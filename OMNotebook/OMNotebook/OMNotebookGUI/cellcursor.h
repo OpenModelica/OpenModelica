@@ -75,7 +75,7 @@ namespace IAEX
     void moveAfter(Cell *current);
 
     virtual void accept(Visitor &v);
-    virtual QString text(){return QString::null;}
+    virtual QString text(){return QString();}
 
     //Flag
     bool isEditable();                // Added 2005-10-28 AF

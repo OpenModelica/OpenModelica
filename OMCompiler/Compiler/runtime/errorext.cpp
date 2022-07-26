@@ -335,9 +335,9 @@ extern void ErrorImpl__freeMessages(threadData_t *threadData, void *handles)
 {
   errorext_members *members = getMembers(threadData);
   while (!listEmpty(handles)) {
-    char *handle = (char*) MMC_CAR(handles);
+    ErrorMessage *handle = static_cast<ErrorMessage*>(MMC_CAR(handles));
     handles = MMC_CDR(handles);
-    free((ErrorMessage*) handle);
+    delete handle;
   }
 }
 
@@ -555,13 +555,29 @@ extern std::string ErrorImpl__printErrorsNoWarning(threadData_t *threadData)
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printMessagesStr(threadData_t *threadData, int warningsAsErrors)
 {
-  errorext_members *members = getMembers(threadData);
+  auto members = getMembers(threadData);
   // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
-  std::string res("");
+  std::string res;
   while(!members->errorMessageQueue->empty()) {
-    res = members->errorMessageQueue->back()->getMessage(warningsAsErrors)+string("\n")+res;
+    res = members->errorMessageQueue->back()->getMessage(warningsAsErrors) + '\n' + res;
     pop_message(threadData,false);
   }
+  return res;
+}
+
+extern std::string ErrorImpl__printCheckpointMessagesStr(threadData_t *threadData, int warningsAsErrors)
+{
+  auto members = getMembers(threadData);
+  std::string res;
+
+  if (members->checkPoints->size() == 0) return res;
+
+  int id = members->checkPoints->back().first;
+  while (members->errorMessageQueue->size() > id) {
+    res = members->errorMessageQueue->back()->getMessage(warningsAsErrors) + '\n' + res;
+    pop_message(threadData, false);
+  }
+
   return res;
 }
 

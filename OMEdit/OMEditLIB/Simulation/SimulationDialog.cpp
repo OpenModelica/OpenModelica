@@ -523,6 +523,10 @@ void SimulationDialog::setUpForm()
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
+  mpVariableFilterHelpButton = new QToolButton;
+  mpVariableFilterHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
+  connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
   // ignore hide result
@@ -537,19 +541,20 @@ void SimulationDialog::setUpForm()
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 0, 0);
-  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1);
-  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 3);
   pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
-  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
+  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1, 1, 2);
   pOutputTabLayout->addWidget(mpResultFileNameLabel, 3, 0);
-  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1, 1, 2);
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1);
-  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpVariableFilterHelpButton, 4, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 3);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -1082,100 +1087,6 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm()));
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
-  if (!result) {
-    //! @todo Remove this once new frontend is used as default and old frontend is removed.
-    bool newFrontendEnabled = true;
-    QList<QString> options = MainWindow::instance()->getOMCProxy()->getCommandLineOptions();
-    foreach (QString option, options) {
-      if (option.contains("nonewInst")) {
-        newFrontendEnabled = false;
-        break;
-      }
-    }
-
-    if (newFrontendEnabled) {
-      QSettings *pSettings = Utilities::getApplicationSettings();
-      int answer;
-      QComboBox *pOldFrontendComboBox = OptionsDialog::instance()->getNotificationsPage()->getOldFrontendComboBox();
-      if (pOldFrontendComboBox->itemData(pOldFrontendComboBox->currentIndex()) == NotificationsPage::AlwaysAskForOF) {
-        QDialog *pOldFrontEndSelectionDialog = new QDialog;
-        pOldFrontEndSelectionDialog->setAttribute(Qt::WA_DeleteOnClose);
-        pOldFrontEndSelectionDialog->setWindowTitle(QString("%1 -%2").arg(Helper::applicationName, Helper::question));
-        pOldFrontEndSelectionDialog->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        // Icon
-        Label *pPixmapLabel = new Label;
-        QStyle *pStyle = this->style();
-        int iconSize = pStyle->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, this);
-        pPixmapLabel->setPixmap(pStyle->standardIcon(QStyle::SP_MessageBoxQuestion, 0, this).pixmap(iconSize, iconSize));
-        // Label
-        Label *pMessageLabel = new Label(tr("The code generation process failed, see the Messages Browser for detailed diagnostic messages.<br /><br />"
-                                            "Most likely this is due to some issues in the Modelica source code, but it could also be due to some issues with the new OpenModelica compiler frontend.<br />"
-                                            "In this case, you may re-try the code generation with the old frontend, see also <b>%1->Simulation->Enable old frontend for code generation</b>.").arg(Helper::toolsOptionsPath));
-        pMessageLabel->setTextFormat(Qt::RichText);
-        pMessageLabel->setTextInteractionFlags(pMessageLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-        pMessageLabel->setOpenExternalLinks(true);
-        // Checkbox
-        QCheckBox *pRememberCheckBox = new QCheckBox(tr("Remember my decision and do not ask again"));
-        // buttons
-        QPushButton *pTryOnceButton = new QPushButton(tr("Try with old frontend once"));
-        pTryOnceButton->setAutoDefault(false);
-        connect(pTryOnceButton, SIGNAL(clicked()), pOldFrontEndSelectionDialog, SLOT(accept()));
-        QSignalMapper signalMapper;
-        QPushButton *pSwitchButton = new QPushButton(tr("Switch to old frontend permanently"));
-        pSwitchButton->setAutoDefault(false);
-        connect(pSwitchButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
-        QPushButton *pKeepButton = new QPushButton(tr("Keep using new frontend"));
-        pKeepButton->setAutoDefault(true);
-        connect(pKeepButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
-        signalMapper.setMapping(pSwitchButton, 2);
-        signalMapper.setMapping(pKeepButton, 3);
-        connect(&signalMapper, SIGNAL(mapped(int)), pOldFrontEndSelectionDialog, SLOT(done(int)));
-        QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
-        pButtonBox->addButton(pKeepButton, QDialogButtonBox::ActionRole);
-        pButtonBox->addButton(pTryOnceButton, QDialogButtonBox::ActionRole);
-        pButtonBox->addButton(pSwitchButton, QDialogButtonBox::ActionRole);
-        // horizontal layout
-        QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
-        pHorizontalLayout->addWidget(pPixmapLabel, 0, Qt::AlignTop);
-        pHorizontalLayout->addWidget(pMessageLabel, 0, Qt::AlignTop);
-        // main layout
-        QGridLayout *pMainLayout = new QGridLayout;
-        pMainLayout->addLayout(pHorizontalLayout, 0, 0, 1, 2, Qt::AlignTop | Qt::AlignLeft);
-        pMainLayout->addWidget(pRememberCheckBox, 1, 0, Qt::AlignLeft | Qt::AlignBottom);
-        pMainLayout->addWidget(pButtonBox, 1, 1, Qt::AlignRight | Qt::AlignBottom);
-        pOldFrontEndSelectionDialog->setLayout(pMainLayout);
-        answer = pOldFrontEndSelectionDialog->exec();
-        if (answer > 1 && pRememberCheckBox->isChecked()) {
-          pSettings->setValue("notifications/promptOldFrontend", answer);
-          pOldFrontendComboBox->setCurrentIndex(pOldFrontendComboBox->findData(answer));
-        }
-      } else {
-        answer = pOldFrontendComboBox->itemData(pOldFrontendComboBox->currentIndex()).toInt();
-      }
-
-      switch (answer) {
-        case 1:
-          MainWindow::instance()->getOMCProxy()->disableNewInstantiation();
-          result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
-          break;
-        case 2:
-          OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(true);
-          mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(true);
-          if (mpLibraryTreeItem->mSimulationOptions.isValid()) {
-            mpLibraryTreeItem->mSimulationOptions.setOldInstantiation(true);
-          }
-          MainWindow::instance()->getOMCProxy()->disableNewInstantiation();
-          result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
-          break;
-        case 3:
-          break;
-        case 0:
-        default:
-          // user cancelled. Do nothing.
-          break;
-      }
-    }
-  }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
   OptionsDialog::instance()->saveNFAPISettings();
@@ -1461,7 +1372,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
  * Creates the SimulationOutputWidget.
  * \param simulationOptions
  */
-void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions simulationOptions)
+void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptions &simulationOptions)
 {
   /* If resimulation and show algorithmic debugger is checked then show algorithmic debugger.
    * Otherwise run the normal resimulation.
@@ -1526,8 +1437,7 @@ void SimulationDialog::saveExperimentAnnotation()
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation,
-                                                                               newExperimentAnnotation);
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation, newExperimentAnnotation);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {
@@ -1721,9 +1631,13 @@ void SimulationDialog::saveTranslationFlagsAnnotation()
   }
 }
 
-void SimulationDialog::performSimulation()
+/*!
+ * \brief SimulationDialog::performSimulation
+ * Translates the model and starts the simulation.
+ * \param simulationOptions
+ */
+void SimulationDialog::performSimulation(const SimulationOptions &simulationOptions)
 {
-  SimulationOptions simulationOptions;
   QString simulationParameters;
   /* build the simulation parameters */
   simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
@@ -1757,11 +1671,6 @@ void SimulationDialog::performSimulation()
   }
   if (!mpCflagsTextBox->text().isEmpty()) {
     simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
-  }
-  simulationOptions = createSimulationOptions();
-  // If we are not doing a re-simulation then save the new SimulationOptions in the class.
-  if (!mIsReSimulate) {
-    mpLibraryTreeItem->mSimulationOptions = simulationOptions;
   }
   // change the cursor to Qt::WaitCursor
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -1832,11 +1741,21 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
-      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
-                                     GDBPath, simulationOptions);
+      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
   }
+}
+
+/*!
+ * \brief SimulationDialog::showVariableFilterHelp
+ * Slot activated when mpVariableFilterHelpButton clicked signal is raised.\n
+ * Opens the omedit.html#output page of OpenModelica users guide.
+ */
+void SimulationDialog::showVariableFilterHelp()
+{
+  QUrl variabeFilterHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#output").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(variabeFilterHelpPath);
 }
 
 /*!
@@ -2055,9 +1974,10 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     }
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
   }
+  bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-      simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+      simulationOptions.getLaunchTransformationalDebugger() || profiling) {
+    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling);
   }
   // Show the data reconciliation report
   if (simulationOptions.getEnableDataReconciliation()) {
@@ -2141,11 +2061,8 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
-  }
+  QUrl integrationAlgorithmsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/solving.html#cruntime-integration-methods").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(integrationAlgorithmsPath);
 }
 
 /*!
@@ -2207,11 +2124,8 @@ void SimulationDialog::browseEquationSystemInitializationFile()
  */
 void SimulationDialog::showSimulationFlagsHelp()
 {
-  QUrl simulationflagsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(simulationflagsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
-  }
+  QUrl simulationflagsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/simulationflags.html").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(simulationflagsPath);
 }
 
 /*!
@@ -2222,9 +2136,14 @@ void SimulationDialog::showSimulationFlagsHelp()
 void SimulationDialog::simulate()
 {
   if (validate()) {
+    SimulationOptions simulationOptions = createSimulationOptions();
+    // If we are not doing a re-simulation then save the new SimulationOptions in the class.
+    if (!mIsReSimulate) {
+      mpLibraryTreeItem->mSimulationOptions = simulationOptions;
+    }
     // interactive simulation
     if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-      performSimulation();
+      performSimulation(simulationOptions);
     } else {
       // if no option is selected then show error message to user
       if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
@@ -2253,7 +2172,7 @@ void SimulationDialog::simulate()
         mpLibraryTreeItem->getModelWidget()->endMacro();
       }
       if (mpSimulateCheckBox->isChecked()) {
-        performSimulation();
+        performSimulation(simulationOptions);
       }
     }
     if (isVisible()) {

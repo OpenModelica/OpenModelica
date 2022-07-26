@@ -54,6 +54,7 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
+#include "gbode_main.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -93,7 +94,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 #endif
 
@@ -129,7 +130,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     if ((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
       retVal = ipopt_step(data, threadData, solverInfo);
@@ -181,15 +182,18 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   case S_IRKSCO:
-  {
     retVal = irksco_midpoint_rule(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
+  case S_GBODE:
+    retVal = gbode_main(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    return retVal;
+  default:
+    throwStreamPrint(threadData, "Unhandled case in solver_main_step.");
   }
-
-  }
-
   TRACE_POP
   return 1;
 }
@@ -240,7 +244,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   switch (solverInfo->solverMethod)
   {
   case S_SYM_SOLVER:
-  case S_EULER: break;
+  case S_EULER:
+  case S_QSS: break;
   case S_SYM_SOLVER_SSC:
   {
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
@@ -248,7 +253,14 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_IRKSCO:
   {
-    allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    break;
+  }
+  case S_GBODE:
+  {
+    if (gbode_allocateData(data, threadData, solverInfo) != 0) {
+      throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
+    }
     break;
   }
   case S_ERKSSC:
@@ -289,7 +301,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     solverInfo->solverData = rungeData;
     break;
   }
-  case S_QSS: break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
   {
@@ -300,7 +311,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
 #endif
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
@@ -384,58 +395,59 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
-  if (solverInfo->solverMethod == S_SYM_SOLVER_SSC)
+  switch (solverInfo->solverMethod)
   {
+  case S_EULER:
+  case S_SYM_SOLVER:
+  case S_QSS: break;
+  case S_SYM_SOLVER_SSC:
     freeSymSolverSsc(solverInfo);
-  }
-  else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_HEUN
-         || solverInfo->solverMethod == S_ERKSSC)
-  {
+    break;
+  case S_RUNGEKUTTA:
+  case S_HEUN:
+  case S_ERKSSC:
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
-  }
-  else if (solverInfo->solverMethod == S_IRKSCO)
-  {
+    break;
+  case S_IRKSCO:
     freeIrksco(solverInfo);
-  }
+    break;
+  case S_GBODE:
+    gbode_freeData(data, solverInfo->solverData);
+    break;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  else if(solverInfo->solverMethod == S_DASSL)
-  {
+  case S_DASSL:
     /* De-Initial DASSL solver */
     dassl_deinitial(solverInfo->solverData);
-  }
+    break;
 #endif
-#ifdef WITH_IPOPT
-  else if(solverInfo->solverMethod == S_OPTIMIZATION)
-  {
+#ifdef OMC_HAVE_IPOPT
+  case S_OPTIMIZATION:
     /* free  work arrays */
     /*destroyIpopt(solverInfo);*/
-  }
+    break;
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == S_IMPEULER ||
-          solverInfo->solverMethod == S_TRAPEZOID ||
-          solverInfo->solverMethod == S_IMPRUNGEKUTTA)
-  {
+  case S_IMPEULER:
+  case S_TRAPEZOID:
+  case S_IMPRUNGEKUTTA:
     /* free  work arrays */
     freeKinOde((KINODE*)solverInfo->solverData);
-  }
-  else if(solverInfo->solverMethod == S_IDA)
-  {
+    break;
+  case S_IDA:
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
-  }
-  else if(solverInfo->solverMethod == S_CVODE)
-  {
+    break;
+  case S_CVODE:
     /* free work arrays */
     cvode_solver_deinitial(solverInfo->solverData);
-  }
+    break;
 #endif
-  {
-    /* free other solver memory */
+  default:
+    throwStreamPrint(NULL, "Unknown solver %u encountered. Possibly leaking memory!", solverInfo->solverMethod);
   }
 
   return retValue;
@@ -672,7 +684,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
     infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
     for(ui=0; ui<data->modelData->nNonLinearSystems; ui++)
-      printNonLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+      printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
     messageClose(LOG_STATS);
@@ -720,13 +732,14 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     return 1;
 #endif
 
-#ifndef WITH_IPOPT
+#ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
     TRACE_POP
     return 1;
 #endif
-
+  default:
+    break;
   }
 
   /* first initialize the model then allocate SolverData memory
@@ -741,6 +754,13 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, simInfo->minStepSize);
     simInfo->stepSize = simInfo->minStepSize;
     simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
+  }
+  /* Check step size is not larger then stopTime-startTime, up to 6 decimals
+   * Ignored when linearizing model */
+  if (!data->modelData->create_linearmodel && simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
+    warningStreamPrint(LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
+    infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
+    messageClose(LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -923,7 +943,7 @@ static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO
   modelica_real* stateDerOld = sDataOld->realVars + nx;
   double t = sDataOld->timeValue;
   const double targetTime = t + solverInfo->currentStepSize;
-  const short isMaxStepSizeSet = (short) omc_flagValue[FLAG_MAX_STEP_SIZE];
+  const short isMaxStepSizeSet = omc_flagValue[FLAG_MAX_STEP_SIZE] != NULL;
   const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
 #if defined(_MSC_VER)
   /* handle stupid compilers */
@@ -1146,7 +1166,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 }
 
 /***************************************    Run Ipopt for optimization     ***********************************/
-#if defined(WITH_IPOPT)
+#if defined(OMC_HAVE_IPOPT)
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int cJ, res;

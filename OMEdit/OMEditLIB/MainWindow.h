@@ -104,6 +104,8 @@ public:
   void setUpMainWindow(threadData_t *threadData);
   bool isDebug() const {return mDebug;}
   void setDebug(bool debug) {mDebug = debug;}
+  bool isNewApi() const {return mNewApi;}
+  void setNewApi(bool newApi) {mNewApi = newApi;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
@@ -210,6 +212,7 @@ public:
   QAction* getRevertCommitAction() {return mpRevertCommitAction;}
   QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
   QMenu* getNewModelMenu() const {return mpNewModelMenu;}
+  QMenu* getLibrariesMenu() const {return mpLibrariesMenu;}
   QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
@@ -244,18 +247,21 @@ public:
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
-  TransformationsWidget* showTransformationsWidget(QString fileName);
+  TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
                                    const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale, const char* variables);
+  static void LoadModelCallbackFunction(void *p, const char* modelName);
   void addSystemLibraries();
+  QString getLibraryIndexFilePath() const;
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
+  bool mNewApi;
   bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
@@ -335,6 +341,7 @@ private:
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
   QAction *mpUpgradeInstalledLibrariesAction;
+  QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -398,8 +405,6 @@ private:
   QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
-  QAction *mpModelicaByExampleAction;
-  QAction *mpModelicaWebReferenceAction;
   QAction *mpOMSimulatorUsersGuideAction;
   QAction *mpOpenModelicaTLMSimulatorDocumentationAction;
   QAction *mpAboutOMEditAction;
@@ -484,8 +489,6 @@ public slots:
   void openCompositeModelFile();
   void loadExternalModels();
   void openDirectory();
-  void loadSystemLibrary();
-  void loadSystemLibrary(const QString &library, QString version = QString("default"));
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
   void openRecentFile();
@@ -526,8 +529,10 @@ public slots:
 #endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
-  void openInstallLibraryDialog();
+  bool openInstallLibraryDialog();
   void upgradeInstalledLibraries();
+  void updateLibraryIndex();
+  void updateLibraryIndex(bool forceUpdate);
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
@@ -543,8 +548,6 @@ public slots:
   void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
-  void openModelicaByExample();
-  void openModelicaWebReference();
   void openOMSimulatorUsersGuide();
   void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
@@ -601,28 +604,6 @@ public slots:
   void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
-};
-
-class MSLVersionDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  MSLVersionDialog(QWidget *parent = 0);
-private:
-  QRadioButton *mpMSL3RadioButton;
-  QRadioButton *mpMSL4RadioButton;
-  QRadioButton *mpNoMSLRadioButton;
-  QWidget *mpWidget;
-private slots:
-  void setMSLVersion();
-
-  // QDialog interface
-public slots:
-  virtual void reject() override;
-
-  // QWidget interface
-public:
-  virtual QSize sizeHint() const override;
 };
 
 #endif // MAINWINDOW_H

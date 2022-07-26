@@ -76,10 +76,11 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
-//       <File name=\"gc/memory_pool.c\" />
-//       <File name=\"gc/omc_gc.c\" />
+//       <File name=\"./gc/memory_pool.c\" />
+//       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
+//       <File name=\"./util/context.c\" />
 //       <File name=\"./util/division.c\" />
 //       <File name=\"./util/doubleEndedList.c\" />
 //       <File name=\"./util/generic_array.c\" />

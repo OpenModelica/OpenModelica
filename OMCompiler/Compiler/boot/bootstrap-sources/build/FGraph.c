@@ -3888,7 +3888,6 @@ case 0: {
 _g = tmp4_1;
 _i = omc_System_tmpTickIndex(threadData, ((modelica_integer) 22));
 _n = omc_FNode_new(threadData, _inName, _i, _inParents, _inData);
-omc_FGraphStream_node(threadData, _n);
 tmpMeta[0+0] = _g;
 tmpMeta[0+1] = _n;
 goto tmp3_done;
@@ -3940,7 +3939,6 @@ _outGraph = tmpMeta[0];
 tmpMeta[0] = mmc_mk_cons(_nr, MMC_REFSTRUCTLIT(mmc_nil));
 tmpMeta[1] = mmc_mk_box3(3, &FCore_Graph_G__desc, _top, tmpMeta[0]);
 arrayUpdate(_ag, ((modelica_integer) 1), tmpMeta[1]);
-omc_FGraphStream_node(threadData, _n);
 _return: OMC_LABEL_UNUSED
 return _outGraph;
 }

@@ -64,7 +64,6 @@ import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import FCore;
 import FGraph;
-import FGraphStream;
 import Flags;
 import FlagsUtil;
 import GCExt;
@@ -554,7 +553,7 @@ protected
   Option<BackendDAE.InlineData> inlineData;
   list<BackendDAE.Equation> removedInitialEquationLst;
 algorithm
-  if Config.simulationCg() then
+  if Config.simulationCg() or Config.simulation() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), AbsynUtil.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
     (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow, "");
@@ -576,7 +575,7 @@ protected
   SimCode.SimulationSettings sim_settings;
   Integer intervals;
 algorithm
-  if Config.simulationCg() then
+  if Config.simulationCg() or Config.simulation() then
     Print.clearErrorBuf();
     Print.clearBuf();
     cname := AbsynUtil.pathString(inClassName);
@@ -879,9 +878,7 @@ algorithm
     elseif interactiveMode == "zmq" then
       interactivemodeZMQ();
     else // No interactive flag given, try to flatten the file.
-      FGraphStream.start();
       translateFile(args);
-      FGraphStream.finish();
     end if;
   else // Something went wrong, print an appropriate error.
     // OMC called with no arguments, print usage information and quit.
@@ -899,7 +896,6 @@ algorithm
       Print.printBuf("\n\n----\n\nError buffer:\n\n");
       print(Print.getErrorString());
       print(ErrorExt.printMessagesStr(false)); print("\n");
-      FGraphStream.finish();
     else
       print("Error: OPENMODELICAHOME was not set.\n");
       print("  Read the documentation for instructions on how to set it properly.\n");

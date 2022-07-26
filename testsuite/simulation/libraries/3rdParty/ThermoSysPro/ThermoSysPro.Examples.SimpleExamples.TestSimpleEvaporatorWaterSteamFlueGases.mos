@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.* ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases_* ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.exe ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.cpp ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.makefile ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.libs ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.log ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.c ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 

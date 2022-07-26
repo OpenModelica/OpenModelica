@@ -50,11 +50,42 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
+PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpPolygon = pPolygon;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
+PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpPolygon = pPolygon;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -113,6 +144,30 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   }
   // 10th item of the list is smooth.
   mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
+}
+
+void PolygonAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpPolygon);
+  FilledShape::parseShapeAnnotation(mpPolygon);
+
+  mPoints.clear();
+  foreach (ModelInstance::Point point, mpPolygon->getPoints()) {
+    mPoints.append(QPointF(point.x(), point.y()));
+  }
+  /* The polygon is automatically closed, if the first and the last points are not identical. */
+  if (mPoints.size() == 1) {
+    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.first());
+  } else if (mPoints.size() == 2) {
+    mPoints.append(mPoints.first());
+  }
+  if (mPoints.size() > 0) {
+    if (mPoints.first() != mPoints.last()) {
+      mPoints.append(mPoints.first());
+    }
+  }
+  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpPolygon->getSmooth()));
 }
 
 QPainterPath PolygonAnnotation::getShape() const

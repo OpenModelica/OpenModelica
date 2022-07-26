@@ -47,12 +47,12 @@ import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import Component = NFComponent;
 import ComponentRef = NFComponentRef;
-import Config;
 import Dimension = NFDimension;
 import ErrorExt;
 import EvalFunction = NFEvalFunction;
 import Inline = NFInline;
 import Inst = NFInst;
+import JSON;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -588,6 +588,16 @@ public
     end match;
   end functionName;
 
+  function functionNameLast
+    input Call call;
+    output String ident = AbsynUtil.pathLastIdent(functionName(call));
+  end functionNameLast;
+
+  function functionNameFirst
+    input Call call;
+    output String ident = AbsynUtil.pathFirstIdent(functionName(call));
+  end functionNameFirst;
+
   function isNamed
     input Call call;
     input String name;
@@ -609,9 +619,19 @@ public
   algorithm
     arguments := match call
       case UNTYPED_CALL() then call.arguments;
-      case TYPED_CALL() then call.arguments;
+      case TYPED_CALL()   then call.arguments;
     end match;
   end arguments;
+
+  function setArguments
+    input output NFCall call;
+    input list<Expression> arguments;
+  algorithm
+    call := match call
+      case UNTYPED_CALL() algorithm call.arguments := arguments; then call;
+      case TYPED_CALL()   algorithm call.arguments := arguments; then call;
+    end match;
+  end setArguments;
 
   function toRecordExpression
     input NFCall call;
@@ -791,6 +811,64 @@ public
       else toString(call);
     end match;
   end typedString;
+
+  function toJSON
+    input Call call;
+    output JSON json = JSON.emptyObject();
+
+    function iterators_json
+      input list<tuple<InstNode, Expression>> iters;
+      output JSON json = JSON.emptyArray(listLength(iters));
+    protected
+      JSON j;
+    algorithm
+      for i in iters loop
+        j := JSON.emptyObject();
+        j := JSON.addPair("name", JSON.makeString(InstNode.name(Util.tuple21(i))), j);
+        j := JSON.addPair("range", Expression.toJSON(Util.tuple22(i)), j);
+        json := JSON.addElement(j, json);
+      end for;
+    end iterators_json;
+  protected
+    Absyn.Path path;
+  algorithm
+    () := match call
+      case TYPED_CALL()
+        algorithm
+          path := Function.nameConsiderBuiltin(call.fn);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
+          json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
+          json := JSON.addPair("arguments", JSON.makeArray(
+            list(Expression.toJSON(a) for a in call.arguments)), json);
+        then
+          ();
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          json := JSON.addPair("$kind", JSON.makeString("array_constructor"), json);
+          json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
+          json := JSON.addPair("iterators", iterators_json(call.iters), json);
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          path := Function.nameConsiderBuiltin(call.fn);
+          json := JSON.addPair("$kind", JSON.makeString("reduction"), json);
+          json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
+          json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
+          json := JSON.addPair("iterators", iterators_json(call.iters), json);
+        then
+          ();
+
+      else
+        algorithm
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
+        then
+          ();
+
+    end match;
+  end toJSON;
 
   function toAbsyn
     input Call call;
@@ -1128,7 +1206,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := Expression.listContainsShallow(call.arguments, func);
+          res := List.exist(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1161,7 +1239,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then Expression.listContainsShallow(call.arguments, func);
+      case TYPED_CALL() then List.exist(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);
@@ -1598,20 +1676,23 @@ public
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_REDUCTION(call.ref, e, call.iters);
+          UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm
@@ -1893,6 +1974,27 @@ public
     outIters := listReverseInPlace(outIters);
   end mapFoldIteratorsExpShallow;
 
+  function getNameAndArgs
+    input Call call;
+    output tuple<String, list<Expression>> tpl;
+  algorithm
+    tpl := match call
+      local
+        Function fn;
+        list<Expression> args;
+
+      case Call.UNTYPED_CALL(arguments = args)
+        then (ComponentRef.firstName(call.ref), args);
+
+      case Call.TYPED_CALL(fn = fn, arguments = args)
+        then (AbsynUtil.pathLastIdent(fn.path), args);
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + ": unhandled case for " + toString(call), sourceInfo());
+      then fail();
+    end match;
+  end getNameAndArgs;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;
@@ -1915,7 +2017,7 @@ protected
       (args, named_args) := instArgs(functionArgs, scope, context, info);
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
-      if Config.getGraphicsExpMode() and stringEq(name, "DynamicSelect") then
+      if InstContext.inAnnotation(context) and stringEq(name, "DynamicSelect") then
         // return just the first part of DynamicSelect
         callExp := match functionArgs
            case Absyn.FUNCTIONARGS() then
@@ -1935,7 +2037,7 @@ protected
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
 
-      case _ guard InstContext.inGraphicalExp(context)
+      case _ guard InstContext.inAnnotation(context)
         algorithm
           // If we're in a graphic annotation expression, first try to find the
           // function in the top scope in case there's a user-defined function
@@ -2059,7 +2161,7 @@ protected
     InstNode iter, range_node;
     Type ty;
   algorithm
-    for i in inIters loop
+    for i in listReverse(inIters) loop
       if isSome(i.range) then
         range := Inst.instExp(Util.getOption(i.range), outScope, context, info);
       else
@@ -2080,8 +2182,6 @@ protected
       (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info, ty);
       outIters := (iter, range) :: outIters;
     end for;
-
-    outIters := listReverse(outIters);
   end instIterators;
 
   function typeArrayConstructor
@@ -2111,7 +2211,7 @@ protected
           is_structural := not InstContext.inFunction(context);
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
-          for i in call.iters loop
+          for i in listReverse(call.iters) loop
             (iter, range) := i;
 
             if Expression.isEmpty(range) then
@@ -2125,12 +2225,13 @@ protected
               iter_ty := Expression.typeOf(range);
             end if;
 
-            dims := listAppend(Type.arrayDims(iter_ty), dims);
+            dims := List.append_reverse(Type.arrayDims(iter_ty), dims);
             variability := Prefixes.variabilityMax(variability, iter_var);
             purity := Prefixes.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
-          iters := listReverseInPlace(iters);
+
+          dims := listReverseInPlace(dims);
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
@@ -2175,7 +2276,7 @@ protected
           purity := Purity.PURE;
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
-          for i in call.iters loop
+          for i in listReverse(call.iters) loop
             (iter, range) := i;
 
             if Expression.isEmpty(range) then
@@ -2187,8 +2288,6 @@ protected
             purity := Variability.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
-
-          iters := listReverseInPlace(iters);
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
@@ -2487,9 +2586,7 @@ protected
             exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
 
             // Create the iterator.
-            iter := InstNode.fromComponent("$i" + intString(i),
-              Component.ITERATOR(Type.INTEGER(), Variability.CONSTANT, info), scope);
-
+            iter := InstNode.newIterator("$i" + intString(i), Type.INTEGER(), info);
             iters := (iter, exp) :: iters;
 
             // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized

@@ -54,13 +54,13 @@ end ConnectInner2;
 //   b.a.global.e = b.a.my.e;
 //   (-b.a.my.f) + (-b.a.global.f) = 0.0;
 // end ConnectInner2;
-// [flattening/modelica/connectors/ConnectInner2.mo:14:3-14:17:writable] Warning: No corresponding 'inner' declaration found for component .C b.a.global declared as 'outer '.
+// [flattening/modelica/connectors/ConnectInner2.mo:14:3-14:17:writable] Warning: No corresponding 'inner' declaration found for component .C b.a.global declared as 'outer'.
 //   The existing 'inner' components are:
 //     There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: A.
 //   Check if you have not misspelled the 'outer' component name.
 //   Please declare an 'inner' component with the same name in the top scope.
 //   Continuing flattening by only considering the 'outer' component declaration.
-// [flattening/modelica/connectors/ConnectInner2.mo:14:3-14:17:writable] Warning: No corresponding 'inner' declaration found for component .C a.global declared as 'outer '.
+// [flattening/modelica/connectors/ConnectInner2.mo:14:3-14:17:writable] Warning: No corresponding 'inner' declaration found for component .C a.global declared as 'outer'.
 //   The existing 'inner' components are:
 //     There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: A.
 //   Check if you have not misspelled the 'outer' component name.

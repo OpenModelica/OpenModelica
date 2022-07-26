@@ -24,6 +24,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/OutputPlainTextEdit.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
+                      Modeling/Model.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
@@ -123,13 +124,15 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/AnimationWindow.cpp
                       Animation/ThreeDViewer.cpp
                       Animation/ExtraShapes.cpp
-                      Animation/Visualizer.cpp
-                      Animation/VisualizerMAT.cpp
-                      Animation/VisualizerCSV.cpp
-                      Animation/VisualizerFMU.cpp
+                      Animation/Visualization.cpp
+                      Animation/VisualizationMAT.cpp
+                      Animation/VisualizationCSV.cpp
+                      Animation/VisualizationFMU.cpp
                       Animation/FMUSettingsDialog.cpp
                       Animation/FMUWrapper.cpp
-                      Animation/Shapes.cpp
+                      Animation/AbstractVisualizer.cpp
+                      Animation/Shape.cpp
+                      Animation/Vector.cpp
                       resource_omedit.qrc)
 
 
@@ -139,6 +142,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/OutputPlainTextEdit.h
                       MainWindow.h
                       OMC/OMCProxy.h
+                      Modeling/Model.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h
@@ -243,13 +247,15 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/ThreeDViewer.h
                       Animation/AnimationUtil.h
                       Animation/ExtraShapes.h
-                      Animation/Visualizer.h
-                      Animation/VisualizerMAT.h
-                      Animation/VisualizerCSV.h
-                      Animation/VisualizerFMU.h
+                      Animation/Visualization.h
+                      Animation/VisualizationMAT.h
+                      Animation/VisualizationCSV.h
+                      Animation/VisualizationFMU.h
                       Animation/FMUSettingsDialog.h
                       Animation/FMUWrapper.h
-                      Animation/Shapes.h
+                      Animation/AbstractVisualizer.h
+                      Animation/Shape.h
+                      Animation/Vector.h
                       Animation/rapidxml.hpp)
 
 
@@ -264,6 +270,8 @@ set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelic
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# OpenSceneGraph does not provide imported targets yet. Add includes manually.
+target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
@@ -295,8 +303,3 @@ endif()
 
 target_include_directories(OMEditLib PRIVATE
   ${OMCompiler_SOURCE_DIR}/Compiler/Script)
-
-target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
-
-install(TARGETS OMEditLib)
-

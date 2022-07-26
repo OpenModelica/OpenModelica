@@ -34,7 +34,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|upperTank.level|upperTank.medium.h|lowerTank.level|lowerTank.medium.h', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
 // Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 126 stopped at time 0 with error in algloop solver: 
+// ERROR  : init  : SimManager: Nonlinear solver 126 stopped at time 0 with error in algloop solver:
 // error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol

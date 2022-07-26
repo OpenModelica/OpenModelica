@@ -46,18 +46,86 @@ template dumpVisualization(VisualXML.Visualization vis)
               <shape>
                   <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
                   <type><%svalue%></type>
-                  <T><%TDump%></T>
-                  <r><%rDump%></r>
-                  <r_shape><%r_shapeDump%></r_shape>
-                  <lengthDir><%lDirDump%></lengthDir>
-                  <widthDir><%wDirDump%></widthDir>
+                  <T>
+                      <%TDump%>
+                  </T>
+                  <r>
+                      <%rDump%>
+                  </r>
+                  <r_shape>
+                      <%r_shapeDump%>
+                  </r_shape>
+                  <lengthDir>
+                      <%lDirDump%>
+                  </lengthDir>
+                  <widthDir>
+                      <%wDirDump%>
+                  </widthDir>
                   <length><%dumpExp(length)%></length>
                   <width><%dumpExp(width)%></width>
                   <height><%dumpExp(height)%></height>
                   <extra><%dumpExp(extra)%></extra>
-                  <color><%colorDump%></color>
+                  <color>
+                      <%colorDump%>
+                  </color>
                   <specCoeff><%dumpExp(specularCoeff)%></specCoeff>
               </shape>
+            >>
+
+        case vis as VECTOR() then
+          let TDump = arrayList(T) |> T0 => <<
+          <%dumpVecExp(T0)%>
+          >> ; separator="\n"
+          let rDump = dumpVecExp(arrayList(r))
+          let coordDump = dumpVecExp(arrayList(coordinates))
+          let colorDump = dumpVecExp(arrayList(color))
+            <<
+              <vector>
+                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <T>
+                      <%TDump%>
+                  </T>
+                  <r>
+                      <%rDump%>
+                  </r>
+                  <coordinates>
+                      <%coordDump%>
+                  </coordinates>
+                  <color>
+                      <%colorDump%>
+                  </color>
+                  <specCoeff><%dumpExp(specularCoeff)%></specCoeff>
+                  <quantity><%dumpExp(quantity)%></quantity>
+                  <headAtOrigin><%dumpExp(headAtOrigin)%></headAtOrigin>
+                  <twoHeadedArrow><%dumpExp(twoHeadedArrow)%></twoHeadedArrow>
+              </vector>
+            >>
+
+        case vis as SURFACE() then
+          let TDump = arrayList(T) |> T0 => <<
+          <%dumpVecExp(T0)%>
+          >> ; separator="\n"
+          let r_0Dump = dumpVecExp(arrayList(r_0))
+          let colorDump = dumpVecExp(arrayList(color))
+            <<
+              <surface>
+                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <T>
+                      <%TDump%>
+                  </T>
+                  <r>
+                      <%r_0Dump%>
+                  </r>
+                  <nu><%dumpExp(nu)%></nu>
+                  <nv><%dumpExp(nv)%></nv>
+                  <wireframe><%dumpExp(wireframe)%></wireframe>
+                  <multiColored><%dumpExp(multiColored)%></multiColored>
+                  <color>
+                      <%colorDump%>
+                  </color>
+                  <specCoeff><%dumpExp(specularCoeff)%></specCoeff>
+                  <transparency><%dumpExp(transparency)%></transparency>
+              </surface>
             >>
     end match
 end dumpVisualization;
@@ -74,11 +142,11 @@ template dumpExp (DAE.Exp expIn)
     match expIn
         case expIn as BCONST(__) then
             <<
-                <bexp><%ExpressionDump.printExpStr(expIn)%></bexp>
+            <bexp><%ExpressionDump.printExpStr(expIn)%></bexp>
             >>
         case expIn as CREF(__) then
             <<
-                <cref><%ExpressionDump.printExpStr(expIn)%></cref>
+            <cref><%ExpressionDump.printExpStr(expIn)%></cref>
             >>
         case expIn as BINARY(__) then
             <<<binary>
@@ -129,7 +197,7 @@ template dumpExp (DAE.Exp expIn)
             >>
         else
             <<
-                <exp><%ExpressionDump.printExpStr(expIn)%></exp>
+            <exp><%ExpressionDump.printExpStr(expIn)%></exp>
             >>
     end match
 end dumpExp;

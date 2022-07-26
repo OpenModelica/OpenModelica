@@ -14,7 +14,7 @@ equation
 end Comments;
 
 // Result:
-// class 'Comments' "Model to test comments in Flat Modelica output"
+// model 'Comments' "Model to test comments in Flat Modelica output"
 //   Real 'x' "Some variable" annotation(Evaluate = false);
 //   Real 'y' "Some other variable";
 // equation

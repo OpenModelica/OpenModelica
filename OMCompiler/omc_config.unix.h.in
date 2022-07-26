@@ -22,14 +22,11 @@
 
 #define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 
-#define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
-
 /* Define as HAVE_LAPACK if we have lapack support*/
 @HAVE_LAPACK@
 /* Define as HAVE_LAPACK_DEPRECATED if we have deprecated lapack functions (v < 3.6)*/
 @HAVE_LAPACK_DEPRECATED@
 
-@NO_LPLIB@
 @NO_FMIL@
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"
@@ -39,7 +36,7 @@
 /* Skip compiling against some stuff for the JavaScript runtime */
 #if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
 #define WITH_SUNDIALS
-#define WITH_IPOPT
+@OMC_HAVE_IPOPT@
 @WITH_SUITESPARSE@
 #define WITH_HWLOC @WITH_HWLOC@
 @WITH_UUID@

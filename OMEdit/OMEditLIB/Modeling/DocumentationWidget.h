@@ -90,6 +90,7 @@ public:
   void setExecutingPreviousNextButtons(bool executingPreviousNextButtons) {mExecutingPreviousNextButtons = executingPreviousNextButtons;}
   QPoint getScrollPosition() const {return mScrollPosition;}
   void setScrollPosition(const QPoint &scrollPosition) {mScrollPosition = scrollPosition;}
+  bool isEditingDocumentation() const {return mEditType != EditType::None;}
 private:
   QFile mDocumentationFile;
   QAction *mpPreviousAction;

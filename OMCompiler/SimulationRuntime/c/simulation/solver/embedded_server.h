@@ -43,7 +43,7 @@ extern void (*embedded_server_deinit)(void *handle);
 /* Tells the embedded server that a simulation step has passed; the server
  * can read/write values from/to the simulator
  */
-extern int (*embedded_server_update)(void *handle, double tout);
+extern int (*embedded_server_update)(void *handle, double tout, int *terminate);
 /* Give the filename or generic name to use for loading an embedded server */
 extern void* embedded_server_load_functions(const char *name);
 extern void embedded_server_unload_functions(void *dllHandle);

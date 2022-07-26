@@ -51,27 +51,9 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   setMinimumWidth(400);
   Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::installLibrary);
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
-  // name combobox
-  mpNameComboBox = new QComboBox;
-  // source label
-  mpSourceLabel = new Label;
-  mpSourceLabel->setOpenExternalLinks(true);
-  mpSourceLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
-  // versions filters
-  mpLatestBackwardsCompatibleCheckBox = new QCheckBox(tr("Latest backwards compatible versions"));
-  mpLatestBackwardsCompatibleCheckBox->setChecked(true);
-  connect(mpLatestBackwardsCompatibleCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  mpPostReleaseBuildsCheckBox = new QCheckBox(tr("Post release builds"));
-  mpPostReleaseBuildsCheckBox->setChecked(true);
-  connect(mpPostReleaseBuildsCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  mpPreReleaseBuildsCheckBox = new QCheckBox(tr("Pre release builds"));
-  connect(mpPreReleaseBuildsCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  QGroupBox *pVersionsFiltersGroupBox = new QGroupBox(tr("Versions Filters"));
-  QGridLayout *pVersionsFiltersGridLayout = new QGridLayout;
-  pVersionsFiltersGridLayout->addWidget(mpLatestBackwardsCompatibleCheckBox, 0, 0);
-  pVersionsFiltersGridLayout->addWidget(mpPostReleaseBuildsCheckBox, 0, 1);
-  pVersionsFiltersGridLayout->addWidget(mpPreReleaseBuildsCheckBox, 1, 0, 1, 2);
-  pVersionsFiltersGroupBox->setLayout(pVersionsFiltersGridLayout);
+  Label *pPackageManagerText = new Label(tr("The library will be installed using the <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager\">package manager</a></u>.").arg(Helper::OpenModelicaUsersGuideVersion));
+  pPackageManagerText->setOpenExternalLinks(true);
+  pPackageManagerText->setTextInteractionFlags(Qt::TextBrowserInteraction);
   // support levels
   mpFullSupportCheckBox = new QCheckBox(tr("Full"));
   mpFullSupportCheckBox->setChecked(true);
@@ -85,7 +67,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   connect(mpObsoleteCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
   mpNoSupportCheckBox = new QCheckBox(tr("None"));
   connect(mpNoSupportCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  QGroupBox *pSupportLevelsGroupBox = new QGroupBox(tr("Support Levels"));
+  QGroupBox *pSupportLevelsGroupBox = new QGroupBox(tr("Level of support by OpenModelica"));
   QGridLayout *pSupportLevelsGridLayout = new QGridLayout;
   pSupportLevelsGridLayout->addWidget(mpFullSupportCheckBox, 0, 0);
   pSupportLevelsGridLayout->addWidget(mpSupportCheckBox, 0, 1);
@@ -93,27 +75,35 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pSupportLevelsGridLayout->addWidget(mpObsoleteCheckBox, 1, 1);
   pSupportLevelsGridLayout->addWidget(mpNoSupportCheckBox, 2, 0, 1, 2);
   pSupportLevelsGroupBox->setLayout(pSupportLevelsGridLayout);
+  // name combobox
+  mpNameComboBox = new QComboBox;
+  connect(mpNameComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(libraryIndexChanged(QString)));
+  // source label
+  mpSourceLabel = new Label;
+  mpSourceLabel->setOpenExternalLinks(true);
+  mpSourceLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
   // version combobox
   mpVersionComboBox = new QComboBox;
   // fetch libraries
-  QString indexFilePath = QString("%1/.openmodelica/libraries/index.json").arg(Helper::userHomeDirectory);
-  // update the package index
-  MainWindow::instance()->getOMCProxy()->updatePackageIndex();
+  QString indexFilePath = MainWindow::instance()->getLibraryIndexFilePath();
   if (QFile::exists(indexFilePath)) {
     if (mIndexJsonDocument.parse(indexFilePath)) {
       QVariantMap result = mIndexJsonDocument.result.toMap();
       mLibrariesMap = result["libs"].toMap();
       for (QVariantMap::const_iterator librariesIterator = mLibrariesMap.begin(); librariesIterator != mLibrariesMap.end(); ++librariesIterator) {
-        mpNameComboBox->addItem(librariesIterator.key());
+        const QString library = librariesIterator.key();
+        QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailablePackageVersions(library, "");
+        mLibrariesAndVersionsMap.insert(library, versions);
       }
     }
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Package index file <b>%1</b> doesn't exist.").arg(indexFilePath), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath), Helper::ok);
   }
   // exact match checkbox
   mpExactMatchCheckBox = new QCheckBox(tr("Exact Match (Install only the specified version of dependencies)"));
   mpExactMatchCheckBox->setChecked(true);
-  // Progress label & bar
+  // Progress label
   mpProgressLabel = new Label(tr("<b>Installing library. Please wait.</b>"));
   mpProgressLabel->hide();
   // buttons
@@ -128,21 +118,20 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
 
-  connect(mpNameComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(libraryIndexChanged(QString)));
-  libraryIndexChanged(mpNameComboBox->currentText());
+  filterChanged(true);
   // layout
   QGridLayout *pMainGridLayout = new QGridLayout;
   int row = 0;
   pMainGridLayout->setAlignment(Qt::AlignTop);
   pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 2);
   pMainGridLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
+  pMainGridLayout->addWidget(pPackageManagerText, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(pSupportLevelsGroupBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(new Label(Helper::name), row, 0);
   pMainGridLayout->addWidget(mpNameComboBox, row++, 1);
-  pMainGridLayout->addWidget(mpSourceLabel, row++, 0, 1, 2);
-  pMainGridLayout->addWidget(pVersionsFiltersGroupBox, row++, 0, 1, 2);
-  pMainGridLayout->addWidget(pSupportLevelsGroupBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(new Label(Helper::versionLabel), row, 0);
   pMainGridLayout->addWidget(mpVersionComboBox, row++, 1);
+  pMainGridLayout->addWidget(mpSourceLabel, row++, 0, 1, 2);
   pMainGridLayout->addWidget(mpExactMatchCheckBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(mpProgressLabel, row, 0);
   pMainGridLayout->addWidget(mpButtonBox, row++, 1, Qt::AlignRight);
@@ -157,6 +146,60 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
 void InstallLibraryDialog::filterChanged(bool checked)
 {
   Q_UNUSED(checked);
+
+  mpNameComboBox->clear();
+  mFilteredLibrariesMap.clear();
+
+  for (QVariantMap::const_iterator librariesIterator = mLibrariesMap.begin(); librariesIterator != mLibrariesMap.end(); ++librariesIterator) {
+    const QString library = librariesIterator.key();
+
+    QVariantMap libraryMap = mLibrariesMap[library].toMap();
+    QVariantMap libraryVersionsMap = libraryMap["versions"].toMap();
+    QStringList versions = mLibrariesAndVersionsMap[library];
+    QStringList filteredVersions = versions;
+    QStringList supportList;
+    QStringList providesList;
+
+    if (mpFullSupportCheckBox->isChecked()) {
+      supportList.append("fullSupport");
+    }
+    if (mpSupportCheckBox->isChecked()) {
+      supportList.append("support");
+    }
+    if (mpExperimentalCheckBox->isChecked()) {
+      supportList.append("experimental");
+    }
+    if (mpObsoleteCheckBox->isChecked()) {
+      supportList.append("obsolete");
+    }
+    if (mpNoSupportCheckBox->isChecked()) {
+      supportList.append("noSupport");
+    }
+
+    foreach (QString version, versions) {
+      QVariantMap libraryVersionMap = libraryVersionsMap[version].toMap();
+      QList<QVariant> provides = libraryVersionMap["provides"].toList();
+      foreach (QVariant provide, provides) {
+        providesList.append(provide.toString());
+      }
+      // support filter
+      QString support = libraryVersionMap["support"].toString();
+      if (!supportList.isEmpty() && !supportList.contains(support)) {
+        filteredVersions.removeOne(version);
+      }
+    }
+
+    filteredVersions.removeDuplicates();
+
+    if (!filteredVersions.isEmpty()) {
+      mpNameComboBox->addItem(library);
+      FilteredLibrary filteredLibrary;
+      filteredLibrary.source = libraryMap["git"].toString();
+      filteredLibrary.versions = filteredVersions;
+      mFilteredLibrariesMap.insert(library, filteredLibrary);
+    }
+  }
+
   libraryIndexChanged(mpNameComboBox->currentText());
 }
 
@@ -169,61 +212,17 @@ void InstallLibraryDialog::libraryIndexChanged(const QString &text)
 {
   mpSourceLabel->clear();
   mpVersionComboBox->clear();
-  QVariantMap libraryMap = mLibrariesMap[text].toMap();
-  mpSourceLabel->setText(QString("<a href=\"%1\">%1</a>").arg(libraryMap["git"].toString()));
 
-  QVariantMap libraryVersionsMap = libraryMap["versions"].toMap();
-  QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailablePackageVersions(text, "");
-  QStringList filteredVersions = versions;
-  QStringList supportList;
-  QStringList providesList;
-
-  if (mpFullSupportCheckBox->isChecked()) {
-    supportList.append("fullSupport");
-  }
-  if (mpSupportCheckBox->isChecked()) {
-    supportList.append("support");
-  }
-  if (mpExperimentalCheckBox->isChecked()) {
-    supportList.append("experimental");
-  }
-  if (mpObsoleteCheckBox->isChecked()) {
-    supportList.append("obsolete");
-  }
-  if (mpNoSupportCheckBox->isChecked()) {
-    supportList.append("noSupport");
-  }
-
-  foreach (QString version, versions) {
-    QVariantMap libraryVersionMap = libraryVersionsMap[version].toMap();
-    QList<QVariant> provides = libraryVersionMap["provides"].toList();
-    foreach (QVariant provide, provides) {
-      providesList.append(provide.toString());
+  if (text.isEmpty()) {
+    mpOkButton->setEnabled(false);
+  } else {
+    FilteredLibrary filteredLibrary = mFilteredLibrariesMap[text];
+    mpSourceLabel->setText(QString("<a href=\"%1\">%1</a>").arg(filteredLibrary.source));
+    foreach (QString version, filteredLibrary.versions) {
+      mpVersionComboBox->addItem(StringHandler::convertSemVertoReadableString(version), version);
     }
-    if (!mpPostReleaseBuildsCheckBox->isChecked() && version.contains("+")) {
-      filteredVersions.removeOne(version);
-    }
-    if (!mpPreReleaseBuildsCheckBox->isChecked() && version.contains("-")) {
-      filteredVersions.removeOne(version);
-    }
-    // support filter
-    QString support = libraryVersionMap["support"].toString();
-    if (!supportList.isEmpty() && !supportList.contains(support)) {
-      filteredVersions.removeOne(version);
-    }
+    mpOkButton->setEnabled(true);
   }
-
-  filteredVersions.removeDuplicates();
-
-  if (mpLatestBackwardsCompatibleCheckBox->isChecked()) {
-    providesList.removeDuplicates();
-    foreach (QString provides, providesList) {
-      filteredVersions.removeOne(provides);
-    }
-  }
-
-  mpVersionComboBox->addItems(filteredVersions);
-  mpOkButton->setEnabled(!filteredVersions.isEmpty());
 }
 
 /*!
@@ -236,11 +235,10 @@ void InstallLibraryDialog::installLibrary()
   mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
   QString library = mpNameComboBox->currentText();
-  QString version = mpVersionComboBox->currentText();
+  QString version = mpVersionComboBox->itemData(mpVersionComboBox->currentIndex()).toString();
   bool exactMatch = mpExactMatchCheckBox->isChecked();
 
   if (MainWindow::instance()->getOMCProxy()->installPackage(library, version, exactMatch)) {
-    MainWindow::instance()->getOMCProxy()->updatePackageIndex();
     MainWindow::instance()->addSystemLibraries();
     accept();
   } else {
@@ -248,5 +246,69 @@ void InstallLibraryDialog::installLibrary()
                           tr("The library <b>%1</b> is not installed. See Messages Browser for any possible messages.").arg(library), Helper::ok);
     mpProgressLabel->hide();
     mpOkButton->setEnabled(true);
+  }
+}
+
+/*!
+ * \brief UpgradeInstalledLibrariesDialog::UpgradeInstalledLibrariesDialog
+ * \param parent
+ */
+UpgradeInstalledLibrariesDialog::UpgradeInstalledLibrariesDialog(QDialog *parent)
+  : QDialog(parent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::upgradeInstalledLibraries));
+  setMinimumWidth(400);
+  Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::upgradeInstalledLibraries);
+  pHeadingLabel->setElideMode(Qt::ElideMiddle);
+  // description label
+  mpDescriptLabel = new Label(tr("Upgrade the installed libraries that have been registered by the package manager."));
+  // installNewestVersions checkbox
+  mpInstallNewestVersionsCheckBox = new QCheckBox(tr("Install Newest Versions (may install the latest non-compatible versions)"));
+  // Progress label
+  mpProgressLabel = new Label(tr("<b>Upgrading installed libraries. Please wait.</b>"));
+  mpProgressLabel->hide();
+  // buttons
+  mpUpgradeButton = new QPushButton(tr("Upgrade"));
+  mpUpgradeButton->setAutoDefault(true);
+  connect(mpUpgradeButton, SIGNAL(clicked()), SLOT(upgradeInstalledLibraries()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpUpgradeButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  int row = 0;
+  pMainGridLayout->setAlignment(Qt::AlignTop);
+  pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpDescriptLabel, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpInstallNewestVersionsCheckBox, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpProgressLabel, row, 0);
+  pMainGridLayout->addWidget(mpButtonBox, row++, 1, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief UpgradeInstalledLibrariesDialog::upgradeInstalledLibraries
+ * Upgrade the installed libraries.
+ */
+void UpgradeInstalledLibrariesDialog::upgradeInstalledLibraries()
+{
+  mpProgressLabel->show();
+  mpUpgradeButton->setEnabled(false);
+  repaint(); // repaint the dialog so progresslabel is updated.
+
+  if (MainWindow::instance()->getOMCProxy()->upgradeInstalledPackages(mpInstallNewestVersionsCheckBox->isChecked())) {
+    MainWindow::instance()->addSystemLibraries();
+    accept();
+  } else {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Fail to upgrade libraries. See Messages Browser for any possible messages."), Helper::ok);
+    mpProgressLabel->hide();
+    mpUpgradeButton->setEnabled(true);
   }
 }

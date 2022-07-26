@@ -153,7 +153,7 @@ MSGPACK_MODELICA_STATIC_INLINE int msgpack_modelica_pack_string(void* packer, co
 MSGPACK_MODELICA_STATIC_INLINE void msgpack_modelica_sbuffer_to_file(void *ptr, const char *file)
 {
   msgpack_sbuffer* buffer = (msgpack_sbuffer*) ptr;
-  FILE *fout = fopen(file, "w");
+  FILE *fout = omc_fopen(file, "w");
   if (!fout) {
     ModelicaFormatError("Failed to open file %s for writing\n", file);
   }
@@ -187,7 +187,7 @@ MSGPACK_MODELICA_STATIC void* msgpack_modelica_new_deserialiser(const char *file
   char *mapped;
   /* The msgpack api uses raw data, and  mmap is nice if we want to use random access in the file */
 #if HAVE_MMAP
-  struct stat s;
+  omc_stat_t s;
   int fd;
   fd = open(file, O_RDONLY);
   if (fd < 0) {
@@ -206,12 +206,12 @@ MSGPACK_MODELICA_STATIC void* msgpack_modelica_new_deserialiser(const char *file
   deserializer->size = s.st_size;
 #else
   size_t sz;
-  FILE *fin = fopen(file, "r");
+  FILE *fin = omc_fopen(file, "r");
   fseek(fin, 0, SEEK_END);
   sz = ftell(fin);
   fseek(fin, 0, SEEK_SET);
   mapped = (char*) malloc(sz + 1);
-  if (1 != fread(mapped, sz, 1, fin)) {
+  if (1 != omc_fread(mapped, sz, 1, fin)) {
     free(mapped);
     fclose(fin);
     ModelicaFormatError("Failed to read contents of size %ld in %s\n", (long) sz, file);
@@ -320,7 +320,7 @@ MSGPACK_MODELICA_STATIC void* msgpack_modelica_new_stream(const char *filename)
     ModelicaError("String streams are not implemented for this platform\n");
 #endif
   } else {
-    st->fout = fopen(filename, "wb");
+    st->fout = omc_fopen(filename, "wb");
   }
   if (!st->fout) {
     free(st);

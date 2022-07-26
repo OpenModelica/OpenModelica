@@ -1,0 +1,51 @@
+// name: GetModelInstanceAttributes1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    type Angle = Real(final quantity = \"Angle\");
+    parameter Real pi = 3;
+    Angle deg(start = pi) = 2;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"pi\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"3\",
+//       \"value\": {
+//         \"binding\": 3
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"name\": \"deg\",
+//       \"type\": \"Real\",
+//       \"modifiers\": {
+//         \"start\": \"pi\",
+//         \"$value\": \"2\"
+//       },
+//       \"value\": {
+//         \"binding\": 2
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ]
+// }"
+// endResult

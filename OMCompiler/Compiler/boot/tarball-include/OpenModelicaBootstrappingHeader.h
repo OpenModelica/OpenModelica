@@ -426,6 +426,21 @@ extern struct record_description NFExpression_NFExpression_RELATION__desc;
 #define NFExpression__RELATION_3dBOX3 23
 #define NFExpression__RELATION(exp1,operator,exp2) (mmc_mk_box4(23,&NFExpression_NFExpression_RELATION__desc,exp1,operator,exp2))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef NFExpression_NFExpression_MULTARY__desc_added
+#define NFExpression_NFExpression_MULTARY__desc_added
+ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_MULTARY__desc__fields[3] = {"arguments","inv_arguments","operator"};
+ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_MULTARY__desc = {
+  "NFExpression_NFExpression_MULTARY",
+  "NFExpression.NFExpression.MULTARY",
+  NFExpression_NFExpression_MULTARY__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description NFExpression_NFExpression_MULTARY__desc;
+#endif
+#define NFExpression__MULTARY_3dBOX3 24
+#define NFExpression__MULTARY(arguments,inv_arguments,operator) (mmc_mk_box4(24,&NFExpression_NFExpression_MULTARY__desc,arguments,inv_arguments,operator))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_IF__desc_added
 #define NFExpression_NFExpression_IF__desc_added
 ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_IF__desc__fields[4] = {"ty","condition","trueBranch","falseBranch"};
@@ -438,8 +453,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_I
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_IF__desc;
 #endif
-#define NFExpression__IF_3dBOX4 24
-#define NFExpression__IF(ty,condition,trueBranch,falseBranch) (mmc_mk_box5(24,&NFExpression_NFExpression_IF__desc,ty,condition,trueBranch,falseBranch))
+#define NFExpression__IF_3dBOX4 25
+#define NFExpression__IF(ty,condition,trueBranch,falseBranch) (mmc_mk_box5(25,&NFExpression_NFExpression_IF__desc,ty,condition,trueBranch,falseBranch))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_CAST__desc_added
 #define NFExpression_NFExpression_CAST__desc_added
@@ -453,8 +468,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_C
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_CAST__desc;
 #endif
-#define NFExpression__CAST_3dBOX2 25
-#define NFExpression__CAST(ty,exp) (mmc_mk_box3(25,&NFExpression_NFExpression_CAST__desc,ty,exp))
+#define NFExpression__CAST_3dBOX2 26
+#define NFExpression__CAST(ty,exp) (mmc_mk_box3(26,&NFExpression_NFExpression_CAST__desc,ty,exp))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_BOX__desc_added
 #define NFExpression_NFExpression_BOX__desc_added
@@ -468,8 +483,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_B
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_BOX__desc;
 #endif
-#define NFExpression__BOX_3dBOX1 26
-#define NFExpression__BOX(exp) (mmc_mk_box2(26,&NFExpression_NFExpression_BOX__desc,exp))
+#define NFExpression__BOX_3dBOX1 27
+#define NFExpression__BOX(exp) (mmc_mk_box2(27,&NFExpression_NFExpression_BOX__desc,exp))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_UNBOX__desc_added
 #define NFExpression_NFExpression_UNBOX__desc_added
@@ -483,12 +498,12 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_U
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_UNBOX__desc;
 #endif
-#define NFExpression__UNBOX_3dBOX2 27
-#define NFExpression__UNBOX(exp,ty) (mmc_mk_box3(27,&NFExpression_NFExpression_UNBOX__desc,exp,ty))
+#define NFExpression__UNBOX_3dBOX2 28
+#define NFExpression__UNBOX(exp,ty) (mmc_mk_box3(28,&NFExpression_NFExpression_UNBOX__desc,exp,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_SUBSCRIPTED__EXP__desc_added
 #define NFExpression_NFExpression_SUBSCRIPTED__EXP__desc_added
-ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_SUBSCRIPTED__EXP__desc__fields[3] = {"exp","subscripts","ty"};
+ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_SUBSCRIPTED__EXP__desc__fields[4] = {"exp","subscripts","ty","split"};
 ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_SUBSCRIPTED__EXP__desc = {
   "NFExpression_NFExpression_SUBSCRIPTED__EXP",
   "NFExpression.NFExpression.SUBSCRIPTED_EXP",
@@ -498,8 +513,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_S
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_SUBSCRIPTED__EXP__desc;
 #endif
-#define NFExpression__SUBSCRIPTED_5fEXP_3dBOX3 28
-#define NFExpression__SUBSCRIPTED_5fEXP(exp,subscripts,ty) (mmc_mk_box4(28,&NFExpression_NFExpression_SUBSCRIPTED__EXP__desc,exp,subscripts,ty))
+#define NFExpression__SUBSCRIPTED_5fEXP_3dBOX4 29
+#define NFExpression__SUBSCRIPTED_5fEXP(exp,subscripts,ty,split) (mmc_mk_box5(29,&NFExpression_NFExpression_SUBSCRIPTED__EXP__desc,exp,subscripts,ty,split))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_TUPLE__ELEMENT__desc_added
 #define NFExpression_NFExpression_TUPLE__ELEMENT__desc_added
@@ -513,8 +528,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_T
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_TUPLE__ELEMENT__desc;
 #endif
-#define NFExpression__TUPLE_5fELEMENT_3dBOX3 29
-#define NFExpression__TUPLE_5fELEMENT(tupleExp,index,ty) (mmc_mk_box4(29,&NFExpression_NFExpression_TUPLE__ELEMENT__desc,tupleExp,index,ty))
+#define NFExpression__TUPLE_5fELEMENT_3dBOX3 30
+#define NFExpression__TUPLE_5fELEMENT(tupleExp,index,ty) (mmc_mk_box4(30,&NFExpression_NFExpression_TUPLE__ELEMENT__desc,tupleExp,index,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_RECORD__ELEMENT__desc_added
 #define NFExpression_NFExpression_RECORD__ELEMENT__desc_added
@@ -528,8 +543,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_R
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_RECORD__ELEMENT__desc;
 #endif
-#define NFExpression__RECORD_5fELEMENT_3dBOX4 30
-#define NFExpression__RECORD_5fELEMENT(recordExp,index,fieldName,ty) (mmc_mk_box5(30,&NFExpression_NFExpression_RECORD__ELEMENT__desc,recordExp,index,fieldName,ty))
+#define NFExpression__RECORD_5fELEMENT_3dBOX4 31
+#define NFExpression__RECORD_5fELEMENT(recordExp,index,fieldName,ty) (mmc_mk_box5(31,&NFExpression_NFExpression_RECORD__ELEMENT__desc,recordExp,index,fieldName,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_MUTABLE__desc_added
 #define NFExpression_NFExpression_MUTABLE__desc_added
@@ -543,8 +558,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_M
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_MUTABLE__desc;
 #endif
-#define NFExpression__MUTABLE_3dBOX1 31
-#define NFExpression__MUTABLE(exp) (mmc_mk_box2(31,&NFExpression_NFExpression_MUTABLE__desc,exp))
+#define NFExpression__MUTABLE_3dBOX1 32
+#define NFExpression__MUTABLE(exp) (mmc_mk_box2(32,&NFExpression_NFExpression_MUTABLE__desc,exp))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_EMPTY__desc_added
 #define NFExpression_NFExpression_EMPTY__desc_added
@@ -558,8 +573,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_E
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_EMPTY__desc;
 #endif
-#define NFExpression__EMPTY_3dBOX1 32
-#define NFExpression__EMPTY(ty) (mmc_mk_box2(32,&NFExpression_NFExpression_EMPTY__desc,ty))
+#define NFExpression__EMPTY_3dBOX1 33
+#define NFExpression__EMPTY(ty) (mmc_mk_box2(33,&NFExpression_NFExpression_EMPTY__desc,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_PARTIAL__FUNCTION__APPLICATION__desc_added
 #define NFExpression_NFExpression_PARTIAL__FUNCTION__APPLICATION__desc_added
@@ -573,23 +588,8 @@ ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_P
 #else /* Only use the file as a header */
 extern struct record_description NFExpression_NFExpression_PARTIAL__FUNCTION__APPLICATION__desc;
 #endif
-#define NFExpression__PARTIAL_5fFUNCTION_5fAPPLICATION_3dBOX4 33
-#define NFExpression__PARTIAL_5fFUNCTION_5fAPPLICATION(fn,args,argNames,ty) (mmc_mk_box5(33,&NFExpression_NFExpression_PARTIAL__FUNCTION__APPLICATION__desc,fn,args,argNames,ty))
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef NFExpression_NFExpression_BINDING__EXP__desc_added
-#define NFExpression_NFExpression_BINDING__EXP__desc_added
-ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_BINDING__EXP__desc__fields[5] = {"exp","expType","bindingType","parents","isEach"};
-ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_BINDING__EXP__desc = {
-  "NFExpression_NFExpression_BINDING__EXP",
-  "NFExpression.NFExpression.BINDING_EXP",
-  NFExpression_NFExpression_BINDING__EXP__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description NFExpression_NFExpression_BINDING__EXP__desc;
-#endif
-#define NFExpression__BINDING_5fEXP_3dBOX5 34
-#define NFExpression__BINDING_5fEXP(exp,expType,bindingType,parents,isEach) (mmc_mk_box6(34,&NFExpression_NFExpression_BINDING__EXP__desc,exp,expType,bindingType,parents,isEach))
+#define NFExpression__PARTIAL_5fFUNCTION_5fAPPLICATION_3dBOX4 34
+#define NFExpression__PARTIAL_5fFUNCTION_5fAPPLICATION(fn,args,argNames,ty) (mmc_mk_box5(34,&NFExpression_NFExpression_PARTIAL__FUNCTION__APPLICATION__desc,fn,args,argNames,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFType_NFType_INTEGER__desc_added
 #define NFType_NFType_INTEGER__desc_added

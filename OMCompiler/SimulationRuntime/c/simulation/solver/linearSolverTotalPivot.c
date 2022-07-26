@@ -69,7 +69,7 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
         }
         else
         {
-          sprintf(buffer, "%s%12.4g ", buffer, matrix[i + j*(m-1)]);
+          sprintf(buffer, "%s %12.4g", buffer, matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -88,14 +88,20 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
-    for(i=0; i<n;i++)
+    if (vector[0]<-1e+300)
+      sprintf(buffer, "%s -INF", buffer);
+    else if (vector[0]>1e+300)
+      sprintf(buffer, "%s +INF", buffer);
+    else
+      sprintf(buffer, "%s %16.8g", buffer, vector[0]);
+    for(i=1; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     free(buffer);
@@ -367,14 +373,12 @@ int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double
  *
  *
  */
-static int wrapper_fvec_totalpivot(double* x, double* f, void** data, int sysNumber)
+static int wrapper_fvec_totalpivot(double* x, double* f, RESIDUAL_USERDATA* resUserData, int sysNumber)
 {
   int currentSys = sysNumber;
   int iflag = 0;
-  /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->nonlinearSystemData[currentSys]); */
-  /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
-  (*((DATA*)data[0])->simulationInfo->linearSystemData[currentSys].residualFunc)(data, x, f, &iflag);
+  resUserData->data->simulationInfo->linearSystemData[currentSys].residualFunc(resUserData, x, f, &iflag);
   return 0;
 }
 
@@ -387,7 +391,7 @@ static int wrapper_fvec_totalpivot(double* x, double* f, void** data, int sysNum
  */
 int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
-  void *dataAndThreadData[2] = {data, threadData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
   DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->parDynamicData[omc_get_thread_num()].solverData[1];
@@ -435,7 +439,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
       assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
-    wrapper_fvec_totalpivot(aux_x, solverData->Ab + n*n, dataAndThreadData, sysNumber);
+    wrapper_fvec_totalpivot(aux_x, solverData->Ab + n*n, &resUserData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
@@ -460,7 +464,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
     if (1 == systemData->method) {
       /* add the solution to old solution vector*/
       vecAddLS(n, aux_x, solverData->x, aux_x);
-      wrapper_fvec_totalpivot(aux_x, solverData->b, dataAndThreadData, sysNumber);
+      wrapper_fvec_totalpivot(aux_x, solverData->b, &resUserData, sysNumber);
     } else {
        /* take the solution */
        vecCopyLS(n, solverData->x, aux_x);

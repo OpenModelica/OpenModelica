@@ -1,0 +1,169 @@
+// name: implicitEquation
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model implicitEquation
+  Real x;
+equation
+   x - x^2 + x^3 = sin(time);
+end implicitEquation;"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpSimCode");
+simulate(implicitEquation); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	SimCode (implicitEquation)
+//
+// ################################################################################
+// ========================================
+// SimVars
+// ========================================
+// Algebraic Variables (1)
+// ****************************************
+//   (0)[ALGB] (1) Real x
+//
+// Residual Variables (1)
+// ****************************************
+//   (0)[RES-] (1) Real $RES_SIM_0
+//
+// INIT
+// ----------------------------------------
+//   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --(1) 0 = sin(time) - (x + x ^ 3.0) - x ^ 2.0
+//
+// Algebraic Partition 1
+// ----------------------------------------
+//   (3) Alias of 2
+//
+// ========================================
+// [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+// ========================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 3: alias of 2
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 3: alias of 2
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (1)
+// ========================================
+// 2:  (NONLINEAR) index:0 jacobian: false
+// crefs: x
+// 	1: sin(time) - (x + x ^ 3.0 - x ^ 2.0) (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 1
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+//
+// modelInfo:
+// ========================================
+// algVars (1)
+// ----------------------
+// index:0: x (no alias)  initial: 	no arrCref index:(1) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "implicitEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'implicitEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

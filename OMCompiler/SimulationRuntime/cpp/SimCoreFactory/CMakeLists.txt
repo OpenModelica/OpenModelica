@@ -2,10 +2,6 @@
 
 #####################################################################################################
 # OMCppOMCFactory
-find_package(Boost COMPONENTS program_options filesystem)
-find_package(Threads)
-
-
 set(OMC_SIMRT_CPP_SIMCOREFACTORY_OMCFACTORY_SOURCES OMCFactory/OMCFactory.cpp)
 
 add_library(OMCppOMCFactory SHARED)
@@ -24,8 +20,6 @@ if(WIN32)
   target_link_libraries(OMCppOMCFactory PUBLIC wsock32)
   target_link_libraries(OMCppOMCFactory PUBLIC ws2_32)
 endif()
-
-target_link_options(OMCppOMCFactory PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppOMCFactory)
 

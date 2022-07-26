@@ -703,7 +703,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings)
    {
 
-      
+
       shared_ptr<IExtendedSimObjects> extended_simObjects = dynamic_pointer_cast<IExtendedSimObjects>( getSimObjects());
 
         if (extended_simObjects)
@@ -713,8 +713,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             string error = string("Simulation data was not found for model <%lastIdentOfPath(modelInfo.name)%> ");
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
-      
-     
+
+
 
    }
 
@@ -742,7 +742,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          <<
              if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
              {
-              
+
                 _writeOutput->init();
                 _writeOutput->clear();
              }
@@ -1564,10 +1564,10 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
       case  "win64" then
         <<
         @echo off
-        <%preRunCommandWindows%>
-        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
-
         SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%>;%PATH%
+        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
+        <%preRunCommandWindows%>
+
         <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%> <%zermMQParams%>  <%outputParameter%>
 
         >>
@@ -3306,7 +3306,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let constVariableInitialize = simulationInitFile(simCode, &extraFuncsDecl, stateDerVectorName, false)
 
     <<
-   
+
 
     /* Constructor */
     <%className%>::<%className%>(shared_ptr<IGlobalSettings> globalSettings)
@@ -5500,7 +5500,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
 
-      
+
            #if !defined(FMU_BUILD)
            string init_file_path  =  "<%initfilename%>";
             <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
@@ -5519,8 +5519,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
           _reader->readInitialValues(*this, getSimVars());
 
          #endif
-       
-        
+
+
       _simTime = 0.0;
       _state_var_reinitialized = false;
 
@@ -6502,7 +6502,7 @@ template generateHeaderIncludeString(SimCode simCode ,Text& extraFuncs,Text& ext
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
- 
+
 
   <%
   match(getConfigString(PROFILING_LEVEL))
@@ -9780,7 +9780,7 @@ case SIMCODE(modelInfo = MODELINFO(__))
 then
 let store_delay_expr = functionStoreDelay(delayedExps, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
-   
+
   bool <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
   {
 
@@ -9921,13 +9921,13 @@ template generateStepStarted(list<SimEqSystem> allEquations,SimCode simCode ,Tex
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
-  
-       
+
+
 
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::stepStarted(double time)
   {
- 
+
   return true;
   }
   >>

@@ -2440,15 +2440,11 @@ Returns a list of names of libraries and their path on the system, for example:
 </html>"));
 end getLoadedLibraries;
 
-type LinearSystemSolver = enumeration(dgesv,lpsolve55);
 function solveLinearSystem
-  "Solve A*X = B, using dgesv or lp_solve (if any variable in X is integer)
-  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input.
-  For solver lp_solve: ???"
+  "Solve A*X = B using dgesv.
+  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input."
   input Real[size(B,1),size(B,1)] A;
   input Real[:] B;
-  input LinearSystemSolver solver = LinearSystemSolver.dgesv;
-  input Integer[:] isInt = {-1} "list of indices that are integers";
   output Real[size(B,1)] X;
   output Integer info;
 external "builtin";
@@ -4402,6 +4398,13 @@ annotation(preferredView="text",Documentation(info="<html>
 <p>Runs the conversion script for a library on a selected package.</p>
 </html>"));
 end convertPackageToLibrary;
+
+function getModelInstance
+  input TypeName className;
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+end getModelInstance;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);

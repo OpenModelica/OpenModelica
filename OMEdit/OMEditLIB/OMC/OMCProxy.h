@@ -46,6 +46,7 @@ class ElementInfo;
 class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
+class QNetworkReply;
 
 typedef struct {
   QString mFromUnit;
@@ -82,6 +83,7 @@ private:
   bool mIsLoggingEnabled;
   QStringList mLibrariesBrowserAdditionCommandsList;
   QStringList mLibrariesBrowserDeletionCommandsList;
+  bool mLoadModelError;
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
@@ -97,6 +99,7 @@ public:
   void removeObjectRefFile();
   void setLoggingEnabled(bool enable) {mIsLoggingEnabled = enable;}
   bool isLoggingEnabled() {return mIsLoggingEnabled;}
+  bool isLoadModelError() const {return mLoadModelError;}
   QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
@@ -110,6 +113,7 @@ public:
   QString getErrorMessage();
   QString getErrorKind();
   QString getErrorLevel();
+  int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
   void loadSystemLibraries();
   void loadUserLibraries();
@@ -230,6 +234,7 @@ public:
   bool disableNewInstantiation();
   QString makeDocumentationUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
+  bool setModelicaPath(const QString &path);
   QString getModelicaPath();
   QString getHomeDirectoryPath();
   QStringList getAvailableLibraries();
@@ -277,6 +282,7 @@ public:
   QStringList getAvailablePackageVersions(QString pkg, QString version);
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
+  QJsonObject getModelInstance(const QString &className, bool prettyPrint = false);
 signals:
   void commandFinished();
 public slots:

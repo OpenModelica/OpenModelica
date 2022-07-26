@@ -34,27 +34,13 @@
 #ifndef _NONLINEARSOLVERHYBRD_H_
 #define _NONLINEARSOLVERHYBRD_H_
 
+#include "../../openmodelica_types.h"
 #include "../../simulation_data.h"
+#include "nonlinearSystem.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef VOID
-#undef VOID
-#endif
-
-extern
-void hybrj_( void(*) (const integer*, const double*, double*, double *, const integer*, const integer*, void*),  const integer *n, double *x, double *fvec, double *fjac, const integer *ldfjac,
-  const double *xtol, const integer *axfev, double *diag, const integer *mode,
-  const double *factor, const integer *nprint, integer *info, integer *nfev, integer *njev,
-  double *r, integer *lr, double *qtf, double *wa1, double *wa2,
-  double *wa3, double *wa4, void* user_data);
-
-extern int allocateHybrdData(size_t size, void **data);
-extern int freeHybrdData(void **data);
-extern int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber);
-
 
 typedef struct DATA_HYBRD
 {
@@ -97,7 +83,20 @@ typedef struct DATA_HYBRD
   unsigned int numberOfIterations; /* over the whole simulation time */
   unsigned int numberOfFunctionEvaluations; /* over the whole simulation time */
 
+  NLS_USERDATA* userData;        /* User data provided to KINSOL */
+
 } DATA_HYBRD;
+
+extern
+void hybrj_( void(*) (const integer*, const double*, double*, double *, const integer*, const integer*, void*),  const integer *n, double *x, double *fvec, double *fjac, const integer *ldfjac,
+  const double *xtol, const integer *axfev, double *diag, const integer *mode,
+  const double *factor, const integer *nprint, integer *info, integer *nfev, integer *njev,
+  double *r, integer *lr, double *qtf, double *wa1, double *wa2,
+  double *wa3, double *wa4, void* user_data);
+
+DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData);
+void freeHybrdData(DATA_HYBRD* hybrdData);
+NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 }

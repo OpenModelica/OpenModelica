@@ -5320,21 +5320,20 @@ public function PFPlusExternal
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+protected
+  Integer nvars,neqns;
 algorithm
+  neqns := BackendDAEUtil.systemSize(isyst);
+  nvars := BackendVariable.daenumVariables(isyst);
   (osyst,oshared,outArg) :=
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
-      Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_) guard intGt(nvars,0) and intGt(neqns,0)
       equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5342,12 +5341,8 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_) guard not intGt(nvars,0) and not intGt(neqns,0)
       equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
         vec1 = listArray({});
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));

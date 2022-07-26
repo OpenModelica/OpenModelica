@@ -112,6 +112,7 @@ void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char 
   va_start(args, msg);
   va_omc_assert_simulation_withEquationIndexes(threadData, info, NULL, msg, args);
   va_end(args);
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...)
@@ -120,6 +121,7 @@ void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_IN
   va_start(args, msg);
   va_omc_assert_simulation_withEquationIndexes(threadData, info, indexes, msg, args);
   va_end(args);
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 

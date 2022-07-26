@@ -44,6 +44,7 @@
 #include "RealAnnotation.h"
 #include "PointAnnotation.h"
 #include "StringAnnotation.h"
+#include "Modeling/Model.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -69,6 +70,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  void parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   void setOrigin(QPointF origin) {mOrigin = origin;}
@@ -88,6 +90,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  void parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   QStringList getTextShapeAnnotation();
@@ -132,6 +135,7 @@ private:
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
+  ShapeAnnotation(QGraphicsItem *pParent);
   ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent);
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent = 0);
   void setDefaults();
@@ -261,6 +265,7 @@ public slots:
   void referenceShapeChanged();
   void referenceShapeDeleted();
   void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 protected:
   GraphicsView *mpGraphicsView;
   Element *mpParentComponent;

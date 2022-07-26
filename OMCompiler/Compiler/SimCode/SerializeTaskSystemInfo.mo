@@ -74,7 +74,7 @@ algorithm
     SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars)) := code;
     fileName := code.fileNamePrefix + "_ode.json";
     File.open(file,fileName,File.Mode.Write);
-    File.write(file, "{\"format\":\"ParModlica task system info\",\"version\":1,\n\"info\":{\"name\":");
+    File.write(file, "{\"format\":\"ParModelica task system info\",\"version\":1,\n\"info\":{\"name\":");
     serializePath(file, mi.name);
     File.write(file, ",\"description\":\"");
     File.writeEscape(file, mi.description, escape=JSON);
@@ -112,7 +112,7 @@ algorithm
       SimCode.LinearSystem lSystem, atL;
       SimCode.NonlinearSystem nlSystem, atNL;
       BackendDAE.WhenOperator whenOp;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs, crefs2;
 
     case SimCode.SES_RESIDUAL() equation
       File.write(file, "\n{\"eqIndex\":");
@@ -382,7 +382,7 @@ algorithm
       File.write(file,"]}]}");
     then true;
 
-    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()}) equation
+    case SimCode.SES_ALGORITHM(statements=stmt::_) algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -390,10 +390,11 @@ algorithm
         File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
-      File.write(file, section + "\",\"tag\":\"algorithm\",\"defines\":[\"");
-      writeCref(file, Expression.expCref(stmt.exp1),escape=JSON);
-      File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(stmt.exp));
+      File.write(file, section + "\",\"tag\":\"algorithm\",\"defines\":[");
+      (crefs, crefs2) := Expression.extractUniqueCrefsFromStatmentS(eq.statements);
+      serializeUses(file,crefs);
+      File.write(file, "],\"uses\":[");
+      serializeUses(file,crefs2);
       File.write(file, "],\"equation\":[");
       serializeList(file,eq.statements,serializeStatement);
       File.write(file, "],\"source\":");
@@ -401,7 +402,7 @@ algorithm
       File.write(file, "}");
     then true;
 
-    case SimCode.SES_ALGORITHM(statements=stmt::_) equation
+    case SimCode.SES_INVERSE_ALGORITHM(statements=stmt::_) algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -409,22 +410,12 @@ algorithm
         File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
-      File.write(file, section + "\",\"tag\":\"algorithm\",\"equation\":[");
-      serializeList(file,eq.statements,serializeStatement);
-      File.write(file, "],\"source\":");
-      serializeSource(file,Algorithm.getStatementSource(stmt),withOperations);
-      File.write(file, "}");
-    then true;
-
-    case SimCode.SES_INVERSE_ALGORITHM(statements=stmt::_) equation
-      File.write(file, "\n{\"eqIndex\":");
-      File.writeInt(file, eq.index);
-      if parent <> 0 then
-        File.write(file, ",\"parent\":");
-        File.writeInt(file, parent);
-      end if;
-      File.write(file, ",\"section\":\"");
-      File.write(file, section + "\",\"tag\":\"algorithm\",\"equation\":[");
+      File.write(file, section + "\",\"tag\":\"algorithm\",\"defines\":[");
+      (crefs, crefs2) := Expression.extractUniqueCrefsFromStatmentS(eq.statements);
+      serializeUses(file,crefs);
+      File.write(file, "],\"uses\":[");
+      serializeUses(file,crefs2);
+      File.write(file, "],\"equation\":[");
       serializeList(file,eq.statements,serializeStatement);
       File.write(file, "],\"source\":");
       serializeSource(file,Algorithm.getStatementSource(stmt),withOperations);

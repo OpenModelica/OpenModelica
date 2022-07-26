@@ -1906,5 +1906,21 @@ getErrorString();
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// ""
+// "[ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:13:3-15:24:writable] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:16:3-18:24:writable] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:19:3-20:82:writable] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:21:3-23:17:writable] Warning: Connector Cs_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:24:3-25:82:writable] Warning: Connector Cs_sur is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:26:3-28:17:writable] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:29:3-31:17:writable] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:32:3-34:17:writable] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:50:3-51:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:52:3-54:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourceQ.mo:24:3-25:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:50:3-51:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:52:3-54:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:50:3-51:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/LumpedStraightPipe.mo:52:3-54:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "
 // endResult

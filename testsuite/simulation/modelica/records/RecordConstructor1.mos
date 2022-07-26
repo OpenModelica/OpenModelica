@@ -6,7 +6,6 @@
 loadString("
   record R
     Real x = 2.0;
-  protected
     Real y = x;
   end R;
 

@@ -2797,12 +2797,7 @@ algorithm
     flow_str := String(flowVars);
     potential_str := String(potentialVars);
     class_str := AbsynUtil.pathString(path);
-    error_str := stringAppendList({
-      "The number of potential variables (",
-      potential_str,
-      ") is not equal to the number of flow variables (",
-      flow_str, ")."});
-    Error.addSourceMessage(Error.UNBALANCED_CONNECTOR, {class_str, error_str}, info);
+    Error.addSourceMessage(Error.UNBALANCED_CONNECTOR, {class_str, potential_str, flow_str}, info);
 
     // This should be a hard error, but there are models that contain such
     // connectors. So we print an error but return that the connector is balanced.
@@ -2813,11 +2808,7 @@ algorithm
   if streamVars > 0 and flowVars <> 1 then
     flow_str := String(flowVars);
     class_str := AbsynUtil.pathString(path);
-    error_str := stringAppendList({
-      "A stream connector must have exactly one flow variable, this connector has ",
-      flow_str, " flow variables."});
-    Error.addSourceMessage(Error.INVALID_STREAM_CONNECTOR,
-      {class_str, error_str}, info);
+    Error.addSourceMessage(Error.MISMATCHED_FLOW_IN_STREAM_CONNECTOR, {class_str, flow_str}, info);
     isBalanced := false;
   end if;
 end checkConnectorBalance2;
@@ -2910,7 +2901,7 @@ algorithm
     case DAE.T_REAL() then 1;
     case DAE.T_STRING() then 1;
     case DAE.T_BOOL() then 1;
-    case DAE.T_ENUMERATION(index = NONE()) then 1;
+    case DAE.T_ENUMERATION() then 1;
     // The size of an array is its dimension multiplied with the size of its type.
     case DAE.T_ARRAY()
       then intMul(Expression.dimensionSize(dim) for dim in ty.dims) * sizeOfType(ty.ty);

@@ -5,7 +5,15 @@ Annotations.mo \
 BuiltinTime1.mo \
 BuiltinTimeInvalid1.mo \
 BuiltinTimeInvalid2.mo \
+ClassRestriction1.mo \
 CondDeclaration.mo \
+ConnectorRestriction1.mo \
+ConnectorRestriction2.mo \
+ConnectorRestriction3.mo \
+ConnectorRestriction4.mo \
+ConnectorRestriction5.mo \
+ConnectorRestriction6.mo \
+ConnectorRestriction7.mo \
 Constant1.mo \
 Constant2.mo \
 Constant3.mo \
@@ -47,6 +55,12 @@ FlowDeclConnector.mo \
 FlowDeclRecord.mo \
 FlowDeclRecord2.mo \
 FlowDeclType.mo \
+FunctionRestriction1.mo \
+FunctionRestriction2.mo \
+FunctionRestriction3.mo \
+FunctionRestriction4.mo \
+FunctionRestriction5.mo \
+FunctionRestriction6.mo \
 InputDeclConnector.mo \
 InputDeclRecord.mo \
 InputDeclType.mo \
@@ -57,9 +71,15 @@ MyPointsInst2.mo \
 OutputDeclConnector.mo \
 OutputDeclRecord.mo \
 OutputDeclType.mo \
+PackageRestriction1.mo \
+PackageRestriction2.mo \
+PackageRestriction3.mo \
 ParameterDeclConnector.mo \
 ParameterDeclRecord.mo \
 ParameterDeclType.mo \
+RecordRestriction1.mo \
+RecordRestriction2.mo \
+RecordRestriction3.mo \
 ScalarizeBindings.mo \
 SimpleIntegrator1.mo \
 SimpleIntegrator2.mo \
@@ -72,6 +92,9 @@ ScopeModification2.mo \
 TestPackageConstantHandling.mo \
 Ticket4276a.mo \
 Ticket4276b.mo \
+TypeRestriction1.mo \
+TypeRestriction2.mo \
+TypeRestriction3.mo \
 
 
 # test that currently fail. Move up when fixed. 

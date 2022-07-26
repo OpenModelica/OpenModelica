@@ -29,6 +29,7 @@ endif
 UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   base_array$(OBJ_EXT) \
                   boolean_array$(OBJ_EXT) \
+                  context$(OBJ_EXT) \
                   division$(OBJ_EXT) \
                   doubleEndedList$(OBJ_EXT) \
                   generic_array$(OBJ_EXT) \
@@ -56,6 +57,7 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
 
 UTIL_HFILES_MINIMAL=base_array.h \
                     boolean_array.h \
+                    context.h \
                     division.h \
                     doubleEndedList.h \
                     generic_array.h \
@@ -156,6 +158,15 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
+              gbode_conf$(OBJ_EXT) \
+              gbode_ctrl$(OBJ_EXT) \
+              gbode_events$(OBJ_EXT) \
+              gbode_main$(OBJ_EXT) \
+              gbode_nls$(OBJ_EXT) \
+              gbode_sparse$(OBJ_EXT) \
+              gbode_step$(OBJ_EXT) \
+              gbode_tableau$(OBJ_EXT) \
+              gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
@@ -273,7 +284,7 @@ GCPATH = ./gc/
 GCOBJSPATH = $(GC_OBJS:%=$(BUILDPATH)/$(GCPATH)%)
 GCHFILESPATH = $(GC_HFILES:%=$(GCPATH)%)
 GCHFILESPATH_MINIMAL = $(GC_HFILES_MINIMAL:%=$(GCPATH)%)
-GCOBJSPATH_MINIMAL = $(GC_OBJS_MINIMAL:%=$(GCPATH)%)
+GCOBJSPATH_MINIMAL = $(GC_OBJS_MINIMAL:%=$(BUILDPATH)/$(GCPATH)%)
 
 
 METAPATH = ./meta/

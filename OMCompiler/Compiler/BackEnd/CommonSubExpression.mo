@@ -173,7 +173,7 @@ algorithm
     if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
       print("Hastable after analysis\n" + UNDERLINE + "\n");
       BaseHashTable.dumpHashTable(HT);
-      ExpandableArray.dump(exarray, "\nExpandable Array after analysis", printCSEEquation);
+      print(ExpandableArray.toString(exarray, "\nExpandable Array after analysis", printCSEEquation));
     end if;
 
     if index > 0 then
@@ -184,7 +184,7 @@ algorithm
         print("\n\nPhase 2: Dependencies\n" + BORDER + "\n\n");
         print("Hashtable after dependencies\n" + UNDERLINE + "\n");
         BaseHashTable.dumpHashTable(HT);
-        ExpandableArray.dump(exarray, "\nExpandable Array after dependencies", printCSEEquation);
+        print(ExpandableArray.toString(exarray, "\nExpandable Array after dependencies", printCSEEquation));
         print("\n\nPhase3: Substitution\n" + BORDER + "\n");
       end if;
 
@@ -195,7 +195,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("Hashtable after substitution\n" + UNDERLINE + "\n");
         BaseHashTable.dumpHashTable(HT);
-        ExpandableArray.dump(exarray, "\nExpandable Array after substitution", printCSEEquation);
+        print(ExpandableArray.toString(exarray, "\nExpandable Array after substitution", printCSEEquation));
         print("\n\nPhase 4: Create CSE-Equations\n" + BORDER + "\n\n");
       end if;
 
@@ -220,7 +220,7 @@ algorithm
         BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
         BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
         BackendDump.dumpVariables(globalKnownVars, "########### Updated globalKnownVars (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
-        ExpandableArray.dump(exarray, "\n########### CSE Replacements", printCSEEquation);
+        print(ExpandableArray.toString(exarray, "\n########### CSE Replacements", printCSEEquation));
       end if;
 
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
@@ -396,7 +396,7 @@ algorithm
     CSE_EQUATION(cse=cse, call=call, dependencies=dependencies) := ExpandableArray.get(id, exarray);
     call := substituteExp(call, inCall, inCSE);
 
-    //ExpandableArray.dump(exarray, "substituteDependencies", printCSEEquation);
+    //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
     //print("Exp: " + ExpressionDump.printExpStr(call) + "\n");
 
     if not BaseHashTable.hasKey(call, ht) then
@@ -415,7 +415,7 @@ algorithm
       //print("inCall: " + ExpressionDump.printExpStr(inCall) + "\n");
       //print("inCSE: " + ExpressionDump.printExpStr(inCSE) + "\n");
       //BaseHashTable.dumpHashTable(ht);
-      //ExpandableArray.dump(exarray, "substituteDependencies", printCSEEquation);
+      //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
     end if;
   end for;
 end substituteDependencies;
@@ -545,7 +545,7 @@ algorithm
 
             // Save the rhs (call) as bind expression and set fixed=true
             var := BackendVariable.setBindExp(var, SOME(call));
-            var := BackendVariable.setVarFixed(var, true);
+            var := BackendVariable.makeParam(var);
 
             // If it is a tuple or a record (or record within tuple)
             if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
@@ -2402,7 +2402,7 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
       (lhs1, _) = ExpressionSolve.solve(lhs2, rhs2, varExp);
 
       (_,lhs1,rhs1) = cancelExpressions(lhs1,rhs1);
-      n = listLength(Expression.getAllCrefs(Expression.makeDiff(lhs1,rhs1)));
+      n = listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
         //print("n1 "+intString(n1)+"\n");
         //print("n2 "+intString(n2)+"\n");
 

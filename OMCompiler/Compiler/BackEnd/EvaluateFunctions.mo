@@ -1621,6 +1621,7 @@ protected
 algorithm
   (varScalarCrefs,funcAlgs) := varPart;
   (constScalarCrefs,constScalarExps,constComplCrefs,constComplExps,constScalarCrefsOut) := constPart;
+
   funcAlgs := List.filterOnTrue(funcAlgs,DAEUtil.isAlgorithm);// get only the algs, not protected vars or stuff
   // generate the additional equations for the constant scalar values and the constant complex ones
   lhsExps1 := List.map(constScalarCrefsOut,Expression.crefExp);
@@ -1836,6 +1837,15 @@ algorithm
     case({},{},_)
       then
         eqsIn;
+
+    // ignore wildcards
+    // solves ticket #8381
+    case ((lhs as DAE.CREF(componentRef = DAE.WILD()))::lrest,rhs::rrest,_)
+      equation
+        eqs = generateConstEqs(lrest,rrest,eqsIn);
+    then
+      eqs;
+
     case(lhs::lrest,rhs::rrest,_)
       equation
         eq = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);

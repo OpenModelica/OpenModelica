@@ -1,0 +1,104 @@
+// name: detectStates
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  // model where there are no algebraics inside der() call
+  // solution -> differentiate whats inside -> no index reduction
+  model expandDerOperator1
+    Real x,y,z;
+  equation
+    der(x) = sin(time);
+    der(y) = cos(time);
+    z = der(x+y);
+  end expandDerOperator1;
+
+  // model where there is one algebraic var inside der() call
+  // solution -> differentiate whats inside -> no index reduction
+  model expandDerOperator2
+    Real x,y,z;
+  equation
+    der(x) = sin(time);
+    y = cos(time);
+    z = der(x+y);
+  end expandDerOperator2;
+
+  // IMPROVED TO OLD BACKEND
+  // model where there is more than one algebraic var inside der() call
+  // solution -> create auxiliary $AUX = x + y -> possibly no index reduction
+  model expandDerOperator3
+    Real x,y,z;
+  equation
+    x = sin(time) + z;
+    y = cos(time);
+    z = der(x+y);
+  end expandDerOperator3;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=stateselection");
+simulate(expandDerOperator1); getErrorString();
+simulate(expandDerOperator2); getErrorString();
+simulate(expandDerOperator3); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// [stateselection] Natural states before index reduction:
+// ****************************************
+// 	[STAT] Real x
+// 	[STAT] Real y
+//
+// [stateselection] Natural discrete states:
+// ****************************************
+// 	<no discrete states>
+//
+// record SimulationResult
+//     resultFile = "expandDerOperator1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// [stateselection] Natural states before index reduction:
+// ****************************************
+// 	[STAT] Real y
+// 	[STAT] Real x
+//
+// [stateselection] Natural discrete states:
+// ****************************************
+// 	<no discrete states>
+//
+// record SimulationResult
+//     resultFile = "expandDerOperator2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// [stateselection] Natural states before index reduction:
+// ****************************************
+// 	[STAT] Real $AUX_0 = x + y
+//
+// [stateselection] Created auxiliary equations:
+// ****************************************
+// 	[SCAL] ($RES_$AUX_0) $AUX_0 = x + y
+//
+// [stateselection] Natural discrete states:
+// ****************************************
+// 	<no discrete states>
+//
+// record SimulationResult
+//     resultFile = "expandDerOperator3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

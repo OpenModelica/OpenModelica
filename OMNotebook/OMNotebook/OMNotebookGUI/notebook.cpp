@@ -112,10 +112,10 @@ namespace IAEX
 
 
 // 2006-03-01 AF, Open, Save, Image and Link dir
-QString NotebookWindow::openDir_ = QString::null;
-QString NotebookWindow::saveDir_ = QString::null;
-QString NotebookWindow::imageDir_ = QString::null;
-QString NotebookWindow::linkDir_ = QString::null;
+QString NotebookWindow::openDir_ = QString();
+QString NotebookWindow::saveDir_ = QString();
+QString NotebookWindow::imageDir_ = QString();
+QString NotebookWindow::linkDir_ = QString();
 
 
 /*!
@@ -136,8 +136,8 @@ NotebookWindow::NotebookWindow(Document *subject,
     app_( subject->application() ), //AF
     findForm_( 0 )          //AF
 {
-  if( filename_ != QString::null )
-    qDebug( filename_.toStdString().c_str() );
+  if( !filename_.isNull() )
+    qDebug( "%s", filename_.toStdString().c_str() );
 
   //    subject_->attach(this);
   //    setMinimumSize( 150, 220 );    //AF
@@ -2396,7 +2396,7 @@ void NotebookWindow::newFile()
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
-    application()->commandCenter()->executeCommand(new OpenFileCommand(QString::null));
+    application()->commandCenter()->executeCommand(new OpenFileCommand(QString()));
   }
   else
   {
@@ -2413,7 +2413,7 @@ void NotebookWindow::newFile()
         return;
     }
 
-    subject_ = new CellDocument(app_, QString::null);
+    subject_ = new CellDocument(app_, QString());
     dynamic_cast<CellDocument*>(subject_)->autoIndent = autoIndentAction->isChecked();
     subject_->executeCommand(new NewFileCommand());
     subject_->attach(this);
@@ -2561,6 +2561,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
       return;
     }
   }
+  application()->clearPasteboard(); // HACK: clear pasteboard as some items might refer to cells in the just closed document
 }
 
 /*!
@@ -3546,7 +3547,7 @@ void NotebookWindow::insertLink()
 void NotebookWindow::indent()
 {
   GraphCell* g;
-  if(g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
+  if((g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell())))
   {
     g->input_->indentText();
   }

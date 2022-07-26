@@ -166,6 +166,7 @@ private:
   QLineEdit *mpResultFileNameTextBox;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
+  QToolButton *mpVariableFilterHelpButton;
   QCheckBox *mpProtectedVariablesCheckBox;
   QCheckBox *mpIgnoreHideResultCheckBox;
   QCheckBox *mpEquidistantTimeGridCheckBox;
@@ -194,12 +195,12 @@ private:
   void applySimulationOptions(SimulationOptions simulationOptions);
   bool translateModel(QString simulationParameters);
   SimulationOptions createSimulationOptions();
-  void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);
+  void createAndShowSimulationOutputWidget(const SimulationOptions &simulationOptions);
   void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
   void saveExperimentAnnotation();
   void saveSimulationFlagsAnnotation();
   void saveTranslationFlagsAnnotation();
-  void performSimulation();
+  void performSimulation(const SimulationOptions &simulationOptions);
   void saveDialogGeometry();
   void killSimulationProcess(int port);
   void removeVariablesFromTree(QString className);
@@ -225,6 +226,7 @@ public slots:
   void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
+  void showVariableFilterHelp();
   void simulationStarted();
   void simulationPaused();
 };

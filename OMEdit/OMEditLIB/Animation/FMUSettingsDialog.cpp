@@ -43,11 +43,11 @@
 /*!
  * \brief FMUSettingsDialog::FMUSettingsDialog
  * \param pParent
- * \param pVisualizerFMU
+ * \param pVisualizationFMU
  */
-FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* pVisualizerFMU)
+FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizationFMU* pVisualizationFMU)
   : QDialog(pParent),
-    mpVisualizerFMU(pVisualizerFMU),
+    mpVisualizationFMU(pVisualizationFMU),
     mStepSize(0.001),
     mRenderFreq(0.1)
 {
@@ -107,7 +107,7 @@ void FMUSettingsDialog::saveSimSettings()
     handleEvents = false;
   };
   //store in FMU simulator
-  mpVisualizerFMU->setSimulationSettings(stepSize, static_cast<Solver>(mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt()),
+  mpVisualizationFMU->setSimulationSettings(stepSize, static_cast<Solver>(mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt()),
                                          handleEvents);
   accept();
 }

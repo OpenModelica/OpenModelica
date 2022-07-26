@@ -54,8 +54,6 @@ protected
   import Util;
   import Type = NFType;
   import NFPrefixes.Variability;
-  import NFHashTable.HashTable;
-  import BaseHashTable;
 
 public
   function verify
@@ -160,7 +158,6 @@ protected
     for eq in eql loop
       crefs := match eq
         case Equation.EQUALITY()       then whenEquationEqualityCrefs(eq.lhs, crefs);
-        case Equation.CREF_EQUALITY()  then eq.lhs :: crefs;
         case Equation.ARRAY_EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
         case Equation.REINIT()         then whenEquationEqualityCrefs(eq.cref, crefs);
         case Equation.IF()             then whenEquationIfCrefs(eq.branches, eq.source, crefs);
@@ -235,7 +232,7 @@ protected
     output list<ComponentRef> outCrefs = {};
   protected
     Expression exp;
-    list<Expression> expl;
+    array<Expression> expl;
   algorithm
     for cref in crefs loop
       exp := Expression.fromCref(cref);
@@ -336,42 +333,22 @@ protected
     Ticket: #5836"
     input FlatModel flatModel;
   protected
-    HashTable hashTable = NFHashTable.emptyHashTable();
+    UnorderedSet<ComponentRef> discrete_reals;
     list<Variable> illegal_discrete_vars = {};
     String err_str = "";
   algorithm
+    discrete_reals := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
     // collect all lhs crefs that are discrete and real from equations
     for eqn in flatModel.equations loop
-      hashTable := match eqn
-        local
-          list<Equation.Branch> branches;
-
-        case Equation.WHEN(branches = branches)
-          algorithm
-            for branch in branches loop
-              hashTable := checkDiscreteRealBranch(branch, hashTable);
-            end for;
-        then hashTable;
-
-        else hashTable;
-      end match;
+      checkDiscreteRealEquation(eqn, discrete_reals, false);
     end for;
 
     // collect all lhs crefs that are discrete and real from algorithms
     for alg in flatModel.algorithms loop
-      hashTable := match alg
-        local
-          list<Statement> statements;
-
-        case Algorithm.ALGORITHM(statements = statements)
-          algorithm
-            for statement in statements loop
-              hashTable := checkDiscreteRealStatement(statement, hashTable);
-            end for;
-        then hashTable;
-
-        else hashTable;
-      end match;
+      for statement in alg.statements loop
+        checkDiscreteRealStatement(statement, discrete_reals, false);
+      end for;
     end for;
 
     // check if all discrete real variables are assigned in when bodys
@@ -379,7 +356,8 @@ protected
       // check variability and not type for discrete variables
       // remove all subscripts to handle arrays
       variable.name := ComponentRef.stripSubscriptsAll(variable.name);
-      if Variable.variability(variable) == Variability.DISCRETE and Type.isRealRecursive(variable.ty) and not BaseHashTable.hasKey(variable.name, hashTable) then
+      if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(Type.arrayElementType(variable.ty)) and
+         not UnorderedSet.contains(variable.name, discrete_reals) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
       end if;
     end for;
@@ -399,31 +377,31 @@ protected
     collects all single discrete real crefs on the LHS of the body eqns of a
     when (or nested if inside when) branch."
     input Equation.Branch branch;
-    input output HashTable hashTable;
+    input output UnorderedSet<ComponentRef> discreteReals;
+    input Boolean when_found;
   algorithm
-    hashTable := match branch
-      local
-        list<Equation> body;
-
-      case Equation.BRANCH(body = body)
+    () := match branch
+      case Equation.BRANCH() guard(when_found)
         algorithm
-          for eqn in body loop
-            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+          for eqn in branch.body loop
+            checkDiscreteRealEquation(eqn, discreteReals, when_found);
           end for;
-      then hashTable;
+        then
+          ();
 
-      else hashTable;
+      else ();
     end match;
   end checkDiscreteRealBranch;
 
-  function checkDiscreteRealBranchBodyEqn
+  function checkDiscreteRealEquation
     "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of a branch which is
     part of a when eqn body. Only use to analyze when equation bodys!"
     input Equation body_eqn;
-    input output HashTable hashTable;
+    input UnorderedSet<ComponentRef> discreteReals;
+    input Boolean when_found;
   algorithm
-    hashTable := match body_eqn
+    () := match body_eqn
       local
         Expression lhs;
         Type ty;
@@ -432,78 +410,81 @@ protected
         list<Equation> body;
         list<Equation.Branch> branches;
 
-      case Equation.EQUALITY(lhs = lhs)       then checkDiscreteRealExp(lhs, hashTable);
-      case Equation.ARRAY_EQUALITY(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
-
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isRealRecursive(ty))
+      case Equation.EQUALITY(lhs = lhs)
+        guard(when_found)
         algorithm
-          // remove all subscripts to handle arrays
-          hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
-      then hashTable;
+          checkDiscreteRealExp(lhs, discreteReals);
+        then
+          ();
 
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty as Type.COMPLEX(cls = cls))) guard(Type.isRecord(ty))
-      then checkDiscreteRealRecord(cref, cls, hashTable);
+      case Equation.ARRAY_EQUALITY(lhs = lhs)
+        guard(when_found)
+        algorithm
+          checkDiscreteRealExp(lhs, discreteReals);
+        then
+          ();
 
       // traverse nested if equations. It suffices if the variable is defined in ANY branch.
       case Equation.IF(branches = branches)
         algorithm
           for branch in branches loop
-            hashTable := checkDiscreteRealBranch(branch, hashTable);
+            checkDiscreteRealBranch(branch, discreteReals, when_found);
           end for;
-      then hashTable;
+        then
+          ();
+
+      // traverse when body
+      case Equation.WHEN(branches = branches)
+        algorithm
+          for branch in branches loop
+            checkDiscreteRealBranch(branch, discreteReals, true);
+          end for;
+        then
+          ();
 
       // what if LHS is indexed? :(
       case Equation.FOR(body = body)
         algorithm
           for eqn in body loop
-            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+            checkDiscreteRealEquation(eqn, discreteReals, when_found);
           end for;
-      then hashTable;
+        then
+          ();
 
-      else hashTable;
+      else ();
     end match;
-  end checkDiscreteRealBranchBodyEqn;
+  end checkDiscreteRealEquation;
 
   function checkDiscreteRealStatement
     "author: kabdelhak 2020-06
-    collects all single discrete real crefs on the LHS of the body statements of
-    a when algorithm."
-    input Statement statement;
-    input output HashTable hashTable;
-  algorithm
-    hashTable := match statement
-      local
-        list<tuple<Expression, list<Statement>>> branches;
-        list<Statement> body_statements;
-
-      case Statement.WHEN(branches = branches)
-        algorithm
-          for branch in branches loop
-            (_, body_statements) := branch;
-            for statement in body_statements loop
-              hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
-            end for;
-          end for;
-      then hashTable;
-
-      else hashTable;
-    end match;
-  end checkDiscreteRealStatement;
-
-  function checkDiscreteRealBodyStatement
-    "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of a statement which is
-    part of a when algorithm body. Only use to analyze when algorithm bodys!"
+    part of a when algorithm body."
     input Statement statement;
-    input output HashTable hashTable;
+    input UnorderedSet<ComponentRef> discreteReals;
+    input Boolean when_found;
   algorithm
-    hashTable := match statement
+    () := match statement
       local
         Expression lhs;
         list<tuple<Expression, list<Statement>>> branches;
         list<Statement> body;
 
-      case Statement.ASSIGNMENT(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
+      case Statement.WHEN(branches = branches)
+        algorithm
+          for branch in branches loop
+            (_, body) := branch;
+            for statement in body loop
+              checkDiscreteRealStatement(statement, discreteReals, true);
+            end for;
+          end for;
+        then
+          ();
+
+      case Statement.ASSIGNMENT(lhs = lhs) guard(when_found)
+        algorithm
+          checkDiscreteRealExp(lhs, discreteReals);
+        then
+          ();
 
       // traverse nested if Algorithms. It suffices if the variable is defined in ANY branch.
       case Statement.IF(branches = branches)
@@ -511,30 +492,32 @@ protected
           for branch in branches loop
             (_, body) := branch;
             for stmt in body loop
-              hashTable := checkDiscreteRealBodyStatement(stmt, hashTable);
+              checkDiscreteRealStatement(stmt, discreteReals, when_found);
             end for;
           end for;
-      then hashTable;
+        then
+          ();
 
       // what if the LHS is indexed? :(
       case Statement.FOR(body = body)
         algorithm
           for statement in body loop
-            hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
+            checkDiscreteRealStatement(statement, discreteReals, when_found);
           end for;
-      then hashTable;
+        then
+          ();
 
-      else hashTable;
+      else ();
     end match;
-  end checkDiscreteRealBodyStatement;
+  end checkDiscreteRealStatement;
 
   function checkDiscreteRealExp
     "author: kabdelhak 2020-06
     collects all single discrete real crefs of an expression which represents the LHS."
     input Expression exp;
-    input output HashTable hashTable;
+    input UnorderedSet<ComponentRef> discreteReals;
   algorithm
-    hashTable := match exp
+    () := match exp
       local
          Type ty;
          ComponentRef cref;
@@ -544,42 +527,48 @@ protected
       // only add if it is a real variable, we cannot check for discrete here
       // since only the variable has variablity information
       // Type.isDiscrete does always return false for REAL
-      case Expression.CREF(ty = ty, cref = cref) guard(Type.isRealRecursive(ty))
+      case Expression.CREF(ty = ty, cref = cref)
+        guard(Type.isReal(Type.arrayElementType(ty)))
         algorithm
           // remove all subscripts to handle arrays
-          hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
-      then hashTable;
+          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
+        then
+          ();
 
-      case Expression.CREF(ty = ty as Type.COMPLEX(cls = cls), cref = cref) guard(Type.isRecord(ty))
-      then checkDiscreteRealRecord(cref, cls, hashTable);
+      case Expression.CREF(ty = ty as Type.COMPLEX(cls = cls), cref = cref)
+        guard(Type.isRecord(ty))
+        algorithm
+          checkDiscreteRealRecord(cref, cls, discreteReals);
+        then
+          ();
 
       case Expression.TUPLE(elements = elements)
         algorithm
           for element in elements loop
-            hashTable := checkDiscreteRealExp(element, hashTable);
+            checkDiscreteRealExp(element, discreteReals);
           end for;
-      then hashTable;
+        then
+          ();
 
-      else hashTable;
-
+      else ();
     end match;
   end checkDiscreteRealExp;
 
   function checkDiscreteRealRecord
     input ComponentRef cref;
     input InstNode cls;
-    input output HashTable hashTable;
+    input UnorderedSet<ComponentRef> discreteReals;
   protected
     ComponentRef element;
     list<InstNode> inputs;
   algorithm
     // remove all subscripts to handle arrays
-    hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
+    UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
     // also add all record elements
     (inputs, _, _) := Record.collectRecordParams(cls);
     for node in inputs loop
       element := ComponentRef.prefixCref(node, InstNode.getType(node), {}, cref);
-      hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(element), 0), hashTable);
+      UnorderedSet.add(ComponentRef.stripSubscriptsAll(element), discreteReals);
     end for;
   end checkDiscreteRealRecord;
 

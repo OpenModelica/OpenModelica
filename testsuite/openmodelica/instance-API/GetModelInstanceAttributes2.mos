@@ -1,0 +1,144 @@
+// name: GetModelInstanceAttributes1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+    stream Real s;
+  end C;
+
+  model A
+    replaceable Real w;
+    outer Real z;
+  end A;
+
+  model M
+    final Real x;
+    input Real y;
+    inner Real z;
+    extends A;
+  protected
+    redeclare replaceable Real w;
+    parameter C c;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"extends\": [
+//     {
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"w\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"public\": false,
+//               \"replaceable\": true,
+//               \"redeclare\": true
+//             }
+//           },
+//           {
+//             \"name\": \"z\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"inner\": true
+//             }
+//           }
+//         ]
+//       }
+//     }
+//   ],
+//   \"components\": [
+//     {
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"outer\": true
+//       }
+//     },
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"final\": true
+//       }
+//     },
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"direction\": \"input\"
+//       }
+//     },
+//     {
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     },
+//     {
+//       \"name\": \"w\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"public\": false,
+//         \"replaceable\": true,
+//         \"redeclare\": true
+//       }
+//     },
+//     {
+//       \"name\": \"c\",
+//       \"type\": {
+//         \"name\": \"C\",
+//         \"restriction\": \"connector\",
+//         \"components\": [
+//           {
+//             \"name\": \"e\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//
+//             }
+//           },
+//           {
+//             \"name\": \"f\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"connector\": \"flow\"
+//             }
+//           },
+//           {
+//             \"name\": \"s\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"connector\": \"stream\"
+//             }
+//           }
+//         ]
+//       },
+//       \"prefixes\": {
+//         \"public\": false,
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"replaceable\": [
+//     {
+//       \"name\": \"w\",
+//       \"type\": \"Real\"
+//     }
+//   ]
+// }"
+// endResult

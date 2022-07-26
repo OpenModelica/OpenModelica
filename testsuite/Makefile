@@ -42,7 +42,8 @@ requirements.log \
 scalable.log \
 device.log \
 ffi.log \
-conversion.log
+conversion.log \
+visualization.log \
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -55,6 +56,7 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
+simulationnewbackend.log \
 simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
@@ -155,6 +157,7 @@ flatteningmodelicamsl.log \
 mmdev.log \
 flatteningmosfiles.log \
 interactive-API.log \
+instance-API.log \
 typed-API.log \
 records.log \
 expandable.log \
@@ -198,7 +201,7 @@ omc-diff :
 	$(MAKE) -C difftool
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/libraries/msl22,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/libraries/msl22,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
 test-oldresult:
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 test-oldresult-summary:
@@ -294,6 +297,9 @@ dataReconciliation.log: omc-diff
 interactive-API.log: omc-diff
 	$(MAKE) -C openmodelica/interactive-API -f Makefile test > $@
 	@echo $@ done
+instance-API.log: omc-diff
+	$(MAKE) -C openmodelica/instance-API -f Makefile test > $@
+	@echo $@ done
 typed-API.log: omc-diff
 	$(MAKE) -C openmodelica/typed-API -f Makefile test > $@
 	@echo $@ done
@@ -317,6 +323,15 @@ simulationconnectors.log: omc-diff
 	@echo $@ done
 simulationdaemode.log: omc-diff
 	$(MAKE) -C simulation/modelica/daemode -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-arrayhandling.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/array_handling/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-functions.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/functions/ -f Makefile test > $@
 	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
@@ -555,6 +570,9 @@ parallel.log: omc-diff
 parameters.log: omc-diff
 	$(MAKE) -C simulation/modelica/parameters -f Makefile test > $@
 	@echo $@ done
+parmodauto.log: omc-diff
+	$(MAKE) -C simulation/modelica/parmodauto -f Makefile test > $@
+	@echo $@ done
 taskGraph.log: omc-diff
 	$(MAKE) -C simulation/modelica/hpcom -f Makefile test > $@
 	@echo $@ done
@@ -631,6 +649,9 @@ ffi.log: omc-diff
 conversion.log: omc-diff
 	$(MAKE) -C openmodelica/conversion -f Makefile test > $@
 	@echo $@ done
+visualization.log: omc-diff
+	$(MAKE) -C openmodelica/visualization -f Makefile test > $@
+	@echo $@ done
 
 failingtest: omc-diff
 	cd mofiles; $(MAKE) -f Makefile failingtest; \
@@ -694,6 +715,7 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/omsi/omsicpp -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
 	$(MAKE) -C openmodelica/interactive-API -f Makefile clean
+	$(MAKE) -C openmodelica/instance-API -f Makefile clean
 	$(MAKE) -C openmodelica/parser -f Makefile clean
 	$(MAKE) -C openmodelica/typed-API -f Makefile clean
 	$(MAKE) -C openmodelica/xml -f Makefile clean

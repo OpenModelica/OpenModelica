@@ -30,6 +30,7 @@
  */
 
 encapsulated uniontype NFVariable
+  import Attributes = NFAttributes;
   import Binding = NFBinding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -40,6 +41,8 @@ encapsulated uniontype NFVariable
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Direction;
   import Type = NFType;
+  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.BackendInfo;
 
 protected
   import ExpandExp = NFExpandExp;
@@ -55,11 +58,12 @@ public
     Type ty;
     Binding binding;
     Visibility visibility;
-    Component.Attributes attributes;
+    Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
     list<Variable> children;
     Option<SCode.Comment> comment;
     SourceInfo info;
+    BackendInfo backendinfo "NFBackendExtension.DUMMY_BACKEND_INFO for all of frontend. Only used in Backend.";
   end VARIABLE;
 
   function fromCref
@@ -72,24 +76,49 @@ public
     Type ty;
     Binding binding;
     Visibility vis;
-    Component.Attributes attr;
+    Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
     ty := ComponentRef.getSubscriptedType(cref);
-    binding := Component.getImplicitBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info);
+    // kabdelhak: add dummy backend info, will be changed to actual value in
+    // conversion to backend process (except for iterators). NBackendDAE.lower
+    if ComponentRef.isIterator(cref) then
+      binding := NFBinding.EMPTY_BINDING;
+      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, BackendExtension.BACKEND_INFO(BackendExtension.ITERATOR(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
+    else
+      binding := Component.getImplicitBinding(comp);
+      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    end if;
   end fromCref;
+
+  function size
+    input Variable var;
+    output Integer s = Type.sizeOf(var.ty);
+  end size;
+
+  function hash
+    input Variable var;
+    input Integer mod;
+    output Integer i = ComponentRef.hash(var.name, mod);
+  end hash;
+
+  function equalName
+    input Variable var1;
+    input Variable var2;
+    output Boolean b = ComponentRef.isEqual(var1.name, var2.name);
+  end equalName;
 
   function expand
     "Expands an array variable into its scalar elements."
     input Variable var;
+    input Boolean backend = false;
     output list<Variable> vars;
   protected
     list<ComponentRef> crefs;
@@ -103,8 +132,10 @@ public
   algorithm
     if Type.isArray(var.ty) then
       // Expand the name.
-      crefs := list(Expression.toCref(e) for e in
-        Expression.arrayScalarElements(ExpandExp.expandCref(Expression.fromCref(var.name))));
+      exp := Expression.fromCref(var.name);
+      exp := ExpandExp.expandCref(exp, backend);
+      expl := Expression.arrayScalarElements(exp);
+      crefs := list(Expression.toCref(e) for e in expl);
 
       v := var;
       v.ty := Type.arrayElementType(v.ty);
@@ -145,7 +176,6 @@ public
           vars := v :: vars;
         end for;
       end if;
-
       vars := listReverseInPlace(vars);
     else
       vars := {var};
@@ -203,11 +233,21 @@ public
     output Boolean potential = ConnectorType.isStream(variable.attributes.connectorType);
   end isStream;
 
+  function isInput
+    input Variable variable;
+    output Boolean b = variable.attributes.direction == Direction.INPUT;
+  end isInput;
+
   function isTopLevelInput
     input Variable variable;
     output Boolean topInput = ComponentRef.isSimple(variable.name) and
                               variable.attributes.direction == Direction.INPUT;
   end isTopLevelInput;
+
+  function isPublic
+    input Variable variable;
+    output Boolean isPublic = variable.visibility == Visibility.PUBLIC;
+  end isPublic;
 
   function lookupTypeAttribute
     input String name;
@@ -267,7 +307,7 @@ public
       s := IOStream.append(s, "protected ");
     end if;
 
-    s := IOStream.append(s, Component.Attributes.toString(var.attributes, var.ty));
+    s := IOStream.append(s, Attributes.toString(var.attributes, var.ty));
     s := IOStream.append(s, Type.toString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toString(var.name));
@@ -322,7 +362,7 @@ public
   algorithm
     s := IOStream.append(s, indent);
 
-    s := Component.Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
+    s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name));

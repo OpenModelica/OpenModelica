@@ -37,6 +37,7 @@ encapsulated uniontype NFClockKind
 protected
   import AbsynUtil;
   import ClockKind = NFClockKind;
+  import JSON;
 
 public
   record INFERRED_CLOCK
@@ -44,21 +45,21 @@ public
 
   record RATIONAL_CLOCK
     Expression intervalCounter " integer type >= 0 ";
-    Expression resolution " integer type >= 1, defaults to 1 ";
+    Expression resolution      " integer type >= 1, defaults to 1 ";
   end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Expression interval " real type > 0 ";
+    Expression interval        " real type > 0 ";
   end REAL_CLOCK;
 
   record EVENT_CLOCK
-    Expression condition " boolean type ";
-    Expression startInterval " real type >= 0.0 ";
+    Expression condition       " boolean type ";
+    Expression startInterval   " real type >= 0.0 ";
   end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Expression c "clock type ";
-    Expression solverMethod " string type ";
+    Expression c               " clock type ";
+    Expression solverMethod    " string type ";
   end SOLVER_CLOCK;
 
   function compare
@@ -107,12 +108,12 @@ public
   algorithm
     res := match ck
       case RATIONAL_CLOCK() then Expression.contains(ck.intervalCounter, func) or
-                                Expression.contains(ck.resolution, func);
-      case REAL_CLOCK()    then Expression.contains(ck.interval, func);
-      case EVENT_CLOCK() then Expression.contains(ck.condition, func) or
-                                Expression.contains(ck.startInterval, func);
-      case SOLVER_CLOCK()  then Expression.contains(ck.c, func) or
-                                Expression.contains(ck.solverMethod, func);
+                                 Expression.contains(ck.resolution, func);
+      case REAL_CLOCK()     then Expression.contains(ck.interval, func);
+      case EVENT_CLOCK()    then Expression.contains(ck.condition, func) or
+                                 Expression.contains(ck.startInterval, func);
+      case SOLVER_CLOCK()   then Expression.contains(ck.c, func) or
+                                 Expression.contains(ck.solverMethod, func);
       else false;
     end match;
   end containsExp;
@@ -458,9 +459,9 @@ public
       local
         Expression i, ic, r, c, si, sm;
       case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
-      case RATIONAL_CLOCK(i, r)  then DAE.RATIONAL_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+      case RATIONAL_CLOCK(i, r) then DAE.RATIONAL_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
       case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
-      case EVENT_CLOCK(c, si) then DAE.EVENT_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+      case EVENT_CLOCK(c, si)   then DAE.EVENT_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
       case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
     end match;
   end toDAE;
@@ -473,9 +474,9 @@ public
       local
         Expression i, ic, r, c, si, sm;
       case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
-      case RATIONAL_CLOCK(i, r)  then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
+      case RATIONAL_CLOCK(i, r) then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
       case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
-      case EVENT_CLOCK(c, si) then "EVENT_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
+      case EVENT_CLOCK(c, si)   then "EVENT_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
       case SOLVER_CLOCK(c, sm)  then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
     end match;
   end toDebugString;
@@ -487,12 +488,11 @@ public
     str := match ck
       local
         Expression e1, e2;
-
-      case INFERRED_CLOCK()      then "";
+      case INFERRED_CLOCK()       then "";
       case RATIONAL_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
-      case REAL_CLOCK(e1)        then Expression.toString(e1);
-      case EVENT_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
-      case SOLVER_CLOCK(e1, e2)  then Expression.toString(e1) + ", " + Expression.toString(e2);
+      case REAL_CLOCK(e1)         then Expression.toString(e1);
+      case EVENT_CLOCK(e1, e2)    then Expression.toString(e1) + ", " + Expression.toString(e2);
+      case SOLVER_CLOCK(e1, e2)   then Expression.toString(e1) + ", " + Expression.toString(e2);
     end match;
 
     str := "Clock(" + str + ")";
@@ -506,15 +506,61 @@ public
       local
         Expression e1, e2;
 
-      case INFERRED_CLOCK()      then "";
+      case INFERRED_CLOCK()       then "";
       case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case REAL_CLOCK(e1)        then Expression.toFlatString(e1);
-      case EVENT_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case SOLVER_CLOCK(e1, e2)  then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case REAL_CLOCK(e1)         then Expression.toFlatString(e1);
+      case EVENT_CLOCK(e1, e2)    then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case SOLVER_CLOCK(e1, e2)   then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
     end match;
 
     str := "Clock(" + str + ")";
   end toFlatString;
+
+  function toJSON
+    input ClockKind clk;
+    output JSON json = JSON.emptyObject();
+  algorithm
+    json := JSON.addPair("kind", JSON.makeString("clock"), json);
+
+    () := match clk
+      case INFERRED_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("inferred"), json);
+        then
+          ();
+
+      case RATIONAL_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("rational"), json);
+          json := JSON.addPair("intervalCounter", Expression.toJSON(clk.intervalCounter), json);
+          json := JSON.addPair("resolution", Expression.toJSON(clk.resolution), json);
+        then
+          ();
+
+      case REAL_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("real"), json);
+          json := JSON.addPair("interval", Expression.toJSON(clk.interval), json);
+        then
+          ();
+
+      case EVENT_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("event"), json);
+          json := JSON.addPair("condition", Expression.toJSON(clk.condition), json);
+          json := JSON.addPair("startInterval", Expression.toJSON(clk.startInterval), json);
+        then
+          ();
+
+      case SOLVER_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("solver"), json);
+          json := JSON.addPair("c", Expression.toJSON(clk.c), json);
+          json := JSON.addPair("solverMethod", Expression.toJSON(clk.solverMethod), json);
+        then
+          ();
+    end match;
+  end toJSON;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFClockKind;

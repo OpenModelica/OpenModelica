@@ -67,6 +67,7 @@ void Transformation::initialize(StringHandler::ViewType viewType)
   mExtent2Diagram = QPointF(100.0, 100.0);
   mRotateAngleDiagram = 0.0;
   mPositionDiagram = QPointF(0.0, 0.0);
+  mVisibleIcon = true;
   mOriginIcon = QPointF(0.0, 0.0);
   mHasOriginIconX = true;
   mHasOriginIconY = true;
@@ -153,6 +154,53 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
   }
 }
 
+void Transformation::parseTransformation(const ModelInstance::PlacementAnnotation &placementAnnotation, const ModelInstance::CoordinateSystem &coordinateSystem)
+{
+  /*
+    if width and height are greater than zero then use them else use fixed width and height of 200. Otherwise OMEdit will crash!!!!
+    e.g BusUsage crash problem!!!!!
+    */
+  QRectF rect = coordinateSystem.getExtentRectangle();
+  if (rect.width() > 0) {
+    mWidth = rect.width();
+  }
+  if (rect.height() > 0) {
+    mHeight = rect.height();
+  }
+
+  // transformation
+  mVisible = placementAnnotation.getVisible();
+
+  ModelInstance::Transformation transformation = placementAnnotation.getTransformation();
+
+  ModelInstance::Point origin = transformation.getOrigin();
+  mOriginDiagram = QPointF(origin.x(), origin.y());
+
+  ModelInstance::Extent extent = transformation.getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  mExtent1Diagram = QPointF(extent1.x(), extent1.y());
+  ModelInstance::Point extent2 = extent.getExtent2();
+  mExtent2Diagram = QPointF(extent2.x(), extent2.y());
+
+  mRotateAngleDiagram = transformation.getRotation();
+
+  // icon transformation
+  mVisibleIcon = placementAnnotation.getIconVisible();
+
+  ModelInstance::Transformation iconTransformation = placementAnnotation.getIconTransformation();
+
+  ModelInstance::Point iconOrigin = iconTransformation.getOrigin();
+  mOriginIcon = QPointF(iconOrigin.x(), iconOrigin.y());
+
+  ModelInstance::Extent iconExtent = iconTransformation.getExtent();
+  ModelInstance::Point iconExtent1 = iconExtent.getExtent1();
+  mExtent1Icon = QPointF(iconExtent1.x(), iconExtent1.y());
+  ModelInstance::Point iconExtent2 = iconExtent.getExtent2();
+  mExtent2Icon = QPointF(iconExtent2.x(), iconExtent2.y());
+
+  mRotateAngleIcon = iconTransformation.getRotation();
+}
+
 void Transformation::updateTransformation(const Transformation &transformation)
 {
   mValid = transformation.isValid();
@@ -168,6 +216,7 @@ void Transformation::updateTransformation(const Transformation &transformation)
   mExtent2Diagram = transformation.getExtent2Diagram();
   mRotateAngleDiagram = transformation.getRotateAngleDiagram();
   mPositionDiagram = transformation.getPositionDiagram();
+  mVisibleIcon = transformation.getVisible();
   mOriginIcon = transformation.getOriginIcon();
   mHasOriginIconX = transformation.hasOriginIconX();
   mHasOriginIconY = transformation.hasOriginIconY();
@@ -256,6 +305,7 @@ QPointF Transformation::getPosition()
 bool Transformation::operator==(const Transformation &transformation) const
 {
   return (transformation.getVisible() == this->getVisible()) &&
+      (transformation.getVisibleIcon() == this->getVisibleIcon()) &&
       (transformation.getOrigin().x() == this->getOrigin().x()) &&
       (transformation.getOrigin().y() == this->getOrigin().y()) &&
       (transformation.getExtent1().x() == this->getExtent1().x()) &&

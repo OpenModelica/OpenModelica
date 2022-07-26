@@ -40,6 +40,7 @@ encapsulated package System
 
 protected
 import Autoconf;
+import Error;
 
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
@@ -172,6 +173,8 @@ public function tolower
 end tolower;
 
 public function strtok
+  "Break string into a series of tokens using the delimiter token.
+   See strtok from C standard."
   input String string;
   input String token;
   output list<String> strings;
@@ -364,6 +367,17 @@ public function plotCallBack
   input String variables;
   external "C" SystemImpl__plotCallBack(OpenModelica.threadData(), externalWindow, filename, title, grid, plotType, logX, logY, xLabel, yLabel, x1, x2, y1, y2, curveWidth, curveStyle, legendPosition, footer, autoScale, variables) annotation(Library = "omcruntime");
 end plotCallBack;
+
+public function loadModelCallBackDefined
+  output Boolean isDefined;
+  external "C"
+  isDefined=SystemImpl__loadModelCallBackDefined(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end loadModelCallBackDefined;
+
+public function loadModelCallBack
+  input String modelName;
+  external "C" SystemImpl__loadModelCallBack(OpenModelica.threadData(), modelName) annotation(Library = "omcruntime");
+end loadModelCallBack;
 
 public function cd
   input String inString;
@@ -963,16 +977,6 @@ public function dgesv
   external "C" info=SystemImpl__dgesv(A,B,X) annotation(Library = {"omcruntime","Lapack"});
 end dgesv;
 
-public function lpsolve55
-  "lpsolve55"
-  input list<list<Real>> A;
-  input list<Real> B;
-  input list<Integer> intIndices;
-  output list<Real> X;
-  output Integer info;
-  external "C" info=SystemImpl__lpsolve55(A,B,intIndices,X) annotation(Library = {"omcruntime"});
-end lpsolve55;
-
 public function reopenStandardStream
   input Integer _stream "stdin,stdout,stderr";
   input String filename;
@@ -1071,9 +1075,22 @@ public function numBits
 end numBits;
 
 public function realpath
+  "Return the canonicalized absolute pathname"
   input String path;
   output String fullpath;
-  external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
+protected
+  function system_realpath
+    input String path;
+    output String fullpath;
+    external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
+  end system_realpath;
+algorithm
+  try
+    fullpath := system_realpath(path);
+  else
+    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+    fail();
+  end try;
 end realpath;
 
 public function getSimulationHelpText

@@ -58,7 +58,8 @@ public
   end REAL_RANGE;
 
   record ARRAY_RANGE
-    list<Expression> values;
+    array<Expression> values;
+    Integer index;
   end ARRAY_RANGE;
 
   record INVALID_RANGE
@@ -93,7 +94,7 @@ public
         Absyn.Path path;
         list<Expression> values;
 
-      case Expression.ARRAY() then ARRAY_RANGE(exp.elements);
+      case Expression.ARRAY() then ARRAY_RANGE(exp.elements, 1);
 
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = SOME(Expression.INTEGER(istep)),
@@ -117,7 +118,7 @@ public
 
       case Expression.RANGE(start = Expression.BOOLEAN(bstart),
                             stop = Expression.BOOLEAN(bstop))
-        then ARRAY_RANGE(list(Expression.BOOLEAN(b) for b in bstart:bstop));
+        then ARRAY_RANGE(listArray(list(Expression.BOOLEAN(b) for b in bstart:bstop)), 1);
 
       case Expression.RANGE(start = Expression.ENUM_LITERAL(ty = ty, index = istart),
                             step = NONE(),
@@ -139,7 +140,7 @@ public
             values := listReverse(values);
           end if;
         then
-          ARRAY_RANGE(values);
+          ARRAY_RANGE(listArray(values), 1);
 
       // enumeration type based range
       case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty as Type.ENUMERATION(literals = literals)))
@@ -152,7 +153,7 @@ public
             values := Expression.ENUM_LITERAL(ty, l, istep) :: values;
           end for;
         then
-          ARRAY_RANGE(values);
+          ARRAY_RANGE(listArray(values), 1);
 
       else INVALID_RANGE(exp);
 
@@ -171,10 +172,10 @@ public
       case Dimension.INTEGER() then INT_RANGE(1, dim.size);
 
       case Dimension.BOOLEAN()
-        then ARRAY_RANGE({Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
+        then ARRAY_RANGE(listArray({Expression.BOOLEAN(false), Expression.BOOLEAN(true)}), 1);
 
       case Dimension.ENUM(enumType = ty as Type.ENUMERATION())
-        then ARRAY_RANGE(Expression.makeEnumLiterals(ty));
+        then ARRAY_RANGE(listArray(Expression.makeEnumLiterals(ty)), 1);
 
       case Dimension.EXP() then fromExp(dim.exp);
 
@@ -215,8 +216,8 @@ public
 
       case ARRAY_RANGE()
         algorithm
-          nextExp := listHead(iterator.values);
-          iterator.values := listRest(iterator.values);
+          nextExp := arrayGet(iterator.values, iterator.index);
+          iterator.index := iterator.index + 1;
         then
           nextExp;
 
@@ -238,7 +239,7 @@ public
       case INT_STEP_RANGE() then if iterator.stepsize > 0 then iterator.current <= iterator.last
                                                           else iterator.current >= iterator.last;
       case REAL_RANGE() then iterator.current < iterator.steps;
-      case ARRAY_RANGE() then not listEmpty(iterator.values);
+      case ARRAY_RANGE() then iterator.index <= arrayLength(iterator.values);
       case INVALID_RANGE()
         algorithm
           Error.assertion(false, getInstanceName() + " got invalid range " +

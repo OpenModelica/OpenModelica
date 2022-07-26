@@ -713,41 +713,35 @@ algorithm
     local
       BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
-      DAE.Exp e;
-      Boolean blst;
       BackendDAE.Var backendVar;
       Absyn.Ident name;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
       false = BackendVariable.isVarDiscrete(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // builtin variable time is not discrete
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, true));
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // Known variables that are input are continuous
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       (backendVar::_, _) = BackendVariable.getVar(cr, globalKnownVars);
       true = BackendVariable.isInput(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=name)), (vars, globalKnownVars, blst))
+    case (DAE.CALL(path=Absyn.IDENT(name=name)), _)
       guard stringEq("pre", name) or
             stringEq("change", name) or
             stringEq("ceil", name) or
-            stringEq("floor", name) or
-            stringEq("div", name) or
-            stringEq("mod", name) or
-            stringEq("rem", name)
-    then (e, false, (vars, globalKnownVars, blst));
+            stringEq("floor", name)
+    then (inExp, false, inTpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, false));
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, false));
 
-    case (e, (vars, globalKnownVars, blst))
-    then (e, true, (vars, globalKnownVars, blst));
+    else (inExp, true, inTpl);
   end matchcontinue;
 end traversingContinuousExpFinder;
 
@@ -1336,7 +1330,6 @@ algorithm
   end while;
 end markStateEquationsWork;
 
-
 public function removeNegative
 "author: PA
   Removes all negative integers."
@@ -1476,6 +1469,9 @@ algorithm
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
       markedEqns := markStateEquationsWork(indicesAlgebraic, adjMatrix, assigndVar, markedEqns);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAlgebraic);
+
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqSystem.removedEqs), 1);
+      eqSystem.removedEqs := setMarkedEqnsEvalStage(eqSystem.removedEqs, markedEqns, BackendEquation.setEvalStageDiscrete);
 
       /* For now avoid this and evaluate all the event update breaks right now
          quite a lot models.
@@ -1939,7 +1935,6 @@ algorithm
       DAE.Type tp;
       Boolean b1;
       String id1;
-      Integer index;
 
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
@@ -1978,11 +1973,11 @@ algorithm
         xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source)::xs;
 
-    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=index,range=e,statementLst=stmts, source = source))::rest),vars)
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source))::rest),vars)
       equation
         stmts = removeDiscreteAssignments(stmts,vars);
         xs = removeDiscreteAssignments(rest,vars);
-      then DAE.STMT_FOR(tp,b1,id1,index,e,stmts,source)::xs;
+      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source)::xs;
 
     case (((DAE.STMT_WHILE(exp=e,statementLst=stmts, source = source))::rest),vars)
       equation
@@ -2513,12 +2508,13 @@ protected function filladjacencyMatrixT
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT = inAdjacencyArrayT;
 protected
   BackendDAE.AdjacencyMatrixElement row;
-  list<Integer> ei;
+  list<Integer> ei, eqnsindxsNeg;
 algorithm
+  eqnsindxsNeg := list(intNeg(e) for e in eqnsindxs);
   for v in eqns loop
     if v < 0 then
       v := intAbs(v);
-      ei := list(intNeg(e) for e in eqnsindxs);
+      ei := eqnsindxsNeg;
     else
       ei := eqnsindxs;
     end if;
@@ -8092,11 +8088,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   lhs := BackendVariable.varExp(var);
-  try
-    rhs := BackendVariable.varBindExpStartValue(var);
-  else
-    rhs := DAE.RCONST(0.0);
-  end try;
+  rhs := BackendVariable.varBindExpStartValueNoFail(var);
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;
@@ -8428,7 +8420,7 @@ public function allPostOptimizationModules
     (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions"),
     // DAEmode modules
     (DAEMode.createDAEmodeBDAE, "createDAEmodeBDAE"),
-    (SymbolicJacobian.detectSparsePatternDAE, "detectDAEmodeSparsePattern"),
+    (SymbolicJacobian.symbolicJacobianDAE, "symbolicJacobianDAE"),
     (BackendDAEUtil.setEvaluationStage, "setEvaluationStage")
   };
 end allPostOptimizationModules;

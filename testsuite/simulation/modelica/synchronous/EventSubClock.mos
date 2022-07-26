@@ -1,0 +1,20 @@
+// name: EventSubClock
+// keywords: synchronous clocked equations
+// status: correct
+// cflags: -d=-newInst --std=3.3
+
+loadFile("EventSubClock.mo");getErrorString();
+simulate(EventSubClock);getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EventSubClock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: EventSubClock
+// assert            | debug   | Factor of sub-clock of event-clock is not an integer, this is not allowed.
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

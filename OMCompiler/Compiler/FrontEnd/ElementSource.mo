@@ -247,7 +247,7 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       DAE.Exp h1,t1,t2;
       list<SCode.Comment> comment;
-      SCode.EEquation scode;
+      SCode.Equation scode;
       list<DAE.Element> elts;
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);

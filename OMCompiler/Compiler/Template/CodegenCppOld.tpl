@@ -1562,9 +1562,9 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
       case  "win64" then
         <<
         @echo off
-        <%preRunCommandWindows%>
-        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
+        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
+        <%preRunCommandWindows%>
         "<%moLib%>/<%fileNamePrefixx%>.exe" <%execParameters%> <%outputParameter%>
         >>
     end match

@@ -263,8 +263,8 @@ public:
   QAction *redoAction;
   QAction *cutAction;
   QAction *copyAction;
-private:
   QAction *pasteAction;
+private:
   QAction *findAction;
   QAction *replaceAction;
   QAction *showExprAction;

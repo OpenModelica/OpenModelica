@@ -1,7 +1,7 @@
 QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
-OMCLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
+OMCLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lomcgc -lomantlr3
 OMCINC = @OMBUILDDIR@/include/omc/c
 INCLUDEPATH += $$system(echo @CFLAGS@ | sed "s/\ //g" | grep ^-I | sed s/^-I//)
 QMAKE_CFLAGS = -g @CFLAGS@ @CPPFLAGS@

@@ -417,7 +417,6 @@ protected
   list<DAE.Element> varLst1, varLst2, assignedVarLst, stateVarLst, otherLst1, equationLst1, equationLst2, otherLst2, flatSmLst, otherLst3;
   DAE.ComponentRef componentRef;
   list<DAE.ComponentRef> stateVarCrefs;
-  list<Option<DAE.VariableAttributes>> variableAttributesOptions;
   list<Option<DAE.Exp>> startValuesOpt;
   list<tuple<DAE.ComponentRef, Option<DAE.Exp>>> varCrefStartVal;
   list<DAE.Element> dAElist "a component with subelements";
@@ -439,8 +438,7 @@ algorithm
   //print("StateMachineFlatten.smCompToDataFlow: stateVarLst:\n" + DAEDump.dumpElementsStr(stateVarLst) +"\n");
 
   stateVarCrefs := List.map(stateVarLst, DAEUtil.varCref);
-  variableAttributesOptions := List.map(stateVarLst, DAEUtil.getVariableAttributes);
-  startValuesOpt := List.map(variableAttributesOptions, getStartAttrOption);
+  startValuesOpt := List.map(stateVarLst, getStartAttrOption);
   varCrefStartVal := List.zip(stateVarCrefs, startValuesOpt);
   crToExpOpt := HashTableCrToExpOption.emptyHashTableSized(listLength(varCrefStartVal) + 1);
   // create table that maps the cref of a variable to its start value
@@ -791,6 +789,10 @@ algorithm
         algorithm
           Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
         then DAE.SCONST("");
+      case DAE.T_ENUMERATION()
+        algorithm
+          Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
+        then Types.getNthEnumLiteral(inLHSty, 1);
       else
         algorithm
           Error.addCompilerError("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value.\n");
@@ -893,6 +895,10 @@ algorithm
         algorithm
           Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
         then DAE.SCONST("");
+      case DAE.T_ENUMERATION()
+        algorithm
+          Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
+        then Types.getNthEnumLiteral(inLHSty, 1);
       else
         algorithm
           Error.addCompilerError("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value.\n");
@@ -1039,19 +1045,21 @@ end traversingSubsPreviousCrefs;
 protected function getStartAttrOption "
 Helper function to smCompToDataFlow
 "
-  input Option<DAE.VariableAttributes> inVarAttrOpt;
+  input DAE.Element inElt;
   output Option<DAE.Exp> outExpOpt;
 protected
   DAE.Exp start;
+  DAE.Type ty;
+  Option<DAE.VariableAttributes> varAttrOpt;
 algorithm
-  if isSome(inVarAttrOpt) then
-    start := DAEUtil.getStartAttr(inVarAttrOpt);
+  DAE.VAR(variableAttributesOption=varAttrOpt, ty=ty) := inElt;
+  if isSome(varAttrOpt) then
+    start := DAEUtil.getStartAttr(varAttrOpt, ty);
     outExpOpt := SOME(start);
   else
     outExpOpt := NONE();
   end if;
 end getStartAttrOption;
-
 
 protected function addPropagationEquations "
 Author: BTH

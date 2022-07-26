@@ -1,0 +1,98 @@
+// name: HeatingSystem
+// status: correct
+// teardown_command: rm -rf refSimulation.log HeatingSystem_esdirk4.log HeatingSystem_fehlberg78.log HeatingSystem_dopri45.log HeatingSystem_* *.bat
+//
+// Test all discrete event handling for specific configurations.
+
+loadFile("HeatingSystemDiscrete.mo");
+getErrorString();
+
+loadString("
+model HeatingSystem
+  extends HeatingSystemDiscrete.HeatingSystem;
+end HeatingSystem;
+"); getErrorString();
+
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+
+// Build model
+buildModel(HeatingSystem, stopTime=864000); getErrorString();
+
+// Create reference results
+system(realpath(".") + "/HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-8,stopTime=864000\"", "refSimulation.log");
+print(readFile("refSimulation.log"));
+
+// Simulate with gauss2 & KINSOL+KLU
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_esdirk4.log");
+print(readFile("HeatingSystem_esdirk4.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Simulate with sdirk2 & KINSOL+KLU
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+print(readFile("HeatingSystem_fehlberg78.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Simulate with sdirk2 & KINSOL+KLU
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10,stopTime=864000\"", "HeatingSystem_dopri45.log");
+print(readFile("HeatingSystem_dopri45.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Result:
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation.
+// "
+// true
+// ""
+// true
+// ""
+// {"HeatingSystem","HeatingSystem_init.xml"}
+// ""
+// 0
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// 0
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// 0
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// endResult

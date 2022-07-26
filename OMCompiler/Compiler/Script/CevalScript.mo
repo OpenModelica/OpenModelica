@@ -354,9 +354,6 @@ algorithm
   (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
-protected type LoadModelFoldArg =
-  tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/, Boolean /*encrypted*/>;
-
 public function loadModel
   input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
   input String modelicaPath;
@@ -367,32 +364,40 @@ public function loadModel
   input Boolean requireExactVersion;
   input Boolean encrypted = false;
   input String pathToFile = "";
-  output Absyn.Program pnew;
-  output Boolean success;
+  output Absyn.Program pnew = ip;
+  output Boolean success = true;
 protected
-  LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted);
+  Boolean b;
 algorithm
-  (pnew, success) := List.fold2(imodelsToLoad, loadModel1, arg, pathToFile, (ip, true));
+  for m in imodelsToLoad loop
+    (pnew, b) := loadModel1(m, modelicaPath, forceLoad, notifyLoad,
+      checkUses, requireExactVersion, encrypted, pathToFile, pnew);
+    success := b and success;
+  end for;
 end loadModel;
 
 protected function loadModel1
   input tuple<Absyn.Path,String,list<String>,Boolean> modelToLoad;
-  input LoadModelFoldArg inArg;
+  input String modelicaPath;
+  input Boolean forceLoad;
+  input Boolean notifyLoad;
+  input Boolean checkUses;
+  input Boolean requireExactVersion;
+  input Boolean encrypted;
   input String pathToFile;
-  input tuple<Absyn.Program, Boolean> inTpl;
-  output tuple<Absyn.Program, Boolean> outTpl;
+  input output Absyn.Program program;
+        output Boolean success = true;
 protected
   list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
-  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath, encrypted;
+  Boolean onlyCheckFirstModelicaPath;
   Absyn.Path path;
   list<String> versionsLst;
-  String pathStr, versions, className, version, modelicaPath, thisModelicaPath, dir;
-  Absyn.Program p, pnew;
+  String pathStr, versions, version, thisModelicaPath, dir;
+  Absyn.Program pnew;
   ErrorTypes.MessageTokens msgTokens;
   Option<Absyn.Class> cl;
 algorithm
   (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
-  (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
     thisModelicaPath::_ := System.strtok(modelicaPath, Autoconf.groupDelimiter);
@@ -400,8 +405,7 @@ algorithm
     thisModelicaPath := modelicaPath;
   end if;
   try
-    (p, success) := inTpl;
-    if checkModelLoaded(modelToLoad, p, forceLoad, NONE()) then
+    if checkModelLoaded(modelToLoad, program, forceLoad, NONE()) then
       pnew := Absyn.PROGRAM({}, Absyn.TOP());
       version := "";
     else
@@ -416,30 +420,30 @@ algorithm
           pnew := Absyn.PROGRAM({}, Absyn.TOP());
         end if;
       end if;
-      version := getPackageVersion(path, pnew);
-      b := not notifyLoad or forceLoad;
-      msgTokens := {AbsynUtil.pathString(path), version};
-      Error.assertionOrAddSourceMessage(b, Error.NOTIFY_NOT_LOADED, msgTokens, AbsynUtil.dummyInfo);
-    end if;
-    p := InteractiveUtil.updateProgram(pnew, p);
 
-    b := true;
+      if notifyLoad and not forceLoad then
+        version := getPackageVersion(path, pnew);
+        msgTokens := {AbsynUtil.pathString(path), version};
+        Error.addMessage(Error.NOTIFY_LOAD_MODEL_DUE_TO_USES, msgTokens);
+        System.loadModelCallBack(AbsynUtil.pathFirstIdent(path));
+      end if;
+    end if;
+
+    program := InteractiveUtil.updateProgram(pnew, program);
+
     if checkUses then
       modelsToLoad := Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion);
-      (p, b) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
+      (program, success) := loadModel(modelsToLoad, modelicaPath, program, false, notifyLoad, checkUses, requireExactVersion, false);
     end if;
-    outTpl := (p, success and b);
   else
-    (p, _) := inTpl;
     pathStr := AbsynUtil.pathString(path);
     versions := stringDelimitList(versionsLst, ",");
     msgTokens := {pathStr, versions, thisModelicaPath};
     if forceLoad then
-      Error.addMessage(Error.LOAD_MODEL, msgTokens);
-      outTpl := (p, false);
+      Error.addMessage(Error.LOAD_MODEL_FAILED, msgTokens);
+      success := false;
     else
       Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED, msgTokens);
-      outTpl := inTpl;
     end if;
   end try;
 end loadModel1;
@@ -798,6 +802,7 @@ algorithm
       algorithm
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
+        setGlobalRoot(Global.packageIndexCacheIndex, 0);
       then
         Values.BOOL(true);
 
@@ -1276,10 +1281,10 @@ algorithm
 
     case ("parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_)
       algorithm
+        vals := {}; // make sure is initialized, see #9250
         str := System.pwd();
         try
           0 := System.cd(System.dirname(filename));
-          vals := {};
           (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
           if b then
             // clear the errors before!
@@ -1294,6 +1299,10 @@ algorithm
         0 := System.cd(str);
       then
         ValuesUtil.makeArray(vals);
+
+    case ("parseEncryptedPackage",_)
+      then
+        ValuesUtil.makeArray({});
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm

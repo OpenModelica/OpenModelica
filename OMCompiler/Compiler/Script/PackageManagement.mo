@@ -163,7 +163,7 @@ function providesExpectedVersion
   input SemanticVersion.Version wantedVersion;
   output Boolean matches;
 protected
-  list<JSON> providedVersions;
+  list<String> providedVersions;
   String str;
   SemanticVersion.Version thisVersion;
 algorithm
@@ -180,11 +180,10 @@ algorithm
       then fail();
     else ();
   end match;
-  JSON.ARRAY(providedVersions) := provides;
+  providedVersions := JSON.getStringList(provides);
   matches := false;
-  for v in JSON.STRING(version)::providedVersions loop
-    JSON.STRING(str) := v;
-    thisVersion := SemanticVersion.parse(str, nonsemverAsZeroZeroZero=true);
+  for v in version::providedVersions loop
+    thisVersion := SemanticVersion.parse(v, nonsemverAsZeroZeroZero=true);
     if SemanticVersion.compare(thisVersion,wantedVersion,comparePrerelease=SemanticVersion.isPrerelease(wantedVersion) and SemanticVersion.isPrerelease(wantedVersion)) == 0 then
       matches := true;
       return;
@@ -293,7 +292,8 @@ algorithm
   userLibraries := getUserLibraryPath();
   packageIndex := userLibraries + "index.json";
   obj := JSON.emptyObject();
-  if not listMember(userLibraries, mps) then
+  // User library path ends with forward slash so compare the path with and without leading forward slash
+  if not listMember(userLibraries, mps) and not listMember(Util.removeLastNChar(userLibraries, 1), mps) then
     if printError then
       Error.addMessage(Error.ERROR_PKG_INDEX_NOT_ON_PATH, {mp, userLibraries});
     end if;
@@ -317,9 +317,8 @@ function getAllProvidedVersionsForLibrary
   input Boolean printError;
   output list<String> result;
 protected
-  JSON obj, libobject, vers;
+  JSON obj, libobject, vers, provides;
   AvlSetString.Tree tree;
-  list<String> versions;
   list<JSON> values;
 algorithm
   result := {};
@@ -327,13 +326,14 @@ algorithm
   try
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), lib);
-    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+    vers := JSON.get(libobject, "versions");
 
-    for version in versions loop
+    for version in JSON.getKeys(vers) loop
       tree := AvlSetString.add(tree, version);
-      JSON.ARRAY(values=values) := JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({}));
-      for v in values loop
-        tree := AvlSetString.add(tree, JSON.getString(v));
+      provides := JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.emptyArray());
+
+      for i in 1:JSON.size(provides) loop
+        tree := AvlSetString.add(tree, JSON.getString(JSON.at(provides, i)));
       end for;
     end for;
 
@@ -350,16 +350,15 @@ function versionsThatProvideTheWanted
   output list<String> result;
 protected
   JSON obj, libobject, vers;
-  list<String> versions;
   SemanticVersion.Version wantedVersion;
 algorithm
   result := {};
   try
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), id);
-    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+    vers := JSON.get(libobject, "versions");
     wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
-    result := List.map(List.sort(list((version,SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({})), wantedVersion) in versions), compareVersionsAndSupportLevel), Util.tuple31);
+    result := List.map(List.sort(list((version,SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.emptyArray()), wantedVersion) in JSON.getKeys(vers)), compareVersionsAndSupportLevel), Util.tuple31);
   else
     return;
   end try;
@@ -373,22 +372,22 @@ function versionsThatConvertFromTheWanted
   output list<String> result;
 protected
   JSON obj, libobject, vers;
-  list<String> versions;
   SemanticVersion.Version wantedVersion, convertVersion;
-  list<JSON> convertFrom;
+  JSON convertFrom;
   String versionStr;
 algorithm
   result := {};
   try
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), id);
-    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+    vers := JSON.get(libobject, "versions");
     wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
 
-    for v in versions loop
-      JSON.ARRAY(values = convertFrom) := JSON.getOrDefault(JSON.get(vers, v), "convertFromVersion", JSON.ARRAY({}));
-      for c in convertFrom loop
-        JSON.STRING(versionStr) := c;
+    for v in JSON.getKeys(vers) loop
+      convertFrom := JSON.getOrDefault(JSON.get(vers, v), "convertFromVersion", JSON.emptyArray());
+
+      for i in 1:JSON.size(convertFrom) loop
+        JSON.STRING(versionStr) := JSON.at(convertFrom, i);
         convertVersion := SemanticVersion.parse(versionStr, nonsemverAsZeroZeroZero=true);
 
         if SemanticVersion.compare(wantedVersion, convertVersion) == 0 then
@@ -410,29 +409,21 @@ function versionsThatConvertToTheWanted
   output list<String> result;
 protected
   JSON obj, libobject, vers;
-  list<String> versions;
   SemanticVersion.Version wantedVersion, libVersion;
-  list<JSON> convertFrom;
   String versionStr;
 algorithm
   result := {};
   try
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), id);
-    vers as JSON.OBJECT(orderedKeys = versions) := JSON.get(libobject, "versions");
+    vers := JSON.get(libobject, "versions");
     wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
 
-    for v in versions loop
+    for v in JSON.getKeys(vers) loop
       libVersion := SemanticVersion.parse(v, nonsemverAsZeroZeroZero=true);
 
       if SemanticVersion.compare(wantedVersion, libVersion) == 0 then
-        JSON.ARRAY(values = convertFrom) := JSON.get(JSON.get(vers, v), "convertFromVersion");
-
-        for c in convertFrom loop
-          JSON.STRING(versionStr) := c;
-          result := versionStr :: result;
-        end for;
-
+        result := JSON.getStringList(JSON.get(JSON.get(vers, v), "convertFromVersion"));
         return;
       end if;
     end for;
@@ -555,7 +546,7 @@ function installPackageWork
 protected
   AvailableLibraries.Tree installedLibraries;
   VersionMap.Tree installedVersions;
-  list<String> candidates, usesPackages;
+  list<String> candidates;
   list<SemanticVersion.Version> candidatesSemver, exactMatches;
   String versionToInstall, usedVersion, path, sha, jsonPath, zip;
   SemanticVersion.Version semverToInstall, semver;
@@ -650,11 +641,11 @@ algorithm
     packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj);
   end if;
 
-  (usesObj as JSON.OBJECT(orderedKeys=usesPackages)) := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
+  usesObj := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
 
   packagesToInstall := packageToInstall :: packagesToInstall;
 
-  for usesPackage in usesPackages loop
+  for usesPackage in JSON.getKeys(usesObj) loop
     JSON.STRING(usedVersion) := JSON.get(usesObj, usesPackage);
     (success, packagesToInstall) := installPackageWork(usesPackage, usedVersion, exactMatch, true, packagesToInstall);
     if not success then

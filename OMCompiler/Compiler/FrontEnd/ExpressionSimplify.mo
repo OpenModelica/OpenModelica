@@ -68,6 +68,7 @@ protected import MetaModelica.Dangerous;
 protected import Static;
 protected import System;
 protected import Types;
+protected import UnorderedMap;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -3116,74 +3117,78 @@ protected function simplifyAdd
   Simplifies terms like 2a+4b+2a+a+b"
   input list<DAE.Exp> inExpLst;
   output list<DAE.Exp> outExpLst;
+protected
+  list<tuple<DAE.Exp, Real>> coeffs;
 algorithm
-  outExpLst := matchcontinue (inExpLst)
-    local
-      list<tuple<DAE.Exp, Real>> exp_const,exp_const_1;
-      list<DAE.Exp> expl_1,expl;
-
-    case (_)
-      equation
-        exp_const = List.map(inExpLst, simplifyBinaryAddCoeff2);
-        exp_const_1 = simplifyAddJoinTerms(exp_const);
-        expl_1 = simplifyAddMakeMul(exp_const_1);
-      then
-        expl_1;
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- ExpressionSimplify.simplifyAdd failed\n");
-      then
-        fail();
-  end matchcontinue;
+  try
+    coeffs := List.map(inExpLst, simplifyBinaryAddCoeff2);
+    coeffs := simplifyAddJoinTerms(coeffs);
+    outExpLst := simplifyAddMakeMul(coeffs);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("- ExpressionSimplify.simplifyAdd failed\n");
+    end if;
+    fail();
+  end try;
 end simplifyAdd;
 
 protected function simplifyAddJoinTerms
-"author: PA
-  Helper function to simplifyAdd.
-  Join all terms with the same expression.
-  i.e. 2a+4a gives an element (a,6) in the list."
+  "O(n)
+   author: PA
+   Helper function to simplifyAdd.
+   Join all terms with the same expression.
+   i.e. 2a+4a gives an element (a,6) in the list."
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 protected
-  list<tuple<DAE.Exp, Real>> tplExpRealLst = inTplExpRealLst;
-  tuple<DAE.Exp, Real> t;
-  DAE.Exp e;
-  Real coeff, coeff2;
+  function addCoeff
+    input Option<Real> oldCoeff;
+    input Real newCoeff;
+    output Real coeff;
+  algorithm
+    coeff := if isSome(oldCoeff) then Util.getOption(oldCoeff) + newCoeff else newCoeff;
+  end addCoeff;
 algorithm
+  outTplExpRealLst := match inTplExpRealLst
+    local
+      DAE.Exp exp1, exp2, exp3;
+      Real coeff1, coeff2, coeff3;
+      UnorderedMap<DAE.Exp, Real> coeff_map;
 
-  while not listEmpty(tplExpRealLst) loop
-    t :: tplExpRealLst := tplExpRealLst;
-    (e, coeff) := t;
-    (coeff2, tplExpRealLst) := simplifyAddJoinTermsFind(e, tplExpRealLst);
-    coeff := coeff + coeff2;
-    outTplExpRealLst := (if coeff2==0 then t else (e, coeff)) :: outTplExpRealLst;
-  end while;
-//outTplExpRealLst := listReverse(outTplExpRealLst);
+    // explicitly roll out the small cases since they happen a lot
+    case {} then {};
+    case {_} then inTplExpRealLst;
+
+    case {(exp1, coeff1), (exp2, coeff2)}
+    then if Expression.expEqual(exp1, exp2) then {(exp1, coeff1 + coeff2)} else inTplExpRealLst;
+
+    case {(exp1, coeff1), (exp2, coeff2), (exp3, coeff3)} algorithm
+      if Expression.expEqual(exp1, exp2) then
+        if Expression.expEqual(exp1, exp3) then
+          outTplExpRealLst := {(exp1, coeff1 + coeff2 + coeff3)};
+        else
+          outTplExpRealLst := {(exp1, coeff1 + coeff2), (exp3, coeff3)};
+        end if;
+      elseif Expression.expEqual(exp1, exp3) then
+        outTplExpRealLst := {(exp1, coeff1 + coeff3), (exp2, coeff2)};
+      elseif Expression.expEqual(exp2, exp3) then
+        outTplExpRealLst := {(exp1, coeff1), (exp2, coeff2 + coeff3)};
+      else
+        outTplExpRealLst := inTplExpRealLst;
+      end if;
+    then outTplExpRealLst;
+
+    // general case, this is O(n) but has a small overhead
+    else algorithm
+      coeff_map := UnorderedMap.new<Real>(Expression.hashExpMod, Expression.expEqual, listLength(inTplExpRealLst));
+      for tpl in inTplExpRealLst loop
+        (exp1, coeff1) := tpl;
+        // set the coefficient of exp1 to coeff1, add the previous coefficient if exp1 is already in the map
+        UnorderedMap.addUpdate(exp1, function addCoeff(newCoeff = coeff1), coeff_map);
+      end for;
+    then UnorderedMap.toList(coeff_map);
+  end match;
 end simplifyAddJoinTerms;
-
-protected function simplifyAddJoinTermsFind
-"author: PA
-  Helper function to simplifyAddJoinTerms, finds all occurences of Expression."
-  input DAE.Exp inExp;
-  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output Real outReal = 0.0;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
-protected
-  DAE.Exp e;
-  Real coeff;
-algorithm
-  for t in inTplExpRealLst loop
-    (e,coeff) := t;
-    if Expression.expEqual(inExp, e) then
-      outReal := outReal + coeff;
-    else
-      outTplExpRealLst := t::outTplExpRealLst;
-    end if;
-  end for;
-  outTplExpRealLst := Dangerous.listReverseInPlace(outTplExpRealLst);
-end simplifyAddJoinTermsFind;
 
 protected function simplifyAddMakeMul
 "author: PA
@@ -3191,34 +3196,19 @@ protected function simplifyAddMakeMul
   in the list, except for coefficient 1.0"
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
   output list<DAE.Exp> outExpLst = {};
-protected
-  tuple<DAE.Exp, Real> tplExpReal;
 algorithm
-  for tplExpReal in inTplExpRealLst loop
-    outExpLst := matchcontinue (tplExpReal)
+  outExpLst := list(match tplExpReal
     local
       DAE.Exp e;
       Real r;
-      Integer tmpInt;
-
-    case (e,r)
-      guard (r == 1.0)
-      then
-        (e :: outExpLst);
-
-    case (e,r)
-      equation
-        DAE.T_INTEGER() = Expression.typeof(e);
-        tmpInt = realInt(r);
-      then
-        (DAE.BINARY(DAE.ICONST(tmpInt),DAE.MUL(DAE.T_INTEGER_DEFAULT),e) :: outExpLst);
-
-    case (e,r)
-      then
-        (DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e) :: outExpLst);
-    end matchcontinue;
-
-  end for;
+    case (e, 1.0) then e;
+    case (e, -1.0) then Expression.negate(e);
+    case (e, r)
+    then match Expression.typeof(e)
+           case DAE.T_INTEGER() then DAE.BINARY(DAE.ICONST(realInt(r)), DAE.MUL(DAE.T_INTEGER_DEFAULT), e);
+                                else DAE.BINARY(DAE.RCONST(r), DAE.MUL(DAE.T_REAL_DEFAULT), e);
+         end match;
+  end match for tplExpReal in inTplExpRealLst);
 end simplifyAddMakeMul;
 
 protected function simplifyBinaryAddCoeff2
@@ -5987,9 +5977,9 @@ algorithm
   {y1, y2, y3} := v2;
 
   // res = {x[2]*y[3] - x[3]*y[2], x[3]*y[1] - x[1]*y[3], x[1]*y[2] - x[2]*y[1]}
-  res := {Expression.makeDiff(Expression.makeProduct(x2, y3), Expression.makeProduct(x3, y2)),
-          Expression.makeDiff(Expression.makeProduct(x3, y1), Expression.makeProduct(x1, y3)),
-          Expression.makeDiff(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
+  res := {Expression.expSub(Expression.makeProduct(x2, y3), Expression.makeProduct(x3, y2)),
+          Expression.expSub(Expression.makeProduct(x3, y1), Expression.makeProduct(x1, y3)),
+          Expression.expSub(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
 end simplifyCross;
 
 annotation(__OpenModelica_Interface="frontend");

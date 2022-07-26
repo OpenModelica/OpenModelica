@@ -1,0 +1,37 @@
+// name: GetModelInstanceAnnotation3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x annotation (HideResult = b);
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//
+//       },
+//       \"annotation\": {
+//         \"HideResult\": {
+//           \"$error\": \"[<interactive>:3:24-3:38:writable] Error: Variable b not found in scope M.\\n\",
+//           \"value\": \"b\"
+//         }
+//       }
+//     }
+//   ]
+// }"
+// endResult

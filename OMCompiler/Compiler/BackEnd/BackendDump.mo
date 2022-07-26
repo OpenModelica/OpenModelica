@@ -113,14 +113,6 @@ end printBackendDAE;
 
 public function printEqSystem "This function prints the BackendDAE.EqSystem representation to stdout."
   input BackendDAE.EqSystem inSyst;
-protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  Option<BackendDAE.AdjacencyMatrix> m;
-  Option<BackendDAE.AdjacencyMatrix> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   print("\n" + partitionKindString(inSyst.partitionKind) + "\n" + UNDERLINE + "\n");
   dumpVariables(inSyst.orderedVars, "Variables");

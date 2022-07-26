@@ -80,7 +80,8 @@ TestSolve18.mos \
 Ticket5129.mos \
 VariableFilter.mos \
 WhenStatement4.mos \
-localKnownVars.mos
+localKnownVars.mos \
+unitConvertTests.mos
 
 
 # test that currently fail. Move up when fixed. 

@@ -261,7 +261,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
 }
 
-static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTestsuite)
+static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int strict, int runningTestsuite)
 {
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
@@ -277,6 +277,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
   ModelicaParser_filename_C = strdup(ModelicaParser_filename_C);
   ModelicaParser_filename_OMC = mmc_mk_scon(ModelicaParser_filename_C);
   ModelicaParser_langStd = langStd;
+  ModelicaParser_strict = strict;
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
@@ -357,7 +358,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
   return res;
 }
 
-static void* parseString(const char* data, const char* interactiveFilename, int flags, int langStd, int runningTestsuite)
+static void* parseString(const char* data, const char* interactiveFilename, int flags, int langStd, int strict, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   time_t current_time = time(NULL);
@@ -390,14 +391,14 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
     fprintf(stderr, "Unable to open file %s\n", members.filename_C); fflush(stderr);
     return NULL;
   }
-  return parseStream(input, langStd, runningTestsuite);
+  return parseStream(input, langStd, strict, runningTestsuite);
 }
 
 #ifdef OMENCRYPTION
 #include "../../OMEncryption/Parser/parseEncryption.c"
 #endif
 
-static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite, const char* libraryPath, void* lveInstance)
+static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int strict, int runningTestsuite, const char* libraryPath, void* lveInstance)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   bool genBootstrappingSources = false;
@@ -428,7 +429,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
 
 #ifdef OMENCRYPTION
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
-    return parseEncryptedFile(fileName, langStd, runningTestsuite, libraryPath, lveInstance);
+    return parseEncryptedFile(fileName, langStd, strict, runningTestsuite, libraryPath, lveInstance);
   }
 #else
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
@@ -449,7 +450,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   omc_stat(members.filename_C, &st);
   members.timestamp = genBootstrappingSources ? mmc_mk_rcon((double)0.0) : mmc_mk_rcon((double)st.st_mtime);
   members.filename_C = genBootstrappingSources ? members.filename_C_testsuiteFriendly : members.filename_C;
-  if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
+  if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, strict, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;
 #if defined(ANTLR_C_VERSION_3_2)
@@ -462,7 +463,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   if ( input == NULL ) {
     return NULL;
   }
-  return parseStream(input, langStd, runningTestsuite);
+  return parseStream(input, langStd, strict, runningTestsuite);
 }
 
 int startLibraryVendorExecutable(const char* path, void** lveInstance)

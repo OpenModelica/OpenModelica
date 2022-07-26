@@ -86,7 +86,7 @@ namespace IAEX{
 
     int height();
     CellStyle *style();                // Changed 2005-10-28
-    virtual QString text(){return QString::null;}
+    virtual QString text(){return QString();}
 
     void closeChildCells();              // Added 2005-11-30 AF
 

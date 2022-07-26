@@ -281,6 +281,8 @@ case SIMCODE(__) then
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
+  fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
+  fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr);
   >>
   else
   <<
@@ -331,6 +333,8 @@ case SIMCODE(__) then
   <%setExternalFunction2(modelInfo)%>
   <%mapInputAndOutputs(simCode)%>
   <%mapRealOutputDerivatives(simCode, FMUType)%>
+  <%mapInitialUnknownsdependentCrefs(simCode)%>
+  <%mapInitialUnknownsIndependentCrefs(simCode)%>
   >>
   else
   <<
@@ -455,6 +459,7 @@ end setStartValues;
 template initializeFunction(list<SimEqSystem> allEquations)
   "Generates initialize function for c file."
 ::=
+  let &sub = buffer ""
   let &varDecls = buffer "" /*BUFD*/
   let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls)
@@ -467,7 +472,7 @@ template initializeFunction(list<SimEqSystem> allEquations)
 
     <%eqPart%>
     <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%escapeModelicaStringToCString(crefStrNoUnderscore(cref))%>", <%cref(cref)%>); }'
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%escapeModelicaStringToCString(crefStrNoUnderscore(cref))%>", <%cref(cref, &sub)%>); }'
     ;separator="\n"%>
 
   }
@@ -795,6 +800,10 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
+    // set start value attribute for all variable that has start value, till initialization mode
+    if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
+      comp->fmuData->modelData->realVarsData[vr].attribute.start = value;
+    }
     if (vr < <%ixFirstParam%>) {
       comp->fmuData->localData[0]->realVars[vr] = value;
       return fmi2OK;
@@ -873,6 +882,10 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
   let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
+    // set start value attribute for all variable that has start value, till initialization mode
+    if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
+      comp->fmuData->modelData->integerVarsData[vr].attribute.start = value;
+    }
     if (vr < <%ixFirstParam%>) {
       comp->fmuData->localData[0]->integerVars[vr] = value;
       return fmi2OK;
@@ -1192,6 +1205,44 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(outputVars=outputVars))) then
 end match
 end mapRealOutputDerivatives;
 
+template mapInitialUnknownsdependentCrefs(SimCode simCode)
+""
+::=
+match simCode
+case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIALUNKNOWNS(sortedUnknownCrefs=sortedUnknownCrefs)))) then
+    <<
+    /* function maps initialUnknowns UnknownVars ValueReferences to an internal partial derivatives index */
+    fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%sortedUnknownCrefs |> (index, cref) =>
+          'case <%lookupVR(cref, simCode)%>: return <%index%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapInitialUnknownsdependentCrefs;
+
+template mapInitialUnknownsIndependentCrefs(SimCode simCode)
+""
+::=
+match simCode
+case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIALUNKNOWNS(sortedknownCrefs=sortedknownCrefs)))) then
+    <<
+    /* function maps initialUnknowns knownVars ValueReferences to an internal partial derivatives index */
+    fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%sortedknownCrefs |> (index, cref) =>
+          'case <%lookupVR(cref, simCode)%>: return <%index%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapInitialUnknownsIndependentCrefs;
+
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "
 ::=
@@ -1259,7 +1310,7 @@ template settingsfile(SimCode simCode)
  >>
 end settingsfile;
 
-template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles, list <String> sundialsObjectFiles)
+template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles, list<String> cminpackObjectFiles, list <String> sundialsObjectFiles)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
   let common =
@@ -1273,8 +1324,11 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
     ifneq ($(NEED_DGESV),)
     DGESV_OBJS = <%dgesvObjectFiles ; separator = " "%>
     endif
+    ifneq ($(NEED_CMINPACK),)
+    CMINPACK_OBJS=<%cminpackObjectFiles ; separator = " "%>
+    endif
     ifneq ($(NEED_RUNTIME),)
-    RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS)
+    RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS) $(CMINPACK_OBJS)
     endif
     ifneq ($(NEED_SUNDIALS),)
     FMISUNDIALSFILES=<%sundialsObjectFiles ; separator = " "%>
@@ -1380,6 +1434,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       DLLEXT=@DLLEXT@
       NEED_RUNTIME=@NEED_RUNTIME@
       NEED_DGESV=@NEED_DGESV@
+      NEED_CMINPACK=@NEED_CMINPACK@
       NEED_SUNDIALS=@NEED_SUNDIALS@
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)

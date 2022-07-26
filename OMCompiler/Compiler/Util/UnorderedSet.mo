@@ -122,7 +122,7 @@ public
     end if;
   end add;
 
-  function addNoUpdCheck
+  function addNew
     "Adds a key to the set without checking if it already exists. Faster than
      add since it doesn't need to check if the key exists, but will lead to
      duplicate keys if it actually does exist in the set already. Might trigger
@@ -135,7 +135,7 @@ public
   algorithm
     hash := hashfn(key, arrayLength(Mutable.access(set.buckets)));
     addKey(key, hash, set);
-  end addNoUpdCheck;
+  end addNew;
 
   function addUnique
     "Adds a key to the set, but fails if the key already exists.
@@ -277,6 +277,22 @@ public
       end for;
     end for;
   end toArray;
+
+  function map
+    "Maps all keys in the set."
+    input UnorderedSet<T> set;
+    input MapFn fn;
+    partial function MapFn
+      input output T key;
+    end MapFn;
+  protected
+    array<list<T>> new_buckets = Mutable.access(set.buckets);
+  algorithm
+    for b in 1:arrayLength(new_buckets) loop
+      new_buckets[b] := list(fn(k) for k in new_buckets[b]);
+    end for;
+    Mutable.update(set.buckets, new_buckets);
+  end map;
 
   function fold<FT>
     "Folds over the keys in the set."

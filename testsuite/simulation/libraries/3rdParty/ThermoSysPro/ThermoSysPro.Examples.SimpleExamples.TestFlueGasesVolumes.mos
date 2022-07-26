@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes_* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.exe ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.cpp ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.makefile ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.libs ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.log ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.c ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 

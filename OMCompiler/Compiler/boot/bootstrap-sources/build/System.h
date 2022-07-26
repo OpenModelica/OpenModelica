@@ -285,13 +285,6 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_System_reopenStandardStream,2,0) {(void
 #define boxvar_System_reopenStandardStream MMC_REFSTRUCTLIT(boxvar_lit_System_reopenStandardStream)
 extern int SystemImpl__reopenStandardStream(int /*__stream*/, const char* /*_filename*/);
 DLLExport
-modelica_metatype omc_System_lpsolve55(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_metatype _intIndices, modelica_integer *out_info);
-DLLExport
-modelica_metatype boxptr_System_lpsolve55(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_metatype _intIndices, modelica_metatype *out_info);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_System_lpsolve55,2,0) {(void*) boxptr_System_lpsolve55,0}};
-#define boxvar_System_lpsolve55 MMC_REFSTRUCTLIT(boxvar_lit_System_lpsolve55)
-extern int SystemImpl__lpsolve55(modelica_metatype /*_A*/, modelica_metatype /*_B*/, modelica_metatype /*_intIndices*/, modelica_metatype* /*_X*/);
-DLLExport
 modelica_metatype omc_System_dgesv(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_integer *out_info);
 DLLExport
 modelica_metatype boxptr_System_dgesv(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_metatype *out_info);

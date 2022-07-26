@@ -377,11 +377,11 @@ void printParameters(DATA *data, int stream)
  * Use to print e.g. sparse Jacobian matrix.
  * Only prints if stream is active and sparse pattern is non NULL and of size > 0.
  *
- * @param [in]  sparsePattern   Matrix to print.
- * @param [in]  sizeRows        Number of rows of matrix.
- * @param [in]  sizeCols        Number of columns of matrix.
- * @param [in]  stream          Steam to print to.
- * @param [in]  name            Name of matrix.
+ * @param sparsePattern   Matrix to print.
+ * @param sizeRows        Number of rows of matrix.
+ * @param sizeCols        Number of columns of matrix.
+ * @param stream          Steam to print to.
+ * @param name            Name of matrix.
  */
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char* name)
 {
@@ -397,14 +397,14 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   /* Catch empty sparsePattern */
   if (sparsePattern == NULL || sizeRows <= 0 || sizeCols <= 0)
   {
-    infoStreamPrint(stream, 0, "No sparse strucutre available for \"%s\".", name);
+    infoStreamPrint(stream, 0, "No sparse structure available for \"%s\".", name);
     return;
   }
 
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
   infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
-  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNoneZeros);
+  infoStreamPrint(stream, 0, "%u non-zero elements", sparsePattern->numberOfNonZeros);
 
   infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;
@@ -430,6 +430,61 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   messageClose(stream);
   messageClose(stream);
 }
+
+/**
+ * @brief Check if sparsity pattern can describe regular matrix.
+ *
+ * @param sparsePattern       Sparsity pattern.
+ * @param nlsSize             size of non-linear loop / size of square matrix.
+ * @param stream              Stream for logging.
+ * @return modelica_boolean   False if sparsity pattern can't describe regular matrix, true otherwise.
+ */
+modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream)
+{
+  int i;
+  char *colCheck;
+
+  if (sparsePattern == NULL || nlsSize <= 0)
+  {
+    warningStreamPrint(stream, 0, "No sparse structure available.");
+    return FALSE;
+  }
+
+  if (sparsePattern->numberOfNonZeros < nlsSize) {
+    warningStreamPrint(stream, 0, "Sparsity pattern of %dx%d has ony %d non-zero elements.", nlsSize,nlsSize, sparsePattern->numberOfNonZeros);
+    return FALSE;
+  }
+
+  /* check rows (or cols?) */
+  for(i=1; i < nlsSize; i++)
+  {
+    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
+      return FALSE;
+    }
+  }
+
+  /* check cols (or rows?) */
+  colCheck = (char*) calloc(nlsSize, sizeof(char));
+
+  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  {
+    colCheck[sparsePattern->index[i]] = TRUE;
+  }
+
+  for(i=0; i < nlsSize; i++)
+  {
+    if(!colCheck[i]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern column %d has no non-zero elements.", i);
+      free(colCheck);
+      return FALSE;
+    }
+  }
+
+  free(colCheck);
+  return TRUE;
+}
+
 
 #ifdef USE_DEBUG_OUTPUT
 /*! \fn printRelationsDebug
@@ -571,6 +626,44 @@ void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATI
 #endif
   }
 
+
+  TRACE_POP
+}
+
+/*
+* print information about ring buffer simulation data
+*/
+void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
+{
+  TRACE_PUSH
+
+  for (int i = 0; i < ringBufferLength(rb); i++)
+  {
+    messageClose(LOG_STDOUT);
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
+    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+    for (int j = 0; j < data->modelData->nVariablesReal; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
+    for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
+    for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+    }
+    messageClose(LOG_STDOUT);
+  }
 
   TRACE_POP
 }
@@ -926,7 +1019,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   }
   data->localData = (SIMULATION_DATA**) omc_alloc_interface.malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
-  rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
+  lookupRingBuffer(data->simulationData, (void**) data->localData);
 
   /* create modelData var arrays */
   data->modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesReal * sizeof(STATIC_REAL_DATA));
@@ -981,11 +1074,13 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->relations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->relationsPre = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->storedRelations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
-  data->simulationInfo->zeroCrossingIndex = (long*) malloc(data->modelData->nZeroCrossings*sizeof(long));
   data->simulationInfo->mathEventsValuePre = (modelica_real*) malloc(data->modelData->nMathEvents*sizeof(modelica_real));
+  data->simulationInfo->zeroCrossingIndex = (long*) malloc(data->modelData->nZeroCrossings*sizeof(long));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
   for(i=0; i<data->modelData->nZeroCrossings; i++)
     data->simulationInfo->zeroCrossingIndex[i] = (long)i;
+  data->simulationInfo->states_left = (modelica_real*) malloc(data->modelData->nStates * sizeof(modelica_real));
+  data->simulationInfo->states_right = (modelica_real*) malloc(data->modelData->nStates * sizeof(modelica_real));
 
   /* buffer for old values */
   data->simulationInfo->realVarsOld = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
@@ -1205,8 +1300,10 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->relations);
   free(data->simulationInfo->relationsPre);
   free(data->simulationInfo->storedRelations);
-  free(data->simulationInfo->zeroCrossingIndex);
   free(data->simulationInfo->mathEventsValuePre);
+  free(data->simulationInfo->zeroCrossingIndex);
+  free(data->simulationInfo->states_left);
+  free(data->simulationInfo->states_right);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
@@ -1482,8 +1579,8 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
   value1 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index];
   value2 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index+1];
 
-  assertStreamPrint(threadData, value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
-  return ldiv(value1, value2).quot;
+  assertStreamPrint(threadData, value2 != 0, "event_div_integer failed at time %f because x2 is zero!", data->localData[0]->timeValue);
+  return modelica_div_integer(value1, value2).quot;
 }
 
 /*! \fn _event_div_real
@@ -1519,58 +1616,3 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
 }
 
 int measure_time_flag=0;
-
-const char *context_string[CONTEXT_MAX] = {
- "context UNKNOWN",
- "context ODE evaluation",
- "context algebraic evaluation",
- "context event search",
- "context jacobian evaluation",
- "context symbolica jacobian evaluation"
-};
-
-/*! \fn setContext
- *
- *  \param [ref] [data]
- *  \param [in]  [currentTime]
- *  \param [in]  [currentContext]
- *
- * Set current context in simulation info object
- */
-void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext){
-  data->simulationInfo->currentContextOld = data->simulationInfo->currentContext;
-  data->simulationInfo->currentContext = currentContext;
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[currentContext], *currentTime);
-  if (currentContext == CONTEXT_JACOBIAN ||
-      currentContext == CONTEXT_SYM_JACOBIAN)
-  {
-    data->simulationInfo->currentJacobianEval = 0;
-  }
-}
-
-/*! \fn increaseJacContext
- *
- *  \param [ref] [data]
- *
- * Increase Jacobian column context in simulation info object
- */
-void increaseJacContext(DATA* data){
-  int currentContext = data->simulationInfo->currentContext;
-  if (currentContext == CONTEXT_JACOBIAN ||
-      currentContext == CONTEXT_SYM_JACOBIAN)
-  {
-    data->simulationInfo->currentJacobianEval++;
-    infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[currentContext], data->simulationInfo->currentJacobianEval);
-  }
-}
-
-/*! \fn unsetContext
- *
- *  \param [ref] [data]
- *
- * Restores previous context in simulation info object
- */
-void unsetContext(DATA* data){
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", context_string[data->simulationInfo->currentContext]);
-  data->simulationInfo->currentContext = data->simulationInfo->currentContextOld;
-}

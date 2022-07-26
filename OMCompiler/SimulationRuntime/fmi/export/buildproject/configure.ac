@@ -7,6 +7,7 @@ AC_SUBST(AR)
 AC_SUBST(DLLEXT)
 AC_SUBST(FMIPLATFORM)
 AC_SUBST(NEED_DGESV)
+AC_SUBST(NEED_CMINPACK)
 AC_SUBST(NEED_SUNDIALS)
 AC_SUBST(NEED_RUNTIME)
 AC_SUBST(LIBTYPE_STATIC)
@@ -244,6 +245,10 @@ AC_ARG_WITH(dynamic-om-runtime,  [  --with-dynamic-om-runtime    (uses the OMC r
 if test "$OPENMODELICADYNAMIC" = "no"; then
   CPPFLAGS="$CPPFLAGS -DCMINPACK_NO_DLL=1"
   NEED_RUNTIME=1
+fi
+
+if test -f "external_solvers/hybrj_.c"; then
+  NEED_CMINPACK=1
 fi
 
 if echo "$host_os" | grep -q darwin; then

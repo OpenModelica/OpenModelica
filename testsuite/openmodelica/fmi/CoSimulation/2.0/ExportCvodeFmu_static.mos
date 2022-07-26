@@ -55,26 +55,8 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
 // info:    Result file: Pendulum_static_res.mat (bufferSize=1)
-// info:    Variable model.root.fmu.body.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.body.sphere.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.rev.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.gravityArrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.gravityArrowLine.shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[3].shapeType will not be stored in the result file, because the signal type is not supported
 // "
 // ""
 // 0.0
@@ -83,6 +65,6 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // ""
 // -2.591643977798211
 // ""
-// 3.178793199957203
+// 3.178793199957211
 // ""
 // endResult

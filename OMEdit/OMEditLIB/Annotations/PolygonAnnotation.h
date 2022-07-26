@@ -44,13 +44,16 @@ class PolygonAnnotation : public ShapeAnnotation
 public:
   // Used for icon/diagram shape
   PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
+  PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent);
   // Used for icon/diagram inherited shape
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default input/output component
   PolygonAnnotation(Element *pParent);
   void parseShapeAnnotation(QString annotation) override;
+  void parseShapeAnnotation();
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -64,6 +67,8 @@ public:
   void clearPoints() override;
   void updateEndPoint(QPointF point);
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+private:
+  ModelInstance::Polygon *mpPolygon;
 public slots:
   void duplicate() override;
 };

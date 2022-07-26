@@ -768,6 +768,10 @@ algorithm
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attr,new_attr;
 
+    // Don't replace with function calls
+    case (BackendDAE.VAR(bindExp=SOME(DAE.CALL())),_)
+      then(inVar,inTpl);
+
     case (v as BackendDAE.VAR(varName=cr,bindExp=SOME(e),values=attr),(repl,numrepl))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
@@ -3477,11 +3481,12 @@ algorithm
       algorithm
         repl := BackendVarTransform.emptyReplacements();
         repl := BackendVariable.traverseBackendDAEVars(globalKnownVars, removeConstantsFinder, repl);
+
+        (globalKnownVars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceFinalVarTraverser, (repl, 0));
+
         if Flags.isSet(Flags.DUMP_CONST_REPL) then
           BackendVarTransform.dumpReplacements(repl);
         end if;
-
-        (globalKnownVars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceFinalVarTraverser, (repl, 0));
 
         lsteqns := BackendEquation.equationList(shared.initialEqs);
         (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
@@ -3925,7 +3930,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       equation
         str = ComponentReference.crefStr(cr);
-        str = stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
+        str = stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Adding 'Real d", str, " = der(", str, ");' *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
     // case for arrays

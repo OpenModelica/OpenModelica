@@ -1,43 +1,36 @@
 // name:     BooleanNetwork1
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
 // status:   correct
-// teardown_command: rm -rf BooleanNetwork1.fmu BooleanNetwork1.log BooleanNetwork1_init.xml BooleanNetwork1_me_FMU.mo BooleanNetwork1_me_FMU_init.xml binaries/ modelDescription.xml resources/ sources/
-// cflags: -d=-newInst
-// Boolean variables, Boolean input variable, no continuous-time states, time events
+// teardown_command: rm -rf Modelica.Blocks.Examples.BooleanNetwork1.fmu Modelica_Blocks_Examples_BooleanNetwork1.log Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo binaries/ modelDescription.xml resources/ sources/
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadFile("BooleanNetwork1.mo"); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=10, numberOfIntervals=150); getErrorString();
 
-simulate(BooleanNetwork1, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+val(triggeredAdd.y, 2.2);
+val(booleanPulse2.y, 10);
+val(set1.y, 10);
+val(onDelay.y, 10);
+val(rSFlipFlop.Q, 10);
+val(rSFlipFlop.QI, 10);
 
-val(y1, 2.2);
-val(y2, 10);
-val(y3, 10);
-val(y4, 10);
-val(Q, 10);
-val(QI, 10);
+translateModelFMU(Modelica.Blocks.Examples.BooleanNetwork1, version="2.0"); getErrorString();
+importFMU("Modelica.Blocks.Examples.BooleanNetwork1.fmu"); getErrorString();
+loadFile("Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"); getErrorString();
+simulate(Modelica_Blocks_Examples_BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150); getErrorString();
 
-translateModelFMU(BooleanNetwork1, version="2.0"); getErrorString();
-
-importFMU("BooleanNetwork1.fmu"); getErrorString();
-loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();
-simulate(BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
-
-val(y1, 2.2);
-val(y2, 10);
-val(y3, 10);
-val(y4, 10);
-val(Q, 10);
-val(QI, 10);
+val(triggeredAdd_y, 2.2);
+val(booleanPulse2_y, 10);
+val(set1_y, 10);
+val(onDelay_y, 10);
+val(rSFlipFlop_Q, 10);
+val(rSFlipFlop_QI, 10);
 
 // Result:
 // true
 // ""
-// true
-// ""
 // record SimulationResult
-//     resultFile = "BooleanNetwork1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     resultFile = "Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -49,15 +42,15 @@ val(QI, 10);
 // 0.0
 // 1.0
 // 0.0
-// "BooleanNetwork1.fmu"
+// "Modelica.Blocks.Examples.BooleanNetwork1.fmu"
 // ""
-// "BooleanNetwork1_me_FMU.mo"
+// "Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "BooleanNetwork1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     resultFile = "Modelica_Blocks_Examples_BooleanNetwork1_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Blocks_Examples_BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

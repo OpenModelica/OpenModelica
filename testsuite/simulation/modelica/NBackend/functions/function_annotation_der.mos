@@ -1,0 +1,112 @@
+// name: function_annotation_der
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model function_annotation_der
+  Real a;
+  Real b(start=0.0, fixed=true);
+  Real c(start=0.0, fixed=true);
+  Real d(start=0.0, fixed=true);
+  discrete Real k(start=1.0, fixed=true);
+  Integer n;
+equation
+  n = 0;
+  when a > 0 then
+    k = pre(k) + 1;
+  end when;
+  a = sin(b);
+  der(b) = f(a, n, k, k);
+  der(c) = f(a, n, k, b);
+  der(d) = f(a, n, b, b);
+end function_annotation_der;
+
+function f
+  input Real x;
+  input Integer n;
+  input Real k;
+  input Real m;
+  output Real y;
+algorithm
+  y := k*x^2 + m;
+  annotation(derivative(zeroDerivative=k)=df, Inline=false);
+end f;
+
+function df
+  input Real x;
+  input Integer n;
+  input Real k;
+  input Real m;
+  input Real der_x;
+  input Real der_m;
+  output Real der_y;
+protected
+  Real y;
+algorithm
+  der_y := k*2*x*der_x + der_m;
+  annotation(Inline = false);
+end df;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=debugDifferentiation"); getErrorString();
+simulate(function_annotation_der); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) a = sin(b) ($RES_SIM_3)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_SIM_3)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.c = f(a, 0, k, b) ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.c = df(a, 0, k, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b) ($RES_SIM_1)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.b = f(a, 0, k, k) ($RES_SIM_2)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.b = df(a, 0, k, k, $pDER_ODE_JAC.a, 0.0) ($RES_SIM_2)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.d = f(a, 0, b, b) ($RES_SIM_0)
+//
+// [BEFORE] function 'f'
+//   input Real 'x';
+//   input Integer 'n';
+//   input Real 'k';
+//   input Real 'm';
+//   output Real 'y';
+// algorithm
+//   'y' := 'k' * 'x' ^ 2.0 + 'm';
+//   annotation(derivative(order = 1, zeroDerivative = 'k') = 'df', derivative(order = 1) = '$fDER1.f', Inline = false);
+// end 'f'
+//
+// [AFTER ] function '$fDER1.f'
+//   input Real 'x';
+//   input Integer 'n';
+//   input Real 'k';
+//   input Real 'm';
+//   input Real '$fDER_x';
+//   input Real '$fDER_k';
+//   input Real '$fDER_m';
+//   output Real '$fDER_y';
+// protected
+//   Real 'y';
+// algorithm
+//   '$fDER_y' := k * (2.0 * x * $fDER_x) + $fDER_k * x ^ 2.0 + $fDER_m;
+//   'y' := 'k' * 'x' ^ 2.0 + 'm';
+//   annotation(Inline = false);
+// end '$fDER1.f'
+//
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.d = $fDER1.f(a, 0, b, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b, $SEED_ODE_JAC.b) ($RES_SIM_0)
+//
+// record SimulationResult
+//     resultFile = "function_annotation_der_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'function_annotation_der', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

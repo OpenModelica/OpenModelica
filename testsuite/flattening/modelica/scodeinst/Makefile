@@ -33,6 +33,8 @@ AssertInvalid3.mo \
 AssertInvalid4.mo \
 AssignConstant1.mo \
 AssignInput1.mo \
+AssignModel1.mo \
+AssignPackage1.mo \
 AssignParameter1.mo \
 Binding1.mo \
 BindingArray1.mo \
@@ -110,6 +112,9 @@ CevalBinding2.mo \
 CevalBinding3.mo \
 CevalBinding4.mo \
 CevalBinding5.mo \
+CevalBinding6.mo \
+CevalBinding7.mo \
+CevalBinding8.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -127,6 +132,7 @@ CevalFuncArray1.mo \
 CevalFuncArray2.mo \
 CevalFuncArray3.mo \
 CevalFuncArray4.mo \
+CevalFuncArray5.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -165,6 +171,8 @@ CevalMul1.mo \
 CevalNoEvent1.mo \
 CevalOnes1.mo \
 CevalProduct1.mo \
+CevalReduction1.mo \
+CevalReduction2.mo \
 CevalRecord1.mo \
 CevalRecord2.mo \
 CevalRecord3.mo \
@@ -325,6 +333,7 @@ DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
 DimSize4.mo \
+DimSize5.mo \
 DimUnknown1.mo \
 DimUnknown2.mo \
 DimUnknown3.mo \
@@ -398,6 +407,7 @@ EqualityConstraint1.mo \
 EquationInvalidType1.mo \
 EvaluateAllParams.mo \
 EvaluateAllParams2.mo \
+EvaluateFalse1.mo \
 ExpandableConnector1.mo \
 ExpandableConnector2.mo \
 ExpandableConnector3.mo \
@@ -499,6 +509,7 @@ FuncBuiltinCross.mo \
 FuncBuiltinDelay.mo \
 FuncBuiltinDer.mo \
 FuncBuiltinDerInvalid1.mo \
+FuncBuiltinDerInvalid2.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
@@ -519,12 +530,15 @@ FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
 FuncBuiltinMax.mo \
+FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
+FuncBuiltinMin2.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
 FuncBuiltinNoClock1.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
+FuncBuiltinPotentialRoot1.mo \
 FuncBuiltinPre.mo \
 FuncBuiltinPrevious1.mo \
 FuncBuiltinPrevious2.mo \
@@ -639,6 +653,7 @@ FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
+FunctionRecordArg5.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -721,6 +736,7 @@ InnerOuter6.mo \
 InnerOuter7.mo \
 InnerOuter8.mo \
 InnerOuter9.mo \
+InnerOuter10.mo \
 InnerOuterClass1.mo \
 InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \
@@ -770,6 +786,20 @@ LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MaxInvalidArg1.mo \
+MaxInvalidArg2.mo \
+MaxInvalidArg3.mo \
+MergeComponents1.mo \
+MergeComponents2.mo \
+MergeComponents3.mo \
+MergeComponents4.mo \
+MergeComponents5.mo \
+MergeComponents6.mo \
+MergeComponents7.mo \
+MergeComponents8.mo \
+MinInvalidArg1.mo \
+MinInvalidArg2.mo \
+MinInvalidArg3.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \
@@ -787,6 +817,7 @@ ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
 ModClass6.mo \
+ModelBinding1.mo \
 ModScope1.mo \
 MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
@@ -802,6 +833,7 @@ OperationAddEW1.mo \
 OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
+OperationLogicalBinary2.mo \
 OperationLogicalUnary1.mo \
 OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
@@ -839,10 +871,12 @@ OperatorOverloadConstructorInvalidOutput2.mo \
 OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 OperatorOverloadSum1.mo \
+PackageBinding1.mo \
 PackageConstant1.mo \
 PackageConstant3.mo \
 PackageConstant4.mo \
 ParameterBug.mos \
+ParameterDer.mo \
 PartialApplication1.mo \
 PartialApplication2.mo \
 PartialApplicationInvalidArg1.mo \
@@ -852,6 +886,7 @@ PartialFunction1.mo \
 PartialFunction2.mo \
 PartialLookup1.mo \
 PartialLookup2.mo \
+PartialLookup3.mo \
 PartialType1.mo \
 PartialType2.mo \
 PartialType3.mo \
@@ -860,6 +895,13 @@ Prefix2.mo \
 Prefix3.mo \
 PrintRecordTypes1.mo \
 PropagateExtends.mo \
+ProtectedMod1.mo \
+ProtectedMod2.mo \
+ProtectedMod3.mo \
+ProtectedMod5.mo \
+ProtectedMod6.mo \
+ProtectedMod7.mo \
+ProtectedMod8.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
@@ -879,6 +921,7 @@ RecordBinding8.mo \
 RecordBinding9.mo \
 RecordBinding10.mo \
 RecordBinding11.mo \
+RecordBinding12.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
@@ -888,6 +931,7 @@ RecursiveConstants1.mo \
 RecursiveExtends1.mo \
 RecursiveExtends2.mo \
 RecursiveExtends3.mo \
+RecursiveExtends4.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
@@ -895,6 +939,8 @@ RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
+RedeclareConnectorType1.mo \
+RedeclareConnectorType2.mo \
 RedeclareDim1.mo \
 RedeclareDim2.mo \
 RedeclareElementClass1.mo \
@@ -925,6 +971,8 @@ RedeclareMod6.mo \
 RedeclareMod7.mo \
 RedeclareMod8.mo \
 RedeclareMod9.mo \
+RedeclareMod10.mo \
+RedeclareMod11.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
@@ -1075,6 +1123,7 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 FinalParameter1.mo \
@@ -1084,7 +1133,6 @@ IfExpression6.mo \
 IfExpression9.mo \
 RedeclareConstant1.mo \
 Connect3.mo \
-ProtectedMod1.mo \
 dim2.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \

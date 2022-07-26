@@ -116,11 +116,39 @@ public
     end match;
   end fromExp;
 
+  function fromRange
+    input Expression range "needs to be RANGE()";
+    output Dimension dim;
+  protected
+    Integer start, step, stop;
+  algorithm
+    (start, step, stop) := match range
+      case Expression.RANGE(start = Expression.INTEGER(start),
+                            step  = NONE(),
+                            stop  = Expression.INTEGER(stop))
+      then (start, 1, stop);
+      case Expression.RANGE(start = Expression.INTEGER(start),
+                            step  = SOME(Expression.INTEGER(step)),
+                            stop  = Expression.INTEGER(stop))
+      then (start, step, stop);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
+      then fail();
+    end match;
+
+    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
+  end fromRange;
+
   function fromInteger
     input Integer n;
     input Variability var = Variability.CONSTANT;
     output Dimension dim = INTEGER(n, var);
   end fromInteger;
+
+  function fromExpArray
+    input array<Expression> expl;
+    output Dimension dim = INTEGER(arrayLength(expl), Variability.CONSTANT);
+  end fromExpArray;
 
   function fromExpList
     input list<Expression> expl;
@@ -172,6 +200,16 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
     end match;
   end size;
+
+  function sizesProduct
+    "Returns the product of the given dimension sizes."
+    input list<Dimension> dims;
+    output Integer outSize = 1;
+  algorithm
+    for dim in dims loop
+      outSize := outSize * Dimension.size(dim);
+    end for;
+  end sizesProduct;
 
   function isEqual
     input Dimension dim1;

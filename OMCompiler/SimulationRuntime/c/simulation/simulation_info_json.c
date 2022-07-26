@@ -40,6 +40,12 @@
 #include "solver/model_help.h"
 #include "../util/omc_file.h"
 
+/**
+ * @brief Skip whitespace.
+ *
+ * @param str           Points to some locating inside JSON.
+ * @return const char*  Points to next non-whitespace character.
+ */
 static inline const char* skipSpace(const char* str)
 {
   do {
@@ -55,40 +61,61 @@ static inline const char* skipSpace(const char* str)
   } while (1);
 }
 
-static const char* skipValue(const char* str);
+static const char* skipValue(const char* str, const char* fileName);
 
-static inline const char* skipObjectRest(const char* str, int first)
+/**
+ * @brief Skip rest of JSON object.
+ *
+ * Move forward until next '}' is reached.
+ *
+ * @param str           Points to some locating inside JSON object.
+ * @param first         1 if first location in JSON object, 0 otherwise.
+ * @param fileName      Name of JSON to parse. Used for error messages.
+ * @return const char*  Points to location directly after JSON obbject.
+ */
+static inline const char* skipObjectRest(const char* str, int first, const char* fileName)
 {
   str=skipSpace(str);
   while (*str != '}') {
     if (!first) {
       if (*str != ',') {
-        fprintf(stderr, "JSON object expected ',' or '}', got: %.20s\n", str);
-        abort();
+        errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        errorStreamPrint(LOG_STDOUT, 0, "JSON object expected ',' or '}', got: %.20s\n", str);
+        messageClose(LOG_STDOUT);
+        omc_throw_function(NULL);
       }
       str++;
     } else {
       first = 0;
     }
-    str = skipValue(str);
+    str = skipValue(str, fileName);
     str = skipSpace(str);
     if (*str++ != ':') {
-      fprintf(stderr, "JSON object expected ':', got: %.20s\n", str);
-      abort();
+      errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+      errorStreamPrint(LOG_STDOUT, 0, "JSON object expected ':', got: %.20s\n", str);
+      messageClose(LOG_STDOUT);
+      omc_throw_function(NULL);
     }
-    str = skipValue(str);
+    str = skipValue(str, fileName);
     str = skipSpace(str);
   }
   return str+1;
 }
 
-static const char* skipValue(const char* str)
+/**
+ * @brief Skip JSON value.
+ *
+ * @param str           Points to beginning of JSON value.
+ * @param fileName      Name of JSON to parse. Used for error messages.
+ * @return const char*  Points to location directly after JSON value.
+ */
+static const char* skipValue(const char* str, const char* fileName)
 {
   str = skipSpace(str);
   switch (*str) {
   case '{':
   {
-    str = skipObjectRest(str+1,1);
+    str = skipObjectRest(str+1, 1, fileName);
     return str;
   }
   case '[':
@@ -97,11 +124,13 @@ static const char* skipValue(const char* str)
     str = skipSpace(str+1);
     while (*str != ']') {
       if (!first && *str++ != ',') {
-        fprintf(stderr, "JSON array expected ',' or ']', got: %.20s\n", str);
-        abort();
+        errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        errorStreamPrint(LOG_STDOUT, 0, "JSON array expected ',' or ']', got: %.20s\n", str);
+        messageClose(LOG_STDOUT);
+        omc_throw_function(NULL);
       }
       first = 0;
-      str = skipValue(str);
+      str = skipValue(str, fileName);
       str = skipSpace(str);
     }
     return str+1;
@@ -110,10 +139,17 @@ static const char* skipValue(const char* str)
     str++;
     do {
       switch (*str) {
-      case '\0': fprintf(stderr, "Found end of file, expected end of string"); abort();
+      case '\0':
+        errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+        errorStreamPrint(LOG_STDOUT, 0, "Found end of file, expected end of string");
+        messageClose(LOG_STDOUT);
+        omc_throw_function(NULL);
       case '\\':
         if (*(str+1) == '\0') {
-          fprintf(stderr, "Found end of file, expected end of string"); abort();
+          errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+          errorStreamPrint(LOG_STDOUT, 0, "Found end of file, expected end of string");
+          messageClose(LOG_STDOUT);
+          omc_throw_function(NULL);
         }
         str+=2;
         break;
@@ -123,7 +159,10 @@ static const char* skipValue(const char* str)
         str++;
       }
     } while (1);
-    abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0, "Reached state that should be impossible to reach.");
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   case '-':
   case '0':
   case '1':
@@ -139,57 +178,102 @@ static const char* skipValue(const char* str)
     char *endptr = NULL;
     om_strtod(str,&endptr);
     if (str == endptr) {
-      fprintf(stderr, "Not a number, got %.20s\n", str);
-       abort();
+      errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+      errorStreamPrint(LOG_STDOUT, 0, "Not a number, got %.20s\n", str);
+      messageClose(LOG_STDOUT);
+      omc_throw_function(NULL);
     }
     return endptr;
   }
   default:
-    fprintf(stderr, "JSON value expected, got: %.20s\n", str);
-    abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0, "JSON value expected, got: %.20s\n", str);
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   }
 }
 
-/* Does not work for escaped strings. Returns the rest of the string to parse. */
-static inline const char* assertStringValue(const char *str, const char *value)
+/**
+ * @brief Assert str points to given string.
+ *
+ * Does not work for escaped strings. Returns the rest of the string to parse.
+ *
+ * @param str           Points to beginning of string to assert.
+ * @param value         Expected value of string.
+ * @param fileName      Name of JSON to parse. Used for error messages.
+ * @return const char*  Points to location directly after string.
+ */
+static inline const char* assertStringValue(const char *str, const char *value, const char* fileName)
 {
   int len = strlen(value);
   str = skipSpace(str);
   if ('\"' != *str || strncmp(str+1,value,len) || str[len+1] != '\"') {
-    fprintf(stderr, "JSON string value %s expected, got: %.20s\n", value, str);
-    abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0, "JSON string value %s expected, got: %.20s\n", value, str);
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   }
   return str + len + 2;
 }
 
-static inline const char* assertChar(const char *str, char c)
+/**
+ * @brief Assert str points to specific character.
+ *
+ * @param str             Pointer to character to assert.
+ * @param c               Character str should be equal to.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next locatin after character.
+ */
+static inline const char* assertChar(const char *str, char c, const char *fileName)
 {
   str = skipSpace(str);
   if (c != *str) {
-    fprintf(stderr, "Expected '%c', got: %.20s\n", c, str);
-     abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0,"Expected '%c', got: %.20s\n", c, str);
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   }
   return str + 1;
 }
 
-static inline const char* assertNumber(const char *str, double expected)
+/**
+ * @brief Assert str point to specific number.
+ *
+ * @param str             Pointer to number to assert.
+ * @param expected        Expected number.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next locatin after number.
+ */
+static inline const char* assertNumber(const char *str, double expected, const char *fileName)
 {
   char *endptr = NULL;
   double d;
   str = skipSpace(str);
   d = om_strtod(str, &endptr);
   if (str == endptr) {
-    fprintf(stderr, "Expected number, got: %.20s\n", str);
-    abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0, "Expected number, got: %.20s\n", str);
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   }
   if (d != expected) {
-    fprintf(stderr, "Got number %f, expected: %f\n", d, expected);
-    abort();
+    errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", fileName);
+    errorStreamPrint(LOG_STDOUT, 0, "Got number %f, expected: %f\n", d, expected);
+    messageClose(LOG_STDOUT);
+    omc_throw_function(NULL);
   }
   return endptr;
 }
 
-static inline const char *skipFieldIfExist(const char *str,const char *name)
+/**
+ * @brief Skipp JSON object if it exists.
+ *
+ * @param str             Pointer to object/filed to skip.
+ * @param name            Name of object to skip.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next locatin after object.
+ */
+static inline const char *skipFieldIfExist(const char *str, const char *name, const char* fileName)
 {
   const char *s = str;
   int len = strlen(name);
@@ -206,24 +290,33 @@ static inline const char *skipFieldIfExist(const char *str,const char *name)
   }
   s += 2;
   s = skipSpace(s);
-  s = skipValue(s);
+  s = skipValue(s, fileName);
   s = skipSpace(s);
   s = skipSpace(s);
   return s;
 }
 
-static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
+/**
+ * @brief Parse single equation info from JSON.
+ *
+ * @param str             Points to beginning of equation object.
+ * @param xml             Equation info to fill
+ * @param i               Index of equation inside "equations" array.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next locatin after character.
+ */
+static const char* readEquation(const char *str, EQUATION_INFO *xml, int i, const char* fileName)
 {
   int n=0,j;
   const char *str2;
-  str=assertChar(str,'{');
-  str=assertStringValue(str,"eqIndex");
-  str=assertChar(str,':');
-  str=assertNumber(str,i);
+  str=assertChar(str,'{', fileName);
+  str=assertStringValue(str,"eqIndex", fileName);
+  str=assertChar(str,':', fileName);
+  str=assertNumber(str,i,fileName);
   str=skipSpace(str);
   xml->id = i;
-  str = skipFieldIfExist(str, "parent");
-  str = skipFieldIfExist(str, "section");
+  str = skipFieldIfExist(str, "parent", fileName);
+  str = skipFieldIfExist(str, "section", fileName);
   if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"system\"", str, 15)) {
     xml->profileBlockIndex = -1;
     str += 15;
@@ -233,13 +326,13 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
   } else {
     xml->profileBlockIndex = 0;
   }
-  str = skipFieldIfExist(str, "tag");
-  str = skipFieldIfExist(str, "display");
-  str = skipFieldIfExist(str, "unknowns");
+  str = skipFieldIfExist(str, "tag", fileName);
+  str = skipFieldIfExist(str, "display", fileName);
+  str = skipFieldIfExist(str, "unknowns", fileName);
   if (strncmp(",\"defines\":[", str, 12)) {
     xml->numVar = 0;
     xml->vars = 0;
-    str = skipObjectRest(str,0);
+    str = skipObjectRest(str,0, fileName);
     return str;
   }
   str += 12;
@@ -247,11 +340,11 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
   if (*str == ']') {
     xml->numVar = 0;
     xml->vars = 0;
-    return skipObjectRest(str-1,0);
+    return skipObjectRest(str-1,0, fileName);
   }
   str2 = skipSpace(str);
   while (1) {
-    str=skipValue(str);
+    str=skipValue(str, fileName);
     n++;
     str=skipSpace(str);
     if (*str != ',') {
@@ -259,7 +352,7 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
     }
     str++;
   };
-  assertChar(str, ']');
+  assertChar(str, ']', fileName);
   xml->numVar = n;
   xml->vars = malloc(sizeof(const char*)*n);
   str = str2;
@@ -267,33 +360,47 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
     const char *str3 = skipSpace(str);
     char *tmp;
     int len=0;
-    str = assertChar(str, '\"');
+    str = assertChar(str, '\"', fileName);
     while (*str != '\"' && *str) {
       len++;
       str++;
     }
-    str = assertChar(str, '\"');
+    str = assertChar(str, '\"', fileName);
     tmp = malloc(len+1);
     strncpy(tmp, str3+1, len);
     tmp[len] = '\0';
     xml->vars[j] = tmp;
     if (j != n-1) {
-      str = assertChar(str, ',');
+      str = assertChar(str, ',', fileName);
     }
   }
-  str = assertChar(skipSpace(str), ']');
-  return skipObjectRest(str,0);
+  str = assertChar(skipSpace(str), ']', fileName);
+  return skipObjectRest(str,0, fileName);
 }
 
-static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
+/**
+ * @brief Parse equations from info.json.
+ *
+ * @param str           Point to beginning of equation array at '['.
+ * @param xml           Model data from xml
+ * @return const char*  Point to end of equation array dirreclty after ']'.
+ */
+static const char* readEquations(const char *str, MODEL_DATA_XML *xml)
 {
   int i;
   xml->nProfileBlocks = measure_time_flag & 2 ? 1 : 0;
-  str=assertChar(str,'[');
-  str = readEquation(str,xml->equationInfo,0);
+  str=assertChar(str,'[', xml->fileName);
+  str = readEquation(str, xml->equationInfo, 0, xml->fileName);
   for (i=1; i<xml->nEquations; i++) {
-    str = assertChar(str,',');
-    str = readEquation(str,xml->equationInfo+i,i);
+    if (*str != ',') {
+      errorStreamPrint(LOG_STDOUT, 1, "Failed to parse %s", xml->fileName);
+      errorStreamPrint(LOG_STDOUT, 0, "Expected %ld equations, but only found %i equations.",  xml->nEquations, i-1);
+      messageClose(LOG_STDOUT);
+      omc_throw_function(NULL);
+    } else {
+      str = str + 1;
+    }
+    str = readEquation(str, xml->equationInfo+i, i, xml->fileName);
     /* TODO: Odd, it seems there is 1 fewer equation than expected... */
     /*
     if (i != xml->nEquations-1) {
@@ -304,19 +411,19 @@ static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
       xml->equationInfo[i].profileBlockIndex = xml->nProfileBlocks++;
     }
   }
-  str=assertChar(str,']');
+  str=assertChar(str,']', xml->fileName);
   return str;
 }
 
-static const char* readFunction(const char *str,FUNCTION_INFO *xml,int i)
+static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, const char* fileName)
 {
   FILE_INFO info = omc_dummyFileInfo;
   size_t len;
   char *name;
   const char *str2;
   str=skipSpace(str);
-  str2=assertChar(str,'"');
-  str=skipValue(str);
+  str2=assertChar(str,'"', fileName);
+  str=skipValue(str, fileName);
   xml->id = i;
   len = str-str2;
   name = malloc(len);
@@ -327,58 +434,59 @@ static const char* readFunction(const char *str,FUNCTION_INFO *xml,int i)
   return str;
 }
 
-static const char* readFunctions(const char *str,MODEL_DATA_XML *xml)
+static const char* readFunctions(const char *str, MODEL_DATA_XML *xml)
 {
   int i;
   if (xml->nFunctions == 0) {
-    str=assertChar(str,'[');
-    str=assertChar(str,']');
+    str=assertChar(str,'[', xml->fileName);
+    str=assertChar(str,']', xml->fileName);
     return str;
   }
-  str=assertChar(str,'[');
+  str=assertChar(str,'[', xml->fileName);
   for (i=0; i<xml->nFunctions; i++) {
-    str = readFunction(str,xml->functionNames+i,i);
-    str=assertChar(str,xml->nFunctions==i+1 ? ']' : ',');
+    str = readFunction(str, xml->functionNames+i, i, xml->fileName);
+    str=assertChar(str,xml->nFunctions==i+1 ? ']' : ',', xml->fileName);
   }
   return str;
 }
 
-static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
+static void readInfoJson(const char *str, MODEL_DATA_XML *xml)
 {
-  str=assertChar(str,'{');
-  str=assertStringValue(str,"format");
-  str=assertChar(str,':');
-  str=assertStringValue(str,"Transformational debugger info");
-  str=assertChar(str,',');
-  str=assertStringValue(str,"version");
-  str=assertChar(str,':');
-  str=assertChar(str,'1');
-  str=assertChar(str,',');
-  str=assertStringValue(str,"info");
-  str=assertChar(str,':');
-  str=skipValue(str);
-  str=assertChar(str,',');
-  str=assertStringValue(str,"variables");
-  str=assertChar(str,':');
-  str=skipValue(str);
-  str=assertChar(str,',');
-  str=assertStringValue(str,"equations");
-  str=assertChar(str,':');
+  str=assertChar(str,'{', xml->fileName);
+  str=assertStringValue(str,"format", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
+  str=assertStringValue(str,"Transformational debugger info", xml->fileName);
+  str=assertChar(str,',', xml->fileName);
+  str=assertStringValue(str,"version", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
+  str=assertChar(str,'1', xml->fileName);
+  str=assertChar(str,',', xml->fileName);
+  str=assertStringValue(str,"info", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
+  str=skipValue(str, xml->fileName);
+  str=assertChar(str,',', xml->fileName);
+  str=assertStringValue(str,"variables", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
+  str=skipValue(str, xml->fileName);
+  str=assertChar(str,',', xml->fileName);
+  str=assertStringValue(str,"equations", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
   str=readEquations(str,xml);
-  str=assertChar(str,',');
-  str=assertStringValue(str,"functions");
-  str=assertChar(str,':');
+  str=assertChar(str,',', xml->fileName);
+  str=assertStringValue(str,"functions", xml->fileName);
+  str=assertChar(str,':', xml->fileName);
   str=readFunctions(str,xml);
-  assertChar(str,'}');
+  assertChar(str,'}', xml->fileName);
 }
 
+/**
+ * @brief Initialize model data xml structure by parsing info.json.
+ *
+ * @param xml     Model info struct to initialize.
+ */
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat buf;
-#else
-  struct stat buf = {0};
-#endif
+  omc_stat_t buf = {0};
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
   int fileStatus;
   if (omc_flag[FLAG_INPUT_PATH])
@@ -393,7 +501,10 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   }
 
   if (fileStatus != 0)
+  {
+    xml->fileName = NULL;
     return;
+  }
 
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_read mmap_reader = {0};
@@ -447,6 +558,13 @@ void modelInfoDeinit(MODEL_DATA_XML* xml)
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy function info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyFunction(xml);
+
   if(xml->functionNames == NULL)
   {
     modelInfoInit(xml);
@@ -455,8 +573,28 @@ FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
   return xml->functionNames[ix];
 }
 
+FUNCTION_INFO modelInfoGetDummyFunction(MODEL_DATA_XML* xml)
+{
+  FUNCTION_INFO functionInfo = omc_dummyFunctionInfo;
+  return functionInfo;
+}
+
+EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
+{
+  const char * var = "";
+  EQUATION_INFO equationInfo = {-1, 0, 0, -1, &var}; // omc_dummyEquationInfo is not working in mingw
+  return equationInfo;
+}
+
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy equation info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyEquation(xml);
+
   if (xml->equationInfo == NULL) {
     modelInfoInit(xml);
   }
@@ -466,6 +604,13 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 
 EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy equation info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyEquation(xml);
+
   int i;
   if(xml->equationInfo == NULL)
   {

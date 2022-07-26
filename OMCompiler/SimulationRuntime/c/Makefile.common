@@ -15,7 +15,14 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+
+# On MinGW assume that we have ipopt. For linux this is actually checked and
+# configured by autoconf.
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	CPPFLAGS += -DOMC_HAVE_IPOPT
+endif
+
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
@@ -114,6 +121,7 @@ RUNTIMEMETAGC_HEADERS = ./gc/omc_gc.h ./gc/memory_pool.h
 RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
 ./util/boolean_array.h \
+./util/context.h \
 ./util/division.h \
 ./util/generic_array.h \
 ./util/index_spec.h \
@@ -167,12 +175,16 @@ all_objs : $(ALL_OBJS)
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
 
-libSimulationRuntimeC.a: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a
-	@# You have to remove the old archive first or it may contain old objects
+libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a libOpenModelicaRuntimeC.dll
 	@rm -f $@
-	cp -a $(CDASKRDIR)/libcdaskr.a $@
-	$(AR) $@ $(ALL_OBJS)
-	ranlib $@
+	$(CXX) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -L$(OMBUILDDIR)/lib/omc \
+		-L$(CDASKRDIR) -lcdaskr \
+		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
+		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
+		-lipopt -lcoinmumps -lgfortran \
+		-llis -lcminpack -lomcgc \
+		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
+		-Wl,--export-all-symbols,--out-implib,$@.a
 
 libSimulationRuntimeC.so: $(ALL_OBJS) $(OPTIONAL_LIBS) Makefile.objs
 	@rm -f $@
@@ -195,6 +207,10 @@ libOpenModelicaRuntimeC.a: $(BASE_OBJS) Makefile.objs
 libOpenModelicaRuntimeC.so: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS)
+
+libOpenModelicaRuntimeC.dll: $(BASE_OBJS) Makefile.objs
+	@rm -f $@
+	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -lomcgc -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
 
 libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
@@ -270,7 +286,13 @@ $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 $(BUILDPATH)/simulation/socket$(OBJ_EXT): simulation/socket_win.inc simulation/socket_unix.inc
 
 bootstrap-dependencies: $(LIBRUNTIME)
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	cp -p $(LIBRUNTIME) $(builddir_bin)
+# 	copy the import (dll.a) lib as well.
+	cp -p $(LIBRUNTIME).a $(builddir_lib)
+else
 	cp -p $(LIBRUNTIME) $(builddir_lib)
+endif
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/
 	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/c/linearization/
@@ -294,7 +316,14 @@ libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
 
 install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime RuntimeSources.mo
 	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	cp -p $(LIBSIMULATION) $(builddir_bin)
+# 	copy the import (dll.a) libs as well.
+	cp -p $(LIBSIMULATION).a $(builddir_lib)
+else
+	cp -p $(LIBSIMULATION) $(builddir_lib)
+endif
+	cp -p $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBFMIRUNTIME)

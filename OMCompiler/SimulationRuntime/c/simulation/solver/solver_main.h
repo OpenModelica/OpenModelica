@@ -55,27 +55,27 @@ typedef struct SOLVERSTATS {
   unsigned int nConvergenveTestFailures;    /* Number of convergence test failures */
 } SOLVERSTATS;
 
+/**
+ * @brief Information and data needed by the ODE/DAE solver.
+ */
 typedef struct SOLVER_INFO
 {
   double currentTime;
   double currentStepSize;
   double laststep;
-  enum SOLVER_METHOD solverMethod;
-  double solverStepSize; /* used by implicit radau solver */
+  enum SOLVER_METHOD solverMethod;            /* ODE/DAE solver method */
+  double solverStepSize;                      /* used by implicit radau solver */
+                                              // TODO: This should be in radau solverData
 
-  /* set by solver if an internal root finding method is activated  */
-  modelica_boolean solverRootFinding;
-  /* set by solver if output points are set by step size control */
-  modelica_boolean solverNoEquidistantGrid;
+  modelica_boolean solverRootFinding;         /* Set by solver if an internal root finding method is activated  */
+  modelica_boolean solverNoEquidistantGrid;   /* Set by solver if output points are set by step size control */
   double lastdesiredStep;
 
   /* events */
   LIST* eventLst;
-  int didEventStep;
+  int didEventStep;       /* Boolean stating if during the last step an event was encountered,
+                           * Used to reinitialize ODE/DAE solver after event iteration */
 
-  /* radau_new
-  void* userdata;
-*/
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
@@ -85,9 +85,10 @@ typedef struct SOLVER_INFO
   unsigned int* solverStatsTmp;       /* tmp solver stats to update solverStats with */
 
   /* further options */
-  int integratorSteps;
+  int integratorSteps;              /* 1 => stepSizeControl; 0 => equidistant grid */
+                                    // TODO: This is a duplicate of solverNoEquidistantGrid set in DASSL/IDA/...
 
-  void* solverData;
+  void* solverData;     /* ODE/DAE solver data */
 }SOLVER_INFO;
 
 #ifdef __cplusplus

@@ -39,15 +39,20 @@ encapsulated package NFUnit
 
 public
 import ComponentRef = NFComponentRef;
+import Absyn;
+import AbsynUtil;
+import UnorderedMap;
 
 protected
 import Debug;
 import Error;
 import Flags;
-import HashTableStringToUnit = NFHashTableStringToUnit;
-import HashTableUnitToString = NFHashTableUnitToString;
 import Util;
 
+public
+type StringToUnitTable = UnorderedMap<String, Unit>;
+type UnitToStringTable = UnorderedMap<Unit, String>;
+type CrefToUnitTable = UnorderedMap<ComponentRef, Unit>;
 
 public uniontype Unit
   record UNIT "based on SI base units"
@@ -139,31 +144,39 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                 fac, mol, cd, m, s, A, K, g*/
 
 public function getKnownUnits
-  output HashTableStringToUnit.HashTable outKnownUnits;
-algorithm
-  outKnownUnits := HashTableStringToUnit.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
-
-  for unit in LU_COMPLEXUNITS loop
-    outKnownUnits := BaseHashTable.add(unit, outKnownUnits);
-  end for;
-end getKnownUnits;
-
-public function getKnownUnitsInverse
-  output HashTableUnitToString.HashTable outKnownUnitsInverse;
+  output StringToUnitTable outKnownUnits;
 protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := HashTableUnitToString.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
+  outKnownUnits := UnorderedMap.new<Unit>(stringHashDjb2Mod, stringEq);
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
+    UnorderedMap.add(s, ut, outKnownUnits);
+  end for;
+end getKnownUnits;
 
-    if not BaseHashTable.hasKey(ut, outKnownUnitsInverse) then
-      outKnownUnitsInverse := BaseHashTable.add((ut, s), outKnownUnitsInverse);
-    end if;
+public function getKnownUnitsInverse
+  output UnitToStringTable outKnownUnitsInverse;
+protected
+  String s;
+  Unit ut;
+algorithm
+  outKnownUnitsInverse := UnorderedMap.new<String>(hashUnitMod, unitEqual);
+
+  for unit in LU_COMPLEXUNITS loop
+    (s, ut) := unit;
+    UnorderedMap.tryAdd(ut, s, outKnownUnitsInverse);
   end for;
 end getKnownUnitsInverse;
+
+public function newCrefUnitTable
+  input Integer size;
+  output CrefToUnitTable table;
+algorithm
+  table := UnorderedMap.new<Unit>(ComponentRef.hash, ComponentRef.isEqual);
+end newCrefUnitTable;
 
 public function isUnit
   input Unit inUnit;
@@ -476,19 +489,22 @@ end unitRoot;
 
 public function unitString "Unit to Modelica unit string"
   input Unit inUnit;
-  input HashTableUnitToString.HashTable inHtU2S = getKnownUnitsInverse();
+  input UnitToStringTable inHtU2S = getKnownUnitsInverse();
   output String outString;
+protected
+  Option<String> opt_s;
+  String s, s1, s2, s3, s4, s5, s6, s7, sExponent;
+  Boolean b;
+  Unit unit;
 algorithm
-  outString := match(inUnit)
-    local
-      String s, s1, s2, s3, s4, s5, s6, s7, sExponent;
-      Boolean b;
-      Unit unit;
+  opt_s := UnorderedMap.get(inUnit, inHtU2S);
 
-    case _ guard BaseHashTable.hasKey(inUnit, inHtU2S) equation
-      s = BaseHashTable.get(inUnit, inHtU2S);
-    then s;
+  if isSome(opt_s) then
+    SOME(outString) := opt_s;
+    return;
+  end if;
 
+  outString := match inUnit
     case unit as UNIT() equation
       s = prefix2String(unit.factor);
 
@@ -575,7 +591,8 @@ end prefix2String;
 public function parseUnitString "author: lochel
   The second argument is optional."
   input String inUnitString;
-  input HashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
+  input StringToUnitTable inKnownUnits = getKnownUnits();
+  input SourceInfo info = AbsynUtil.dummyInfo;
   output Unit outUnit;
 protected
   list<String> charList;
@@ -585,7 +602,14 @@ algorithm
   if listEmpty(charList) then
     fail();
   end if;
-  tokenList := lexer(charList);
+
+  try
+    tokenList := lexer(charList);
+  else
+    Error.addSourceMessage(Error.INVALID_UNIT, {inUnitString}, info);
+    fail();
+  end try;
+
   outUnit := parser3({true, true}, tokenList, UNIT(1e0, 0, 0, 0, 0, 0, 0, 0), inKnownUnits);
   if not isUnit(outUnit) then
     if Flags.isSet(Flags.FAILTRACE) then
@@ -599,7 +623,7 @@ protected function parser3
   input list<Boolean> inMul "true=Mul, false=Div, initial call with true";
   input list<Token> inTokenList "Tokenliste";
   input Unit inUnit "initial call with UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)";
-  input HashTableStringToUnit.HashTable inHtS2U;
+  input StringToUnitTable inHtS2U;
   output Unit outUnit;
 algorithm
   outUnit := matchcontinue(inMul, inTokenList, inUnit, inHtS2U)
@@ -669,26 +693,23 @@ end parser3;
 
 protected function unitToken2unit
   input String inS;
-  input HashTableStringToUnit.HashTable inHtS2U;
+  input StringToUnitTable inHtS2U;
   output Unit outUnit;
+protected
+  Option<Unit> opt_unit;
+  String s, s2;
+  Real r;
 algorithm
-  outUnit := matchcontinue(inS, inHtS2U)
-    local
-      String s, s2;
-      Real r;
-      Unit ut;
+  opt_unit := UnorderedMap.get(inS, inHtS2U);
 
-    case (_, _) equation
-      ut=BaseHashTable.get(inS, inHtS2U);
-    then ut;
-
-    else equation
-      s = stringGetStringChar(inS, 1);
-      (r, s) = getPrefix(s, inS);
-      ut = unitToken2unit(s, inHtS2U);
-      ut = unitMulReal(ut, r);
-    then ut;
-  end matchcontinue;
+  if isSome(opt_unit) then
+    SOME(outUnit) := opt_unit;
+  else
+    s := stringGetStringChar(inS, 1);
+    (r, s) := getPrefix(s, inS);
+    outUnit := unitToken2unit(s, inHtS2U);
+    outUnit := unitMulReal(outUnit, r);
+  end if;
 end unitToken2unit;
 
 protected function getPrefix
@@ -879,9 +900,6 @@ algorithm
       tokenList = lexer(charList);
     then T_UNIT(unit)::tokenList;
 
-    else equation
-      Error.addInternalError("function lexer failed", sourceInfo());
-    then fail();
   end matchcontinue;
 end lexer;
 

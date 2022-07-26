@@ -1,0 +1,29 @@
+// name: unitConvertTests.mos [#8699]
+// keywords: check unit conversion
+// status: correct
+//
+// refs ticket: #8699
+//
+
+convertUnits("rad","deg"); getErrorString();
+convertUnits("rad","rev"); getErrorString();
+convertUnits("rad/s","rpm"); getErrorString();
+convertUnits("Pa","bar"); getErrorString();
+convertUnits("Pa","psi"); getErrorString();
+convertUnits("Pa","inWG"); getErrorString();
+
+
+// Result:
+// (true,0.0174532925199433,0.0)
+// ""
+// (true,6.283185307179586,0.0)
+// ""
+// (true,0.1047197551196598,0.0)
+// ""
+// (true,100000.0,0.0)
+// ""
+// (true,6894.75729,0.0)
+// ""
+// (true,249.088908333,0.0)
+// ""
+// endResult

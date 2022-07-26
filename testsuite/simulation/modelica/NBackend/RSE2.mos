@@ -1,0 +1,76 @@
+// name: RSE2
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model RSE
+    Real y;             // not simple
+    Real x, z;          // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = c;
+    x = z;
+    c = 3.0;
+    y = time + c;
+    der(x) = cos(time);
+    der(z) = sin(time) + b;
+  end RSE;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(RSE); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ========================================
+// [dumprepl] Alias Sets:
+// ========================================
+//
+// Alias Set 1:
+// ****************************************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) x = z ($RES_SIM_4)
+//
+// Alias Set 2:
+// ****************************************
+// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_3)
+// 	### Set Equations:
+// 	[SCAL] (1) y = time + c ($RES_SIM_2)
+// 	[SCAL] (1) a = c ($RES_SIM_5)
+//
+// [dumprepl] Constant Replacements:
+// ****************************************
+// 	c	 ==> 	3.0
+// 	a	 ==> 	3.0
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	z	 ==> 	x
+// [dumprepl] Nontrivial Alias Replacements:
+// ****************************************
+// 	y	 ==> 	3.0 + time
+//
+// ========================================
+// [dumprepl] Alias Sets:
+// ========================================
+//
+// <No Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ****************************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// ****************************************
+//
+// record SimulationResult
+//     resultFile = "RSE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -40,21 +40,23 @@
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
+#include "gc/omc_gc.h"
+#include "util/context.h"
+#include "util/jacobian_util.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
-#include "gc/omc_gc.h"
 
-#include "simulation/options.h"
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/solver/epsilon.h"
-#include "simulation/solver/omc_math.h"
-#include "simulation/solver/jacobianSymbolical.h"
-#include "simulation/solver/dassl.h"
+#include "dassl.h"
+#include "epsilon.h"
+#include "external_input.h"
+#include "jacobianSymbolical.h"
 #include "meta/meta_modelica.h"
+#include "model_help.h"
+#include "omc_math.h"
+#include "simulation/options.h"
+#include "simulation/results/simulation_result.h"
+#include "simulation/simulation_runtime.h"
+#include "solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -344,24 +346,24 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
-  /* selects the calculation method of the jacobian */
-  if(dasslData->dasslJacobian == COLOREDNUMJAC ||
-     dasslData->dasslJacobian == COLOREDSYMJAC ||
-     dasslData->dasslJacobian == SYMJAC)
-  {
-    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      dasslData->dasslJacobian = INTERNALNUMJAC;
-    } else {
-      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
-      infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNoneZeros, jac->sparsePattern->maxColors);
-      messageClose(LOG_SIMULATION);
-    }
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    infoStreamPrint(LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+    messageClose(LOG_SIMULATION);
   }
+
+  // Compare user flag to availabe Jacobian methods
+  const char* flagValue;
+  if(omc_flag[FLAG_JACOBIAN]){
+    flagValue = omc_flagValue[FLAG_JACOBIAN];
+  } else {
+    flagValue = NULL;
+  }
+  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;
 
@@ -816,7 +818,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_ODE);
+    setContext(data, *t, CONTEXT_ODE);
   }
   printCurrentStatesVector(LOG_DASSL_STATES, y, data, *t);
   printVector(LOG_DASSL_STATES, "yd", yd, data->modelData->nStates, *t);
@@ -886,7 +888,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_EVENTS);
+    setContext(data, *t, CONTEXT_EVENTS);
   }
 
   saveJumpState = threadData->currentErrorStage;
@@ -1058,7 +1060,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   int i,j;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i=dasslData->N-1; i >= 0; i--)
   {
@@ -1120,7 +1122,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   unsigned int i,j,l,k,ii;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i = 0; i < jacobian->sparsePattern->maxColors; i++)
   {

@@ -16,6 +16,7 @@ end IllegalConnector;
 model ConnectorIllegal
   IllegalConnector ic;
 end ConnectorIllegal;
+
 // Result:
 // Error processing file: ConnectorIllegal.mo
 // [flattening/modelica/connectors/ConnectorIllegal.mo:13:3-13:8:writable] Error: Equations are not allowed in connector.

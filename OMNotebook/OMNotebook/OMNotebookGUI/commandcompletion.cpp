@@ -274,7 +274,7 @@ namespace IAEX
       }
     }
 
-    return QString::null;
+    return QString();
   }
 
   /*

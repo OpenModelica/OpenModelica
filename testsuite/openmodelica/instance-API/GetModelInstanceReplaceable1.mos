@@ -1,0 +1,67 @@
+// name: GetModelInstanceAttributes1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    replaceable Real x = 1.0;
+
+    replaceable model M
+      Real x;
+    end M;
+
+    M m;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"1.0\",
+//       \"value\": {
+//         \"binding\": 1
+//       },
+//       \"prefixes\": {
+//         \"replaceable\": true
+//       }
+//     },
+//     {
+//       \"name\": \"m\",
+//       \"type\": {
+//         \"name\": \"M\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ],
+//   \"replaceable\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\"
+//     },
+//     \"M\"
+//   ]
+// }"
+// endResult

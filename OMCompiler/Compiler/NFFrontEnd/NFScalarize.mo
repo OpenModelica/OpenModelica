@@ -35,6 +35,8 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
+import Attributes = NFAttributes;
+import NFBackendExtension.{BackendInfo, VariableAttributes};
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
@@ -61,17 +63,17 @@ function scalarize
   input output FlatModel flatModel;
 protected
   list<Variable> vars = {};
-  list<Equation> eql = {}, ieql = {}, neql = {};
+  list<Equation> eql = {}, ieql = {};
   list<Algorithm> alg = {}, ialg = {};
 algorithm
   for c in flatModel.variables loop
-    (vars, neql) := scalarizeVariable(c, vars, neql);
+    vars := scalarizeVariable(c, vars);
   end for;
 
   flatModel.variables := listReverseInPlace(vars);
   flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
   flatModel.equations := scalarizeEquations(flatModel.equations);
-  flatModel.initialEquations := Equation.mapExpList(listAppend(flatModel.initialEquations, neql), expandComplexCref);
+  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
   flatModel.initialEquations := scalarizeEquations(flatModel.initialEquations);
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);
@@ -79,33 +81,32 @@ algorithm
   execStat(getInstanceName());
 end scalarize;
 
-protected
 function scalarizeVariable
   input Variable var;
-  input output list<Variable> vars;
-  input output list<Equation> eqns;
+  input output list<Variable> vars = {};
 protected
   ComponentRef name;
   Binding binding;
   Type ty, elem_ty;
   Visibility vis;
-  Component.Attributes attr;
+  Attributes attr;
   list<tuple<String, Binding>> ty_attr;
   Option<SCode.Comment> cmt;
   SourceInfo info;
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
   Expression exp;
-  Variable v;
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
+  list<BackendInfo> backend_attributes;
   Variability bind_var;
+  BackendInfo binfo;
   Binding.Source bind_src;
   Boolean force_scalar_attributes = false;
 algorithm
-  if Type.isArray(var.ty) then
+  if Type.isArray(var.ty) and Type.hasKnownSize(var.ty) then
     try
-      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info) := var;
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
@@ -114,6 +115,8 @@ algorithm
 
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
+        bind_var := Binding.variability(binding);
+
         for attribute in {"min", "max", "nominal"} loop
           force_scalar_attributes := not Binding.isUnbound(Variable.lookupTypeAttribute(attribute, var));
           if force_scalar_attributes then break; end if;
@@ -135,19 +138,23 @@ algorithm
           bind_src := Binding.source(binding);
           elem_ty := Type.arrayElementType(ty);
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+          backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
             binding := Binding.makeFlat(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
+            binfo :: backend_attributes := backend_attributes;
+            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
           end for;
         end if;
       else
         elem_ty := Type.arrayElementType(ty);
         (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+        backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
+          binfo :: backend_attributes := backend_attributes;
+          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
         end for;
       end if;
     else
@@ -160,6 +167,73 @@ algorithm
   end if;
 end scalarizeVariable;
 
+function scalarizeBackendVariable
+  input Variable var;
+  input output list<Variable> vars = {};
+protected
+  list<ComponentRef> crefs;
+  ExpressionIterator binding_iter;
+  Binding binding;
+  Variability bind_var;
+  Binding.Source bind_src;
+  Expression exp;
+  Type elem_ty;
+  BackendInfo binfo;
+  list<BackendInfo> backend_attributes;
+algorithm
+  crefs               := ComponentRef.scalarizeAll(var.name);
+  elem_ty             := Type.arrayElementType(var.ty);
+  backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
+  if Binding.isBound(var.binding) then
+    binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding));
+    bind_var          := Binding.variability(var.binding);
+    bind_src          := Binding.source(var.binding);
+    for cr in crefs loop
+      (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+      binding := Binding.makeFlat(exp, bind_var, bind_src);
+      binfo :: backend_attributes := backend_attributes;
+      vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+    end for;
+  else
+    for cr in crefs loop
+      binfo :: backend_attributes := backend_attributes;
+      vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+    end for;
+  end if;
+  vars := listReverse(vars);
+end scalarizeBackendVariable;
+
+function scalarizeComplexVariable
+  "Scalarizes a complex variable to its elements. Assumes potential arrays
+  have already been resolved with scalarizeVariable()."
+  input Variable var;
+  input output list<Variable> vars = {};
+algorithm
+  vars := match var.backendinfo.attributes
+      local
+        VariableAttributes attr;
+        String name;
+        Integer index;
+        Variable elem_var;
+
+    case attr as VariableAttributes.VAR_ATTR_RECORD() algorithm
+      for tpl in UnorderedMap.toList(attr.indexMap) loop
+        (name, index) := tpl;
+        elem_var := var;
+        elem_var.name := ComponentRef.prepend(elem_var.name, ComponentRef.rename(name, elem_var.name));
+        elem_var.backendinfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index]);
+        // update the types accordingly
+        elem_var.ty := VariableAttributes.elemType(attr.childrenAttr[index]);
+        elem_var.name := ComponentRef.setNodeType(elem_var.ty, elem_var.name);
+        vars := elem_var :: vars;
+      end for;
+    then listReverse(vars);
+
+    else {var};
+  end match;
+end scalarizeComplexVariable;
+
+protected
 function scalarizeTypeAttributes
   input list<tuple<String, Binding>> attrs;
   output list<String> names = {};

@@ -1318,9 +1318,7 @@ void CompositeModelEditor::contentsHasChanged(int position, int charsRemoved, in
     } else {
       /* if user is changing, the normal file. */
       if (!mForceSetPlainText) {
-        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
-        mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+        contentsChanged();
         mTextChanged = true;
       }
     }

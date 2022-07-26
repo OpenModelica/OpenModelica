@@ -82,7 +82,7 @@ val(p9,0.0);
 // 15: pr1:PARAM(protected = true )  = 5  type: Integer
 // 16: pr2:PARAM(protected = true )  = pr1  type: Integer
 // 17: d:PARAM(fixed = false )  = p9  type: Integer
-// 18: $cse1:VARIABLE(fixed = true protected = true )  = sin(/*Real*/(p2))  type: Real unreplaceable
+// 18: $cse1:PARAM(protected = true )  = sin(/*Real*/(p2))  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)
@@ -90,7 +90,7 @@ val(p9,0.0);
 // 1: $cse1 - sin(/*Real*/(p2)) - {}
 // record SimulationResult
 //     resultFile = "parameterTest17_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'parameterTest17', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest17', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

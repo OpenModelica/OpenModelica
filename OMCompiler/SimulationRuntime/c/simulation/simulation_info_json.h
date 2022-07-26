@@ -40,8 +40,10 @@ extern "C" {
 void modelInfoInit(MODEL_DATA_XML* xml);
 void modelInfoDeinit(MODEL_DATA_XML* xml);
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix);
+FUNCTION_INFO modelInfoGetDummyFunction(MODEL_DATA_XML* xml);
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix);
 EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix);
+EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml);
 
 #ifdef __cplusplus
 }

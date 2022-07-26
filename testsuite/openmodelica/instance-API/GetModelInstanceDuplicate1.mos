@@ -1,0 +1,53 @@
+// name: GetModelInstanceDuplicate1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+  end A;
+
+  model B
+    extends A;
+    Real x;
+  end B;
+");
+
+getModelInstance(B, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"B\",
+//   \"restriction\": \"model\",
+//   \"extends\": [
+//     {
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       }
+//     }
+//   ],
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ]
+// }"
+// endResult

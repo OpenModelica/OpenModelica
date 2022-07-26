@@ -111,6 +111,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
   bool debug = false;
+  bool newApi = false;
   QString fileName = "";
   QStringList fileNames;
   if (arguments().size() > 1 && !testsuiteRunning) {
@@ -122,6 +123,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           debug = true;
         } else {
           debug = false;
+        }
+      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--NAPI=",7) == 0) {
+        QString napiArg = arguments().at(i);
+        napiArg.remove("--NAPI=");
+        if (0 == strcmp("true", napiArg.toUtf8().constData())) {
+          newApi = true;
+        } else {
+          newApi = false;
         }
       } else {
         fileName = arguments().at(i);
@@ -145,6 +154,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // MainWindow Initialization
   MainWindow *pMainwindow = MainWindow::instance();
   pMainwindow->setDebug(debug);
+  pMainwindow->setNewApi(newApi);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.

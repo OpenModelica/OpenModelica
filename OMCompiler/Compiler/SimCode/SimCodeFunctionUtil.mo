@@ -2015,20 +2015,33 @@ protected function getLinkerLibraryPaths"Builds search paths for the linker to f
   input Absyn.Path path;
   input list<String> inLibs;
   output list<String> libPaths;
+protected
+  String installationDir;
 algorithm
-  libPaths := matchcontinue(uri,path,inLibs)
+  installationDir := Settings.getInstallationDirectoryPath();
+
+  _ := matchcontinue(uri,path,inLibs)
     local
-      String str, platform1, platform2;
   case(_, _,{"-lWinmm"}) guard Autoconf.os=="Windows_NT"
+    algorithm
     //Winmm has to be linked from the windows system but not from the resource directories.
     //This is a fix for M_DD since otherwise the dummy pthread.dll that breaks the built will be linked
-    then {(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")};
+      libPaths := {(installationDir + "/lib/" + Autoconf.triple + "/omc")};
+    then ();
   case(, _,_)
-    equation
-      platform1 = uri + "/" + System.openModelicaPlatform();
-      platform2 = uri + "/" + System.modelicaPlatform();
-    then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+AbsynUtil.pathFirstIdent(path))::
-      (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")::{};
+    algorithm
+      libPaths := {uri,
+                   uri + "/" + System.modelicaPlatform(),
+                   uri + "/" + System.openModelicaPlatform(),
+                   (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
+                   (installationDir + "/lib/"),
+                   (installationDir + "/lib/" + Autoconf.triple + "/omc")};
+
+      if Autoconf.os == "Windows_NT" then
+        libPaths := List.appendElt(installationDir + "/bin/", libPaths);
+      end if;
+
+    then ();
   end matchcontinue;
 end getLinkerLibraryPaths;
 
@@ -2268,7 +2281,7 @@ algorithm
         if "Windows_NT" == Autoconf.os then
           // omcruntime on windows needs linking with mico2313 and wsock and then some :)
           str = "-l" + str;
-          strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-ltre" :: "-lomniORB420_rt" :: "-lomnithread40_rt" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
+          strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-ltre" :: "-lomniORB420_rt" :: "-lomnithread40_rt" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
         else
           strs = Autoconf.systemLibs;
         end if;
@@ -2645,7 +2658,7 @@ algorithm
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
   if Flags.getConfigBool(Flags.PARMODAUTO) then
-    ldflags := "-lParModelicaAuto -ltbb_static -lboost_system" + ldflags;
+    ldflags := " -lParModelicaAuto -ltbb_static -lboost_system " + ldflags;
   end if;
   rtlibs := if isFunction then Autoconf.ldflags_runtime else (if isFMU then Autoconf.ldflags_runtime_fmu else Autoconf.ldflags_runtime_sim);
   platform := System.modelicaPlatform();
@@ -2774,7 +2787,6 @@ algorithm
     else algorithm Error.addInternalError("Tried to append cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end appendCurrentCrefPrefix;
-
 
 annotation(__OpenModelica_Interface="backendInterface");
 end SimCodeFunctionUtil;

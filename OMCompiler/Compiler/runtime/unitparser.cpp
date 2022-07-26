@@ -34,17 +34,12 @@
 #include <sstream>
 #include <stack>
 
-#ifndef NO_LPLIB
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #ifndef WIN32
 #define WIN32
 #endif
 #endif /* MINGW & MSVC */
 
-#include CONFIG_LPSOLVEINC
-
-#endif
 
 string UnitRes::toString()
 {
@@ -80,7 +75,6 @@ Rational::Rational(mmc_sint_t numerator, mmc_sint_t denominator) {
 /* Rationalize a double precision number using an epsilon, should be a constructor but that leads to a lot
  * of ambiguity that needs to be adressed. */
 void Rational::rationalize(double r) {
-#ifndef NO_LPLIB
   const double eps = 1e-6;
   double rapp;
   mmc_sint_t numerator = (mmc_sint_t) r;
@@ -96,7 +90,6 @@ void Rational::rationalize(double r) {
   num = numerator / d;
   denom = denominator / d;
   //cout << "Rationalized " << r << " to " << num << " / " << denom << endl;
-#endif
 }
 
 Rational::Rational(const Rational& r) {
@@ -439,248 +432,7 @@ UnitRes UnitParser::commit() {
 }
 
 string UnitParser::prettyPrintUnit2str(Unit unit) {
-  //Unit prettyUnit = solveMIP(unit);
   return unit2str(unit);//prettyUnit);
-}
-
-Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
-#ifndef NO_LPLIB
-  int numBaseUnits = _base.size();
-  int numDerivedUnits = 0;
-  // Counting the derived units by traversing all units
-  for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++)
-    if (!it->second.isBaseUnit())
-      numDerivedUnits++;
-  int NU = numBaseUnits + numDerivedUnits;
-
-  // Create MIP with 2*NU variables(columns)
-  lprec *lp = make_lp(0, 2 * NU);
-  if (lp == NULL) {
-    cerr
-        << "Internal error pretty printing expression. Using simple approach"
-        << endl;
-    return unit;
-  }
-
-  /* Set name of variables for debug printing */
-  int i;
-  for (i = 1; i <= numBaseUnits; i++) {
-    char * s1 = (char*) _base[i - 1].unitName.c_str();
-    char * s2 = (char*) (string("-") + string(s1)).c_str();
-    if (!set_col_name(lp, i, s1)) {
-      cerr << "ERROR1" << endl;
-    }
-    if (!set_col_name(lp, NU + i, s2)) {
-      cerr << "ERROR" << endl;
-    }
-  }
-  for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++) {
-    if (!it->second.isBaseUnit()) {
-      char * s1 = (char*) it->second.unitName.c_str();
-      char * s2 = (char*) (string("-") + string(s1)).c_str();
-      if (!set_col_name(lp, i, s1)) {
-        cerr << "ERROR2" << endl;
-      }
-      if (!set_col_name(lp, NU + i, s2)) {
-        cerr << "ERROR3" << endl;
-      }
-      i++;
-    }
-  }
-
-  // Increases efficency when adding rows.
-  set_add_rowmode(lp, TRUE);
-
-  double *row = new double[2 * NU];
-  int *colno = new int[2 * NU];
-
-  if (!row || !colno) {
-    cerr
-        << "Internal error pretty printing expression (allocation of memory). Using simple approach"
-        << endl;
-    return unit;
-  }
-
-  int c;
-  // Set the constraint
-  for (int r = 0; r < numBaseUnits; r++) {
-    int j = 0;
-    /* Set 0..numBaseUnits-1 first columns */
-    for (c = 0; c < numBaseUnits; c++) {
-      colno[j] = c + 1;
-      row[j++] = r == c ? 1 : 0;
-    }
-    /* Set numBaseUnits .. NU-1 following columns */
-    for (map<string, Unit>::iterator it = _units.begin(); it
-        != _units.end(); it++) {
-      Unit u = it->second;
-      if (!u.isBaseUnit()) {
-        colno[j] = 1 + c;
-        row[j++] = u.unitVec[r].toReal();
-        c++;
-      }
-    }
-    for (int j2 = 0; j2 < NU; j2++) {
-      colno[j] = colno[j2] + NU;
-      row[j++] = -row[j2];
-    }
-    double b = r < unit.unitVec.size() ? unit.unitVec[r].toReal() : 0.0;
-    if (!add_constraintex(lp, j, row, colno, EQ, b)) {
-      cerr
-          << "Internal error pretty printing expression (adding row to lp). Using simple approach"
-          << endl;
-      return unit;
-    }
-  }
-  set_add_rowmode(lp, FALSE);
-
-  /* Set the objective */
-  int j = 0;
-  int c2;
-  /* element 0..numBaseUnits-1*/
-  for (c2 = 0; c2 < numBaseUnits; c2++) {
-    double cost = 1;
-    for (int r2 = 0; r2 < numBaseUnits; r2++) {
-      double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-          : 0.0;
-      cost += fabs(b - (c2 == r2 ? 1 : 0));
-    }
-    cost /= _base[c2].weight;
-    colno[j] = c2 + 1;
-    row[j++] = cost;
-  }
-  /* elements numBaseUnits .. NU -1 */
-  c2 = numBaseUnits;
-  for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++) {
-    double cost = 1;
-    Unit u = it->second;
-    if (!u.isBaseUnit()) {
-      for (int r2 = 0; r2 < numBaseUnits; r2++) {
-        double b1 =
-            r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-                : 0.0;
-        double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
-            : 0.0;
-        cost += fabs(b1 - b2);
-      }
-      cost /= u.weight;
-      colno[j] = c2 + 1;
-      row[j++] = cost;
-      c2++;
-    }
-  }
-  /* elements NU .. NU+numBaseUnits-1 */
-  for (int c2 = 0; c2 < numBaseUnits; c2++) {
-    double cost = 1;
-    for (int r2 = 0; r2 < numBaseUnits; r2++) {
-      double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-          : 0.0;
-      cost += fabs(b - (c2 == r2 ? -1 : 0));
-    }
-    cost /= _base[c2].weight;
-    colno[j] = c2 + NU + 1;
-    row[j++] = cost;
-  }
-  /* elements NU+numBaseUnits .. 2*NU -1 */
-  c2 = numBaseUnits;
-  for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++) {
-    double cost = 1;
-    Unit u = it->second;
-    if (!u.isBaseUnit()) {
-      for (int r2 = 0; r2 < numBaseUnits; r2++) {
-        double b1 =
-            r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-                : 0.0;
-        double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
-            : 0.0;
-        cost += fabs(b1 + b2);
-      }
-      cost /= u.weight;
-      colno[j] = c2 + NU + 1;
-      row[j++] = cost;
-      c2++;
-    }
-  }
-  if (!set_obj_fnex(lp, j, row, colno)) {
-    cerr
-        << "Internal error pretty printing expression (adding objective to lp). Using simple approach"
-        << endl;
-    return unit;
-  }
-
-  /* Set up domain , Reals for base units, Integers for derived units */
-  int v = 0;
-  for (; v < numBaseUnits; v++)
-    set_int(lp, v + 1, FALSE);
-  for (; v < NU; v++)
-    set_int(lp, v + 1, TRUE);
-  for (; v < NU + numBaseUnits; v++)
-    set_int(lp, v + 1, FALSE);
-  for (; v < 2 * NU; v++)
-    set_int(lp, v + 1, TRUE);
-
-  /* Set up lower and upper bound */
-  double maxDim = 0;
-  for (vector<Rational>::iterator it = unit.unitVec.begin(); it
-      != unit.unitVec.end(); it++) {
-    maxDim = max(it->toReal(), maxDim);
-  }
-  for (v = 0; v < 2 * NU; v++) {
-    set_upbo(lp, v + 1, maxDim);
-  }
-  //cout << "LP debug:" << endl;
-  set_verbose(lp, -1); // NO printing
-  //print_lp(lp);
-  int res = solve(lp);
-  Unit prettyUnit, retVal;
-  if (res == 0) {
-    //cout << "result =" << get_var_primalresult(lp,0) << endl;
-    for (int i = 0; i < 2 * NU; i++) {
-      double res = get_var_primalresult(lp, i + 1 + numBaseUnits);
-      //cerr << i << " : " << res << endl ;
-      if (i >= NU) {
-        //cerr << "Resetting elt " << i << " at pos " << i%NU << endl;
-        Rational r;
-        r.rationalize(res);
-        prettyUnit.unitVec[i % NU] = Rational::sub(prettyUnit.unitVec[i
-            % NU], r);
-      } else {
-        //cerr << "Setting elt " << i << endl;
-        Rational r;
-        r.rationalize(res);
-        //cerr << "setting elt " << i << " to rational " << r.toString() << endl;
-        prettyUnit.unitVec.push_back(r);
-      }
-    }
-    //cout << "resulting unit =" << unit2str(prettyUnit) << endl;
-    retVal = prettyUnit;
-  } else {
-    retVal = unit;
-  }
-  free_lp(&lp);
-  Unit retVal1,retVal2;
-  if (!innerCall) {
-    _derivedUnitsVisited.clear();
-    //cout << "minimizing derived units for " << unit2str(retVal) <<  endl;
-    retVal1 = minimizeDerivedUnits(retVal,unit,0.1);
-    _derivedUnitsVisited.clear();
-    retVal2 = minimizeDerivedUnits(retVal,unit,10.0);
-    //cout << "increase factor gave " << unit2str(retVal1) <<  endl;
-    //cout << "decrease factor gave " << unit2str(retVal2) <<  endl;
-    if (actualNumDerived(retVal1) < actualNumDerived(retVal2)) {
-      retVal = retVal1;
-    } else {
-      retVal = retVal2;
-    }
-    //cout << "returning unit " << unit2str(retVal) <<  endl;
-  }
-
-  delete[] row;
-  delete[] colno;
-  return retVal;
-#else
-  return unit;
-#endif
 }
 
 int UnitParser::actualNumDerived(Unit unit) {
@@ -692,54 +444,6 @@ int UnitParser::actualNumDerived(Unit unit) {
     }
   }
   return res;
-}
-
-/* If the unit contains several derived units, try to increase weight on each of them to see if number of derived units decrease */
-Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
-
-  if (unit.isBaseUnit()) {
-    return unit;
-  }
-
-  int numBaseUnits = _base.size();
-  int numDerivedUnits = 0;
-  // Counting the derived units by traversing all units
-  for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++)
-    if (!it->second.isBaseUnit())
-      numDerivedUnits++;
-
-  stack<int> stack; // stack of indices for derived units =! 0
-  if (actualNumDerived(unit) > 1) {
-    for (int i = numBaseUnits; i < unit.unitVec.size(); i++) {
-      if (!unit.unitVec[i].isZero()) {
-        stack.push(i); // store nth position in unit map
-      }
-    }
-  }
-  Unit newUnit;
-  while (actualNumDerived(unit) > 1 && !stack.empty()) {
-    int actNumDerived = actualNumDerived(unit);
-    //cout << "actNumDerived = "<<actNumDerived<< endl;
-    int indx = stack.top();
-    _derivedUnitsVisited.insert(indx);
-    stack.pop();
-    increaseNthUnitWeight(indx,factor);
-    newUnit = solveMIP(origUnit, true);
-    cout << "after increased weight on " << indx << "unit " << unit2str(unit) << " became " << unit2str(newUnit) << endl;
-    if (actNumDerived < actualNumDerived(newUnit)) {
-      //cout << "not decreased, resetting indx " << indx << endl;
-      resetNthUnitWeight(indx,factor);
-    }
-    if (actualNumDerived(newUnit)==1) break;
-    for (int i = numBaseUnits; i < newUnit.unitVec.size(); i++) {
-          if (!newUnit.unitVec[i].isZero()&&_derivedUnitsVisited.find(i) == _derivedUnitsVisited.end()) {
-            stack.push(i); // store nth position in unit map
-            cout << "adding " << i << " to stack" << endl;
-          }
-        }
-  }
-
-  return newUnit;
 }
 
 /*
@@ -1160,12 +864,27 @@ void UnitParser::initSIUnits() {
 
   // More derived units
   addDerived("plane angle", "degree", "deg", "rad", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 1800000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 180000000), Rational(0), true);
+#endif
   addDerived("plane angle", "revolutions", "rev", "rad", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 5000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 500000), Rational(0), true);
+#endif
 
   addDerived("angular velocity", "revolutions per minute", "rpm", "rad/s", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 300000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 30000000), Rational(0), true);
+#endif
+
+  addDerived("energy", "watt hour", "Wh", "J",Rational(0),
+      Rational(3600), Rational(0), true);
 
   addDerived("velocity", "knot", "kn", "m/s", Rational(0),
       Rational(1852, 3600), Rational(0), true);
@@ -1188,7 +907,11 @@ void UnitParser::initSIUnits() {
 
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
   addDerived("pressure", "millimeter of mercury", "mmHg", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(133322387415, 1000000000), Rational(0), true);
+#else // 32bit
+      Rational(13332238, 100000), Rational(0), true);
+#endif
 
   addDerived("time", "minute", "min", "s", Rational(0), Rational(60), Rational(0), true);
   addDerived("time", "hour", "h", "s", Rational(0), Rational(60 * 60), Rational(0), true);
@@ -1207,9 +930,17 @@ void UnitParser::initSIUnits() {
       Rational(45359237, 100000000), Rational(0), true);
 
   addDerived("pressure", "pound per square inch", "psi", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(689475729, 100000), Rational(0), true);
+#else // 32bit systems
+      Rational(68947572, 10000), Rational(0), true);
+#endif
   addDerived("pressure", "inch water gauge", "inWG", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(249088908333, 1000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(24908890, 100000), Rational(0), true);
+#endif
 
   commit();
 }

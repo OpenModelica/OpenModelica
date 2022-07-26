@@ -1,0 +1,45 @@
+// name:      Modelica.Electrical.Analog.Examples.CauerLowPassSC
+// keywords:  parmodauto
+// status:    correct
+// cflags:
+//
+// Tests automatic parallelization with parmodauto
+//
+
+setCommandLineOptions("--parmodauto");
+getErrorString();
+
+loadModel(Modelica, {"3.2.1"});
+getErrorString();
+
+echo(false);
+res := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
+echo(true);
+getErrorString();
+
+
+echo(false);
+expectedRes := getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
+outDiffFile := "Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff";
+
+varsToCompare := {"C1.v","C2.v","C3.v","C4.v","C7.v","R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v"};
+echo(true);
+
+
+OpenModelica.Scripting.diffSimulationResults(actualFile = "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
+                                             expectedFile = expectedRes,
+                                             diffPrefix = outDiffFile,
+                                             vars = varsToCompare);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// (true,{})
+// ""
+// endResult

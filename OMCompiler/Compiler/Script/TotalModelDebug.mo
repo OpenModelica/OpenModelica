@@ -328,37 +328,21 @@ public
     input SCode.Equation eq;
     input UseTable used;
   algorithm
-    analyseEEquation(eq.eEquation, used);
-  end analyseEquation;
-
-  function analyseEEquations
-    input list<SCode.EEquation> eqs;
-    input UseTable used;
-  algorithm
-    for e in eqs loop
-      analyseEEquation(e, used);
-    end for;
-  end analyseEEquations;
-
-  function analyseEEquation
-    input SCode.EEquation eq;
-    input UseTable used;
-  algorithm
     () := match eq
-      case SCode.EEquation.EQ_IF()
+      case SCode.Equation.EQ_IF()
         algorithm
           analyseExpList(eq.condition, used);
 
           for b in eq.thenBranch loop
-            analyseEEquations(b, used);
+            analyseEquations(b, used);
           end for;
 
-          analyseEEquations(eq.elseBranch, used);
+          analyseEquations(eq.elseBranch, used);
           analyseComment(eq.comment, used);
         then
           ();
 
-      case SCode.EEquation.EQ_EQUALS()
+      case SCode.Equation.EQ_EQUALS()
         algorithm
           analyseExp(eq.expLeft, used);
           analyseExp(eq.expRight, used);
@@ -366,7 +350,7 @@ public
         then
           ();
 
-      case SCode.EEquation.EQ_PDE()
+      case SCode.Equation.EQ_PDE()
         algorithm
           analyseExp(eq.expLeft, used);
           analyseExp(eq.expRight, used);
@@ -374,7 +358,7 @@ public
         then
           ();
 
-      case SCode.EEquation.EQ_CONNECT()
+      case SCode.Equation.EQ_CONNECT()
         algorithm
           analyseCref(eq.crefLeft, used);
           analyseCref(eq.crefRight, used);
@@ -382,29 +366,29 @@ public
         then
           ();
 
-      case SCode.EEquation.EQ_FOR()
+      case SCode.Equation.EQ_FOR()
         algorithm
           analyseExpOpt(eq.range, used);
-          analyseEEquations(eq.eEquationLst, used);
+          analyseEquations(eq.eEquationLst, used);
           analyseComment(eq.comment, used);
         then
           ();
 
-      case SCode.EEquation.EQ_WHEN()
+      case SCode.Equation.EQ_WHEN()
         algorithm
           analyseExp(eq.condition, used);
-          analyseEEquations(eq.eEquationLst, used);
+          analyseEquations(eq.eEquationLst, used);
 
           for b in eq.elseBranches loop
             analyseExp(Util.tuple21(b), used);
-            analyseEEquations(Util.tuple22(b), used);
+            analyseEquations(Util.tuple22(b), used);
           end for;
 
           analyseComment(eq.comment, used);
         then
           ();
 
-      case SCode.EEquation.EQ_ASSERT()
+      case SCode.Equation.EQ_ASSERT()
         algorithm
           analyseExp(eq.condition, used);
           analyseExp(eq.message, used);
@@ -413,14 +397,14 @@ public
         then
           ();
 
-      case SCode.EEquation.EQ_TERMINATE()
+      case SCode.Equation.EQ_TERMINATE()
         algorithm
           analyseExp(eq.message, used);
           analyseComment(eq.comment, used);
         then
           ();
 
-      case SCode.EEquation.EQ_REINIT()
+      case SCode.Equation.EQ_REINIT()
         algorithm
           analyseExp(eq.cref, used);
           analyseExp(eq.expReinit, used);
@@ -428,14 +412,14 @@ public
         then
           ();
 
-      case SCode.EEquation.EQ_NORETCALL()
+      case SCode.Equation.EQ_NORETCALL()
         algorithm
           analyseExp(eq.exp, used);
           analyseComment(eq.comment, used);
         then
           ();
     end match;
-  end analyseEEquation;
+  end analyseEquation;
 
   function analyseAlgorithms
     input list<SCode.AlgorithmSection> algs;

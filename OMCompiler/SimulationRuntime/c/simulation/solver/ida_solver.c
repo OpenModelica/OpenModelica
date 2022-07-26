@@ -45,23 +45,25 @@
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
+#include "gc/omc_gc.h"
+#include "util/context.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
-#include "gc/omc_gc.h"
 
 #include "ida_solver.h"
 
+#include "dae_mode.h"
+#include "dassl.h"
+#include "epsilon.h"
+#include "external_input.h"
+#include "jacobianSymbolical.h"
+#include "util/jacobian_util.h"
+#include "model_help.h"
+#include "omc_math.h"
 #include "simulation/options.h"
-#include "simulation/simulation_runtime.h"
 #include "simulation/results/simulation_result.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/solver/epsilon.h"
-#include "simulation/solver/omc_math.h"
-#include "simulation/solver/dassl.h"
-#include "simulation/solver/dae_mode.h"
-#include "simulation/solver/jacobianSymbolical.h"
+#include "simulation/simulation_runtime.h"
+#include "solver_main.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -333,79 +335,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
      infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
   }
 
-
-  /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
-  if (omc_flag[FLAG_JACOBIAN]) {
-    for (i=1; i< JAC_MAX;i++) {
-      if (!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])) {
-        idaData->jacobianMethod = (int)i;
-        break;
-      }
-    }
-    if (idaData->daeMode && ( idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC )) {
-      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians are currently not supported by DAE Mode. Switching back to numerical Jacobian!");
-      idaData->jacobianMethod = COLOREDNUMJAC;
-    }
-    if(idaData->jacobianMethod == SYMJAC) {
-      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.");
-      idaData->jacobianMethod = COLOREDSYMJAC;
-    }
-    if(idaData->jacobianMethod == NUMJAC) {
-      warningStreamPrint(LOG_STDOUT, 1, "Numerical Jacobians without coloring are currently not supported by IDA. Colored numerical Jacobian will be used.");
-      idaData->jacobianMethod = COLOREDNUMJAC;
-    }
-    if(idaData->jacobianMethod == JAC_UNKNOWN){
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_JACOBIAN]);
-        for(i=1; i < JAC_MAX; ++i) {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", JACOBIAN_METHOD[i], JACOBIAN_METHOD_DESC[i]);
-        }
-        messageClose(LOG_SOLVER);
-      }
-      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_JACOBIAN]);
-    }
-    /* default case colored numerical jacobian */
-  } else {
-    idaData->jacobianMethod = COLOREDNUMJAC;
-  }
-
-  /* selects the calculation method of the jacobian */
-  /* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
-  if(!idaData->daeMode && (idaData->jacobianMethod == COLOREDNUMJAC ||
-      idaData->jacobianMethod == COLOREDSYMJAC ||
-      idaData->jacobianMethod == SYMJAC))
-  {
-    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      idaData->jacobianMethod = INTERNALNUMJAC;
-      if (idaData->linearSolverMethod == IDA_LS_KLU)
-      {
-        idaData->linearSolverMethod = IDA_LS_DENSE;
-        warningStreamPrint(LOG_STDOUT, 0, "IDA linear solver method also switched back to %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
-      }
-    } else {
-      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
-      infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNoneZeros, jac->sparsePattern->maxColors);
-      messageClose(LOG_SIMULATION);
-    }
-  }
-
-  /* Set NNZ */
-  if (idaData->daeMode) {
-    idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNoneZeros;
-  } else {
-    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNoneZeros;
-  }
-
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS]) {
-    for (i=1; i< IDA_LS_MAX;i++) {
+    for (i=1; i< IDA_LS_MAX; i++) {
       if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
-        idaData->linearSolverMethod = (int)i;
+        idaData->linearSolverMethod = (enum IDA_LS)i;
         break;
       }
     }
@@ -421,6 +355,46 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   } else {
     idaData->linearSolverMethod = IDA_LS_KLU;
+  }
+
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    infoStreamPrint(LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+    messageClose(LOG_SIMULATION);
+  }
+
+  // Compare user flag to availabe Jacobian methods
+  const char* flagValue;
+  if(omc_flag[FLAG_JACOBIAN]){
+    flagValue = omc_flagValue[FLAG_JACOBIAN];
+  } else {
+    flagValue = NULL;
+  }
+  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
+  // change IDA specific jacobian method
+  if(idaData->jacobianMethod == SYMJAC) {
+    warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
+                                      " Colored symbolical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDSYMJAC;
+  }else if(idaData->jacobianMethod == NUMJAC) {
+    warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by IDA."
+                                      " Colored numerical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDNUMJAC;
+  }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
+    warningStreamPrint(LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+                                      " Colored numerical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDNUMJAC;
+  }
+
+  /* Set NNZ */
+  if (idaData->daeMode) {
+    idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNonZeros;
+  } else {
+    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNonZeros;
   }
 
   switch (idaData->linearSolverMethod){
@@ -735,6 +709,10 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
+  memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+  memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+  memcpy(NV_DATA_S(idaData->y), idaData->states, idaData->N);
+  memcpy(NV_DATA_S(idaData->yp), idaData->statesDer, idaData->N);
   flag = IDAReInit(idaData->ida_mem,
                     data->localData[0]->timeValue,
                     idaData->y,
@@ -1155,7 +1133,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_ODE);
+    setContext(data, time, CONTEXT_ODE);
   }
   data->localData[0]->timeValue = time;
 
@@ -1271,7 +1249,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_EVENTS);
+    setContext(data, time, CONTEXT_EVENTS);
   }
 
   /* re-scale idaData->y and idaData->yp to evaluate the equations*/
@@ -1376,7 +1354,7 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
     sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   }
 
-  setContext(data, &currentTime, CONTEXT_JACOBIAN);
+  setContext(data, currentTime, CONTEXT_JACOBIAN);
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
@@ -1447,12 +1425,13 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   unsigned int i,ii,j, nth;
   SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  jac->dae_cj = cj;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer_Serial(yy);
   double *yprime = N_VGetArrayPointer_Serial(yp);
 
-  setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {
@@ -1679,7 +1658,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
-  setContext(data, &currentTime, CONTEXT_JACOBIAN);
+  setContext(data, currentTime, CONTEXT_JACOBIAN);
 
   /* rescale idaData->y and idaData->yp
    * the evaluation of the  residual function
@@ -1742,7 +1721,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       }
     }
   }
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
 
   /* scale idaData->y and idaData->yp again */
   if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
@@ -1760,6 +1739,8 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
 
 /*
  * This function calculates the jacobian matrix symbolically while exploiting coloring.
+ * ToDo: backend: generate seeds for der(x)
+         here: always set der(x) seeds to cj when setting seed for x
  */
 int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
                                N_Vector rr, SUNMatrix Jac, double cj,
@@ -1771,6 +1752,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
   const int index = data->callback->INDEX_JAC_A;
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  jac->dae_cj = cj;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer_Serial(yy);
@@ -1789,7 +1771,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
-  setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {
@@ -1799,7 +1781,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, t_jac,
                                            data, threadData, &setJacElementKluSparse);
 
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
   unsetContext(data);
 
   TRACE_POP

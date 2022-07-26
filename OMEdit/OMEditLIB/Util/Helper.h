@@ -56,8 +56,9 @@ public:
   static QString organization;
   static QString application;
   static QString OpenModelicaVersion;
+  static QString OpenModelicaUsersGuideVersion;
   static QString OpenModelicaHome;
-  static QString OpenModelicaLibrary;
+  static QString ModelicaPath;
   static QString userHomeDirectory;
   static QString OMCServerName;
   static QString omFileTypes;
@@ -150,6 +151,9 @@ public:
   static QString reset;
   static QString close;
   static QString error;
+  static QString percentageLabel;
+  static QString chooseTransparency;
+  static QString chooseColor;
   static QString chooseFile;
   static QString chooseFiles;
   static QString saveFile;
@@ -431,6 +435,8 @@ public:
   static QString translationFlags;
   static QString send;
   static QString installLibrary;
+  static QString upgradeInstalledLibraries;
+  static QString updateLibraryIndex;
   static QString dataReconciliation;
 };
 
@@ -506,7 +512,8 @@ public:
     MULTIPLE_DECLARATIONS_COMPONENT,
     GDB_ERROR,
     INVALID_INSTANCE_NAME,
-    ENTER_SCRIPT
+    ENTER_SCRIPT,
+    LIBRARY_INDEX_FILE_NOT_FOUND
   };
 
   static QString getMessage(int type);

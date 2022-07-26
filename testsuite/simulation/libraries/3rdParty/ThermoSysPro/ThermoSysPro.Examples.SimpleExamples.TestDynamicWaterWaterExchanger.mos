@@ -35,7 +35,10 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | debug   | Division by zero (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p in function context
+// stdout            | warning | Non-Linear Solver try to handle a problem with a called assert.
+// assert            | debug   | Division by zero (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p in function context
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

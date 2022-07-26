@@ -7,7 +7,6 @@ extern "C" {
 #include "Error.h"
 #include "FCore.h"
 #include "FGraph.h"
-#include "FGraphStream.h"
 #include "FNode.h"
 #include "Flags.h"
 #include "List.h"

@@ -174,9 +174,9 @@ static ffi_type* exp_alignment_and_type(void *exp, struct Alignment *align, int 
       align->size = sizeof(void*);
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
 
-      if (!listEmpty(elems)) {
+      if (arrayLength(elems) > 0) {
         align->fields = (struct Alignment*)generic_alloc(1, sizeof(struct Alignment));
-        exp_alignment_and_type(MMC_CAR(elems), &align->fields[0], 0);
+        exp_alignment_and_type(MMC_STRUCTDATA(elems)[0], &align->fields[0], 0);
       }
       }
       return &ffi_type_pointer;
@@ -330,13 +330,14 @@ static void* mk_enum_exp(void *ptr, void *type)
 static void* mk_array_exp_2(void *arr, void *type, mk_exp_fn_t mkExpFn,
                             size_t dimCount, size_t elemCount, size_t elemSize)
 {
-  void *elems = mmc_mk_nil();
+  void *elems;
 
   if (dimCount == 1) { /* 1-dimensional array */
-    /* Use the given function to construct a list of scalar elements */
-    for (int i = elemCount-1; i >= 0; --i) {
-      void *elem = mkExpFn(increment_ptr(arr, i*elemSize), type);
-      elems = mmc_mk_cons(elem, elems);
+    elems = arrayCreateNoInit(elemCount, 0);
+
+    /* Use the given function to construct an array of scalar elements */
+    for (int i = 0; i < elemCount; ++i) {
+      MMC_STRUCTDATA(elems)[i] = mkExpFn(increment_ptr(arr, i*elemSize), type);
     }
   } else { /* Multidimensional array */
     /* The length of this array */
@@ -348,12 +349,14 @@ static void* mk_array_exp_2(void *arr, void *type, mk_exp_fn_t mkExpFn,
     /* The (array) type of each array element */
     void *elem_ty = unlift_array_type(type);
 
-    /* Divide the array up into equal sized chunks (backwards to avoid a list
-     * reverse) and convert each chunk recursively into an array */
-    for (int i = arr_len-1; i >= 0; --i) {
+    elems = arrayCreateNoInit(arr_len, 0);
+
+    /* Divide the array up into equal sized chunks and convert each chunk
+     * recursively into an array */
+    for (int i = 0; i < arr_len; ++i) {
       void *arr_ptr = increment_ptr(arr, i*elems_bytes);
       void *elem = mk_array_exp_2(arr_ptr, elem_ty, mkExpFn, dimCount - 1, arr_scalar_count, elemSize);
-      elems = mmc_mk_cons(elem, elems);
+      MMC_STRUCTDATA(elems)[i] = elem;
     }
   }
 
@@ -509,10 +512,10 @@ static void* write_exp_value(void *exp, void *ptr, struct Alignment *align)
 
     case NFExpression__ARRAY_3dBOX3: {
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
+      int len = arrayLength(elems);
 
-      while (!listEmpty(elems)) {
-        ptr = write_exp_value(MMC_CAR(elems), ptr, align);
-        elems = MMC_CDR(elems);
+      for (int i = 0; i < len; ++i) {
+        ptr = write_exp_value(MMC_STRUCTDATA(elems)[i], ptr, align);
       }
       }
       return ptr;

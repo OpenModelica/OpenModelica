@@ -10137,6 +10137,8 @@ algorithm
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
       DAE.Binding binding "equation modification";
+      list<Absyn.Subscript> subscripts;
+      Absyn.ComponentRef stripped_cref;
 
     // wildcard
     case (cache, _, Absyn.WILD(), _, _)
@@ -10161,34 +10163,51 @@ algorithm
       then
         (inCache, res);
 
-    // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
-    // No vectorization is performed
+    // qualified subscripted array
+    case (cache, env, Absyn.CREF_QUAL(name = id), impl, pre)
+      algorithm
+        true := Config.acceptMetaModelicaGrammar();
+        true := AbsynUtil.crefHasSubscripts(inComponentRef);
+
+        // get the last subscripts and then strip them
+        subscripts := AbsynUtil.crefGetLastSubs(inComponentRef);
+        stripped_cref := AbsynUtil.crefStripLastSubs(inComponentRef);
+
+        // fail if there are still subscripts left or more than one have been extracted
+        true := not AbsynUtil.crefHasSubscripts(stripped_cref) and listLength(subscripts) == 1;
+
+        // elaborate the subscript
+        {Absyn.SUBSCRIPT(e)} := subscripts;
+        (cache, res) := elabCrefArraySubscripts(
+          cref      = stripped_cref,
+          e         = e,
+          cache     = cache,
+          env       = env,
+          pre       = pre,
+          evalCref  = evalCref,
+          impl      = impl,
+          info      = info
+        );
+      then
+        (cache, res);
+
+    // ident subscripted array
     case (cache, env, Absyn.CREF_IDENT(name = id, subscripts = {Absyn.SUBSCRIPT(e)}), impl, pre)
       algorithm
         true := Config.acceptMetaModelicaGrammar();
-        // Elaborate the cref without the subscript.
-        (cache, SOME((exp1, DAE.PROP(t, const1), attr))) :=
-          elabCref1(cache, env, Absyn.CREF_IDENT(id, {}), false, false, pre, evalCref, info);
-
-        // Check that the type is a MetaModelica array, and get the element type.
-        t := Types.metaArrayElementType(t);
-
-        // Elaborate the subscript.
-        (cache,exp2,DAE.PROP(sub_ty, const2)) :=
-          elabExpInExpression(cache,env,e,impl,false,pre,info);
-
-        // Unbox the subscript if it's boxed, since it will be converted to an
-        // arrayGet/arrayUpdate in code generation.
-        if Types.isMetaBoxedType(sub_ty) then
-          sub_ty := Types.unboxedType(sub_ty);
-          exp2 := DAE.UNBOX(exp2, sub_ty);
-        end if;
-
-        true := Types.isScalarInteger(sub_ty);
-        const := Types.constAnd(const1,const2);
-        exp := Expression.makeASUB(exp1,{exp2});
+        // elaborate the subscript
+        (cache, res) := elabCrefArraySubscripts(
+          cref      = Absyn.CREF_IDENT(id, {}),
+          e         = e,
+          cache     = cache,
+          env       = env,
+          pre       = pre,
+          evalCref  = evalCref,
+          impl      = impl,
+          info      = info
+        );
       then
-        (cache, SOME((exp, DAE.PROP(t, const), attr)));
+        (cache, res);
 
     // a normal cref
     case (cache, env, c, impl, pre)
@@ -10286,6 +10305,48 @@ algorithm
         (cache,NONE());
   end matchcontinue;
 end elabCref1;
+
+protected function elabCrefArraySubscripts
+"function: elabCrefArraySubscripts
+  Parse the subscripts of an array and unbox if necessary."
+  input Absyn.ComponentRef cref                                   "originally subscripted (now stripped) cref";
+  input Absyn.Exp e                                               "the subscript";
+  input output FCore.Cache cache                                  "cache";
+  input FCore.Graph env                                           "environment";
+  input DAE.Prefix pre                                            "cref prefixes";
+  input Boolean evalCref                                          "true if cref should be evaluated";
+  input Boolean impl                                              "implicit instantiation";
+  input SourceInfo info                                           "source information";
+  output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res "elaborated expression with props and attr";
+protected
+  DAE.Exp exp, exp1, exp2;
+  DAE.Const const, const1, const2;
+  DAE.Type t, sub_ty;
+  DAE.Attributes attr;
+algorithm
+  // Elaborate the cref without the subscript.
+  (cache, SOME((exp1, DAE.PROP(t, const1), attr))) :=
+    elabCref1(cache, env, cref, false, false, pre, evalCref, info);
+
+  // Check that the type is a MetaModelica array, and get the element type.
+  t := Types.metaArrayElementType(t);
+
+  // Elaborate the subscript.
+  (cache,exp2,DAE.PROP(sub_ty, const2)) :=
+    elabExpInExpression(cache,env,e,impl,false,pre,info);
+
+  // Unbox the subscript if it's boxed, since it will be converted to an
+  // arrayGet/arrayUpdate in code generation.
+  if Types.isMetaBoxedType(sub_ty) then
+    sub_ty := Types.unboxedType(sub_ty);
+    exp2 := DAE.UNBOX(exp2, sub_ty);
+  end if;
+
+  true := Types.isScalarInteger(sub_ty);
+  const := Types.constAnd(const1,const2);
+  exp := Expression.makeASUB(exp1,{exp2});
+  res := SOME((exp, DAE.PROP(t, const), attr));
+end elabCrefArraySubscripts;
 
 protected function isValidTimeScope
   "Checks if time is allowed to be used in the current scope."

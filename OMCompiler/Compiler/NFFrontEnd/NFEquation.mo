@@ -152,12 +152,6 @@ public
     DAE.ElementSource source;
   end EQUALITY;
 
-  record CREF_EQUALITY
-    ComponentRef lhs;
-    ComponentRef rhs;
-    DAE.ElementSource source;
-  end CREF_EQUALITY;
-
   record ARRAY_EQUALITY
     Expression lhs;
     Expression rhs;
@@ -222,6 +216,19 @@ public
     annotation(__OpenModelica_EarlyInline=true);
   end makeEquality;
 
+  function makeCrefEquality
+    input ComponentRef lhsCref;
+    input ComponentRef rhsCref;
+    input DAE.ElementSource src;
+    output Equation eq;
+  protected
+    Expression e1, e2;
+  algorithm
+    e1 := Expression.fromCref(lhsCref);
+    e2 := Expression.fromCref(rhsCref);
+    eq := makeEquality(e1, e2, Expression.typeOf(e1), src);
+  end makeCrefEquality;
+
   function makeBranch
     input Expression condition;
     input list<Equation> body;
@@ -247,7 +254,6 @@ public
   algorithm
     source := match eq
       case EQUALITY() then eq.source;
-      case CREF_EQUALITY() then eq.source;
       case ARRAY_EQUALITY() then eq.source;
       case CONNECT() then eq.source;
       case FOR() then eq.source;
@@ -518,6 +524,7 @@ public
     eq := match eq
       local
         Expression e1, e2, e3;
+        ComponentRef cr1, cr2;
 
       case EQUALITY()
         algorithm
@@ -534,6 +541,13 @@ public
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
             then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
+
+      //case CREF_EQUALITY()
+      //  algorithm
+      //    Expression.CREF(cref = cr1) := func(Expression.fromCref(eq.lhs));
+      //    Expression.CREF(cref = cr2) := func(Expression.fromCref(eq.rhs));
+      //  then
+      //    Equation.CREF_EQUALITY(cr1, cr2, eq.source);
 
       case CONNECT()
         algorithm
@@ -1044,14 +1058,6 @@ public
         then
           s;
 
-      case CREF_EQUALITY()
-        algorithm
-          s := IOStream.append(s, ComponentRef.toString(eq.lhs));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, ComponentRef.toString(eq.rhs));
-        then
-          s;
-
       case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toString(eq.lhs));
@@ -1064,7 +1070,7 @@ public
         algorithm
           s := IOStream.append(s, "connect(");
           s := IOStream.append(s, Expression.toString(eq.lhs));
-          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ", ");
           s := IOStream.append(s, Expression.toString(eq.rhs));
           s := IOStream.append(s, ")");
         then
@@ -1198,14 +1204,6 @@ public
         then
           s;
 
-      case CREF_EQUALITY()
-        algorithm
-          s := IOStream.append(s, ComponentRef.toFlatString(eq.lhs));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, ComponentRef.toFlatString(eq.rhs));
-        then
-          s;
-
       case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toFlatString(eq.lhs));
@@ -1218,7 +1216,7 @@ public
         algorithm
           s := IOStream.append(s, "connect(");
           s := IOStream.append(s, Expression.toFlatString(eq.lhs));
-          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ", ");
           s := IOStream.append(s, Expression.toFlatString(eq.rhs));
           s := IOStream.append(s, ")");
         then

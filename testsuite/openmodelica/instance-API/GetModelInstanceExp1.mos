@@ -1,0 +1,100 @@
+// name: GetModelInstanceExp1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x[3] = {1, 2, 3};
+  end A;
+
+  model M
+    Real x = 2.0;
+    A a;
+    Real y = a.x[1];
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"2.0\",
+//       \"value\": {
+//         \"binding\": 2
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     },
+//     {
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \"3\"
+//               ],
+//               \"typed\": [
+//                 \"3\"
+//               ]
+//             },
+//             \"modifiers\": \"{1, 2, 3}\",
+//             \"value\": {
+//               \"binding\": [
+//                 1,
+//                 2,
+//                 3
+//               ]
+//             },
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     },
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"a.x[1]\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"a\"
+//             },
+//             {
+//               \"name\": \"x\",
+//               \"subscripts\": [
+//                 1
+//               ]
+//             }
+//           ]
+//         }
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ]
+// }"
+// endResult

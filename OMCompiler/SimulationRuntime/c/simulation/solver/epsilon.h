@@ -52,6 +52,7 @@ static const double DASSL_STEP_EPS = 1e-13;
  * defines the minimal step size
  */
 static const double MINIMAL_STEP_SIZE = 1e-12;
+static const double GB_MINIMAL_STEP_SIZE = 1e-20;
 
 /*
  * used in model_help.c for function setZCtol

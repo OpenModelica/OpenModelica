@@ -14,10 +14,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define stat _stat
-#endif
-
 #if defined(_MSC_VER)
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)
@@ -64,11 +60,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   PlotFormat format;
   int len = strlen(filename);
   const char *msg[] = {"",""};
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat buf;
-#else
-  struct stat buf = {0} /* Zero this or valgrind complains */;
-#endif
+  omc_stat_t buf = {0} /* Zero this or valgrind complains */;
 
   if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) {
     /* Also check that the file was not modified */
@@ -121,7 +113,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   simresglob->curFormat = format;
   simresglob->curFileName = strdup(filename);
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
-  stat(filename, &buf);
+  omc_stat(filename, &buf);
   simresglob->mtime = buf.st_mtime;
 #endif
   // fprintf(stderr, "SimulationResultsImpl__openFile(%s) => %s\n", filename, PlotFormatStr[curFormat]);
@@ -470,7 +462,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
           vals[i] = omc_matlab4_read_vals(&simresglob.matReader, mat_var[i]->index);
         }
       }
-      fout = fopen(outFile, "w");
+      fout = omc_fopen(outFile, "w");
       fprintf(fout, "time");
       for (i=1; i<numToFilter; i++) {
         fprintf(fout, ",\"%s\"", mat_var[i]->name);
@@ -530,7 +522,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       /* indexes becomes the lookup table from old index to new index */
       parameter_indexes[i] = j;
     }
-    fout = fopen(outFile, "wb");
+    fout = omc_fopen(outFile, "wb");
     if (fout == NULL) {
       return failedToWriteToFile(outFile);
     }

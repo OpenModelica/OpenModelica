@@ -1,0 +1,212 @@
+// name: GetModelInstanceMod1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+    Real y;
+  end A;
+
+  model B
+    A a1;
+    A a2;
+  end B;
+
+  model C
+    B b1;
+    B b2;
+  end C;
+
+  model M
+    C c(b1(a1(x = 1.0, y = 2.0), a2(x = 3.0, y = 4.0)),
+        b2(a1(x = 5.0)));
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"c\",
+//       \"type\": {
+//         \"name\": \"C\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"b1\",
+//             \"type\": {
+//               \"name\": \"B\",
+//               \"restriction\": \"model\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"a1\",
+//                   \"type\": {
+//                     \"name\": \"A\",
+//                     \"restriction\": \"model\",
+//                     \"components\": [
+//                       {
+//                         \"name\": \"x\",
+//                         \"type\": \"Real\",
+//                         \"value\": {
+//                           \"binding\": 1
+//                         },
+//                         \"prefixes\": {
+//
+//                         }
+//                       },
+//                       {
+//                         \"name\": \"y\",
+//                         \"type\": \"Real\",
+//                         \"value\": {
+//                           \"binding\": 2
+//                         },
+//                         \"prefixes\": {
+//
+//                         }
+//                       }
+//                     ]
+//                   },
+//                   \"prefixes\": {
+//
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"a2\",
+//                   \"type\": {
+//                     \"name\": \"A\",
+//                     \"restriction\": \"model\",
+//                     \"components\": [
+//                       {
+//                         \"name\": \"x\",
+//                         \"type\": \"Real\",
+//                         \"value\": {
+//                           \"binding\": 3
+//                         },
+//                         \"prefixes\": {
+//
+//                         }
+//                       },
+//                       {
+//                         \"name\": \"y\",
+//                         \"type\": \"Real\",
+//                         \"value\": {
+//                           \"binding\": 4
+//                         },
+//                         \"prefixes\": {
+//
+//                         }
+//                       }
+//                     ]
+//                   },
+//                   \"prefixes\": {
+//
+//                   }
+//                 }
+//               ]
+//             },
+//             \"prefixes\": {
+//
+//             }
+//           },
+//           {
+//             \"name\": \"b2\",
+//             \"type\": {
+//               \"name\": \"B\",
+//               \"restriction\": \"model\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"a1\",
+//                   \"type\": {
+//                     \"name\": \"A\",
+//                     \"restriction\": \"model\",
+//                     \"components\": [
+//                       {
+//                         \"name\": \"x\",
+//                         \"type\": \"Real\",
+//                         \"value\": {
+//                           \"binding\": 5
+//                         },
+//                         \"prefixes\": {
+//
+//                         }
+//                       },
+//                       {
+//                         \"name\": \"y\",
+//                         \"type\": \"Real\",
+//                         \"prefixes\": {
+//
+//                         }
+//                       }
+//                     ]
+//                   },
+//                   \"prefixes\": {
+//
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"a2\",
+//                   \"type\": {
+//                     \"name\": \"A\",
+//                     \"restriction\": \"model\",
+//                     \"components\": [
+//                       {
+//                         \"name\": \"x\",
+//                         \"type\": \"Real\",
+//                         \"prefixes\": {
+//
+//                         }
+//                       },
+//                       {
+//                         \"name\": \"y\",
+//                         \"type\": \"Real\",
+//                         \"prefixes\": {
+//
+//                         }
+//                       }
+//                     ]
+//                   },
+//                   \"prefixes\": {
+//
+//                   }
+//                 }
+//               ]
+//             },
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       },
+//       \"modifiers\": {
+//         \"b1\": {
+//           \"a1\": {
+//             \"x\": \"1.0\",
+//             \"y\": \"2.0\"
+//           },
+//           \"a2\": {
+//             \"x\": \"3.0\",
+//             \"y\": \"4.0\"
+//           }
+//         },
+//         \"b2\": {
+//           \"a1\": {
+//             \"x\": \"5.0\"
+//           }
+//         }
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ]
+// }"
+// endResult

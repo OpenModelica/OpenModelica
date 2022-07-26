@@ -33,6 +33,7 @@
 
 #include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
+#include "LinearScaleEngine.h"
 #include "iostream"
 #include "qwt_plot_layout.h"
 #if QWT_VERSION >= 0x060000
@@ -128,7 +129,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[17]);
   }
   setTimeUnit("");
-  setPrefixUnits(false);
+  setPrefixUnits(true);
   setCanUseXPrefixUnits(false);
   setCanUseYPrefixUnits(false);
   /* read variables */
@@ -520,13 +521,15 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader))) {
       throw PlotException(msg);
     }
-    //Read in timevector
-    double startTime = omc_matlab4_startTime(&reader);
-    double stopTime =  omc_matlab4_stopTime(&reader);
+
     if (reader.nvar < 1) {
       omc_free_matlab4_reader(&reader);
       throw NoVariableException("Variable doesnt exist: time");
     }
+
+    double startTime = omc_matlab4_startTime(&reader);
+    double stopTime =  omc_matlab4_stopTime(&reader);
+    //Read in timevector
     double *timeVals = omc_matlab4_read_vals(&reader,1);
     if (!timeVals) {
       omc_free_matlab4_reader(&reader);
@@ -974,7 +977,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       readPLTArray(mpTextStream, currentVariable, alpha, intervalSize, it, arrLst);
       for (int i = 0; i < arrLst.length(); i++)
       {
-        pPlotCurve->addXAxisValue(i);
+        pPlotCurve->addXAxisValue(i+1);
         pPlotCurve->addYAxisValue(arrLst[i]);
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1034,7 +1037,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
       for (int j = 0; j < res.count(); j++){
-        pPlotCurve->addXAxisValue(j);
+        pPlotCurve->addXAxisValue(j+1);
         pPlotCurve->addYAxisValue(res[j]);
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1095,7 +1098,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
         for (int i = 0; i < vars.count(); i++){
-          pPlotCurve->addXAxisValue(i);
+          pPlotCurve->addXAxisValue(i+1);
           pPlotCurve->addYAxisValue(res[i]);
         }
         pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1735,7 +1738,7 @@ void PlotWindow::printPlot()
 
   printer.setDocName("OMPlot");
   printer.setCreator("Plot Window");
-  printer.setOrientation(QPrinter::Landscape);
+  printer.setPageOrientation(QPageLayout::Landscape);
 
   QPrintDialog dialog(&printer);
   if ( dialog.exec() )
@@ -1806,7 +1809,7 @@ void PlotWindow::setLogX(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpLogXCheckBox->blockSignals(true);
@@ -1827,7 +1830,7 @@ void PlotWindow::setLogY(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpLogYCheckBox->blockSignals(true);
@@ -2288,8 +2291,6 @@ void SetupDialog::applySetup()
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
   }
   // replot
-  mpPlotWindow->getPlot()->getXScaleDraw()->invalidateCache();
-  mpPlotWindow->getPlot()->getYScaleDraw()->invalidateCache();
   mpPlotWindow->getPlot()->updateLayout();
   mpPlotWindow->getPlot()->replot();
   if (requiresFitInView) {

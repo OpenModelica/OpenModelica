@@ -78,8 +78,8 @@ ENDIF(SUNDIALS_INCLUDE_DIR)
 # Defines for Visual Studio
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
-    # GC shall not use a dll
-    add_definitions(-DGC_NOT_DLL)
+
+  add_definitions(-DWIN32_LEAN_AND_MEAN)
 endif(MSVC)
 
 # includes

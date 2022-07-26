@@ -129,6 +129,7 @@ val(f, 0.0);
 //     resultFile = "initializationTests.homotopy4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry -homTauStart=0.4'",
 //     messages = "stdout            | info    | homotopy parameter homTauStart changed to 0.400000
+// stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_SUCCESS       | info    | The initialization finished successfully with 479 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

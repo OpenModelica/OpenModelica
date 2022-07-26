@@ -19,8 +19,8 @@ model ArrayConnect2
   A S, R[N], C[N], G;
 equation
   connect(S.p, R[1].p);
-  connect(S.n,G.p) ;
-  connect(C[1]. n,G.p) ;
+  connect(S.n, G.p) ;
+  connect(C[1].n, G.p) ;
 
   for i in 1:N-1 loop
     connect(R[i].n, R[i+1].p);

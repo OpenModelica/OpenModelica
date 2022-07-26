@@ -76,7 +76,7 @@ algorithm
     case true
       algorithm
         newName := if Autoconf.os == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
-        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/(libraries-for-testing/.openmodelica/libraries/)?)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 7, true, false);
+        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/(libraries-for-testing/.openmodelica/libraries/)?)?(.*/lib/omlibrary/)?(.*/build/(install_cmake/)?)?(.*)$", 8, true, false);
         friendly := listGet(strs,i);
 
         // Remove the name of any temporary folders used to sandbox a test case,
