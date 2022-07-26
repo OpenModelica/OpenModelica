@@ -55,6 +55,7 @@
  */
 
 #include "newton_diagnostics.h"
+#include "../simulation_info_json.h"
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -65,7 +66,7 @@ extern int dgetrf_(int *n, int *nrhs, double *a, int *lda,
 extern int dgetri_(int *n, double *a, int *lda,
                    int *ipiv, double *work, int *lwork, int *info);
 
-unsigned var_id( idx)
+/*unsigned var_id( idx)
 {
    // DC circuit case
 
@@ -101,7 +102,7 @@ unsigned var_id( idx)
    else
       id = idx;
    return id;
-}
+}*/
 
 /*unsigned var_id( idx)
 {
@@ -130,6 +131,20 @@ unsigned var_id( idx)
    return id;
 }*/
 // --------------------------------------------------------------------------------------------------------------------------------
+
+unsigned var_id( unsigned idx, DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
+{
+   unsigned id = -1;
+   for( unsigned int i = 0; i < data->modelData->nVariablesReal; ++i)
+   {
+      if (!strcmp(data->modelData->realVarsData[i].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[idx]))
+      {
+         id = i;
+         break;
+      }
+   }
+   return id;
+}
 
 void MatMult( unsigned rA, unsigned cArB, unsigned cB, double A[rA][cArB], double B[cArB][cB], double C[rA][cB])
 {
@@ -263,9 +278,18 @@ void getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsig
    double fxPls[m][m];
    double fxMin[m][m];
 
+   // ----------------------------------------------- Debug -------------------------------------------------
+   printf( "\n");
    for( k = 0; k < m; k++)
    {
-      unsigned id = var_id(k);
+      unsigned id = var_id(k, data, systemData);
+      printf( "               k = %d: id = %d (%s)\n", k, id, data->modelData->realVarsData[id].info.name);
+   }
+   // -------------------------------------------- end of Debug ---------------------------------------------
+
+   for( k = 0; k < m; k++)
+   {
+      unsigned id = var_id(k, data, systemData);
 
       double tmp_x = sData->realVars[id];
       const modelica_real delta_x = tmp_x * eps;
@@ -496,7 +520,7 @@ void calcSigma( unsigned m, unsigned p, unsigned w_idx[p], unsigned n_idx[p],
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-void PrintResults( DATA* data, unsigned p, unsigned w_idx[p], unsigned n_idx[p], double x0[p],
+void PrintResults( DATA* data, unsigned sysNumber, unsigned p, unsigned w_idx[p], unsigned n_idx[p], double x0[p],
                    double lambda, double alpha[p], double Gamma_ijk[p][p][p], double Sigma_ij[p][p])
 {
    unsigned i, j, k;
@@ -505,12 +529,14 @@ void PrintResults( DATA* data, unsigned p, unsigned w_idx[p], unsigned n_idx[p],
    printf("  \n    Final results ");
    printf("  \n   ===============\n\n");
 
+   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+
    for( i = 0; i < p; i++)
-      printf("      eq_%d : \n", n_idx[i]+1); //, data->modelData->realVarsData[var_id(w_idx[j])].info.name);
+      printf("      eq_%d : %s\n", n_idx[i]+1, "???"); //, modelInfoGetFunction(&data->modelData->modelDataXml, i).name);
    printf("\n");
 
    for( j = 0; j < p; j++)
-      printf("      var_%d: %8s = %10.8g\n", w_idx[j]+1, data->modelData->realVarsData[var_id(w_idx[j])].info.name, x0[w_idx[j]]);
+      printf("      var_%d: %8s = %10.8g\n", w_idx[j]+1, data->modelData->realVarsData[var_id(w_idx[j], data, systemData)].info.name, x0[w_idx[j]]);
    printf("\n");
 
    printf("      lambda    = %8.3g\n\n", lambda);
@@ -610,9 +636,9 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   // --------------------------------------------------------------------------------------------------------------------------------
   //  Thermo hydraulic case
   // --------------------------------------------------------------------------------------------------------------------------------
-  /*
+
   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-  unsigned p = m;
+  /*unsigned p = m;
   double w0[p];
   unsigned w_idx[p];
   w_idx[0] = 0;
@@ -630,12 +656,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   n_idx[2] = 2;
   n_idx[3] = 3;
   n_idx[4] = 4;
-  n_idx[5] = 5;
+  n_idx[5] = 5;*/
 
-  // Linear dependables "z":
-  double z[1];
-  unsigned z_idx[1];
-  */
   // --------------------------------------------------------------------------------------------------------------------------------
   //  DC circuit case
   // --------------------------------------------------------------------------------------------------------------------------------
@@ -644,6 +666,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   unsigned p = 3;
   double w0[p];
   unsigned w_idx[p];
+
   w_idx[0] = 2;  // var^3
   w_idx[1] = 3;  // var^4
   w_idx[2] = 4;  // var^5
@@ -651,27 +674,73 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
   double n[p];
   unsigned n_idx[p];
+
   n_idx[0] = 1;  // f^2
   n_idx[1] = 3;  // f^4
   n_idx[2] = 4;  // f^5
 
-  // Linear dependables "z":
-  double z[m-p];
-  unsigned z_idx[m-p];
-  z_idx[0]  =  0;
-  z_idx[1]  =  1;
-  z_idx[2]  =  5;
-  z_idx[3]  =  6;
-  z_idx[4]  =  7;
-  z_idx[5]  =  8;
-  z_idx[6]  =  9;
-  z_idx[7]  = 10;
-  z_idx[8]  = 11;
-  z_idx[9]  = 12;
+// --------------------------------------------------------------------------------------------------------------------------------
+
+   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
+   /*unsigned p;
+   double* w0;
+   unsigned* w_idx;
+
+   p = 3;
+
+   w0 = (double*)malloc(p);
+   w_idx = (unsigned*)malloc(p);
+
+   w_idx[0] = 2;  // var^3
+   w_idx[1] = 3;  // var^4
+   w_idx[2] = 4;  // var^5
+
+   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
+   double* n;
+   unsigned* n_idx;
+
+   n = (double*)malloc(p);
+   n_idx = (unsigned*)malloc(p);
+
+   n_idx[0] = 1;  // f^2
+   n_idx[1] = 3;  // f^4
+   n_idx[2] = 4;  // f^5*/
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
+   // Linear dependables "z": store the remaining ones (those not being in w_idx) in z_idx
    unsigned i;
+   double* z;
+   unsigned* z_idx;
+   if (m > p)
+   {
+      z = (double*)malloc(m-p);
+      z_idx = (unsigned*)malloc(m-p);
+      unsigned j = 0;
+      for( i = 0; i < m; i++)
+      {
+         unsigned i_in_w = 0;
+         for( unsigned k = 0; k < p; k++)
+         {
+            if (w_idx[k] == i)
+            {
+               i_in_w = 1;
+               break;
+            }
+         }
+         if (!i_in_w)
+         {
+            z_idx[j] = i;
+            j++;
+         }
+      }
+      for( i = 0; i < m-p; i++)
+         printf("\n               z_idx[%d] = %d", i, z_idx[i]);
+      printf("\n");
+   }
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
    double x0[m], f[m];
 
    // Store all all dependents in x0 and function values as function of x0 in f
@@ -688,7 +757,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    // Prints values of vector x0
    printf("\n   Vector x0 ....\n");
    for( i = 0; i < m; i++)
-      printf("\n               x0[%d] = %14.10f  (%s)", i+1, x0[i], data->modelData->realVarsData[var_id(i)].info.name);
+      printf("\n               x0[%d] = %14.10f  (%s)", i, x0[i], data->modelData->realVarsData[var_id(i, data, systemData)].info.name);
 
    // Prints function values "f", i.e. residuals as function of x0
    printf("\n\n   Function values of all equations f(x0) ....\n");
@@ -711,7 +780,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-   double lambda = 1.0; //0.49;
+   double lambda = 1.0; // 0.49; //
 
    double alpha[p];
    calcAlpha( data, threadData, sysNumber, m, p, w_idx, n_idx, x0, dx, f, fxx, lambda, maxRes, alpha);
@@ -722,7 +791,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    double Sigma[p][p];
    calcSigma( m, p, w_idx, n_idx, dx, fx, fxx, Sigma);
 
-   PrintResults( data, p, w_idx, n_idx, x0, lambda, alpha, Gamma_ijk, Sigma);
+   PrintResults( data, sysNumber, p, w_idx, n_idx, x0, lambda, alpha, Gamma_ijk, Sigma);
 
    infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Newton diagnostics (version Teus) finished!!");
 
