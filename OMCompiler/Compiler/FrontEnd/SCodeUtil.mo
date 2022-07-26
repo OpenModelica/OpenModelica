@@ -917,39 +917,26 @@ algorithm
   end matchcontinue;
 end algorithmEqual2;
 
-public function equationEqual
-"Returns true if two equations are equal."
-  input SCode.Equation eqn1;
-  input SCode.Equation eqn2;
-  output Boolean equal;
-protected
-  SCode.EEquation eq1, eq2;
-algorithm
-  SCode.EQUATION(eEquation = eq1) := eqn1;
-  SCode.EQUATION(eEquation = eq2) := eqn2;
-  equal := equationEqual2(eq1, eq2);
-end equationEqual;
-
-protected function equationEqual2
-"Helper function to equationEqual"
-  input SCode.EEquation eq1;
-  input SCode.EEquation eq2;
+protected function equationEqual
+  "Returns true if two equations are equal."
+  input SCode.Equation eq1;
+  input SCode.Equation eq2;
   output Boolean equal;
 algorithm
   equal := matchcontinue(eq1,eq2)
     local
-      list<list<SCode.EEquation>> tb1,tb2;
+      list<list<SCode.Equation>> tb1,tb2;
       Absyn.Exp cond1,cond2;
       list<Absyn.Exp> ifcond1,ifcond2;
       Absyn.Exp e11,e12,e21,e22,exp1,exp2,c1,c2,m1,m2,e1,e2;
       Absyn.ComponentRef cr11,cr12,cr21,cr22,cr1,cr2;
       Absyn.Ident id1,id2;
-      list<SCode.EEquation> fb1,fb2,eql1,eql2,elst1,elst2;
+      list<SCode.Equation> fb1,fb2,eql1,eql2,elst1,elst2;
 
     case (SCode.EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),SCode.EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       equation
-        true = equationEqual22(tb1,tb2);
-        List.threadMapAllValue(fb1,fb2,equationEqual2,true);
+        true = equationEqual2(tb1,tb2);
+        List.threadMapAllValue(fb1,fb2,equationEqual,true);
         List.threadMapAllValue(ifcond1,ifcond2,AbsynUtil.expEqual,true);
       then
         true;
@@ -978,7 +965,7 @@ algorithm
 
     case (SCode.EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
       equation
-        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
+        List.threadMapAllValue(eql1,eql2,equationEqual,true);
         true = AbsynUtil.expEqual(exp1,exp2);
         true = stringEq(id1,id2);
       then
@@ -986,14 +973,14 @@ algorithm
 
     case (SCode.EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))
       equation
-        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
+        List.threadMapAllValue(eql1,eql2,equationEqual,true);
         true = stringEq(id1,id2);
       then
         true;
 
     case (SCode.EQ_WHEN(condition = cond1, eEquationLst = elst1),SCode.EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
-        List.threadMapAllValue(elst1,elst2,equationEqual2,true);
+        List.threadMapAllValue(elst1,elst2,equationEqual,true);
         true = AbsynUtil.expEqual(cond1,cond2);
       then
         true;
@@ -1021,33 +1008,33 @@ algorithm
     // otherwise false
     else false;
   end matchcontinue;
-end equationEqual2;
+end equationEqual;
 
-protected function equationEqual22
+protected function equationEqual2
 "Author BZ
  Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.)"
-  input list<list<SCode.EEquation>> inTb1;
-  input list<list<SCode.EEquation>> inTb2;
+  input list<list<SCode.Equation>> inTb1;
+  input list<list<SCode.Equation>> inTb2;
   output Boolean bOut;
 algorithm
   bOut := matchcontinue(inTb1,inTb2)
     local
-      list<SCode.EEquation> tb_1,tb_2;
-      list<list<SCode.EEquation>> tb1,tb2;
+      list<SCode.Equation> tb_1,tb_2;
+      list<list<SCode.Equation>> tb1,tb2;
 
     case({},{}) then true;
     case(_,{}) then false;
     case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
       equation
-        List.threadMapAllValue(tb_1,tb_2,equationEqual2,true);
-        true = equationEqual22(tb1,tb2);
+        List.threadMapAllValue(tb_1,tb_2,equationEqual,true);
+        true = equationEqual2(tb1,tb2);
       then
         true;
     case(_::_,_::_) then false;
 
   end matchcontinue;
-end equationEqual22;
+end equationEqual2;
 
 public function modEqual
 "Return true if two Mod:s are equal"
@@ -1339,25 +1326,25 @@ algorithm
   end matchcontinue;
 end setClassPartialPrefix;
 
-public function findIteratorIndexedCrefsInEEquations
-  input list<SCode.EEquation> inEqs;
+public function findIteratorIndexedCrefsInEquations
+  input list<SCode.Equation> inEqs;
   input String inIterator;
   input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
   output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
-  outCrefs := List.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator,
+  outCrefs := List.fold1(inEqs, findIteratorIndexedCrefsInEquation, inIterator,
     inCrefs);
-end findIteratorIndexedCrefsInEEquations;
+end findIteratorIndexedCrefsInEquations;
 
-public function findIteratorIndexedCrefsInEEquation
-  input SCode.EEquation inEq;
+public function findIteratorIndexedCrefsInEquation
+  input SCode.Equation inEq;
   input String inIterator;
   input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
   output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
-  outCrefs := foldEEquationsExps(inEq,
+  outCrefs := foldEquationsExps(inEq,
     function AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
-end findIteratorIndexedCrefsInEEquation;
+end findIteratorIndexedCrefsInEquation;
 
 public function findIteratorIndexedCrefsInStatements
   input list<SCode.Statement> inStatements;
@@ -1563,24 +1550,6 @@ algorithm
   end match;
 end statementToAlgorithmItem;
 
-public function equationFileInfo
-  input SCode.EEquation eq;
-  output SourceInfo info;
-algorithm
-  info := match eq
-    case SCode.EQ_IF(info=info) then info;
-    case SCode.EQ_EQUALS(info=info) then info;
-    case SCode.EQ_PDE(info=info) then info;
-    case SCode.EQ_CONNECT(info=info) then info;
-    case SCode.EQ_FOR(info=info) then info;
-    case SCode.EQ_WHEN(info=info) then info;
-    case SCode.EQ_ASSERT(info=info) then info;
-    case SCode.EQ_TERMINATE(info=info) then info;
-    case SCode.EQ_REINIT(info=info) then info;
-    case SCode.EQ_NORETCALL(info=info) then info;
-  end match;
-end equationFileInfo;
-
 public function emptyModOrEquality
 "Checks if a Mod is empty (or only an equality binding is present)"
   input SCode.Mod mod;
@@ -1649,16 +1618,16 @@ algorithm
   end match;
 end isClass;
 
-public function foldEEquations<ArgT>
+public function foldEquations<ArgT>
   "Calls the given function on the equation and all its subequations, and
    updates the argument for each call."
-  input SCode.EEquation inEquation;
+  input SCode.Equation inEquation;
   input FoldFunc inFunc;
   input ArgT inArg;
   output ArgT outArg;
 
   partial function FoldFunc
-    input SCode.EEquation inEquation;
+    input SCode.Equation inEquation;
     input ArgT inArg;
     output ArgT outArg;
   end FoldFunc;
@@ -1667,35 +1636,35 @@ algorithm
 
   outArg := match inEquation
     local
-      list<SCode.EEquation> eql;
+      list<SCode.Equation> eql;
 
     case SCode.EQ_IF()
       algorithm
-        outArg := List.foldList1(inEquation.thenBranch, foldEEquations, inFunc, outArg);
+        outArg := List.foldList1(inEquation.thenBranch, foldEquations, inFunc, outArg);
       then
-        List.fold1(inEquation.elseBranch, foldEEquations, inFunc, outArg);
+        List.fold1(inEquation.elseBranch, foldEquations, inFunc, outArg);
 
     case SCode.EQ_FOR()
-      then List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg);
+      then List.fold1(inEquation.eEquationLst, foldEquations, inFunc, outArg);
 
     case SCode.EQ_WHEN()
       algorithm
-        outArg := List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg);
+        outArg := List.fold1(inEquation.eEquationLst, foldEquations, inFunc, outArg);
 
         for branch in inEquation.elseBranches loop
           (_, eql) := branch;
-          outArg := List.fold1(eql, foldEEquations, inFunc, outArg);
+          outArg := List.fold1(eql, foldEquations, inFunc, outArg);
         end for;
       then
         outArg;
 
   end match;
-end foldEEquations;
+end foldEquations;
 
-public function foldEEquationsExps<ArgT>
+public function foldEquationsExps<ArgT>
   "Calls the given function on all expressions inside the equation, and updates
    the argument for each call."
-  input SCode.EEquation inEquation;
+  input SCode.Equation inEquation;
   input FoldFunc inFunc;
   input ArgT inArg;
   output ArgT outArg = inArg;
@@ -1709,14 +1678,14 @@ algorithm
   outArg := match inEquation
     local
       Absyn.Exp exp;
-      list<SCode.EEquation> eql;
+      list<SCode.Equation> eql;
 
     case SCode.EQ_IF()
       algorithm
         outArg := List.fold(inEquation.condition, inFunc, outArg);
-        outArg := List.foldList1(inEquation.thenBranch, foldEEquationsExps, inFunc, outArg);
+        outArg := List.foldList1(inEquation.thenBranch, foldEquationsExps, inFunc, outArg);
       then
-        List.fold1(inEquation.elseBranch, foldEEquationsExps, inFunc, outArg);
+        List.fold1(inEquation.elseBranch, foldEquationsExps, inFunc, outArg);
 
     case SCode.EQ_EQUALS()
       algorithm
@@ -1746,16 +1715,16 @@ algorithm
           outArg := inFunc(exp, outArg);
         end if;
       then
-        List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
+        List.fold1(inEquation.eEquationLst, foldEquationsExps, inFunc, outArg);
 
     case SCode.EQ_WHEN()
       algorithm
-        outArg := List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
+        outArg := List.fold1(inEquation.eEquationLst, foldEquationsExps, inFunc, outArg);
 
         for branch in inEquation.elseBranches loop
           (exp, eql) := branch;
           outArg := inFunc(exp, outArg);
-          outArg := List.fold1(eql, foldEEquationsExps, inFunc, outArg);
+          outArg := List.fold1(eql, foldEquationsExps, inFunc, outArg);
         end for;
       then
         outArg;
@@ -1782,7 +1751,7 @@ algorithm
       then inFunc(inEquation.exp, outArg);
 
   end match;
-end foldEEquationsExps;
+end foldEquationsExps;
 
 public function foldStatementsExps<ArgT>
   "Calls the given function on all expressions inside the statement, and updates
@@ -1893,210 +1862,176 @@ algorithm
   end match;
 end foldStatementsExps;
 
-public function traverseEEquationsList
-  "Traverses a list of SCode.EEquations, calling traverseEEquations on each SCode.EEquation
+public function mapFoldEquationsList<ArgT>
+  "Traverses a list of SCode.Equations, calling mapFoldEquations on each SCode.Equation
   in the list."
-  input list<SCode.EEquation> inEEquations;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output list<SCode.EEquation> outEEquations;
-  output tuple<TraverseFunc, Argument> outTuple;
+  input output list<SCode.Equation> eql;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.EEquation, Argument> inTuple;
-    output tuple<SCode.EEquation, Argument> outTuple;
+    input output SCode.Equation eq;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outEEquations, outTuple) :=
-    List.mapFold(inEEquations, traverseEEquations, inTuple);
-end traverseEEquationsList;
+  (eql, arg) := List.mapFold(eql, function mapFoldEquations(traverser = traverser), arg);
+end mapFoldEquationsList;
 
-public function traverseEEquations
-  "Traverses an SCode.EEquation. For each SCode.EEquation it finds it calls the given
-  function with the SCode.EEquation and an extra argument which is passed along."
-  input SCode.EEquation inEEquation;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output SCode.EEquation outEEquation;
-  output tuple<TraverseFunc, Argument> outTuple;
+public function mapFoldEquations<ArgT>
+  "Traverses an SCode.Equation. For each SCode.Equation it finds it calls the given
+  function with the SCode.Equation and an extra argument which is passed along."
+  input output SCode.Equation eq;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.EEquation, Argument> inTuple;
-    output tuple<SCode.EEquation, Argument> outTuple;
-  end TraverseFunc;
-
-protected
-  TraverseFunc traverser;
-  Argument arg;
-  SCode.EEquation eq;
-algorithm
-  (traverser, arg) := inTuple;
-  ((eq, arg)) := traverser((inEEquation, arg));
-  (outEEquation, outTuple) := traverseEEquations2(eq, (traverser, arg));
-end traverseEEquations;
-
-public function traverseEEquations2
-  "Helper function to traverseEEquations, does the actual traversing."
-  input SCode.EEquation inEEquation;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output SCode.EEquation outEEquation;
-  output tuple<TraverseFunc, Argument> outTuple;
-
-  partial function TraverseFunc
-    input tuple<SCode.EEquation, Argument> inTuple;
-    output tuple<SCode.EEquation, Argument> outTuple;
+    input output SCode.Equation eq;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outEEquation, outTuple) := match(inEEquation, inTuple)
+  (eq, arg) := traverser(eq, arg);
+
+  (eq, arg) := match eq
     local
-      tuple<TraverseFunc, Argument> tup;
       Absyn.Exp e1;
-      Option<Absyn.Exp> oe1;
       list<Absyn.Exp> expl1;
-      list<list<SCode.EEquation>> then_branch;
-      list<SCode.EEquation> else_branch, eql;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> else_when;
+      list<list<SCode.Equation>> then_branch;
+      list<SCode.Equation> else_branch, eql;
+      list<tuple<Absyn.Exp, list<SCode.Equation>>> else_when;
       SCode.Comment comment;
       SourceInfo info;
-      SCode.Ident index;
 
-    case (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
+    case SCode.EQ_IF(expl1, then_branch, else_branch, comment, info)
       equation
-        (then_branch, tup) = List.mapFold(then_branch,
-          traverseEEquationsList, tup);
-        (else_branch, tup) = traverseEEquationsList(else_branch, tup);
+        (then_branch, arg) = List.mapFold(then_branch,
+          function mapFoldEquationsList(traverser = traverser), arg);
+        (else_branch, arg) = mapFoldEquationsList(else_branch, traverser, arg);
       then
-        (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
+        (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
-    case (SCode.EQ_FOR(index, oe1, eql, comment, info), tup)
+    case SCode.EQ_FOR()
+      algorithm
+        (eql, arg) := mapFoldEquationsList(eq.eEquationLst, traverser, arg);
+        eq.eEquationLst := eql;
+      then
+        (eq, arg);
+
+    case SCode.EQ_WHEN(e1, eql, else_when, comment, info)
       equation
-        (eql, tup) = traverseEEquationsList(eql, tup);
+        (eql, arg) = mapFoldEquationsList(eql, traverser, arg);
+        (else_when, arg) = List.mapFold(else_when,
+           function mapFoldElseWhenEquations(traverser = traverser), arg);
       then
-        (SCode.EQ_FOR(index, oe1, eql, comment, info), tup);
+        (SCode.EQ_WHEN(e1, eql, else_when, comment, info), arg);
 
-    case (SCode.EQ_WHEN(e1, eql, else_when, comment, info), tup)
-      equation
-        (eql, tup) = traverseEEquationsList(eql, tup);
-        (else_when, tup) = List.mapFold(else_when,
-          traverseElseWhenEEquations, tup);
-      then
-        (SCode.EQ_WHEN(e1, eql, else_when, comment, info), tup);
-
-    else (inEEquation, inTuple);
+    else (eq, arg);
   end match;
-end traverseEEquations2;
+end mapFoldEquations;
 
-protected function traverseElseWhenEEquations
-  "Traverses all SCode.EEquations in an else when branch, calling the given function
-  on each SCode.EEquation."
-  input tuple<Absyn.Exp, list<SCode.EEquation>> inElseWhen;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output tuple<Absyn.Exp, list<SCode.EEquation>> outElseWhen;
-  output tuple<TraverseFunc, Argument> outTuple;
+protected function mapFoldElseWhenEquations<ArgT>
+  "Traverses all SCode.Equations in an else when branch, calling the given function
+  on each SCode.Equation."
+  input output tuple<Absyn.Exp, list<SCode.Equation>> elseWhen;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.EEquation, Argument> inTuple;
-    output tuple<SCode.EEquation, Argument> outTuple;
+    input output SCode.Equation eq;
+    input output ArgT arg;
   end TraverseFunc;
 
 protected
   Absyn.Exp exp;
-  list<SCode.EEquation> eql;
+  list<SCode.Equation> eql;
 algorithm
-  (exp, eql) := inElseWhen;
-  (eql, outTuple) := traverseEEquationsList(eql, inTuple);
-  outElseWhen := (exp, eql);
-end traverseElseWhenEEquations;
+  (exp, eql) := elseWhen;
+  (eql, arg) := mapFoldEquationsList(eql, traverser, arg);
+  elseWhen := (exp, eql);
+end mapFoldElseWhenEquations;
 
-public function traverseEEquationListExps
-  "Traverses a list of SCode.EEquations, calling the given function on each Absyn.Exp
+public function mapFoldEquationListExps<ArgT>
+  "Traverses a list of SCode.Equations, calling the given function on each Absyn.Exp
   it encounters."
-  input list<SCode.EEquation> inEEquations;
+  input list<SCode.Equation> inEquations;
   input TraverseFunc traverser;
   input Argument inArg;
-  output list<SCode.EEquation> outEEquations;
+  output list<SCode.Equation> outEquations;
   output Argument outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
-  end TraverseFunc;algorithm
-  (outEEquations, outArg) := List.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg);
-end traverseEEquationListExps;
-
-public function traverseEEquationExps
-  "Traverses an SCode.EEquation, calling the given function on each Absyn.Exp it
-  encounters. This funcion is intended to be used together with
-  traverseEEquations, and does NOT descend into sub-EEquations."
-  input SCode.EEquation inEEquation;
-  input TraverseFunc inFunc;
-  input Argument inArg;
-  output SCode.EEquation outEEquation;
-  output Argument outArg;
-
-  partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outEEquation, outArg) := match(inEEquation, inFunc, inArg)
+  (outEquations, outArg) := List.map1Fold(inEquations, mapFoldEquationExps, traverser, inArg);
+end mapFoldEquationListExps;
+
+public function mapFoldEquationExps<ArgT>
+  "Traverses an SCode.Equation, calling the given function on each Absyn.Exp it
+  encounters. This funcion is intended to be used together with
+  mapFoldEquations, and does NOT descend into sub-Equations."
+  input output SCode.Equation eq;
+  input TraverseFunc traverser;
+  input output ArgT arg;
+
+  partial function TraverseFunc
+    input output Absyn.Exp exp;
+    input output ArgT arg;
+  end TraverseFunc;
+algorithm
+  (eq, arg) := match eq
     local
-      TraverseFunc traverser;
-      Argument arg;
-      tuple<TraverseFunc, Argument> tup;
       Absyn.Exp e1, e2, e3;
       list<Absyn.Exp> expl1;
-      list<list<SCode.EEquation>> then_branch;
-      list<SCode.EEquation> else_branch, eql;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> else_when;
+      list<list<SCode.Equation>> then_branch;
+      list<SCode.Equation> else_branch, eql;
+      list<tuple<Absyn.Exp, list<SCode.Equation>>> else_when;
       SCode.Comment comment;
       SourceInfo info;
       Absyn.ComponentRef cr1, cr2, domain;
       SCode.Ident index;
 
-    case (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)
+    case SCode.EQ_IF(expl1, then_branch, else_branch, comment, info)
       equation
         (expl1, arg) = AbsynUtil.traverseExpList(expl1, traverser, arg);
       then
         (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
-    case (SCode.EQ_EQUALS(e1, e2, comment, info), traverser, arg)
+    case SCode.EQ_EQUALS(e1, e2, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
       then
         (SCode.EQ_EQUALS(e1, e2, comment, info), arg);
 
-    case (SCode.EQ_PDE(e1, e2, domain, comment, info), traverser, arg)
+    case SCode.EQ_PDE(e1, e2, domain, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
       then
         (SCode.EQ_PDE(e1, e2, domain, comment, info), arg);
 
-    case (SCode.EQ_CONNECT(cr1, cr2, comment, info), _, _)
+    case SCode.EQ_CONNECT(cr1, cr2, comment, info)
       equation
-        (cr1, arg) = traverseComponentRefExps(cr1, inFunc, inArg);
-        (cr2, arg) = traverseComponentRefExps(cr2, inFunc, arg);
+        (cr1, arg) = mapFoldComponentRefExps(cr1, traverser, arg);
+        (cr2, arg) = mapFoldComponentRefExps(cr2, traverser, arg);
       then
         (SCode.EQ_CONNECT(cr1, cr2, comment, info), arg);
 
-    case (SCode.EQ_FOR(index, SOME(e1), eql, comment, info), traverser, arg)
+    case SCode.EQ_FOR(index, SOME(e1), eql, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
       then
         (SCode.EQ_FOR(index, SOME(e1), eql, comment, info), arg);
 
-    case (SCode.EQ_WHEN(e1, eql, else_when, comment, info), traverser, arg)
+    case SCode.EQ_WHEN(e1, eql, else_when, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
-        (else_when, arg) = List.map1Fold(else_when, traverseElseWhenExps, traverser, arg);
+        (else_when, arg) = List.map1Fold(else_when, mapFoldElseWhenExps, traverser, arg);
       then
         (SCode.EQ_WHEN(e1, eql, else_when, comment, info), arg);
 
-    case (SCode.EQ_ASSERT(e1, e2, e3, comment, info), traverser, arg)
+    case SCode.EQ_ASSERT(e1, e2, e3, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
@@ -2104,43 +2039,41 @@ algorithm
       then
         (SCode.EQ_ASSERT(e1, e2, e3, comment, info), arg);
 
-    case (SCode.EQ_TERMINATE(e1, comment, info), traverser, arg)
+    case SCode.EQ_TERMINATE(e1, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
       then
         (SCode.EQ_TERMINATE(e1, comment, info), arg);
 
-    case (SCode.EQ_REINIT(e1, e2, comment, info), traverser, _)
+    case SCode.EQ_REINIT(e1, e2, comment, info)
       equation
-        (e1, arg) = traverser(e1, inArg);
+        (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
       then
         (SCode.EQ_REINIT(e1, e2, comment, info), arg);
 
-    case (SCode.EQ_NORETCALL(e1, comment, info), traverser, arg)
+    case SCode.EQ_NORETCALL(e1, comment, info)
       equation
         (e1, arg) = traverser(e1, arg);
       then
         (SCode.EQ_NORETCALL(e1, comment, info), arg);
 
-    else (inEEquation, inArg);
+    else (eq, arg);
   end match;
-end traverseEEquationExps;
+end mapFoldEquationExps;
 
-protected function traverseComponentRefExps
+protected function mapFoldComponentRefExps<ArgT>
   "Traverses the subscripts of a component reference and calls the given
   function on the subscript expressions."
   input Absyn.ComponentRef inCref;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output Absyn.ComponentRef outCref;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
   (outCref, outArg) := match(inCref, inFunc, inArg)
@@ -2148,51 +2081,49 @@ algorithm
       Absyn.Ident name;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
-      Argument arg;
+      ArgT arg;
 
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)
       equation
-        (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg);
+        (cr, arg) = mapFoldComponentRefExps(cr, inFunc, inArg);
       then
         (AbsynUtil.crefMakeFullyQualified(cr), arg);
 
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)
       equation
-        (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg);
-        (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, arg);
+        (cr, arg) = mapFoldComponentRefExps(cr, inFunc, inArg);
+        (subs, arg) = List.map1Fold(subs, mapFoldSubscriptExps, inFunc, arg);
       then
         (Absyn.CREF_QUAL(name, subs, cr), arg);
 
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)
       equation
-        (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, inArg);
+        (subs, arg) = List.map1Fold(subs, mapFoldSubscriptExps, inFunc, inArg);
       then
         (Absyn.CREF_IDENT(name, subs), arg);
 
     case (Absyn.WILD(), _, _) then (inCref, inArg);
   end match;
-end traverseComponentRefExps;
+end mapFoldComponentRefExps;
 
-protected function traverseSubscriptExps
+protected function mapFoldSubscriptExps<ArgT>
   "Calls the given function on the subscript expression."
   input Absyn.Subscript inSubscript;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output Absyn.Subscript outSubscript;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
   (outSubscript, outArg) := match(inSubscript, inFunc, inArg)
     local
       Absyn.Exp sub_exp;
       TraverseFunc traverser;
-      Argument arg;
+      ArgT arg;
 
     case (Absyn.SUBSCRIPT(subscript = sub_exp), traverser, arg)
       equation
@@ -2202,83 +2133,47 @@ algorithm
 
     case (Absyn.NOSUB(), _, _) then (inSubscript, inArg);
   end match;
-end traverseSubscriptExps;
+end mapFoldSubscriptExps;
 
-protected function traverseElseWhenExps
+protected function mapFoldElseWhenExps<ArgT>
   "Traverses the expressions in an else when branch, and calls the given
   function on the expressions."
-  input tuple<Absyn.Exp, list<SCode.EEquation>> inElseWhen;
+  input tuple<Absyn.Exp, list<SCode.Equation>> inElseWhen;
   input TraverseFunc traverser;
-  input Argument inArg;
-  output tuple<Absyn.Exp, list<SCode.EEquation>> outElseWhen;
-  output Argument outArg;
+  input ArgT inArg;
+  output tuple<Absyn.Exp, list<SCode.Equation>> outElseWhen;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
-
-
 protected
   Absyn.Exp exp;
-  list<SCode.EEquation> eql;
+  list<SCode.Equation> eql;
 algorithm
   (exp, eql) := inElseWhen;
   (exp, outArg) := traverser(exp, inArg);
   outElseWhen := (exp, eql);
-end traverseElseWhenExps;
+end mapFoldElseWhenExps;
 
-protected function traverseNamedArgExps
-  "Calls the given function on the value expression associated with a named
-  function argument."
-  input Absyn.NamedArg inArg;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output Absyn.NamedArg outArg;
-  output tuple<TraverseFunc, Argument> outTuple;
-
-  partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
-  end TraverseFunc;
-
-
-protected
-  TraverseFunc traverser;
-  Argument arg;
-  Absyn.Ident name;
-  Absyn.Exp value;
-algorithm
-  (traverser, arg) := inTuple;
-  Absyn.NAMEDARG(argName = name, argValue = value) := inArg;
-  (value, arg) := traverser(value, arg);
-  outArg := Absyn.NAMEDARG(name, value);
-  outTuple := (traverser, arg);
-end traverseNamedArgExps;
-
-protected function traverseForIteratorExps
+protected function mapFoldForIteratorExps<ArgT>
   "Calls the given function on the expression associated with a for iterator."
   input Absyn.ForIterator inIterator;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output Absyn.ForIterator outIterator;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
-
 algorithm
   (outIterator, outArg) := match(inIterator, inFunc, inArg)
     local
       TraverseFunc traverser;
-      Argument arg;
+      ArgT arg;
       Absyn.Ident ident;
       Absyn.Exp guardExp,range;
 
@@ -2306,66 +2201,40 @@ algorithm
         (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg);
 
   end match;
-end traverseForIteratorExps;
+end mapFoldForIteratorExps;
 
-public function traverseStatementsList
+public function mapFoldStatementsList<ArgT>
   "Calls traverseStatement on each statement in the given list."
-  input list<SCode.Statement> inStatements;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output list<SCode.Statement> outStatements;
-  output tuple<TraverseFunc, Argument> outTuple;
+  input output list<SCode.Statement> statements;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.Statement, Argument> inTuple;
-    output tuple<SCode.Statement, Argument> outTuple;
+    input output SCode.Statement stmt;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outStatements, outTuple) :=
-    List.mapFold(inStatements, traverseStatements, inTuple);
-end traverseStatementsList;
+  (statements, arg) :=
+    List.mapFold(statements, function mapFoldStatements(traverser = traverser), arg);
+end mapFoldStatementsList;
 
-public function traverseStatements
+public function mapFoldStatements<ArgT>
   "Traverses all statements in the given statement in a top-down approach where
   the given function is applied to each statement found, beginning with the given
   statement."
-  input SCode.Statement inStatement;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output SCode.Statement outStatement;
-  output tuple<TraverseFunc, Argument> outTuple;
+  input output SCode.Statement stmt;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.Statement, Argument> inTuple;
-    output tuple<SCode.Statement, Argument> outTuple;
-  end TraverseFunc;
-
-protected
-  TraverseFunc traverser;
-  Argument arg;
-  SCode.Statement stmt;
-algorithm
-  (traverser, arg) := inTuple;
-  ((stmt, arg)) := traverser((inStatement, arg));
-  (outStatement, outTuple) := traverseStatements2(stmt, (traverser, arg));
-end traverseStatements;
-
-public function traverseStatements2
-  "Helper function to traverseStatements. Goes through each statement contained
-  in the given statement and calls traverseStatements on them."
-  input SCode.Statement inStatement;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output SCode.Statement outStatement;
-  output tuple<TraverseFunc, Argument> outTuple;
-
-  partial function TraverseFunc
-    input tuple<SCode.Statement, Argument> inTuple;
-    output tuple<SCode.Statement, Argument> outTuple;
+    input output SCode.Statement stmt;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outStatement, outTuple) := match(inStatement, inTuple)
+  (stmt, arg) := traverser(stmt, arg);
+
+  (stmt, arg) := match stmt
     local
-      TraverseFunc traverser;
-      Argument arg;
-      tuple<TraverseFunc, Argument> tup;
       Absyn.Exp e;
       list<SCode.Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> branches;
@@ -2374,71 +2243,71 @@ algorithm
       String iter;
       Option<Absyn.Exp> range;
 
-    case (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)
+    case SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
-        (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup);
-        (stmts2, tup) = traverseStatementsList(stmts2, tup);
+        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
+        (branches, arg) = List.mapFold(branches,
+          function mapFoldBranchStatements(traverser = traverser), arg);
+        (stmts2, arg) = mapFoldStatementsList(stmts2, traverser, arg);
       then
-        (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), tup);
+        (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), arg);
 
-    case (SCode.ALG_FOR(iter, range, stmts1, comment, info), tup)
+    case SCode.ALG_FOR(iter, range, stmts1, comment, info)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
       then
-        (SCode.ALG_FOR(iter, range, stmts1, comment, info), tup);
+        (SCode.ALG_FOR(iter, range, stmts1, comment, info), arg);
 
-    case (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), tup)
+    case SCode.ALG_PARFOR(iter, range, stmts1, comment, info)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
       then
-        (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), tup);
+        (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), arg);
 
-    case (SCode.ALG_WHILE(e, stmts1, comment, info), tup)
+    case SCode.ALG_WHILE(e, stmts1, comment, info)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
       then
-        (SCode.ALG_WHILE(e, stmts1, comment, info), tup);
+        (SCode.ALG_WHILE(e, stmts1, comment, info), arg);
 
-    case (SCode.ALG_WHEN_A(branches, comment, info), tup)
+    case SCode.ALG_WHEN_A(branches, comment, info)
       equation
-        (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup);
+        (branches, arg) = List.mapFold(branches,
+           function mapFoldBranchStatements(traverser = traverser), arg);
       then
-        (SCode.ALG_WHEN_A(branches, comment, info), tup);
+        (SCode.ALG_WHEN_A(branches, comment, info), arg);
 
-    case (SCode.ALG_FAILURE(stmts1, comment, info), tup)
+    case SCode.ALG_FAILURE(stmts1, comment, info)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
       then
-        (SCode.ALG_FAILURE(stmts1, comment, info), tup);
+        (SCode.ALG_FAILURE(stmts1, comment, info), arg);
 
-    else (inStatement, inTuple);
+    else (stmt, arg);
   end match;
-end traverseStatements2;
+end mapFoldStatements;
 
-protected function traverseBranchStatements
+protected function mapFoldBranchStatements<ArgT>
   "Helper function to traverseStatements2. Calls traverseStatement each
   statement in a given branch."
-  input tuple<Absyn.Exp, list<SCode.Statement>> inBranch;
-  input tuple<TraverseFunc, Argument> inTuple;
-  output tuple<Absyn.Exp, list<SCode.Statement>> outBranch;
-  output tuple<TraverseFunc, Argument> outTuple;
+  input output tuple<Absyn.Exp, list<SCode.Statement>> branch;
+  input TraverseFunc traverser;
+  input output ArgT arg;
 
   partial function TraverseFunc
-    input tuple<SCode.Statement, Argument> inTuple;
-    output tuple<SCode.Statement, Argument> outTuple;
+    input output SCode.Statement stmt;
+    input output ArgT arg;
   end TraverseFunc;
-
 protected
   Absyn.Exp exp;
   list<SCode.Statement> stmts;
 algorithm
-  (exp, stmts) := inBranch;
-  (stmts, outTuple) := traverseStatementsList(stmts, inTuple);
-  outBranch := (exp, stmts);
-end traverseBranchStatements;
+  (exp, stmts) := branch;
+  (stmts, arg) := mapFoldStatementsList(stmts, traverser, arg);
+  branch := (exp, stmts);
+end mapFoldBranchStatements;
 
-public function traverseStatementListExps
+public function mapFoldStatementListExps<ArgT>
   "Traverses a list of statements and calls the given function on each
   expression found."
   input list<SCode.Statement> inStatements;
@@ -2448,36 +2317,32 @@ public function traverseStatementListExps
   output Argument outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArgument;
-    output Absyn.Exp outExp;
-    output Argument outArgument;
+    input output SCode.Statement stmt;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outStatements, outArg) := List.map1Fold(inStatements, traverseStatementExps, inFunc, inArg);
-end traverseStatementListExps;
+  (outStatements, outArg) := List.map1Fold(inStatements, mapFoldStatementExps, inFunc, inArg);
+end mapFoldStatementListExps;
 
-public function traverseStatementExps
+public function mapFoldStatementExps<ArgT>
   "Applies the given function to each expression in the given statement. This
-  function is intended to be used together with traverseStatements, and does NOT
+  function is intended to be used together with mapFoldStatements, and does NOT
   descend into sub-statements."
   input SCode.Statement inStatement;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output SCode.Statement outStatement;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArgument;
-    output Absyn.Exp outExp;
-    output Argument outArgument;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
 algorithm
   (outStatement, outArg) := match(inStatement, inFunc, inArg)
     local
       TraverseFunc traverser;
-      Argument arg;
+      ArgT arg;
       tuple<TraverseFunc, Argument> tup;
       String iterator;
       Absyn.Exp e1, e2, e3;
@@ -2497,7 +2362,7 @@ algorithm
     case (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), traverser, arg)
       equation
         (e1, arg) = traverser(e1, arg);
-        (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg);
+        (branches, arg) = List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
       then
         (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg);
 
@@ -2522,7 +2387,7 @@ algorithm
 
     case (SCode.ALG_WHEN_A(branches, comment, info), traverser, arg)
       equation
-        (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg);
+        (branches, arg) = List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
       then
         (SCode.ALG_WHEN_A(branches, comment, info), arg);
 
@@ -2555,32 +2420,29 @@ algorithm
 
     else (inStatement, inArg);
   end match;
-end traverseStatementExps;
+end mapFoldStatementExps;
 
-protected function traverseBranchExps
+protected function mapFoldBranchExps<ArgT>
   "Calls the given function on each expression found in an if or when branch."
   input tuple<Absyn.Exp, list<SCode.Statement>> inBranch;
   input TraverseFunc traverser;
-  input Argument inArg;
+  input ArgT inArg;
   output tuple<Absyn.Exp, list<SCode.Statement>> outBranch;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input Absyn.Exp inExp;
-    input Argument inArgument;
-    output Absyn.Exp outExp;
-    output Argument outArgument;
+    input output Absyn.Exp exp;
+    input output ArgT arg;
   end TraverseFunc;
-
 protected
-  Argument arg;
+  ArgT arg;
   Absyn.Exp exp;
   list<SCode.Statement> stmts;
 algorithm
   (exp, stmts) := inBranch;
   (exp, outArg) := traverser(exp, inArg);
   outBranch := (exp, stmts);
-end traverseBranchExps;
+end mapFoldBranchExps;
 
 public function elementIsClass
   input SCode.Element el;
@@ -2669,27 +2531,24 @@ algorithm
   end match;
 end isBuiltinFunction;
 
-public function getEEquationInfo
-  "Extracts the SourceInfo from an SCode.EEquation."
-  input SCode.EEquation inEEquation;
-  output SourceInfo outInfo;
+public function getEquationInfo
+  "Extracts the SourceInfo from an SCode.Equation."
+  input SCode.Equation inEquation;
+  output SourceInfo info;
 algorithm
-  outInfo := match(inEEquation)
-    local
-      SourceInfo info;
-
-    case SCode.EQ_IF(info = info) then info;
-    case SCode.EQ_EQUALS(info = info) then info;
-    case SCode.EQ_PDE(info = info) then info;
-    case SCode.EQ_CONNECT(info = info) then info;
-    case SCode.EQ_FOR(info = info) then info;
-    case SCode.EQ_WHEN(info = info) then info;
-    case SCode.EQ_ASSERT(info = info) then info;
-    case SCode.EQ_TERMINATE(info = info) then info;
-    case SCode.EQ_REINIT(info = info) then info;
-    case SCode.EQ_NORETCALL(info = info) then info;
+  info := match inEquation
+    case SCode.EQ_IF()        then inEquation.info;
+    case SCode.EQ_EQUALS()    then inEquation.info;
+    case SCode.EQ_PDE()       then inEquation.info;
+    case SCode.EQ_CONNECT()   then inEquation.info;
+    case SCode.EQ_FOR()       then inEquation.info;
+    case SCode.EQ_WHEN()      then inEquation.info;
+    case SCode.EQ_ASSERT()    then inEquation.info;
+    case SCode.EQ_TERMINATE() then inEquation.info;
+    case SCode.EQ_REINIT()    then inEquation.info;
+    case SCode.EQ_NORETCALL() then inEquation.info;
   end match;
-end getEEquationInfo;
+end getEquationInfo;
 
 public function getStatementInfo
   "Extracts the SourceInfo from a Statement."
@@ -3404,6 +3263,37 @@ algorithm
   end match;
 end lookupNamedAnnotation;
 
+public function lookupNamedAnnotationBinding
+  input SCode.Annotation ann;
+  input String name;
+  output Option<Absyn.Exp> binding;
+protected
+  SCode.Mod mod;
+algorithm
+  mod := lookupNamedAnnotation(ann, name);
+
+  binding := match mod
+    case SCode.Mod.MOD() then mod.binding;
+    else NONE();
+  end match;
+end lookupNamedAnnotationBinding;
+
+public function lookupNamedBooleanAnnotation
+  input SCode.Annotation ann;
+  input String name;
+  output Option<Boolean> value;
+protected
+  Option<Absyn.Exp> binding;
+  Boolean bval;
+algorithm
+  binding := lookupNamedAnnotationBinding(ann, name);
+
+  value := match binding
+    case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
+    else NONE();
+  end match;
+end lookupNamedBooleanAnnotation;
+
 public function lookupNamedAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;
@@ -3521,18 +3411,18 @@ algorithm
 end hasBooleanNamedAnnotation2;
 
 public function getEvaluateAnnotation
-"@author: adrpo
- returns true if annotation(Evaluate = true) is present,
- otherwise false"
-  input Option<SCode.Comment> inCommentOpt;
-  output Boolean evalIsTrue;
+  "Looks up the Evaluate annotation and returns the value if the annotation
+   exists and has a boolean value, otherwise NONE()."
+  input Option<SCode.Comment> cmt;
+  output Option<Boolean> value;
+protected
+  SCode.Annotation ann;
+  Option<Absyn.Exp> binding;
 algorithm
-  evalIsTrue := match (inCommentOpt)
-    local
-      SCode.Annotation ann;
-    case (SOME(SCode.COMMENT(annotation_ = SOME(ann))))
-      then hasBooleanNamedAnnotation(ann, "Evaluate");
-    else false;
+  value := match cmt
+    case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
+      then lookupNamedBooleanAnnotation(ann, "Evaluate");
+    else NONE();
   end match;
 end getEvaluateAnnotation;
 
@@ -3723,14 +3613,14 @@ public function isElementPublic
   input SCode.Element inElement;
   output Boolean outIsPublic;
 algorithm
-  outIsPublic := visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+  outIsPublic := visibilityBool(elementVisibility(inElement));
 end isElementPublic;
 
 public function isElementProtected
   input SCode.Element inElement;
   output Boolean outIsProtected;
 algorithm
-  outIsProtected := not visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+  outIsProtected := not visibilityBool(elementVisibility(inElement));
 end isElementProtected;
 
 public function isElementEncapsulated
@@ -4206,13 +4096,6 @@ algorithm
   end match;
 end setClassPrefixes;
 
-public function makeEquation
-  input SCode.EEquation inEEq;
-  output SCode.Equation outEq;
-algorithm
-  outEq := SCode.EQUATION(inEEq);
-end makeEquation;
-
 public function getClassDef
   input SCode.Element inClass;
   output SCode.ClassDef outCdef;
@@ -4222,10 +4105,24 @@ algorithm
   end match;
 end getClassDef;
 
+public function getClassBody
+  "Returns the body of a class, which for a class extends is the definition it
+   contains and otherwise just the immediate definition of the class."
+  input SCode.Element inClass;
+  output SCode.ClassDef outCdef;
+algorithm
+  outCdef := getClassDef(inClass);
+
+  outCdef := match outCdef
+    case SCode.ClassDef.CLASS_EXTENDS() then outCdef.composition;
+    else outCdef;
+  end match;
+end getClassBody;
+
 public function equationsContainReinit
 "@author:
  returns true if equations contains reinit"
-  input list<SCode.EEquation> inEqs;
+  input list<SCode.Equation> inEqs;
   output Boolean hasReinit;
 algorithm
   hasReinit := match(inEqs)
@@ -4241,15 +4138,15 @@ end equationsContainReinit;
 public function equationContainReinit
 "@author:
  returns true if equation contains reinit"
-  input SCode.EEquation inEq;
+  input SCode.Equation inEq;
   output Boolean hasReinit;
 algorithm
   hasReinit := match(inEq)
     local
       Boolean b;
-      list<SCode.EEquation> eqs;
-      list<list<SCode.EEquation>> eqs_lst;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
+      list<SCode.Equation> eqs;
+      list<list<SCode.Equation>> eqs_lst;
+      list<tuple<Absyn.Exp, list<SCode.Equation>>> tpl_el;
 
     case SCode.EQ_REINIT() then true;
     case SCode.EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
@@ -4393,6 +4290,7 @@ algorithm
     case SCode.CLASS(classDef = SCode.DERIVED(modifications = mod)) then mod;
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod)) then mod;
     case SCode.EXTENDS(modifications = mod) then mod;
+    else SCode.NOMOD();
 
   end match;
 end elementMod;
@@ -4578,6 +4476,30 @@ algorithm
   end match;
 end isRestrictionImpure;
 
+public function elementInnerOuter
+  input SCode.Element element;
+  output Absyn.InnerOuter io;
+algorithm
+  io := match element
+    case SCode.Element.CLASS() then prefixesInnerOuter(element.prefixes);
+    case SCode.Element.COMPONENT() then prefixesInnerOuter(element.prefixes);
+    else Absyn.InnerOuter.NOT_INNER_OUTER();
+  end match;
+end elementInnerOuter;
+
+public function elementVisibility
+  input SCode.Element element;
+  output SCode.Visibility visibility;
+algorithm
+  visibility := match element
+    case SCode.Element.IMPORT() then element.visibility;
+    case SCode.Element.EXTENDS() then element.visibility;
+    case SCode.Element.CLASS() then prefixesVisibility(element.prefixes);
+    case SCode.Element.COMPONENT() then prefixesVisibility(element.prefixes);
+    case SCode.Element.DEFINEUNIT() then element.visibility;
+  end match;
+end elementVisibility;
+
 public function setElementVisibility
   input SCode.Element inElement;
   input SCode.Visibility inVisibility;
@@ -4654,6 +4576,7 @@ algorithm
 
     case SCode.COMPONENT(comment = cmt) then SOME(cmt);
     case SCode.CLASS(cmt = cmt) then SOME(cmt);
+    case SCode.EXTENDS() then SOME(SCode.Comment.COMMENT(inElement.ann, NONE()));
     else NONE();
 
   end match;
@@ -5494,21 +5417,13 @@ function stripCommentsFromEquation
   input Boolean stripAnn;
   input Boolean stripCmt;
 algorithm
-  eq.eEquation := stripCommentsFromEEquation(eq.eEquation, stripAnn, stripCmt);
-end stripCommentsFromEquation;
-
-function stripCommentsFromEEquation
-  input output SCode.EEquation eq;
-  input Boolean stripAnn;
-  input Boolean stripCmt;
-algorithm
   () := match eq
     case SCode.EQ_IF()
       algorithm
         eq.thenBranch := list(
-            list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch)
+            list(stripCommentsFromEquation(e, stripAnn, stripCmt) for e in branch)
           for branch in eq.thenBranch);
-        eq.elseBranch := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.elseBranch);
+        eq.elseBranch := list(stripCommentsFromEquation(e, stripAnn, stripCmt) for e in eq.elseBranch);
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
@@ -5533,14 +5448,14 @@ algorithm
 
     case SCode.EQ_FOR()
       algorithm
-        eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
+        eq.eEquationLst := list(stripCommentsFromEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
     case SCode.EQ_WHEN()
       algorithm
-        eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
+        eq.eEquationLst := list(stripCommentsFromEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
         eq.elseBranches := list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches);
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
@@ -5571,18 +5486,18 @@ algorithm
         ();
 
   end match;
-end stripCommentsFromEEquation;
+end stripCommentsFromEquation;
 
 function stripCommentsFromWhenEqBranch
-  input output tuple<Absyn.Exp, list<SCode.EEquation>> branch;
+  input output tuple<Absyn.Exp, list<SCode.Equation>> branch;
   input Boolean stripAnn;
   input Boolean stripCmt;
 protected
   Absyn.Exp cond;
-  list<SCode.EEquation> body;
+  list<SCode.Equation> body;
 algorithm
   (cond, body) := branch;
-  body := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in body);
+  body := list(stripCommentsFromEquation(e, stripAnn, stripCmt) for e in body);
   branch := (cond, body);
 end stripCommentsFromWhenEqBranch;
 
@@ -5827,6 +5742,405 @@ algorithm
     else false;
   end match;
 end classDefHasSections;
+
+function mapElements
+  "Applies a function to all elements in a list of elements, and recursively to
+   all elements in those elements."
+  input output list<SCode.Element> elements;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+algorithm
+  elements := list(mapElement(e, func) for e in elements);
+end mapElements;
+
+function mapElement
+  input output SCode.Element element;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef def;
+algorithm
+  () := match element
+    case SCode.Element.CLASS()
+      algorithm
+        def := mapElementsClassDef(element.classDef, func);
+
+        if not referenceEq(def, element.classDef) then
+          element.classDef := def;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+
+  element := func(element);
+end mapElement;
+
+function mapElementsClassDef
+  input output SCode.ClassDef classDef;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef def;
+algorithm
+  () := match classDef
+    case SCode.ClassDef.PARTS()
+      algorithm
+        classDef.elementLst := list(mapElement(e, func) for e in classDef.elementLst);
+      then
+        ();
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        def := mapElementsClassDef(classDef.composition, func);
+
+        if not referenceEq(def, classDef.composition) then
+          classDef.composition := def;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end mapElementsClassDef;
+
+function mapEquationsList
+  "Applies a function to all equations in a list of equations, and recursively
+   to all equations in those equations."
+  input output list<SCode.Equation> eql;
+  input Func func;
+
+  partial function Func
+    input output SCode.Equation eq;
+  end Func;
+algorithm
+  eql := list(mapEquations(e, func) for e in eql);
+end mapEquationsList;
+
+function mapEquations
+  input output SCode.Equation eq;
+  input Func func;
+
+  partial function Func
+    input output SCode.Equation eq;
+  end Func;
+algorithm
+  () := match eq
+    case SCode.Equation.EQ_IF()
+      algorithm
+        eq.thenBranch := list(mapEquationsList(b, func) for b in eq.thenBranch);
+        eq.elseBranch := mapEquationsList(eq.elseBranch, func);
+      then
+        ();
+
+    case SCode.Equation.EQ_FOR()
+      algorithm
+        eq.eEquationLst := mapEquationsList(eq.eEquationLst, func);
+      then
+        ();
+
+    case SCode.Equation.EQ_WHEN()
+      algorithm
+        eq.eEquationLst := mapEquationsList(eq.eEquationLst, func);
+        eq.elseBranches := list(
+          (Util.tuple21(b), mapEquationsList(Util.tuple22(b), func)) for b in eq.elseBranches);
+      then
+        ();
+
+    else ();
+  end match;
+
+  eq := func(eq);
+end mapEquations;
+
+function mapEquationExps
+  input output SCode.Equation eq;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match eq
+    case SCode.Equation.EQ_IF()
+      algorithm
+        eq.condition := list(func(e) for e in eq.condition);
+      then
+        ();
+
+    case SCode.Equation.EQ_EQUALS()
+      algorithm
+        eq.expLeft := func(eq.expLeft);
+        eq.expRight := func(eq.expRight);
+      then
+        ();
+
+    case SCode.Equation.EQ_PDE()
+      algorithm
+        eq.expLeft := func(eq.expLeft);
+        eq.expRight := func(eq.expRight);
+        eq.domain := AbsynUtil.mapCrefExps(eq.domain, func);
+      then
+        ();
+
+    case SCode.Equation.EQ_CONNECT()
+      algorithm
+        eq.crefLeft := AbsynUtil.mapCrefExps(eq.crefLeft, func);
+        eq.crefRight := AbsynUtil.mapCrefExps(eq.crefRight, func);
+      then
+        ();
+
+    case SCode.Equation.EQ_FOR()
+      algorithm
+        if isSome(eq.range) then
+          eq.range := SOME(func(Util.getOption(eq.range)));
+        end if;
+      then
+        ();
+
+    case SCode.Equation.EQ_WHEN()
+      algorithm
+        eq.condition := func(eq.condition);
+        eq.elseBranches := list(Util.applyTuple21(b, func) for b in eq.elseBranches);
+      then
+        ();
+
+    case SCode.Equation.EQ_ASSERT()
+      algorithm
+        eq.condition := func(eq.condition);
+        eq.message := func(eq.message);
+        eq.level := func(eq.level);
+      then
+        ();
+
+    case SCode.Equation.EQ_TERMINATE()
+      algorithm
+        eq.message := func(eq.message);
+      then
+        ();
+
+    case SCode.Equation.EQ_REINIT()
+      algorithm
+        eq.cref := func(eq.cref);
+        eq.expReinit := func(eq.expReinit);
+      then
+        ();
+
+    case SCode.Equation.EQ_NORETCALL()
+      algorithm
+        eq.exp := func(eq.exp);
+      then
+        ();
+
+  end match;
+end mapEquationExps;
+
+function mapAlgorithmStatements
+  "Applies a function to all statements in algorithm section, and recursively
+   to all statements in those statements."
+  input output SCode.AlgorithmSection alg;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  alg.statements := mapStatementsList(alg.statements, func);
+end mapAlgorithmStatements;
+
+function mapStatementsList
+  input output list<SCode.Statement> statements;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  statements := list(mapStatements(s, func) for s in statements);
+end mapStatementsList;
+
+function mapStatements
+  input output SCode.Statement stmt;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  () := match stmt
+    case SCode.Statement.ALG_IF()
+      algorithm
+        stmt.trueBranch := mapStatementsList(stmt.trueBranch, func);
+        stmt.elseIfBranch :=
+          list((Util.tuple21(b), mapStatementsList(Util.tuple22(b), func)) for b in stmt.elseIfBranch);
+        stmt.elseBranch := mapStatementsList(stmt.elseBranch, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_FOR()
+      algorithm
+        stmt.forBody := mapStatementsList(stmt.forBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_PARFOR()
+      algorithm
+        stmt.parforBody := mapStatementsList(stmt.parforBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHILE()
+      algorithm
+        stmt.whileBody := mapStatementsList(stmt.whileBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHEN_A()
+      algorithm
+        stmt.branches :=
+          list((Util.tuple21(b), mapStatementsList(Util.tuple22(b), func)) for b in stmt.branches);
+      then
+        ();
+
+    case SCode.Statement.ALG_FAILURE()
+      algorithm
+        stmt.stmts := mapStatementsList(stmt.stmts, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_TRY()
+      algorithm
+        stmt.body := mapStatementsList(stmt.body, func);
+        stmt.elseBody := mapStatementsList(stmt.body, func);
+      then
+        ();
+
+    else ();
+  end match;
+
+  stmt := func(stmt);
+end mapStatements;
+
+function mapStatementExps
+  "Applies a function to all expressions in a statement."
+  input output SCode.Statement stmt;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match stmt
+    case SCode.Statement.ALG_ASSIGN()
+      algorithm
+        stmt.assignComponent := func(stmt.assignComponent);
+        stmt.value := func(stmt.value);
+      then
+        ();
+
+    case SCode.Statement.ALG_IF()
+      algorithm
+        stmt.boolExpr := func(stmt.boolExpr);
+        stmt.elseIfBranch := list((func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.elseIfBranch);
+      then
+        ();
+
+    case SCode.Statement.ALG_FOR()
+      algorithm
+        if isSome(stmt.range) then
+          stmt.range := SOME(func(Util.getOption(stmt.range)));
+        end if;
+      then
+        ();
+
+    case SCode.Statement.ALG_PARFOR()
+      algorithm
+        if isSome(stmt.range) then
+          stmt.range := SOME(func(Util.getOption(stmt.range)));
+        end if;
+      then
+        ();
+
+    case SCode.Statement.ALG_WHILE()
+      algorithm
+        stmt.boolExpr := func(stmt.boolExpr);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHEN_A()
+      algorithm
+        stmt.branches := list((func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.branches);
+      then
+        ();
+
+    case SCode.Statement.ALG_ASSERT()
+      algorithm
+        stmt.condition := func(stmt.condition);
+        stmt.message := func(stmt.message);
+        stmt.level := func(stmt.level);
+      then
+        ();
+
+    case SCode.Statement.ALG_TERMINATE()
+      algorithm
+        stmt.message := func(stmt.message);
+      then
+        ();
+
+    case SCode.Statement.ALG_REINIT()
+      algorithm
+        stmt.cref := func(stmt.cref);
+        stmt.newValue := func(stmt.newValue);
+      then
+        ();
+
+    case SCode.Statement.ALG_NORETCALL()
+      algorithm
+        stmt.exp := func(stmt.exp);
+      then
+        ();
+
+    else ();
+  end match;
+end mapStatementExps;
+
+function lookupModInMod
+  "Looks up a modifier with the given name in the given modifier, or returns
+   NOMOD() if no modifier is found."
+  input String name;
+  input SCode.Mod mod;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        for m in mod.subModLst loop
+          if m.ident == name then
+            outMod := m.mod;
+            return;
+          end if;
+        end for;
+      then
+        SCode.Mod.NOMOD();
+
+    else SCode.Mod.NOMOD();
+  end match;
+end lookupModInMod;
+
+function isNonEmptyAlgorithm
+  input SCode.AlgorithmSection alg;
+  output Boolean res = not listEmpty(alg.statements);
+end isNonEmptyAlgorithm;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

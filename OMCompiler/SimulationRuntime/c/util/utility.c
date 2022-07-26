@@ -32,6 +32,7 @@
 #include "../ModelicaUtilities.h"
 #include "utility.h"
 #include "modelica_string.h"
+#include "omc_file.h"
 #include "../simulation_data.h"
 #include "../simulation/options.h"
 #include <string.h>
@@ -171,9 +172,9 @@ static int hasDriveLetter(const char* uri)
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
 {
   FILE_INFO info = omc_dummyFileInfo;
-  struct stat stat_buf;
+  omc_stat_t stat_buf;
   size_t len, i, j = 0;
-  int uriExists = 0==stat(uri, &stat_buf);
+  int uriExists = 0==omc_stat(uri, &stat_buf);
   if (resourcesDir) {
     if (strlen(resourcesDir)+strlen(uri)+2 < PATH_MAX) {
       if (hasDriveLetter(uri)) {
@@ -189,7 +190,7 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
       } else {
         sprintf(buf, "%s/%s", resourcesDir, uri);
       }
-      if (!uriExists || 0==stat(buf, &stat_buf)) {
+      if (!uriExists || 0==omc_stat(buf, &stat_buf)) {
         /* The path with resources prepended either exists or the path without resources does not exist
          * So re-run uriToFilenameRegularPaths with resourcesDir prepended to the URI
          */
@@ -280,12 +281,16 @@ static void getIdent(const char *str, char *this, const char **next)
 
 extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData, modelica_string uri_om, const char *resourcesDir)
 {
+#if defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#endif
+
   FILE_INFO info = omc_dummyFileInfo;
   char buf[PATH_MAX];
   const char *uri = MMC_STRINGDATA(uri_om);
   modelica_string dir;
   if (0==strncasecmp(uri, "modelica://", 11)) {
-    struct stat stat_buf;
+    omc_stat_t stat_buf;
     uri += 11;
     getIdent(uri, buf, &uri);
     if (0 == *buf) {
@@ -301,9 +306,9 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
       if (MMC_STRLEN(dir)+2+strlen(resourcesDir) >= PATH_MAX) {
         omc_assert_warning(info, "Path longer than PATH_MAX: %s/%s, ignoring the resourcesDir", MMC_STRINGDATA(dir), resourcesDir);
       } else {
-        int dirExists = 0==stat(MMC_STRINGDATA(dir), &stat_buf);
+        int dirExists = 0==omc_stat(MMC_STRINGDATA(dir), &stat_buf);
         sprintf(buf, "%s/%s", MMC_STRINGDATA(dir), resourcesDir);
-        if (!dirExists || 0==stat(buf, &stat_buf)) {
+        if (!dirExists || 0==omc_stat(buf, &stat_buf)) {
           dir = mmc_mk_scon(buf);
         } else {
           omc_assert_warning(info, PATH_NOT_IN_FMU_RESOURCES, MMC_STRINGDATA(dir));
@@ -334,7 +339,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
       /* Copy the old directory in there */
       strcpy(buf, MMC_STRINGDATA(dir));
       buf[MMC_STRLEN(dir)]='/';
-      if (!(0==stat(buf, &stat_buf) && S_ISDIR(stat_buf.st_mode))) {
+      if (!(0==omc_stat(buf, &stat_buf) && S_ISDIR(stat_buf.st_mode))) {
         break;
       }
       dir = mmc_mk_scon(buf);

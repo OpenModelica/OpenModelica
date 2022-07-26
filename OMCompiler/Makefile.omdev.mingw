@@ -76,7 +76,7 @@ OPENCL = Yes
 LINK = cp -rl
 AR = ar
 # LIBGC configuration is different for Windows (this file) and Linux (Makefile.in)
-MINGW_EXTRA_LIBS=lpsolve sundials
+MINGW_EXTRA_LIBS=sundials
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 #--disable-parallel-mark
 MSL_EXTRA_ARGS=--enable-static --disable-shared
 LIBFMILIB=libfmilib.a
@@ -100,10 +100,12 @@ IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
-LIBMODELICAZLIB=$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
-LIBMODELICAZLIB_MSVC=$(OMBUILDDIR_MSVC)\lib\omc\msvc\zlib.lib
 LIBMODELICAIO=$(OMBUILDDIR)/lib/omc/libModelicaIO$(STAEXT)
 LIBMODELICAMATIO=$(OMBUILDDIR)/lib/omc/libModelicaMatIO$(STAEXT)
+
+ZLIB_DIR=3rdParty/zlib
+LIBMODELICAZLIB=$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
+LIBMODELICAZLIB_MSVC=$(OMBUILDDIR_MSVC)\lib\omc\msvc\zlib.lib
 
 SUITESPARSE_LIBS=
 
@@ -115,13 +117,11 @@ SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
-main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls install-openturns copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
 
 include Makefile.common
 include Makefile.omsi.common
 
-# For Windows build static FMI lib!
-FMILIB_SHARED = ON
 # For Windows build static CMinpack lib!
 CMINPACKLIB_SHARED = OFF
 
@@ -300,63 +300,45 @@ endif
 	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
 	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
-copycppheader: copycppheader_old
-	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp directory
-	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
-	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
-	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
-
-copycppmsvcheader: getMSVCversion copycppmsvcheader_old
+copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
 	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 
-copycppheader_old:
-	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp directory
-	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
-	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
-	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
-
-copycppmsvcheader_old: getMSVCversion
-	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp/ directory
-	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
-	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
-	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
-
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream $(SEMLA_LIB) OMSI parmodauto
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
-boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
+boehm-gc-lib: $(builddir_bin)/libomcgc-1.dll
 
 
 zlib_msvc: $(LIBMODELICAZLIB_MSVC)
 $(LIBMODELICAZLIB_MSVC): getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/zlib.*
-	rm -rf SimulationRuntime/ModelicaExternalC/build_msvc
-	rm -rf SimulationRuntime/ModelicaExternalC/install_msvc
+	rm -rf $(ZLIB_DIR)/build_msvc
+	rm -rf $(ZLIB_DIR)/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
 	# Goto build msvc directory
-	test -d SimulationRuntime/ModelicaExternalC
-	mkdir -p SimulationRuntime/ModelicaExternalC/build_msvc
+	test -d $(ZLIB_DIR)
+	mkdir -p $(ZLIB_DIR)/build_msvc
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """$(VSCOMNTOOLS)/../../VC/vcvarsall.bat"""
 	echo 'Building ModelicaExternalC/zlib with MSVC'
-	echo @echo on > SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo echo Calling CMake >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo echo Building ModelicaExternalC/zlib >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo @echo on >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo set MAKE= >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo set MAKEFLAGS= >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo @echo on > $(ZLIB_DIR)/build_msvc/build.bat
+	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo echo Calling CMake >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc_msvc)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo echo Building ModelicaExternalC/zlib >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo @echo on >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo set MAKE= >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo set MAKEFLAGS= >> $(ZLIB_DIR)/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> $(ZLIB_DIR)/build_msvc/build.bat
 	# Change into directory and run batch file
-	cd ./SimulationRuntime/ModelicaExternalC/build_msvc; echo "change to SimulationRuntime/ModelicaExternalC/build_msvc";\
+	cd ./$(ZLIB_DIR)/build_msvc; echo "change to $(ZLIB_DIR)/build_msvc";\
 	cmd /c build.bat
 	# copy dll to bin folder
-	(cp -puf SimulationRuntime/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
+	(cp -puf $(ZLIB_DIR)/install_msvc/lib/omc/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
 fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
 $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc
@@ -499,7 +481,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall_old: copycppmsvcheader_old
+runtimeCPPmsvcinstall_old:
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc

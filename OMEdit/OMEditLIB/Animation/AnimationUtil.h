@@ -32,7 +32,6 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-
 #ifndef ANIMATIONUTIL_H
 #define ANIMATIONUTIL_H
 
@@ -40,11 +39,12 @@
 #include <QRegExp>
 #include <QFileInfo>
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <sys/stat.h>
 #include <string>
 #include <osg/Vec3>
 
-#include "Shapes.h"
 #include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
 

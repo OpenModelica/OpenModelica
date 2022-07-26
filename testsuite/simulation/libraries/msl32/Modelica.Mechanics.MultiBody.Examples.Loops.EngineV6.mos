@@ -65,7 +65,7 @@ runScript(modelTesting);getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 7 systems
-//    {(27,757,17.6%), (2,11,100.0%), (2,11,100.0%), (3,10,88.9%), (2,11,100.0%), (2,11,100.0%), (2,11,100.0%)}
+//    {(27,757,17.6%), (3,10,88.9%), (3,10,88.9%), (3,10,88.9%), (2,11,100.0%), (3,10,88.9%), (3,10,88.9%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 6 systems
 //    {(2,12), (2,12), (2,12), (2,12), (2,12), (2,12)}
 // Notification: Model statistics after passing the back-end for simulation:

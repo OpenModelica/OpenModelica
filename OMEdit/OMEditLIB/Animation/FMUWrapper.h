@@ -32,7 +32,6 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-
 #ifndef FMUWRAPPER_H
 #define FMUWRAPPER_H
 

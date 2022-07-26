@@ -20,7 +20,7 @@ equation
 end CombineSubscripts3;
 
 // Result:
-// class 'CombineSubscripts3'
+// model 'CombineSubscripts3'
 //   Real[3] 'b.p';
 //   Real[3, 4] 'b.x';
 // equation

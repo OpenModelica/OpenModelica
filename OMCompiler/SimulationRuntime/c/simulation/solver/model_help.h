@@ -88,9 +88,11 @@ void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
 void printParameters(DATA *data, int stream);
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char*);
+modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream);
 
 void overwriteOldSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);
+void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
 void restoreExtrapolationDataOld(DATA *data);
 
@@ -206,10 +208,6 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
 }
 
 extern int measure_time_flag;
-
-void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext);
-void increaseJacContext(DATA* data);
-void unsetContext(DATA* data);
 
 #ifdef __cplusplus
 }

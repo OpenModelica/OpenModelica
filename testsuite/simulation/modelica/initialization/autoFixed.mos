@@ -126,7 +126,7 @@ res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time
 // "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          b:VARIABLE(start = 2.0 fixed = true )  \"comment b\" type: Real
+//          a:DISCRETE(start = 1.0 fixed = true )  \"comment a\" type: Real
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.autoFixed.test5_res.mat",

@@ -66,11 +66,21 @@ function addSourceMessage
 end addSourceMessage;
 
 function printMessagesStr
+  "Prints all error messages as a string and pops them from the message queue."
   input Boolean warningsAsErrors = false;
   output String outString;
 
   external "C" outString=Error_printMessagesStr(OpenModelica.threadData(),warningsAsErrors) annotation(Library = "omcruntime");
 end printMessagesStr;
+
+function printCheckpointMessagesStr
+  "Prints the error messages since the last checkpoint as a string and pops them
+   from the message queue."
+  input Boolean warningsAsErrors = false;
+  output String outString;
+
+  external "C" outString=Error_printCheckpointMessagesStr(OpenModelica.threadData(),warningsAsErrors) annotation(Library = "omcruntime");
+end printCheckpointMessagesStr;
 
 function getNumMessages
   output Integer num;

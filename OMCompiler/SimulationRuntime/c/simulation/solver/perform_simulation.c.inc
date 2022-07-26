@@ -72,9 +72,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   if (compiledInDAEMode) /* dae mode */
   {
-    if (data->simulationInfo->daeModeData->nResidualVars > 0) {
-      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
-    }
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
   }
   else /* ode mode */
   {
@@ -271,17 +269,24 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   /* prevent emit if noEventEmit flag is used, if it's an event */
-  if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
+  if (!omc_flag[FLAG_NOEVENTEMIT] || !solverInfo->didEventStep) {
     sim_result.emit(&sim_result, data, threadData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue)) {
+  int terminate=0;
+
+  if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue, &terminate)) {
     solverInfo->didEventStep = 1;
     overwriteOldSimulationData(data);
     storePreValues(data); // Maybe??
     storeOldValues(data); // Maybe??
     sim_result.emit(&sim_result, data, threadData);
   }
+
+  if (terminate) {
+    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+  }
+
   if (data->real_time_sync.enabled) {
     double time = data->localData[0]->timeValue;
     int64_t res = rt_ext_tp_sync_nanosec(&data->real_time_sync.clock, (uint64_t) (data->real_time_sync.scaling*(time-data->real_time_sync.time)*1e9));
@@ -319,8 +324,11 @@ static void checkSimulationTerminated(DATA* data, SOLVER_INFO* solverInfo)
 {
   if(terminationTerminate)
   {
-    printInfo(stdout, TermInfo);
-    fputc('\n', stdout);
+    if (TermInfo.filename != NULL && TermInfo.filename[0] != '\0') {
+      printInfo(stdout, TermInfo);
+      fputc('\n', stdout);
+    }
+
     infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     data->simulationInfo->stopTime = solverInfo->currentTime;
   }
@@ -357,7 +365,7 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
   int ui;
-  if (solverInfo->didEventStep == 1)
+  if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep)
   {
     for(ui=0; ui<numStatistics; ui++)
     {
@@ -473,8 +481,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         printAllVars(data, 0, LOG_SOLVER_V);
 
         clear_rt_step(data);
-        if (!compiledInDAEMode) { /* do not use ringbuffer for daeMode */
-          rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+        if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
+          rotateRingBuffer(data->simulationData, 1);
+          lookupRingBuffer(data->simulationData, (void**) data->localData);
         }
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
@@ -497,7 +506,21 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           }
         }
 
-        solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+        // Calculate integrator step size
+        if(simInfo->numSteps == 0) {
+          if(fabs(simInfo->stopTime-simInfo->startTime) < 1e-16) {
+            solverInfo->currentStepSize = 0;
+          } else {
+            errorStreamPrint(LOG_STDOUT, 1, "Number of integrator steps to do is 0, but experiment start time is not equal stop time.");
+            infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
+            messageClose(LOG_STDOUT);
+            errorStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
+            retValue = -1;
+            break;
+          }
+        } else {
+          solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+        }
 
         solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
@@ -515,14 +538,15 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         * skip that step and go further */
         if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
           __currStepNo++;
-          rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+          rotateRingBuffer(data->simulationData, 1);
+          lookupRingBuffer(data->simulationData, (void**) data->localData);
           continue;
         }
 
-      /*
-      * integration step determine all states by a integration method
-      * update continuous system
-      */
+        /*
+        * integration step determine all states by a integration method
+        * update continuous system
+        */
         infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
         retValIntegrator = simulationStep(data, threadData, solverInfo);
         infoStreamPrint(LOG_SOLVER, 0, "finished solver step %g", solverInfo->currentTime);

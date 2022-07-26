@@ -22,7 +22,7 @@ res := OpenModelica.Scripting.compareSimulationResults("PNlib.Examples.Test12_re
     "T3.instantaneousSpeed",
     "T3.maximumSpeed"
   }); getErrorString();
-  
+
 // Result:
 // true
 // ""

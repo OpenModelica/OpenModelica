@@ -1,0 +1,37 @@
+// name: multary_simplifications
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model multary_simplification
+    Real x, y;
+  equation
+    x = 2 * (time + (-4) - 3);
+    y = time * (-2) * 4 * 1;
+  end multary_simplification;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpSimplify");
+simulate(multary_simplification); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] (-2.0) * time * 4.0
+// [AFTER ] -8.0 * time
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] 2.0 * (time - (3.0 + 4.0))
+// [AFTER ] 2.0 * ((-7.0) + time)
+//
+// record SimulationResult
+//     resultFile = "multary_simplification_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'multary_simplification', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

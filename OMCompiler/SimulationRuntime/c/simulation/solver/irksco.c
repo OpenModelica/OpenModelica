@@ -45,56 +45,66 @@
 #include "newtonIteration.h"
 #include "irksco.h"
 
-int wrapper_fvec_irksco(int* n, double* x, double* f, void* userdata, int fj);
+int wrapper_fvec_irksco(int n, double* x, double* f, DATA_IRKSCO* userdata, int fj);
 static int refreshModel(DATA* data, threadData_t *threadData, double* x, double time);
 void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double* y_new);
 
 
-/*! \fn allocateIrksco
+/**
+ * @brief Allocate memory for implicit Runge-Kutta with step size control solver.
  *
- *   Function allocates memory needed for implicit rk solving methods.
+ * Integration methods of higher order can be used by increasing userdata->order:
+ *   (1) implicit euler method
  *
- *   Integration methods of higher order can be used by increasing userdata->order:
- *      (1) implicit euler method
- *
+ * @param data        Pointer to data struct.
+ * @param threadData  Pointer to thread data.
+ * @param solverInfo  Pointer to solver info.
+ * @param size        Size of ODE.
+ * @param zcSize      Number of zero-crossings-
+ * @return int        Return 0 on success.
  */
-int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize)
+int allocateIrksco(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, int size, int zcSize)
 {
-  DATA_IRKSCO* userdata = (DATA_IRKSCO*) malloc(sizeof(DATA_IRKSCO));
-  solverInfo->solverData = (void*) userdata;
-  userdata->order = 1;
-  userdata->ordersize = 1;
+  DATA_IRKSCO* irkscoData = (DATA_IRKSCO*) malloc(sizeof(DATA_IRKSCO));
+  solverInfo->solverData = (void*) irkscoData;
+  irkscoData->order = 1;
+  irkscoData->ordersize = 1;
 
-  allocateNewtonData(userdata->ordersize*size, &(userdata->solverData));
-  userdata->firstStep = 1;
-  userdata->y0 = malloc(sizeof(double)*size);
-  userdata->y05= malloc(sizeof(double)*size);
-  userdata->y1 = malloc(sizeof(double)*size);
-  userdata->y2 = malloc(sizeof(double)*size);
-  userdata->der_x0 = malloc(sizeof(double)*size);
-  userdata->radauVarsOld = malloc(sizeof(double)*size);
-  userdata->radauVars = malloc(sizeof(double)*size);
-  userdata->zeroCrossingValues = malloc(sizeof(double)*zcSize);
-  userdata->zeroCrossingValuesOld = malloc(sizeof(double)*zcSize);
+  NLS_USERDATA* newtonUserData = initNlsUserData(data, threadData, -1, NULL, NULL);
+  irkscoData->newtonData = allocateNewtonData(irkscoData->ordersize*size, newtonUserData);
+  irkscoData->firstStep = 1;
+  irkscoData->y0 = malloc(sizeof(double)*size);
+  irkscoData->y05= malloc(sizeof(double)*size);
+  irkscoData->y1 = malloc(sizeof(double)*size);
+  irkscoData->y2 = malloc(sizeof(double)*size);
+  irkscoData->der_x0 = malloc(sizeof(double)*size);
+  irkscoData->radauVarsOld = malloc(sizeof(double)*size);
+  irkscoData->radauVars = malloc(sizeof(double)*size);
+  irkscoData->zeroCrossingValues = malloc(sizeof(double)*zcSize);
+  irkscoData->zeroCrossingValuesOld = malloc(sizeof(double)*zcSize);
 
-  userdata->m = malloc(sizeof(double)*size);
-  userdata->n = malloc(sizeof(double)*size);
+  irkscoData->m = malloc(sizeof(double)*size);
+  irkscoData->n = malloc(sizeof(double)*size);
 
-  userdata->A = malloc(sizeof(double)*userdata->ordersize*userdata->ordersize);
-  userdata->Ainv = malloc(sizeof(double)*userdata->ordersize*userdata->ordersize);
-  userdata->c = malloc(sizeof(double)*userdata->ordersize);
-  userdata->d = malloc(sizeof(double)*userdata->ordersize);
+  irkscoData->A = malloc(sizeof(double)*irkscoData->ordersize*irkscoData->ordersize);
+  irkscoData->Ainv = malloc(sizeof(double)*irkscoData->ordersize*irkscoData->ordersize);
+  irkscoData->c = malloc(sizeof(double)*irkscoData->ordersize);
+  irkscoData->d = malloc(sizeof(double)*irkscoData->ordersize);
 
   /* initialize stats */
-  userdata->stepsDone = 0;
-  userdata->evalFunctionODE = 0;
-  userdata->evalJacobians = 0;
+  irkscoData->stepsDone = 0;
+  irkscoData->evalFunctionODE = 0;
+  irkscoData->evalJacobians = 0;
 
-  userdata->radauStepSizeOld = 0;
-  userdata->A[0] = 1;
-  userdata->c[0] = 1;
-  userdata->d[0] = 1;
+  irkscoData->radauStepSizeOld = 0;
+  irkscoData->A[0] = 1;
+  irkscoData->c[0] = 1;
+  irkscoData->d[0] = 1;
+
+  /* Set user data */
+  irkscoData->data = data;
+  irkscoData->threadData = threadData;
 
   return 0;
 }
@@ -103,10 +113,10 @@ int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize)
  *
  *   Memory needed for solver is set free.
  */
-int freeIrksco(SOLVER_INFO* solverInfo)
+void freeIrksco(SOLVER_INFO* solverInfo)
 {
   DATA_IRKSCO* userdata = (DATA_IRKSCO*) solverInfo->solverData;
-  freeNewtonData(&(userdata->solverData));
+  freeNewtonData(userdata->newtonData);
 
   free(userdata->y0);
   free(userdata->y05);
@@ -117,8 +127,6 @@ int freeIrksco(SOLVER_INFO* solverInfo)
   free(userdata->radauVars);
   free(userdata->zeroCrossingValues);
   free(userdata->zeroCrossingValuesOld);
-
-  return 0;
 }
 
 /*! \fn checkForZeroCrossingsIrksco
@@ -178,92 +186,93 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* stateDer = sData->realVars + data->modelData->nStates;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
-  DATA_IRKSCO* userdata = (DATA_IRKSCO*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+  DATA_IRKSCO* irkscoData = (DATA_IRKSCO*)solverInfo->solverData;
+  DATA_NEWTON* newtonData = irkscoData->newtonData;
 
-  userdata->data = (void*) data;
-  userdata->threadData = threadData;
+  /* Set rest of user data */
+  newtonData->userData->nlsData = nonlinsys;
+  newtonData->userData->analyticJacobian = NULL;
 
   double a,b;
 
-  sData->timeValue = userdata->radauTime + userdata->radauStepSize;
+  sData->timeValue = irkscoData->radauTime + irkscoData->radauStepSize;
   solverInfo->currentTime = sData->timeValue;
 
-  solverData->initialized = 1;
-  solverData->numberOfIterations = 0;
-  solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = n*userdata->ordersize;
+  newtonData->initialized = 1;
+  newtonData->numberOfIterations = 0;
+  newtonData->numberOfFunctionEvaluations = 0;
+  newtonData->n = n*irkscoData->ordersize;
 
 
   /* linear extrapolation for start value of newton iteration */
   for (i=0; i<n; i++)
   {
-    if (userdata->radauStepSizeOld > 1e-16)
+    if (irkscoData->radauStepSizeOld > 1e-16)
     {
-      userdata->m[i] = (userdata->radauVars[i] - userdata->radauVarsOld[i]) / userdata->radauStepSizeOld;
-      userdata->n[i] = userdata->radauVars[i] - userdata->radauTime * userdata->m[i];
+      irkscoData->m[i] = (irkscoData->radauVars[i] - irkscoData->radauVarsOld[i]) / irkscoData->radauStepSizeOld;
+      irkscoData->n[i] = irkscoData->radauVars[i] - irkscoData->radauTime * irkscoData->m[i];
     }
     else
     {
-      userdata->m[i] = 0;
-      userdata->n[i] = 0;
+      irkscoData->m[i] = 0;
+      irkscoData->n[i] = 0;
     }
   }
 
   /* initial guess calculated via linear extrapolation */
-  for (i=0; i<userdata->ordersize; i++)
+  for (i=0; i<irkscoData->ordersize; i++)
   {
-    if (userdata->radauStepSizeOld > 1e-16)
+    if (irkscoData->radauStepSizeOld > 1e-16)
     {
       for (j=0; j<n; j++)
       {
-        solverData->x[i*n+j] = userdata->m[j] * (userdata->radauTimeOld + userdata->c[i] * userdata->radauStepSize )+ userdata->n[j] - userdata->y0[j];
+        newtonData->x[i*n+j] = irkscoData->m[j] * (irkscoData->radauTimeOld + irkscoData->c[i] * irkscoData->radauStepSize )+ irkscoData->n[j] - irkscoData->y0[j];
       }
     }
     else
     {
       for (j=0; j<n; j++)
       {
-        solverData->x[i*n+j] = userdata->radauVars[i];
+        newtonData->x[i*n+j] = irkscoData->radauVars[i];
       }
     }
   }
 
-  solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_fvec_irksco, solverData, (void*)userdata);
+  newtonData->newtonStrategy = NEWTON_DAMPED2;
+  _omc_newton((genericResidualFunc*)wrapper_fvec_irksco, newtonData, irkscoData);
 
   /* if newton solver did not converge, do iteration again but calculate jacobian in every step */
-  if (solverData->info == -1)
+  if (newtonData->info == -1)
   {
-    for (i=0; i<userdata->ordersize; i++)
+    for (i=0; i<irkscoData->ordersize; i++)
     {
       for (j=0; j<n; j++)
       {
-        solverData->x[i*n+j] = userdata->m[j] * (userdata->radauTimeOld + userdata->c[i] * userdata->radauStepSize )+ userdata->n[j] - userdata->y0[j];
+        newtonData->x[i*n+j] = irkscoData->m[j] * (irkscoData->radauTimeOld + irkscoData->c[i] * irkscoData->radauStepSize )+ irkscoData->n[j] - irkscoData->y0[j];
       }
     }
-    solverData->numberOfIterations = 0;
-    solverData->numberOfFunctionEvaluations = 0;
-    solverData->calculate_jacobian = 1;
+    newtonData->numberOfIterations = 0;
+    newtonData->numberOfFunctionEvaluations = 0;
+    newtonData->calculate_jacobian = 1;
 
     warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_fvec_irksco, solverData, (void*)userdata);
+    _omc_newton((genericResidualFunc*)wrapper_fvec_irksco, newtonData, irkscoData);
 
-    solverData->calculate_jacobian = -1;
+    newtonData->calculate_jacobian = -1;
   }
 
   for (j=0; j<n; j++)
   {
-    y_new[j] = userdata->y0[j];
+    y_new[j] = irkscoData->y0[j];
   }
 
-  for (i=0; i<userdata->ordersize; i++)
+  for (i=0; i<irkscoData->ordersize; i++)
   {
-    if (userdata->d[i] != 0)
+    if (irkscoData->d[i] != 0)
     {
       for (j=0; j<n; j++)
       {
-        y_new[j] += userdata->d[i] * solverData->x[i*n+j];
+        y_new[j] += irkscoData->d[i] * newtonData->x[i*n+j];
       }
     }
   }
@@ -273,29 +282,27 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 }
 
 
-/*!	\fn wrapper_fvec_irksco
+/*! \fn wrapper_fvec_irksco
  *
  *  calculate function values or jacobian matrix
  *  fj = 1 ==> calculate function values
  *  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
+int wrapper_fvec_irksco(int n, double* x, double* fvec, DATA_IRKSCO* userData, int fj)
 {
-  DATA* data = ((DATA_IRKSCO*)userdata)->data;
-  threadData_t* threadData = ((DATA_IRKSCO*)userdata)->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)((DATA_IRKSCO*)userdata)->solverData;
+  DATA* data = userData->data;
+  threadData_t* threadData = userData->threadData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userData->newtonData;
   if (fj)
   {
     int i, j, k;
-    DATA_IRKSCO* irkscoData = (DATA_IRKSCO*) userdata;
-    DATA* data = irkscoData->data;
-    int n0 = (*n)/irkscoData->ordersize;
+    int n0 = n/userData->ordersize;
     SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
     modelica_real* stateDer = sData->realVars + data->modelData->nStates;
 
-    ((DATA_IRKSCO*)userdata)->evalFunctionODE++;
+    userData->evalFunctionODE++;
 
-    for (k=0; k < irkscoData->ordersize; k++)
+    for (k=0; k < userData->ordersize; k++)
     {
       for (j=0; j<n0; j++)
       {
@@ -303,13 +310,13 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       }
     }
 
-    for (i=0; i < irkscoData->ordersize; i++)
+    for (i=0; i < userData->ordersize; i++)
     {
-      sData->timeValue = irkscoData->radauTimeOld + irkscoData->c[i] * irkscoData->radauStepSize;
+      sData->timeValue = userData->radauTimeOld + userData->c[i] * userData->radauStepSize;
 
       for (j=0; j < n0; j++)
       {
-        sData->realVars[j] = irkscoData->y0[j] + x[n0*i+j];
+        sData->realVars[j] = userData->y0[j] + x[n0*i+j];
       }
 
 
@@ -317,11 +324,11 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       data->callback->input_function(data, threadData);
       data->callback->functionODE(data, threadData);
 
-      for (k=0; k < irkscoData->ordersize; k++)
+      for (k=0; k < userData->ordersize; k++)
       {
         for (j=0; j<n0; j++)
         {
-          fvec[k*n0+j] -= irkscoData->A[i*irkscoData->ordersize+k] * irkscoData->radauStepSize * stateDer[j];
+          fvec[k*n0+j] -= userData->A[i*userData->ordersize+k] * userData->radauStepSize * stateDer[j];
         }
       }
 
@@ -338,9 +345,9 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
     /* profiling */
     rt_tick(SIM_TIMER_JACOBIAN);
 
-    ((DATA_IRKSCO*)userdata)->evalJacobians++;
+    userData->evalJacobians++;
 
-    for(i = 0; i < *n; i++)
+    for(i = 0; i < n; i++)
     {
       delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
       delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
@@ -349,12 +356,12 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       x[i] += delta_hh;
       delta_hh = 1. / delta_hh;
 
-      wrapper_fvec_irksco(n, x, solverData->rwork, userdata, 1);
+      wrapper_fvec_irksco(n, x, solverData->rwork, userData, 1);
       solverData->nfev++;
 
-      for(j = 0; j < *n; j++)
+      for(j = 0; j < n; j++)
       {
-        l = i * *n + j;
+        l = i * n + j;
         solverData->fjac[l] = (solverData->rwork[j] - fvec[j]) * delta_hh;
       }
       x[i] = xsave;
@@ -400,7 +407,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   modelica_real* stateDer = sData->realVars + data->modelData->nStates;
   DATA_IRKSCO* userdata = (DATA_IRKSCO*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->newtonData;
 
   double sc, err, a, b, diff;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
@@ -503,12 +510,20 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       {
         userdata->radauStepSize = 1e-6;
       }
+      if (err>1)
+      {
+        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+                        userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
+      }
+
 
     } while  (err > 1.0 );
 
     userdata->radauTimeOld = userdata->radauTime;
 
     userdata->radauTime += userdata->radauStepSizeOld;
+    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+                    userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
 
     memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
     memcpy(userdata->radauVars, userdata->y2, data->modelData->nStates*sizeof(double));

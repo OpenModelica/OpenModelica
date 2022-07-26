@@ -32,10 +32,9 @@
 encapsulated package Obfuscate
   import Absyn;
   import AbsynUtil;
+  import DAE;
   import Dump;
   import FBuiltin;
-  import IOStream;
-  import List;
   import SCode;
   import SCodeUtil;
   import System;
@@ -75,8 +74,8 @@ encapsulated package Obfuscate
     input output Absyn.Path classPath;
     input output SCode.Comment classComment = SCode.noComment;
           output String mapStr;
+          output Mapping mapping;
   protected
-    Mapping mapping;
     Builtins builtins;
     Env env;
   algorithm
@@ -94,7 +93,7 @@ encapsulated package Obfuscate
 
     // Convert the mapping table to a JSON structure that can be used to look up
     // which name is mapped to what.
-    mapStr := mappingToString(env.mapping);
+    mapStr := UnorderedMap.toJSON(env.mapping, Util.id, Util.id);
   end obfuscateProgram;
 
   function makeBuiltins
@@ -114,29 +113,30 @@ encapsulated package Obfuscate
     end for;
 
     // Builtin types.
-    UnorderedMap.add("Boolean"    , ElementType.TYPE             , builtins);
-    UnorderedMap.add("Clock"      , ElementType.TYPE             , builtins);
-    UnorderedMap.add("Real"       , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Boolean"           , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Clock"             , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Real"              , ElementType.TYPE             , builtins);
     // Builtin types that are also functions.
-    UnorderedMap.add("Integer"    , ElementType.TYPE_AND_FUNCTION, builtins);
-    UnorderedMap.add("String"     , ElementType.TYPE_AND_FUNCTION, builtins);
+    UnorderedMap.add("Integer"           , ElementType.TYPE_AND_FUNCTION, builtins);
+    UnorderedMap.add("String"            , ElementType.TYPE_AND_FUNCTION, builtins);
     // Builtin type attributes.
-    UnorderedMap.add("displayUnit", ElementType.OTHER            , builtins);
-    UnorderedMap.add("fixed"      , ElementType.OTHER            , builtins);
-    UnorderedMap.add("max"        , ElementType.OTHER            , builtins);
-    UnorderedMap.add("min"        , ElementType.OTHER            , builtins);
-    UnorderedMap.add("nominal"    , ElementType.OTHER            , builtins);
-    UnorderedMap.add("quantity"   , ElementType.OTHER            , builtins);
-    UnorderedMap.add("start"      , ElementType.OTHER            , builtins);
-    UnorderedMap.add("stateSelect", ElementType.OTHER            , builtins);
-    UnorderedMap.add("time"       , ElementType.OTHER            , builtins);
-    UnorderedMap.add("unbounded"  , ElementType.OTHER            , builtins);
-    UnorderedMap.add("uncertain"  , ElementType.OTHER            , builtins);
-    UnorderedMap.add("unit"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("displayUnit"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("fixed"             , ElementType.OTHER            , builtins);
+    UnorderedMap.add("max"               , ElementType.OTHER            , builtins);
+    UnorderedMap.add("min"               , ElementType.OTHER            , builtins);
+    UnorderedMap.add("nominal"           , ElementType.OTHER            , builtins);
+    UnorderedMap.add("quantity"          , ElementType.OTHER            , builtins);
+    UnorderedMap.add("start"             , ElementType.OTHER            , builtins);
+    UnorderedMap.add("stateSelect"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("time"              , ElementType.OTHER            , builtins);
+    UnorderedMap.add("unbounded"         , ElementType.OTHER            , builtins);
+    UnorderedMap.add("uncertain"         , ElementType.OTHER            , builtins);
+    UnorderedMap.add("unit"              , ElementType.OTHER            , builtins);
     // Builtin functions.
-    UnorderedMap.add("constructor", ElementType.FUNCTION         , builtins);
-    UnorderedMap.add("destructor" , ElementType.FUNCTION         , builtins);
-    UnorderedMap.add("$array"     , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("constructor"       , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("destructor"        , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("$array"            , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("equalityConstraint", ElementType.FUNCTION         , builtins);
   end makeBuiltins;
 
   function obfuscateElement
@@ -432,21 +432,23 @@ encapsulated package Obfuscate
     input Env env;
     input ElementType etype;
     output String outId;
+    output ElementType foundType;
   protected
     Builtins builtins = env.builtins;
     Mapping mapping = env.mapping;
     Option<ElementType> opt_ety;
-    ElementType ety;
   algorithm
     opt_ety := UnorderedMap.get(id, builtins);
 
     if isSome(opt_ety) then
-      SOME(ety) := opt_ety;
+      SOME(foundType) := opt_ety;
 
-      if isBuiltinInContext(etype, ety) then
+      if isBuiltinInContext(etype, foundType) then
         outId := id;
         return;
       end if;
+    else
+      foundType := ElementType.OTHER;
     end if;
 
     outId := UnorderedMap.addUpdate(id,
@@ -626,6 +628,7 @@ encapsulated package Obfuscate
     input Boolean obfuscateSubs = true;
   protected
     Absyn.Ident name;
+    ElementType ety;
   algorithm
     () := match cref
       case Absyn.ComponentRef.CREF_IDENT()
@@ -647,21 +650,25 @@ encapsulated package Obfuscate
 
       case Absyn.ComponentRef.CREF_QUAL()
         algorithm
-          name := obfuscateIdentifier(cref.name, env, etype);
+          (name, ety) := obfuscateIdentifier(cref.name, env, etype);
 
           // Don't obfuscate if it's a builtin name, and don't obfuscate the
-          // rest of the cref either.
-          if referenceEq(name, cref.name) then
-            return;
+          // rest of the cref either if it's a class.
+          //if referenceEq(name, cref.name) and ety <> ElementType.OTHER then
+          //  return;
+          //end if;
+
+          if not referenceEq(name, cref.name) then
+            cref.name := name;
           end if;
 
-          cref.name := name;
+          if ety == ElementType.OTHER then
+            if obfuscateSubs then
+              cref.subscripts := obfuscateSubscripts(cref.subscripts, env);
+            end if;
 
-          if obfuscateSubs then
-            cref.subscripts := obfuscateSubscripts(cref.subscripts, env);
+            cref.componentRef := obfuscateCref(cref.componentRef, env, etype, obfuscateSubs);
           end if;
-
-          cref.componentRef := obfuscateCref(cref.componentRef, env, etype, obfuscateSubs);
         then
           ();
 
@@ -758,35 +765,28 @@ encapsulated package Obfuscate
     extDecl.annotation_ := obfuscateAnnotationOpt(extDecl.annotation_, env);
   end obfuscateExternalDecl;
 
+  function obfuscateEquations
+    input output list<SCode.Equation> eql;
+    input Env env;
+  algorithm
+    eql := list(obfuscateEquation(eq, env) for eq in eql);
+  end obfuscateEquations;
+
   function obfuscateEquation
     input output SCode.Equation eq;
     input Env env;
   algorithm
-    eq.eEquation := obfuscateEEquation(eq.eEquation, env);
-  end obfuscateEquation;
-
-  function obfuscateEEquations
-    input output list<SCode.EEquation> eql;
-    input Env env;
-  algorithm
-    eql := list(obfuscateEEquation(eq, env) for eq in eql);
-  end obfuscateEEquations;
-
-  function obfuscateEEquation
-    input output SCode.EEquation eq;
-    input Env env;
-  algorithm
     () := match eq
-      case SCode.EEquation.EQ_IF()
+      case SCode.Equation.EQ_IF()
         algorithm
           eq.condition := list(obfuscateExp(e, env) for e in eq.condition);
-          eq.thenBranch := list(obfuscateEEquations(e, env) for e in eq.thenBranch);
-          eq.elseBranch := obfuscateEEquations(eq.elseBranch, env);
+          eq.thenBranch := list(obfuscateEquations(e, env) for e in eq.thenBranch);
+          eq.elseBranch := obfuscateEquations(eq.elseBranch, env);
           eq.comment := obfuscateComment(eq.comment, env);
         then
           ();
 
-      case SCode.EEquation.EQ_EQUALS()
+      case SCode.Equation.EQ_EQUALS()
         algorithm
           eq.expLeft := obfuscateExp(eq.expLeft, env);
           eq.expRight := obfuscateExp(eq.expRight, env);
@@ -794,7 +794,7 @@ encapsulated package Obfuscate
         then
           ();
 
-      case SCode.EEquation.EQ_PDE()
+      case SCode.Equation.EQ_PDE()
         algorithm
           eq.expLeft := obfuscateExp(eq.expLeft, env);
           eq.expRight := obfuscateExp(eq.expRight, env);
@@ -802,7 +802,7 @@ encapsulated package Obfuscate
         then
           ();
 
-      case SCode.EEquation.EQ_CONNECT()
+      case SCode.Equation.EQ_CONNECT()
         algorithm
           eq.crefLeft := obfuscateCref(eq.crefLeft, env, ElementType.OTHER);
           eq.crefRight := obfuscateCref(eq.crefRight, env, ElementType.OTHER);
@@ -810,27 +810,27 @@ encapsulated package Obfuscate
         then
           ();
 
-      case SCode.EEquation.EQ_FOR()
+      case SCode.Equation.EQ_FOR()
         algorithm
           eq.index := obfuscateIdentifier(eq.index, env, ElementType.OTHER);
           eq.range := obfuscateExpOpt(eq.range, env);
-          eq.eEquationLst := obfuscateEEquations(eq.eEquationLst, env);
+          eq.eEquationLst := obfuscateEquations(eq.eEquationLst, env);
           eq.comment := obfuscateComment(eq.comment, env);
         then
           ();
 
-      case SCode.EEquation.EQ_WHEN()
+      case SCode.Equation.EQ_WHEN()
         algorithm
           eq.condition := obfuscateExp(eq.condition, env);
-          eq.eEquationLst := obfuscateEEquations(eq.eEquationLst, env);
+          eq.eEquationLst := obfuscateEquations(eq.eEquationLst, env);
           eq.elseBranches := list(
             (obfuscateExp(Util.tuple21(b), env),
-             obfuscateEEquations(Util.tuple22(b), env)) for b in eq.elseBranches);
+             obfuscateEquations(Util.tuple22(b), env)) for b in eq.elseBranches);
           eq.comment := obfuscateComment(eq.comment, env);
         then
           ();
 
-      case SCode.EEquation.EQ_ASSERT()
+      case SCode.Equation.EQ_ASSERT()
         algorithm
           eq.condition := obfuscateExp(eq.condition, env);
           eq.message := obfuscateMessage(eq.message, "assert");
@@ -839,14 +839,14 @@ encapsulated package Obfuscate
         then
           ();
 
-      case SCode.EEquation.EQ_TERMINATE()
+      case SCode.Equation.EQ_TERMINATE()
         algorithm
           eq.message := obfuscateMessage(eq.message, "terminate");
           eq.comment := obfuscateComment(eq.comment, env);
         then
           ();
 
-      case SCode.EEquation.EQ_REINIT()
+      case SCode.Equation.EQ_REINIT()
         algorithm
           eq.cref := obfuscateExp(eq.cref, env);
           eq.expReinit := obfuscateExp(eq.expReinit, env);
@@ -854,14 +854,14 @@ encapsulated package Obfuscate
         then
           ();
 
-      case SCode.EEquation.EQ_NORETCALL()
+      case SCode.Equation.EQ_NORETCALL()
         algorithm
           eq.exp := obfuscateExp(eq.exp, env);
           eq.comment := obfuscateComment(eq.comment, env);
         then
           ();
     end match;
-  end obfuscateEEquation;
+  end obfuscateEquation;
 
   function obfuscateMessage
     "Obfuscates the message of assert/terminate by replacing it with
@@ -1016,53 +1016,9 @@ encapsulated package Obfuscate
     res := ety == ElementType.FUNCTION or ety == ElementType.TYPE_AND_FUNCTION;
   end isBuiltinCall;
 
-  function mappingToString
-    "Converts a mapping to a string in JSON format."
-    input Mapping mapping;
-    output String str;
-  protected
-    list<tuple<String, String>> map;
-    String key, value;
-    IOStream.IOStream io;
+  function deobfuscatePublicDAEVars
 
-    function key_value_comp
-      input tuple<String, String> p1;
-      input tuple<String, String> p2;
-      output Boolean res;
-    protected
-      String key1, key2;
-    algorithm
-      (key1, _) := p1;
-      (key2, _) := p2;
-      res := key1 > key2;
-    end key_value_comp;
-  algorithm
-    map := UnorderedMap.toList(mapping);
-    map := List.sort(map, key_value_comp);
-    io := IOStream.create("ObfuscateMapping", IOStream.IOStreamType.LIST());
-    io := IOStream.append(io, "{\n");
-
-    if not listEmpty(map) then
-      (key, value) :: map := map;
-      io := IOStream.append(io, "  \"");
-      io := IOStream.append(io, key);
-      io := IOStream.append(io, "\": \"");
-      io := IOStream.append(io, value);
-      io := IOStream.append(io, "\"");
-
-      for p in map loop
-        (key, value) := p;
-        io := IOStream.append(io, ",\n  \"");
-        io := IOStream.append(io, key);
-        io := IOStream.append(io, "\": \"");
-        io := IOStream.append(io, value);
-        io := IOStream.append(io, "\"");
-      end for;
-    end if;
-
-    io := IOStream.append(io, "\n}");
-    str := IOStream.string(io);
-  end mappingToString;
+  end deobfuscatePublicDAEVars;
 
   annotation(__OpenModelica_Interface="backend");
 end Obfuscate;

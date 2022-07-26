@@ -1,0 +1,257 @@
+// name: examplary
+// keywords: NewBackend
+// status: correct
+
+// from OpenModelica Workshop Presentation 2022 by kabdelhak
+// used for extreme scaling purposes with slicing, only scaled one is tested
+
+loadString("
+model exemplary
+  Real x[5,2];
+  Real y[2];
+equation
+  for i in 1:4, j in 1:2 loop
+    x[i+1,j] = x[i,j] - y[j];
+  end for;
+  for j in 1:2 loop
+	y[j] = j*sin(time);
+    x[3,j] = j*cos(time);
+  end for;
+end exemplary;
+
+model exemplaryS
+  parameter Integer s = 20;
+  Real x[5+s,2+s];
+  Real y[2+s];
+equation
+  for i in 1:4+s, j in 1:2+s loop
+    x[i+1,j] = x[i,j] - y[j];
+  end for;
+  for j in 1:2+s loop
+    y[j] = j*sin(time);
+    x[3,j] = j*cos(time);
+  end for;
+end exemplaryS;
+
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpSlice");
+simulate(exemplaryS); getErrorString();
+val(x[2,1],1);
+val(x[4,2],1);
+
+// Result:
+// true
+// ""
+// true
+// --- BUCKETS:
+// (key: (start[s]: 23, index[a]:2, mode: 1),
+// 	val: (y[j], [1:22]))
+// (key: (start[s]: 1, index[a]:1, mode: 1),
+// 	entwined:
+// 	key: (start[s]: 89, index[a]:3, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 67, index[a]:3, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 1, index[a]:1, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+// (key: (start[s]: 67, index[a]:3, mode: 2),
+// 	entwined:
+// 	key: (start[s]: 89, index[a]:3, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 67, index[a]:3, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 1, index[a]:1, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+// (key: (start[s]: 89, index[a]:3, mode: 3),
+// 	entwined:
+// 	key: (start[s]: 89, index[a]:3, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 67, index[a]:3, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 1, index[a]:1, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+//
+// --- BUCKETS:
+// (key: (start[s]: 529, index[a]:2, mode: 1),
+// 	val: (y[j], [1:22]))
+// (key: (start[s]: 551, index[a]:3, mode: 1),
+// 	entwined:
+// 	key: (start[s]: 45, index[a]:1, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 23, index[a]:1, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 551, index[a]:3, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+// (key: (start[s]: 23, index[a]:1, mode: 2),
+// 	entwined:
+// 	key: (start[s]: 45, index[a]:1, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 23, index[a]:1, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 551, index[a]:3, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+// (key: (start[s]: 45, index[a]:1, mode: 3),
+// 	entwined:
+// 	key: (start[s]: 45, index[a]:1, mode: 3) ::
+// 	val: (x[1 + i, j], [26:572])
+// 	key: (start[s]: 23, index[a]:1, mode: 2) ::
+// 	val: (x[i, j], [24:550])
+// 	key: (start[s]: 551, index[a]:3, mode: 1) ::
+// 	val: (x[3, j], [23:548]))
+//
+// [0] ### Entwining following equations:
+//   [FOR-] (22) ($RES_SIM_0)
+//   [----] for $k1 in 1:1:22 loop
+//   [----]   [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//   [----] end for;
+//   [FOR-] (528) ($RES_SIM_2)
+//   [----] for $k1 in 1:1:22 loop
+//   [----]   [FOR-] (528) ($RES_SIM_2)
+//   [----]   [----] for $k2 in 2:(-1):1 loop
+//   [----]   [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//   [----]   [----] end for;
+//   [----] end for;
+//   [FOR-] (528) ($RES_SIM_2)
+//   [----] for $k1 in 1:1:22 loop
+//   [----]   [FOR-] (528) ($RES_SIM_2)
+//   [----]   [----] for $k2 in 3:1:24 loop
+//   [----]   [----]   [SCAL] (1) x[1 + $k2, $k1] = x[$k2, $k1] - y[$k1]
+//   [----]   [----] end for;
+//   [----] end for;
+//
+//   [1] ### Entwining following equations:
+//     [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 2:(-1):1 loop
+//     [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//     [----] end for;
+//
+//   [1] +++ Result of entwining:
+//     [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 2:(-1):1 loop
+//     [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//     [----] end for;
+//
+//   [1] ### Entwining following equations:
+//     [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 2:(-1):1 loop
+//     [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//     [----] end for;
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 3:1:24 loop
+//     [----]   [SCAL] (1) x[1 + $k2, $k1] = x[$k2, $k1] - y[$k1]
+//     [----] end for;
+//
+//   [1] +++ Result of entwining:
+//     [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 2:(-1):1 loop
+//     [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//     [----] end for;
+//     [FOR-] (528) ($RES_SIM_2)
+//     [----] for $k2 in 3:1:24 loop
+//     [----]   [SCAL] (1) x[1 + $k2, $k1] = x[$k2, $k1] - y[$k1]
+//     [----] end for;
+//
+// [0] +++ Result of entwining:
+//   [FOR-] (22) ($RES_SIM_0)
+//   [----] for $k1 in 1:1:22 loop
+//   [----]   [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+//   [----]   [FOR-] (528) ($RES_SIM_2)
+//   [----]   [----] for $k2 in 2:(-1):1 loop
+//   [----]   [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+//   [----]   [----] end for;
+//   [----]   [FOR-] (528) ($RES_SIM_2)
+//   [----]   [----] for $k2 in 3:1:24 loop
+//   [----]   [----]   [SCAL] (1) x[1 + $k2, $k1] = x[$k2, $k1] - y[$k1]
+//   [----]   [----] end for;
+//   [----] end for;
+//
+// [dumpSlice] The block:
+// BLOCK: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+//
+// [dumpSlice] got sliced to:
+// --- Alias of INI[1 | 1] ---
+// BLOCK: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1_1)
+// 	[----] for j in 1:1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+//
+//
+// [dumpSlice] The block:
+// BLOCK: Entwined Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[3, j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {22, 0, 23, 1, 24, 2, 25, 3, 26, 4 ...}
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {44, 66, 88, 110, 132, 154, 176, 198, 220, 242 ...}
+//
+// [dumpSlice] got sliced to:
+// --- Alias of INI[1 | 2] ---
+// BLOCK: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+//
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0_1)
+// 	[----] for $k1 in 1:1:22 loop
+// 	[----]   [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+// 	[----]   [FOR-] (528) ($RES_SIM_2)
+// 	[----]   [----] for $k2 in 2:(-1):1 loop
+// 	[----]   [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+// 	[----]   [----] end for;
+// 	[----]   [FOR-] (528) ($RES_SIM_2)
+// 	[----]   [----] for $k2 in 3:1:24 loop
+// 	[----]   [----]   [SCAL] (1) x[1 + $k2, $k1] = x[$k2, $k1] - y[$k1]
+// 	[----]   [----] end for;
+// 	[----] end for;
+//
+//
+// record SimulationResult
+//     resultFile = "exemplaryS_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'exemplaryS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.381773290676036
+// -0.6023373578795135
+// endResult

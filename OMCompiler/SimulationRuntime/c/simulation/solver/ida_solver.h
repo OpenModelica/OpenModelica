@@ -55,19 +55,6 @@
 /* readability */
 #define MINIMAL_SCALE_FACTOR 1e-8
 
-#ifndef booleantype
-#define booleantype int
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-
 typedef struct IDA_USERDATA
 {
   DATA* data;
@@ -78,11 +65,11 @@ typedef struct IDA_SOLVER
 {
   /* ### configuration  ### */
   int setInitialSolution;
-  int jacobianMethod;            /* specifies the method to calculate the Jacobian matrix */
-  int linearSolverMethod;        /* specifies the method to solve the linear problem */
-  int internalSteps;             /* if = 1 internal step of the integrator are used  */
-  unsigned int stepsFreq;        /* value specifies the output frequency regarding to time steps. Used in internal steps mode. */
-  double stepsTime;              /* value specifies the time increment when output happens. Used in internal steps mode. */
+  enum JACOBIAN_METHOD jacobianMethod;  /* specifies the method to calculate the Jacobian matrix */
+  enum IDA_LS linearSolverMethod;       /* specifies the method to solve the linear problem */
+  int internalSteps;                    /* if = 1 internal step of the integrator are used  */
+  unsigned int stepsFreq;               /* value specifies the output frequency regarding to time steps. Used in internal steps mode. */
+  double stepsTime;                     /* value specifies the time increment when output happens. Used in internal steps mode. */
 
   /* ### work arrays ### */
   N_Vector y;                   /* State vector */

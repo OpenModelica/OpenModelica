@@ -55,6 +55,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 }
 
 #include <QMessageBox>
+#include <QStringBuilder>
 
 /*!
  * \class OMCProxy
@@ -133,6 +134,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mLibrariesBrowserDeletionCommandsList << "deleteClass"
                                       << "clear"
                                       << "clearProgram";
+  mLoadModelError = false;
   //start the server
   if(!initializeOMC(threadData)) {  // if we are unable to start OMC. Exit the application.
     MainWindow::instance()->setExitApplicationStatus(true);
@@ -249,6 +251,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   omc_Main_init(threadData, args);
   threadData->plotClassPointer = MainWindow::instance();
   threadData->plotCB = MainWindow::PlotCallbackFunction;
+  threadData->loadModelClassPointer = MainWindow::instance();
+  threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
@@ -256,9 +260,27 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
   // get OpenModelica version
-  Helper::OpenModelicaVersion = getVersion();
+  QString version = getVersion();
+  Helper::OpenModelicaVersion = version;
+  // set users guide version
+  QString versionShort;
+  int dots = 0;
+  for (int i=0; i < version.length(); i++) {
+    if (version.at(i).isDigit()) {
+      versionShort.append(version.at(i));
+    } else if (version.at(i) == '.') {
+      dots++;
+      if (dots > 1) {
+        break;
+      }
+      versionShort.append(version.at(i));
+    }
+  }
+  Helper::OpenModelicaUsersGuideVersion = versionShort;
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
+  // set ModelicaPath variale
+  Helper::ModelicaPath = getModelicaPath();
 #if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
@@ -266,8 +288,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #endif
   /* set the tmp directory as the working directory */
   changeDirectory(tmpPath);
-  // set the OpenModelicaLibrary variable.
-  Helper::OpenModelicaLibrary = getModelicaPath();
+  // set the user home directory variable.
   Helper::userHomeDirectory = getHomeDirectoryPath();
   return true;
 }
@@ -572,9 +593,14 @@ bool OMCProxy::printMessagesStringInternal()
   /* Loop in reverse order since getMessagesStringInternal returns error messages in reverse order. */
   for (int i = errorsSize; i > 0 ; i--) {
     setCurrentError(i);
-    MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
-                            getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-    MessagesWidget::instance()->addGUIMessage(messageItem);
+    const int errorId = getErrorId();
+    if (errorId == 371 || errorId == 372 || errorId == 373) {
+      mLoadModelError = true;
+    } else {
+      MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+                              getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
+      MessagesWidget::instance()->addGUIMessage(messageItem);
+    }
   }
   return returnValue;
 }
@@ -701,6 +727,17 @@ QString OMCProxy::getErrorLevel()
 }
 
 /*!
+ * \brief OMCProxy::getErrorId
+ * Gets the current error id.
+ * \return
+ */
+int OMCProxy::getErrorId()
+{
+  sendCommand("currentError.id");
+  return getResult().toInt();
+}
+
+/*!
   Gets the OMC version. On Linux it also return the revision number as well.
   \return the version
   */
@@ -720,27 +757,10 @@ void OMCProxy::loadSystemLibraries()
     loadModel("Modelica", "default");
     loadModel("ModelicaReference", "default");
   } else {
-    bool forceModelicaLoad = true;
     QSettings *pSettings = Utilities::getApplicationSettings();
-    if (pSettings->contains("forceModelicaLoad")) {
-      forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
-    }
     pSettings->beginGroup("libraries");
     QStringList libraries = pSettings->childKeys();
     pSettings->endGroup();
-    /* Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
-     * Later user must use the libraries options dialog.
-     */
-    if (forceModelicaLoad) {
-      if (!pSettings->contains("libraries/Modelica")) {
-        pSettings->setValue("libraries/Modelica","default");
-        libraries.prepend("Modelica");
-      }
-      if (!pSettings->contains("libraries/ModelicaReference")) {
-        pSettings->setValue("libraries/ModelicaReference","default");
-        libraries.prepend("ModelicaReference");
-      }
-    }
     foreach (QString lib, libraries) {
       QString version = pSettings->value("libraries/" + lib).toString();
       loadModel(lib, version);
@@ -1459,19 +1479,21 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   infoHeader = getDocumentationAnnotationInfoHeader(pLibraryTreeItem->parent(), infoHeader);
   // get the class comment and show it as the first line on the documentation page.
   QString doc = getClassComment(pLibraryTreeItem->getNameStructure());
-  if (!doc.isEmpty()) doc.prepend("<h4>").append("</h4>");
-  doc.prepend(QString("<h2>").append(pLibraryTreeItem->getNameStructure()).append("</h2>"));
+  if (!doc.isEmpty()) {
+    doc = "<h4>" % doc % "</h4>";
+  }
+  doc = "<h2>" % pLibraryTreeItem->getNameStructure() % "</h2>";
   for (int ele = 0 ; ele < docsList.size() ; ele++) {
     QString docElement = docsList[ele];
     if (docElement.isEmpty()) {
       continue;
     }
     if (ele == 0) {         // info section
-      doc += "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
+      doc = doc % "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
     } else if (ele == 1) {    // revisions section
-      doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
+      doc = doc % "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
     } else if (ele == 2) {    // __OpenModelica_infoHeader section
-      infoHeader.append(docElement);
+      infoHeader = infoHeader % docElement;
       continue;
     }
     /* Anything within the HTML tags should be shown with standard font. So we put html tag inside a div with special style.
@@ -1490,16 +1512,15 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       if (endPos < docElement.length()) {
         endNonHtml = Qt::convertFromPlainText(docElement.mid(endPos+7)); // All characters after the position of </html>
       }
-      docElement = QString("<div class=\"textDoc\">%1</div><div class=\"htmlDoc\">%2</div><div class=\"textDoc\">%3</div>")
-          .arg(startNonHtml)
-          .arg(docElement.mid(startPos, endPos - startPos + strlen("</html>")))
-          .arg(endNonHtml);
+      docElement = QString("<div class=\"textDoc\">" % startNonHtml % "</div>"
+                           "<div class=\"htmlDoc\">" % docElement.mid(startPos, endPos - startPos + strlen("</html>")) % "</div>"
+                           "<div class=\"textDoc\">" % endNonHtml % "</div>");
     } else {  // if we have just plain text
-      docElement = QString("<div class=\"textDoc\">%1</div>").arg(Qt::convertFromPlainText(docElement));
+      docElement = QString("<div class=\"textDoc\">" % Qt::convertFromPlainText(docElement) % "</div>");
     }
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
-    doc += docElement;
+    doc = doc % docElement;
   }
 
   QString version = pLibraryTreeItem->getVersion();
@@ -1508,40 +1529,32 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QString dateModified = pLibraryTreeItem->getDateModified();
   if (!version.isEmpty()) {
     if (!versionDate.isEmpty()) {
-      version += QString(", %1").arg(versionDate);
+      version = version % ", " % versionDate;
     }
     if (!versionBuild.isEmpty()) {
-      version += QString(", build %1").arg(versionBuild);
+      version = version % ", build " % versionBuild;
       if (!dateModified.isEmpty()) {
-        version += QString(" (%1)").arg(dateModified);
+        version = version % " (" % dateModified % ")";
       }
     }
   }
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
-                                  "      div.htmlDoc {font-family:\"%1\";\n"
-                                  "                   font-size:%2px;}\n"
-                                  "      pre div.textDoc, div.textDoc p {font-family:\"%3\";\n"
-                                  "                   font-size:%4px;}\n"
+                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";\n"
+                                  "                   font-size:" % QString::number(Helper::systemFontInfo.pointSize()) % "px;}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";\n"
+                                  "                   font-size:" % QString::number(Helper::monospacedFontInfo.pointSize()) % "px;}\n"
                                   "    </style>\n"
-                                  "    %5\n"
+                                  "    " % infoHeader % "\n"
                                   "  </head>\n"
                                   "  <body>\n"
-                                  "    %6\n"
+                                  "    " % doc % "\n"
                                   "    <hr />"
-                                  "    Filename: %7<br />"
-                                  "    Version: %8<br />"
+                                  "    Filename: " % pLibraryTreeItem->getFileName() % "<br />"
+                                  "    Version: " % version % "<br />"
                                   "  </body>\n"
-                                  "</html>")
-                          .arg(Helper::systemFontInfo.family())
-                          .arg(Helper::systemFontInfo.pointSize())
-                          .arg(Helper::monospacedFontInfo.family())
-                          .arg(Helper::monospacedFontInfo.pointSize())
-                          .arg(infoHeader)
-                          .arg(doc)
-                          .arg(pLibraryTreeItem->getFileName())
-                          .arg(version);
+                                  "</html>");
   documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
@@ -1600,6 +1613,7 @@ QString OMCProxy::changeDirectory(QString directory)
   */
 bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify, QString languageStandard, bool requireExactVersion)
 {
+  mLoadModelError = false;
   bool result = false;
   QList<QString> priorityVersionList;
   priorityVersionList << priorityVersion;
@@ -1615,6 +1629,7 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   */
 bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion)
 {
+  mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion);
@@ -2372,7 +2387,6 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
   bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return res;
 }
 
@@ -2432,7 +2446,6 @@ QString OMCProxy::checkModel(QString className)
 {
   QString result = mpOMCInterface->checkModel(className);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2459,7 +2472,6 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
 {
   QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2473,7 +2485,6 @@ QString OMCProxy::instantiateModel(QString className)
 {
   QString result = mpOMCInterface->instantiateModel(className);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2515,9 +2526,6 @@ QString OMCProxy::buildModelFMU(QString className, QString version, QString type
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
   QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
-  if (!fmuFileName.isEmpty()) {
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-  }
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -2532,9 +2540,6 @@ QString OMCProxy::translateModelXML(QString className)
 {
   sendCommand("translateModelXML(" + className + ")");
   QString xmlFileName = StringHandler::unparse(getResult());
-  if (!xmlFileName.isEmpty()) {
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-  }
   printMessagesStringInternal();
   return xmlFileName;
 }
@@ -2779,6 +2784,19 @@ QString OMCProxy::uriToFilename(QString uri)
   } else {
     return "";
   }
+}
+
+/*!
+ * \brief OMCProxy::setModelicaPath
+ * Sets the Modelica library path.
+ * \param path
+ */
+bool OMCProxy::setModelicaPath(const QString &path)
+{
+  bool result = mpOMCInterface->setModelicaPath(path);
+  printMessagesStringInternal();
+  MainWindow::instance()->addSystemLibraries();
+  return result;
 }
 
 /*!
@@ -3404,6 +3422,31 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
   QList<QString> result = mpOMCInterface->getAvailablePackageConversionsFrom(pkg, version);
   printMessagesStringInternal();
   return result;
+}
+
+/*!
+ * \brief OMCProxy::getModelInstance
+ * Returns the class information as json string.
+ * \param className
+ * \param prettyPrint
+ * \return
+ */
+QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
+{
+  QString modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+  printMessagesStringInternal();
+  if (!modelInstanceJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
+    if (doc.isNull()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse model instance json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    return doc.object();
+  }
+  return QJsonObject();
 }
 
 /*!

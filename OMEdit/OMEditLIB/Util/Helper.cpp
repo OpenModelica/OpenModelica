@@ -42,8 +42,9 @@ QString Helper::organization = "openmodelica";  /* case-sensitive string. Don't 
 QString Helper::application = "omedit"; /* case-sensitive string. Don't change it. Used by ini settings file. */
 // Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
+QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OpenModelicaHome = "";
-QString Helper::OpenModelicaLibrary = "";
+QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
@@ -144,6 +145,9 @@ QString Helper::cancel;
 QString Helper::reset;
 QString Helper::close;
 QString Helper::error;
+QString Helper::percentageLabel;
+QString Helper::chooseTransparency;
+QString Helper::chooseColor;
 QString Helper::chooseFile;
 QString Helper::chooseFiles;
 QString Helper::saveFile;
@@ -424,6 +428,8 @@ QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
 QString Helper::installLibrary;
+QString Helper::upgradeInstalledLibraries;
+QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
 
 void Helper::initHelperVariables()
@@ -445,6 +451,9 @@ void Helper::initHelperVariables()
   Helper::reset = tr("Reset");
   Helper::close = tr("Close");
   Helper::error = tr("Error");
+  Helper::percentageLabel = tr("Percentage:");
+  Helper::chooseTransparency = tr("Choose Transparency");
+  Helper::chooseColor = tr("Choose Color");
   Helper::chooseFile = tr("Choose File");
   Helper::chooseFiles = tr("Choose File(s)");
   Helper::saveFile = tr("Save File");
@@ -726,6 +735,8 @@ void Helper::initHelperVariables()
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
   Helper::installLibrary = tr("Install Library");
+  Helper::upgradeInstalledLibraries = tr("Upgrade Installed Libraries");
+  Helper::updateLibraryIndex = tr("Update Library Index");
   Helper::dataReconciliation = tr("Data Reconciliation");
 }
 
@@ -875,6 +886,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Name <b>%1</b> is not a valid identifier.<br />A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.");
     case ENTER_SCRIPT:
       return tr("Please enter a script file.");
+    case LIBRARY_INDEX_FILE_NOT_FOUND:
+      return tr("Library index file <b>%1</b> doesn't exist.");
     default:
       return "";
   }

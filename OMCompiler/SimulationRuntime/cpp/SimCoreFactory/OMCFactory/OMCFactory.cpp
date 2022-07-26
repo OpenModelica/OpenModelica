@@ -11,7 +11,6 @@
 #include <Core/Utils/extension/logger.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/bind.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -369,12 +368,11 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      po::variables_map vm;
      vector<string> unrecognized;
-     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::replaceCRuntimeArguments, this, _1));
      try {
        po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(descAll)
          .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
-         .extra_parser(parserFunction)
+         .extra_parser([this](const string& arg) { return replaceCRuntimeArguments(arg); })
          .allow_unregistered()
          .run();
        po::store(parsed, vm);

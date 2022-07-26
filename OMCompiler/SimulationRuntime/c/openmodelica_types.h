@@ -33,26 +33,11 @@
 #ifndef OPENMODELICA_TYPES_H_
 #define OPENMODELICA_TYPES_H_
 
+#include <limits.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-typedef int integer;
-typedef unsigned int uinteger;
-typedef double doublereal;
-#define maxmacro(X,Y) X > Y ? X : Y
-#define minmacro(X,Y) X > Y ? Y : X
-
-typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
-typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
-/* MetaModelica extension.
-We actually store function-pointers in lists, etc...
-So it needs to be void*. If we use a platform with different sizes of function-
-pointers, some changes need to be done to code generation */
-typedef void* modelica_fnptr;
-
-/* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string;
 
 #if defined(_LP64) /* linux 64bit*/
 
@@ -63,6 +48,8 @@ typedef modelica_metatype modelica_string;
 #define PRINT_MMC_UINT_T "lu"
 typedef unsigned long mmc_uint_t;
 typedef long mmc_sint_t;
+#define MODELICA_INT_MIN LONG_MIN;
+#define MODELICA_INT_MAX LONG_MAX;
 
 #elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__) /* windows 64bit */
 
@@ -79,6 +66,8 @@ typedef long mmc_sint_t;
 #define PRINT_MMC_UINT_T PRIu64
 typedef unsigned long long mmc_uint_t;
 typedef long long mmc_sint_t;
+#define MODELICA_INT_MIN LONG_MIN;
+#define MODELICA_INT_MAX LONG_MAX;
 
 #else /* 32bit platforms */
 
@@ -89,14 +78,60 @@ typedef long long mmc_sint_t;
 #define PRINT_MMC_UINT_T "u"
 typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
+#define MODELICA_INT_MIN INT_MIN;
+#define MODELICA_INT_MAX INT_MAX;
 
 #endif
 
-typedef double            m_real;
-typedef mmc_sint_t        m_integer;
-typedef modelica_metatype m_string;
-typedef signed char       m_boolean;
-typedef m_integer         _index_t;
+/* helpers for mmc_sint_t: printing / div */
+#if defined(_WIN64) || defined(__MINGW64__)
+#define modelica_div_integer lldiv
+#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*lld"
+#define OMC_INT_FORMAT "%*lld"
+#else
+#define modelica_div_integer ldiv
+#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*ld"
+#define OMC_INT_FORMAT "%*ld"
+#endif
+
+typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
+typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
+/* MetaModelica extension.
+We actually store function-pointers in lists, etc...
+So it needs to be void*. If we use a platform with different sizes of function-
+pointers, some changes need to be done to code generation */
+typedef void* modelica_fnptr;
+
+typedef double modelica_real;
+typedef mmc_sint_t modelica_integer;
+typedef signed char modelica_boolean;
+/* When MetaModelica grammar is enabled, all strings are boxed */
+typedef modelica_metatype modelica_string;
+typedef mmc_sint_t         _index_t;
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+
+struct base_array_s
+{
+  int ndims;
+  _index_t *dim_size;
+  void *data;
+  modelica_boolean flexible;
+};
+typedef struct base_array_s base_array_t;
+
+typedef base_array_t boolean_array;
+typedef base_array_t real_array;
+typedef base_array_t integer_array;
+typedef base_array_t string_array;
+
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
@@ -115,31 +150,13 @@ struct index_spec_s
 };
 typedef struct index_spec_s index_spec_t;
 
-struct base_array_s
-{
-  int ndims;
-  _index_t *dim_size;
-  void *data;
-  m_boolean flexible;
-};
 
-typedef struct base_array_s base_array_t;
 
-typedef base_array_t string_array_t;
 
-typedef signed char modelica_boolean;
-typedef base_array_t boolean_array_t;
-
-typedef double modelica_real;
-typedef base_array_t real_array_t;
-
-typedef m_integer modelica_integer;
-typedef base_array_t integer_array_t;
-
-typedef real_array_t real_array;
-typedef integer_array_t integer_array;
-typedef boolean_array_t boolean_array;
-typedef string_array_t string_array;
+// This typedfes should be removed and their uses replaced by the corresponding data types.
+typedef int integer;
+typedef unsigned int uinteger;
+typedef double doublereal;
 
 #include "gc/omc_gc.h" /* for threadData_t */
 

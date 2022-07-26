@@ -18,7 +18,7 @@
 #define SOCKET_H_
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  #include <winsock.h>
+  #include <winsock2.h>
 #else
   #include <sys/socket.h>
   #include <sys/types.h>

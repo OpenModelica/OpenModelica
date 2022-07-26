@@ -4,7 +4,7 @@ QMAKE_LINK = @CXX@
 
 PLOTLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc -lOMPlot -lomqwt @RPATH_QMAKE@
 PLOTINC = @OPENMODELICAHOME@/include/omplot/qwt @OPENMODELICAHOME@/include/omplot
-OMCLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcruntime -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
+OMCLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcruntime -lfmilib_shared -lomcgc -lomantlr3
 OMCINC = @OPENMODELICAHOME@/include/omc/c
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@

@@ -202,6 +202,25 @@ public
     end if;
   end makeConnectors;
 
+  function toString
+    input Connections conns;
+    output String str;
+  protected
+    list<String> strl = {};
+  algorithm
+    strl := "FLOWS:" :: strl;
+    for f in conns.flows loop
+      strl := Connector.toString(f) :: strl;
+    end for;
+
+    strl := "\nCONNECTIONS:" :: strl;
+    for c in conns.connections loop
+      strl := Connection.toString(c) :: strl;
+    end for;
+
+    strl := listReverseInPlace(strl);
+    str := stringDelimitList(strl, "\n");
+  end toString;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFConnections;

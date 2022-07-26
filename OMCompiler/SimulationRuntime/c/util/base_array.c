@@ -39,6 +39,56 @@
 #include <assert.h>
 #include <stdarg.h>
 
+
+_index_t getIndex_2D(_index_t * dim, int i, int j) {
+  return i * dim[1] + j;
+}
+
+_index_t getIndex_3D(_index_t * dim, int i, int j, int k) {
+  return (i * dim[1] + j) * dim[2] + k;
+}
+
+_index_t getIndex_4D(_index_t * dim, int i, int j, int k, int l) {
+  return ((i * dim[1] + j) * dim[2] + k) * dim[3] + l;
+}
+
+_index_t getIndex_5D(_index_t * dim, int i, int j, int k, int l, int m) {
+  return (((i * dim[1] + j) * dim[2] + k) * dim[3] + l) * dim[4] + m;
+}
+
+/* Number of elements in array. */
+_index_t base_array_nr_of_elements(const base_array_t a)
+{
+  int i;
+  _index_t nr_of_elements = 1;
+  for(i = 0; i < a.ndims; ++i) {
+     nr_of_elements *= a.dim_size[i];
+  }
+  return nr_of_elements;
+}
+
+/* size of the ith dimension of an array */
+_index_t size_of_dimension_base_array(const base_array_t a, int i)
+{
+  /* assert(base_array_ok(&a)); */
+  if ((i > 0) && (i <= a.ndims)) {
+    return a.dim_size[i-1];
+  }
+  /* This is a weird work-around to return 0 if the dimension is out of bounds and a dimension is 0
+   * The reason is that we lose the dimensions in the DAE.ARRAY after a 0-dimension
+   * Note: We return size(arr,2)=0 if arr has dimensions [0,2], and not the expected 2
+   */
+  for (i=0; i<a.ndims; i++) {
+    if (a.dim_size[i] == 0) {
+      return 0;
+    }
+  }
+  fprintf(stderr, "size_of_dimension_base_array failed for i=%d, ndims=%d (ndims out of bounds)\n", i, a.ndims);
+  abort();
+}
+
+
+
 /** function: base_array_create
  **
  ** sets all fields in a base_array, i.e. data, ndims and dim_size.
@@ -387,7 +437,7 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
     }
 }
 
-void index_alloc_base_array_size(const real_array_t * source,
+void index_alloc_base_array_size(const real_array * source,
                                  const index_spec_t* source_spec,
                                  base_array_t* dest)
 {

@@ -66,6 +66,7 @@ protected
   import NFPrefixes.ConnectorType;
   import ClockKind = NFClockKind;
   import Structural = NFStructural;
+  import Array;
 
 public
   function needSpecialHandling
@@ -208,7 +209,7 @@ public
       fail();
     end if;
 
-    arrayExp := Expression.makeArray(Type.UNKNOWN(), posArgs);
+    arrayExp := Expression.makeArray(Type.UNKNOWN(), listArray(posArgs));
   end makeArrayExp;
 
   function makeCatExp
@@ -623,7 +624,8 @@ protected
 
     // The argument must be differentiable, i.e. not discrete, unless where in a
     // scope where everything is discrete (like an initial equation).
-    if variability == Variability.DISCRETE and not InstContext.inDiscreteScope(context) then
+    if Prefixes.effectiveVariability(variability) == Variability.DISCRETE and
+       not InstContext.inDiscreteScope(context) then
       Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
         {Expression.toString(arg)}, info);
     end if;
@@ -687,6 +689,36 @@ protected
     Variability var1, var2;
     Purity pur1, pur2;
     TypeCheck.MatchKind mk;
+
+    function is_valid_type
+      input Type ty;
+      output Boolean res;
+    algorithm
+      res := match ty
+        case Type.REAL() then true;
+        case Type.INTEGER() then true;
+        case Type.BOOLEAN() then true;
+        case Type.ENUMERATION() then true;
+        else false;
+      end match;
+    end is_valid_type;
+
+    function invalid_args_error
+      input Call call;
+      input String name;
+      input SourceInfo info;
+    algorithm
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call),
+         name + "(Real, Real) => Real\n  " +
+         name + "(Integer, Integer) => Integer\n  " +
+         name + "(Boolean, Boolean) => Boolean\n  " +
+         name + "(enumeration(:), enumeration(:)) => enumeration(:)\n  " +
+         name + "(Real[:, ...]) => Real\n  " +
+         name + "(Integer[:, ...]) => Integer\n  " +
+         name + "(Boolean[:, ...]) => Boolean\n  " +
+         name + "(enumeration(:)[:, ...]) => enumeration(:)"}, info);
+    end invalid_args_error;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
@@ -697,9 +729,8 @@ protected
           (arg1, ty1, var, purity) := Typing.typeExp(arg1, context, info);
           ty := Type.arrayElementType(ty1);
 
-          if not (Type.isArray(ty1) and Type.isBasic(ty)) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any[:, ...]"}, info);
+          if not (Type.isArray(ty1) and is_valid_type(ty)) then
+            invalid_args_error(call, name, info);
           end if;
 
           // If the argument is an array with a single element we can just
@@ -716,29 +747,21 @@ protected
           (arg1, ty1, var1, pur1) := Typing.typeExp(arg1, context, info);
           (arg2, ty2, var2, pur2) := Typing.typeExp(arg2, context, info);
 
-          if not Type.isBasic(ty1) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any"}, info);
-          end if;
-
-          if not Type.isBasic(ty2) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"2", name, "", Expression.toString(arg2), Type.toString(ty2), "Any"}, info);
+          if not (is_valid_type(ty1) and is_valid_type(ty2)) then
+            invalid_args_error(call, name, info);
           end if;
 
           (arg1, arg2, ty, mk) := TypeCheck.matchExpressions(arg1, ty1, arg2, ty2);
 
           if not TypeCheck.isValidArgumentMatch(mk) then
-            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-              {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+            invalid_args_error(call, name, info);
           end if;
         then
           ({arg1, arg2}, ty, Prefixes.variabilityMax(var1, var2), Purity.purityMin(pur1, pur2));
 
       else
         algorithm
-          Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+          invalid_args_error(call, name, info);
         then
           fail();
     end match;
@@ -914,12 +937,10 @@ protected
     Type arg_ty;
     Function fn;
     list<Dimension> dims;
-    Boolean evaluated;
     Integer index = 1;
   algorithm
     ty_args := {fillArg};
     dims := {};
-    evaluated := true;
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
@@ -938,8 +959,6 @@ protected
           arg := Ceval.evalExp(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
-      else
-        evaluated := false;
       end if;
 
       // Each dimension argument must be an Integer expression.
@@ -949,16 +968,11 @@ protected
           Expression.toString(arg), Type.toString(arg_ty), "Integer"}, info);
       end if;
 
-      if not Expression.isInteger(arg) then
-        // Argument might be a binding expression that needs to be flattened
-        // before we can evaluate the fill call.
-        evaluated := false;
-      end if;
-
       variability := Prefixes.variabilityMax(variability, arg_var);
       purity := Prefixes.purityMin(purity, arg_pur);
       ty_args := arg :: ty_args;
       dims := Dimension.fromExp(arg, arg_var) :: dims;
+      index := index + 1;
     end for;
 
     ty_args := listReverseInPlace(ty_args);
@@ -967,12 +981,8 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated then
-      callExp := Ceval.evalBuiltinFill(ty_args);
-    else
-      callExp := Expression.CALL(
-        Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
-    end if;
+    callExp := Expression.CALL(
+      Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
   end typeFillCall2;
 
   function typeZerosOnesCall
@@ -1330,6 +1340,36 @@ protected
     System.setUsesCardinality(true);
   end typeCardinalityCall;
 
+  function typeConnectionsArgs
+    input list<Expression> args;
+    input InstContext.Type context;
+    input SourceInfo info;
+    input ComponentRef fnRef;
+    output list<Expression> outArgs = {};
+  protected
+    Integer index = 1;
+  algorithm
+    for arg in args loop
+      outArgs := typeConnectionsArg(arg, context, info, fnRef, index) :: outArgs;
+      index := index + 1;
+    end for;
+
+    outArgs := listReverseInPlace(outArgs);
+  end typeConnectionsArgs;
+
+  function typeConnectionsArg
+    input Expression arg;
+    input InstContext.Type context;
+    input SourceInfo info;
+    input ComponentRef fnRef;
+    input Integer index;
+    output Expression outArg;
+    output Type outType;
+  algorithm
+    (outArg, outType) := Typing.typeExp(arg, context, info);
+    checkConnectionsArgument(outArg, outType, fnRef, index, info);
+  end typeConnectionsArg;
+
   function typeBranchCall
     input Call call;
     input InstContext.Type context;
@@ -1342,7 +1382,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg1, arg2;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1358,16 +1397,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    {arg1, arg2} := args;
-
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
-    (arg2, ty) := Typing.typeExp(arg2, context, info);
-    checkConnectionsArgument(arg2, ty, fn_ref, 2, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeBranchCall;
 
   function typeIsRootCall
@@ -1382,7 +1415,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1398,12 +1430,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeIsRootCall;
 
   function typePotentialRootCall
@@ -1422,6 +1452,7 @@ protected
     Function fn;
     Integer args_len;
     String name;
+    Variability arg_var;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
@@ -1449,18 +1480,25 @@ protected
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+    arg1 := typeConnectionsArg(arg1, context, info, fn_ref, 1);
 
     if args_len == 2 then
       arg2 := listHead(args);
-      (arg2, ty) := Typing.typeExp(arg2, context, info);
+      (arg2, ty, arg_var) := Typing.typeExp(arg2, context, info);
 
       if not Type.isInteger(ty) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
           {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
            Type.toString(ty), "Integer"}, info);
       end if;
+
+      if arg_var > Variability.PARAMETER then
+        Error.addSourceMessageAndFail(Error.INVALID_ARGUMENT_VARIABILITY,
+          {"2", ComponentRef.toString(fn_ref), Prefixes.variabilityString(Variability.PARAMETER),
+          Expression.toString(arg2), Prefixes.variabilityString(arg_var)}, info);
+      end if;
+
+      Structural.markExp(arg2);
     else
       arg2 := Expression.INTEGER(0);
     end if;
@@ -1482,7 +1520,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1498,12 +1535,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeRootCall;
 
   function typeRootedCall
@@ -1518,7 +1553,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1534,8 +1568,7 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
+    args := typeConnectionsArgs(args, context, info, fn_ref);
 
     if ComponentRef.isSimple(fn_ref) then
       Error.addSourceMessage(Error.DEPRECATED_API_CALL, {"rooted", "Connections.rooted"}, info);
@@ -1543,7 +1576,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeRootedCall;
 
   function typeUniqueRootCall
@@ -1592,8 +1625,7 @@ protected
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+    arg1 := typeConnectionsArg(arg1, context, info, fn_ref, 1);
 
     if args_len == 2 then
       arg2 := listHead(args);
@@ -1666,10 +1698,21 @@ protected
 
     arg1 :: arg2 :: args := args;
 
-    (arg1, ty1) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty1, fn_ref, 1, info);
-    (arg2, ty2) := Typing.typeExp(arg2, context, info);
-    checkConnectionsArgument(arg2, ty2, fn_ref, 1, info);
+    (arg1, ty1) := typeConnectionsArg(arg1, context, info, fn_ref, 1);
+
+    if not Type.isArray(ty1) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg1),
+         Type.toString(ty1), "Connector[:]"}, info);
+    end if;
+
+    (arg2, ty2) := typeConnectionsArg(arg2, context, info, fn_ref, 2);
+
+    if not Type.isArray(ty2) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
+         Type.toString(ty2), "Connector[:]"}, info);
+    end if;
 
     if args_len == 3 then
       arg3 := listHead(args);
@@ -1681,13 +1724,13 @@ protected
            Type.toString(ty3), "String"}, info);
       end if;
     else
-      arg2 := Expression.STRING("");
+      arg3 := Expression.STRING("");
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
     assert(listLength(Type.arrayDims(ty1)) == listLength(Type.arrayDims(ty2)), "the first two parameters need to have the same size");
     ty := Type.ARRAY(Type.Type.INTEGER(), Type.arrayDims(ty1));
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2, arg3}, var, purity, ty));
 
   end typeUniqueRootIndicesCall;
 
@@ -2015,7 +2058,8 @@ protected
 
       case Expression.ARRAY()
         algorithm
-          arg.elements := list(typeActualInStreamCall2(name, fn, e, var, info) for e in arg.elements);
+          arg.elements := Array.map(arg.elements, function
+            typeActualInStreamCall2(name = name, fn = fn, var = var, info = info));
         then
           arg;
 

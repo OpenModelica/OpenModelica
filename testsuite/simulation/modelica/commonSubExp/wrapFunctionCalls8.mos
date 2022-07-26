@@ -69,7 +69,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
 //
 // ########### Updated Variable List (simulation) (1)
 // ========================================
-// 1: c:VARIABLE()  type: Real 
+// 1: c:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List (simulation) (1, 1)
@@ -81,13 +81,13 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
 // ========================================
 // 1: x:VARIABLE(fixed = true )  = sin(cos(p1))  type: Real
 // 2: p1:PARAM()  = 5.0  type: Real
-// 3: a:VARIABLE(fixed = true )  = sin(x)  type: Real
-// 4: d in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
-// 5: b in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
-// 6: $cse4:VARIABLE(fixed = true protected = true )  = cos(p1)  type: Real  unreplaceable
-// 7: $cse3:VARIABLE(fixed = true protected = true )  = sin($cse4)  type: Real  unreplaceable
-// 8: $cse2 in ($cse2, _, _):VARIABLE(fixed = true protected = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
-// 9: $cse1:VARIABLE(fixed = true protected = true )  = sin($cse2)  type: Real  unreplaceable
+// 3: a:PARAM()  = sin(x)  type: Real
+// 4: d in (d, b, _):PARAM()  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
+// 5: b in (d, b, _):PARAM()  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
+// 6: $cse4:PARAM(protected = true )  = cos(p1)  type: Real unreplaceable
+// 7: $cse3:PARAM(protected = true )  = sin($cse4)  type: Real unreplaceable
+// 8: $cse2 in ($cse2, _, _):PARAM(protected = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real unreplaceable
+// 9: $cse1:PARAM(protected = true )  = sin($cse2)  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (6/46)

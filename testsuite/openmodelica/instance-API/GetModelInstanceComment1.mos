@@ -1,0 +1,23 @@
+// name: GetModelInstanceComment1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    \"A class\"
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"comment\": \"A class\"
+// }"
+// endResult

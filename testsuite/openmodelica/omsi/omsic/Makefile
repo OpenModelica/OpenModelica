@@ -13,7 +13,6 @@ buildSimpleOMSU.mos \
 simulateSimpleOMSU.mos \
 problem2.mos \
 simpleLoop.mos \
-simpleNonLinLoop.mos
 
 # test that currently fail. Move up when fixed.
 

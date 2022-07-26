@@ -50,11 +50,42 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpEllipse = pEllipse;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpEllipse = pEllipse;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -86,6 +117,23 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   mEndAngle.parse(list.at(10));
   // 12th item of the list contains the closure
   mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
+}
+
+void EllipseAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpEllipse);
+  FilledShape::parseShapeAnnotation(mpEllipse);
+
+  QList<QPointF> extents;
+  ModelInstance::Extent extent = mpEllipse->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+  mExtents = extents;
+  mStartAngle = mpEllipse->getStartAngle();
+  mEndAngle = mpEllipse->getEndAngle();
+  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -144,18 +192,11 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the extents
-  QString extentString;
-  extentString.append("{");
-  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-  extentString.append(QString::number(mExtents.at(0).y())).append("},");
-  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-  extentString.append(QString::number(mExtents.at(1).y())).append("}");
-  extentString.append("}");
-  annotationString.append(extentString);
+  annotationString.append(mExtents.toQString());
   // get the start angle
-  annotationString.append(QString::number(mStartAngle));
+  annotationString.append(mStartAngle.toQString());
   // get the end angle
-  annotationString.append(QString::number(mEndAngle));
+  annotationString.append(mEndAngle.toQString());
   // get the closure
   annotationString.append(StringHandler::getClosureString(mClosure));
   return annotationString.join(",");
@@ -182,23 +223,16 @@ QString EllipseAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1) {
-    QString extentString;
-    extentString.append("extent={");
-    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-    extentString.append(QString::number(mExtents.at(0).y())).append("},");
-    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-    extentString.append(QString::number(mExtents.at(1).y())).append("}");
-    extentString.append("}");
-    annotationString.append(extentString);
+  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
   }
   // get the start angle
-  if (mStartAngle != 0) {
-    annotationString.append(QString("startAngle=").append(QString::number(mStartAngle)));
+  if (mStartAngle.isDynamicSelectExpression() || mStartAngle != 0) {
+    annotationString.append(QString("startAngle=%1").arg(mStartAngle.toQString()));
   }
   // get the end angle
-  if (mEndAngle != 360) {
-    annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
+  if (mEndAngle.isDynamicSelectExpression() || mEndAngle != 360) {
+    annotationString.append(QString("endAngle=%1").arg(mEndAngle.toQString()));
   }
   // get the closure
   if (!((mStartAngle == 0 && mEndAngle == 360 && mClosure == StringHandler::ClosureChord)

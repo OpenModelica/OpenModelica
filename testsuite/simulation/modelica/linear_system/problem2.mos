@@ -201,13 +201,13 @@ val(i2, 1.0);
 // 0.0
 // 0.2804903282692988
 // true
-// INeqn => i3 = u2 / r3[1]
-// INeqn => i2 = u2 / r2[2]
+// INeqn => i2 = u2 / r2[1]
+// INeqn => i3 = u2 / r3[2]
 // INeqn => i1 = i3 + i2[3]
 // INeqn => u1 = r1 * i1[4]
 // INres => u1 + u2 = u0[1]
-// OUTeqn => i3 = u2 / r3[0]
-// OUTeqn => i2 = u2 / r2[1]
+// OUTeqn => i2 = u2 / r2[0]
+// OUTeqn => i3 = u2 / r3[1]
 // OUTeqn => i1 = __OMC__1$RTEARINGF * u2[2]
 // OUTeqn => u1 = __OMC__2$RTEARINGF * u2[3]
 // OUTres => __OMC__3$RTEARINGF * u2 = u0[0]
@@ -284,9 +284,9 @@ val(i2, 1.0);
 // "
 // end SimulationResult;
 // ""
-// 9.518569369879021e-28
+// 4.259848888193464e-29
 // 2.804903282692988
-// 2.655481430415245e-28
+// 3.954165287420322e-29
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
@@ -310,6 +310,6 @@ val(i2, 1.0);
 // ""
 // 0.0
 // 2.804903282692988
-// 0.0
-// 0.2804903282692988
+// -0.0
+// 0.2804903282692989
 // endResult

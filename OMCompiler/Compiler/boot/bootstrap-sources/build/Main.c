@@ -600,9 +600,7 @@ omc_Main_interactivemodeZMQ(threadData);
 }
 else
 {
-omc_FGraphStream_start(threadData);
 omc_Main_translateFile(threadData, _args);
-omc_FGraphStream_finish(threadData);
 }
 }
 }
@@ -635,7 +633,6 @@ omc_Print_printBuf(threadData, _OMC_LIT37);
 fputs(MMC_STRINGDATA(omc_Print_getErrorString(threadData)),stdout);
 fputs(MMC_STRINGDATA(omc_ErrorExt_printMessagesStr(threadData, 0)),stdout);
 fputs(MMC_STRINGDATA(_OMC_LIT0),stdout);
-omc_FGraphStream_finish(threadData);
 goto tmp6_done;
 }
 case 1: {

@@ -93,7 +93,7 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omc/c/util \
   $$OPENMODELICAHOME/include/omc/fmil \
   $$OPENMODELICAHOME/../OMParser/ \
-  $$OPENMODELICAHOME/../OMParser/install/include/antlr4-runtime/
+  $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 # Don't show the warnings from included headers.
 # Don't add a space between for and open parenthesis below. Qt4 complains about it.
@@ -108,6 +108,7 @@ SOURCES += Util/Helper.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
+  Modeling/Model.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
@@ -209,6 +210,7 @@ HEADERS  += Util/Helper.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
+  Modeling/Model.h \
   Modeling/MessagesWidget.h \
   Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
@@ -322,13 +324,15 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/AnimationWindow.cpp \
   Animation/ThreeDViewer.cpp \
   Animation/ExtraShapes.cpp \
-  Animation/Visualizer.cpp \
-  Animation/VisualizerMAT.cpp \
-  Animation/VisualizerCSV.cpp \
-  Animation/VisualizerFMU.cpp \
+  Animation/Visualization.cpp \
+  Animation/VisualizationMAT.cpp \
+  Animation/VisualizationCSV.cpp \
+  Animation/VisualizationFMU.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
-  Animation/Shapes.cpp
+  Animation/AbstractVisualizer.cpp \
+  Animation/Shape.cpp \
+  Animation/Vector.cpp
 
 greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
   HEADERS += Animation/OpenGLWidget.h
@@ -341,13 +345,15 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/ThreeDViewer.h \
   Animation/AnimationUtil.h \
   Animation/ExtraShapes.h \
-  Animation/Visualizer.h \
-  Animation/VisualizerMAT.h \
-  Animation/VisualizerCSV.h \
-  Animation/VisualizerFMU.h \
+  Animation/Visualization.h \
+  Animation/VisualizationMAT.h \
+  Animation/VisualizationCSV.h \
+  Animation/VisualizationFMU.h \
   Animation/FMUSettingsDialog.h \
   Animation/FMUWrapper.h \
-  Animation/Shapes.h \
+  Animation/AbstractVisualizer.h \
+  Animation/Shape.h \
+  Animation/Vector.h \
   Animation/rapidxml.hpp
 }
 

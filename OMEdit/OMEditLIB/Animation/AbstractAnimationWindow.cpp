@@ -31,6 +31,8 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/MatrixTransform>
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
@@ -41,9 +43,9 @@
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "ViewerWidget.h"
-#include "Visualizer.h"
-#include "VisualizerMAT.h"
-#include "VisualizerCSV.h"
+#include "Visualization.h"
+#include "VisualizationMAT.h"
+#include "VisualizationCSV.h"
 
 /*!
  * \class AbstractAnimationWindow
@@ -58,7 +60,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
 //    osgViewer::CompositeViewer(),
     mPathName(""),
     mFileName(""),
-    mpVisualizer(nullptr),
+    mpVisualization(nullptr),
     mpViewerWidget(nullptr),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
     mpAnimationParameterDockerWidget(new QDockWidget(QString("Parameter Settings"),this)),
@@ -125,7 +127,7 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       mpAnimationSlider->blockSignals(state);
       mpSpeedComboBox->setEnabled(true);
       mpTimeTextBox->setEnabled(true);
-      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getStartTime()));
       /* Only use isometric view as default for csv file type.
        * Otherwise use side view as default which suits better for Modelica models.
        */
@@ -236,8 +238,8 @@ void AbstractAnimationWindow::createActions()
  */
 void AbstractAnimationWindow::updateControlPanelValues()
 {
-  if (getVisualizer()) {
-    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
+  if (getVisualization()) {
+    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     for (int stateIdx = 0; stateIdx < mSpinBoxVector.size(); stateIdx++) {
       mStateLabels.at(stateIdx)->setText(QString::number(FMUvis->getFMU()->getFMUData()->_states[stateIdx]));
     }
@@ -249,8 +251,8 @@ void AbstractAnimationWindow::updateControlPanelValues()
  */
 void AbstractAnimationWindow::initInteractiveControlPanel()
 {
-  if (getVisualizer()) {
-    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
+  if (getVisualization()) {
+    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     QWidget *widget = new QWidget(this);
     mSpinBoxVector.clear();
     mStateLabels.clear();
@@ -333,7 +335,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
 void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
 {
   if (idx>=0) {
-    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
+    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     if (FMUvis) {
       FMUvis->getFMU()->getFMUData()->_states[idx] = val;
     }
@@ -388,7 +390,7 @@ bool AbstractAnimationWindow::loadVisualization()
                                                           Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
-  //load the XML File, build osgTree, get initial values for the shapes
+  //load the XML File, build osgTree, get initial values for the visualizers
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
@@ -396,31 +398,31 @@ bool AbstractAnimationWindow::loadVisualization()
                                                           Helper::errorLevel));
     return false;
   } else {
-    //init visualizer
+    //init visualization
     if (visType == VisType::MAT) {
-      mpVisualizer = new VisualizerMAT(mFileName, mPathName);
+      mpVisualization = new VisualizationMAT(mFileName, mPathName);
     } else if (visType == VisType::CSV) {
-      mpVisualizer = new VisualizerCSV(mFileName, mPathName);
+      mpVisualization = new VisualizationCSV(mFileName, mPathName);
     } else if (visType == VisType::FMU) {
-      mpVisualizer = new VisualizerFMU(mFileName, mPathName);
+      mpVisualization = new VisualizationFMU(mFileName, mPathName);
     } else {
       QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;
     }
-    connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
-    mpVisualizer->initData();
-    mpVisualizer->setUpScene();
-    mpVisualizer->initVisualization();
+    connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
+    mpVisualization->initData();
+    mpVisualization->setUpScene();
+    mpVisualization->initVisualization();
     //add scene for the chosen visualization
-    mpViewerWidget->getSceneView()->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+    mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode());
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
   if (visType == VisType::FMU) {
-    openFMUSettingsDialog(dynamic_cast<VisualizerFMU*>(mpVisualizer));
+    openFMUSettingsDialog(dynamic_cast<VisualizationFMU*>(mpVisualization));
     mpInteractiveControlAction->setEnabled(true);
     initInteractiveControlPanel();
   }
@@ -528,11 +530,11 @@ double AbstractAnimationWindow::computeDistanceToOrigin()
 /*!
  * \brief AbstractAnimationWindow::openFMUSettingsDialog
  * Opens a dialog to set the settings for the FMU visualization
- * \param pVisualizerFMU
+ * \param pVisualizationFMU
  */
-void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFMU)
+void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualizationFMU)
 {
-  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizerFMU);
+  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizationFMU);
   pFMUSettingsDialog->exec();
 }
 
@@ -542,13 +544,13 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFM
  */
 void AbstractAnimationWindow::updateScene()
 {
-  if (!(mpVisualizer == NULL)) {
+  if (mpVisualization) {
     //set time label
-    if (!mpVisualizer->getTimeManager()->isPaused()) {
-      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+    if (!mpVisualization->getTimeManager()->isPaused()) {
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
       // set time slider
-      if (mpVisualizer->getVisType() != VisType::FMU) {
-        int time = mpVisualizer->getTimeManager()->getTimeFraction();
+      if (mpVisualization->getVisType() != VisType::FMU) {
+        int time = mpVisualization->getTimeManager()->getTimeFraction();
         bool state = mpAnimationSlider->blockSignals(true);
         mpAnimationSlider->setValue(time);
         mpAnimationSlider->blockSignals(state);
@@ -556,7 +558,7 @@ void AbstractAnimationWindow::updateScene()
     }
 
     //update the scene
-    mpVisualizer->sceneUpdate();
+    mpVisualization->sceneUpdate();
     mpViewerWidget->update();
 
     updateControlPanelValues();
@@ -569,8 +571,8 @@ void AbstractAnimationWindow::updateScene()
  */
 void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
-                                                    NULL, Helper::visualizationFileTypes, NULL);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 – %2").arg(Helper::applicationName).arg(Helper::chooseFile),
+                                                    nullptr, Helper::visualizationFileTypes, nullptr);
   if (fileName.isEmpty()) {
     return;
   }
@@ -583,11 +585,11 @@ void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
  */
 void AbstractAnimationWindow::initSlotFunction()
 {
-  mpVisualizer->initVisualization();
+  mpVisualization->initVisualization();
   bool state = mpAnimationSlider->blockSignals(true);
   mpAnimationSlider->setValue(0);
   mpAnimationSlider->blockSignals(state);
-  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   mpViewerWidget->update();
   updateControlPanelValues();
 }
@@ -598,7 +600,7 @@ void AbstractAnimationWindow::initSlotFunction()
  */
 void AbstractAnimationWindow::playSlotFunction()
 {
-  mpVisualizer->getTimeManager()->setPause(false);
+  mpVisualization->getTimeManager()->setPause(false);
 }
 
 /*!
@@ -607,7 +609,7 @@ void AbstractAnimationWindow::playSlotFunction()
  */
 void AbstractAnimationWindow::pauseSlotFunction()
 {
-  mpVisualizer->getTimeManager()->setPause(true);
+  mpVisualization->getTimeManager()->setPause(true);
 }
 
 /*!
@@ -617,7 +619,7 @@ void AbstractAnimationWindow::pauseSlotFunction()
  */
 void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
 {
-  mpVisualizer->getTimeManager()->setRepeat(checked);
+  mpVisualization->getTimeManager()->setRepeat(checked);
 }
 
 /*!
@@ -626,12 +628,12 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
  */
 void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
-  float time = (mpVisualizer->getTimeManager()->getEndTime()
-                - mpVisualizer->getTimeManager()->getStartTime())
+  float time = (mpVisualization->getTimeManager()->getEndTime()
+                - mpVisualization->getTimeManager()->getStartTime())
       * (float) (value / (float)mSliderRange);
-  mpVisualizer->getTimeManager()->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
-  mpVisualizer->updateScene(time);
+  mpVisualization->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+  mpVisualization->updateScene(time);
   mpViewerWidget->update();
 }
 
@@ -643,8 +645,8 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
 {
   QString str = mpTimeTextBox->text();
   bool isFloat = true;
-  double start = mpVisualizer->getTimeManager()->getStartTime();
-  double end = mpVisualizer->getTimeManager()->getEndTime();
+  double start = mpVisualization->getTimeManager()->getStartTime();
+  double end = mpVisualization->getTimeManager()->getEndTime();
   double value = str.toFloat(&isFloat);
   if (isFloat && value >= 0.0) {
     if (value < start) {
@@ -652,11 +654,11 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
     } else if (value > end) {
       value = end;
     }
-    mpVisualizer->getTimeManager()->setVisTime(value);
+    mpVisualization->getTimeManager()->setVisTime(value);
     bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
     mpAnimationSlider->blockSignals(state);
-    mpVisualizer->updateScene(value);
+    mpVisualization->updateScene(value);
     mpViewerWidget->update();
   }
 }
@@ -671,7 +673,7 @@ void AbstractAnimationWindow::setSpeedSlotFunction()
   bool isFloat = true;
   double value = str.toFloat(&isFloat);
   if (isFloat && value > 0.0) {
-    mpVisualizer->getTimeManager()->setSpeedUp(value);
+    mpVisualization->getTimeManager()->setSpeedUp(value);
     mpViewerWidget->update();
   }
 }

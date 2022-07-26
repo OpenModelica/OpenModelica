@@ -55,7 +55,6 @@ import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import HashSet;
-import HashTable4;
 import List;
 import Matching;
 import MetaModelica.Dangerous;
@@ -126,7 +125,6 @@ algorithm
       list<DAE.Exp> crefexplst;
       array<list<Integer>> vorphansarray1, mapEqnIncRow, ass22, vec1;
       list<BackendDAE.Equation> neweqns;
-      HashTable4.HashTable ht;
       DAE.FunctionTree funcs;
 
     case (_, _, {})
@@ -343,7 +341,6 @@ algorithm
         transformJacToMatrix(jac, 1, 1, size, beqs, matrix);
         //  print("Jacobian as Matrix:\n");
         //  dumpMatrix(1, size, matrix);
-        _ = HashTable4.emptyHashTable();
         (tvars, teqns) = gaussElimination(1, size, matrix, BackendVariable.emptyVars(), BackendEquation.listEquation({}), (1, 1));
         //  dumpMatrix(1, size, matrix);
         //  subsyst = BackendDAEUtil.createEqSystem(tvars, teqns);

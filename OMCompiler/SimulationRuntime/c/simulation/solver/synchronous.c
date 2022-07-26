@@ -60,7 +60,12 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   for(i=0; i<data->modelData->nBaseClocks; i++) {
     for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++) {
       assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
-      assertStreamPrint(threadData, rat2Real(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
+      assertStreamPrint(threadData, floorRat(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
+    }
+    if (data->simulationInfo->baseClocks[i].isEventClock) { /*event clock*/
+      for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++) {
+        assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].factor.den == 1, "Factor of sub-clock of event-clock is not an integer, this is not allowed.");
+      }
     }
   }
 
@@ -99,24 +104,13 @@ static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
   TRACE_PUSH
 
-  LIST_NODE* prevNode = NULL;
-  if(listLen(list) > 0)
+  LIST_NODE *it, *prevNode = NULL;
+  for(it = listFirstNode(list); it; it = listNextNode(it))
   {
-    LIST_NODE* tmpNode = listFirstNode(list);
-    SYNC_TIMER* tmpTimer = listNodeData(tmpNode);
-    assertStreamPrint(NULL, 0 != tmpTimer, "invalid timerList node");
-
-    while(tmpTimer->activationTime <= timer->activationTime)
-    {
-      prevNode = tmpNode;
-      tmpNode = listNextNode(tmpNode);
-      if(tmpNode)
-      {
-        tmpTimer = listNodeData(tmpNode);
-        assertStreamPrint(NULL, 0 != tmpTimer, "invalid timerList node");
-      }
-      else break;
-    }
+    SYNC_TIMER *tmpTimer = listNodeData(it);
+    if(tmpTimer->activationTime > timer->activationTime)
+      break;
+    prevNode = it;
   }
   if (prevNode) listInsert(list, prevNode, timer);
   else listPushFront(list, timer);
@@ -162,7 +156,7 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
 modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
   TRACE_PUSH
-   modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
+  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
 
   /* Special case for event-clocks activated at initialization */
   if (data->simulationInfo->initial) {
@@ -179,13 +173,9 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
   SUBCLOCK_DATA* subClock;
   SYNC_TIMER nextTimer, firstSubTimer;
   SYNC_TIMER* nextSubTimer;
-  double nextBaseTime, nextSubTime, absoluteSubTime;
-  double subTimer, activationTime;
-  int i, k;
-
-  if (baseClock->subClocks[0].shift.m == 0 && baseClock->subClocks[0].factor.m == 1 && baseClock->subClocks[0].factor.n == 1) {
-    frstSubClockIsBaseClock = 1 /* true */;
-  }
+  double nextBaseTime, nextSubTime, absoluteSubTime, activationTime;
+  RATIONAL subTimer;
+  int i;
 
   /* Update base clock */
   baseClock->stats.count++;
@@ -198,14 +188,17 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
     baseClock->stats.previousInterval = baseClock->interval;
   }
   baseClock->stats.lastActivationTime = curTime;
-  if (frstSubClockIsBaseClock) {
+
+  subClock = &baseClock->subClocks[0];
+  if (subClock->shift.num == 0 && subClock->factor.num == 1 && subClock->factor.den == 1) {
+    frstSubClockIsBaseClock = 1 /* true */;
 #if !defined(OMC_MINIMAL_RUNTIME)
     // Save result before clock tick, then evaluate equations
     sim_result.emit(&sim_result, data, threadData);
 #endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
-    baseClock->subClocks[0].stats.count++;
-    baseClock->subClocks[0].stats.previousInterval = baseClock->stats.previousInterval;
-    baseClock->subClocks[0].stats.lastActivationTime = baseClock->stats.lastActivationTime;
+    subClock->stats.count++;
+    subClock->stats.previousInterval = baseClock->stats.previousInterval;
+    subClock->stats.lastActivationTime = baseClock->stats.lastActivationTime;
     data->callback->function_equationsSynchronous(data, threadData, idx, 0);
   }
   if (!baseClock->isEventClock) {
@@ -225,32 +218,24 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
   }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.
-  // k = subClock->stats.count
-  // s = subClock->shift + k*subClock->factor;
-  // timer = base.prevTick + (s-baseClock->stats.count-1) * baserClock->interval
+  // s = subClock->shift + subClock->stats.count * subClock->factor - (baseClock->stats.count-1);
+  // timer = base.prevTick + s * baseClock->interval
 
-  // Skipp first subClock if is equivalent to the baseClock
-  if (frstSubClockIsBaseClock) {
-    i=1;
-  } else {
-    i=0;
-  }
-  while (i<baseClock->nSubClocks) {
+  // Skip first subClock if is equivalent to the baseClock
+  i = frstSubClockIsBaseClock ? 1 : 0;
+  for (/* init above */; i < baseClock->nSubClocks; ++i) {
     subClock = &baseClock->subClocks[i];
-    k = subClock->stats.count;
-    subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
-    while (subTimer < baseClock->stats.count) {
-      activationTime = curTime + (subTimer-(baseClock->stats.count-1))*baseClock->interval;
+    subTimer = addRat(subRat(subClock->shift, int2Rat(baseClock->stats.count-1)), mulRat(int2Rat(subClock->stats.count), subClock->factor));
+    while (floorRat(subTimer) == 0) {
+      activationTime = curTime + rat2Real(subTimer)*baseClock->interval;
       nextTimer = (SYNC_TIMER){
         .base_idx = idx,
         .sub_idx = i,
         .type = SYNC_SUB_CLOCK,
         .activationTime = activationTime};
       insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
-      k++;
-      subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
+      subTimer = addRat(subTimer, subClock->factor);
     }
-    i++;
   }
 
   TRACE_POP
@@ -291,11 +276,11 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
   {
-    base_idx =  nextTimer->base_idx;
+    base_idx = nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
-    listPopFront(data->simulationInfo->intvlTimers);
+    listRemoveFront(data->simulationInfo->intvlTimers);
     switch(type)
     {
       case SYNC_BASE_CLOCK:
@@ -365,7 +350,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
 
   *nextTimerDefined = 0;
 
-  if (data->simulationInfo->intvlTimers == NULL ||listLen(data->simulationInfo->intvlTimers) <= 0) {
+  if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
     TRACE_POP
     return (int) ret;
   }
@@ -374,11 +359,11 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
   nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   while(nextTimer->activationTime <= currentTime + SYNC_EPS)
   {
-    base_idx =  nextTimer->base_idx;
+    base_idx = nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
-    listPopFront(data->simulationInfo->intvlTimers);
+    listRemoveFront(data->simulationInfo->intvlTimers);
     switch(type)
     {
       case SYNC_BASE_CLOCK:
@@ -425,8 +410,8 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
  * @param baseClocks   Pointer to array of size nClocks with base clock data.
  * @param nBaseClocks  Number of base clocks.
  */
-void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
-  /* Variables */
+void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks)
+{
   int i,j;
   BASECLOCK_DATA* baseClock;
   SUBCLOCK_DATA* subClock;
@@ -438,7 +423,7 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
       baseClock = &baseClocks[i];
       infoStreamPrint(LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
       if (baseClock->isEventClock) {
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "is event clock");
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "is event clock");
       } else if (baseClock->intervalCounter==-1) {
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
       } else {
@@ -449,8 +434,8 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
       for(j=0; j<baseClock->nSubClocks; j++) {
         subClock = &baseClock->subClocks[j];
         infoStreamPrint(LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: %li/%li", subClock->shift.m, subClock->shift.n);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: %li/%li", subClock->factor.m, subClock->factor.n);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: "RAT_FMT"/"RAT_FMT, subClock->shift.num, subClock->shift.den);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: "RAT_FMT"/"RAT_FMT, subClock->factor.num, subClock->factor.den);
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "solverMethod: %s", strlen(subClock->solverMethod)>0?subClock->solverMethod:"none");
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClock->holdEvents?"true":"false");
         messageClose(LOG_SYNCHRONOUS);
@@ -482,7 +467,7 @@ void printSyncTimer(void* data, int stream, void* elemPointer)
   case SYNC_SUB_CLOCK:
     infoStreamPrint(stream, 0, "%p: (base_idx: %i, sub_idx: %i, type: %s, activationTime: %e)", elemPointer, syncTimerElem->base_idx, syncTimerElem->sub_idx, "sub-clock", syncTimerElem->activationTime);
     break;
-  
+
   default:
     infoStreamPrint(stream, 0, "%p: ERROR: Unknown type", elemPointer);
     break;

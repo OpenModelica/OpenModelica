@@ -12,6 +12,7 @@ set(OMPLOTLIB_SOURCES Plot.cpp
                       PlotWindowContainer.cpp
                       PlotMainWindow.cpp
                       ScaleDraw.cpp
+                      LinearScaleEngine.cpp
                       resource_omplot.qrc)
 
 set(OMPLOTLIB_HEADERS OMPlot.h
@@ -25,7 +26,8 @@ set(OMPLOTLIB_HEADERS OMPlot.h
                       PlotApplication.h
                       PlotWindowContainer.h
                       PlotMainWindow.h
-                      ScaleDraw.h)
+                      ScaleDraw.h
+                      LinearScaleEngine.h)
 
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})
 target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
@@ -37,11 +39,9 @@ target_link_libraries(OMPlotLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMPlotLib PUBLIC qwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
-target_link_options(OMPlotLib PRIVATE -Wl,--no-undefined)
-
-
-add_executable(OMPlot main.cpp rc_omplot.rc)
+add_executable(OMPlot WIN32 MACOSX_BUNDLE main.cpp rc_omplot.rc)
 target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
 install(TARGETS OMPlotLib)
-install(TARGETS OMPlot)
+install(TARGETS OMPlot
+        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})

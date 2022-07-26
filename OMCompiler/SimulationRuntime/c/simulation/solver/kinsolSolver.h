@@ -38,6 +38,8 @@
 extern "C" {
 #endif
 
+#include "nonlinearSystem.h"
+#include "simulation_data.h"
 #include "sundials_error.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
@@ -52,14 +54,6 @@ extern "C" {
 #define RETRY_MAX 5
 #define FTOL_WITH_LESS_ACCURACY 1.e-6
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 /* readability */
 typedef enum initialMode {
   INITIAL_EXTRAPOLATION = 0,
@@ -72,22 +66,15 @@ typedef enum scalingMode {
   SCALING_JACOBIAN                     /* Scale jacobian */
 } scalingMode;
 
-typedef struct NLS_KINSOL_USERDATA {
-  DATA *data;
-  threadData_t *threadData;
-
-  int sysNumber;
-} NLS_KINSOL_USERDATA;
-
 typedef struct NLS_KINSOL_DATA {
   /* ### configuration  ### */
   NLS_LS linearSolverMethod;           /* specifies the method to solve the
                                           underlying linear problem */
-  int nonLinearSystemNumber;
   int kinsolStrategy;                  /* Strategy used to solve nonlinear systems. Has to be one
                                           of: KIN_NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
+  modelica_boolean attemptRetry;       /* True if KINSOL should retry with different settings after solution failed.*/
   int retries;                         /* Number of retries after failed solve of KINSOL */
-  int solved;                          /* If the system is once solved reuse linear matrix information */
+  NLS_SOLVER_STATUS solved;            /* If the system is once solved reuse linear matrix information */
   int nominalJac;                      /* 0/1 for disabled/enabled scaling on Jacobian */
 
   /* ### tolerances ### */
@@ -96,6 +83,8 @@ typedef struct NLS_KINSOL_DATA {
   double maxstepfactor;                /* maximum newton step factor mxnewtstep = maxstepfactor
                                         * norm2(xScaling) */
   double mxnstepin;                    /* Maximum allowable scaled length of Newton step */
+  modelica_boolean resetTol;           /* True if solution with less accuracy was accepted.
+                                          Need to reset KINSOL  */
 
   /* ### work arrays ### */
   N_Vector initialGuess;
@@ -109,7 +98,7 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### kinsol internal data */
   void *kinsolMemory;                  /* Internal memroy block for KINSOL */
-  NLS_KINSOL_USERDATA userData;        /* User data provided to KINSOL */
+  NLS_USERDATA* userData;        /* User data provided to KINSOL */
 
   /* linear solver data */
   SUNLinearSolver linSol;              /* Linear solver object used by KINSOL */
@@ -124,10 +113,9 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nonlinsys,
-                      NLS_LS linearSolverMethod);
-int nlsKinsolFree(void **solverData);
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry);
+void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
+NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };

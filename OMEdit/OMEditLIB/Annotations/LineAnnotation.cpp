@@ -74,6 +74,40 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setShapeFlags(true);
 }
 
+LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpLine = pLine;
+  setLineType(LineAnnotation::ShapeType);
+  setStartComponent(0);
+  setStartComponentName("");
+  setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  setOMSConnectionType(oms_connection_single);
+  setActiveState(false);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
@@ -98,6 +132,39 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
   setAlpha("");
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
+  applyTransformation();
+}
+
+LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpLine = pLine;
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setStartComponentName("");
+  setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  setOMSConnectionType(oms_connection_single);
+  setActiveState(false);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -432,6 +499,23 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
 }
 
+void LineAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpLine);
+
+  mPoints.clear();
+  foreach (ModelInstance::Point point, mpLine->getPoints()) {
+    addPoint(QPointF(point.x(), point.y()));
+  }
+  mLineColor = mpLine->getColor().getColor();
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
+  mLineThickness = mpLine->getLineThickness();
+  mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
+  mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
+  mArrowSize = mpLine->getArrowSize();
+  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpLine->getSmooth()));
+}
+
 QPainterPath LineAnnotation::getShape() const
 {
   QPainterPath path;
@@ -718,24 +802,18 @@ QString LineAnnotation::getOMCShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the line color
-  QString colorString;
-  colorString.append("{");
-  colorString.append(QString::number(mLineColor.red())).append(",");
-  colorString.append(QString::number(mLineColor.green())).append(",");
-  colorString.append(QString::number(mLineColor.blue()));
-  colorString.append("}");
-  annotationString.append(colorString);
+  annotationString.append(mLineColor.toQString());
   // get the line pattern
   annotationString.append(StringHandler::getLinePatternString(mLinePattern));
   // get the thickness
-  annotationString.append(QString::number(mLineThickness));
+  annotationString.append(mLineThickness.toQString());
   // get the start and end arrow
   QString arrowString;
   arrowString.append("{").append(StringHandler::getArrowString(mArrow.at(0))).append(",");
   arrowString.append(StringHandler::getArrowString(mArrow.at(1))).append("}");
   annotationString.append(arrowString);
   // get the arrow size
-  annotationString.append(QString::number(mArrowSize));
+  annotationString.append(mArrowSize.toQString());
   // get the smooth
   annotationString.append(StringHandler::getSmoothString(mSmooth));
   return annotationString.join(",");
@@ -777,22 +855,16 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the line color
-  if (mLineColor != Qt::black) {
-    QString colorString;
-    colorString.append("color={");
-    colorString.append(QString::number(mLineColor.red())).append(",");
-    colorString.append(QString::number(mLineColor.green())).append(",");
-    colorString.append(QString::number(mLineColor.blue()));
-    colorString.append("}");
-    annotationString.append(colorString);
+  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+    annotationString.append(QString("color=%1").arg(mLineColor.toQString()));
   }
   // get the line pattern
   if (mLinePattern != StringHandler::LineSolid) {
     annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
   }
   // get the thickness
-  if (mLineThickness != 0.25) {
-    annotationString.append(QString("thickness=").append(QString::number(mLineThickness)));
+  if (mLineThickness.isDynamicSelectExpression() || mLineThickness != 0.25) {
+    annotationString.append(QString("thickness=%1").arg(mLineThickness.toQString()));
   }
   // get the start and end arrow
   if ((mArrow.at(0) != StringHandler::ArrowNone) || (mArrow.at(1) != StringHandler::ArrowNone)) {
@@ -803,8 +875,8 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(arrowString);
   }
   // get the arrow size
-  if (mArrowSize != 3) {
-    annotationString.append(QString("arrowSize=").append(QString::number(mArrowSize)));
+  if (mArrowSize.isDynamicSelectExpression() || mArrowSize != 3) {
+    annotationString.append(QString("arrowSize=%1").arg(mArrowSize.toQString()));
   }
   // get the smooth
   if (mSmooth != StringHandler::SmoothNone) {
@@ -1012,12 +1084,12 @@ void LineAnnotation::setShapeFlags(bool enable)
   if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType
        || mLineType == LineAnnotation::InitialStateType || mLineType == LineAnnotation::ShapeType)
       && mpGraphicsView) {
-    /*
-      Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
-      AND Line is not an inherited Line AND Line type is not ConnectionType.
-      */
+    /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
+     * AND not a visualization view
+     * AND Line is not an inherited Line AND Line type is not ConnectionType.
+     */
     bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
-    if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
+    if (!isSystemLibrary && !mpGraphicsView->isVisualizationView() && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
         mLineType != LineAnnotation::TransitionType && mLineType != LineAnnotation::InitialStateType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -1260,9 +1332,9 @@ void LineAnnotation::updateConnectionTransformation()
   /* If both start and end component are selected then this function is called twice.
    * we use the flag mStartAndEndComponentSelected to make sure that we only use this function once in such case.
    */
-  if (!mStartAndEndComponentsSelected
-      && mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected()
-      && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
+  if (mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected()
+      && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()
+      && mpStartComponent->getRootParentComponent() != mpEndComponent->getRootParentComponent() && !mStartAndEndComponentsSelected) {
       mStartAndEndComponentsSelected = true;
       return;
   } else if (mStartAndEndComponentsSelected) {
@@ -2176,7 +2248,7 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->isVisualizationView()) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()) {
     mpOkButton->setDisabled(true);
   }
   connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));

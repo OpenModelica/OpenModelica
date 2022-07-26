@@ -26,11 +26,10 @@ instantiateModel(unitCheckTests.UnitCheck17); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {S,{1.0 * m^(1)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
-// {A,{1.0 * m^(1) * s^(-2)}}
-// {C,{1.0 * m^(1) * s^(-1)}}
+// (S, 1.0 * m^(1))
+// (V, 1.0 * m^(1) * s^(-1))
+// (A, 1.0 * m^(1) * s^(-2))
+// (C, 1.0 * m^(1) * s^(-1))
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck17
 //   Real S(unit = \"m\");

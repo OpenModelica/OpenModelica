@@ -601,15 +601,17 @@ algorithm
       File.write(file, "\"alias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true)+"\"");
+      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, "\"");
     then ();
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.NEGATEDALIAS())
     algorithm
       File.write(file, "\"negatedAlias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true)+"\"");
-      then ();
+      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, "\"");
+    then ();
   else
     algorithm File.write(file, "\"noAlias\""); then ();
   end match;

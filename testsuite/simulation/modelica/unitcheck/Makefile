@@ -20,6 +20,7 @@ UnitCheck16.mos \
 UnitCheck17.mos \
 UnitCheck18.mos \
 UnitCheck19.mos \
+UnitCheck20.mos \
 ticket3631.mos \
 
 

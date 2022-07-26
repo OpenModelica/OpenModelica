@@ -49,6 +49,7 @@ readFile("logOverride.txt"); getErrorString();
 // LOG_SOLVER        | info    | override b = 5
 // LOG_SOLVER        | info    | override c = 6
 // LOG_SOLVER        | info    | override done!
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // "
 // ""
 // endResult

@@ -50,12 +50,12 @@
 #include "linearSolverTotalPivot.h"
 #include "../simulation_info_json.h"
 
-static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *);
-static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *);
-static void setAElementUmfpack(int row, int col, double value, int nth, void *data, threadData_t *);
-static void setAElementKlu(int row, int col, double value, int nth, void *data, threadData_t *);
-static void setBElement(int row, double value, void *data, threadData_t*);
-static void setBElementLis(int row, double value, void *data, threadData_t*);
+static void setAElement(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+static void setAElementLis(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+static void setAElementUmfpack(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+static void setAElementKlu(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+static void setBElement(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+static void setBElementLis(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
@@ -118,7 +118,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].jacobianIndex = -1;
         throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
-      nnz = jacobian->sparsePattern->numberOfNoneZeros;
+      nnz = jacobian->sparsePattern->numberOfNonZeros;
       linsys[i].nnz = nnz;
 
 #ifdef USE_PARJAC
@@ -126,15 +126,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       for (j=0; j<maxNumberThreads; ++j)
       {
         // ToDo Simplify this. Only have one location for jacobian
-        linsys[i].parDynamicData[j].jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-        linsys[i].parDynamicData[j].jacobian->sizeCols = jacobian->sizeCols;
-        linsys[i].parDynamicData[j].jacobian->sizeRows = jacobian->sizeRows;
-        linsys[i].parDynamicData[j].jacobian->sizeTmpVars = jacobian->sizeTmpVars;
-        linsys[i].parDynamicData[j].jacobian->seedVars = (modelica_real*) calloc(jacobian->sizeCols, sizeof(modelica_real));
-        linsys[i].parDynamicData[j].jacobian->resultVars = (modelica_real*) calloc(jacobian->sizeRows, sizeof(modelica_real));
-        linsys[i].parDynamicData[j].jacobian->tmpVars = (modelica_real*) calloc(jacobian->sizeTmpVars, sizeof(modelica_real));
-        linsys[i].parDynamicData[j].jacobian->constantEqns = jacobian->constantEqns;
-        linsys[i].parDynamicData[j].jacobian->sparsePattern = jacobian->sparsePattern;
+        linsys[i].parDynamicData[j].jacobian = copyAnalyticJacobian(jacobian);
       }
 #else
       linsys[i].parDynamicData[0].jacobian = jacobian;
@@ -167,12 +159,13 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
                         i, size, linearSparseSolverMinSize);
     }
 
-    /* allocate more system data */
+    /* Allocate nominal, min and max */
     linsys[i].nominal = (double*) malloc(size*sizeof(double));
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
 
-    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
+    /* Init sparsitiy pattern */
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i], 1 /* true */);
 
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
@@ -354,11 +347,15 @@ void freeLinSystThreadData(LINEAR_SYSTEM_DATA *linsys)
   free(linsys->parDynamicData);
 }
 
-/*! \fn int updateStaticDataOfLinearSystems(DATA *data)
+/**
+ * @brief Set min, max, nominal for linear systems.
  *
- *  This function allocates memory for all linear systems.
+ * This function allocates memory for sparsity pattern and
+ * initialized nominal, min, max and spsarsity pattern.
  *
- *  \param [ref] [data]
+ * @param data          Pointer to data.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0.
  */
 int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 {
@@ -376,7 +373,7 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
     {
       throwStreamPrint(threadData, "Static data of Linear system not initialized for linear system %i",i);
     }
-    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i], 0 /* false */);
   }
 
   messageClose(LOG_LS_V);
@@ -801,14 +798,13 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
  *  \param [in]  [col]
  *  \param [in]  [value]
  *  \param [in]  [nth] number element in matrix,
- *                     is ingored here, used only for sparse
+ *                     is ignored here, used only for sparse
  *  \param [ref] [data]
  *
  */
-static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *threadData)
+static void setAElement(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData)
 {
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  linsys->parDynamicData[omc_get_thread_num()].A[row + col * linsys->size] = value;
+  linearSystemData->parDynamicData[omc_get_thread_num()].A[row + col * linearSystemData->size] = value;
 }
 
 /*! \fn setBElement
@@ -818,33 +814,29 @@ static void setAElement(int row, int col, double value, int nth, void *data, thr
  *  \param [in]  [value]
  *  \param [ref] [data]
  */
-static void setBElement(int row, double value, void *data, threadData_t *threadData)
+static void setBElement(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  linsys->parDynamicData[omc_get_thread_num()].b[row] = value;
+  linearSystemData->parDynamicData[omc_get_thread_num()].b[row] = value;
 }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *threadData)
+static void setAElementLis(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  DATA_LIS* sData = (DATA_LIS*) linsys->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_LIS* sData = (DATA_LIS*) linearSystemData->parDynamicData[omc_get_thread_num()].solverData[0];
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }
 
-static void setBElementLis(int row, double value, void *data, threadData_t *threadData)
+static void setBElementLis(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  DATA_LIS* sData = (DATA_LIS*) linsys->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_LIS* sData = (DATA_LIS*) linearSystemData->parDynamicData[omc_get_thread_num()].solverData[0];
   lis_vector_set_value(LIS_INS_VALUE, row, value, sData->b);
 }
 #endif
 
 #ifdef WITH_SUITESPARSE
-static void setAElementUmfpack(int row, int col, double value, int nth, void *data, threadData_t *threadData)
+static void setAElementUmfpack(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
-  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
-  DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_UMFPACK* sData = (DATA_UMFPACK*) linearSystemData->parDynamicData[omc_get_thread_num()].solverData[0];
 
   infoStreamPrint(LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
   if (row > 0) {
@@ -857,10 +849,9 @@ static void setAElementUmfpack(int row, int col, double value, int nth, void *da
   sData->Ax[nth] = value;
 }
 
-static void setAElementKlu(int row, int col, double value, int nth, void *data, threadData_t *threadData)
+static void setAElementKlu(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
-  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
-  DATA_KLU* sData = (DATA_KLU*) linSys->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_KLU* sData = (DATA_KLU*) linearSystemData->parDynamicData[omc_get_thread_num()].solverData[0];
 
   if (row > 0) {
     if (sData->Ap[row] == 0) {

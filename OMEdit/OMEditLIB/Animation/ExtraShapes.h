@@ -35,7 +35,9 @@
 #ifndef EXTRASHAPES_H
 #define EXTRASHAPES_H
 
-#include "Visualizer.h"
+#include "Visualization.h"
+
+#include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/Node>
 #include <osg/Group>
@@ -46,13 +48,21 @@
 #include <QTextStream>
 #include <QFile>
 
+// TODO: Support is missing for the following shape types:
+//  - beam,
+//  - gearwheel.
+// They are currently replaced by a capsule.
+// In addition, the extra parameter is not always considered, in particular for cone and cylinder shapes.
+// See documentation of Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape model.
+// Also, the spring shape is implemented but has an undesired torsion near the end of each winding,
+// and it should be drawn with more facets for a nicer animation.
+
 class Pipecylinder : public osg::Geometry
 {
 public:
   Pipecylinder(float rI, float rO, float l);
   ~Pipecylinder() {};
 };
-
 
 class Spring : public osg::Geometry
 {

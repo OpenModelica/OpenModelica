@@ -104,7 +104,7 @@ void TextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdd
     }
     /* if user is changing the text. */
     if (!mForceSetPlainText) {
-      mpModelWidget->updateModelText();
+      contentsChanged();
     }
   }
 }

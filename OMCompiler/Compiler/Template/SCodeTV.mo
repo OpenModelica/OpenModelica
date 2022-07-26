@@ -497,16 +497,10 @@ package SCode
   end ExternalDecl;
 
   uniontype Equation
-    record EQUATION
-      EEquation eEquation;
-    end EQUATION;
-  end Equation;
-
-  uniontype EEquation
     record EQ_IF
       list<Absyn.Exp> condition;
-      list<list<EEquation>> thenBranch;
-      list<EEquation>       elseBranch;
+      list<list<Equation>> thenBranch;
+      list<Equation>       elseBranch;
       Comment comment;
       SourceInfo info;
     end EQ_IF;
@@ -536,15 +530,15 @@ package SCode
     record EQ_FOR
       Ident index;
       Option<Absyn.Exp> range;
-      list<EEquation> eEquationLst;
+      list<Equation> eEquationLst;
       Comment comment;
       SourceInfo info;
     end EQ_FOR;
 
     record EQ_WHEN
       Absyn.Exp condition;
-      list<EEquation> eEquationLst;
-      list<tuple<Absyn.Exp, list<EEquation>>> elseBranches;
+      list<Equation> eEquationLst;
+      list<tuple<Absyn.Exp, list<Equation>>> elseBranches;
       Comment comment;
       SourceInfo info;
     end EQ_WHEN;
@@ -576,7 +570,7 @@ package SCode
       SourceInfo info;
     end EQ_NORETCALL;
 
-  end EEquation;
+  end Equation;
 
   uniontype AlgorithmSection
     record ALGORITHM

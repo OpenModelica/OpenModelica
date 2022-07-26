@@ -29,7 +29,6 @@
  */
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
- #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 #endif
 
@@ -390,11 +389,11 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
 
 extern void* System_getFileModificationTime(const char *fileName)
 {
-  struct stat attrib;   // create a file attribute structure
+  omc_stat_t attrib;
   double elapsedTime;    // the time elapsed as double
   int result;            // the result of the function call
 
-  if (stat( fileName, &attrib ) != 0) {
+  if (omc_stat( fileName, &attrib ) != 0) {
     return mmc_mk_none();
   } else {
     return mmc_mk_some(mmc_mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time
@@ -402,34 +401,65 @@ extern void* System_getFileModificationTime(const char *fileName)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-void* System_moFiles(const char *directory)
+/**
+ * @brief Scan directory for package files with given pattern except for packageName.
+ *
+ * @param directory     Directory to search in
+ * @param pattern       Pattern to search for, e.g. "*.mo" or "*.moc".
+ * @param packageName   Name of packages, e.g. "package.mo" or "package.moc"
+ * @return void*        List of file names matching pattern.
+ */
+void* omc_scanDirForPackagePattern(const char* directory, const char* pattern, const wchar_t* packageName)
 {
   void *res;
-  WIN32_FIND_DATA FileData;
+  WIN32_FIND_DATAW FileData;
   BOOL more = TRUE;
-  char pattern[1024];
   HANDLE sh;
-  sprintf(pattern, "%s\\*.mo", directory);
+  char pattern_mb[1024];
+
+  // TODO: Use longabspath for path longer than MAX_PATH
+  //wchar_t* unicodeAbsDirectory = longabspath(directory);
+  sprintf(pattern_mb, "%s\\%s", directory, pattern);
+
+  wchar_t* pattern_uc = omc_multibyte_to_wchar_str(pattern_mb);
+  sh = FindFirstFileW(pattern_uc, &FileData);
+  free(pattern_uc);
+
   res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
-      if (strcmp(FileData.cFileName,"package.mo") != 0)
+      if (wcscmp(FileData.cFileName, packageName) != 0)
       {
-        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+        char* file_name_mb = omc_wchar_to_multibyte_str(FileData.cFileName);
+        res = mmc_mk_cons(mmc_mk_scon(file_name_mb),res);
+        free(file_name_mb);
       }
-      more = FindNextFile(sh, &FileData);
+      more = FindNextFileW(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
   }
+
+
   return res;
 }
-#else
+#endif
+
+/**
+ * @brief Scan directory for .mo files excluding package.mo.
+ *
+ * @param directory   Directory to search in.
+ * @return void*      List of file names.
+ */
 void* System_moFiles(const char *directory)
+#if defined(__MINGW32__) || defined(_MSC_VER)
+{
+  return omc_scanDirForPackagePattern(directory, "*.mo", L"package.mo");
+}
+#else
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_mo, NULL);
   res = mmc_mk_nil();
@@ -438,39 +468,27 @@ void* System_moFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief Scan directory for .moc files excluding package.moc.
+ *
+ * @param directory   Directory to search in.
+ * @return void*      List of file names.
+ */
 void* System_mocFiles(const char *directory)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 {
-  void *res;
-  WIN32_FIND_DATA FileData;
-  BOOL more = TRUE;
-  char pattern[1024];
-  HANDLE sh;
-  sprintf(pattern, "%s\\*.moc", directory);
-  res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
-  if (sh != INVALID_HANDLE_VALUE) {
-    while(more) {
-      if (strcmp(FileData.cFileName,"package.moc") != 0)
-      {
-        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
-      }
-      more = FindNextFile(sh, &FileData);
-    }
-    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
-  }
-  return res;
+  return omc_scanDirForPackagePattern(directory, "*.moc", L"package.moc");
 }
 #else
-void* System_mocFiles(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_moc, NULL);
   res = mmc_mk_nil();
@@ -479,6 +497,7 @@ void* System_mocFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -552,24 +571,30 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
 void* System_subDirectories(const char *directory)
 {
   void *res;
-  WIN32_FIND_DATA FileData;
+  WIN32_FIND_DATAW FileData;
   BOOL more = TRUE;
-  char pattern[1024];
+  char pattern_mb[1024];
   HANDLE sh;
 
-  sprintf(pattern, "%s\\*.*", directory);
+  sprintf(pattern_mb, "%s\\*.*", directory);
+
+  wchar_t* pattern_uc = omc_multibyte_to_wchar_str(pattern_mb);
+  sh = FindFirstFileW(pattern_uc, &FileData);
+  free(pattern_uc);
 
   res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
-      if (strcmp(FileData.cFileName,"..") != 0 &&
-        strcmp(FileData.cFileName,".") != 0 &&
+      if (wcscmp(FileData.cFileName,L"..") != 0 &&
+        wcscmp(FileData.cFileName,L".") != 0 &&
         (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
       {
-          res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+        char* dir_name_mb = omc_wchar_to_multibyte_str(FileData.cFileName);
+        res = mmc_mk_cons(mmc_mk_scon(dir_name_mb),res);
+        free(dir_name_mb);
+
       }
-      more = FindNextFile(sh, &FileData);
+      more = FindNextFileW(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
   }
@@ -580,7 +605,7 @@ void* System_subDirectories(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_directories, NULL);
   res = mmc_mk_nil();
@@ -589,6 +614,7 @@ void* System_subDirectories(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -597,19 +623,14 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 {
   void *res;
   int i = 0;
-#if !defined(_MSC_VER)
-  void *matches[maxn];
-#else
   void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
-#endif
-  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
+  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)matches);
   res = mmc_mk_nil();
   for (i=maxn-1; i>=0; i--) {
     res = mmc_mk_cons(matches[i],res);
   }
-#if defined(_MSC_VER)
+
   GC_free(matches);
-#endif
   return res;
 }
 
@@ -759,8 +780,7 @@ extern const char* System_sprintff(const char *fmt, double d)
 extern const char* System_realpath(const char *path)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  MULTIBYTE_TO_WIDECHAR_LENGTH(path, unicodePathLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(path, unicodePath, unicodePathLength);
+  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
 
   DWORD bufLen = 0;
   bufLen = GetFullPathNameW(unicodePath, bufLen, NULL, NULL);
@@ -769,23 +789,58 @@ extern const char* System_realpath(const char *path)
     MMC_THROW();
   }
 
-  WCHAR unicodeFullPath[bufLen];
-  if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
-    MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
+  wchar_t* unicodeFullPath = (wchar_t*) omc_alloc_interface.malloc_atomic(sizeof(wchar_t) * bufLen);
+  int success = GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL);
+  free(unicodePath);
+
+  if (!success) {
     fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
     MMC_THROW();
   }
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
 
-  WIDECHAR_TO_MULTIBYTE_LENGTH(unicodeFullPath, bufferLength);
-  WIDECHAR_TO_MULTIBYTE_VAR(unicodeFullPath, buffer, bufferLength);
+  char* buffer = omc_wchar_to_multibyte_str(unicodeFullPath);
+  // This seems like it is an overkill. If all we need is the length then strlen on the 'buffer' above should suffice.
+  // I am leaving it like this for now since this was what was being done by the macro WIDECHAR_TO_MULTIBYTE_LENGTH
+  int bufferLength = WideCharToMultiByte(CP_UTF8, 0, unicodeFullPath, -1, NULL, 0, NULL, NULL);
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  free(buffer);
+
+  GC_free(unicodeFullPath);
   return res;
 #else
   char buf[PATH_MAX];
   if (realpath(path, buf) == NULL) {
+    fprintf(stderr, "System_realpath failed.\n");
+    switch (errno)
+    {
+    case EACCES:
+      fprintf(stderr, "Read or search permission was denied for a component of the path prefix.\n");
+      break;
+    case EINVAL:
+      fprintf(stderr, "path is NULL.\n");
+      break;
+    case EIO:
+      fprintf(stderr, "An I/O error occurred while reading from the filesystem.\n");
+      break;
+    case ELOOP:
+      fprintf(stderr, "Too many symbolic links were encountered in translating the pathname.\n");
+      break;
+    case ENAMETOOLONG:
+      fprintf(stderr, "A component of a pathname exceeded %u characters, or an entire pathname exceeded %u characters.\n", NAME_MAX, PATH_MAX);
+      break;
+    case ENOENT:
+      fprintf(stderr, "The named file does not exist.\n");
+      break;
+    case ENOMEM:
+      fprintf(stderr, "Out of memory.\n");
+      break;
+    case ENOTDIR:
+      fprintf(stderr, "A component of the path prefix is not a directory.\n");
+      break;
+    default:
+      break;
+    }
     MMC_THROW();
   }
   return omc_alloc_interface.malloc_strdup(buf);
@@ -850,19 +905,21 @@ static void* System_launchParallelTasksSerial(threadData_t *threadData, void *da
 
 extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
-  int len = listLength(dataLst), i;
+  int i;
+  size_t len = listLength(dataLst);
   void *result = mmc_mk_nil();
   thread_data data = {0};
-#if !defined(_MSC_VER)
-  void *commands[len];
-  void *status[len];
-  pthread_t th[numThreads];
   int isInteger = 0;
+  pthread_attr_t* attr_addr = NULL;
+
+  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
 
 #if defined(__MINGW32__)
-  /* adrpo: set thread stack size on Windows to 4MB */
   pthread_attr_t attr;
-  if (pthread_attr_init(&attr))
+  attr_addr = &attr;
+  if (pthread_attr_init(attr_addr))
   {
     const char *tok[1] = {strerror(errno)};
     data.fail = 1;
@@ -870,38 +927,30 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
       ErrorType_scripting,
       ErrorLevel_internal,
       gettext("System.launchParallelTasks: failed to initialize the pthread attributes: %s"),
-      NULL,
-      0);
+      tok,
+      1);
     MMC_THROW_INTERNAL();
   }
-  /* try to set a stack size of 4MB */
-  if (pthread_attr_setstacksize(&attr, 4194304))
+
+  /* adrpo: set thread stack size on Windows to 4MB */
+  /* try to set a stack size of 4MB, if not then 2MB, if not then 1MB, if not then fail */
+  /* Rely on left to right Short Circuit Evaluation, i.e, shorts on the first true. */
+  if (pthread_attr_setstacksize(attr_addr, 4194304) ||
+      pthread_attr_setstacksize(attr_addr, 2097152) ||
+      pthread_attr_setstacksize(attr_addr, 1048576))
   {
-    /* did not work, try half 2MB */
-    if (pthread_attr_setstacksize(&attr, 2097152))
-    {
-      /* did not work, try half 1MB */
-      if (pthread_attr_setstacksize(&attr, 1048576))
-      {
         const char *tok[1] = {strerror(errno)};
         data.fail = 1;
         c_add_message(NULL,5999,
           ErrorType_scripting,
           ErrorLevel_internal,
           gettext("System.launchParallelTasks: failed to set the pthread stack size to 1MB: %s"),
-          NULL,
-          0);
+          tok,
+          1);
         MMC_THROW_INTERNAL();
-      }
-    }
   }
 #endif
 
-#else /* MSVC */
-  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
-#endif
   if (len == 0) {
     return mmc_mk_nil();
   } else if (numThreads == 1 || len == 1) {
@@ -926,14 +975,9 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
     status[i] = 0; /* just in case */
   }
   numThreads = numThreads > len ? len : numThreads;
-  for (i=0; i<numThreads; i++) {
-    if (GC_pthread_create(&th[i],
-#if defined(__MINGW32__)
-    &attr,
-#else
-    NULL,
-#endif
-    System_launchParallelTasksThread,&data)) {
+  unsigned int live_threads = 0;
+  for (i=0; i < numThreads; i++) {
+    if (GC_pthread_create(&th[i], attr_addr, System_launchParallelTasksThread,&data)) {
       /* GC_pthread_create failed. We need to join already created threads though... */
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
@@ -941,21 +985,27 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to create thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
       break;
     }
+    live_threads++;
   }
-  for (i=0; i<numThreads; i++) {
-    if (th[i] && GC_pthread_join(th[i], NULL)) {
+
+#if defined(__MINGW32__)
+  pthread_attr_destroy(attr_addr);
+#endif
+
+  for (i=0; i < live_threads; i++) {
+    if (GC_pthread_join(th[i], NULL)) {
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
       c_add_message(NULL,5999,
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to join thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
     }
   }
   if (data.fail) {

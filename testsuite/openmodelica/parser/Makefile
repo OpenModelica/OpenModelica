@@ -41,6 +41,8 @@ ParseFullModelica3.1.mos \
 ParseFullModelica3.2.1.mos \
 ParseString.mos \
 PureImpure.mo \
+PureImpure2.mo \
+PureImpure3.mo \
 RealOpLexerModelica.mo \
 Redeclare.mos \
 ReloadClass.mos \

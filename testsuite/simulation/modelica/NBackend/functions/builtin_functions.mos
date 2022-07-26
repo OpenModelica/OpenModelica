@@ -1,0 +1,344 @@
+// name: builtin_functions
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model builtin_functions
+  Real y;
+  Real[14] x(each start=-1.0, each fixed=true);
+equation
+  y = abs(x[2]);
+  der(x[1]) = sqrt(y);
+  der(x[2]) = sin(y);
+  der(x[3]) = cos(y);
+  der(x[4]) = tan(y);
+  der(x[5]) = asin(y);
+  der(x[6]) = acos(y);
+  der(x[7]) = atan(y);
+  der(x[8]) = sinh(y);
+  der(x[9]) = cosh(y);
+  der(x[10]) = tanh(y);
+  der(x[11]) = exp(y);
+  der(x[12]) = log(y+1);
+  der(x[13]) = log10(y+1);
+  der(x[14]) = atan2(y, x[1]);
+end builtin_functions;
+
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=symjacdump"); getErrorString();
+simulate(builtin_functions); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ################################################################################
+//
+// 	[symjacdump] Creating symbolic Jacobians:
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ODE System
+// ========================================
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = abs(x[2]) ($RES_SIM_14)
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[1]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[1] = sqrt(y) ($RES_SIM_13)
+//
+// --- Alias of INI[1 | 4] ---
+// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[2]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[2] = sin(y) ($RES_SIM_12)
+//
+// --- Alias of INI[1 | 5] ---
+// BLOCK 4: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[3]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[3] = cos(y) ($RES_SIM_11)
+//
+// --- Alias of INI[1 | 6] ---
+// BLOCK 5: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[4]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[4] = tan(y) ($RES_SIM_10)
+//
+// --- Alias of INI[1 | 7] ---
+// BLOCK 6: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[5]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[5] = asin(y) ($RES_SIM_9)
+//
+// --- Alias of INI[1 | 8] ---
+// BLOCK 7: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[6]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[6] = acos(y) ($RES_SIM_8)
+//
+// --- Alias of INI[1 | 9] ---
+// BLOCK 8: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[7]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[7] = atan(y) ($RES_SIM_7)
+//
+// --- Alias of INI[1 | 10] ---
+// BLOCK 9: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[8]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[8] = sinh(y) ($RES_SIM_6)
+//
+// --- Alias of INI[1 | 11] ---
+// BLOCK 10: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[9]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[9] = cosh(y) ($RES_SIM_5)
+//
+// --- Alias of INI[1 | 12] ---
+// BLOCK 11: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[10]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[10] = tanh(y) ($RES_SIM_4)
+//
+// --- Alias of INI[1 | 13] ---
+// BLOCK 12: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[11]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[11] = exp(y) ($RES_SIM_3)
+//
+// --- Alias of INI[1 | 14] ---
+// BLOCK 13: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[12]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[12] = log(1.0 + y) ($RES_SIM_2)
+//
+// --- Alias of INI[1 | 15] ---
+// BLOCK 14: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[13]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[13] = log10(1.0 + y) ($RES_SIM_1)
+//
+// --- Alias of INI[1 | 17] ---
+// BLOCK 15: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[14]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[14] = atan2(y, x[1]) ($RES_SIM_0)
+//
+// ################################################################################
+//
+// 	[SIM] Jacobian ODE_JAC: SIM
+//
+// ################################################################################
+//
+// Partial Derivative Variables (2/15)
+// ****************************************
+// (1)       [JACV] (14) Real[14] $pDER_ODE_JAC.$DER.x
+// (2)       [JACV] (1) Real $pDER_ODE_JAC.y
+//
+// Seed Variables (1/14)
+// ****************************************
+// (1)       [SEED] (14) Real[14] $SEED_ODE_JAC.x
+//
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC.y
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.y = sign(x[2]) * $SEED_ODE_JAC.x[2] ($RES_ODE_JAC_0)
+//
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[1]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[1] = 0.5 / y ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_1)
+//
+// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[2]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[2] = cos(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_2)
+//
+// BLOCK 4: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[3]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[3] = -sin(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_3)
+//
+// BLOCK 5: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[4]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[4] = 1/cos(y) ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_4)
+//
+// BLOCK 6: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[5]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[5] = 1/(1.0 - y ^ 2.0) ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_5)
+//
+// BLOCK 7: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[6]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[6] = -1/(1.0 - y ^ 2.0) ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_6)
+//
+// BLOCK 8: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[7]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[7] = 1/1.0 + y ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_7)
+//
+// BLOCK 9: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[8]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[8] = cosh(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_8)
+//
+// BLOCK 10: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[9]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[9] = sinh(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_9)
+//
+// BLOCK 11: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[10]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[10] = (1.0 - tanh(y) ^ 2.0) * $pDER_ODE_JAC.y ($RES_ODE_JAC_10)
+//
+// BLOCK 12: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[11]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[11] = exp(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_11)
+//
+// BLOCK 13: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[12]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[12] = 1/1.0 + y * $pDER_ODE_JAC.y ($RES_ODE_JAC_12)
+//
+// BLOCK 14: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[13]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[13] = 0.4342944819032518 / 1.0 + y * $pDER_ODE_JAC.y ($RES_ODE_JAC_13)
+//
+// BLOCK 15: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[14]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[14] = y / y ^ 2.0 + x[1] ^ 2.0 * $SEED_ODE_JAC.x[1] - x[1] / y ^ 2.0 + x[1] ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_14)
+//
+// ========================================
+// Sparsity Pattern (nnz: 15)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (x[14])	 affects:	{}
+// (x[13])	 affects:	{}
+// (x[12])	 affects:	{}
+// (x[11])	 affects:	{}
+// (x[10])	 affects:	{}
+// (x[9])	 affects:	{}
+// (x[8])	 affects:	{}
+// (x[7])	 affects:	{}
+// (x[6])	 affects:	{}
+// (x[5])	 affects:	{}
+// (x[4])	 affects:	{}
+// (x[3])	 affects:	{}
+// (x[2])	 affects:	{$DER.x[14],$DER.x[13],$DER.x[12],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[1]}
+// (x[1])	 affects:	{$DER.x[14]}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($DER.x[14])	 depends on:	{x[1],x[2]}
+// ($DER.x[13])	 depends on:	{x[2]}
+// ($DER.x[12])	 depends on:	{x[2]}
+// ($DER.x[11])	 depends on:	{x[2]}
+// ($DER.x[10])	 depends on:	{x[2]}
+// ($DER.x[9])	 depends on:	{x[2]}
+// ($DER.x[8])	 depends on:	{x[2]}
+// ($DER.x[7])	 depends on:	{x[2]}
+// ($DER.x[6])	 depends on:	{x[2]}
+// ($DER.x[5])	 depends on:	{x[2]}
+// ($DER.x[4])	 depends on:	{x[2]}
+// ($DER.x[3])	 depends on:	{x[2]}
+// ($DER.x[2])	 depends on:	{x[2]}
+// ($DER.x[1])	 depends on:	{x[2]}
+//
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x[14],x[13],x[12],x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[1]}
+//   - Row:    {$DER.x[14]}
+//
+// Color (2)
+//   - Column: {x[2]}
+//   - Row:    {$DER.x[14],$DER.x[13],$DER.x[12],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[1]}
+//
+//
+// record SimulationResult
+//     resultFile = "builtin_functions_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

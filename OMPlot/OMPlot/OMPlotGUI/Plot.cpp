@@ -32,6 +32,8 @@
  */
 
 #include "PlotWindow.h"
+#include "LinearScaleEngine.h"
+
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"
 #include "qwt_scale_widget.h"
@@ -52,6 +54,14 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
+  // create the scale engine
+  LinearScaleEngine *pXLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::xBottom, pXLinearScaleEngine);
+  setAxisAutoScale(QwtPlot::xBottom);
+  LinearScaleEngine *pYLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::yLeft, pYLinearScaleEngine);
+  setAxisAutoScale(QwtPlot::yLeft);
+  // create the scale draw
   mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
   mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
@@ -222,11 +232,75 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
   mpParentPlotWindow->setLegendFont(font);
 }
 
+/*!
+ * \brief Plot::prefixableUnit
+ * Returns true if the unit is prefixable.
+ * \param unit
+ * \return
+ */
+bool Plot::prefixableUnit(const QString &unit)
+{
+  QStringList prefixableUnits;
+  prefixableUnits << "s"
+                  << "m"
+                  << "m/s"
+                  << "m/s2"
+                  << "rad"
+                  << "rad/s"
+                  << "rad/s2"
+                  << "rpm"
+                  << "Hz"
+                  << "N"
+                  << "N.m"
+                  << "Pa"
+                  << "Pa.s"
+                  << "J"
+                  << "J/kg"
+                  << "J/(kg.K)"
+                  << "K"
+                  << "V"
+                  << "V/m"
+                  << "A"
+                  << "C"
+                  << "F"
+                  << "T"
+                  << "Wb"
+                  << "Wb/m"
+                  << "H"
+                  << "Ohm"
+                  << "S"
+                  << "W"
+                  << "W/m"
+                  << "W/m2"
+                  << "Wh"
+                  << "var";
+
+  return prefixableUnits.contains(unit);
+}
+
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
   bool canUseXPrefixUnits = true;
   bool canUseYPrefixUnits = true;
+
+  // we need to loop through curves to find the prefix for units
+  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
+    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
+        && canUseXPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getXDisplayUnit())) {
+      canUseXPrefixUnits = false;
+    }
+    if (canUseYPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getYDisplayUnit())) {
+      canUseYPrefixUnits = false;
+    }
+  }
+
+  mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
+  mpXScaleDraw->invalidateCache();
+  mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
+  mpYScaleDraw->invalidateCache();
+
+  // Now we need to again loop through curves to set the color and title.
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -235,35 +309,20 @@ void Plot::replot()
       mPlotCurvesList[i]->setPen(pen);
     }
     mPlotCurvesList[i]->setTitleLocal();
-    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
-        && canUseXPrefixUnits && mPlotCurvesList[i]->getXDisplayUnit().isEmpty()) {
-      canUseXPrefixUnits = false;
-    }
-    if (canUseYPrefixUnits && mPlotCurvesList[i]->getYDisplayUnit().isEmpty()) {
-      canUseYPrefixUnits = false;
-    }
-  }
-
-  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
-    mpXScaleDraw->invalidateCache();
-    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
-  }
-  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
-    mpYScaleDraw->invalidateCache();
-    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
   }
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
     QString timeUnit = mpParentPlotWindow->getTimeUnit();
     if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
       } else {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
       }
+    } else if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXLabel());
     } else {
       setAxisTitle(QwtPlot::xBottom, "");
     }

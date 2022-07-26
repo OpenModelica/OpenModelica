@@ -49,7 +49,7 @@ package CodegenOMSICpp
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
-import CodegenCpp.*; 
+import CodegenCpp.*;
 
 //import CodegenCppCommon.*;
 //import CodegenOMSI_common.*;
@@ -62,7 +62,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
-  
+
   let()= textFile(simulationOMSUCPPMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%dotPath(modelInfo.name)%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
 
  ""
@@ -106,9 +106,9 @@ template simulationOMSUCPPMainRunScript(SimCode simCode ,Text& extraFuncs,Text& 
       case  "win64" then
         <<
         @echo off
-        <%preRunCommandWindows%>
-        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%binFolder%>;<%libFolder%>;<%libPaths%>;%PATH%
+        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
+        <%preRunCommandWindows%>
         OMCppOSUSimulation.exe <%execParameters%> <%zermMQParams%> <%outputParameter%>
         >>
     end match

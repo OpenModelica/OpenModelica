@@ -53,7 +53,7 @@ import Error;
 import InstUtil;
 import Class = NFClass;
 import Component = NFComponent;
-import NFComponent.Attributes;
+import Attributes = NFAttributes;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
 import Util;
@@ -610,7 +610,8 @@ uniontype Function
     fn.path := name;
   end setName;
 
-  function nameConsiderBuiltin "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
+  function nameConsiderBuiltin
+    "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
     input Function fn;
     output Absyn.Path path;
   algorithm
@@ -774,12 +775,12 @@ uniontype Function
       annMod := SCodeUtil.filterSubMods(annMod,
         function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative", "inverse"}));
 
-      for derivative in fn.derivatives loop
+      for derivative in listReverse(fn.derivatives) loop
         annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
       end for;
 
-      for inverse in fn.inverses loop
-        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(inverse), annMod);
+      for i in arrayLength(fn.inverses):-1:1 loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(fn.inverses[i]), annMod);
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
@@ -2086,18 +2087,30 @@ protected
     input InstNode component;
     output Direction direction;
   protected
+    Component comp;
     ConnectorType.Type cty;
     InnerOuter io;
     Visibility vis;
     Variability var;
   algorithm
-    Component.Attributes.ATTRIBUTES(
+    comp := InstNode.component(InstNode.resolveOuter(component));
+
+    // Outer components are not instantiated, so check this first to make sure
+    // it's safe to e.g. fetch the attributes of the component.
+    io := Component.innerOuter(comp);
+
+    // Function components may not be inner/outer.
+    if io <> InnerOuter.NOT_INNER_OUTER then
+      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+        {Prefixes.innerOuterString(io), InstNode.name(component)},
+        InstNode.info(InstNode.resolveOuter(component)));
+      fail();
+    end if;
+
+    Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
-      innerOuter = io) := Component.getAttributes(InstNode.component(component));
-
-    vis := InstNode.visibility(component);
-    var := Component.variability(InstNode.component(component));
+      variability = var) := Component.getAttributes(comp);
 
     // Function components may not be connectors.
     if ConnectorType.isFlowOrStream(cty) then
@@ -2107,15 +2120,9 @@ protected
       fail();
     end if;
 
-    // Function components may not be inner/outer.
-    if io <> InnerOuter.NOT_INNER_OUTER then
-      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-        {Prefixes.innerOuterString(io), InstNode.name(component)},
-        InstNode.info(component));
-      fail();
-    end if;
-
     // Formal parameters must be public, other function variables must be protected.
+    vis := InstNode.visibility(component);
+
     if direction <> Direction.NONE then
       if vis == Visibility.PROTECTED then
         Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
@@ -2568,6 +2575,30 @@ protected
     deps := Dimension.foldExp(dim,
       function getLocalDependenciesExp(locals = locals), deps);
   end getLocalDependenciesDim;
+
+  function getDerivative
+    "returns the first derivative that fits the interface_map
+    and returns NONE() if none of them fit."
+    input Function original;
+    input UnorderedMap<String, Boolean> interface_map;
+    output Option<Function> derivative = NONE();
+  protected
+    list<FunctionDerivative> derivatives;
+    Boolean perfect_fit;
+  algorithm
+    for func in original.derivatives loop
+      if FunctionDerivative.perfectFit(func, interface_map) then
+        derivative := SOME(List.first(getCachedFuncs(func.derivativeFn)));
+        return;
+      end if;
+    end for;
+
+    // no derivative could be found, set whole map to true
+    // so that the self-generated function removes as much as possible
+    for key in UnorderedMap.keyList(interface_map) loop
+      UnorderedMap.add(key, true, interface_map);
+    end for;
+  end getDerivative;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

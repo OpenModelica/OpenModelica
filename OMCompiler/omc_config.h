@@ -53,14 +53,14 @@
 #define CONFIG_GCC_DUMPMACHINE "i686-w64-mingw32"
 #define CONFIG_GCC_VERSION __VERSION__
 
-#elif defined(_MSV_VER) && defined(_M_IX86)
+#elif defined(_MSC_VER) && defined(_M_IX86)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc32"
 #define CONFIG_GCC_DUMPMACHINE ""
 #define CONFIG_GCC_VERSION ""
 
-#elif defined(_MSV_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_X64)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc64"
@@ -88,7 +88,7 @@
 #define CONFIG_TRIPLE ""
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lomcgc -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lszip -Wl,-Bdynamic"
+#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lszip -Wl,-Bdynamic"
 
 #define CONFIG_WITH_OPENMP 1
 
@@ -96,7 +96,6 @@
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define CONFIG_DLL_EXT ".dll"
-#define CONFIG_LPSOLVEINC "lpsolve/lp_lib.h"
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /*
@@ -118,12 +117,6 @@
 #define WITH_HWLOC 0
 #define WITH_SUNDIALS
 
-#if defined(__MINGW32__)
-#define WITH_IPOPT
-#else
-/* Without IPOPT for MSVC */
-#endif
-
 #include "revision.h"
 
 #define WITH_SUITESPARSE
@@ -131,7 +124,9 @@
 /* On Windows (with OMDev) assume we have lapack*/
 #define HAVE_LAPACK
 /* On Windows (with OMDev) assume we have deprecated lapack functions*/
+#if !defined(_MSC_VER)
 #define HAVE_LAPACK_DEPRECATED
+#endif
 
 #else /* Unix */ /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 

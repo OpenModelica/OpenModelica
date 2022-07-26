@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.log ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.c ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -201,10 +201,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// stdout            | warning | While solving non-linear system an assertion failed at time 681.59.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

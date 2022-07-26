@@ -34,11 +34,22 @@
 #ifndef _NONLINEARSOLVERHOMOTOPY_H_
 #define _NONLINEARSOLVERHOMOTOPY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "../../openmodelica_types.h"
+#include "../../simulation_data.h"
 #include "../../simulation_data.h"
 
-int allocateHomotopyData(size_t size, void** data);
-int freeHomotopyData(void** data);
+typedef struct DATA_HOMOTOPY DATA_HOMOTOPY;
 
-int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber);
+DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData);
+void freeHomotopyData(DATA_HOMOTOPY* homotopyData);
+NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
+#ifdef __cplusplus
+};
 #endif
+
+#endif /* _NONLINEARSOLVERHOMOTOPY_H_ */

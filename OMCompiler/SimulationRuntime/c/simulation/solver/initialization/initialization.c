@@ -74,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-extern int init_lambda_steps = 3;
+int init_lambda_steps = 3;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
@@ -735,7 +735,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   data->callback->function_initSpatialDistribution(data, threadData);
 
-  /* update static data of linear/non-linear system solvers */
+  /* Update nominal, min and max values of linear/non-linear system solvers */
   updateStaticDataOfLinearSystems(data, threadData);
   updateStaticDataOfNonlinearSystems(data, threadData);
 

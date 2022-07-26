@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.exe ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.cpp ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.makefile ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.libs ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.log ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.c ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 

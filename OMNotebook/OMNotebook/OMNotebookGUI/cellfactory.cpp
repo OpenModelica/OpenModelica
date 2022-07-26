@@ -330,7 +330,7 @@ namespace IAEX
 
       // set correct cell style
       QString style_ = style;
-      if(style_ == QString::null)
+      if(style_.isNull())
         style_ = QString("Text");
 
       text->setStyle( style_ );

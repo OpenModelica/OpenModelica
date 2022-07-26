@@ -50,6 +50,7 @@ protected
   import Restriction = NFRestriction;
   import ComplexType = NFComplexType;
   import Dimension = NFDimension;
+  import MetaModelica.Dangerous.arrayGetNoBoundsChecking;
 
 public
   type Face = enumeration(INSIDE, OUTSIDE);
@@ -100,10 +101,11 @@ public
   algorithm
     conns := match exp
       case Expression.CREF() then fromCref(exp.cref, exp.ty, source) :: conns;
+
       case Expression.ARRAY()
         algorithm
-          for e in listReverse(exp.elements) loop
-            conns := fromExp(e, source, conns);
+          for i in arrayLength(exp.elements):-1:1 loop
+            conns := fromExp(arrayGetNoBoundsChecking(exp.elements, i), source, conns);
           end for;
         then
           conns;

@@ -636,11 +636,11 @@ end StateSet;
 public
 uniontype EventInfo
   record EVENT_INFO
-    list<TimeEvent> timeEvents         "stores all information related to time events";
+    list<TimeEvent> timeEvents    "stores all information related to time events";
     ZeroCrossingSet zeroCrossings "list of zero crossing conditions";
-    DoubleEnded.MutableList<ZeroCrossing> relations    "list of zero crossing function as before";
+    DoubleEnded.MutableList<ZeroCrossing> relations "list of zero crossing function as before";
     ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
-    Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;
 
@@ -844,6 +844,7 @@ uniontype DifferentiationType "Define the behaviour of differentiation method fo
   end DIFF_FULL_JACOBIAN;
 
   record GENERIC_GRADIENT "Used to generate a generic gradient for generation the Jacobian matrix while the runtime."
+    Boolean daeMode       "true if computing for dae mode";
   end GENERIC_GRADIENT;
 end DifferentiationType;
 

@@ -1,0 +1,133 @@
+// name: fmi_attributes_19.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_19.fmu fmi_attributes_19.log fmi_attributes_19.xml fmi_attributes_19_tmp.xml
+
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
+loadString("
+model fmi_attributes_19
+  Real x(start=-1.0, fixed=true);
+  Real x1 = 3;
+  Integer x2 = 4;
+  Boolean x3 = true;
+  parameter Real rp1 =6;
+  parameter Integer rp2 = 7;
+  parameter Boolean rp3 = true;
+equation
+  (x + der(x))^2 = 3.0 - x^2 - der(x)^2;
+  annotation(__OpenModelica_commandLineOptions=\"-d=force-fmi-attributes\");
+end fmi_attributes_19;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_19, fmuType="cs"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_19.fmu modelDescription.xml > fmi_attributes_19_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_19_tmp.xml > fmi_attributes_19.xml"); getErrorString();
+readFile("fmi_attributes_19.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_19_tmp.xml > fmi_attributes_19.xml"); getErrorString();
+readFile("fmi_attributes_19.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_19.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"-1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"approx\">
+//     <Real start=\"0.0\" derivative=\"1\" nominal=\"500.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"x1\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"rp1\"
+//     valueReference=\"3\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"6.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"x2\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"rp2\"
+//     valueReference=\"1\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Integer start=\"7\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"x3\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Boolean start=\"false\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"rp3\"
+//     valueReference=\"1\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Boolean start=\"true\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

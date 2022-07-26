@@ -36,12 +36,11 @@ instantiateModel(unitCheckTests.UnitCheck18); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {y1,{1.0 * m^(1) * s^(-1)}}
-// {y2,{1000.0 * m^(2) * s^(-2) * g^(1)}}
-// {t1,{1.0 * m^(1)}}
-// {t2,{1.0 * m^(1) * s^(-1)}}
-// {b,{1.0 * m^(1) * s^(-2)}}
+// (y1, 1.0 * m^(1) * s^(-1))
+// (y2, 1000.0 * m^(2) * s^(-2) * g^(1))
+// (t1, 1.0 * m^(1))
+// (t2, 1.0 * m^(1) * s^(-1))
+// (b, 1.0 * m^(1) * s^(-2))
 // ######## UnitCheck COMPLETED ########
 // "function unitCheckTests.UnitCheck18.test
 //   input Real x(unit = \"m\");

@@ -6,10 +6,10 @@
 // inner/outer example from the specification.
 //
 
-class A
-  class B
-    class C
-      class D
+model A
+  model B
+    model C
+      model D
         outer Real TI;
       end D;
 
@@ -25,10 +25,10 @@ class A
   B b;
 end A;
 
-class E
-  class F
-    class G
-      class H
+model E
+  model F
+    model G
+      model H
         A a;
       end H;
 
@@ -44,7 +44,7 @@ class E
   F f;
 end E;
 
-class I
+model I
   inner Real TI;
   E e;
   A a;

@@ -29,7 +29,6 @@
  */
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
- #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 #endif
 
@@ -48,11 +47,11 @@ static int set_grammar_flag(int flags, int grammar)
   return flags;
 }
 
-void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, const char* encoding, int runningTestsuite, const char* libraryPath, void* lveInstance)
+void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, int strict, const char* encoding, int runningTestsuite, const char* libraryPath, void* lveInstance)
 {
   int flags = set_grammar_flag(PARSE_MODELICA, acceptedGrammar);
 
-  void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite, libraryPath, lveInstance);
+  void *res = parseFile(filename, infoname, flags, encoding, langStd, strict, runningTestsuite, libraryPath, lveInstance);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
@@ -63,17 +62,17 @@ void* ParserExt_parseexp(const char* filename, const char* infoname, int accepte
 {
   int flags = set_grammar_flag(PARSE_EXPRESSION, acceptedGrammar);
 
-  void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite, "", 0);
+  void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, 0, runningTestsuite, "", 0);
   if (res == NULL)
     MMC_THROW();
   return res;
 }
 
-void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
+void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammar, int langStd, int strict, int runningTestsuite)
 {
   int flags = set_grammar_flag(PARSE_MODELICA, acceptedGrammar);
 
-  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, strict, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -85,7 +84,7 @@ void* ParserExt_parsestringexp(const char* data, const char* filename, int accep
 {
   int flags = set_grammar_flag(PARSE_EXPRESSION, acceptedGrammar);
 
-  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -97,7 +96,7 @@ void* ParserExt_stringPath(const char* data, const char* filename, int acceptedG
 {
   int flags = set_grammar_flag(PARSE_PATH, acceptedGrammar);
 
-  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -109,7 +108,7 @@ void* ParserExt_stringCref(const char* data, const char* filename, int acceptedG
 {
   int flags = set_grammar_flag(PARSE_CREF, acceptedGrammar);
 
-  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -121,7 +120,7 @@ void* ParserExt_stringMod(const char* data, const char* filename, int acceptedGr
 {
   int flags = set_grammar_flag(PARSE_MODIFIER, acceptedGrammar);
 
-  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {

@@ -1285,7 +1285,7 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   }
   else
   {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   /* Add the extension with purposedName because if the directory with the same name exists then
@@ -1317,14 +1317,12 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
 #else
     Q_UNUSED(defaultSuffix);
 #endif
-    mLastOpenDir = fileInfo.absolutePath();
-    return fileName;
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
-  return "";
+  return fileName;
 }
 
-QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption, QString * dir, const QString &filter,
-                                         QString * selectedFilter, const QString *proposedName)
+QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString *proposedName)
 {
   QString dir_str;
   QString folderName;
@@ -1332,7 +1330,7 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString proposedFileName = *proposedName;
@@ -1340,6 +1338,9 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
     folderName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     folderName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+  }
+  if (!folderName.isEmpty()) {
+    StringHandler::setLastOpenDirectory(folderName);
   }
   return folderName;
 }
@@ -1351,7 +1352,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString fileName = "";
@@ -1372,7 +1373,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 #endif
   if (!fileName.isEmpty()) {
     QFileInfo fileInfo(fileName);
-    mLastOpenDir = fileInfo.absolutePath();
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
   return fileName;
 }
@@ -1384,7 +1385,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QStringList fileNames;
@@ -1405,7 +1406,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 #endif
   if (!fileNames.isEmpty()) {
     QFileInfo fileInfo(fileNames.at(0));
-    mLastOpenDir = fileInfo.absolutePath();
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
   return fileNames;
 }
@@ -1417,15 +1418,14 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
   if (!dirName.isEmpty()) {
-    mLastOpenDir = dirName;
-    return dirName;
+    StringHandler::setLastOpenDirectory(dirName);
   }
-  return "";
+  return dirName;
 }
 
 void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
@@ -1435,7 +1435,7 @@ void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
 
 QString StringHandler::getLastOpenDirectory()
 {
-  return mLastOpenDir;
+  return mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
 }
 
 QStringList StringHandler::getAnnotation(QString componentAnnotation, QString annotationName)
@@ -1958,13 +1958,20 @@ QString StringHandler::insertClassAtPosition(QString parentClassText, QString ch
  * \brief StringHandler::number
  * Helper for QString::number with default precision of 16 instead of 6.
  * \param value
+ * \param hint - default "" otherwise previous value to get a hint on how to format the new one
  * \param format
  * \param precision
  * \return
  */
-QString StringHandler::number(double value, char format, int precision)
+QString StringHandler::number(double value, QString hint, char format, int precision)
 {
-  return QString::number(value, format, precision);
+  // we have a hint, see if we can use it to display the number in a similar fashion
+  if (hint.contains("e", Qt::CaseInsensitive)) {
+    // we have an e in the hint, attempt to shorten the number!
+    return QString::number(value, format, QLocale::FloatingPointShortest);
+  } else {
+    return QString::number(value, format, precision);
+  }
 }
 
 static std::string cmt = "";
@@ -1999,4 +2006,36 @@ QString StringHandler::getModelicaComment(QString element)
     return removeFirstLastQuotes(q);
   }
   return element;
+}
+
+/*!
+ * \brief StringHandler::convertSemVertoReadableString
+ * Converts the semver to user friendly string.
+ * https://semver.org/#semantic-versioning-specification-semver
+ * For example, "4.0.0+maint.om" becomes "4.0.0 (post-release build maint.om)"
+ * \param semver
+ * \return
+ */
+QString StringHandler::convertSemVertoReadableString(const QString &semver)
+{
+  QStringList vars;
+  QString release;
+  QString version = semver;
+  if (semver.contains('+')) {
+    vars = semver.split('+');
+    release = "post-release";
+  } else {
+    vars = semver.split('-');
+    release = "pre-release";
+  }
+
+  if (!vars.isEmpty()) {
+    version = vars.at(0);
+    if (vars.length() > 1) {
+      vars.removeFirst();
+      version = QString("%1 (%2 build %3)").arg(version, release, vars.join(""));
+    }
+  }
+
+  return version;
 }

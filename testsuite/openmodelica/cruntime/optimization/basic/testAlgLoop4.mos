@@ -48,7 +48,6 @@ getErrorString();
 // --------------------------------------------------------
 // number of nonlinear constraints: 3
 // ========================================================
-// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 //
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.

@@ -1,0 +1,76 @@
+// name:     constVar2.mos
+// keywords: record constants function call alias
+// status:   correct
+// teardown_command: rm -rf constRecModel2*
+
+loadString("
+package constRecModel2
+  model SimCenter
+    replaceable parameter ExtendedRecord1 rec constrainedby EmptyRecord;
+  end SimCenter;
+
+  record BaseRecord
+    extends EmptyRecord;
+    constant Integer m = 2;
+    parameter Real paramArr[m] = {1,2};
+    constant Real constArr[m];
+    constant Real constMat[m,m-1];
+  end BaseRecord;
+
+  record ExtendedRecord1
+    extends BaseRecord(m=3, paramArr={3,2,1}, constArr={4,5,6}, constMat={{1,2},{3,4},{5,6}});
+  end ExtendedRecord1;
+
+  partial record EmptyRecord
+  end EmptyRecord;
+
+  function foo
+    input BaseRecord rec;
+    output Integer m;
+  algorithm
+    assert(rec.m == 3, \"m not 3\");
+    assert(rec.paramArr[1] == 3, \"paramArr[1] wrong\");
+    assert(rec.paramArr[2] == 2, \"paramArr[2] wrong\");
+    assert(rec.paramArr[3] == 1, \"paramArr[3] wrong\");
+
+    assert(rec.constArr[1] == 4, \"constArr[1] wrong\");
+    assert(rec.constArr[2] == 5, \"constArr[2] wrong\");
+    assert(rec.constArr[3] == 6, \"constArr[3] wrong\");
+
+    assert(rec.constMat[1,1] == 1, \"constMat[1,1] wrong \");
+    assert(rec.constMat[1,2] == 2, \"constMat[1,1] wrong \");
+    assert(rec.constMat[2,1] == 3, \"constMat[2,1] wrong \");
+    assert(rec.constMat[2,2] == 4, \"constMat[2,2] wrong \");
+    assert(rec.constMat[3,1] == 5, \"constMat[3,1] wrong \");
+    assert(rec.constMat[3,2] == 6, \"constMat[3,2] wrong \");
+    m := rec.m;
+  end foo;
+
+  model InnerM
+    outer SimCenter simCenter;
+    parameter BaseRecord fuelModel = simCenter.rec; // <------ the important line
+    Integer m;
+  equation
+    m = foo(fuelModel);
+  end InnerM;
+
+  model Test
+    InnerM innerM;
+    inner SimCenter simCenter(replaceable ExtendedRecord1 rec);
+  end Test;
+end constRecModel2;"); getErrorString();
+
+simulate(constRecModel2.Test); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "constRecModel2.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'constRecModel2.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

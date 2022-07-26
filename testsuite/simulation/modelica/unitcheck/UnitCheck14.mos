@@ -24,11 +24,10 @@ instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {A,{1.0 * 1}}
-// {V,{MASTER(V)}}
-// {S,{1.0 * s^(1)}}
-// {jhagemann,{MASTER()}}
+// (A, 1.0 * 1)
+// (V, MASTER(V))
+// (S, 1.0 * s^(1))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck14
 //   Real A(unit = \"1\");

@@ -1,0 +1,57 @@
+// name:     constVar3.mos
+// keywords: record constants function call array
+// status:   correct
+// teardown_command: rm -rf constRecModel3*
+
+loadString("
+package constRecModel3
+  record BaseRecord
+    constant Integer m = 0;
+  end BaseRecord;
+
+  record ExtendedRecord
+    extends BaseRecord(m=7);
+  end ExtendedRecord;
+
+  function foo
+    input BaseRecord r;
+    output Integer n;
+  algorithm
+    assert(r.m == 7, \"n not 7\");
+    n := r.m + 1;
+  end foo;
+
+  function bar
+    input BaseRecord[:] r_array;
+    output Integer n;
+  algorithm
+    for i in r_array loop
+      assert(r_array[i].m == 7, \"n not 7\");
+    end for;
+    n := r_array[end].m + 1;
+  end bar;
+
+  model Test1
+    ExtendedRecord r[2];
+    Integer n1;
+    Integer n2;
+  equation
+    n1 = foo(r[1]);
+    n2 = bar(r);
+  end Test1;
+end constRecModel3;"); getErrorString();
+
+simulate(constRecModel3.Test1); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "constRecModel3.Test1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'constRecModel2.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -38,6 +38,7 @@ encapsulated package NFRecord
   Functions used by NFInst for handling records.
 "
 
+import Attributes = NFAttributes;
 import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
@@ -63,6 +64,7 @@ import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import NFFunction.FunctionStatus;
 import MetaModelica.Dangerous.listReverseInPlace;
+import UnorderedMap;
 import UnorderedSet;
 
 public
@@ -147,7 +149,7 @@ algorithm
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-                NFComponent.OUTPUT_ATTR, NONE(), false, AbsynUtil.dummyInfo);
+                NFAttributes.OUTPUT_ATTR, NONE(), false, AbsynUtil.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.
@@ -251,37 +253,35 @@ algorithm
 
   comp := InstNode.component(comp_node);
 
-  if Component.isModifiable(comp) then
-    setFieldDirection(comp_node, Direction.INPUT);
-    inputs := comp_node :: inputs;
-  else
+  if Component.isFinal(comp) then
     setFieldDirection(comp_node, Direction.NONE);
     locals := comp_node :: locals;
+  else
+    setFieldDirection(comp_node, Direction.INPUT);
+    inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;
 
 function setFieldDirection
   input InstNode field;
   input Direction direction;
-protected
-  Component comp = InstNode.component(field);
-  Component.Attributes attr;
 algorithm
-  attr := Component.getAttributes(comp);
-  attr.direction := direction;
-  comp := Component.setAttributes(attr, comp);
-  InstNode.updateComponent(comp, field);
+  InstNode.componentApply(field, Component.setDirection, direction);
 end setFieldDirection;
 
 function collectRecordFields
   input InstNode recNode;
-  output list<Field> fields;
+  output array<Field> fields;
+  output UnorderedMap<String, Integer> indexMap;
 protected
+  list<Field> field_lst;
   ClassTree tree;
 algorithm
   tree := Class.classTree(InstNode.getClass(recNode));
-  fields := ClassTree.foldComponents(tree, collectRecordField, {});
-  fields := listReverseInPlace(fields);
+  field_lst := ClassTree.foldComponents(tree, collectRecordField, {});
+  fields := listArray(listReverseInPlace(field_lst));
+  indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
+  Type.updateRecordFieldsIndexMap(fields, indexMap);
 end collectRecordFields;
 
 function collectRecordField
@@ -296,7 +296,7 @@ algorithm
   else
     comp := InstNode.component(comp_node);
 
-    if not Component.isModifiable(comp) then
+    if Component.isFinal(comp) then
       fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
     elseif not Component.isOutput(comp) then
       fields := Field.INPUT(InstNode.name(comp_node)) :: fields;

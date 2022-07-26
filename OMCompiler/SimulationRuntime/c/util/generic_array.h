@@ -103,7 +103,7 @@ void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t s
 
 #define data_of_string_array(arr)                  (modelica_string*) ((arr).data)
 // This one needs some manual processing. It is implemented in string_array.c/h
-// const char** data_of_string_c89_array(const string_array_t *a);
+// const char** data_of_string_c89_array(const string_array *a);
 
 
 

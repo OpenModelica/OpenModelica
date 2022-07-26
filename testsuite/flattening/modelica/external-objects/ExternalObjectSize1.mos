@@ -1,0 +1,36 @@
+// name:     ExternalObjectSize1
+// keywords: external object
+// cflags:   -d=newInst
+// status:   correct
+//
+// description: External object in extended class
+
+loadString("
+  class EO
+    extends ExternalObject;
+
+    function constructor
+      output EO e;
+      external \"C\" e = init();
+    end constructor;
+
+    function destructor
+      input EO e;
+      external \"C\" deinit(e);
+    end destructor;
+  end EO;
+
+  model M
+    EO e1 = EO();
+    EO e2[1] = {e1};
+  end M;
+");
+
+checkModel(M);
+
+// Result:
+// true
+// "Check of M completed successfully.
+// Class M has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// endResult

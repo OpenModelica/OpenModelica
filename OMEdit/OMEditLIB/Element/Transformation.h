@@ -38,6 +38,7 @@
 #include <QPointF>
 #include <QTransform>
 #include "Util/StringHandler.h"
+#include "Modeling/Model.h"
 
 class Element;
 
@@ -49,6 +50,7 @@ public:
   Transformation(const Transformation &transformation);
   void initialize(StringHandler::ViewType viewType);
   void parseTransformationString(QString value, qreal width, qreal height);
+  void parseTransformation(const ModelInstance::PlacementAnnotation &placementAnnotation, const ModelInstance::CoordinateSystem &coordinateSystem);
   void updateTransformation(const Transformation &transformation);
   QTransform getTransformationMatrix();
   Element* getComponent() const {return mpComponent;}
@@ -56,6 +58,7 @@ public:
   void setWidth(const qreal &width) {mWidth = width;}
   void setHeight(const qreal &height) {mHeight = height;}
   bool getVisible() const {return mVisible;}
+  bool getVisibleIcon() const {return mVisibleIcon;}
   void adjustPosition(qreal x, qreal y);
   bool hasOrigin();
   void setOrigin(QPointF origin);
@@ -83,6 +86,7 @@ private:
   QPointF mExtent2Diagram;
   qreal mRotateAngleDiagram;
   QPointF mPositionDiagram;
+  bool mVisibleIcon;
   QPointF mOriginIcon;
   bool mHasOriginIconX;
   bool mHasOriginIconY;

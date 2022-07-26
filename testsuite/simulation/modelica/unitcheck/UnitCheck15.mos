@@ -30,14 +30,13 @@ instantiateModel(unitCheckTests.UnitCheck15); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {v_18f,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
-// {v_18r,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
-// {K_18ICIT,{0.001 * mol^(1)}}
-// {K_18eq,{1.0 * 1}}
-// {ICIT,{0.001 * mol^(1)}}
-// {alphaKG,{0.001 * mol^(1)}}
-// {v,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// (v_18f, 1.666666666666667e-05 * mol^(1) * s^(-1))
+// (v_18r, 1.666666666666667e-05 * mol^(1) * s^(-1))
+// (K_18ICIT, 0.001 * mol^(1))
+// (K_18eq, 1.0 * 1)
+// (ICIT, 0.001 * mol^(1))
+// (alphaKG, 0.001 * mol^(1))
+// (v, 1.666666666666667e-05 * mol^(1) * s^(-1))
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck15
 //   parameter Real v_18f(quantity = \"MolarFlowRate\", unit = \"mmol/min\") = 1.0;

@@ -55,37 +55,12 @@ protected
   import Prefixes = NFPrefixes;
   import NFPrefixes.Visibility;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import UnorderedMap;
+  import Typing = NFTyping;
 
   import FlatModel = NFFlatModel;
 
-  type TypeTree = TypeTreeImpl.Tree;
-
-  encapsulated package TypeTreeImpl
-    import BaseAvlTree;
-    import Absyn.Path;
-    import NFType.Type;
-
-    extends BaseAvlTree;
-    redeclare type Key = Absyn.Path;
-    redeclare type Value = Type;
-
-    redeclare function extends keyStr
-    algorithm
-      outString := AbsynUtil.pathString(inKey);
-    end keyStr;
-
-    redeclare function extends valueStr
-    algorithm
-      outString := Type.toString(inValue);
-    end valueStr;
-
-    redeclare function extends keyCompare
-    algorithm
-      outResult := AbsynUtil.pathCompareNoQual(inKey1, inKey2);
-    end keyCompare;
-
-    redeclare function addConflictDefault = addConflictKeep;
-  end TypeTreeImpl;
+  type TypeMap = UnorderedMap<Absyn.Path, Type>;
 
 public
   record FLAT_MODEL
@@ -242,7 +217,7 @@ public
     FlatModel flat_model = flatModel;
     Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "class '" + flat_model.name + "'");
+    s := IOStream.append(s, "model '" + flat_model.name + "'");
     s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
     s := IOStream.append(s, "\n");
 
@@ -255,7 +230,7 @@ public
       end if;
     end for;
 
-    for ty in TypeTree.listValues(collectFlatTypes(flat_model, functions)) loop
+    for ty in collectFlatTypes(flat_model, functions) loop
       s := Type.toFlatDeclarationStream(ty, s);
       s := IOStream.append(s, ";\n\n");
     end for;
@@ -302,56 +277,60 @@ public
   function collectFlatTypes
     input FlatModel flatModel;
     input list<Function> functions;
-    output TypeTree types;
+    output list<Type> outTypes;
+  protected
+    TypeMap types;
   algorithm
-    types := TypeTree.new();
-    types := List.fold(flatModel.variables, collectVariableFlatTypes, types);
-    types := List.fold(flatModel.equations, collectEquationFlatTypes, types);
-    types := List.fold(flatModel.initialEquations, collectEquationFlatTypes, types);
-    types := List.fold(flatModel.algorithms, collectAlgorithmFlatTypes, types);
-    types := List.fold(flatModel.initialAlgorithms, collectAlgorithmFlatTypes, types);
-    types := List.fold(functions, collectFunctionFlatTypes, types);
+    types := UnorderedMap.new<Type>(AbsynUtil.pathHashMod, AbsynUtil.pathEqual);
+    List.map1_0(flatModel.variables, collectVariableFlatTypes, types);
+    List.map1_0(flatModel.equations, collectEquationFlatTypes, types);
+    List.map1_0(flatModel.initialEquations, collectEquationFlatTypes, types);
+    List.map1_0(flatModel.algorithms, collectAlgorithmFlatTypes, types);
+    List.map1_0(flatModel.initialAlgorithms, collectAlgorithmFlatTypes, types);
+    List.map1_0(functions, collectFunctionFlatTypes, types);
+    outTypes := UnorderedMap.valueList(types);
+    outTypes := list(typeFlatType(ty) for ty in outTypes);
   end collectFlatTypes;
 
   function collectVariableFlatTypes
     input Variable var;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
-    types := collectFlatType(var.ty, types);
-    types := collectBindingFlatTypes(var.binding, types);
+    collectFlatType(var.ty, types);
+    collectBindingFlatTypes(var.binding, types);
 
     for attr in var.typeAttributes loop
-      types := collectBindingFlatTypes(Util.tuple22(attr), types);
+      collectBindingFlatTypes(Util.tuple22(attr), types);
     end for;
   end collectVariableFlatTypes;
 
   function collectFlatType
     input Type ty;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
     () := match ty
       case Type.ENUMERATION()
         algorithm
-          types := TypeTree.add(types, ty.typePath, ty);
+          UnorderedMap.tryAdd(ty.typePath, ty, types);
         then
           ();
 
       case Type.ARRAY()
         algorithm
-          types := Dimension.foldExpList(ty.dimensions, collectExpFlatTypes_traverse, types);
-          types := collectFlatType(ty.elementType, types);
+          Dimension.foldExpList(ty.dimensions, collectExpFlatTypes_traverse, types);
+          collectFlatType(ty.elementType, types);
         then
           ();
 
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
         algorithm
-          types := TypeTree.add(types, InstNode.scopePath(ty.cls), ty);
+          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
         then
           ();
 
       case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         algorithm
-          types := TypeTree.add(types, InstNode.scopePath(ty.cls), ty);
+          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
         then
           ();
 
@@ -361,77 +340,79 @@ public
 
   function collectBindingFlatTypes
     input Binding binding;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
     if Binding.isExplicitlyBound(binding) then
-      types := collectExpFlatTypes(Binding.getTypedExp(binding), types);
+      collectExpFlatTypes(Binding.getTypedExp(binding), types);
     end if;
   end collectBindingFlatTypes;
 
   function collectEquationFlatTypes
     input Equation eq;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
     () := match eq
       case Equation.EQUALITY()
         algorithm
-          types := collectExpFlatTypes(eq.lhs, types);
-          types := collectExpFlatTypes(eq.rhs, types);
-          types := collectFlatType(eq.ty, types);
+          collectExpFlatTypes(eq.lhs, types);
+          collectExpFlatTypes(eq.rhs, types);
+          collectFlatType(eq.ty, types);
         then
           ();
 
       case Equation.ARRAY_EQUALITY()
         algorithm
-          types := collectExpFlatTypes(eq.lhs, types);
-          types := collectExpFlatTypes(eq.rhs, types);
-          types := collectFlatType(eq.ty, types);
+          collectExpFlatTypes(eq.lhs, types);
+          collectExpFlatTypes(eq.rhs, types);
+          collectFlatType(eq.ty, types);
         then
           ();
 
       case Equation.FOR()
         algorithm
-          types := Util.applyOptionOrDefault(eq.range,
-            function collectExpFlatTypes(types = types), types);
-          types := List.fold(eq.body, collectEquationFlatTypes, types);
+          if isSome(eq.range) then
+            collectExpFlatTypes(Util.getOption(eq.range), types);
+          end if;
+
+          List.map1_0(eq.body, collectEquationFlatTypes, types);
         then
           ();
 
       case Equation.IF()
         algorithm
-          types := List.fold(eq.branches, collectEqBranchFlatTypes, types);
+          List.map1_0(eq.branches, collectEqBranchFlatTypes, types);
         then
           ();
 
       case Equation.WHEN()
         algorithm
-          types := List.fold(eq.branches, collectEqBranchFlatTypes, types);
+          List.map1_0(eq.branches, collectEqBranchFlatTypes, types);
         then
           ();
 
       case Equation.ASSERT()
         algorithm
-          types := collectExpFlatTypes(eq.condition, types);
-          types := collectExpFlatTypes(eq.message, types);
-          types := collectExpFlatTypes(eq.level, types);
+          collectExpFlatTypes(eq.condition, types);
+          collectExpFlatTypes(eq.message, types);
+          collectExpFlatTypes(eq.level, types);
         then
           ();
 
       case Equation.TERMINATE()
         algorithm
-          types := collectExpFlatTypes(eq.message, types);
+          collectExpFlatTypes(eq.message, types);
         then
           ();
 
       case Equation.REINIT()
         algorithm
-          types := collectExpFlatTypes(eq.reinitExp, types);
+          collectExpFlatTypes(eq.reinitExp, types);
         then
           ();
 
       case Equation.NORETCALL()
         algorithm
-          types := collectExpFlatTypes(eq.exp, types);
+          collectExpFlatTypes(eq.exp, types);
         then
           ();
 
@@ -441,13 +422,13 @@ public
 
   function collectEqBranchFlatTypes
     input Equation.Branch branch;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
     () := match branch
       case Equation.Branch.BRANCH()
         algorithm
-          types := collectExpFlatTypes(branch.condition, types);
-          types := List.fold(branch.body, collectEquationFlatTypes, types);
+          collectExpFlatTypes(branch.condition, types);
+          List.map1_0(branch.body, collectEquationFlatTypes, types);
         then
           ();
 
@@ -457,67 +438,76 @@ public
 
   function collectAlgorithmFlatTypes
     input Algorithm alg;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
-    types := List.fold(alg.statements, collectStatementFlatTypes, types);
+    collectStatementsFlatTypes(alg.statements, types);
   end collectAlgorithmFlatTypes;
+
+  function collectStatementsFlatTypes
+    input list<Statement> statements;
+    input TypeMap types;
+  algorithm
+    for s in statements loop
+      collectStatementFlatTypes(s, types);
+    end for;
+  end collectStatementsFlatTypes;
 
   function collectStatementFlatTypes
     input Statement stmt;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
     () := match stmt
       case Statement.ASSIGNMENT()
         algorithm
-          types := collectExpFlatTypes(stmt.lhs, types);
-          types := collectExpFlatTypes(stmt.rhs, types);
-          types := collectFlatType(stmt.ty, types);
+          collectExpFlatTypes(stmt.lhs, types);
+          collectExpFlatTypes(stmt.rhs, types);
+          collectFlatType(stmt.ty, types);
         then
           ();
 
       case Statement.FOR()
         algorithm
-          types := List.fold(stmt.body, collectStatementFlatTypes, types);
-          types := collectExpFlatTypes(Util.getOption(stmt.range), types);
+          collectStatementsFlatTypes(stmt.body, types);
+          collectExpFlatTypes(Util.getOption(stmt.range), types);
         then
           ();
 
       case Statement.IF()
         algorithm
-          types := List.fold(stmt.branches, collectStmtBranchFlatTypes, types);
+          List.map1_0(stmt.branches, collectStmtBranchFlatTypes, types);
         then
           ();
 
       case Statement.WHEN()
         algorithm
-          types := List.fold(stmt.branches, collectStmtBranchFlatTypes, types);
+          List.map1_0(stmt.branches, collectStmtBranchFlatTypes, types);
         then
           ();
 
       case Statement.ASSERT()
         algorithm
-          types := collectExpFlatTypes(stmt.condition, types);
-          types := collectExpFlatTypes(stmt.message, types);
-          types := collectExpFlatTypes(stmt.level, types);
+          collectExpFlatTypes(stmt.condition, types);
+          collectExpFlatTypes(stmt.message, types);
+          collectExpFlatTypes(stmt.level, types);
         then
           ();
 
       case Statement.TERMINATE()
         algorithm
-          types := collectExpFlatTypes(stmt.message, types);
+          collectExpFlatTypes(stmt.message, types);
         then
           ();
 
       case Statement.NORETCALL()
         algorithm
-          types := collectExpFlatTypes(stmt.exp, types);
+          collectExpFlatTypes(stmt.exp, types);
         then
           ();
 
       case Statement.WHILE()
         algorithm
-          types := collectExpFlatTypes(stmt.condition, types);
-          types := List.fold(stmt.body, collectStatementFlatTypes, types);
+          collectExpFlatTypes(stmt.condition, types);
+          collectStatementsFlatTypes(stmt.body, types);
         then
           ();
 
@@ -527,65 +517,68 @@ public
 
   function collectStmtBranchFlatTypes
     input tuple<Expression, list<Statement>> branch;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
-    types := collectExpFlatTypes(Util.tuple21(branch), types);
-    types := List.fold(Util.tuple22(branch), collectStatementFlatTypes, types);
+    collectExpFlatTypes(Util.tuple21(branch), types);
+    collectStatementsFlatTypes(Util.tuple22(branch), types);
   end collectStmtBranchFlatTypes;
 
   function collectExpFlatTypes
     input Expression exp;
-    input output TypeTree types;
+    input TypeMap types;
   algorithm
-    types := Expression.fold(exp, collectExpFlatTypes_traverse, types);
+    Expression.fold(exp, collectExpFlatTypes_traverse, types);
   end collectExpFlatTypes;
 
   function collectExpFlatTypes_traverse
     input Expression exp;
-    input output TypeTree types;
+    input output TypeMap types;
   algorithm
-    types := match exp
+    () := match exp
       case Expression.SUBSCRIPTED_EXP()
         guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
         algorithm
-          types := collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
+          collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
         then
-          types;
+          ();
 
-      else collectFlatType(Expression.typeOf(exp), types);
+      else
+        algorithm
+          collectFlatType(Expression.typeOf(exp), types);
+        then
+          ();
+
     end match;
   end collectExpFlatTypes_traverse;
 
   function collectFunctionFlatTypes
     input Function fn;
-    input output TypeTree types;
-  protected
-    list<Statement> body;
+    input TypeMap types;
   algorithm
-    types := ClassTree.foldComponents(Class.classTree(InstNode.getClass(fn.node)),
-      collectComponentFlatTypes, types);
+    ClassTree.applyComponents(Class.classTree(InstNode.getClass(fn.node)),
+      function collectComponentFlatTypes(types = types));
+
     if not Function.isExternal(fn) then
-      body := Function.getBody(fn);
-      types := List.fold(body, collectStatementFlatTypes, types);
+      collectStatementsFlatTypes(Function.getBody(fn), types);
     end if;
   end collectFunctionFlatTypes;
 
   function collectComponentFlatTypes
     input InstNode component;
-    input output TypeTree types;
+    input TypeMap types;
   protected
     Component comp;
   algorithm
     comp := InstNode.component(component);
-    types := collectFlatType(Component.getType(comp), types);
-    types := collectBindingFlatTypes(Component.getBinding(comp), types);
+    collectFlatType(Component.getType(comp), types);
+    collectBindingFlatTypes(Component.getBinding(comp), types);
   end collectComponentFlatTypes;
 
   function collectSubscriptedFlatType
     input Expression exp;
     input list<Subscript> subs;
     input Type subscriptedTy;
-    input output TypeTree types;
+    input TypeMap types;
   protected
     Type exp_ty;
     list<Type> sub_tyl;
@@ -597,7 +590,7 @@ public
     dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
     sub_tyl := list(Dimension.subscriptType(d) for d in dims);
     name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-    types := TypeTree.add(types, Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy));
+    UnorderedMap.tryAdd(Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy), types);
   end collectSubscriptedFlatType;
 
   function reconstructRecordInstances
@@ -670,8 +663,80 @@ public
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node));
+      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
   end reconstructRecordInstance;
+
+  function typeFlatType
+    input output Type ty;
+  algorithm
+    () := match ty
+      case Type.COMPLEX(complexTy = ComplexType.RECORD())
+        algorithm
+          Typing.typeBindings(ty.cls, NFInstContext.CLASS);
+        then
+          ();
+
+      else ();
+    end match;
+  end typeFlatType;
+
+  function deobfuscatePublicVars
+    input output FlatModel flatModel;
+    input UnorderedMap<String, String> mapping;
+  protected
+    UnorderedMap<String, String> inv_mapping;
+  algorithm
+    inv_mapping := UnorderedMap.fromLists(UnorderedMap.valueList(mapping),
+      UnorderedMap.keyList(mapping), stringHashDjb2Mod, stringEq);
+
+    flatModel.variables := list(deobfuscatePublicVar(v, inv_mapping) for v in flatModel.variables);
+    flatModel := mapExp(flatModel,
+      function Expression.map(func = function deobfuscatePublicVarsInExp(mapping = inv_mapping)));
+  end deobfuscatePublicVars;
+
+  function deobfuscatePublicVar
+    input output Variable variable;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    variable.name := deobfuscatePublicVarCref(variable.name, mapping);
+  end deobfuscatePublicVar;
+
+  function deobfuscatePublicVarCref
+    input output ComponentRef cref;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    if ComponentRef.visibility(cref) == Visibility.PUBLIC then
+      cref := ComponentRef.mapNodes(cref, function deobfuscateNode(mapping = mapping));
+    end if;
+  end deobfuscatePublicVarCref;
+
+  function deobfuscateNode
+    input output InstNode node;
+    input UnorderedMap<String, String> mapping;
+  protected
+    Option<String> res;
+  algorithm
+    res := UnorderedMap.get(InstNode.name(node), mapping);
+
+    if isSome(res) then
+      node := InstNode.rename(Util.getOption(res), node);
+    end if;
+  end deobfuscateNode;
+
+  function deobfuscatePublicVarsInExp
+    input output Expression exp;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := deobfuscatePublicVarCref(exp.cref, mapping);
+        then
+          ();
+
+      else ();
+    end match;
+  end deobfuscatePublicVarsInExp;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

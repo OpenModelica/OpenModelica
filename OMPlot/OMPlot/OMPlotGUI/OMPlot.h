@@ -89,6 +89,7 @@ public:
   QColor getUniqueColor(int index, int total);
   void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                     double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize);
+  static bool prefixableUnit(const QString &unit);
 public slots:
   virtual void replot();
 };

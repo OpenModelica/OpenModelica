@@ -42,7 +42,7 @@ equation
 end SD;
 
 // Result:
-// class 'SD'
+// model 'SD'
 //   parameter Integer 'N' = 3;
 //   parameter Real[3] 'p' = {1.0, 1.5, 2.0};
 //   Real[3] 'c.c.f';

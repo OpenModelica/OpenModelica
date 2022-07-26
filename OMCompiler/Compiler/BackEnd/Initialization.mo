@@ -46,13 +46,14 @@ import Util;
 
 protected
 import Array;
+import BackendDAECreate;
 import BackendDAEEXT;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
-import BackendVarTransform;
 import BackendVariable;
+import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
 import ComponentReference;
@@ -94,6 +95,7 @@ protected
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns, reeqns;
+  list<BackendDAE.Equation> eqnsLst, reeqnsLst;
   BackendDAE.Shared shared;
   BackendDAE.Variables initVars;
   BackendDAE.Variables vars, fixvars;
@@ -164,6 +166,19 @@ algorithm
     (vars, fixvars, eqns, reeqns) := collectInitialVarsEqnsSystem(dae.eqs, vars, fixvars, eqns, reeqns, hs, allPrimaryParameters, datarecon);
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     execStat("collectInitialBindings (initialization)");
+
+    // Fix types of constant components in record bindings
+    eqnsLst := BackendEquation.equationList(eqns);
+    reeqnsLst := BackendEquation.equationList(reeqns);
+    (_, eqnsLst, reeqnsLst, _) := BackendDAECreate.patchRecordBindings({}, {}, BackendVariable.varList(dae.shared.globalKnownVars), eqnsLst, reeqnsLst, {});
+    eqns := BackendEquation.listEquation(eqnsLst);
+    reeqns := BackendEquation.listEquation(reeqnsLst);
+
+    // scalarize variables after collecting bindings
+    if Flags.isSet(Flags.NF_SCALARIZE) then
+      vars := BackendVariable.scalarizeVariables(vars);
+      initVars := BackendVariable.scalarizeVariables(initVars);
+    end if;
 
     // replace initial(), sample(...), delay(...) and homotopy(...)
     useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, simplifyInitialFunctions, false);
@@ -363,7 +378,6 @@ protected
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
   (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
-  // TODO AHEU: Add simCodeTarget C around this?
   clockEqnsLst := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, SynchronousFeatures.getBoolClockWhenClauses, {});
   eqnlst := listAppend(clockEqnsLst, eqnlst);
   outDAE.shared := BackendDAEUtil.setSharedRemovedEqns(outDAE.shared, BackendEquation.listEquation(eqnlst));
@@ -917,11 +931,7 @@ algorithm
     Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
   end if;
 
-  try
-    rhs := BackendVariable.varBindExpStartValue(var);
-  else
-    rhs := DAE.RCONST(0.0);
-  end try;
+  rhs := BackendVariable.varBindExpStartValueNoFail(var);
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;
@@ -2802,11 +2812,12 @@ algorithm
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
-      DAE.Type ty;
+      DAE.Type ty, basic_ty;
       BackendDAE.EquationArray eqns, reeqns;
       DAE.Exp bindExp, crefExp;
       DAE.ElementSource source;
       BackendDAE.Equation eqn;
+      Option<Integer> record_size;
 
     // no binding
     case (var as BackendDAE.VAR(bindExp=NONE()), _) equation
@@ -2821,7 +2832,13 @@ algorithm
     // binding
     case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns)) equation
       crefExp = DAE.CREF(cr, ty);
-      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      if Types.isArray(ty) then
+        basic_ty = Types.getBasicType(ty);
+        record_size = if Types.isRecord(basic_ty) then SOME(Types.getDimensionProduct(basic_ty)) else NONE();
+        eqn = BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL, record_size);
+      else
+        eqn = BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      end if;
       eqns = BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
 
@@ -2889,16 +2906,16 @@ protected function removeInitializationStuff2
   output DAE.Exp outExp;
   output Boolean outUseHomotopy;
 algorithm
-  (outExp, outUseHomotopy) := match (inExp, inUseHomotopy)
+  (outExp, outUseHomotopy) := match inExp
     local
       DAE.Exp e1, e2, e3, actual, simplified;
 
     // replace initial() with false
-    case (DAE.CALL(path=Absyn.IDENT(name="initial")), _)
+    case DAE.CALL(path=Absyn.IDENT(name="initial"))
     then (DAE.BCONST(false), inUseHomotopy);
 
     // replace homotopy(actual, simplified) with actual
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_), _)
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_)
     then (actual, true);
 
     else (inExp, inUseHomotopy);

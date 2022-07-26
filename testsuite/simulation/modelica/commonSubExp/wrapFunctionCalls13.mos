@@ -76,11 +76,11 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // ########### Updated Variable List (simulation) (5)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: x:DISCRETE()  type: Integer 
-// 3: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
-// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
-// 5: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: z:VARIABLE()  type: Real
+// 2: x:DISCRETE()  type: Integer
+// 3: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (5, 5)
@@ -94,9 +94,9 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
-// 1: p1:PARAM()  = 5  type: Integer 
-// 2: dat.d2 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
-// 3: dat.d1 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 1: p1:PARAM()  = 5  type: Integer
+// 2: dat.d2 in dat:PARAM()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer
+// 3: dat.d1 in dat:PARAM()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer
 //
 //
 // ########### CSE Replacements (4/46)
@@ -116,7 +116,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // Variables (1)
 // ========================================
-// 1: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // Equations (1, 1)
@@ -140,10 +140,10 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // Variables (4)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: x:DISCRETE()  type: Integer 
-// 3: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
-// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: z:VARIABLE()  type: Real
+// 2: x:DISCRETE()  type: Integer
+// 3: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // Equations (4, 4)
@@ -177,9 +177,9 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // Known variables only depending on parameters and constants - globalKnownVars (3)
 // ========================================
-// 1: p1:PARAM()  = 5  type: Integer 
-// 2: dat.d1 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
-// 3: dat.d2 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 1: p1:PARAM()  = 5  type: Integer
+// 2: dat.d1 in dat:PARAM()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer
+// 3: dat.d2 in dat:PARAM()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer
 //
 //
 //

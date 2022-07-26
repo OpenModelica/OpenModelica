@@ -26,6 +26,16 @@ endif()
 # than that.
 if(MINGW)
   target_link_options(bomc PRIVATE -Wl,--stack,33554432)
+elseif(MSVC)
+  target_link_options(bomc PRIVATE /STACK:33554432)
+endif()
+
+# For now disable some warnings for MSVC. These should of course be fixed properly.
+if(MSVC)
+  target_compile_options(bomc PRIVATE /wd4101) # unreferenced local variable
+  target_compile_options(bomc PRIVATE /wd4102) # unreferenced label
+  target_compile_options(bomc PRIVATE /wd4267) # conversion from 'size_t' to 'int', possible loss of data
+  target_compile_options(bomc PRIVATE /wd4244) # conversion from '' to '', possible loss of data
 endif()
 
 
@@ -34,7 +44,6 @@ target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 
 target_link_libraries(bomc PRIVATE omc::parser)
 target_link_libraries(bomc PRIVATE omc::compiler::runtime)
-target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
 
 
 # Set up for proper usage of the bootstrap omc (bomc).
@@ -53,6 +62,13 @@ target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
 set_target_properties(bomc
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    # We need to specify these explicitly for multi-config generators like MSVC and Xcode.
+    # Otherwise they will still add the release/, debug/ ... directories within the
+    # RUNTIME_OUTPUT_DIRECTORY specified above.
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
 )
 
 # It also wants to have these builtin files in ../lib/ relative to its location.
@@ -66,13 +82,14 @@ add_custom_command (
 
 
 # On Windows it also needs to have the dlls it depends on (remember bomc is being used without being installed)
-# think of this as a manual install for it. Luckily it depends only on one dll for now,
+# think of this as a manual install for it. Luckily it depends only on just two dlls for now,
 if(WIN32)
   add_custom_command (
     TARGET bomc
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
-    COMMENT "Copying OpenModelicaRuntimeC.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::3rd::omcgc> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMENT "Copying libOpenModelicaRuntimeC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
 endif()
 
 # add_custom_command(

@@ -38,9 +38,11 @@ encapsulated uniontype UnorderedMap<K, V>
   import Vector;
 
 protected
+  import Error;
   import List;
   import MetaModelica.Dangerous.*;
   import Util;
+  import IOStream;
 
 public
   partial function Hash
@@ -82,6 +84,36 @@ public
       keyEq
     );
   end new;
+
+  function fromLists<V>
+    "Creates a new map from a list of keys and a corresponding list of values.
+     Fails if the two lists do not have the same size."
+    input list<K> keys;
+    input list<V> values;
+    input Hash hash;
+    input KeyEq keyEq;
+    output UnorderedMap<K, V> map;
+  protected
+    Integer key_count, bucket_count;
+    V v;
+    list<V> rest_v = values;
+  algorithm
+    key_count := listLength(keys);
+    bucket_count := Util.nextPrime(key_count);
+
+    map := UNORDERED_MAP(
+      Vector.newFill(bucket_count, {}),
+      Vector.new<K>(key_count),
+      Vector.new<V>(key_count),
+      hash,
+      keyEq
+    );
+
+    for k in keys loop
+      v :: rest_v := rest_v;
+      add(k, v, map);
+    end for;
+  end fromLists;
 
   function copy
     "Returns a copy of the map."
@@ -204,12 +236,11 @@ public
       output V value;
     end UpdateFn;
   protected
-    Integer index, hash, bucket_count;
+    Integer index, hash;
   algorithm
     (index, hash) := find(key, map);
 
     if index > 0 then
-      bucket_count := Vector.size(map.buckets);
       value := fn(SOME(Vector.getNoBounds(map.values, index)));
       Vector.updateNoBounds(map.values, index, value);
     else
@@ -284,6 +315,21 @@ public
     value := if index > 0 then SOME(Vector.getNoBounds(map.values, index)) else NONE();
   end get;
 
+  function getSafe
+    "Returns value if the given key has an associated value in the map,
+     otherwise fails."
+    input K key;
+    input UnorderedMap<K, V> map;
+    output V value;
+  algorithm
+    if contains(key, map) then
+      SOME(value) := get(key, map);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the key did not exist."});
+      fail();
+    end if;
+  end getSafe;
+
   function getOrFail
     "Return the value associated with the given key, or fails if no such value exists."
     input K key;
@@ -342,10 +388,36 @@ public
     key := Vector.get(map.keys, 1);
   end firstKey;
 
+  function keyAt
+    input UnorderedMap<K, V> map;
+    input Integer index;
+    output K key;
+  algorithm
+    key := Vector.get(map.keys, index);
+  end keyAt;
+
+  function valueAt
+    input UnorderedMap<K, V> map;
+    input Integer index;
+    output V value;
+  algorithm
+    value := Vector.get(map.values, index);
+  end valueAt;
+
   function toList
     "Returns a list with the (key, value) pairs."
     input UnorderedMap<K, V> map;
-    output list<tuple<K, V>> entries = List.zip(keyList(map), valueList(map));
+    output list<tuple<K, V>> lst;
+  protected
+    list<K> keys = keyList(map);
+    list<V> values = valueList(map);
+  algorithm
+    if listLength(keys) == listLength(values) then
+      lst := List.zip(keys, values);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is an unequal number of keys ("
+        + intString(listLength(keys)) + ") and values (" + intString(listLength(values)) + ")."});
+    end if;
   end toList;
 
   function keyList
@@ -433,13 +505,13 @@ public
   end valueVector;
 
   function fold<FT>
-    "Folds over the keys in the map."
+    "Folds over the values in the map."
     input UnorderedMap<K, V> map;
     input FoldFn fn;
     input output FT arg;
 
     partial function FoldFn
-      input K value;
+      input V value;
       input output FT arg;
     end FoldFn;
   algorithm
@@ -607,6 +679,50 @@ public
     str := stringDelimitList(strl, delimiter);
   end toString;
 
+  function toJSON
+    input UnorderedMap<K, V> map;
+    input KeyStringFn keyStringFn;
+    input ValueStringFn valueStringFn;
+    output String str;
+
+    partial function KeyStringFn
+      input K key;
+      output String str;
+    end KeyStringFn;
+
+    partial function ValueStringFn
+      input V value;
+      output String str;
+    end ValueStringFn;
+  protected
+    IOStream.IOStream io;
+    Vector<K> keys = map.keys;
+    Vector<V> values = map.values;
+    Integer sz = Vector.size(keys);
+  algorithm
+    io := IOStream.create("UnorderedMap.toJSON", IOStream.IOStreamType.LIST());
+    io := IOStream.append(io, "{\n");
+
+    if sz > 0 then
+      io := IOStream.append(io, "  \"");
+      io := IOStream.append(io, keyStringFn(Vector.getNoBounds(keys, 1)));
+      io := IOStream.append(io, "\": \"");
+      io := IOStream.append(io, valueStringFn(Vector.getNoBounds(values, 1)));
+      io := IOStream.append(io, "\"");
+
+      for i in 2:sz loop
+        io := IOStream.append(io, ",\n  \"");
+        io := IOStream.append(io, keyStringFn(Vector.getNoBounds(keys, i)));
+        io := IOStream.append(io, "\": \"");
+        io := IOStream.append(io, valueStringFn(Vector.getNoBounds(values, i)));
+        io := IOStream.append(io, "\"");
+      end for;
+    end if;
+
+    io := IOStream.append(io, "\n}");
+    str := IOStream.string(io);
+  end toJSON;
+
 protected
   function find
     "Returns the array index of the given key (or -1 if the key isn't in the map)
@@ -621,14 +737,15 @@ protected
     list<Integer> bucket;
   algorithm
     hash := hashfn(key, Vector.size(map.buckets));
-    bucket := Vector.get(map.buckets, hash + 1);
-
-    for i in bucket loop
-      if eqfn(key, Vector.getNoBounds(map.keys, i)) then
-        index := i;
-        break;
-      end if;
-    end for;
+    if Vector.size(map.buckets) > 0 then
+      bucket := Vector.get(map.buckets, hash + 1);
+      for i in bucket loop
+        if eqfn(key, Vector.getNoBounds(map.keys, i)) then
+          index := i;
+          break;
+        end if;
+      end for;
+    end if;
   end find;
 
   function addEntry

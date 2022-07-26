@@ -30,11 +30,17 @@
 
 #include <zmq.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "meta/meta_modelica.h"
 #include "util/modelica_string.h"
+#include "util/omc_file.h"
 
 #include "settingsimpl.h"
 #include "systemimpl.h"
@@ -61,9 +67,11 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
     return mmcZmqSocket;
   }
   // get the port number
-  const size_t endPointBufSize = 30;
-  char endPointBuf[endPointBufSize];
-  zmq_getsockopt(zmqSocket, ZMQ_LAST_ENDPOINT, &endPointBuf, (size_t *)&endPointBufSize);
+  char endPointBuf[30];
+  size_t endPointBufSize = sizeof(endPointBuf);
+  zmq_getsockopt(zmqSocket, ZMQ_LAST_ENDPOINT, endPointBuf, &endPointBufSize);
+  assert(endPointBufSize > 0);
+
   // create the file path
   const char* tempPath = SettingsImpl__getTempDirectoryPath();
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -76,7 +84,7 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
 #endif
   // Create the file with port number
   FILE *fp;
-  fp = fopen(zeroMQFilePath, "w");
+  fp = omc_fopen(zeroMQFilePath, "w");
   fputs(endPointBuf, fp);
   fclose(fp);
   printf("Created ZeroMQ Server.\nDumped server port in file: %s", zeroMQFilePath);fflush(NULL);

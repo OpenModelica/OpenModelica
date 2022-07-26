@@ -894,9 +894,6 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
     } else {
       currentNode = getNextNodeDoubleEndedList(currentNode);
     }
-    if(currentNode == NULL) {
-      printf("AHeu6: That should not be possible!\n");
-    }
     currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
     /* Check for event:

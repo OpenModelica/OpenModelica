@@ -36,7 +36,7 @@ win32 {
   } else { # 64-bit
     QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
   }
-  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread
   OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMShell.config)

@@ -60,7 +60,9 @@
 #include <sys/time.h>
 #endif
 
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 
 extern "C" {
 #include "meta/meta_modelica.h"

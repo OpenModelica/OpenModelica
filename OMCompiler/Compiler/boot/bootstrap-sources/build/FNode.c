@@ -4414,7 +4414,6 @@ _d = tmpMeta[5];
 _c = omc_FCore_RefTree_add(threadData, _c, _inName, _inChildRef, (_checkDuplicate?boxvar_FNode_printElementConflictError:boxvar_FCore_RefTree_addConflictReplace));
 tmpMeta[0] = mmc_mk_box6(3, &FCore_Node_N__desc, _n, mmc_mk_integer(_i), _p, _c, _d);
 _parent = omc_FNode_updateRef(threadData, _inParentRef, tmpMeta[0]);
-omc_FGraphStream_edge(threadData, _inName, omc_FNode_fromRef(threadData, _parent), omc_FNode_fromRef(threadData, _inChildRef));
 _return: OMC_LABEL_UNUSED
 return;
 }

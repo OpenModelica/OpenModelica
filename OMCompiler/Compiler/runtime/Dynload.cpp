@@ -601,10 +601,10 @@ void *type_desc_to_value(type_description *desc)
                                    varlst, namelst, mmc_mk_icon(-1));
   };
   case TYPE_DESC_REAL_ARRAY: {
-    void *ptr = (modelica_real *) desc->data.real_array.data
-      + base_array_nr_of_elements(desc->data.real_array) - 1;
-    return generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims,
-                          desc->data.real_array.dim_size, &ptr);
+    void *ptr = (modelica_real *) desc->data.r_array.data
+      + base_array_nr_of_elements(desc->data.r_array) - 1;
+    return generate_array(TYPE_DESC_REAL, 1, desc->data.r_array.ndims,
+                          desc->data.r_array.dim_size, &ptr);
   };
   case TYPE_DESC_INT_ARRAY: {
     void *ptr = (modelica_integer *) desc->data.int_array.data
@@ -767,8 +767,8 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
   dim_size = (_index_t*) malloc(sizeof(_index_t) * dims);
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
-    desc->data.real_array.ndims = dims;
-    desc->data.real_array.dim_size = dim_size;
+    desc->data.r_array.ndims = dims;
+    desc->data.r_array.dim_size = dim_size;
     break;
   case TYPE_DESC_INT_ARRAY:
     desc->data.int_array.ndims = dims;
@@ -790,8 +790,8 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
     return -1;
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
-    alloc_real_array_data(&(desc->data.real_array));
-    data = desc->data.real_array.data;
+    alloc_real_array_data(&(desc->data.r_array));
+    data = desc->data.r_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_REAL, &data);
   case TYPE_DESC_INT_ARRAY:
     alloc_integer_array_data(&(desc->data.int_array));

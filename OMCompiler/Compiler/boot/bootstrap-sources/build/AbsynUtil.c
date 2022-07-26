@@ -10926,6 +10926,49 @@ _return: OMC_LABEL_UNUSED
 return _outComponentRef;
 }
 DLLExport
+modelica_metatype omc_AbsynUtil_crefGetLastSubs(threadData_t *threadData, modelica_metatype _cref)
+{
+modelica_metatype _subscripts = NULL;
+modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+{
+modelica_metatype tmp3_1;
+tmp3_1 = _cref;
+{
+int tmp3;
+{
+switch (MMC_SWITCH_CAST(valueConstructor(tmp3_1))) {
+case 5: {
+tmpMeta[0] = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_cref), 3)));
+goto tmp2_done;
+}
+case 4: {
+_cref = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_cref), 4)));
+goto _tailrecursive;
+goto tmp2_done;
+}
+case 3: {
+_cref = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_cref), 2)));
+goto _tailrecursive;
+goto tmp2_done;
+}
+}
+goto tmp2_end;
+tmp2_end: ;
+}
+goto goto_1;
+goto_1:;
+MMC_THROW_INTERNAL();
+goto tmp2_done;
+tmp2_done:;
+}
+}
+_subscripts = tmpMeta[0];
+_return: OMC_LABEL_UNUSED
+return _subscripts;
+}
+DLLExport
 modelica_metatype omc_AbsynUtil_crefGetLastIdent(threadData_t *threadData, modelica_metatype _inComponentRef)
 {
 modelica_metatype _outComponentRef = NULL;

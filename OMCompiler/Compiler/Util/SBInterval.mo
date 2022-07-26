@@ -276,6 +276,11 @@ public
     end if;
   end affine;
 
+  function cardinality
+    input SBInterval int;
+    output Integer card = realInt(intReal(int.hi - int.lo)/intReal(int.step));
+  end cardinality;
+
   function contains
     "Returns true if c belongs to the interval, otherwise false."
     input Integer c;

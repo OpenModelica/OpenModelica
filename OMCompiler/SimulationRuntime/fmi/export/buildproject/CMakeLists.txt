@@ -4,7 +4,9 @@
 
 if(WIN32)
   install(FILES configure.ac
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
+                ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
+        ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject
 )
 else()
   execute_process(COMMAND autoconf
@@ -22,7 +24,17 @@ else()
       message(FATAL_ERROR "autoconf failed configuring for FMUS.")
   endif()
 
-  install(FILES configure
-          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
+  install(# INSTALL it as a program so it can be executed.
+          PROGRAMS configure
+          ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject
+  )
+  install(FILES configure.ac
+                ${OpenModelica_SOURCE_DIR}/common/config.sub
+                ${OpenModelica_SOURCE_DIR}/common/config.guess
+                ${OpenModelica_SOURCE_DIR}/common/install-sh
+                ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
+          ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject
   )
 endif()

@@ -49,6 +49,39 @@ constant Integer CHAR_SPACE = 32;
 constant Integer CHAR_DASH = 45;
 constant Integer CHAR_DOT = 46;
 
+constant String HEADLINE_1 = "################################################################################";
+constant String HEADLINE_2 = "========================================";
+constant String HEADLINE_3 = "----------------------------------------";
+constant String HEADLINE_4 = "****************************************";
+
+public function headline_1
+  input String title;
+  output String header;
+algorithm
+  header := HEADLINE_1 + "\n\n\t" + title + "\n\n" + HEADLINE_1 + "\n";
+end headline_1;
+
+public function headline_2
+  input String title;
+  output String header;
+algorithm
+  header := HEADLINE_2 + "\n" + title + "\n" + HEADLINE_2 + "\n";
+end headline_2;
+
+public function headline_3
+  input String title;
+  output String header;
+algorithm
+  header := title + "\n" + HEADLINE_3 + "\n";
+end headline_3;
+
+public function headline_4
+  input String title;
+  output String header;
+algorithm
+  header := title + "\n" + HEADLINE_4 + "\n";
+end headline_4;
+
 public function findChar
   "Searches for a given character in the given string, returning the index of
    the character if found. If not found returns NO_POS. The start and end

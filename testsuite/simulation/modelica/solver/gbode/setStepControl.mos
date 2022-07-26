@@ -1,0 +1,23 @@
+// name: setStepControl.mos
+//loadModel(Modelica);
+//getErrorString();
+
+//loadModel(ModelicaTest);
+//getErrorString();
+
+loadFile("TestAnalytic.mo");
+getErrorString();
+
+cd("tmp");
+
+setCommandLineOptions("--generateSymbolicJacobian");
+
+simulate(TestAnalytic, stopTime=20, simflags = "-lv=LOG_SOLVER -s=gbode -rkOpt=esdirk2");
+getErrorString();
+
+//plot({err}, externalWindow=true);
+//getErrorString();
+
+
+
+// override=startTime=0,stopTime=10,stepSize=0.02,tolerance=1e-06,solver=dassl,outputFormat=mat

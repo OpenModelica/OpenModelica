@@ -41,7 +41,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASM_Y_D', options = '', outputFormat = 'mat', variableFilter = 'time|power.p.1.|power.p.2.|power.p.3.|asm_Y_D.motor.slip|loadInertia.flange_a.tau|frictTorq.flange.tau|frictTorq.w', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Drives.ASM_Y_D_res.mat
 // Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 69 stopped at time 0 with error in algloop solver: 
+// ERROR  : init  : SimManager: Nonlinear solver 69 stopped at time 0 with error in algloop solver:
 // error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol

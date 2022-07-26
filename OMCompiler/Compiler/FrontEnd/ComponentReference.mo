@@ -100,8 +100,6 @@ hash := match(cr)
     //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
   then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
 
-  case(DAE.CREF_ITER(id,_,tp,subs))
-  then stringHashDjb2(id)+ hashSubscripts(tp,subs);
   else 0;
 end match;
 end hashComponentRef;
@@ -314,13 +312,6 @@ algorithm
       Absyn.ComponentRef cr_1;
       DAE.ComponentRef cr;
 
-    // iterators
-    case (DAE.CREF_ITER(ident = id, subscriptLst = subs))
-      equation
-        subs_1 = unelabSubscripts(subs);
-      then
-        Absyn.CREF_IDENT(id ,subs_1);
-
     // identifiers
     case (DAE.CREF_IDENT(ident = id, subscriptLst = subs))
       equation
@@ -509,17 +500,6 @@ algorithm
         str = printComponentRef2Str(s, subs);
       then
         str;
-
-    // Optimize -- a function call less
-    case (DAE.CREF_ITER(ident = s,index=ix,subscriptLst = {}))
-      then s + "/* iter index " + intString(ix) + " */";
-
-    // idents with subscripts
-    case DAE.CREF_ITER(ident = s,index=ix,subscriptLst = subs)
-      equation
-        str = printComponentRef2Str(s, subs);
-      then
-        str + "/* iter index " + intString(ix) + " */";
 
     // Qualified - Modelica output - does not handle names with underscores
     // Qualified - non Modelica output
@@ -1555,6 +1535,28 @@ algorithm
   isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
+public function crefGetFirstRec
+  input DAE.ComponentRef cref;
+  output DAE.ComponentRef result;
+  output Boolean isRec;
+algorithm
+  (result, isRec) := match cref
+    local
+      DAE.ComponentRef innerCref;
+    case DAE.CREF_IDENT() then (cref, Types.isRecord(crefType(cref)));
+    case DAE.CREF_QUAL() algorithm
+      if Types.isRecord(crefType(cref)) then
+        result := DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
+        isRec := true;
+      else
+        (innerCref, isRec) := crefGetFirstRec(cref.componentRef);
+        result := DAE.CREF_QUAL(cref.ident, cref.identType, cref.subscriptLst, innerCref);
+      end if;
+    then (result, isRec);
+    else (cref, false);
+  end match;
+end crefGetFirstRec;
+
 protected function containWholeDim2 "
   A function to check if a cref contains a [:] wholedim element in the subscriptlist."
   input list<DAE.Subscript> inRef;
@@ -2092,7 +2094,7 @@ crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
 alternative names: crefAddSuffix, crefAddIdent
 "
   input DAE.ComponentRef icr;
-  input String ident;
+  input DAE.Ident ident;
   input list<DAE.Subscript> subs;
   input DAE.Type tp;
   output DAE.ComponentRef newCr;
@@ -2298,12 +2300,6 @@ algorithm
       then
         DAE.CREF_IDENT(id, ty, subs);
 
-    case (_, DAE.CREF_ITER(id, idx, ty, subs))
-      equation
-        id = stringAppend(id, inString);
-      then
-        DAE.CREF_ITER(id, idx, ty, subs);
-
   end match;
 end appendStringFirstIdent;
 
@@ -2331,12 +2327,6 @@ algorithm
         id = stringAppend(id, inString);
       then
         DAE.CREF_IDENT(id, ty, subs);
-
-    case (_, DAE.CREF_ITER(id, idx, ty, subs))
-      equation
-        id = stringAppend(id, inString);
-      then
-        DAE.CREF_ITER(id, idx, ty, subs);
 
   end match;
 end appendStringLastIdent;
@@ -2535,24 +2525,21 @@ end crefApplySubs;
 
 public function crefSetType "
 sets the type of a cref."
-  input DAE.ComponentRef inRef;
-  input DAE.Type newType;
-  output DAE.ComponentRef outRef;
+  input output DAE.ComponentRef cref;
+  input DAE.Type ty;
 algorithm
-  outRef := match (inRef,newType)
-    local
-      DAE.Type ty;
-      DAE.ComponentRef child;
-      list<DAE.Subscript> subs;
-      DAE.Ident id;
+  cref := match cref
+    case DAE.CREF_IDENT() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_IDENT(id,_,subs),_)
-      then
-        makeCrefIdent(id,newType,subs);
+    case DAE.CREF_QUAL() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_QUAL(id,_,subs,child),_)
-      then
-        makeCrefQual(id,newType,subs,child);
+    else algorithm
+      Error.addInternalError(getInstanceName() + " was applied on a cref that has no type: " + crefStr(cref), sourceInfo());
+    then fail();
   end match;
 end crefSetType;
 
@@ -2578,9 +2565,6 @@ algorithm
         child = crefSetLastType(child,newType);
       then
         makeCrefQual(id,ty,subs,child);
-
-    case DAE.CREF_ITER(id, idx, _, subs)
-      then DAE.CREF_ITER(id, idx, newType, subs);
 
   end match;
 end crefSetLastType;
@@ -2803,6 +2787,23 @@ public function crefStripSubsExceptModelSubs
 "Removes all subscript of a componentref expcept for model subscripts"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
+protected
+  function is_model_array
+    input DAE.Type ty;
+    output Boolean res;
+  protected
+    ClassInf.State state;
+  algorithm
+    res := match ty
+      case DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = state))
+        then match state
+          case ClassInf.MODEL() then true;
+          case ClassInf.BLOCK() then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end is_model_array;
 algorithm
   outCref := match(inCref)
     local
@@ -2810,10 +2811,12 @@ algorithm
       DAE.ComponentRef cr, cref;
       DAE.Type ty;
 
-    case (cref as DAE.CREF_IDENT(ident = id,identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
-      then cref;
+    case DAE.CREF_IDENT()
+      guard is_model_array(inCref.identType)
+      then inCref;
 
-    case (cref as DAE.CREF_QUAL(componentRef = cr, identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
+    case cref as DAE.CREF_QUAL(componentRef = cr)
+      guard is_model_array(inCref.identType)
       algorithm
         outCref := crefStripSubsExceptModelSubs(cr);
         cref.componentRef := outCref;
@@ -3523,9 +3526,6 @@ algorithm
       then
         cr;
 
-    case DAE.CREF_ITER()
-      then
-        inCref;
     case DAE.WILD()
       then
         inCref;
@@ -3806,12 +3806,6 @@ algorithm
       then
         ();
 
-    case (DAE.CREF_ITER(identType = ty, subscriptLst = subs), _, _)
-      equation
-        checkCrefSubscriptsBounds3(ty, subs, inWholeCref, inInfo);
-      then
-        ();
-
   end match;
 end checkCrefSubscriptsBounds2;
 
@@ -4042,11 +4036,6 @@ algorithm
           szTypes := szTypes + System.getSizeOfData(cr.identType);
           szSubs := szSubs + System.getSizeOfData(cr.subscriptLst);
         then (false,cr);
-      case DAE.CREF_ITER()
-        algorithm
-          szIdents := szIdents + System.getSizeOfData(cr.ident);
-          szTypes := szTypes + System.getSizeOfData(cr.identType);
-        then (false,cr);
       case DAE.CREF_QUAL()
         algorithm
           szIdents := szIdents + System.getSizeOfData(cr.ident);
@@ -4088,6 +4077,26 @@ algorithm
   outCref := crefSetLastType(outCref, crefLastType(inCref));
   if debug then print("outCref: " + printComponentRefStr(outCref) + "\n"); end if;
 end createDifferentiatedCrefName;
+
+public function isTime
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.CREF_IDENT(ident = "time") then true;
+    else false;
+  end match;
+end isTime;
+
+public function isWild
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.WILD() then true;
+    else false;
+  end match;
+end isWild;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

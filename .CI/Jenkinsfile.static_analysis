@@ -2,6 +2,9 @@ def common
 
 pipeline {
   agent none
+  options {
+    buildDiscarder(logRotator(numToKeepStr: "100", artifactNumToKeepStr: "2"))
+  }
   environment {
     LC_ALL = 'C.UTF-8'
   }

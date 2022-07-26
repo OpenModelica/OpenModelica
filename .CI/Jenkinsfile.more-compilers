@@ -3,6 +3,7 @@ pipeline {
   agent none
   options {
     newContainerPerStage()
+    buildDiscarder(logRotator(numToKeepStr: "100", artifactNumToKeepStr: "2"))
   }
   environment {
     LC_ALL = 'C.UTF-8'

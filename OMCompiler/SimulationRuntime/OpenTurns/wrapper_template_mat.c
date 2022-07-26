@@ -407,12 +407,12 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   const int matrixTypes[6]={51,51,51,20,0,0};
   int i;
   char binTrans = 1;
-  reader->file = fopen(filename, "rb");
+  reader->file = omc_fopen(filename, "rb");
   if (!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);
   for (i=0; i<nMatrix;i++) {
     MHeader_t hdr;
-    int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
+    int nr = omc_fread(&hdr,sizeof(MHeader_t),1,reader->file);
     int matrix_length,element_length;
     char *name;
     if (nr != 1) return "Corrupt header (1)";
@@ -421,7 +421,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     if (hdr.imagf > 1) return "Matrix uses imaginary numbers";
     if ((element_length = mat_element_length(hdr.type)) == -1) return "Could not determine size of matrix elements";
     name = (char*) malloc(hdr.namelen);
-    nr = fread(name,hdr.namelen,1,reader->file);
+    nr = omc_fread(name,hdr.namelen,1,reader->file);
     if (nr != 1) return "Corrupt header (2)";
     if (name[hdr.namelen-1]) return "Corrupt header (3)";
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
@@ -431,7 +431,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     switch (i) {
     case 0: {
       char tmp[size_omc_mat_Aclass];
-      if (fread(tmp,size_omc_mat_Aclass-1,1,reader->file) != 1) return "Corrupt header: Aclass matrix";
+      if (omc_fread(tmp,size_omc_mat_Aclass-1,1,reader->file) != 1) return "Corrupt header: Aclass matrix";
       tmp[size_omc_mat_Aclass-1] = '\0';
      /* binTrans */
      if (0 == strncmp(tmp,omc_mat_Aclass,size_omc_mat_Aclass))  {
@@ -455,7 +455,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if (binTrans==1) {
         for (i=0; i<hdr.ncols; i++) {
           reader->allInfo[i].name = (char*) malloc(hdr.mrows+1);
-          if (fread(reader->allInfo[i].name,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          if (omc_fread(reader->allInfo[i].name,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
           reader->allInfo[i].name[hdr.mrows] = '\0';
           reader->allInfo[i].isParam = -1;
           reader->allInfo[i].index = -1;
@@ -465,7 +465,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if (binTrans==0) {
       uint32_t j;
       char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
-        if (fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
+        if (omc_fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
           free(tmp);
           return "Corrupt header: names matrix";
         }
@@ -488,13 +488,13 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if (binTrans==1) {
         for (i=0; i<hdr.ncols; i++) {
           reader->allInfo[i].descr = (char*) malloc(hdr.mrows+1);
-          if (fread(reader->allInfo[i].descr,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          if (omc_fread(reader->allInfo[i].descr,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
           reader->allInfo[i].descr[hdr.mrows] = '\0';
          }
       } else if (binTrans==0) {
         uint32_t j;
         char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
-        if (fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
+        if (omc_fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
           free(tmp);
           return "Corrupt header: names matrix";
         }
@@ -513,7 +513,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     case 3: { /* "dataInfo" */
       unsigned int i;
       int32_t *tmp = (int32_t*) malloc(sizeof(int32_t)*hdr.ncols*hdr.mrows);
-      if (1 != fread(tmp,sizeof(int32_t)*hdr.ncols*hdr.mrows,1,reader->file)) {
+      if (1 != omc_fread(tmp,sizeof(int32_t)*hdr.ncols*hdr.mrows,1,reader->file)) {
         free(tmp); tmp=NULL;
         return "Corrupt header: dataInfo matrix";
       }
@@ -543,7 +543,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         if (hdr.ncols != 2) return "data_1 matrix does not have 2 rows";
         reader->nparam = hdr.mrows;
         reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-        if (1 != fread(reader->params,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
+        if (1 != omc_fread(reader->params,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
         /* fprintf(stderr, "    startTime = %.6g\n", reader->params[0]);
         * fprintf(stderr, "    stopTime = %.6g\n", reader->params[1]); */
         for (i=1; i<reader->nparam; i++) {
@@ -559,7 +559,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         reader->nparam = hdr.ncols;
         tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
         reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-        if (1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
+        if (1 != omc_fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
         for (i=0; i<hdr.mrows; i++) {
           for (j=0; j<hdr.ncols; j++) {
             reader->params[i*hdr.ncols+j] = tmp[i +j*hdr.mrows];
@@ -590,7 +590,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
         tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-        if (1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_2 matrix";
+        if (1 != omc_fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_2 matrix";
         for (i=0; i<hdr.ncols; i++) {
           reader->vars[i] = (double*) malloc(hdr.mrows*sizeof(double));
           for (j=0; j<hdr.mrows; j++) {
@@ -633,7 +633,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
     for (i=0; i<reader->nrows; i++) {
       fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + absVarIndex-1), SEEK_SET);
-      if (1 != fread(&tmp[i], sizeof(double), 1, reader->file)) {
+      if (1 != omc_fread(&tmp[i], sizeof(double), 1, reader->file)) {
         /* fprintf(stderr, "Corrupt file at %d of %d? nvar %d\n", i, reader->nrows, reader->nvar); */
         free(tmp);
         tmp=NULL;
@@ -657,7 +657,7 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
     return 0;
   }
   fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
-  if (1 != fread(res, sizeof(double), 1, reader->file))
+  if (1 != omc_fread(res, sizeof(double), 1, reader->file))
     return 1;
   if (varIndex < 0)
     *res = -(*res);

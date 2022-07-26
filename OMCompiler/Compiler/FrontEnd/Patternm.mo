@@ -2921,7 +2921,6 @@ algorithm
       SourceInfo info;
       Boolean b;
       String id;
-      Integer index;
       DAE.ElementSource source;
 
     case DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info))
@@ -2953,7 +2952,7 @@ algorithm
         useTree = AvlSetString.join(useTree,elseTree);
       then (DAE.STMT_IF(exp,body,else_,source),useTree);
 
-    case DAE.STMT_FOR(ty,b,id,index,exp,body,source)
+    case DAE.STMT_FOR(ty,b,id,exp,body,source)
       equation
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
         ErrorExt.setCheckpoint(getInstanceName());
@@ -2963,7 +2962,7 @@ algorithm
         (_,useTree) = Expression.traverseExpBottomUp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
         useTree = AvlSetString.join(useTree,inUseTree);
-      then (DAE.STMT_FOR(ty,b,id,index,exp,body,source),useTree);
+      then (DAE.STMT_FOR(ty,b,id,exp,body,source),useTree);
 
     case DAE.STMT_WHILE(exp=exp,statementLst=body,source=source)
       equation

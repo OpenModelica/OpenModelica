@@ -131,7 +131,7 @@ void MetaModelicaEditor::contentsHasChanged(int position, int charsRemoved, int 
     }
     /* if user is changing the text. */
     if (!mForceSetPlainText) {
-      mpModelWidget->updateModelText();
+      contentsChanged();
     }
   }
 }

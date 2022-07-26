@@ -77,6 +77,12 @@ extern const char* Error_printMessagesStr(threadData_t *threadData,int warningsA
   return omc_alloc_interface.malloc_strdup(res.c_str());
 }
 
+extern const char* Error_printCheckpointMessagesStr(threadData_t *threadData,int warningsAsErrors)
+{
+  std::string res = ErrorImpl__printCheckpointMessagesStr(threadData,warningsAsErrors);
+  return omc_alloc_interface.malloc_strdup(res.c_str());
+}
+
 extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
   ErrorMessage::TokenList tokens;

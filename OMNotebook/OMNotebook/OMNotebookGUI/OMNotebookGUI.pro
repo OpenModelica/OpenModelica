@@ -165,7 +165,7 @@ win32 {
   PLOTLIBS = -L$$(OMBUILDDIR)/build/lib/omc -lOMPlot -lomqwt
   PLOTINC = $$(OMBUILDDIR)/include/omplot \
             $$(OMBUILDDIR)/include/omplot/qwt
-  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread
   OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMNotebook.config)

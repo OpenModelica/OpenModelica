@@ -1,0 +1,47 @@
+def common
+pipeline {
+  agent none
+  options {
+    buildDiscarder(logRotator(numToKeepStr: "5", artifactNumToKeepStr: "2"))
+  }
+  stages {
+    stage('Environment') {
+      agent {
+        label '!windows'
+      }
+      steps {
+        script {
+          if (changeRequest()) {
+            def buildNumber = env.BUILD_NUMBER as int
+            if (buildNumber > 1) milestone(buildNumber - 1)
+            milestone(buildNumber)
+          }
+          common = load("${env.workspace}/.CI/common.groovy")
+        }
+      }
+    }
+    stage('build') {
+      parallel {
+        stage('cmake-OMDev-gcc') {
+          agent {
+            node {
+              label 'windows'
+            }
+          }
+          environment {
+            RUNTESTDB = '/c/dev/'
+            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          steps {
+            script {
+              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build -G "MSYS Makefiles"')
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

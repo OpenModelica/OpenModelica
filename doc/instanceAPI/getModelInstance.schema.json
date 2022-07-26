@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "getModelInstance",
+  "description": "The result of calling the getModelInstance API",
+  "type": "object",
+  "properties": {
+    "name": {
+      "description": "The name of the class",
+      "type": "string"
+    },
+    "restriction": {
+      "description": "The kind of class",
+      "type": "string"
+    },
+    "modifiers": {
+      "description": "Modifier from the SCode",
+      "type": "#/definitions/scodeModifier"
+    },
+    "comment": {
+      "$ref": "#/definitions/comment"
+    },
+    "extends": {
+      "description": "The extends clauses in the class instance",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/extends"
+      }
+    },
+    "components": {
+      "description": "The components in the class instance",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/component"
+      }
+    },
+    "connections": {
+      "description": "The top-level connect equations of the class instance",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lhs": {
+            "description": "Left hand side of the connect equation",
+            "$ref": "expression.schema.json"
+          },
+          "rhs": {
+            "description": "Right hand side of the connect equation",
+            "$ref": "expression.schema.json"
+          },
+          "comment": {
+            "$ref": "#/definitions/comment"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotation"
+          }
+        },
+        "required": ["lhs", "rhs"]
+      }
+    },
+    "replaceable": {
+      "description": "The replaceable elements of the class instance",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of a replaceable component",
+                "type": "string"
+              },
+              "type": {
+                "description": "The type of a replaceable component",
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "The name of a replaceable class",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  "required": ["name"],
+  "definitions": {
+    "comment": {
+      "type": "string"
+    },
+    "annotation": {
+      "type": "object",
+      "properties": {
+        "$kind": false,
+        "$error": false
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/annotation"
+          },
+          {
+            "$ref": "expression.schema.json"
+          },
+          {
+            "description": "An invalid annotation",
+            "type": "object",
+            "properties": {
+              "$error": {
+                "description": "Error message",
+                "type": "string"
+              },
+              "value": {
+                "description": "Annotation dumped as a string",
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extends": {
+      "description": "An extends clause",
+      "type": "object",
+      "properties": {
+        "modifiers": {
+          "description": "SCode modifier on the extends clause",
+          "type": "#/definitions/scodeModifier"
+        },
+        "annotation": {
+          "description": "Annotation on the extends clause",
+          "type": "#/definitions/annotation"
+        },
+        "baseClass": {
+          "description": "The class instance of the extended class",
+          "$ref": "#"
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "Deleted component",
+          "additionalProperties": false
+        },
+        {
+          "description": "Normal component",
+          "properties": {
+            "name": {
+              "description": "Name of the component",
+              "type": "string"
+            },
+            "type": {
+              "description": "The component's type (without dimensions)",
+              "oneOf": [
+                {
+                  "description": "Class type",
+                  "$ref": "#"
+                },
+                {
+                  "description": "Builtin type",
+                  "type": "string"
+                }
+              ]
+            },
+            "dims": {
+              "description": "The component's dimensions",
+              "type": "object",
+              "properties": {
+                "absyn": {
+                  "properties": "Dimensions from the Absyn",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "typed": {
+                  "properties": "Instantiated dimensions",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["absyn", "typed"]
+            },
+            "modifiers": {
+              "description": "Modifier from the SCode",
+              "type": "#/definitions/scodeModifier"
+            },
+            "value": {
+              "description": "The component's binding equation",
+              "$ref": "#/definitions/binding"
+            },
+            "condition": {
+              "description": "The component's condition",
+              "$ref": "#/definitions/binding"
+            },
+            "prefixes": {
+              "description": "The component's prefixes",
+              "type": "object",
+              "properties": {
+                "public": {
+                  "type": "boolean"
+                },
+                "final": {
+                  "type": "boolean"
+                },
+                "inner": {
+                  "type": "boolean"
+                },
+                "outer": {
+                  "type": "boolean"
+                },
+                "replaceable": {
+                  "type": "boolean"
+                },
+                "redeclare": {
+                  "type": "boolean"
+                },
+                "connector": {
+                  "type": "string",
+                  "enum": ["flow", "stream"]
+                },
+                "variability": {
+                  "type": "string",
+                  "enum": ["constant", "parameter", "discrete"]
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["input", "output"]
+                }
+              }
+            },
+            "comment": {
+              "description": "The component's comment",
+              "$ref": "#/definitions/comment"
+            },
+            "annotation": {
+              "description": "The component's annotation",
+              "$ref": "#/definitions/annotation"
+            }
+          },
+          "required": ["name", "type", "modifier", "prefixes"]
+        }
+      ]
+    },
+    "binding": {
+      "description": "A binding expression",
+      "type": "object",
+      "properties": {
+        "binding": {
+          "description": "Instantiated binding expression",
+          "$ref": "expression.schema.json"
+        },
+        "value": {
+          "description": "Evaluated binding expression",
+          "$ref": "expression.schema.json"
+        }
+      },
+      "required": ["binding"]
+    },
+    "scodeModifier": {
+      "description": "An SCode modifier",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "The string representation of the binding equation"
+        },
+        {
+          "type": "object",
+          "description": "A modifier with submodifiers",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "description": "The string representation of the binding equation"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/scodeModifier"
+          },
+          "required": [],
+          "minProperties": 1
+        }
+      ]
+    }
+  }
+}

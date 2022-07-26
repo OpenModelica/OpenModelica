@@ -824,7 +824,7 @@ namespace IAEX
   QString InputCell::ChapterCounter()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toPlainText();
   }
@@ -839,7 +839,7 @@ namespace IAEX
   QString InputCell::ChapterCounterHtml()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toHtml();
   }

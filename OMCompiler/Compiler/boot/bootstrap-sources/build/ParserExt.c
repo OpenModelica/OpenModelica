@@ -150,7 +150,7 @@ modelica_metatype _outProgram = NULL;
 _acceptedGram_ext = (int)_acceptedGram;
 _languageStandardInt_ext = (int)_languageStandardInt;
 _runningTestsuite_ext = (int)_runningTestsuite;
-_outProgram_ext = ParserExt_parsestring(MMC_STRINGDATA(_str), MMC_STRINGDATA(_infoFilename), _acceptedGram_ext, _languageStandardInt_ext, _runningTestsuite_ext);
+_outProgram_ext = ParserExt_parsestring(MMC_STRINGDATA(_str), MMC_STRINGDATA(_infoFilename), _acceptedGram_ext, _languageStandardInt_ext, 0, _runningTestsuite_ext);
 _outProgram = (modelica_metatype)_outProgram_ext;
 return _outProgram;
 }
@@ -204,7 +204,7 @@ _acceptedGram_ext = (int)_acceptedGram;
 _languageStandardInt_ext = (int)_languageStandardInt;
 _runningTestsuite_ext = (int)_runningTestsuite;
 _lveInstance_ext = (modelica_metatype)_lveInstance;
-_outProgram_ext = ParserExt_parse(MMC_STRINGDATA(_filename), MMC_STRINGDATA(_infoFilename), _acceptedGram_ext, _languageStandardInt_ext, MMC_STRINGDATA(_encoding), _runningTestsuite_ext, MMC_STRINGDATA(_libraryPath), _lveInstance_ext);
+_outProgram_ext = ParserExt_parse(MMC_STRINGDATA(_filename), MMC_STRINGDATA(_infoFilename), _acceptedGram_ext, _languageStandardInt_ext, 0, MMC_STRINGDATA(_encoding), _runningTestsuite_ext, MMC_STRINGDATA(_libraryPath), _lveInstance_ext);
 _outProgram = (modelica_metatype)_outProgram_ext;
 return _outProgram;
 }

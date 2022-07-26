@@ -16,8 +16,6 @@ target_link_libraries(OMCppCVode PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppCVode PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppCVode PRIVATE omc::3rd::sundials::cvode)
 
-target_link_options(OMCppCVode PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppCVode)
 
 
@@ -35,8 +33,6 @@ target_sources(OMCppDASSL PRIVATE ${OMC_SIMRT_CPP_SOLVER_DASSL_SOURCES})
 target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppDASSL PRIVATE omc::3rd::cdaskr)
-
-target_link_options(OMCppDASSL PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppDASSL)
 
@@ -56,8 +52,6 @@ target_link_libraries(OMCppDgesvSolver PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppDgesvSolver PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppDgesvSolver PRIVATE ${LAPACK_LIBRARIES})
 
-target_link_options(OMCppDgesvSolver PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppDgesvSolver)
 
 # OMCppDgesvSolver_static
@@ -66,7 +60,7 @@ add_library(omc::simrt::cpp::solver::dgesvsolver::static ALIAS OMCppDgesvSolver_
 
 target_sources(OMCppDgesvSolver_static PRIVATE ${OMC_SIMRT_CPP_SOLVER_DGESV_SOURCES})
 
-target_compile_definitions(OMCppDgesvSolver_static PRIVATE -DRUNTIME_STATIC_LINKING)
+target_compile_definitions(OMCppDgesvSolver_static PRIVATE RUNTIME_STATIC_LINKING)
 
 target_link_libraries(OMCppDgesvSolver_static PUBLIC omc::simrt::cpp::core::modelica)
 
@@ -90,8 +84,6 @@ target_link_libraries(OMCppKinsol PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppKinsol PRIVATE omc::3rd::sundials::kinsol)
 target_link_libraries(OMCppKinsol PRIVATE ${LAPACK_LIBRARIES})
 
-target_link_options(OMCppKinsol PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppKinsol)
 
 
@@ -109,8 +101,6 @@ target_sources(OMCppLinearSolver PRIVATE ${OMC_SIMRT_CPP_SOLVER_LINEAR_SOLVER_SO
 target_link_libraries(OMCppLinearSolver PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppLinearSolver PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppLinearSolver PRIVATE ${LAPACK_LIBRARIES})
-
-target_link_options(OMCppLinearSolver PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppLinearSolver)
 
@@ -130,8 +120,6 @@ target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppNewton PRIVATE ${LAPACK_LIBRARIES})
 
-target_link_options(OMCppNewton PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppNewton)
 
 # OMCppNewton_static
@@ -140,7 +128,7 @@ add_library(omc::simrt::cpp::solver::newton::static ALIAS OMCppNewton_static)
 
 target_sources(OMCppNewton_static PRIVATE ${OMC_SIMRT_CPP_SOLVER_NEWTON_SOURCES})
 
-target_compile_definitions(OMCppNewton_static PRIVATE -DRUNTIME_STATIC_LINKING)
+target_compile_definitions(OMCppNewton_static PRIVATE RUNTIME_STATIC_LINKING)
 
 target_link_libraries(OMCppNewton_static PUBLIC omc::simrt::cpp::core::modelica)
 

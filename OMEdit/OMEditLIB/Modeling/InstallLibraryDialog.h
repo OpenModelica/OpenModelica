@@ -40,6 +40,11 @@
 #include <QCheckBox>
 #include <QDialogButtonBox>
 
+typedef struct {
+  QString source;
+  QStringList versions;
+} FilteredLibrary;
+
 class InstallLibraryDialog : public QDialog
 {
   Q_OBJECT
@@ -48,17 +53,16 @@ public:
 private:
   JsonDocument mIndexJsonDocument;
   QVariantMap mLibrariesMap;
-  QComboBox *mpNameComboBox;
-  Label *mpSourceLabel;
-  QCheckBox *mpLatestBackwardsCompatibleCheckBox;
-  QCheckBox *mpPostReleaseBuildsCheckBox;
-  QCheckBox *mpPreReleaseBuildsCheckBox;
+  QMap<QString, QStringList> mLibrariesAndVersionsMap;
+  QMap<QString, FilteredLibrary> mFilteredLibrariesMap;
   QCheckBox *mpFullSupportCheckBox;
   QCheckBox *mpSupportCheckBox;
   QCheckBox *mpExperimentalCheckBox;
   QCheckBox *mpObsoleteCheckBox;
   QCheckBox *mpNoSupportCheckBox;
+  QComboBox *mpNameComboBox;
   QComboBox *mpVersionComboBox;
+  Label *mpSourceLabel;
   QCheckBox *mpExactMatchCheckBox;
   Label *mpProgressLabel;
   QPushButton *mpOkButton;
@@ -68,6 +72,22 @@ private slots:
   void filterChanged(bool checked);
   void libraryIndexChanged(const QString &text);
   void installLibrary();
+};
+
+class UpgradeInstalledLibrariesDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  explicit UpgradeInstalledLibrariesDialog(QDialog *parent = nullptr);
+private:
+  Label *mpDescriptLabel;
+  QCheckBox *mpInstallNewestVersionsCheckBox;
+  Label *mpProgressLabel;
+  QPushButton *mpUpgradeButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void upgradeInstalledLibraries();
 };
 
 #endif // INSTALLLIBRARYDIALOG_H

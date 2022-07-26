@@ -498,6 +498,27 @@ algorithm
   end match;
 end isRecord;
 
+public function recordHasConstVar
+  "Returns true if an record has at least one component of type CONST.
+   Fails if input type ty is not an record."
+  input DAE.Type ty;
+  output Boolean hasConstType = false;
+algorithm
+  () := match ty
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
+        for var in ty.varLst loop
+          if DAEUtil.isConstVar(var) then
+            hasConstType := true;
+            break;
+          end if;
+        end for;
+      then();
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because input type is not a record."});
+    then fail();
+  end match;
+end recordHasConstVar;
+
 public function getRecordPath "gets the record path"
   input DAE.Type tp;
   output Absyn.Path p;
@@ -593,7 +614,7 @@ end isRealOrSubTypeReal;
 
 public function isIntegerOrSubTypeInteger "
 Author BZ 2009-02
-This function verifies if it is some kind of a Integer type we are working with."
+This function verifies if it is some kind of an Integer type we are working with."
   input DAE.Type inType;
   output Boolean b;
 protected
@@ -603,6 +624,18 @@ algorithm
   lb2 := equivtypes(inType, DAE.T_INTEGER_DEFAULT);
   b := lb1 or lb2;
 end isIntegerOrSubTypeInteger;
+
+public function isEnumerationOrSubTypeEnumeration "
+This function verifies if it is some kind of an Enumeration type we are working with."
+  input DAE.Type inType;
+  output Boolean b;
+protected
+  Boolean lb1, lb2;
+algorithm
+  lb1 := isEnumeration(inType);
+  lb2 := equivtypes(inType, DAE.T_ENUMERATION_DEFAULT);
+  b := lb1 or lb2;
+end isEnumerationOrSubTypeEnumeration;
 
 protected function isClockOrSubTypeClock1
   input DAE.Type inType;
@@ -817,7 +850,7 @@ algorithm
   end match;
 end isString;
 
-public function isEnumeration "Return true if Type is the builtin String type."
+public function isEnumeration "Return true if Type is the enumeration type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -2322,6 +2355,9 @@ algorithm
     case DAE.C_CONST() then "C_CONST";
     case DAE.C_PARAM() then "C_PARAM";
     case DAE.C_VAR() then "C_VAR";
+    else algorithm
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
+    then fail();
   end match;
 end printConstStr;
 
@@ -2729,42 +2765,42 @@ public function printBindingStr "Print a variable binding to a string."
   input DAE.Binding inBinding;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inBinding)
+  outString := match inBinding
     local
       String str,str2,res,v_str,s,str3;
-      DAE.Exp exp;
-      Const f;
       Values.Value v;
-      DAE.BindingSource source;
 
     case DAE.UNBOUND() then "UNBOUND";
-    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE(),constant_ = f,source = source)
+    case DAE.EQBOUND(evaluatedExp = NONE())
       equation
-        str = ExpressionDump.printExpStr(exp);
-        str2 = printConstStr(f);
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str = ExpressionDump.printExpStr(inBinding.exp);
+        str2 = printConstStr(inBinding.constant_);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
+    case DAE.EQBOUND(evaluatedExp = SOME(v))
       equation
-        str = ExpressionDump.printExpStr(exp);
-        str2 = printConstStr(f);
+        str = ExpressionDump.printExpStr(inBinding.exp);
+        str2 = printConstStr(inBinding.constant_);
         v_str = ValuesUtil.valString(v);
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.VALBOUND(valBound = v, source = source)
+    case DAE.VALBOUND(valBound = v)
       equation
         s = ValuesUtil.unparseValues({v});
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
-    else "";
-  end matchcontinue;
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
+      then
+        fail();
+  end match;
 end printBindingStr;
 
 public function makeFunctionType "author: LS
@@ -2864,6 +2900,23 @@ algorithm
     case DAE.VAR(ty = ty) then ty;
   end match;
 end makeElementReturnTypeSingle;
+
+public function getNthEnumLiteral
+  "Returns the n:th literal of an enumeration type."
+  input DAE.Type ty;
+  input Integer n;
+  output DAE.Exp literalExp;
+algorithm
+  literalExp := match ty
+    case DAE.T_ENUMERATION()
+      then DAE.ENUM_LITERAL(AbsynUtil.joinPaths(ty.path, Absyn.IDENT(listGet(ty.names, n))), n);
+
+    // Not sure if this is correct, maybe it would be more correct to
+    // use the path in the ClassInf.State inside the subtype?
+    case DAE.T_SUBTYPE_BASIC()
+      then getNthEnumLiteral(ty.complexType, n);
+  end match;
+end getNthEnumLiteral;
 
 public function makeEnumerationType
   "Creates an enumeration type from a name and an enumeration type containing
@@ -7541,7 +7594,6 @@ protected function makeDummyExpFromType
 algorithm
   outExp := match(inType)
     local
-      Absyn.Path p;
       Type ty;
       DAE.Dimension dim;
       Integer idim;
@@ -7553,7 +7605,7 @@ algorithm
     case (DAE.T_REAL()) then DAE.RCONST(0.0);
     case (DAE.T_STRING()) then DAE.SCONST("");
     case (DAE.T_BOOL()) then DAE.BCONST(false);
-    case (DAE.T_ENUMERATION(path = p)) then DAE.ENUM_LITERAL(p, 1);
+    case (DAE.T_ENUMERATION()) then getNthEnumLiteral(inType, 1);
     case (DAE.T_ARRAY(ty = ty, dims = {dim}))
       equation
         idim = Expression.dimensionSize(dim);
@@ -8693,6 +8745,17 @@ algorithm
     else false;
   end match;
 end isExpandableConnector;
+
+public function getBasicType
+  input DAE.Type ty;
+  output DAE.Type outType;
+algorithm
+  outType := match ty
+    case DAE.Type.T_ARRAY() then getBasicType(ty.ty);
+    case DAE.Type.T_SUBTYPE_BASIC() then getBasicType(ty.complexType);
+    else ty;
+  end match;
+end getBasicType;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

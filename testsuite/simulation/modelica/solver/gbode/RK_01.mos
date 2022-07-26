@@ -1,0 +1,263 @@
+// name: RK_01
+// status: correct
+// teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
+//
+// Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
+
+loadString("
+model SlowFastDynamics
+  parameter Real epsilon = 3;
+  parameter Real corr = 0.01;
+  parameter Real fast = 7;
+  parameter Real slow = 0.1;
+  Real y[2](start = {1,1}, each fixed=true);
+equation
+  der(y) = {-y[1] - corr*y[2] + fast*sin(fast*time), corr*y[1] - epsilon*y[2] - cos(slow*time)};
+end SlowFastDynamics;");
+getErrorString();
+
+rkMethods := {"expl_euler",
+             "dopri45",
+             "merson",
+             "fehlberg12",
+             "fehlberg45",
+             "fehlberg78",
+             "rk810",
+             "rk1012",
+             "rk1214"};
+
+errCtrls := {"const", "i"};
+
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+
+// Build model
+buildModel(SlowFastDynamics);
+getErrorString();
+
+// Create reference results
+system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
+print(readFile("refSimulation.log"));
+
+// Test all RK methods
+for rkMethod in rkMethods loop
+  for errCtrl in errCtrls loop
+    print("\n--------------------------------------------------------\n");
+    print("Running RK " + rkMethod + ":\n");
+    logFile := "SlowFastDynamics_"+ rkMethod + "_" + errCtrl + ".log";
+    system("rm -f SlowFastDynamics_res.mat");
+    system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
+    print(readFile(logFile) + "\n");
+
+    (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
+                                expectedFile = "SlowFastDynamics_ref.mat",
+                                diffPrefix = "diff_" + rkMethod + "_",
+                                vars = {"der(y[1])", "der(y[2])"});
+    print("Failed vars:\n");
+    for var in failVars loop
+      print("\t" + var + "\n");
+    end for;
+    if not success then
+      print("Failed to compare simulation results\n");
+      print(getErrorString() + "\n");
+    end if;
+  end for;
+end for;
+
+// Result:
+// true
+// ""
+// {"expl_euler","dopri45","merson","fehlberg12","fehlberg45","fehlberg78","rk810","rk1012","rk1214"}
+// {"const","i"}
+// true
+// ""
+// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// ""
+// 0
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK expl_euler:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK expl_euler:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK dopri45:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK dopri45:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK merson:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK merson:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg12:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg12:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg45:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg45:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg78:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK fehlberg78:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1012:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1012:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1214:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1214:
+// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// endResult

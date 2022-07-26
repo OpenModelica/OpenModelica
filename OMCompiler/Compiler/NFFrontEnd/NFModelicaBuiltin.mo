@@ -1459,9 +1459,6 @@ end parseFile;
 function loadFileInteractiveQualified
   input String filename;
   input String encoding = "UTF-8";
-  input Boolean uses = true;
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
-  input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1470,6 +1467,9 @@ end loadFileInteractiveQualified;
 function loadFileInteractive
   input String filename;
   input String encoding = "UTF-8";
+  input Boolean uses = true;
+  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -2682,15 +2682,11 @@ Returns a list of names of libraries and their path on the system, for example:
 </html>"));
 end getLoadedLibraries;
 
-type LinearSystemSolver = enumeration(dgesv,lpsolve55);
 function solveLinearSystem
-  "Solve A*X = B, using dgesv or lp_solve (if any variable in X is integer)
-  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input.
-  For solver lp_solve: ???"
+  "Solve A*X = B using dgesv.
+  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input."
   input Real[size(B,1),size(B,1)] A;
   input Real[:] B;
-  input LinearSystemSolver solver = LinearSystemSolver.dgesv;
-  input Integer[:] isInt = {-1} "list of indices that are integers";
   output Real[size(B,1)] X;
   output Integer info;
 external "builtin";
@@ -2790,7 +2786,7 @@ function simulate "simulates a modelica model by generating c code, build it and
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output SimulationResult simulationResults;
@@ -2826,7 +2822,7 @@ function buildModel "builds a modelica model by generating c code and build it.
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String[2] buildModelResults;
@@ -2844,7 +2840,7 @@ input TypeName className "the class that should be built";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "" "cflags. <default> = \"\"";
   input String simflags = "" "simflags. <default> = \"\"";
 output String[2] buildModelResults;
@@ -2862,7 +2858,7 @@ input TypeName className "the class that should be built";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "" "cflags. <default> = \"\"";
   input String simflags = "" "simflags. <default> = \"\"";
   input String labelstoCancel="";
@@ -2926,7 +2922,7 @@ function linearize "creates a model with symbolic linearization matrixes"
   input Boolean noClean = false "noClean. <default> = false";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String linearizationResult;
@@ -2963,7 +2959,7 @@ function optimize "optimize a modelica/optimica model by generating c code, buil
   input Boolean noClean = false "noClean. <default> = false";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String optimizationResults;
@@ -4644,6 +4640,13 @@ annotation(preferredView="text",Documentation(info="<html>
 <p>Runs the conversion script for a library on a selected package.</p>
 </html>"));
 end convertPackageToLibrary;
+
+function getModelInstance
+  input TypeName className;
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+end getModelInstance;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);

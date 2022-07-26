@@ -1,0 +1,70 @@
+
+cmake_minimum_required(VERSION 3.7)
+
+set(FMU_NAME @FMU_NAME_IN@)
+
+project(${FMU_NAME})
+
+if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
+  message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
+endif()
+
+set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
+                              ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
+
+file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  set(FMU_TARGET_SYSTEM_NAME "win")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(FMU_TARGET_SYSTEM_NAME "linux")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set(FMU_TARGET_SYSTEM_NAME "darwin")
+else()
+  message(FATAL_ERROR "Unknown target system: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}64")
+else()
+  set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}32")
+endif()
+
+message(STATUS "Building for FMI platform ${FMU_TARGET_PLATFORM}")
+
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../binaries/${FMU_TARGET_PLATFORM})
+set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
+set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
+add_library(${FMU_NAME} SHARED
+            ${FMU_RUNTIME_SOURCES}
+            ${FMU_GENERATED_MODEL_SOURCES})
+
+
+target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
+
+target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY})
+
+target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;DOMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
+
+install(TARGETS ${FMU_NAME}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+add_custom_target(create_zip COMMAND
+    ${CMAKE_COMMAND} -E tar "cfv" "../${CMAKE_PROJECT_NAME}.fmu" --format=zip
+    "binaries/"
+    "resources/"
+    "sources/"
+    "modelDescription.xml"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../")

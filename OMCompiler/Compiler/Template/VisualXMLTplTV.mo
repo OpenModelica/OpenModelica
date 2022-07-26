@@ -159,6 +159,32 @@ interface package VisualXMLTplTV
         array<DAE.Exp> color;
         DAE.Exp specularCoeff;
       end SHAPE;
+
+      record VECTOR
+        DAE.ComponentRef ident;
+        array<list<DAE.Exp>> T;
+        array<DAE.Exp> r;
+        array<DAE.Exp> coordinates;
+        array<DAE.Exp> color;
+        DAE.Exp specularCoeff;
+        DAE.Exp quantity;
+        DAE.Exp headAtOrigin;
+        DAE.Exp twoHeadedArrow;
+      end VECTOR;
+
+      record SURFACE
+        DAE.ComponentRef ident;
+        array<list<DAE.Exp>> T;
+        array<DAE.Exp> r_0;
+        DAE.Exp nu;
+        DAE.Exp nv;
+        // surfaceCharacteristic
+        DAE.Exp wireframe;
+        DAE.Exp multiColored;
+        array<DAE.Exp> color;
+        DAE.Exp specularCoeff;
+        DAE.Exp transparency;
+      end SURFACE;
     end Visualization;
   end VisualXML;
 
@@ -507,13 +533,6 @@ interface package VisualXMLTplTV
         Type identType "type of the identifier, without considering the subscripts";
         list<Subscript> subscriptLst;
       end CREF_IDENT;
-
-      record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
-        Ident ident;
-        Integer index;
-        Type identType "type of the identifier, without considering the subscripts";
-        list<Subscript> subscriptLst;
-      end CREF_ITER;
 
       record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
         ComponentRef componentRef;

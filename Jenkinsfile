@@ -188,7 +188,6 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache-bionic-cmake-3.17.2'
               label 'linux'
-              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
@@ -199,7 +198,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
@@ -471,37 +470,6 @@ pipeline {
             LIBRARIES = "/cache/omlibrary"
             COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures --flakyTests=.CI/compliance.flaky"
             COMPLIANCEPREFIX = "compliance"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script { common.compliance() }
-          }
-        }
-
-        stage('testsuite-compliance-newinst') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
-              label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            LIBRARIES = "/cache/omlibrary"
-            COMPLIANCEEXTRAFLAGS = "-d=newInst"
-            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance-newinst.failures"
-            COMPLIANCEPREFIX = "compliance-newinst"
           }
           when {
             beforeAgent true
@@ -798,7 +766,6 @@ pipeline {
           }
           steps {
             unstash 'compliance'
-            unstash 'compliance-newinst'
             echo "${env.NODE_NAME}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }

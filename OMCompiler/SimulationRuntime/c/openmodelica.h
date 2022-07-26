@@ -70,7 +70,9 @@ extern "C" {
 
 #include "openmodelica_types.h"
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#if !defined(WIN32_LEAN_AND_MEAN)
  #define WIN32_LEAN_AND_MEAN
+#endif
 #if !defined(NOMINMAX)
  #define NOMINMAX
 #endif
@@ -125,13 +127,13 @@ struct type_desc_s {
   int retval : 1;
   union _data {
     modelica_real real;
-    real_array_t real_array;
+    real_array r_array;
     modelica_integer integer;
-    integer_array_t int_array;
+    integer_array int_array;
     modelica_boolean boolean;
-    boolean_array_t bool_array;
+    boolean_array bool_array;
     modelica_string string;
-    string_array_t string_array;
+    string_array string_array;
     struct _tuple {
       size_t elements;
       struct type_desc_s *element;

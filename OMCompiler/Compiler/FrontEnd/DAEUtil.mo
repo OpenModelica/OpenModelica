@@ -902,18 +902,26 @@ end setMinMax;
 
 public function getStartAttr "
   Return the start attribute."
-  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  input Option<DAE.VariableAttributes> inAttributes;
+  input DAE.Type inType;
   output DAE.Exp start;
+protected
+  DAE.Exp e;
 algorithm
-  start := match(inVariableAttributesOption)
-    local
-      DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
-    else DAE.RCONST(0.0);
+  start := match inAttributes
+    case SOME(DAE.VAR_ATTR_REAL(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_INT(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_STRING(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(e))) then e;
+    else
+      match Types.getBasicType(inType)
+        case DAE.Type.T_INTEGER() then DAE.ICONST(0);
+        case DAE.Type.T_STRING() then DAE.SCONST("");
+        case DAE.Type.T_BOOL() then DAE.BCONST(false);
+        case DAE.Type.T_ENUMERATION() then Types.getNthEnumLiteral(inType, 1);
+        else DAE.RCONST(0.0);
+      end match;
   end match;
 end getStartAttr;
 
@@ -1547,6 +1555,17 @@ algorithm
   DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var)) := inVar;
   outIsParamOrConst := SCodeUtil.isParameterOrConst(var);
 end isParamOrConstVar;
+
+public function isConstVar
+  "Return true if variable has variability CONST."
+  input DAE.Var var;
+  output Boolean isConstVar = false;
+algorithm
+  isConstVar := match var.attributes.variability
+    case SCode.CONST() then true;
+    else false;
+  end match;
+end isConstVar;
 
 public function isNotParamOrConstVar
   input DAE.Var inVar;
@@ -4530,7 +4549,6 @@ algorithm
       DAE.Statement x,ew,ew_1;
       Boolean b1;
       String id1,str;
-      Integer ix;
       DAE.ElementSource source;
       DAE.Else algElse,algElse1;
       Type_a extraArg;
@@ -4585,18 +4603,18 @@ algorithm
         stmts1 = if not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1) then (inStmt::{}) else stmts1;
       then (stmts1,extraArg);
 
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source),_,_,extraArg)
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source);
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source);
       then (x::{},extraArg);
 
-    case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
+    case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source);
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_PARFOR(tp,b1,id1,e_1,stmts2,loopPrlVars,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source),_,_,extraArg)
@@ -4740,7 +4758,6 @@ protected
   DAE.Statement ew,ew_1;
   Boolean b1;
   String id1,str;
-  Integer ix;
   DAE.ElementSource source;
   DAE.Else algElse;
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
@@ -4784,19 +4801,19 @@ algorithm
         then
           List.append_reverse(stmts1, outStmts);
 
-      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)
+      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)
         equation
           (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) = func(e, stmt, extraArg);
         then
-          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source)::outStmts;
+          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source)::outStmts;
 
-      case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
+      case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
         equation
           (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) = func(e, stmt, extraArg);
         then
-          DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source)::outStmts;
+          DAE.STMT_PARFOR(tp,b1,id1,e_1,stmts2,loopPrlVars,source)::outStmts;
 
       case DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)
         equation
@@ -5585,10 +5602,10 @@ public function printBindingSourceStr "prints a binding source as a string"
   output String str;
 algorithm
   str := match(bindingSource)
-    local
-    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[DEFAULT VALUE]";
-    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[RECORD SUBMOD]";
-    case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
+    case(DAE.BINDING_FROM_DEFAULT_VALUE())       then "[DEFAULT VALUE]";
+    case(DAE.BINDING_FROM_START_VALUE())         then "[START VALUE]";
+    case(DAE.BINDING_FROM_RECORD_SUBMODS())      then "[RECORD SUBMODS]";
+    case(DAE.BINDING_FROM_DERIVED_RECORD_DECL()) then "[DERIVED RECORD]";
   end match;
 end printBindingSourceStr;
 

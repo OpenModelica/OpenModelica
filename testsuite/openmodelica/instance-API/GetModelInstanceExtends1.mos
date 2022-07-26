@@ -1,0 +1,83 @@
+// name: GetModelInstanceExtends1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+  end A;
+
+  model M
+    Real y;
+    extends A(x = 1) annotation(IconMap(extent = {{-100, -100}, {100, 100}}));
+    Real z;
+  end M;
+");
+getErrorString();
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// ""
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"extends\": [
+//     {
+//       \"modifiers\": {
+//         \"x\": \"1\"
+//       },
+//       \"annotation\": {
+//         \"IconMap\": {
+//           \"extent\": [
+//             [
+//               -100,
+//               -100
+//             ],
+//             [
+//               100,
+//               100
+//             ]
+//           ]
+//         }
+//       },
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 1
+//             },
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       }
+//     }
+//   ],
+//   \"components\": [
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//
+//       }
+//     },
+//     {
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ]
+// }"
+// endResult

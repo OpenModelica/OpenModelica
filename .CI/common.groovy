@@ -318,11 +318,11 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=16
      echo set -ex
      echo mkdir build_cmake
-     echo cmake -S ./ -B ./build_cmake ${cmake_args}
-     echo time cmake --build ./build_cmake --parallel \${MAKETHREADS} --target install
+     echo ${cmake_exe} --version
+     echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
+     echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
@@ -332,13 +332,9 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   }
   else {
     sh "mkdir ./build_cmake"
+    sh "${cmake_exe} --version"
     sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}"
-    sh "${cmake_exe} --build ./build_cmake/OMCompiler --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMParser --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMEdit --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMShell --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMNotebook --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/testsuite --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
 }
@@ -421,7 +417,7 @@ void buildAndRunOMEditTestsuite(stash) {
     patchConfigStatus()
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   HOME="\$PWD/testsuite/libraries-for-testing"

@@ -233,21 +233,20 @@ protected function treatClockedStates
   output list<BackendDAE.EqSystem> outSysts = {};
   output BackendDAE.Shared shared = inShared;
 algorithm
-  for syst1 in inSysts loop
-    syst1 := match syst1
+  outSysts := list(
+    match syst
       local
         BackendDAE.EquationArray eqs;
         Integer idx;
         BackendDAE.SubPartition subPartition;
         String solverMethod;
-        BackendDAE.EqSystem syst;
         list<BackendDAE.Equation> lstEqs = {};
         BackendDAE.Equation eq;
         list<DAE.ComponentRef> derVars = {};
         BackendDAE.Var var;
         DAE.Exp exp, exp2;
         DAE.Type ty;
-      case syst as BackendDAE.EQSYSTEM(orderedEqs = eqs)
+      case BackendDAE.EQSYSTEM(orderedEqs = eqs)
         algorithm
           BackendDAE.CLOCKED_PARTITION(idx) := syst.partitionKind;
           subPartition := shared.partitionsInfo.subPartitions[idx];
@@ -324,11 +323,9 @@ algorithm
             end for;
           end if;
           shared := markClockedStates(syst, shared, derVars);
-        then syst;
-    end match;
-    outSysts := BackendDAEUtil.clearEqSyst(syst1) :: outSysts;
-  end for;
-  outSysts := listReverse(outSysts);
+        then BackendDAEUtil.clearEqSyst(syst);
+    end match
+  for syst in inSysts);
 end treatClockedStates;
 
 protected function getDerVars1 "helper to getDerVars"
@@ -791,23 +788,19 @@ algorithm
     local
       Integer i1,i2,i3,i4;
       Real r1,r2;
-  case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
-    algorithm
-    then BackendDAE.SUBCLOCK(MMath.RATIONAL(i2,i1), MMath.RAT0,NONE());
-  case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.RATIONAL_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
-    algorithm
-    then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(i2,i1),MMath.RATIONAL(i4,i3)),MMath.RAT0,NONE());
-  case(DAE.REAL_CLOCK(DAE.RCONST(r1)), DAE.INFERRED_CLOCK())
-    algorithm
-    then BackendDAE.SUBCLOCK(MMath.RATIONAL(1, realInt(1.0/r1)), MMath.RAT0, NONE());
-  case(DAE.REAL_CLOCK(DAE.RCONST(r1)), DAE.REAL_CLOCK(DAE.RCONST(r2)))
-    algorithm
-    then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(1, realInt(1.0/r1)),MMath.RATIONAL(1,realInt(1.0/r2))), MMath.RAT0, NONE());
-  else
-    algorithm
-    //Please add the missing cases.
-    Error.addMessage(Error.INTERNAL_ERROR, {"SynchrnonousFeatures.getSubClockForClkConstructor failed.\n"});
-    then fail();
+    case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
+      then BackendDAE.SUBCLOCK(MMath.RATIONAL(i2,i1), MMath.RAT0,NONE());
+    case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.RATIONAL_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
+      then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(i2,i1),MMath.RATIONAL(i4,i3)),MMath.RAT0,NONE());
+    case(DAE.REAL_CLOCK(DAE.RCONST(r1)), DAE.INFERRED_CLOCK())
+      then BackendDAE.SUBCLOCK(MMath.RATIONAL(1, realInt(1.0/r1)), MMath.RAT0, NONE());
+    case(DAE.REAL_CLOCK(DAE.RCONST(r1)), DAE.REAL_CLOCK(DAE.RCONST(r2)))
+      then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(1, realInt(1.0/r1)),MMath.RATIONAL(1,realInt(1.0/r2))), MMath.RAT0, NONE());
+    else
+      algorithm
+        //Please add the missing cases.
+        Error.addInternalError(getInstanceName() + " failed.\n", sourceInfo());
+      then fail();
   end match;
 end getSubClockForClkConstructor;
 
@@ -819,16 +812,14 @@ author: vwaurich 2017-06"
   output DAE.ClockKind baseClkOut;
   output BackendDAE.SubClock outSubClock;
 algorithm
-  (baseClkOut, outSubClock) := match(baseClkIn, inSubClock)
-  local
-    String solver;
-    DAE.ClockKind clk;
-    case(DAE.SOLVER_CLOCK(c = DAE.CLKCONST(clk=clk), solverMethod=DAE.SCONST(solver)), _)
-      algorithm
-        outSubClock := setSubClockSolver(inSubClock, SOME(solver));
-      then (clk, outSubClock);
-      else
-        then (baseClkIn, inSubClock);
+  (baseClkOut, outSubClock) := match baseClkIn
+    local
+      String solver;
+      DAE.ClockKind clk;
+    case DAE.SOLVER_CLOCK(c = DAE.CLKCONST(clk=clk), solverMethod=DAE.SCONST(solver)) algorithm
+      outSubClock := setSubClockSolver(inSubClock, if solver == "" then NONE() else SOME(solver));
+    then (clk, outSubClock);
+    else (baseClkIn, inSubClock);
   end match;
 end setSolverSubClock;
 
@@ -923,7 +914,7 @@ algorithm
       then subSeqClock;
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"SynchrnonousFeatures.computeAbsoluteSubClock failed\n"});
+        Error.addInternalError(getInstanceName() + " failed.\n", sourceInfo());
       then fail();
   end match;
 end computeAbsoluteSubClock;
@@ -1152,7 +1143,7 @@ algorithm
       sub1 := setSubClockShift(sub1, MMath.RATIONAL(counter,resolution));
       sub2 := setSubClockShift(sub2, MMath.subRational(MMath.RAT0, MMath.RATIONAL(counter, resolution)));
     then (p1,v1,p2,v2);
-  case(BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cref1), scalar=DAE.CLKCONST(clk= DAE.SOLVER_CLOCK(c=DAE.CREF(componentRef=cref2), solverMethod= DAE.SCONST(solver)))))
+  case(BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cref1), scalar=DAE.CLKCONST(clk=DAE.SOLVER_CLOCK(c=DAE.CREF(componentRef=cref2), solverMethod=DAE.SCONST(solver)))))
     algorithm
       (_,{v1}) := BackendVariable.getVar(cref1,vars);
       p1 := varPartMap[v1];
@@ -2637,8 +2628,8 @@ algorithm
         end for;
       then false;
     else
-      equation
-        Error.addInternalError("SynchronousFeatures.isClockEquation failed.\n", sourceInfo());
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed.\n", sourceInfo());
       then fail();
   end match;
 end isClockEquation;
@@ -2769,8 +2760,8 @@ algorithm
       equation
       then (setClockedPartition(SOME(expClocked), inPartition, NONE(), info), (cr, refClocked)::inRefs);
     else
-      equation
-        Error.addInternalError("SynchronousFeatures.detectEqPartitionCall1 failed\n", sourceInfo());
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed.\n", sourceInfo());
       then fail();
   end match;
 end detectEqPartitionCall1;

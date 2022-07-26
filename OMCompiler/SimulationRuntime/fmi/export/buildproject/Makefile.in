@@ -12,7 +12,7 @@ configure: configure.ac $(top_builddir)/m4/lapack.m4
 
 install: all
 	mkdir -p $(PROJECTDIR)
-	cp -a configure "$(top_builddir)/config.guess" "$(top_builddir)/config.sub" "$(top_builddir)/install-sh" $(PROJECTDIR)/
+	cp -a configure "$(top_builddir)/config.guess" "$(top_builddir)/config.sub" "$(top_builddir)/install-sh" CMakeLists.txt.in $(PROJECTDIR)/
 
 Makefile: Makefile.in
 	cd "$(top_builddir)" && ./config.status

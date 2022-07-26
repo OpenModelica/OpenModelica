@@ -50,6 +50,12 @@
   #include <regex.h>
 #endif
 
+/* For CommandLineToArgvW. */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 /* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
  *
  */
@@ -187,6 +193,14 @@ void setGlobalVerboseLevel(int argc, char**argv)
       }
     }while(pos != string::npos);
   }
+
+  /* print LOG_GBODE if LOG_GBODE_V if active */
+  if(useStream[LOG_GBODE_V] == 1)
+    useStream[LOG_GBODE] = 1;
+
+  /* print LOG_GBODE_NLS if LOG_GBODE_NLS_V if active */
+  if(useStream[LOG_GBODE_NLS_V] == 1)
+    useStream[LOG_GBODE_NLS] = 1;
 
   /* print LOG_INIT and LOG_SOTI if LOG_INIT_V is active */
   if(useStream[LOG_INIT_V] == 1)
@@ -421,6 +435,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   /* linear model option is set : <-l lintime> */
   int create_linearmodel = omc_flag[FLAG_L];
+  data->modelData->create_linearmodel = create_linearmodel;
   const char* lintime = omc_flagValue[FLAG_L];
 
   /* activated measure time option with LOG_STATS */
@@ -542,15 +557,27 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
   if(omc_flag[FLAG_IIF]) {
+    omc_stat_t attrib;
     if (omc_flag[FLAG_INPUT_PATH]) {
       const char *tmp_filename;
-      if (0 > GC_asprintf(&tmp_filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], omc_flagValue[FLAG_IIF])) {
-        throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+
+      if (omc_stat(omc_flagValue[FLAG_IIF], &attrib ) == 0) {
+        if (0 > GC_asprintf(&tmp_filename, "%s", omc_flagValue[FLAG_IIF] )) {
+          throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+        }
+      }
+      else {
+        if (0 > GC_asprintf(&tmp_filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], omc_flagValue[FLAG_IIF])) {
+          throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+        }
       }
       init_file = tmp_filename;
     }
     else {
       init_file = omc_flagValue[FLAG_IIF];
+    }
+    if (omc_stat(init_file.c_str(), &attrib ) != 0) {
+      throwStreamPrint(NULL, "Initialization file \"%s\" doesn't exist.", init_file.c_str());
     }
   }
   if(omc_flag[FLAG_IIT]) {
@@ -753,6 +780,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     if (compiledInDAEMode)
     {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
+      simData->callback->function_ZeroCrossingsEquations = evaluateDAEResiduals_wrapperZeroCrossingsEquations;
     }
   }
 
@@ -1148,10 +1176,9 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
    */
   wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
   for (int i = 0; i < argc; i++) {
-    WIDECHAR_TO_MULTIBYTE_LENGTH(wargv[i], len);
-    WIDECHAR_TO_MULTIBYTE_VAR(wargv[i], buf, len);
+    char* buf = omc_wchar_to_multibyte_str(wargv[i]);
     strcpy(argv[i], buf);
-    MULTIBYTE_OR_WIDECHAR_VAR_FREE(buf);
+    free(buf);
   }
 #endif
 

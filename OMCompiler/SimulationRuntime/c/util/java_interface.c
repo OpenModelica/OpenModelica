@@ -32,7 +32,6 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */
 
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #define MAXPATHLEN 1024
 #include <winreg.h>

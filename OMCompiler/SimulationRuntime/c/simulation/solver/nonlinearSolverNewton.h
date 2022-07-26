@@ -40,14 +40,7 @@
 extern "C" {
 #endif
 
-typedef struct
-{
-  void* data;
-  threadData_t *threadData;
-  int sysNumber;
-} DATA_USER;
-
-int solveNewton(DATA *data, threadData_t *threadData, int sysNumber);
+NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData);
 
 #ifdef __cplusplus
 }

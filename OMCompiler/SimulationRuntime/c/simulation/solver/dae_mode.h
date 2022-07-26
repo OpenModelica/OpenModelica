@@ -49,6 +49,7 @@ extern "C" {
 #endif
 
 int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData);
+int evaluateDAEResiduals_wrapperZeroCrossingsEquations(DATA* data, threadData_t* threadData);
 
 void getAlgebraicDAEVarNominals(DATA*, double*);
 void getAlgebraicDAEVars(DATA*, double*);

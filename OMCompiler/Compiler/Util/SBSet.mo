@@ -36,6 +36,7 @@ encapsulated uniontype SBSet
 protected
   import Array;
   import List;
+  import Vector;
 
 public
   record SET
@@ -216,6 +217,38 @@ public
       outSet := addAtomicSets(aux.asets, outSet);
     end if;
   end union;
+
+  function card
+    "the name cardinality seems to be reserved and cannot be used inside of the same scope
+    ToDo: rename the others?"
+    input SBSet set;
+    output Integer cardinality = UnorderedSet.fold(set.asets, SBAtomicSet.cardinality, 0);
+  end card;
+
+  function maxCardinality
+    "ToDo kabdelhak: this can be optimized by storing all the cardinalities and update them if a set is changed"
+    input Vector<SBSet> sets;
+    output SBSet maxSet;
+    output Integer index;
+    function maxCardinality_traverse
+      input SBSet set;
+      output Boolean res = false;
+      input output Integer maxCard;
+    protected
+      Integer cardinality = card(set);
+    algorithm
+      if cardinality > maxCard then
+        res := true;
+        maxCard := cardinality;
+      end if;
+    end maxCardinality_traverse;
+  algorithm
+    try
+      (SOME(maxSet), index, _) := Vector.findFold(sets, maxCardinality_traverse, 0);
+    else
+      fail();
+    end try;
+  end maxCardinality;
 
   function minElem
     input SBSet set;
