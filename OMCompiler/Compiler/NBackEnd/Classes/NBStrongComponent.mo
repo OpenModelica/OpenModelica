@@ -311,19 +311,36 @@ public
   end isEqual;
 
   function create
+    // UNUSED AND BROKEN!
     input list<Integer> comp_indices;
     input Matching matching;
     input VariablePointers vars;
     input EquationPointers eqns;
     output StrongComponent comp;
   algorithm
-    comp := match matching
-      case Causalize.SCALAR_MATCHING() algorithm
-      then createScalar(comp_indices, matching.eqn_to_var, vars, eqns);
+    // ToDo: add all other cases!
+    comp := match comp_indices
+      local
+        Integer i;
+        list<Integer> array_comp_indices;
+        list<Pointer<Variable>> loop_vars;
+        list<Pointer<Equation>> loop_eqns;
 
-      case Causalize.ARRAY_MATCHING() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array strong components are not yet supported."});
-      then fail();
+      case {i} then SINGLE_EQUATION(
+                      var     = VariablePointers.getVarAt(vars, matching.eqn_to_var[i]),
+                      eqn     = EquationPointers.getEqnAt(eqns, i),
+                      status  = NBSolve.Status.UNPROCESSED
+                    );
+
+      case _ algorithm
+        //(loop_vars, loop_eqns) := getLoopPairs(comp_indices, mapping, matching.eqn_to_var, vars, eqns);
+      then ALGEBRAIC_LOOP(
+          vars    = {},
+          eqns    = {},
+          jac     = NONE(),
+          mixed   = false,
+          status  = NBSolve.Status.UNPROCESSED
+        );
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -668,44 +685,6 @@ public
   // ############################################################
 
 protected
-  function createScalar
-    // UNUSED AND BROKEN!
-    input list<Integer> comp_indices;
-    input array<Integer> eqn_to_var;
-    input VariablePointers vars;
-    input EquationPointers eqns;
-    output StrongComponent comp;
-  algorithm
-    // ToDo: add all other cases!
-    comp := match comp_indices
-      local
-        Integer i;
-        list<Integer> array_comp_indices;
-        list<Pointer<Variable>> loop_vars;
-        list<Pointer<Equation>> loop_eqns;
-
-      case {i} then SINGLE_EQUATION(
-                      var     = VariablePointers.getVarAt(vars, eqn_to_var[i]),
-                      eqn     = EquationPointers.getEqnAt(eqns, i),
-                      status  = NBSolve.Status.UNPROCESSED
-                    );
-
-      case _ algorithm
-        //(loop_vars, loop_eqns) := getLoopPairs(comp_indices, mapping, eqn_to_var, vars, eqns);
-      then ALGEBRAIC_LOOP(
-          vars    = {},
-          eqns    = {},
-          jac     = NONE(),
-          mixed   = false,
-          status  = NBSolve.Status.UNPROCESSED
-        );
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-      then fail();
-    end match;
-  end createScalar;
-
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;

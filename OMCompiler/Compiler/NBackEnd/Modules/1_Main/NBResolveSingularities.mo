@@ -169,7 +169,7 @@ public
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
       set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.LINEAR);
-      set_matching := Matching.regular(Matching.EMPTY_MATCHING(), set_adj, true, true);
+      set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
 
       if debug then
         print(Adjacency.Matrix.toString(set_adj, "Index Reduction"));

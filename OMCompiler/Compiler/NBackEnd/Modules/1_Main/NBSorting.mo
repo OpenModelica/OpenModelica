@@ -332,18 +332,18 @@ public
     input EquationPointers eqns;
     output list<StrongComponent> comps = {};
   algorithm
-    comps := match (adj, matching)
+    comps := match adj
       local
         list<list<Integer>> comps_indices;
         PseudoBucket bucket;
         Option<StrongComponent> comp_opt;
 
-      case (Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
         comps := list(StrongComponent.create(idx_lst, matching, vars, eqns) for idx_lst in comps_indices);
       then comps;
 
-      case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
         // recollect array information
@@ -362,15 +362,8 @@ public
         comps := listReverse(comps);
       then comps;
 
-      case (Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX(), Matching.ARRAY_MATCHING()) algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array sorting is not yet supported."});
-      then fail();
-
-      case (Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX(), Matching.EMPTY_MATCHING()) algorithm
-      then {};
-
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix and matching have different types."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix has unknown type."});
       then fail();
     end match;
   end tarjan;
