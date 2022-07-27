@@ -95,8 +95,8 @@ public
 
         else
           algorithm
-            str := str +  VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
-                          EquationPointers.toString(system.equations, "Equations") + "\n";
+            str := str + VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
+                         EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
 
@@ -148,35 +148,18 @@ public
       output Boolean b = EquationPointers.size(system.equations) == 0;
     end isEmpty;
 
-    function isAlgebraic
-      input System syst;
-      output Boolean b = true;
-    algorithm
-      for var in VariablePointers.toList(syst.unknowns) loop
-          if BVariable.isStateDerivative(var) then
-            b := false;
-            break;
-          end if;
-      end for;
-    end isAlgebraic;
-
     function isAlgebraicContinuous
       input System syst;
       output Boolean alg = true;
       output Boolean con = true;
     algorithm
       for var in VariablePointers.toList(syst.unknowns) loop
-          if BVariable.isStateDerivative(var) then
-            alg := false;
-            break;
-          end if;
-          if BVariable.isDiscrete(var) then
-            con := false;
-          end if;
-          // stop searching if both
-          if not (alg or con) then
-            break;
-          end if;
+        alg := if alg then not BVariable.isStateDerivative(var) else false;
+        con := if con then not BVariable.isDiscrete(var) else false;
+        // stop searching if both
+        if not (alg or con) then
+          break;
+        end if;
       end for;
     end isAlgebraicContinuous;
 
@@ -191,7 +174,7 @@ public
       System cont_syst, disc_syst;
     algorithm
       (algebraic, continuous) := isAlgebraicContinuous(system);
-      _ := match (algebraic, continuous)
+      () := match (algebraic, continuous)
         case (true, true) algorithm
           // algebraic continuous
           system.systemType := SystemType.ALG;

@@ -46,8 +46,8 @@ encapsulated package NBModule
    - aliasInterface
 
   *** MAIN
-   - causalizeInterface
    - partitioningInterface
+   - causalizeInterface
    - daeModeInterface
 
   *** POST (Mandatory)
@@ -209,7 +209,7 @@ public
   partial function aliasInterface
     "Alias
      This module is allowed to read and remove equations and move variables from
-     unknowns to knows. Since this can also affects all other pointer arrays, the
+     unknowns to knowns. Since this can also affect all other pointer arrays, the
      full variable data is needed. All things that are allowed to be changed
      are pointers, so no return value."
     input output VarData varData         "Data containing variable pointers";

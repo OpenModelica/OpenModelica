@@ -219,7 +219,7 @@ public
     list<tuple<String, Real>> postOptClocks;
   algorithm
     // Pre-Partitioning Modules
-    // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
+    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
       (simplify,           "simplify"),
