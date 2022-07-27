@@ -618,7 +618,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   printf("   ****** Number of linear systems        : %ld\n", data->modelData->nLinearSystems);
   printf("   ****** Number of nonlinear systems     : %ld\n", data->modelData->nNonLinearSystems);
   printf("   ****** Current index linear equation   : %d\n", data->simulationInfo->currentLinearSystemIndex);
-  printf("   ****** Current index nonlinear equation: %d\n", data->simulationInfo->currentNonlinearSystemIndex);
+  //printf("   ****** Current index nonlinear equation: %d\n", data->simulationInfo->currentNonlinearSystemIndex);
 
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   printf("   Nonlinear equation: %d\n", sysNumber);
