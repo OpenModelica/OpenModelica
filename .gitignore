@@ -21,4 +21,5 @@
 /OMSetup/
 /OpenModelicaSetup/
 /testsuite/libraries-for-testing/.ccache/
+/testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/libFFITestLib.dll
 trace.txt
