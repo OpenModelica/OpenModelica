@@ -776,8 +776,16 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   // create hash based VariableNode
   VariableNode *pTopVariableNode = new VariableNode(variabledata);
+
   // sort the variables using natural sort
+#if defined(__APPLE__) // avoid crash on MacOS, see #9180
+  QMap<QString, QString> m;
+  for (auto variableName : variablesList)
+    m[StringHandler::cleanResultVariable(variableName)] = variableName;
+  variablesList = QStringList(m.values());
+#endif
   std::sort(variablesList.begin(), variablesList.end(), StringHandler::naturalSortForResultVariables);
+
   // remove time from variables list
   variablesList.removeOne("time");
   /* Fixes issue #7551
