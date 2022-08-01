@@ -1,0 +1,49 @@
+// name: compositeEvent
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model CompositeEvent
+  Real x(start=0, fixed=true);
+  Integer n(start=0, fixed=true);
+equation
+  der(x) = 1;
+  when x < 1 and (x > 0.5 and sample(0.125,0.25)) then
+    n = pre(n) + 1;
+  end when;
+end CompositeEvent;
+"); getErrorString();
+simulate(CompositeEvent, simflags="-lv LOG_EVENTS"); getErrorString();
+val(n,0.125);
+val(n,0.375);
+val(n,0.625);
+val(n,0.875);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "/mnt/home/ph/ws/models/compositeEvent/CompositeEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CompositeEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | time event at time=0.125
+// |                 | |       | | [1] sample(0.125, 0.25)
+// LOG_EVENTS        | info    | time event at time=0.375
+// |                 | |       | | [1] sample(0.125, 0.25)
+// LOG_EVENTS        | info    | time event at time=0.625
+// |                 | |       | | [1] sample(0.125, 0.25)
+// LOG_EVENTS        | info    | time event at time=0.875
+// |                 | |       | | [1] sample(0.125, 0.25)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 1.0
+// 2.0
+// endResult
