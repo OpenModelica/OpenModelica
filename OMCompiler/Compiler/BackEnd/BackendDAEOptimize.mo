@@ -1481,7 +1481,8 @@ protected
 algorithm
   for sjac in inShared.symjacs loop
     _ := match(sjac)
-      case (SOME((bdae, _, _, _, _, _)), _, _)
+      //TS,org//case (SOME((bdae, _, _, _, _, _)), _, _)
+      case (SOME((bdae, _, _, _, _, _)), _, _, _)
         equation
           bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           shared = bdae.shared;

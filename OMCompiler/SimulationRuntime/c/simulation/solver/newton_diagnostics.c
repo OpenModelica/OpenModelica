@@ -366,7 +366,8 @@ void calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, unsign
    // lambda: damping factor
    // maxRes: absolute maximum value of the non-linear residuals of iteration 0
 
-   void *dataAndThreadData[2] = {data, threadData};
+   //void *dataAndThreadData[2] = {data, threadData};
+   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
    NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
 
    unsigned i, j, k;
@@ -378,7 +379,8 @@ void calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, unsign
 
    // Calculate residuals f_x1_star for damped guess x1_star
    double f_x1_star[m];
-   (systemData->residualFunc)(dataAndThreadData, x1_star, f_x1_star, (int*)&systemData->size);
+   //(systemData->residualFunc)(dataAndThreadData, x1_star, f_x1_star, (int*)&systemData->size);
+   (systemData->residualFunc)(&resUserData, x1_star, f_x1_star, (int*)&systemData->size);
 
    // For each non-linear independent get w1_star - w0
    double w1_star_w0[p];

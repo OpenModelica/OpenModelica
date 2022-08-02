@@ -218,3 +218,53 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
   }
   return jacobianMethod;
 }
+
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp) {
+  if (nlp != NULL) {
+    free(nlp->indexVar); nlp->indexVar = NULL;
+    free(nlp->indexEqn); nlp->indexEqn = NULL;
+    free(nlp->columns);  nlp->columns = NULL;
+    free(nlp->rows);     nlp->rows = NULL;
+  }
+}
+
+unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx){
+  unsigned int idx_start = nlp->indexVar[var_idx];
+  unsigned int idx_stop;
+  if (var_idx == nlp->numberOfVars){
+    idx_stop = nlp->numberOfNonlinear;
+  }else{
+    idx_stop = nlp->indexVar[var_idx + 1];
+  }
+
+  unsigned int* col = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
+
+  int index = 0;
+  for(int i = idx_start; i < idx_stop + 1; i++){
+    col[index] = nlp->columns[i];
+    index++;
+  }
+
+  return col;
+}
+
+unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx){
+  unsigned int idx_start = nlp->indexEqn[eqn_idx];
+  unsigned int idx_stop;
+  if (eqn_idx == nlp->numberOfEqns){
+    idx_stop = nlp->numberOfNonlinear;
+  }else{
+    idx_stop = nlp->indexEqn[eqn_idx + 1];
+  }
+
+  unsigned int* row = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
+
+  int index = 0;
+  for(int i = idx_start; i < idx_stop + 1; i++){
+    row[index] = nlp->rows[i];
+    index++;
+  }
+
+  return row;
+}
+

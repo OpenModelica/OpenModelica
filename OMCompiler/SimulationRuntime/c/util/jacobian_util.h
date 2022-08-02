@@ -48,6 +48,10 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int number
 void freeSparsePattern(SPARSE_PATTERN *spp);
 enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue);
 
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
+
+unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
+unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
 
 #ifdef __cplusplus
 }
