@@ -1429,6 +1429,7 @@ protected
   Option<BackendDAE.SymbolicJacobian> daeModeJac;
   BackendDAE.SparsePattern daeModeSparsity;
   BackendDAE.SparseColoring daeModeColoring;
+  BackendDAE.NonlinearPattern nonlinearPattern;
 
   SimCode.JacobianMatrix symDAESparsPattern;
   list<SimCode.JacobianMatrix> symJacs, SymbolicJacs, SymbolicJacsNLS, SymbolicJacsTemp, SymbolicJacsStateSelect;
@@ -1520,14 +1521,14 @@ algorithm
     // sparsity pattern generation
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
       // create symbolic jacobian (like nls systems!)
-      (daeModeJac, daeModeSparsity, daeModeColoring) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
+      (daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         matrixnames := {"B", "C", "D"};
       else
         matrixnames := {"B", "C", "D", "F"};
       end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
-        inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring),
+        inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern),
         iuniqueEqIndex  = uniqueEqIndex,
         itempvars       = tempVars);
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);

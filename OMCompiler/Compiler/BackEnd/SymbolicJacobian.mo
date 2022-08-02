@@ -216,6 +216,7 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SparseColoring coloredCols;
   BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.NonlinearPattern nonlinearPattern;
   list<BackendDAE.Var> inDepVars;
   list<BackendDAE.Var> depVars;
   BackendDAE.Var dummyVar;
@@ -248,7 +249,7 @@ algorithm
 
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
       // generate symbolic jacobian and sparsity pattern
-      (symjac, funcs, sparsePattern, coloredCols) := generateGenericJacobian(
+      (symjac, funcs, sparsePattern, coloredCols, nonlinearPattern) := generateGenericJacobian(
         inBackendDAE          = DAE,
         inDiffVars            = inDepVars,
         inStateVars           = BackendVariable.emptyVars(),
@@ -261,10 +262,10 @@ algorithm
         daeMode               = true);
       if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
 
-      shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols));
+      shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols, nonlinearPattern));
       shared.functionTree := funcs;
 
-      if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols)); end if;
+      if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols, nonlinearPattern)); end if;
     else
       // only generate sparsity pattern
       (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
@@ -1932,7 +1933,7 @@ try
     graph := initDAE.shared.graph;
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {})::outJacobianMatrixes;
+    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
   else
     // prepare more needed variables
     paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1947,7 +1948,8 @@ try
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
     end if;
-    outJacobianMatrixes := (outJacobian, sparsePattern_, sparseColoring_)::outJacobianMatrixes;
+    // kabdelhak: maybe also pass nonlinearity pattern to add it here
+    outJacobianMatrixes := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
   end if;
 else
   Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());

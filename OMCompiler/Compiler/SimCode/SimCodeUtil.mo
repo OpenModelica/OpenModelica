@@ -13749,10 +13749,10 @@ algorithm
 
     // get jacobian matrix FMIDERINT
     if not listEmpty(fmiDerInit) then
-      SOME((optinitialPartDer, spPattern1 as (_, spTA1, (diffCrefsA1, diffedCrefsA1),_), spColors1)) := SymbolicJacobian.getJacobianMatrixbyName(fmiDerInit, "FMIDERINIT");
+      SOME((optinitialPartDer, spPattern1 as (_, spTA1, (diffCrefsA1, diffedCrefsA1),_), spColors1, nlPattern)) := SymbolicJacobian.getJacobianMatrixbyName(fmiDerInit, "FMIDERINIT");
       // partial derivatives for fmu's during enter_initialization_mode and exit_initialization_mode
       if not checkForEmptyBDAE(optinitialPartDer) then
-        initPartDer := {(optinitialPartDer,spPattern1,spColors1)};
+        initPartDer := {(optinitialPartDer, spPattern1, spColors1, nlPattern)};
         ({initSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(initPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDERINIT"}, {});
         // collect algebraic loops and symjacs for FMIDer
         ({initSimJac}, _, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, inModelInfo);
