@@ -295,8 +295,9 @@ private:
 
   };
 
-  class Element;
   class Extend;
+  class Element;
+  class Connection;
   class Model
   {
   public:
@@ -314,6 +315,7 @@ private:
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation;}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation;}
     QList<Element *> getElements() const {return mElements;}
+    QList<Connection *> getConnections() const {return mConnections;}
   private:
     void initialize();
 
@@ -325,6 +327,7 @@ private:
     IconDiagramAnnotation *mpIconAnnotation;
     IconDiagramAnnotation *mpDiagramAnnotation;
     QList<Element*> mElements;
+    QList<Connection*> mConnections;
   };
 
   class Transformation
@@ -480,6 +483,33 @@ private:
     DialogAnnotation mDialogAnnotation;
     bool mEvaluate;
     Choices mChoices;
+  };
+
+  class Connector
+  {
+  public:
+    Connector();
+    void deserialize(const QJsonObject &jsonObject);
+
+    QString getName() const;
+  private:
+    QString mKind;
+    QStringList mParts;
+  };
+
+  class Connection
+  {
+  public:
+    Connection();
+    ~Connection();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+
+    Connector *getStartConnector() const {return mpStartConnector;}
+    Connector *getEndConnector() const {return mpEndConnector;}
+  private:
+    Connector *mpStartConnector;
+    Connector *mpEndConnector;
   };
 
   class Extend : public Model

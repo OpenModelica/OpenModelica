@@ -318,6 +318,21 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
   }
 }
 
+void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool inherited)
+{
+  // We use access.diagram so we can draw connections.
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
+    QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
+    foreach (auto pConnection, connections) {
+      qDebug() << pConnection->getStartConnector()->getName() << pConnection->getEndConnector()->getName();
+    }
+
+//    getModelConnections();
+//    getModelTransitions();
+//    getModelInitialStates();
+  }
+}
+
 bool GraphicsView::isCreatingShape()
 {
   return isCreatingLineShape() ||
@@ -4912,11 +4927,7 @@ void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, boo
   mpIconGraphicsView->drawConnectors(pModelInstance, inherited);
   mpDiagramGraphicsView->drawShapes(pModelInstance, inherited, false);
   mpDiagramGraphicsView->drawElements(pModelInstance, inherited);
-}
-
-void ModelWidget::drawModelConnections()
-{
-
+  mpDiagramGraphicsView->drawConnections(pModelInstance, inherited);
 }
 
 /*!
@@ -8059,9 +8070,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
     if (pSubModelWidget == pModelWidget) {
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-        if (MainWindow::instance()->isNewApi()) {
-          pModelWidget->drawModelConnections();
-        } else {
+        if (!MainWindow::instance()->isNewApi()) {
           pModelWidget->loadDiagramView();
           pModelWidget->loadConnections();
         }
@@ -8079,9 +8088,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      if (MainWindow::instance()->isNewApi()) {
-        pModelWidget->drawModelConnections();
-      } else {
+      if (!MainWindow::instance()->isNewApi()) {
         pModelWidget->loadDiagramView();
         pModelWidget->loadConnections();
       }
