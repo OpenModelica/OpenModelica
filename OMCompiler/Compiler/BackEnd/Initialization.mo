@@ -252,7 +252,7 @@ function createInitialDAEFromSystem
   output list<BackendDAE.Var> dumpVars;
   output list<BackendDAE.Equation> removedEqns;
 protected
-  String systemStr = if isLambda0 then "initialization lambda0" else "initialization";
+  String systemStr = if isLambda0 then "initialization_lambda0" else "initialization";
   BackendDAE.Shared shared = inShared;
   BackendDAE.EqSystem initsyst;
   list<BackendDAE.EqSystem> systs;
@@ -331,7 +331,7 @@ algorithm
       Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
     end if;
     if b2 then
-      Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the " + systemStr + " system :\n" + warnAboutEqns2(removedEqns)});
+      Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the " + systemStr + " system:\n" + warnAboutEqns2(removedEqns)});
     end if;
   else
     if b1 then
