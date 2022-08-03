@@ -412,6 +412,7 @@ public slots:
   void duplicate();
   void rotateClockwise();
   void rotateAntiClockwise();
+  void replaceSubModel();
   void flipHorizontal();
   void flipVertical();
   void moveUp();

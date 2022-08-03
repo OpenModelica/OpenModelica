@@ -3472,6 +3472,16 @@ void Element::deleteMe()
 }
 
 /*!
+ * \brief Element::replaceSubModel
+ * replaces the current submodel Element selected by user with a new submodel
+ */
+void Element::replaceSubModel()
+{
+  // replaces the subModel element with new fmu
+  mpGraphicsView->replaceSubModel(this);
+}
+
+/*!
  * \brief Element::duplicate
  * Duplicates the Element.
  */
@@ -3856,6 +3866,7 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(replaceSubModelSignal()), this, SLOT(replaceSubModel()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
@@ -3892,6 +3903,7 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()));
+        disconnect(mpGraphicsView, SIGNAL(replaceSubModelSignal()), this, SLOT(replaceSubModel()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));

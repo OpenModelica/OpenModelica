@@ -41,6 +41,7 @@
 #include <QGroupBox>
 #include <QDialogButtonBox>
 #include <QScrollArea>
+#include "Element/Element.h"
 
 class LibraryTreeItem;
 class Label;
@@ -120,6 +121,29 @@ private slots:
   void browseSubModelPath();
   void browseStartScript();
   void addSubModel();
+};
+
+class ReplaceSubModelDialog: public QDialog
+{
+  Q_OBJECT
+public:
+  ReplaceSubModelDialog(GraphicsView *pGraphicsView, Element *pElement);
+private:
+  GraphicsView *mpGraphicsView;
+  Element *mpElement;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  Label *mpDryRunLabel;
+  QComboBox *mpDryRunComboBox;
+  QPushButton *mpBrowsePathButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browseSubModelPath();
+  void replaceSubModel();
 };
 
 class ShapeAnnotation;

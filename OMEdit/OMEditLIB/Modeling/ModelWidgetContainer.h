@@ -169,6 +169,7 @@ private:
   QAction *mpRotateAntiClockwiseAction;
   QAction *mpFlipHorizontalAction;
   QAction *mpFlipVerticalAction;
+  QAction *mpReplaceSubModelAction;
   QAction *mpCreateConnectorAction;
   QAction *mpCancelConnectionAction;
   QAction *mpSetInitialStateAction;
@@ -242,6 +243,7 @@ public:
   QAction* getRotateAntiClockwiseAction() {return mpRotateAntiClockwiseAction;}
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
+  QAction* getReplaceSubModelAction() {return mpReplaceSubModelAction;}
   bool performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
@@ -256,6 +258,7 @@ public:
   void deleteElementFromList(Element *pElement) {mElementsList.removeOne(pElement);}
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
+  void replaceSubModel(Element *pElement);
   Element* getElementObject(QString elementName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(QString elementName, int number = 0);
@@ -394,6 +397,7 @@ signals:
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
   void mouseFlipVertical();
+  void replaceSubModelSignal();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
   void keyPressFlipHorizontal();
@@ -440,6 +444,7 @@ public slots:
   void rotateAntiClockwise();
   void flipHorizontal();
   void flipVertical();
+  void replaceSubModelItem();
   void createConnector();
   void cancelConnection();
   void setInitialState();
