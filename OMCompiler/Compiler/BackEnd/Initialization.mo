@@ -90,25 +90,21 @@ public function solveInitialSystem "author: lochel
   output BackendDAE.BackendDAE outSimDAE = inDAE "updated with fixed attribute";
 protected
   BackendDAE.BackendDAE dae;
-  BackendDAE.BackendDAE initdae;
-  BackendDAE.BackendDAE initdae0;
-  BackendDAE.EqSystem initsyst;
+  BackendDAE.BackendDAE initdae, initdae0;
+  BackendDAE.EqSystem initsyst, initsyst0;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns, reeqns;
   list<BackendDAE.Equation> eqnsLst, reeqnsLst;
   BackendDAE.Shared shared;
   BackendDAE.Variables initVars;
   BackendDAE.Variables vars, fixvars;
-  Boolean b, b1, b2, useHomotopy, datarecon=false;
+  Boolean useHomotopy, datarecon=false;
   String msg;
   list<String> enabledModules, disabledModules;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2, outAllPrimaryParameters;
   AvlSetCR.Tree allPrimaryParameters;
-  list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules, initOptModulesLambda0;
-  tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
-  tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
   try
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -196,53 +192,6 @@ algorithm
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
-    (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
-    execStat("preBalanceInitialSystem (initialization)");
-
-    // split the initial system into independend subsystems
-    initdae := BackendDAE.DAE({initsyst}, shared);
-    if Flags.isSet(Flags.OPT_DAE_DUMP) then
-      BackendDump.dumpBackendDAE(initdae, "created initial system");
-    end if;
-
-    if Flags.isSet(Flags.PARTITION_INITIALIZATION) then
-      (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
-      initdae := BackendDAE.DAE(systs, shared);
-      execStat("partitionIndependentBlocks (initialization)");
-    end if;
-
-    if Flags.isSet(Flags.OPT_DAE_DUMP) then
-      BackendDump.dumpBackendDAE(initdae, "partitioned initial system");
-    end if;
-    // initdae := BackendDAE.DAE({initsyst}, shared);
-
-    // fix over- and under-constrained subsystems
-    (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
-    dumpVars := listAppend(dumpVars, dumpVars2) annotation(__OpenModelica_DisableListAppendWarning=true);
-    execStat("analyzeInitialSystem (initialization)");
-
-    // some debug prints
-    if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
-      BackendDump.dumpBackendDAE(initdae, "initial system");
-    end if;
-
-    // now let's solve the system!
-    initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
-    execStat("solveInitialSystemEqSystem (initialization)");
-
-    // solve system
-    initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-    execStat("matching and sorting (n="+String(BackendDAEUtil.daeSize(initdae))+") (initialization)");
-
-    // add initial assignmnents to all algorithms
-    initdae := BackendDAEOptimize.addInitialStmtsToAlgorithms(initdae, true);
-
-    if useHomotopy and Config.globalHomotopy() then
-      initdae0 := BackendDAEUtil.copyBackendDAE(initdae);
-    end if;
-
-    // simplify system
-    initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
 
     if useHomotopy then
       enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
@@ -252,54 +201,24 @@ algorithm
       disabledModules := {"inlineHomotopy", "generateHomotopyComponents"};
     end if;
 
-    initOptModules := BackendDAEUtil.getInitOptModules(NONE(), enabledModules, disabledModules);
-    matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
-    daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
-    initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
-
-    if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
-      BackendDump.dumpBackendDAE(initdae, "solved initial system");
-      if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
-        BackendDump.graphvizBackendDAE(initdae, "dumpinitialsystem");
-      end if;
-    end if;
-
-    // compute system for lambda=0
-    if useHomotopy and Config.globalHomotopy() then
-      initOptModulesLambda0 := BackendDAEUtil.getInitOptModules(NONE(),{"replaceHomotopyWithSimplified"},{"inlineHomotopy", "generateHomotopyComponents"});
-      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
-      initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, initOptModulesLambda0, matchingAlgorithm, daeHandler);
-      initdae0.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae0.shared, BackendVariable.emptyVars());
-      outInitDAE_lambda0 := SOME(initdae0);
-      initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared));
-    else
-      outInitDAE_lambda0 := NONE();
-    end if;
-
-    // Remove the globalKnownVars for the initialization set again
-    initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
+    (initdae, dumpVars, outRemovedInitialEquations) := createInitialDAEFromSystem(initsyst, shared, initVars, enabledModules, disabledModules, outGlobalKnownVars, false);
 
     // update the fixed attribute in the simulation DAE
     outSimDAE := BackendVariable.traverseBackendDAE(outSimDAE, updateFixedAttribute, BackendVariable.listVar(dumpVars));
 
-    // warn about selected default initial conditions
-    b1 := not listEmpty(dumpVars);
-    b2 := not listEmpty(removedEqns);
-    msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
-    if Flags.isSet(Flags.INITIALIZATION) then
-      if b1 then
-        Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
-      end if;
-      if b2 then
-        Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the initialization sytem:\n" + warnAboutEqns2(removedEqns)});
-      end if;
+    // compute system for lambda=0
+    if useHomotopy and Config.globalHomotopy() then
+      initsyst0 := BackendDAEUtil.copyEqSystem(initsyst);
+      initsyst0 := replaceHomotopyWithSimplifiedEqs(initsyst0);
+      initdae0 := BackendDAE.DAE({initsyst0}, shared);
+      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
+      (initdae0, _, removedEqns) := createInitialDAEFromSystem(initsyst0, shared, initVars, {}, {"inlineHomotopy", "generateHomotopyComponents"}, outGlobalKnownVars, true);
+      outRemovedInitialEquations := listAppend(removedEqns, outRemovedInitialEquations);
+      initdae0.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae0.shared, BackendVariable.emptyVars());
+      outInitDAE_lambda0 := SOME(initdae0);
+      initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared)); // PH: why?
     else
-      if b1 then
-        Error.addMessage(Error.INITIALIZATION_NOT_FULLY_SPECIFIED, {msg});
-      end if;
-      if b2 then
-        Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {msg});
-      end if;
+      outInitDAE_lambda0 := NONE();
     end if;
 
     if Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -315,12 +234,115 @@ algorithm
     end if;
 
     outInitDAE := initdae;
-    outRemovedInitialEquations := removedEqns;
   else
     Error.addCompilerError("No system for the symbolic initialization was generated");
     fail();
   end try;
 end solveInitialSystem;
+
+function createInitialDAEFromSystem
+  input BackendDAE.EqSystem inInitsyst;
+  input BackendDAE.Shared inShared;
+  input BackendDAE.Variables initVars;
+  input list<String> enabledModules;
+  input list<String> disabledModules;
+  input BackendDAE.Variables globalKnownVars;
+  input Boolean isLambda0;
+  output BackendDAE.BackendDAE initdae;
+  output list<BackendDAE.Var> dumpVars;
+  output list<BackendDAE.Equation> removedEqns;
+protected
+  String systemStr = if isLambda0 then "initialization lambda0" else "initialization";
+  BackendDAE.Shared shared = inShared;
+  BackendDAE.EqSystem initsyst;
+  list<BackendDAE.EqSystem> systs;
+  list<BackendDAE.Var> dumpVars2;
+  list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules;
+  tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
+  tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
+  Boolean b1, b2;
+  String msg;
+algorithm
+
+  (initsyst, dumpVars) := preBalanceInitialSystem(inInitsyst);
+  execStat("preBalanceInitialSystem (" + systemStr + ")");
+
+  initdae := BackendDAE.DAE({initsyst}, shared);
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    BackendDump.dumpBackendDAE(initdae, "created " + systemStr + " system");
+  end if;
+
+  // split the initial system into independend subsystems
+  if Flags.isSet(Flags.PARTITION_INITIALIZATION) then
+    (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
+    initdae := BackendDAE.DAE(systs, shared);
+    execStat("partitionIndependentBlocks (" + systemStr + ")");
+  end if;
+
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    BackendDump.dumpBackendDAE(initdae, "partitioned " + systemStr + " system");
+  end if;
+
+  // fix over- and under-constrained subsystems
+  (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
+  dumpVars := listAppend(dumpVars, dumpVars2) annotation(__OpenModelica_DisableListAppendWarning=true);
+  execStat("analyzeInitialSystem (" + systemStr + ")");
+
+  // some debug prints
+  if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    BackendDump.dumpBackendDAE(initdae, systemStr);
+  end if;
+
+  // now let's solve the system!
+  initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
+  execStat("solveInitialSystemEqSystem (" + systemStr + ")");
+
+  // solve system
+  initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+  execStat("matching and sorting (n=" + String(BackendDAEUtil.daeSize(initdae)) + ") (" + systemStr + ")");
+
+  // add initial assignmnents to all algorithms
+  initdae := BackendDAEOptimize.addInitialStmtsToAlgorithms(initdae, true);
+
+  // simplify system
+  initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, globalKnownVars);
+
+  initOptModules := BackendDAEUtil.getInitOptModules(NONE(), enabledModules, disabledModules);
+  matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
+  daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
+  initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
+
+  if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    BackendDump.dumpBackendDAE(initdae, "solved " + systemStr);
+    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+      BackendDump.graphvizBackendDAE(initdae, "dumpinitialsystem");
+    end if;
+  end if;
+
+  // Remove the globalKnownVars for the initialization set again
+  initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
+
+  // warn about selected default initial conditions
+  b1 := not listEmpty(dumpVars);
+  b2 := not listEmpty(removedEqns);
+  msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
+  if Flags.isSet(Flags.INITIALIZATION) then
+    if b1 then
+      Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
+    end if;
+    if b2 then
+      Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the " + systemStr + " system :\n" + warnAboutEqns2(removedEqns)});
+    end if;
+  else
+    if b1 then
+      Error.addMessage(Error.INITIALIZATION_NOT_FULLY_SPECIFIED, {msg});
+    end if;
+    if b2 then
+      Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {msg});
+    end if;
+  end if;
+
+end createInitialDAEFromSystem;
 
 // =============================================================================
 // section for helper functions of solveInitialSystem
@@ -2932,12 +2954,16 @@ public function replaceHomotopyWithSimplified
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
 algorithm
-  for eqs in outDAE.eqs loop
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
-  end for;
-  outDAE.eqs := list(BackendDAEUtil.clearEqSyst(eqs) for eqs in outDAE.eqs);
+  outDAE.eqs := list(replaceHomotopyWithSimplifiedEqs(eqs) for eqs in outDAE.eqs);
 end replaceHomotopyWithSimplified;
+
+public function replaceHomotopyWithSimplifiedEqs
+  input output BackendDAE.EqSystem eqs;
+algorithm
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
+  eqs := BackendDAEUtil.clearEqSyst(eqs);
+end replaceHomotopyWithSimplifiedEqs;
 
 protected function replaceHomotopyWithSimplified1
   input DAE.Exp inExp;
