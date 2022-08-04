@@ -515,6 +515,10 @@ namespace ModelInstance
     foreach (auto pElement, mElements) {
       delete pElement;
     }
+
+    foreach (auto pConnection, mConnections) {
+      delete pConnection;
+    }
   }
 
   void Model::deserialize()
@@ -561,6 +565,18 @@ namespace ModelInstance
         }
       }
     }
+
+    if (mModelJson.contains("connections")) {
+      QJsonArray connections = mModelJson.value("connections").toArray();
+      foreach (QJsonValue connection, connections) {
+        QJsonObject connectionObject = connection.toObject();
+        if (!connectionObject.isEmpty()) {
+          Connection *pConnection = new Connection;
+          pConnection->deserialize(connection.toObject());
+          mConnections.append(pConnection);
+        }
+      }
+    }
   }
 
   void Model::serialize(QJsonObject &jsonObject) const
@@ -585,6 +601,7 @@ namespace ModelInstance
     mpIconAnnotation = new IconDiagramAnnotation;
     mpDiagramAnnotation = new IconDiagramAnnotation;
     mElements.clear();
+    mConnections.clear();
   }
 
   Transformation::Transformation()
@@ -859,6 +876,63 @@ namespace ModelInstance
       if (annotation.contains("choices")) {
         mChoices.deserialize(annotation.value("choices").toObject());
       }
+    }
+  }
+
+  Connector::Connector()
+  {
+    mKind = "";
+    mParts.clear();
+  }
+
+  void Connector::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("$kind")) {
+      mKind = jsonObject.value("$kind").toString();
+    }
+
+    if (jsonObject.contains("parts")) {
+      QJsonArray parts = jsonObject.value("parts").toArray();
+      foreach (QJsonValue part, parts) {
+        QJsonObject partObject = part.toObject();
+        if (partObject.contains("name")) {
+          mParts.append(partObject.value("name").toString());
+        }
+      }
+    }
+  }
+
+  QString Connector::getName() const
+  {
+    if (mParts.isEmpty()) {
+      return "";
+    } else {
+      return mParts.join(".");
+    }
+  }
+
+  Connection::Connection()
+  {
+    mpStartConnector = 0;
+    mpEndConnector = 0;
+  }
+
+  Connection::~Connection()
+  {
+    delete mpStartConnector;
+    delete mpEndConnector;
+  }
+
+  void Connection::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("lhs")) {
+      mpStartConnector = new Connector;
+      mpStartConnector->deserialize(jsonObject.value("lhs").toObject());
+    }
+
+    if (jsonObject.contains("rhs")) {
+      mpEndConnector = new Connector;
+      mpEndConnector->deserialize(jsonObject.value("rhs").toObject());
     }
   }
 

@@ -171,6 +171,7 @@ public:
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select);
   void drawConnectors(ModelInstance::Model *pModelInstance, bool inherited);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited);
+  void drawConnections(ModelInstance::Model *pModelInstance, bool inherited);
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -568,8 +569,6 @@ public:
 
   void drawModel();
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited);
-
-  void drawModelConnections();
 
   void loadDiagramView();
   void loadConnections();
