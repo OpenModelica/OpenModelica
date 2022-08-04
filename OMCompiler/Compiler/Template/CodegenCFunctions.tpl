@@ -5882,7 +5882,8 @@ case rel as RELATION(__) then
     case EQUAL(ty = T_INTEGER(__))         then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
+    //case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
+    case EQUAL(ty = T_ARRAY(__))           then '(<%e1%> == <%e2%>)'
 
     case NEQUAL(ty = T_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
@@ -5891,6 +5892,8 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 
     else error(sourceInfo(), 'daeExpRelation <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
+else error(sourceInfo(), 'daeExpRelation: Input expression not a DAE.RELATION ')
+end match
 end daeExpRelation;
 
 
