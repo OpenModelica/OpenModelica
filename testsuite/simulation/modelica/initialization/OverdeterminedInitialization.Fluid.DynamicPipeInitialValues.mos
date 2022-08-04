@@ -28,5 +28,9 @@ simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorS
 //          m_flow_initial:DISCRETE(unit = \"kg/s\" fixed = true )  type: Real
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          pipe.mediums[1].p = 10000000.0.
+// Warning: Assuming fixed start value for the following 1 variables:
+//          m_flow_initial:DISCRETE(unit = \"kg/s\" fixed = true )  type: Real
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization_lambda0 system:
+//          pipe.mediums[1].p = 10000000.0.
 // "
 // endResult

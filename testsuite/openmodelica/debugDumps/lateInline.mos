@@ -517,7 +517,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// created initial system
+// created initialization system
 // ########################################
 //
 //
@@ -545,7 +545,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// partitioned initial system
+// partitioned initialization system
 // ########################################
 //
 //

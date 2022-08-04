@@ -21,5 +21,7 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateIniti
 // Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(pipe1.mediums[1].p) = 0.0 -> 0.0 = 0.0
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          $DER.pipe1.mediums[5].p = 0.0.
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization_lambda0 system:
+//          $DER.pipe1.mediums[5].p = 0.0.
 // "
 // endResult
