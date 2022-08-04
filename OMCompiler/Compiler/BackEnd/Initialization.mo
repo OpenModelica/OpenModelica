@@ -194,6 +194,7 @@ algorithm
     initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
 
     if useHomotopy then
+      initsyst0 := BackendDAEUtil.copyEqSystem(initsyst);
       enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
       disabledModules := {};
     else
@@ -208,7 +209,6 @@ algorithm
 
     // compute system for lambda=0
     if useHomotopy and Config.globalHomotopy() then
-      initsyst0 := BackendDAEUtil.copyEqSystem(initsyst);
       initsyst0 := replaceHomotopyWithSimplifiedEqs(initsyst0);
       initdae0 := BackendDAE.DAE({initsyst0}, shared);
       initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
