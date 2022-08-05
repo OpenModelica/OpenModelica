@@ -202,7 +202,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
       } else {
         if (omc_flag[FLAG_JACOBIAN]) {
-          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0) {
+          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
             infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
             gbfData->symJacAvailable = TRUE;
           }
@@ -385,7 +385,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
       if (omc_flag[FLAG_JACOBIAN]) {
-        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0) {
+        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
           infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
           gbData->symJacAvailable = TRUE;
         }
