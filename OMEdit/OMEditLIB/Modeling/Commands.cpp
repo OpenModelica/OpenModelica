@@ -1792,13 +1792,12 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   }
 }
 
-OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QJsonObject &newModelInstanceJson,
-                               const QString &commandText, UndoCommand *pParent)
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
   mOldModelInstanceJson = oldModelInstanceJson;
-  mNewModelInstanceJson = newModelInstanceJson;
+  mNewModelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
   setText(commandText);
 }
 

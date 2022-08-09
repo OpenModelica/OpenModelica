@@ -557,6 +557,10 @@ public:
   const QList<ElementInfo*> &getComponentsList() {return mElementsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   QMap<QString, QString> getDerivedClassModifiersMap();
+
+  void addDependsOnModel(const QString &dependsOnModel) {mDependsOnModelsList.append(dependsOnModel);}
+  void clearDependsOnModels() {mDependsOnModelsList.clear();}
+
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
   void drawModelCoOrdinateSystem(GraphicsView *pGraphicsView);
@@ -602,6 +606,8 @@ public:
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
+  void emitUpdateModel();
+  void updateModelIfDependsOn(const QString &modelName);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -642,6 +648,7 @@ private:
   QList<ElementInfo*> mElementsList;
   QStringList mElementsAnnotationsList;
   QTimer mUpdateModelTimer;
+  QStringList mDependsOnModelsList;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
@@ -675,6 +682,8 @@ private:
   void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
+signals:
+  void updateModel(const QString &modelName);
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

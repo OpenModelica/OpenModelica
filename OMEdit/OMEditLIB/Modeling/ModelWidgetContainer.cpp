@@ -312,6 +312,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
     QList<ModelInstance::Element*> elements = pModelInstance->getElements();
     foreach (auto pElement, elements) {
       if (pElement->getModel()) {
+        mpModelWidget->addDependsOnModel(pElement->getModel()->getName());
         addElementToView(pElement, inherited, false, true, false, true);
       }
     }
@@ -1759,6 +1760,9 @@ void GraphicsView::checkEmitUpdateSelect(const bool showPropertiesAndSelect, Sha
     setFocus(Qt::ActiveWindowFocusReason);
   }
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   if (showPropertiesAndSelect) {
     shapeAnnotation->setSelected(true);
@@ -3082,6 +3086,9 @@ void GraphicsView::pasteItems()
       }
       // update the model text
       mpModelWidget->updateClassAnnotationIfNeeded();
+      if (MainWindow::instance()->isNewApi()) {
+        mpModelWidget->emitUpdateModel();
+      }
       mpModelWidget->updateModelText();
       mpModelWidget->endMacro();
     }
@@ -3237,6 +3244,9 @@ void GraphicsView::manhattanizeItems()
   mpModelWidget->beginMacro("Manhattanize");
   emit manhattanize();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3250,6 +3260,9 @@ void GraphicsView::deleteItems()
   mpModelWidget->beginMacro("Delete items");
   emit deleteSignal();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3263,6 +3276,9 @@ void GraphicsView::duplicateItems()
   mpModelWidget->beginMacro("Duplicate by mouse");
   emit mouseDuplicate();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3276,6 +3292,9 @@ void GraphicsView::rotateClockwise()
   mpModelWidget->beginMacro("Rotate clockwise by mouse");
   emit mouseRotateClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3289,6 +3308,9 @@ void GraphicsView::rotateAntiClockwise()
   mpModelWidget->beginMacro("Rotate anti clockwise by mouse");
   emit mouseRotateAntiClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3302,6 +3324,9 @@ void GraphicsView::flipHorizontal()
   mpModelWidget->beginMacro("Flip horizontal by mouse");
   emit mouseFlipHorizontal();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3315,6 +3340,9 @@ void GraphicsView::flipVertical()
   mpModelWidget->beginMacro("Flip vertical by mouse");
   emit mouseFlipVertical();
   mpModelWidget->updateClassAnnotationIfNeeded();
+  if (MainWindow::instance()->isNewApi()) {
+    mpModelWidget->emitUpdateModel();
+  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3734,6 +3762,9 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       addClassAnnotation();
     }
     if (hasComponentMoved || hasShapeMoved) {
+      if (MainWindow::instance()->isNewApi()) {
+        mpModelWidget->emitUpdateModel();
+      }
       mpModelWidget->updateModelText();
     }
     // if we have started he undo stack macro then we should end it.
@@ -3978,54 +4009,105 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
   /* handle keys */
   if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_H && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_V && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpModelWidget->emitUpdateModel();
+    }
     mpModelWidget->updateModelText();
   } else {
     QGraphicsView::keyReleaseEvent(event);
@@ -4575,6 +4657,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     createUndoStack();
 
     if (MainWindow::instance()->isNewApi()) {
+      connect(this, SIGNAL(updateModel(QString)), MainWindow::instance(), SLOT(updateModel(QString)));
       QJsonObject modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
       mpModelInstance = new ModelInstance::Model(modelInstanceJson);
       drawModel();
@@ -4913,6 +4996,7 @@ void ModelWidget::drawModel()
 {
   mpIconGraphicsView->drawCoordinateSystem();
   mpDiagramGraphicsView->drawCoordinateSystem();
+  clearDependsOnModels();
   drawModelIconDiagram(mpModelInstance, false);
 }
 
@@ -4920,6 +5004,7 @@ void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, boo
 {
   QList<ModelInstance::Extend*> extends = pModelInstance->getExtends();
   foreach (auto pExtend, extends) {
+    addDependsOnModel(pExtend->getName());
     drawModelIconDiagram(pExtend, true);
   }
 
@@ -5593,7 +5678,7 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
   }
   updateViewButtonsBasedOnAccess();
   // announce the change.
-//  mpLibraryTreeItem->emitLoaded();
+  emitUpdateModel();
   mpUndoStack->setEnabled(true);
   QApplication::restoreOverrideCursor();
 }
@@ -5677,7 +5762,11 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      */
     ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
-    reDrawModelWidget();
+    if (MainWindow::instance()->isNewApi()) {
+      reDrawModelWidget(pOMCProxy->getModelInstance(mpLibraryTreeItem->getNameStructure(), true));
+    } else {
+      reDrawModelWidget();
+    }
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
       pParentLibraryTreeItem->setClassText(stringToLoad);
@@ -5713,7 +5802,11 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     pNewLibraryTreeItem->setClassText(modelicaText);
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
-    reDrawModelWidget();
+    if (MainWindow::instance()->isNewApi()) {
+      reDrawModelWidget(pOMCProxy->getModelInstance(pNewLibraryTreeItem->getNameStructure(), true));
+    } else {
+      reDrawModelWidget();
+    }
     if (pNewLibraryTreeItem->isInPackageOneFile()) {
       pNewLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
@@ -5751,7 +5844,11 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
         pChildLibraryTreeItem->setClassInformation(pMainWindow->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
         if (pLibraryTreeItem->isExpanded()) {
           if (pChildLibraryTreeItem->getModelWidget()) {
-            pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget();
+            if (MainWindow::instance()->isNewApi()) {
+              pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget(pMainWindow->getOMCProxy()->getModelInstance(pChildLibraryTreeItem->getNameStructure(), true));
+            } else {
+              pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget();
+            }
             pLibraryTreeModel->readLibraryTreeItemClassText(pChildLibraryTreeItem);
           }
           updateChildClasses(pChildLibraryTreeItem);
@@ -6755,6 +6852,18 @@ void ModelWidget::processPendingModelUpdate()
   if (mUpdateModelTimer.isActive()) {
     mUpdateModelTimer.stop();
     updateModel();
+  }
+}
+
+void ModelWidget::emitUpdateModel()
+{
+  emit updateModel(mpLibraryTreeItem->getNameStructure());
+}
+
+void ModelWidget::updateModelIfDependsOn(const QString &modelName)
+{
+  if (mDependsOnModelsList.contains(modelName)) {
+    reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true));
   }
 }
 

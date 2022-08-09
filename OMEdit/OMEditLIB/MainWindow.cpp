@@ -1950,6 +1950,9 @@ void MainWindow::undo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
     pModelWidget->updateClassAnnotationIfNeeded();
+    if (isNewApi()) {
+      pModelWidget->emitUpdateModel();
+    }
     pModelWidget->updateModelText();
   } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
              && pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable()) {
@@ -1970,6 +1973,9 @@ void MainWindow::redo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
+    if (isNewApi()) {
+      pModelWidget->emitUpdateModel();
+    }
     pModelWidget->updateModelText();
   } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
              && pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable()) {
@@ -3118,6 +3124,25 @@ void MainWindow::enableReSimulationToolbar(bool visible)
     mpReSimulationToolBar->setEnabled(!mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   } else {
     mpReSimulationToolBar->setEnabled(false);
+  }
+}
+
+void MainWindow::updateModel(const QString &modelName)
+{
+  updateModelHelper(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem(), modelName);
+}
+
+void MainWindow::updateModelHelper(LibraryTreeItem *pLibraryTreeItem, const QString &modelName)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem
+        && !pChildLibraryTreeItem->isSystemLibrary()
+        && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+        && pChildLibraryTreeItem->getModelWidget()) {
+      pChildLibraryTreeItem->getModelWidget()->updateModelIfDependsOn(modelName);
+      updateModelHelper(pChildLibraryTreeItem, modelName);
+    }
   }
 }
 

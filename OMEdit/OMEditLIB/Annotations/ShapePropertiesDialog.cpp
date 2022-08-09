@@ -951,6 +951,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateShapeCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateClassAnnotationIfNeeded();
+    if (MainWindow::instance()->isNewApi()) {
+      mpShapeAnnotation->getGraphicsView()->getModelWidget()->emitUpdateModel();
+    }
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   }
   return true;
