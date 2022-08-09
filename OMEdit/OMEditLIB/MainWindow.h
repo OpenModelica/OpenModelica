@@ -559,6 +559,8 @@ public slots:
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
+  void updateModel(const QString &modelName);
+  void updateModelHelper(LibraryTreeItem *pLibraryTreeItem, const QString &modelName);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);

@@ -437,11 +437,7 @@ void Parameter::createValueWidget()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className;
   if (MainWindow::instance()->isNewApi()) {
-    if (mpElement->getModel()) {
-      className = mpElement->getModel()->getName();
-    } else {
-      className = mpElement->getType();
-    }
+    className = mpElement->getType();
   } else {
     className = mpComponent->getComponentInfo()->getClassName();
   }
@@ -1791,13 +1787,11 @@ void ElementParameters::updateElementParameters()
     }
     // if valueChanged is true then put the change in the undo stack.
     if (valueChanged) {
-      // create UpdateComponentParametersCommand
+      // create OMCUndoCommand
       const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
-      const QJsonObject newModelInstance = pOMCProxy->getModelInstance(className, true);
       ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
-      OMCUndoCommand *pOMCUndoCommand = new OMCUndoCommand(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem(), oldModelInstance, newModelInstance,
-                                                           QString("Update Element %1 Parameters").arg(mpElement->getName()));
-      pModelWidget->getUndoStack()->push(pOMCUndoCommand);
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem(), oldModelInstance,
+                                                            QString("Update Element %1 Parameters").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {

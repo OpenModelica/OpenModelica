@@ -446,8 +446,7 @@ private:
 class OMCUndoCommand : public UndoCommand
 {
 public:
-  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QJsonObject &newModelInstanceJson, const QString &commandText,
-                 UndoCommand *pParent = 0);
+  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QString &commandText, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:

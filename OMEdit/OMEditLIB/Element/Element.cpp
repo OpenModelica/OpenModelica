@@ -671,17 +671,9 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
   mpOriginItem = new OriginItem(this);
   createResizerItems();
   updateToolTip();
-//  if (mpLibraryTreeItem) {
-//    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForComponent()), SLOT(handleCoOrdinateSystemUpdated()));
-//    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
-//    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
-//    connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
-//  }
-//  connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
-//  connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
-//  connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
+  connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 //  /* Ticket:4204
@@ -724,12 +716,6 @@ Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
   mpTopLeftResizerItem = 0;
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
-//  if (mpLibraryTreeItem) {
-//    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
-//    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
-//  }
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
@@ -758,7 +744,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   mActiveState = false;
   mpBusComponent = 0;
   drawInheritedElementsAndShapes();
-  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation = Transformation(StringHandler::Icon, this);
   mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -766,17 +752,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   mpTopLeftResizerItem = 0;
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
-//  updateToolTip();
-//  if (mpLibraryTreeItem) {
-//    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
-//    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
-//    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
-//  }
-//  connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceElementAdded()));
-//  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
-//  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
-//  connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
+  updateToolTip();
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
@@ -1198,6 +1174,11 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   }
 }
 
+/*!
+ * \brief Element::getName
+ * Returns the name of the element.
+ * \return
+ */
 QString Element::getName() const
 {
   if (MainWindow::instance()->isNewApi()) {
@@ -1207,6 +1188,25 @@ QString Element::getName() const
   }
 }
 
+/*!
+ * \brief Element::getClassName
+ * Returns the class name of the element.
+ * \return
+ */
+QString Element::getClassName() const
+{
+  if (MainWindow::instance()->isNewApi()) {
+    return mpModelElement->getType();
+  } else {
+    return mpElementInfo->getClassName();
+  }
+}
+
+/*!
+ * \brief Element::getComment
+ * Returns the element comment
+ * \return
+ */
 QString Element::getComment() const
 {
   if (MainWindow::instance()->isNewApi()) {
@@ -1319,7 +1319,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
   if (mTransformation.isValid()) {
     placementAnnotationString.append("visible=").append(mTransformation.getVisible() ? "true" : "false");
   }
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
+  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (MainWindow::instance()->isNewApi() && mpModel->isConnector())) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
@@ -2944,8 +2944,7 @@ void Element::updatePlacementAnnotation()
     }
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateComponent(mpElementInfo->getName(), mpElementInfo->getClassName(),
-                               mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
+    pOMCProxy->updateComponent(getName(), getClassName(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
   }
   /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
