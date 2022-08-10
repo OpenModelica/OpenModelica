@@ -1790,8 +1790,7 @@ void ElementParameters::updateElementParameters()
       // create OMCUndoCommand
       const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
       ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem(), oldModelInstance,
-                                                            QString("Update Element %1 Parameters").arg(mpElement->getName())));
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInstance, QString("Update Element %1 Parameters").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {
@@ -2041,43 +2040,84 @@ void ElementAttributes::setUpDialog()
  */
 void ElementAttributes::initializeDialog()
 {
-  // get Class Name
-  mpNameTextBox->setText(mpElement->getComponentInfo()->getName());
-  mpNameTextBox->setCursorPosition(0);
-  // get dimensions
-  QString dimensions = mpElement->getComponentInfo()->getArrayIndex();
-  mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
-  // get Comment
-  mpCommentTextBox->setText(mpElement->getComponentInfo()->getComment());
-  mpCommentTextBox->setCursorPosition(0);
-  // get classname
-  mpPathTextBox->setText(mpElement->getComponentInfo()->getClassName());
-  // get Variability
-  if (mpElement->getComponentInfo()->getVariablity() == "constant") {
-    mpConstantRadio->setChecked(true);
-  } else if (mpElement->getComponentInfo()->getVariablity() == "parameter") {
-    mpParameterRadio->setChecked(true);
-  } else if (mpElement->getComponentInfo()->getVariablity() == "discrete") {
-    mpDiscreteRadio->setChecked(true);
+  if (MainWindow::instance()->isNewApi()) {
+    // get Class Name
+    mpNameTextBox->setText(mpElement->getModelElement()->getName());
+    mpNameTextBox->setCursorPosition(0);
+    // get dimensions
+    QString dimensions = mpElement->getModelElement()->getDimensions();
+    mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
+    // get Comment
+    mpCommentTextBox->setText(mpElement->getModelElement()->getComment());
+    mpCommentTextBox->setCursorPosition(0);
+    // get classname
+    mpPathTextBox->setText(mpElement->getModelElement()->getType());
+    // get Variability
+    const QString variability = mpElement->getModelElement()->getVariability();
+    if (variability.compare(QStringLiteral("constant")) == 0) {
+      mpConstantRadio->setChecked(true);
+    } else if (variability.compare(QStringLiteral("parameter")) == 0) {
+      mpParameterRadio->setChecked(true);
+    } else if (variability.compare(QStringLiteral("discrete")) == 0) {
+      mpDiscreteRadio->setChecked(true);
+    } else {
+      mpDefaultRadio->setChecked(true);
+    }
+    // get Properties
+    mpFinalCheckBox->setChecked(mpElement->getModelElement()->isFinal());
+    mpProtectedCheckBox->setChecked(!mpElement->getModelElement()->isPublic());
+    mpReplaceAbleCheckBox->setChecked(mpElement->getModelElement()->isReplaceable());
+    // get Casuality
+    const QString direction = mpElement->getModelElement()->getDirection();
+    if (direction.compare(QStringLiteral("input")) == 0) {
+      mpInputRadio->setChecked(true);
+    } else if (direction.compare(QStringLiteral("output")) == 0) {
+      mpOutputRadio->setChecked(true);
+    } else {
+      mpNoneRadio->setChecked(true);
+    }
+    // get InnerOuter
+    mpInnerCheckBox->setChecked(mpElement->getModelElement()->isInner());
+    mpOuterCheckBox->setChecked(mpElement->getModelElement()->isOuter());
   } else {
-    mpDefaultRadio->setChecked(true);
+    // get Class Name
+    mpNameTextBox->setText(mpElement->getComponentInfo()->getName());
+    mpNameTextBox->setCursorPosition(0);
+    // get dimensions
+    QString dimensions = mpElement->getComponentInfo()->getArrayIndex();
+    mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
+    // get Comment
+    mpCommentTextBox->setText(mpElement->getComponentInfo()->getComment());
+    mpCommentTextBox->setCursorPosition(0);
+    // get classname
+    mpPathTextBox->setText(mpElement->getComponentInfo()->getClassName());
+    // get Variability
+    if (mpElement->getComponentInfo()->getVariablity() == "constant") {
+      mpConstantRadio->setChecked(true);
+    } else if (mpElement->getComponentInfo()->getVariablity() == "parameter") {
+      mpParameterRadio->setChecked(true);
+    } else if (mpElement->getComponentInfo()->getVariablity() == "discrete") {
+      mpDiscreteRadio->setChecked(true);
+    } else {
+      mpDefaultRadio->setChecked(true);
+    }
+    // get Properties
+    mpFinalCheckBox->setChecked(mpElement->getComponentInfo()->getFinal());
+    mpProtectedCheckBox->setChecked(mpElement->getComponentInfo()->getProtected());
+    mpReplaceAbleCheckBox->setChecked(mpElement->getComponentInfo()->getReplaceable());
+    mIsFlow = mpElement->getComponentInfo()->getFlow() ? "true" : "false";
+    // get Casuality
+    if (mpElement->getComponentInfo()->getCausality() == "input") {
+      mpInputRadio->setChecked(true);
+    } else if (mpElement->getComponentInfo()->getCausality() == "output") {
+      mpOutputRadio->setChecked(true);
+    } else {
+      mpNoneRadio->setChecked(true);
+    }
+    // get InnerOuter
+    mpInnerCheckBox->setChecked(mpElement->getComponentInfo()->getInner());
+    mpOuterCheckBox->setChecked(mpElement->getComponentInfo()->getOuter());
   }
-  // get Properties
-  mpFinalCheckBox->setChecked(mpElement->getComponentInfo()->getFinal());
-  mpProtectedCheckBox->setChecked(mpElement->getComponentInfo()->getProtected());
-  mpReplaceAbleCheckBox->setChecked(mpElement->getComponentInfo()->getReplaceable());
-  mIsFlow = mpElement->getComponentInfo()->getFlow() ? "true" : "false";
-  // get Casuality
-  if (mpElement->getComponentInfo()->getCausality() == "input") {
-    mpInputRadio->setChecked(true);
-  } else if (mpElement->getComponentInfo()->getCausality() == "output") {
-    mpOutputRadio->setChecked(true);
-  } else {
-    mpNoneRadio->setChecked(true);
-  }
-  // get InnerOuter
-  mpInnerCheckBox->setChecked(mpElement->getComponentInfo()->getInner());
-  mpOuterCheckBox->setChecked(mpElement->getComponentInfo()->getOuter());
 }
 
 /*!
@@ -2089,7 +2129,7 @@ void ElementAttributes::updateElementAttributes()
 {
   ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
-  if (mpElement->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
+  if (mpElement->getName().compare(mpNameTextBox->text()) != 0) {
     if (!mpElement->getGraphicsView()->checkElementName(mpNameTextBox->text())) {
       QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
@@ -2135,30 +2175,97 @@ void ElementAttributes::updateElementAttributes()
   } else {
     causality = "";
   }
-  // save the old ElementInfo
-  ElementInfo oldComponentInfo(mpElement->getComponentInfo());
-  // Create a new ElementInfo
-  ElementInfo newComponentInfo;
-  newComponentInfo.setClassName(mpElement->getComponentInfo()->getClassName());
-  newComponentInfo.setName(mpNameTextBox->text());
-  newComponentInfo.setComment(mpCommentTextBox->text());
-  newComponentInfo.setProtected(mpProtectedCheckBox->isChecked());
-  newComponentInfo.setFinal(mpFinalCheckBox->isChecked());
-  newComponentInfo.setFlow(mpElement->getComponentInfo()->getFlow());
-  newComponentInfo.setStream(mpElement->getComponentInfo()->getStream());
-  newComponentInfo.setReplaceable(mpReplaceAbleCheckBox->isChecked());
-  newComponentInfo.setVariablity(variability);
-  newComponentInfo.setInner(mpInnerCheckBox->isChecked());
-  newComponentInfo.setOuter(mpOuterCheckBox->isChecked());
-  newComponentInfo.setCausality(causality);
-  QString dimensions = StringHandler::removeFirstLastSquareBrackets(mpDimensionsTextBox->text());
-  newComponentInfo.setArrayIndex(QString("{%1}").arg(dimensions));
-  /* If user has really changed the Component's attributes then push that change on the stack.
-   */
-  if (oldComponentInfo != newComponentInfo) {
-    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpElement, oldComponentInfo, newComponentInfo);
-    pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
-    pModelWidget->updateModelText();
+  if (MainWindow::instance()->isNewApi()) {
+    QString modelName = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    bool attributesChanged = false;
+    attributesChanged |= mpElement->getModelElement()->isFinal() != mpFinalCheckBox->isChecked();
+    attributesChanged |= !mpElement->getModelElement()->isPublic() != mpProtectedCheckBox->isChecked();
+    attributesChanged |= mpElement->getModelElement()->isReplaceable() != mpReplaceAbleCheckBox->isChecked();
+    attributesChanged |= mpElement->getModelElement()->getVariability().compare(variability) != 0;
+    attributesChanged |= mpElement->getModelElement()->isInner() != mpInnerCheckBox->isChecked();
+    attributesChanged |= mpElement->getModelElement()->isOuter() != mpOuterCheckBox->isChecked();
+    attributesChanged |= mpElement->getModelElement()->getDirection().compare(causality) != 0;
+
+    QString isFinal = mpFinalCheckBox->isChecked() ? "true" : "false";
+    QString flow = (mpElement->getModelElement()->getConnector().compare(QStringLiteral("flow")) == 0) ? "true" : "false";
+    QString isProtected = mpProtectedCheckBox->isChecked() ? "true" : "false";
+    QString isReplaceAble = mpReplaceAbleCheckBox->isChecked() ? "true" : "false";
+    QString isInner = mpInnerCheckBox->isChecked() ? "true" : "false";
+    QString isOuter = mpOuterCheckBox->isChecked() ? "true" : "false";
+
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    // update component attributes if needed
+    if (attributesChanged) {
+      if (!pOMCProxy->setComponentProperties(modelName, mpElement->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        pOMCProxy->printMessagesStringInternal();
+      }
+    }
+
+    // update the component comment only if its changed.
+    if (mpElement->getModelElement()->getComment().compare(mpCommentTextBox->text()) != 0) {
+      QString comment = StringHandler::escapeString(mpCommentTextBox->text());
+      if (pOMCProxy->setComponentComment(modelName, mpElement->getName(), comment)) {
+        attributesChanged = true;
+      } else {
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        pOMCProxy->printMessagesStringInternal();
+      }
+    }
+    // update the component dimensions
+    const QString dimensions = StringHandler::removeFirstLastSquareBrackets(mpDimensionsTextBox->text());
+    if (mpElement->getModelElement()->getDimensions().compare(dimensions) != 0) {
+      const QString arrayIndex = QString("{%1}").arg(dimensions);
+      if (pOMCProxy->setComponentDimensions(modelName, mpElement->getName(), arrayIndex)) {
+        attributesChanged = true;
+      } else {
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        pOMCProxy->printMessagesStringInternal();
+      }
+    }
+    // update the component name only if its changed.
+    if (mpElement->getName().compare(mpNameTextBox->text()) != 0) {
+      // if renameComponentInClass command is successful update the component with new name
+      if (pOMCProxy->renameComponentInClass(modelName, mpElement->getName(), mpNameTextBox->text())) {
+        attributesChanged = true;
+      } else {
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        pOMCProxy->printMessagesStringInternal();
+      }
+    }
+    // push the attributes updated change to the stack
+    if (attributesChanged) {
+      const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
+      ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInstance, QString("Update Component %1 Attributes").arg(mpElement->getName())));
+      pModelWidget->updateModelText();
+    }
+  } else {
+    // save the old ElementInfo
+    ElementInfo oldComponentInfo(mpElement->getComponentInfo());
+    // Create a new ElementInfo
+    ElementInfo newComponentInfo;
+    newComponentInfo.setClassName(mpElement->getComponentInfo()->getClassName());
+    newComponentInfo.setName(mpNameTextBox->text());
+    newComponentInfo.setComment(mpCommentTextBox->text());
+    newComponentInfo.setProtected(mpProtectedCheckBox->isChecked());
+    newComponentInfo.setFinal(mpFinalCheckBox->isChecked());
+    newComponentInfo.setFlow(mpElement->getComponentInfo()->getFlow());
+    newComponentInfo.setStream(mpElement->getComponentInfo()->getStream());
+    newComponentInfo.setReplaceable(mpReplaceAbleCheckBox->isChecked());
+    newComponentInfo.setVariablity(variability);
+    newComponentInfo.setInner(mpInnerCheckBox->isChecked());
+    newComponentInfo.setOuter(mpOuterCheckBox->isChecked());
+    newComponentInfo.setCausality(causality);
+    QString dimensions = StringHandler::removeFirstLastSquareBrackets(mpDimensionsTextBox->text());
+    newComponentInfo.setArrayIndex(QString("{%1}").arg(dimensions));
+    /* If user has really changed the Component's attributes then push that change on the stack.
+     */
+    if (oldComponentInfo != newComponentInfo) {
+      UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpElement, oldComponentInfo, newComponentInfo);
+      pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
+      pModelWidget->updateModelText();
+    }
   }
   accept();
 }

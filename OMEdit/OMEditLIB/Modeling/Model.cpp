@@ -773,6 +773,7 @@ namespace ModelInstance
     mName = "";
     mType = "";
     mpModel = 0;
+    mDims.clear();
     mPublic = true;
     mFinal = false;
     mInner = false;
@@ -810,6 +811,17 @@ namespace ModelInstance
 
     if (jsonObject.contains("modifiers")) {
       mModifier.deserialize(jsonObject.value("modifiers"));
+    }
+
+    if (jsonObject.contains("dims")) {
+      QJsonObject dims = jsonObject.value("dims").toObject();
+
+      if (dims.contains("absyn")) {
+        QJsonArray dimsAbsynArray = dims.value("absyn").toArray();
+        foreach (auto dim, dimsAbsynArray) {
+          mDims.append(dim.toString());
+        }
+      }
     }
 
     if (jsonObject.contains("prefixes")) {

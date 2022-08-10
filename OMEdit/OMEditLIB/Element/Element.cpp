@@ -3592,8 +3592,11 @@ void Element::showParameters()
 void Element::showAttributes()
 {
   MainWindow *pMainWindow = MainWindow::instance();
-  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpLibraryTreeItem->getNameStructure())
-                                           .arg(mpElementInfo->getName()));
+  if (pMainWindow->isNewApi()) {
+    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpModelElement->getModel()->getName()).arg(getName()));
+  } else {
+    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpLibraryTreeItem->getNameStructure()).arg(mpElementInfo->getName()));
+  }
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
   ElementAttributes *pElementAttributes = new ElementAttributes(this, pMainWindow);
