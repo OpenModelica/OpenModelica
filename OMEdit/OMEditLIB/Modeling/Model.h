@@ -447,6 +447,7 @@ private:
     QString getType() const {return mType;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
+    QString getDimensions() const {return mDims.join(", ");}
     bool isPublic() const {return mPublic;}
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
@@ -468,6 +469,7 @@ private:
     QString mType;
     Model *mpModel;
     Modifier mModifier;
+    QStringList mDims;
     bool mPublic;
     bool mFinal;
     bool mInner;

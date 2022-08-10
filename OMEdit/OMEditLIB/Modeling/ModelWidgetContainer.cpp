@@ -2177,7 +2177,7 @@ Element *GraphicsView::elementAtPosition(QPoint position)
     Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
     if (pElement) {
       Element *pRootElement = pElement->getRootParentComponent();
-      if (pRootElement && pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) {
+      if (pRootElement && ((pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) || (MainWindow::instance()->isNewApi()))) {
         return pRootElement;
       }
     }
