@@ -1300,7 +1300,7 @@ algorithm
     (init_eqns, sim_eqns) := List.splitOnTrue(BackendEquation.equationList(inEqSystem.orderedEqs), BackendEquation.isInitialEquation);
 
     // 2. sort fixables to be matched last
-    outEqSystem := BackendDAEUtil.createEqSystem(BackendVariable.sortInitialVars(inEqSystem.orderedVars, initVars), BackendEquation.listEquation(sim_eqns));
+    outEqSystem := BackendDAEUtil.createEqSystem(BackendVariable.sortInitialVars(inEqSystem.orderedVars, initVars), BackendEquation.listEquation(init_eqns));
     outEqSystem.removedEqs := inEqSystem.removedEqs;
     funcs := BackendDAEUtil.getFunctions(inShared);
 
@@ -1314,7 +1314,7 @@ algorithm
     (eqn_to_var, var_to_eqn, _, _, _) := Matching.RegularMatching(mT, nEqns, nVars);
 
     // 5. add initial equations and continue matching
-    outEqSystem.orderedEqs := BackendEquation.addList(init_eqns, outEqSystem.orderedEqs);
+    outEqSystem.orderedEqs := BackendEquation.addList(sim_eqns, outEqSystem.orderedEqs);
     (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
     (eqn_to_var, var_to_eqn, _, _, _) := Matching.ContinueMatching(mT, nEqns, nVars, eqn_to_var, var_to_eqn);
 
