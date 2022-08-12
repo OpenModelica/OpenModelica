@@ -1102,7 +1102,14 @@ public
     Integer start, step, stop;
   algorithm
     (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start) / step);
+    if step > 0 then
+      size := max(intDiv(stop - start, step) + 1, 0);
+    elseif step < 0 then
+      size := max(intDiv(start - stop, -step) + 1, 0);
+    else
+      Error.addInternalError(getInstanceName() + " failed because step is zero.", sourceInfo());
+      fail();
+    end if;
   end rangeSize;
 
   function applySubscripts
