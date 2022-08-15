@@ -776,12 +776,12 @@ public
     b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
   end isCombineableSize;
 
-  function toString
+  function toDebugString
     input Operator op;
     output String str;
   algorithm
     str := "OPERATOR(" + Type.toString(op.ty) + ", " + opToString(op.op) + ")";
-  end toString;
+  end toDebugString;
 
   function opToString
     input Op op;
