@@ -776,5 +776,59 @@ public
     b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
   end isCombineableSize;
 
+  function toDebugString
+    input Operator op;
+    output String str;
+  algorithm
+    str := "OPERATOR(" + Type.toString(op.ty) + ", " + opToString(op.op) + ")";
+  end toDebugString;
+
+  function opToString
+    input Op op;
+    output String str;
+  algorithm
+    str := match op
+      case Op.ADD then "ADD";
+      case Op.SUB then "SUB";
+      case Op.MUL then "MUL";
+      case Op.DIV then "DIV";
+      case Op.POW then "POW";
+      case Op.ADD_EW then "ADD_EW";
+      case Op.SUB_EW then "SUB_EW";
+      case Op.MUL_EW then "MUL_EW";
+      case Op.DIV_EW then "DIV_EW";
+      case Op.POW_EW then "POW_EW";
+      case Op.ADD_SCALAR_ARRAY then "ADD_SCALAR_ARRAY";
+      case Op.ADD_ARRAY_SCALAR then "ADD_ARRAY_SCALAR";
+      case Op.SUB_SCALAR_ARRAY then "SUB_SCALAR_ARRAY";
+      case Op.SUB_ARRAY_SCALAR then "SUB_ARRAY_SCALAR";
+      case Op.MUL_SCALAR_ARRAY then "MUL_SCALAR_ARRAY";
+      case Op.MUL_ARRAY_SCALAR then "MUL_ARRAY_SCALAR";
+      case Op.MUL_VECTOR_MATRIX then "MUL_VECTOR_MATRIX";
+      case Op.MUL_MATRIX_VECTOR then "MUL_MATRIX_VECTOR";
+      case Op.SCALAR_PRODUCT then "SCALAR_PRODUCT";
+      case Op.MATRIX_PRODUCT then "MATRIX_PRODUCT";
+      case Op.DIV_SCALAR_ARRAY then "DIV_SCALAR_ARRAY";
+      case Op.DIV_ARRAY_SCALAR then "DIV_ARRAY_SCALAR";
+      case Op.POW_SCALAR_ARRAY then "POW_SCALAR_ARRAY";
+      case Op.POW_ARRAY_SCALAR then "POW_ARRAY_SCALAR";
+      case Op.POW_MATRIX then "POW_MATRIX";
+      case Op.UMINUS then "UMINUS";
+      case Op.AND then "AND";
+      case Op.OR then "OR";
+      case Op.NOT then "NOT";
+      case Op.LESS then "LESS";
+      case Op.LESSEQ then "LESSEQ";
+      case Op.GREATER then "GREATER";
+      case Op.GREATEREQ then "GREATEREQ";
+      case Op.EQUAL then "EQUAL";
+      case Op.NEQUAL then "NEQUAL";
+      case Op.USERDEFINED then "USERDEFINED";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "failed. Unhanded enumeration."});
+        then fail();
+    end match;
+  end opToString;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;
