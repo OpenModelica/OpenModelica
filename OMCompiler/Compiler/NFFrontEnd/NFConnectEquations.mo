@@ -278,9 +278,9 @@ algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
 
-  ty := ComponentRef.getComponentType(lhsCref);
   lhs_exp := Expression.fromCref(lhsCref);
   rhs_exp := Expression.fromCref(rhsCref);
+  ty := Expression.typeOf(lhs_exp);
 
   if Type.isReal(ty) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
