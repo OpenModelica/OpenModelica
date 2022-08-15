@@ -1484,6 +1484,14 @@ algorithm
           json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod), json);
         end for;
 
+        if SCodeUtil.finalBool(mod.finalPrefix) then
+          json := JSON.addPair("final", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.eachBool(mod.eachPrefix) then
+          json := JSON.addPair("each", JSON.makeBoolean(true), json);
+        end if;
+
         if isSome(mod.binding) then
           binding_json := JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding)));
 

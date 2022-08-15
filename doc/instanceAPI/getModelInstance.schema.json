@@ -275,6 +275,14 @@
             "$value": {
               "type": "string",
               "description": "The string representation of the binding equation"
+            },
+            "final": {
+              "type": "boolean",
+              "description": "Whether the modifier is final or not"
+            },
+            "each": {
+              "type": "boolean",
+              "description": "Whether the modifier is each or not"
             }
           },
           "additionalProperties": {
