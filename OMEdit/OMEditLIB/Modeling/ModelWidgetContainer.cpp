@@ -321,11 +321,12 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
 
 void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool inherited)
 {
+  mpModelWidget->detectMultipleDeclarations();
   // We use access.diagram so we can draw connections.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
     QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     foreach (auto pConnection, connections) {
-      qDebug() << pConnection->getStartConnector()->getName() << pConnection->getEndConnector()->getName();
+      addConnection(pConnection, inherited, false, false);
     }
 
 //    getModelConnections();
@@ -864,6 +865,95 @@ bool GraphicsView::checkElementName(QString elementName)
     }
   }
   return true;
+}
+
+void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool inherited, bool addToOMC, bool select)
+{
+  // if connection is valid and has line annotation
+  if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getLine()) {
+    MainWindow *pMainWindow = MainWindow::instance();
+    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    QString connectionString = QString("{%1, %2}").arg(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName());
+    // get start and end components
+    QStringList startComponentList = pConnection->getStartConnector()->getNameParts();
+    QStringList endComponentList = pConnection->getEndConnector()->getNameParts();
+    // get start component
+    Element *pStartComponent = 0;
+    if (startComponentList.size() > 0) {
+      QString startComponentName = startComponentList.at(0);
+      if (startComponentName.contains("[")) {
+        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+      }
+      pStartComponent = getElementObject(startComponentName);
+    }
+    // get start connector
+    Element *pStartConnectorComponent = 0;
+    Element *pEndConnectorComponent = 0;
+    if (pStartComponent) {
+      // if a component type is connector then we only get one item in startComponentList
+      // check the startcomponentlist
+      if (startComponentList.size() < 2
+          || (pStartComponent->getLibraryTreeItem()
+              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+        pStartConnectorComponent = pStartComponent;
+      } else if (pStartComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+        /* if class doesn't exist then connect with the red cross box */
+        pStartConnectorComponent = pStartComponent;
+      } else {
+        // look for port from the parent component
+        QString startComponentName = startComponentList.at(1);
+        if (startComponentName.contains("[")) {
+          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+        }
+        pStartConnectorComponent = mpModelWidget->getConnectorComponent(pStartComponent, startComponentName);
+      }
+    }
+    // show error message if start component is not found.
+    if (!pStartConnectorComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                            .arg(pConnection->getStartConnector()->getName(), connectionString), Helper::scriptingKind, Helper::errorLevel));
+      return;
+    }
+    // get end component
+    Element *pEndComponent = 0;
+    if (endComponentList.size() > 0) {
+      QString endComponentName = endComponentList.at(0);
+      if (endComponentName.contains("[")) {
+        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+      }
+      pEndComponent = getElementObject(endComponentName);
+    }
+    // get the end connector
+    if (pEndComponent) {
+      // if a component type is connector then we only get one item in endComponentList
+      // check the endcomponentlist
+      if (endComponentList.size() < 2 || (pEndComponent->getLibraryTreeItem() && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+        pEndConnectorComponent = pEndComponent;
+      } else if (pEndComponent->getLibraryTreeItem() && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+        /* if class doesn't exist then connect with the red cross box */
+        pEndConnectorComponent = pEndComponent;
+      } else {
+        QString endComponentName = endComponentList.at(1);
+        if (endComponentName.contains("[")) {
+          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+        }
+        pEndConnectorComponent = mpModelWidget->getConnectorComponent(pEndComponent, endComponentName);
+      }
+    }
+    // show error message if end component is not found.
+    if (!pEndConnectorComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                            .arg(pConnection->getEndConnector()->getName(), connectionString), Helper::scriptingKind, Helper::errorLevel));
+      return;
+    }
+    LineAnnotation *pConnectionLineAnnotation;
+    pConnectionLineAnnotation = new LineAnnotation(pConnection, pStartConnectorComponent, pEndConnectorComponent, inherited, this);
+    if (select) {
+      pConnectionLineAnnotation->setSelected(true);
+    }
+    mpModelWidget->getUndoStack()->push(new AddConnectionCommand(pConnectionLineAnnotation, addToOMC));
+  }
 }
 
 /*!
@@ -5076,6 +5166,47 @@ void ModelWidget::getModelConnections()
   }
 }
 
+/*!
+ * \brief ModelWidget::getMetaModelSubModels
+ * \brief ModelWidget::detectMultipleDeclarations
+ * detect multiple declarations of a component instance
+ */
+void ModelWidget::detectMultipleDeclarations()
+{
+  if (MainWindow::instance()->isNewApi()) {
+    QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
+    for (int i = 0 ; i < elements.size() ; i++) {
+      for (int j = 0 ; j < elements.size() ; j++) {
+        if (i == j) {
+          j++;
+          continue;
+        }
+        if (elements[i]->getName().compare(elements[j]->getName()) == 0) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT).arg(elements[i]->getName()),
+                                                                Helper::scriptingKind, Helper::errorLevel));
+          return;
+        }
+      }
+    }
+  } else {
+    for (int i = 0 ; i < mElementsList.size() ; i++) {
+      for (int j = 0 ; j < mElementsList.size() ; j++) {
+        if (i == j) {
+          j++;
+          continue;
+        }
+        if (mElementsList[i]->getName().compare(mElementsList[j]->getName()) == 0) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT).arg(mElementsList[i]->getName()),
+                                                                Helper::scriptingKind, Helper::errorLevel));
+          return;
+        }
+      }
+    }
+  }
+}
+
 void ModelWidget::addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select)
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -7362,30 +7493,6 @@ void ModelWidget::getModelInitialStates()
     pInitialStateLineAnnotation->setStartComponentName(initialState.at(0));
     pInitialStateLineAnnotation->setEndComponentName("");
     mpUndoStack->push(new AddInitialStateCommand(pInitialStateLineAnnotation, false));
-  }
-}
-
-/*!
- * \brief ModelWidget::getMetaModelSubModels
- * \brief ModelWidget::detectMultipleDeclarations
- * detect multiple declarations of a component instance
- */
-void ModelWidget::detectMultipleDeclarations()
-{
-  for (int i = 0 ; i < mElementsList.size() ; i++) {
-    for (int j = 0 ; j < mElementsList.size() ; j++) {
-      if (i == j) {
-        j++;
-        continue;
-      }
-      if (mElementsList[i]->getName().compare(mElementsList[j]->getName()) == 0) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                              GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
-                                                              .arg(mElementsList[i]->getName()),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-        return;
-      }
-    }
   }
 }
 

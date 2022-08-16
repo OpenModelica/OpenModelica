@@ -121,6 +121,7 @@ private:
     double getRotation() const {return mRotation;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QJsonObject &jsonObject);
 private:
     bool mVisible;
     Point mOrigin;
@@ -157,6 +158,7 @@ private:
     double getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QJsonObject &jsonObject);
   private:
     Color mLineColor;
     Color mFillColor;
@@ -177,6 +179,7 @@ private:
   public:
     Line();
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QJsonObject &jsonObject);
 
     QList<Point> getPoints() const {return mPoints;}
     Color getColor() const {return mColor;}
@@ -246,6 +249,7 @@ private:
   public:
     Text();
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QJsonObject &jsonObject);
 
     Extent getExtent() const {return mExtent;}
     QString getTextString() const {return mTextString;}
@@ -494,6 +498,7 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     QString getName() const;
+    QStringList getNameParts() const {return mParts;}
   private:
     QString mKind;
     QStringList mParts;
@@ -509,9 +514,13 @@ private:
 
     Connector *getStartConnector() const {return mpStartConnector;}
     Connector *getEndConnector() const {return mpEndConnector;}
+    Line *getLine() const {return mpLine;}
+    Text *getText() const {return mpText;}
   private:
     Connector *mpStartConnector;
     Connector *mpEndConnector;
+    Line *mpLine;
+    Text *mpText;
   };
 
   class Extend : public Model

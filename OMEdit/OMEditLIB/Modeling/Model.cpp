@@ -219,6 +219,21 @@ namespace ModelInstance
     mRotation = jsonArray.at(2).toDouble();
   }
 
+  void GraphicItem::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("visible")) {
+      mVisible = jsonObject.value("visible").toBool();
+    }
+
+    if (jsonObject.contains("origin")) {
+      mOrigin.deserialize(jsonObject.value("origin").toArray());
+    }
+
+    if (jsonObject.contains("rotation")) {
+      mRotation = jsonObject.value("rotation").toDouble();
+    }
+  }
+
   Color::Color()
   {
     mColor = Qt::black;
@@ -258,6 +273,35 @@ namespace ModelInstance
       mFillPattern = fillPattern.value("name").toString();
     }
     mLineThickness = jsonArray.at(7).toDouble();
+  }
+
+  void FilledShape::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("lineColor")) {
+      mLineColor.deserialize(jsonObject.value("lineColor").toArray());
+    }
+
+    if (jsonObject.contains("fillColor")) {
+      mFillColor.deserialize(jsonObject.value("fillColor").toArray());
+    }
+
+    if (jsonObject.contains("pattern")) {
+      QJsonObject pattern = jsonObject.value("pattern").toObject();
+      if (pattern.contains("name")) {
+        mPattern = pattern.value("name").toString();
+      }
+    }
+
+    if (jsonObject.contains("fillPattern")) {
+      QJsonObject fillPattern = jsonObject.value("fillPattern").toObject();
+      if (fillPattern.contains("name")) {
+        mFillPattern = fillPattern.value("name").toString();
+      }
+    }
+
+    if (jsonObject.contains("lineThickness")) {
+      mLineThickness = jsonObject.value("lineThickness").toDouble();
+    }
   }
 
   Shape::Shape()
@@ -306,6 +350,57 @@ namespace ModelInstance
       }
       mArrowSize = jsonArray.at(8).toDouble();
       QJsonObject smooth = jsonArray.at(9).toObject();
+      if (smooth.contains("name")) {
+        mSmooth = smooth.value("name").toString();
+      }
+    }
+  }
+
+  void Line::deserialize(const QJsonObject &jsonObject)
+  {
+    GraphicItem::deserialize(jsonObject);
+
+    if (jsonObject.contains("points")) {
+      QJsonArray points = jsonObject.value("points").toArray();
+      foreach (QJsonValue pointValue, points) {
+        Point point;
+        point.deserialize(pointValue.toArray());
+        mPoints.append(point);
+      }
+    }
+
+    if (jsonObject.contains("color")) {
+      mColor.deserialize(jsonObject.value("color").toArray());
+    }
+
+    if (jsonObject.contains("pattern")) {
+      mPattern = jsonObject.value("pattern").toString();
+    }
+
+    if (jsonObject.contains("thickness")) {
+      mThickness = jsonObject.value("thickness").toDouble();
+    }
+
+    if (jsonObject.contains("arrow")) {
+      QJsonArray arrows = jsonObject.value("arrow").toArray();
+      if (arrows.size() == 2) {
+        QJsonObject startArrow = arrows.at(0).toObject();
+        if (startArrow.contains("name")) {
+          mArrow[0] = startArrow.value("name").toString();
+        }
+        QJsonObject endArrow = arrows.at(1).toObject();
+        if (endArrow.contains("name")) {
+          mArrow[1] = endArrow.value("name").toString();
+        }
+      }
+    }
+
+    if (jsonObject.contains("arrowSize")) {
+      mArrowSize = jsonObject.value("arrowSize").toDouble();
+    }
+
+    if (jsonObject.contains("smooth")) {
+      QJsonObject smooth = jsonObject.value("smooth").toObject();
       if (smooth.contains("name")) {
         mSmooth = smooth.value("name").toString();
       }
@@ -418,6 +513,53 @@ namespace ModelInstance
         mHorizontalAlignment = horizontalAlignment.value("name").toString();
       }
     }
+  }
+
+  void Text::deserialize(const QJsonObject &jsonObject)
+  {
+    GraphicItem::deserialize(jsonObject);
+    FilledShape::deserialize(jsonObject);
+
+    if (jsonObject.contains("extent")) {
+      mExtent.deserialize(jsonObject.value("extent").toArray());
+    }
+
+    if (jsonObject.contains("string")) {
+      mTextString = jsonObject.value("string").toString();
+    }
+
+    if (jsonObject.contains("fontSize")) {
+      mFontSize = jsonObject.value("fontSize").toDouble();
+    }
+
+    if (jsonObject.contains("textColor")) {
+      mTextColor.deserialize(jsonObject.value("textColor").toArray());
+    }
+
+    if (jsonObject.contains("fontName")) {
+      mFontName = jsonObject.value("fontName").toString();
+    }
+
+    if (jsonObject.contains("textStyle")) {
+      QJsonArray textStyles = jsonObject.value("textStyle").toArray();
+      foreach (QJsonValue textStyle, textStyles) {
+        QJsonObject textStyleObject = textStyle.toObject();
+        if (textStyleObject.contains("name")) {
+          mTextStyle.append(textStyleObject.value("name").toString());
+        }
+      }
+    }
+
+    if (jsonObject.contains("horizontalAlignment")) {
+      QJsonObject horizontalAlignment = jsonObject.value("horizontalAlignment").toObject();
+      if (horizontalAlignment.contains("name")) {
+        mHorizontalAlignment = horizontalAlignment.value("name").toString();
+      }
+    }
+
+//    if (jsonObject.contains("index")) {
+//      mIndex = jsonObject.value("index").toDouble();
+//    }
   }
 
   Bitmap::Bitmap()
@@ -927,12 +1069,24 @@ namespace ModelInstance
   {
     mpStartConnector = 0;
     mpEndConnector = 0;
+    mpLine = 0;
+    mpText = 0;
   }
 
   Connection::~Connection()
   {
-    delete mpStartConnector;
-    delete mpEndConnector;
+    if (mpStartConnector) {
+      delete mpStartConnector;
+    }
+    if (mpEndConnector) {
+      delete mpEndConnector;
+    }
+    if (mpLine) {
+      delete mpLine;
+    }
+    if (mpText) {
+      delete mpText;
+    }
   }
 
   void Connection::deserialize(const QJsonObject &jsonObject)
@@ -945,6 +1099,19 @@ namespace ModelInstance
     if (jsonObject.contains("rhs")) {
       mpEndConnector = new Connector;
       mpEndConnector->deserialize(jsonObject.value("rhs").toObject());
+    }
+
+    if (jsonObject.contains("annotation")) {
+      QJsonObject annotation = jsonObject.value("annotation").toObject();
+      if (annotation.contains("Line")) {
+        mpLine = new Line;
+        mpLine->deserialize(annotation.value("Line").toObject());
+      }
+
+      if (annotation.contains("Text")) {
+        mpText = new Text;
+        mpText->deserialize(annotation.value("Text").toObject());
+      }
     }
   }
 
