@@ -164,6 +164,16 @@ algorithm
   end match;
 end addPair;
 
+function addPairNotNull
+  "Adds a key-value pair to a JSON object if the value is not null."
+  input String key;
+  input JSON value;
+  input JSON obj;
+  output JSON outObj;
+algorithm
+  outObj := if isNull(value) then obj else addPair(key, value, obj);
+end addPairNotNull;
+
 function toStream
   input JSON value;
   input Boolean prettyPrint = false;
