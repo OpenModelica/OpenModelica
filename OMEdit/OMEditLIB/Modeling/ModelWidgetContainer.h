@@ -245,6 +245,7 @@ public:
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
+  void addConnection(ModelInstance::Connection *pConnection, bool inherited, bool addToOMC, bool select);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
@@ -577,6 +578,7 @@ public:
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
+  void detectMultipleDeclarations();
   void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
@@ -670,7 +672,6 @@ private:
   void getModelInitialStates();
   void getMetaModelSubModels();
   void getMetaModelConnections();
-  void detectMultipleDeclarations();
   QString getCompositeModelName();
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
