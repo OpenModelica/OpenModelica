@@ -578,21 +578,31 @@ function backSample<__Any> "First activation of clock is shifted in time before 
 </html>"));
 end backSample;
 
-function transition "Define state machine transition"
+function transition<__Block> "Define state machine transition"
+  input __Block from;
+  input __Block to;
+  input Boolean condition;
+  input Boolean immediate = true;
+  input Boolean reset = true;
+  input Boolean synchronize = false;
+  input Integer priority = 1;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'transition()'\">transition()</a>
 </html>"));
 end transition;
 
-function initialState "Define inital state of a state machine"
+function initialState<__Block> "Define inital state of a state machine"
+  input __Block state;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initialState()'\">initialState()</a>
 </html>"));
 end initialState;
 
-function activeState "Return true if instance of a state machine is active, otherwise false"
+function activeState<__Block> "Return true if instance of a state machine is active, otherwise false"
+  input __Block state;
+  output Boolean active;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'activeState()'\">activeState()</a>

@@ -57,6 +57,52 @@
         "required": ["lhs", "rhs"]
       }
     },
+    "initialStates": {
+      "description": "The top-level initial state machine states of the class instance",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "arguments": {
+            "description": "The arguments of an initialState call",
+            "type": "array",
+            "items": {
+              "$ref": "expression.schema.json"
+            }
+          },
+          "comment": {
+            "$ref": "#/definitions/comment"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotation"
+          }
+        },
+        "required": ["arguments"]
+      }
+    },
+    "transitions": {
+      "description": "The top-level state machine transitions of the class instance",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "arguments": {
+            "description": "The arguments of a transition call",
+            "type": "array",
+            "items": {
+              "$ref": "expression.schema.json"
+            }
+          },
+          "comment": {
+            "$ref": "#/definitions/comment"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotation"
+          }
+        },
+        "required": ["arguments"]
+      }
+    },
     "replaceable": {
       "description": "The replaceable elements of the class instance",
       "type": "array",

@@ -951,15 +951,10 @@ algorithm
 
   if root then
     sections := Class.getSections(InstNode.getClass(node));
-    j := dumpJSONConnections(sections, node);
-    if not JSON.isNull(j) then
-      json := JSON.addPair("connections", j, json);
-    end if;
+    json := dumpJSONEquations(sections, node, json);
 
     j := dumpJSONReplaceableElements(node);
-    if not JSON.isNull(j) then
-      json := JSON.addPair("replaceable", j, json);
-    end if;
+    json := JSON.addPairNotNull("replaceable", j, json);
   end if;
 end dumpJSONInstanceTree;
 
@@ -1140,9 +1135,7 @@ algorithm
     end match;
   end for;
 
-  if not JSON.isNull(attr_json) then
-    json := JSON.addPair("attributes", attr_json, json);
-  end if;
+  json := JSON.addPairNotNull("attributes", attr_json, json);
 end dumpJSONBuiltinClassComponents;
 
 function dumpJSONDims
@@ -1399,24 +1392,82 @@ algorithm
   end match;
 end dumpJSONAbsynFunctionArgs;
 
-function dumpJSONConnections
+function dumpJSONEquations
   input Sections sections;
   input InstNode scope;
-  output JSON json = JSON.makeNull();
+  input output JSON json;
+protected
+  list<Equation> connections, transitions, initial_states;
+  JSON j;
+  InstContext.Type context;
+algorithm
+  (connections, transitions, initial_states) := sortEquations(sections);
+  context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
+  transitions := list(Typing.typeEquation(e, context) for e in transitions);
+  initial_states := list(Typing.typeEquation(e, context) for e in initial_states);
+
+  j := dumpJSONConnections(connections, scope);
+  json := JSON.addPairNotNull("connections", j, json);
+
+  j := dumpJSONStateCalls(initial_states, scope);
+  json := JSON.addPairNotNull("initialStates", j, json);
+
+  j := dumpJSONStateCalls(transitions, scope);
+  json := JSON.addPairNotNull("transitions", j, json);
+end dumpJSONEquations;
+
+function sortEquations
+  input Sections sections;
+  output list<Equation> connections = {};
+  output list<Equation> transitions = {};
+  output list<Equation> initialStates = {};
+  output list<Equation> others = {};
 algorithm
   () := match sections
     case Sections.SECTIONS()
       algorithm
-        for eq in sections.equations loop
-          if Equation.isConnect(eq) then
-            json := JSON.addElement(dumpJSONConnection(eq, scope), json);
-          end if;
+        for eq in listReverse(sections.equations) loop
+          () := match eq
+            case Equation.CONNECT()
+              algorithm
+                connections := eq :: connections;
+              then
+                ();
+
+            case Equation.NORETCALL()
+              algorithm
+                if Expression.isCallNamed(eq.exp, "transition") then
+                  transitions := eq :: transitions;
+                elseif Expression.isCallNamed(eq.exp, "initialState") then
+                  initialStates := eq :: initialStates;
+                else
+                  others := eq :: others;
+                end if;
+              then
+                ();
+
+            else
+              algorithm
+                others := eq :: others;
+              then
+                ();
+          end match;
         end for;
       then
         ();
 
     else ();
   end match;
+end sortEquations;
+
+function dumpJSONConnections
+  input list<Equation> connections;
+  input InstNode scope;
+  output JSON json = JSON.makeNull();
+algorithm
+  for conn in connections loop
+    json := JSON.addElement(dumpJSONConnection(conn, scope), json);
+  end for;
 end dumpJSONConnections;
 
 function dumpJSONConnection
@@ -1432,6 +1483,42 @@ algorithm
   json := JSON.addPair("rhs", Expression.toJSON(rhs), json);
   json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
 end dumpJSONConnection;
+
+function dumpJSONStateCalls
+  input list<Equation> callEqs;
+  input InstNode scope;
+  output JSON json = JSON.makeNull();
+algorithm
+  for eq in callEqs loop
+    json := JSON.addElement(dumpJSONStateCall(eq, scope), json);
+  end for;
+end dumpJSONStateCalls;
+
+function dumpJSONStateCall
+  input Equation callEq;
+  input InstNode scope;
+  output JSON json = JSON.emptyObject();
+protected
+  Call call;
+  list<Expression> args;
+  DAE.ElementSource src;
+  JSON j;
+algorithm
+  () := match callEq
+    case Equation.NORETCALL(exp = Expression.CALL(call = call as Call.TYPED_CALL(arguments = args)), source = src)
+      algorithm
+        j := JSON.emptyArray(listLength(args));
+        for arg in args loop
+          j := JSON.addElement(Expression.toJSON(arg), j);
+        end for;
+        json := JSON.addPair("arguments", j, json);
+        json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONStateCall;
 
 function dumpJSONReplaceableElements
   input InstNode clsNode;
@@ -1465,10 +1552,7 @@ protected
   JSON j;
 algorithm
   j := dumpJSONSCodeMod_impl(mod);
-
-  if not JSON.isNull(j) then
-    json := JSON.addPair("modifiers", j, json);
-  end if;
+  json := JSON.addPairNotNull("modifiers", j, json);
 end dumpJSONSCodeMod;
 
 function dumpJSONSCodeMod_impl

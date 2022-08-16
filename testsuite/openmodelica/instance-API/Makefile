@@ -15,6 +15,7 @@ GetModelInstanceInnerOuter1.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceReplaceable1.mos \
+GetModelInstanceStateMachine1.mos \
 
 
 # test that currently fail. Move up when fixed.

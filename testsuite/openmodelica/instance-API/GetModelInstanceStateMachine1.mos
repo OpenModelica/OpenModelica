@@ -1,0 +1,211 @@
+// name: GetModelInstanceStateMachine1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    output Real y;
+    model State1
+    output Integer i(start=2);
+    equation
+      i = previous(i) + 2;
+    end State1;
+    State1 state1;
+    model State2
+    end State2;
+    State2 state2;
+  equation
+    initialState(state1) annotation(Line(points = {{0, 0}, {100, 100}}));
+    transition(
+      state1,
+      state2,
+      state1.i > 10,
+      immediate=false) annotation(Line(points = {{-100, 0}, {100, 100}}), Text(string = \"test\"));
+    transition(
+      state2,
+      state1,
+      true,
+      immediate=false) annotation(Line(points = {{0, 0}, {10, 100}}));
+    y = previous(state1.i);
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"direction\": \"output\"
+//       }
+//     },
+//     {
+//       \"name\": \"state1\",
+//       \"type\": {
+//         \"name\": \"State1\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"i\",
+//             \"type\": \"Integer\",
+//             \"modifiers\": {
+//               \"start\": \"2\"
+//             },
+//             \"prefixes\": {
+//               \"direction\": \"output\"
+//             }
+//           }
+//         ]
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     },
+//     {
+//       \"name\": \"state2\",
+//       \"type\": {
+//         \"name\": \"State2\",
+//         \"restriction\": \"model\"
+//       },
+//       \"prefixes\": {
+//
+//       }
+//     }
+//   ],
+//   \"initialStates\": [
+//     {
+//       \"arguments\": [
+//         {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"state1\"
+//             }
+//           ]
+//         }
+//       ],
+//       \"annotation\": {
+//         \"Line\": {
+//           \"points\": [
+//             [
+//               0,
+//               0
+//             ],
+//             [
+//               100,
+//               100
+//             ]
+//           ]
+//         }
+//       }
+//     }
+//   ],
+//   \"transitions\": [
+//     {
+//       \"arguments\": [
+//         {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"state1\"
+//             }
+//           ]
+//         },
+//         {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"state2\"
+//             }
+//           ]
+//         },
+//         {
+//           \"$kind\": \"relation\",
+//           \"lhs\": {
+//             \"$kind\": \"cref\",
+//             \"parts\": [
+//               {
+//                 \"name\": \"state1\"
+//               },
+//               {
+//                 \"name\": \"i\"
+//               }
+//             ]
+//           },
+//           \"op\": \" > \",
+//           \"rhs\": 10
+//         },
+//         false,
+//         true,
+//         false,
+//         1
+//       ],
+//       \"annotation\": {
+//         \"Line\": {
+//           \"points\": [
+//             [
+//               -100,
+//               0
+//             ],
+//             [
+//               100,
+//               100
+//             ]
+//           ]
+//         },
+//         \"Text\": {
+//           \"string\": \"test\"
+//         }
+//       }
+//     },
+//     {
+//       \"arguments\": [
+//         {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"state2\"
+//             }
+//           ]
+//         },
+//         {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"state1\"
+//             }
+//           ]
+//         },
+//         true,
+//         false,
+//         true,
+//         false,
+//         1
+//       ],
+//       \"annotation\": {
+//         \"Line\": {
+//           \"points\": [
+//             [
+//               0,
+//               0
+//             ],
+//             [
+//               10,
+//               100
+//             ]
+//           ]
+//         }
+//       }
+//     }
+//   ]
+// }"
+// endResult

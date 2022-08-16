@@ -2510,6 +2510,12 @@ algorithm
       then
         (actualType, matchKind);
 
+    case "__Block"
+      algorithm
+        matchKind := if Type.isComplex(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
     else
       algorithm
         exp := Expression.box(exp);
