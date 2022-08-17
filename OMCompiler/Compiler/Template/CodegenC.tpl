@@ -2861,7 +2861,7 @@ template getNLSPrototypes(Integer index)
 ::=
   <<
   void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern);
+  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
   void getIterationVarsNLS<%index%>(DATA* data, double *array);
   >>
 end getNLSPrototypes;
@@ -3223,7 +3223,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern)
+  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
   {
     int i=0;
     <%bodyStaticData%>
