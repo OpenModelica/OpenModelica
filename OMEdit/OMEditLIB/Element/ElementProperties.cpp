@@ -1528,9 +1528,17 @@ void ElementParameters::fetchExtendsModifiers()
     foreach (auto pExtend, mpElement->getModel()->getExtends()) {
       foreach (auto modifier, pExtend->getModifier().getModifiers()) {
         Parameter *pParameter = findParameter(modifier.getName());
+        /* Ticket #2531
+         * Check if parameter is marked final in the extends modifier.
+         */
+        if (modifier.isFinal()) {
+          mParametersList.removeOne(pParameter);
+          delete pParameter;
+          continue;
+        }
         if (pParameter) {
-          if (pParameter->isShowStartAttribute()) {
-            foreach (auto subModifier, modifier.getModifiers()) {
+          foreach (auto subModifier, modifier.getModifiers()) {
+            if (pParameter->isShowStartAttribute()) {
               if (subModifier.getName().compare(QStringLiteral("start")) == 0) {
                 QString start = subModifier.getValue();
                 if (!start.isEmpty()) {
@@ -1540,12 +1548,9 @@ void ElementParameters::fetchExtendsModifiers()
                   pParameter->setValueWidget(start, true, pParameter->getUnit());
                 }
               }
+            } else {
+              pParameter->setValueWidget(modifier.getValue(), true, pParameter->getUnit());
             }
-          } else {
-            pParameter->setValueWidget(modifier.getValue(), true, pParameter->getUnit());
-          }
-
-          foreach (auto subModifier, modifier.getModifiers()) {
             if (subModifier.getName().compare(QStringLiteral("displayUnit")) == 0) {
               QString displayUnit = subModifier.getValue();
               int index = pParameter->getUnitComboBox()->findData(displayUnit);
