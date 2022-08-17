@@ -724,7 +724,12 @@ void GraphicsView::deleteElement(Element *pElement)
     QString startComponentName = getComponentName(mConnectionsList[i]->getStartComponentName());
     QString endComponentName = getComponentName(mConnectionsList[i]->getEndComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
-      deleteConnection(mConnectionsList[i]);
+      if (MainWindow::instance()->isNewApi()) {
+        deleteConnectionFromClass(mConnectionsList[i]);
+        deleteConnectionFromList(mConnectionsList[i]);
+      } else {
+        deleteConnection(mConnectionsList[i]);
+      }
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -736,7 +741,12 @@ void GraphicsView::deleteElement(Element *pElement)
     QString startComponentName = getComponentName(mTransitionsList[i]->getStartComponentName());
     QString endComponentName = getComponentName(mTransitionsList[i]->getEndComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
-      deleteTransition(mTransitionsList[i]);
+      if (MainWindow::instance()->isNewApi()) {
+        deleteTransitionFromClass(mTransitionsList[i]);
+        deleteTransitionFromList(mTransitionsList[i]);
+      } else {
+        deleteTransition(mTransitionsList[i]);
+      }
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -747,7 +757,12 @@ void GraphicsView::deleteElement(Element *pElement)
   while(i != mInitialStatesList.size()) {
     QString startComponentName = getComponentName(mInitialStatesList[i]->getStartComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0)) {
-      deleteInitialState(mInitialStatesList[i]);
+      if (MainWindow::instance()->isNewApi()) {
+        deleteInitialStateFromClass(mInitialStatesList[i]);
+        deleteInitialStateFromList(mInitialStatesList[i]);
+      } else {
+        deleteInitialState(mInitialStatesList[i]);
+      }
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -758,21 +773,25 @@ void GraphicsView::deleteElement(Element *pElement)
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
     pElement->emitDeleted();
   } else {
-    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
+    if (MainWindow::instance()->isNewApi()) {
+      deleteElementFromClass(pElement);
+      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), mpModelWidget->getModelInstance()->getModelJson(), ""));
+    } else {
+      mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
+    }
   }
 }
 
 /*!
- * \brief GraphicsView::deleteElementObject
- * Deletes the Element.
- * \param pComponent
+ * \brief GraphicsView::deleteElementFromClass
+ * Deletes the Element from class.
+ * \param pElement
  */
 void GraphicsView::deleteElementFromClass(Element *pElement)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     // delete the component from OMC
-    pOMCProxy->deleteComponent(pElement->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    MainWindow::instance()->getOMCProxy()->deleteComponent(pElement->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteSubModel(pElement->getName());
