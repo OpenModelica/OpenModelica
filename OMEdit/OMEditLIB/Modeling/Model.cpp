@@ -868,6 +868,8 @@ namespace ModelInstance
   {
     mName = "";
     mValue = "";
+    mFinal = false;
+    mEach = false;
     mModifiers.clear();
   }
 
@@ -880,6 +882,10 @@ namespace ModelInstance
         const QJsonValue modifierValue = modifiersIterator.value();
         if (modifierKey.compare(QStringLiteral("$value")) == 0) {
           mValue = modifierValue.toString();
+        } else if (modifierKey.compare(QStringLiteral("final")) == 0) {
+          mFinal = true;
+        } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
+          mEach = true;
         } else {
           Modifier modifier;
           modifier.setName(modifierKey);

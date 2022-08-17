@@ -419,9 +419,13 @@ private:
     void setName(const QString &name) {mName = name;}
     QString getValue() const {return mValue;}
     QList<Modifier> getModifiers() const {return mModifiers;}
+    bool isFinal() const {return mFinal;}
+    bool isEach() const {return mEach;}
   private:
     QString mName;
     QString mValue;
+    bool mFinal;
+    bool mEach;
     QList<Modifier> mModifiers;
   };
 
