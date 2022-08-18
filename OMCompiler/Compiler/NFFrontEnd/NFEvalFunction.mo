@@ -396,7 +396,7 @@ algorithm
         UnorderedMap.apply(local_map, function applyBindingReplacement(map = local_map));
         bindings := UnorderedMap.valueList(local_map);
       then
-        Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true), cls.ty, bindings);
+        Expression.makeRecord(InstNode.fullPath(cls_node), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, map, mutableParams);
   end match;
@@ -1441,7 +1441,7 @@ algorithm
       expl := getExternalOutputResult(c, map) :: expl;
     end for;
 
-    exp := Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true),
+    exp := Expression.makeRecord(InstNode.fullPath(cls_node),
       InstNode.getType(cls_node), listReverseInPlace(expl));
   else
     Error.assertion(false, getInstanceName() +

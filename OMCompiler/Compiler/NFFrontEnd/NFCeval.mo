@@ -798,7 +798,7 @@ algorithm
     args := arg :: args;
   end for;
 
-  exp := Expression.makeRecord(InstNode.scopePath(recordNode, includeRoot = true), recordType, args);
+  exp := Expression.makeRecord(InstNode.fullPath(recordNode), recordType, args);
 end makeRecordBindingExp;
 
 function evalTypename

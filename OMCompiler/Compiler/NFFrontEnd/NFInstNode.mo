@@ -1078,9 +1078,27 @@ uniontype InstNode
     end match;
   end scopeListClass;
 
+  type ScopeType = enumeration(
+    RELATIVE       "Stops at a root class and doesn't include the root",
+    INCLUDING_ROOT "Stops at a root class and includes the root",
+    FULL           "Stops at the top scope"
+  );
+
+  function rootPath
+    input InstNode node;
+    input Boolean ignoreBaseClass = false "Ignore that a class is a base class if true.";
+    output Absyn.Path path = scopePath(node, ScopeType.INCLUDING_ROOT, ignoreBaseClass);
+  end rootPath;
+
+  function fullPath
+    input InstNode node;
+    input Boolean ignoreBaseClass = false "Ignore that a class is a base class if true.";
+    output Absyn.Path path = scopePath(node, ScopeType.FULL, ignoreBaseClass);
+  end fullPath;
+
   function scopePath
     input InstNode node;
-    input Boolean includeRoot = false "Whether to include the root class name or not.";
+    input ScopeType scopeType = ScopeType.RELATIVE;
     input Boolean ignoreBaseClass = false "Ignore that a class is a base class if true.";
     output Absyn.Path path;
   algorithm
@@ -1091,12 +1109,12 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, includeRoot);
-            else scopePath2(node.parentScope, includeRoot, Absyn.IDENT(node.name));
+            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, scopeType);
+            else scopePath2(node.parentScope, scopeType, Absyn.IDENT(node.name));
           end match;
 
-      case COMPONENT_NODE() then scopePath2(node.parent, includeRoot, Absyn.IDENT(node.name));
-      case IMPLICIT_SCOPE() then scopePath(node.parentScope, includeRoot);
+      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.IDENT(node.name));
+      case IMPLICIT_SCOPE() then scopePath(node.parentScope, scopeType);
 
       // For debugging.
       else Absyn.IDENT(name(node));
@@ -1105,13 +1123,13 @@ uniontype InstNode
 
   function scopePath2
     input InstNode node;
-    input Boolean includeRoot;
+    input ScopeType scopeType;
     input Absyn.Path accumPath;
     output Absyn.Path path;
   algorithm
     path := match node
-      case CLASS_NODE() then scopePathClass(node, node.nodeType, includeRoot, accumPath);
-      case COMPONENT_NODE() then scopePath2(node.parent, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
+      case CLASS_NODE() then scopePathClass(node, node.nodeType, scopeType, accumPath);
+      case COMPONENT_NODE() then scopePath2(node.parent, scopeType, Absyn.QUALIFIED(node.name, accumPath));
       else accumPath;
     end match;
   end scopePath2;
@@ -1119,30 +1137,32 @@ uniontype InstNode
   function scopePathClass
     input InstNode node;
     input InstNodeType ty;
-    input Boolean includeRoot;
+    input ScopeType scopeType;
     input Absyn.Path accumPath;
     output Absyn.Path path;
   algorithm
     path := match ty
       case InstNodeType.NORMAL_CLASS()
-        then scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath));
+        then scopePath2(classParent(node), scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.BASE_CLASS()
-        then scopePath2(ty.parent, includeRoot, accumPath);
+        then scopePath2(ty.parent, scopeType, accumPath);
       case InstNodeType.DERIVED_CLASS()
-        then scopePathClass(node, ty.ty, includeRoot, accumPath);
+        then scopePathClass(node, ty.ty, scopeType, accumPath);
       case InstNodeType.BUILTIN_CLASS()
         then Absyn.QUALIFIED(className(node), accumPath);
       case InstNodeType.TOP_SCOPE()
         then accumPath;
       case InstNodeType.ROOT_CLASS()
-        then if includeRoot then
-            scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath))
-          else
-            accumPath;
+        then if scopeType == ScopeType.FULL then
+               scopePath2(classParent(node), scopeType, Absyn.QUALIFIED(className(node), accumPath))
+             elseif scopeType == ScopeType.INCLUDING_ROOT then
+               Absyn.QUALIFIED(className(node), accumPath)
+             else
+               accumPath;
       case InstNodeType.REDECLARED_CLASS()
-        then scopePath2(ty.parent, includeRoot, Absyn.QUALIFIED(className(node), accumPath));
+        then scopePath2(ty.parent, scopeType, Absyn.QUALIFIED(className(node), accumPath));
       case InstNodeType.IMPLICIT_SCOPE()
-        then scopePath2(classParent(node), includeRoot, accumPath);
+        then scopePath2(classParent(node), scopeType, accumPath);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
@@ -1648,8 +1668,7 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls),
-                                           scopePath(clsNode, includeRoot = true));
+                state := Restriction.toDAE(Class.restriction(cls), fullPath(clsNode));
               then
                 DAE.Type.T_COMPLEX(state, {}, NONE());
 
@@ -1691,8 +1710,7 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls),
-                                           scopePath(clsNode, includeRoot = true));
+                state := Restriction.toDAE(Class.restriction(cls), fullPath(clsNode));
                 vars := ConvertDAE.makeTypeVars(clsNode);
                 outType := DAE.Type.T_COMPLEX(state, vars, NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));

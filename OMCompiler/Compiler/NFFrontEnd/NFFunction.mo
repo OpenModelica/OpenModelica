@@ -398,7 +398,7 @@ uniontype Function
       case CachedData.FUNCTION() then ();
       else
         algorithm
-          node := instFunction2(InstNode.scopePath(node, includeRoot = true), node, context, info);
+          node := instFunction2(InstNode.fullPath(node), node, context, info);
         then
           ();
     end match;
