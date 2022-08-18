@@ -48,7 +48,7 @@ omc_add_subdirectory(3rdParty)
 # declaration so that we can be consistent and correct with our inclusions.
 # We do this after 3rdParty is added!! because some libs in FMILib use implicit function declaration
 # because of missing #defines due to bad configuration for now.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
 endif()
 

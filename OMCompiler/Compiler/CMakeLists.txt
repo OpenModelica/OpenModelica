@@ -194,7 +194,7 @@ add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 # Silence warnings about extra parenthesized equality checks. if((a==b))
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(OpenModelicaCompiler PRIVATE -Wno-parentheses-equality)
 endif()
 
