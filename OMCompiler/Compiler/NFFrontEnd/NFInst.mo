@@ -2182,11 +2182,9 @@ algorithm
         InstNode.cacheInitFunc(node);
 
         if SCodeUtil.isOperatorRecord(InstNode.definition(node)) then
-          OperatorOverloading.instConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
+          OperatorOverloading.instConstructor(InstNode.fullPath(node), node, context, InstNode.info(node));
         else
-          Record.instDefaultConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
+          Record.instDefaultConstructor(InstNode.fullPath(node), node, context, InstNode.info(node));
         end if;
       then
         ();

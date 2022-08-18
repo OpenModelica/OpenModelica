@@ -780,7 +780,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     ty as Type.COMPLEX(complexTy = ComplexType.RECORD(ty_node)) := getType(cls, clsNode);
     fields := ClassTree.getComponents(classTree(cls));
     args := list(Binding.getExp(Component.getImplicitBinding(InstNode.component(f))) for f in fields);
-    exp := Expression.makeRecord(InstNode.scopePath(ty_node, includeRoot = true), ty, args);
+    exp := Expression.makeRecord(InstNode.fullPath(ty_node), ty, args);
   end makeRecordExp;
 
   function toFlatStream

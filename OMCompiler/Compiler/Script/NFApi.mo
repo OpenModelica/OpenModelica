@@ -530,7 +530,7 @@ algorithm
       cls := Lookup.lookupClassName(pathToQualify, expanded_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
     end if;
 
-    qualPath := InstNode.scopePath(cls, true);
+    qualPath := InstNode.fullPath(cls);
 
     if not Flags.isSet(Flags.NF_API_NOISE) then
       ErrorExt.rollBack("NFApi.mkFullyQual");
@@ -820,8 +820,8 @@ algorithm
   cls := InstNode.getClass(cls_node);
 
   extendsPaths := match cls
-    case Class.EXPANDED_DERIVED() then {InstNode.scopePath(cls.baseClass, true, true)};
-    else list(InstNode.scopePath(e, true, true) for e in ClassTree.getExtends(Class.classTree(cls)));
+    case Class.EXPANDED_DERIVED() then {InstNode.fullPath(cls.baseClass, true)};
+    else list(InstNode.fullPath(e, true) for e in ClassTree.getExtends(Class.classTree(cls)));
   end match;
 end getInheritedClasses;
 
