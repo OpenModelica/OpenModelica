@@ -15,7 +15,7 @@ target_sources(bomc PRIVATE ../.cmake/omc_main.c)
 target_compile_definitions(bomc PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 # Silence warnings about extra parenthesized equality checks. if((a==b)).
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(bomc PRIVATE -Wno-parentheses-equality)
 endif()
 
