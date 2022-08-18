@@ -4406,6 +4406,23 @@ function getModelInstance
 external "builtin";
 end getModelInstance;
 
+function storeAST
+  output Integer id;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Stores the AST and returns an id that can be used to restore it with restoreAST.</p>
+</html>"));
+end storeAST;
+
+function restoreAST
+  input Integer id;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Restores an AST that was previously stored with storeAST.</p>
+</html>"));
+end restoreAST;
+
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined);

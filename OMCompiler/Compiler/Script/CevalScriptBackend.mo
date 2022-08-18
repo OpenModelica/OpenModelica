@@ -3105,6 +3105,12 @@ algorithm
     case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then NFApi.getModelInstance(classpath, b);
 
+    case ("storeAST", {})
+      then Values.INTEGER(SymbolTable.storeAST());
+
+    case ("restoreAST", {Values.INTEGER(integer = n)})
+      then Values.BOOL(SymbolTable.restoreAST(n));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

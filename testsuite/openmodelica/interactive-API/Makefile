@@ -73,6 +73,7 @@ setComponentModifierValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
+StoreAST.mos \
 stringSplit.mos \
 strings.mos  \
 variables.mos \

@@ -40,6 +40,7 @@ import Absyn;
 import GlobalScript;
 import FCore;
 import SCode;
+import Vector;
 
 protected
 import AvlTreeStringString;
@@ -60,14 +61,17 @@ record SYMBOLTABLE
   Absyn.Program ast "ast ; The ast" ;
   Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
   list<GlobalScript.Variable> vars "List of variables with values" ;
+  Vector<Absyn.Program> cachedAsts;
 end SYMBOLTABLE;
 
 function reset
+  type Program = Absyn.Program;
 algorithm
   setGlobalRoot(Global.symbolTable, SYMBOLTABLE(
                  ast=Absyn.PROGRAM({},Absyn.TOP()),
                  explodedAst=NONE(),
-                 vars={}
+                 vars={},
+                 cachedAsts=Vector.new<Program>()
                  ));
   updateUriMapping({});
 end reset;
@@ -240,6 +244,30 @@ algorithm
   table.vars := List.deleteMemberOnTrue(inIdent, table.vars, isVarNamed);
   update(table);
 end deleteVarFirstEntry;
+
+function storeAST
+  output Integer id;
+protected
+  SymbolTable table;
+algorithm
+  table := get();
+  Vector.push(table.cachedAsts, getAbsyn());
+  id := Vector.size(table.cachedAsts);
+end storeAST;
+
+function restoreAST
+  input Integer id;
+  output Boolean success;
+protected
+  SymbolTable table;
+algorithm
+  table := get();
+  success := id <= Vector.size(table.cachedAsts) and id > 0;
+
+  if success then
+    setAbsyn(Vector.get(table.cachedAsts, id));
+  end if;
+end restoreAST;
 
 protected
 
