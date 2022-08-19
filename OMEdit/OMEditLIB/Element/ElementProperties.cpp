@@ -1701,6 +1701,7 @@ void ElementParameters::updateElementParameters()
 {
   if (MainWindow::instance()->isNewApi()) {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    int oldASTID = pOMCProxy->storeAST();
     QString className = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     bool valueChanged = false;
     // any parameter changed
@@ -1795,7 +1796,7 @@ void ElementParameters::updateElementParameters()
       // create OMCUndoCommand
       const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
       ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInstance, QString("Update Element %1 Parameters").arg(mpElement->getName())));
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldASTID, oldModelInstance, QString("Update Element %1 Parameters").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {
@@ -2181,6 +2182,8 @@ void ElementAttributes::updateElementAttributes()
     causality = "";
   }
   if (MainWindow::instance()->isNewApi()) {
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    int oldASTID = pOMCProxy->storeAST();
     QString modelName = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     bool attributesChanged = false;
     attributesChanged |= mpElement->getModelElement()->isFinal() != mpFinalCheckBox->isChecked();
@@ -2198,7 +2201,6 @@ void ElementAttributes::updateElementAttributes()
     QString isInner = mpInnerCheckBox->isChecked() ? "true" : "false";
     QString isOuter = mpOuterCheckBox->isChecked() ? "true" : "false";
 
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     // update component attributes if needed
     if (attributesChanged) {
       if (!pOMCProxy->setComponentProperties(modelName, mpElement->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
@@ -2242,7 +2244,7 @@ void ElementAttributes::updateElementAttributes()
     if (attributesChanged) {
       const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
       ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInstance, QString("Update Component %1 Attributes").arg(mpElement->getName())));
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldASTID, oldModelInstance, QString("Update Component %1 Attributes").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {

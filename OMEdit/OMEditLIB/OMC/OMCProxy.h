@@ -283,6 +283,8 @@ public:
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
   QJsonObject getModelInstance(const QString &className, bool prettyPrint = false);
+  int storeAST();
+  bool restoreAST(int id);
 signals:
   void commandFinished();
 public slots:

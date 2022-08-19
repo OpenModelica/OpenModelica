@@ -718,6 +718,10 @@ QString getComponentName(const QString &qualifiedComponentName)
  */
 void GraphicsView::deleteElement(Element *pElement)
 {
+  int oldASTID;
+  if (MainWindow::instance()->isNewApi() && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    oldASTID = MainWindow::instance()->getOMCProxy()->storeAST();
+  }
   // First remove the connections associated to this element
   int i = 0;
   while(i != mConnectionsList.size()) {
@@ -775,7 +779,7 @@ void GraphicsView::deleteElement(Element *pElement)
   } else {
     if (MainWindow::instance()->isNewApi()) {
       deleteElementFromClass(pElement);
-      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), mpModelWidget->getModelInstance()->getModelJson(), ""));
+      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldASTID, mpModelWidget->getModelInstance()->getModelJson(), ""));
     } else {
       mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
     }

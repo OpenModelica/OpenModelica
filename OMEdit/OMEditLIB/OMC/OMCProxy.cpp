@@ -3450,6 +3450,31 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
 }
 
 /*!
+ * \brief OMCProxy::storeAST
+ * Stores the AST and return an id handle.
+ * \return
+ */
+int OMCProxy::storeAST()
+{
+  int id = mpOMCInterface->storeAST();
+  printMessagesStringInternal();
+  return id;
+}
+
+/*!
+ * \brief OMCProxy::restoreAST
+ * Restores the AST to a specific id handle.
+ * \param id
+ * \return
+ */
+bool OMCProxy::restoreAST(int id)
+{
+  bool result = mpOMCInterface->restoreAST(id);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
