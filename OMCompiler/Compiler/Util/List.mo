@@ -6540,21 +6540,30 @@ public function toString<T>
   input String inDelimitStr   = ", "    "The delimiter between list elements.";
   input String inEndStr       = "}"     "The end of the list.";
   input Boolean inPrintEmpty  = true    "If false, don't output begin and end if the list is empty.";
+  input Integer maxLength = 0           "If > 0, only the first maxLength elements are printed";
   output String outString;
 
   partial function FuncType
     input T inElement;
     output String outString;
   end FuncType;
+protected
+  list<T> lst = inList;
+  String endStr = inEndStr;
 algorithm
-  outString := match(inList, inPrintEmpty)
+  if maxLength > 0 and listLength(lst) > maxLength then
+    lst := List.firstN(lst, maxLength);
+    endStr := ", ..." + endStr;
+  end if;
+
+  outString := match(lst, inPrintEmpty)
     local
       String str;
 
     // Empty list and inPrintEmpty true => concatenate the list name, begin
     // string and end string.
     case ({}, true)
-      then stringAppendList({inListNameStr, inBeginStr, inEndStr});
+      then stringAppendList({inListNameStr, inBeginStr, endStr});
 
     // Empty list and inPrintEmpty false => output only list name.
     case ({}, false)
@@ -6562,8 +6571,8 @@ algorithm
 
     else
       equation
-        str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
-        str = stringAppendList({inListNameStr, inBeginStr, str, inEndStr});
+        str = stringDelimitList(map(lst, inPrintFunc), inDelimitStr);
+        str = stringAppendList({inListNameStr, inBeginStr, str, endStr});
       then
         str;
 

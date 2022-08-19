@@ -696,6 +696,7 @@ algorithm
       literals                    = {}, // Set by the traversal below...
       recordDecls                 = recordDecls,
       externalFunctionIncludes    = externalFunctionIncludes,
+      generic_loop_calls          = {}, // only used in new backend
       localKnownVars              = localKnownVars,
       allEquations                = allEquations,
       odeEquations                = odeEquations,
@@ -10262,6 +10263,8 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_ARRAY_CALL_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_GENERIC_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_ENTWINED_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_WHEN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_FOR_LOOP(source=DAE.SOURCE(info=info)) then info;
   end match;
@@ -10276,6 +10279,8 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
     case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then index;
     case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
+    case SimCode.SES_GENERIC_ASSIGN(index=index) then index;
+    case SimCode.SES_ENTWINED_ASSIGN(index=index) then index;
     case SimCode.SES_IFEQUATION(index=index) then index;
     case SimCode.SES_ALGORITHM(index=index) then index;
     case SimCode.SES_INVERSE_ALGORITHM(index=index) then index;

@@ -110,7 +110,7 @@ public
     output list<System.System> systems;
   end partitioningInterface;
 
-//                               Causalize
+//                               CAUSALIZE
 // *************************************************************************
   partial function causalizeInterface
     "Causalize
@@ -122,6 +122,9 @@ public
     input output FunctionTree funcTree;
   end causalizeInterface;
 
+//                           RESOLVING SINGULARITIES
+//                  Index Reduction + Balance Initialization
+// *************************************************************************
   partial function resolveSingularitiesInterface
     input output VariablePointers variables;
     input output EquationPointers equations;

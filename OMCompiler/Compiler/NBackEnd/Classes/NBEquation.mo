@@ -65,7 +65,7 @@ public
   import StrongComponent = NBStrongComponent;
   import Solve = NBSolve;
   import BVariable = NBVariable;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointer, VariablePointers};
 
   // Util imports
   import BackendUtil = NBBackendUtil;
@@ -679,16 +679,15 @@ public
     algorithm
       attr := match eq
         local
-          EquationAttributes tmp;
           Equation body;
-        case SCALAR_EQUATION(attr = tmp)      then tmp;
-        case ARRAY_EQUATION(attr = tmp)       then tmp;
-        case SIMPLE_EQUATION(attr = tmp)      then tmp;
-        case RECORD_EQUATION(attr = tmp)      then tmp;
-        case ALGORITHM(attr = tmp)            then tmp;
-        case IF_EQUATION(attr = tmp)          then tmp;
-        case FOR_EQUATION(attr = tmp)         then tmp;
-        case WHEN_EQUATION(attr = tmp)        then tmp;
+        case SCALAR_EQUATION()                then eq.attr;
+        case ARRAY_EQUATION()                 then eq.attr;
+        case SIMPLE_EQUATION()                then eq.attr;
+        case RECORD_EQUATION()                then eq.attr;
+        case ALGORITHM()                      then eq.attr;
+        case IF_EQUATION()                    then eq.attr;
+        case FOR_EQUATION()                   then eq.attr;
+        case WHEN_EQUATION()                  then eq.attr;
         case AUX_EQUATION(body = SOME(body))  then getAttributes(body);
                                               else EQ_ATTR_DEFAULT_UNKNOWN;
       end match;
@@ -713,6 +712,26 @@ public
         case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setAttributes(body, attr)); then eq;
         end match;
     end setAttributes;
+
+    function getSource
+      input Equation eq;
+      output DAE.ElementSource source;
+    algorithm
+      source := match eq
+        local
+          Equation body;
+        case SCALAR_EQUATION()                then eq.source;
+        case ARRAY_EQUATION()                 then eq.source;
+        case SIMPLE_EQUATION()                then eq.source;
+        case RECORD_EQUATION()                then eq.source;
+        case ALGORITHM()                      then eq.source;
+        case IF_EQUATION()                    then eq.source;
+        case FOR_EQUATION()                   then eq.source;
+        case WHEN_EQUATION()                  then eq.source;
+        case AUX_EQUATION(body = SOME(body))  then getSource(body);
+                                              else DAE.emptyElementSource;
+      end match;
+    end getSource;
 
     function setDerivative
       input output Equation eq;
@@ -2904,35 +2923,6 @@ public
       end match;
     end removeList;
   end EqData;
-
-  uniontype InnerEquation
-    record INNER_EQUATION
-      "Inner equation for torn systems."
-      Pointer<Equation> eqn;
-      Pointer<Variable> var;
-      //Option<Constraints> cons;
-    end INNER_EQUATION;
-
-    function toString
-      input InnerEquation eqn;
-      input output String str;
-    algorithm
-      str := Equation.toString(Pointer.access(eqn.eqn), str + "(" + BVariable.pointerToString(eqn.var) + ") ");
-    end toString;
-
-    function fromStrongComponent
-      input StrongComponent comp;
-      output InnerEquation eqn;
-    algorithm
-      // ToDo: add more cases
-      eqn := match comp
-        case StrongComponent.SINGLE_EQUATION() then INNER_EQUATION(comp.eqn, comp.var);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be an inner equation: " + StrongComponent.toString(comp)});
-        then fail();
-      end match;
-    end fromStrongComponent;
-  end InnerEquation;
 
   annotation(__OpenModelica_Interface="backend");
 end NBEquation;

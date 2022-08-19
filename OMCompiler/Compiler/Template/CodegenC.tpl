@@ -5411,6 +5411,10 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationSimpleAssign(e, context, &varD, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
+  case e as SES_GENERIC_ASSIGN(__)
+    then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+  case e as SES_ENTWINED_ASSIGN(__)
+    then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_IFEQUATION(__)
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
   case e as SES_ALGORITHM(__)
@@ -5512,6 +5516,12 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
 
         case e as SES_ARRAY_CALL_ASSIGN(__)
         then equationArrayCallAssign(e, context, &varD, &tempeqns)
+
+        case e as SES_GENERIC_ASSIGN(__)
+        then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+
+        case e as SES_ENTWINED_ASSIGN(__)
+        then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
 
         case e as SES_IFEQUATION(__)
         then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
@@ -5840,6 +5850,88 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 <%endModelicaLine()%>
 >>
 end equationArrayCallAssign;
+
+template equationGenericAssign(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+ "Generate a call for a generic for-loop structure with an index-list."
+::=
+<<
+<%modelicaLine(eqInfo(eq))%>
+<%match eq
+
+case eqn as SES_GENERIC_ASSIGN() then
+  let idx_len = listLength(scal_indices)
+  <<
+  const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+  for(int i=0; i<<%idx_len%>; i++)
+    genericCall_<%call_index%>(data, threadData, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+  >>
+%>
+<%endModelicaLine()%>
+>>
+end equationGenericAssign;
+
+template equationEntwinedAssign(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+ "Generate a call for entwined generic for-loop structures with an index-lists and a call order."
+
+::=
+<<
+<%modelicaLine(eqInfo(eq))%>
+<%match eq
+
+case eqn as SES_ENTWINED_ASSIGN() then
+  let call_num = listLength(single_calls)
+  let call_order_len = listLength(call_order)
+  <<
+  int call_indices[<%call_num%>] = {<%(single_calls |> call => '0'; separator=", ")%>};
+  const int call_order[<%call_order_len%>] = {<%(call_order |> idx => '<%idx%>'; separator=", ")%>};
+  <%(single_calls |> call hasindex i0 => entwinedSingleCallIndices(call, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+  for(int i=0; i<<%call_order_len%>; i++)
+  {
+    switch(call_order[i])
+    {
+    <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+      default:
+        throwStreamPrint(NULL, "Call index %i at pos %i unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
+        break;
+    }
+  }
+  >>
+%>
+<%endModelicaLine()%>
+>>
+end equationEntwinedAssign;
+
+template entwinedSingleCallIndices(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+::=
+<<
+<%match eq
+case eqn as SES_GENERIC_ASSIGN() then
+  let idx_len = listLength(scal_indices)
+  <<
+  const int idx_lst_<%call_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+  >>
+%>
+>>
+end entwinedSingleCallIndices;
+
+template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+::=
+<<
+<%match eq
+case eqn as SES_GENERIC_ASSIGN() then
+  <<
+    case <%call_index%>:
+      genericCall_<%call_index%>(data, threadData, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
+      call_indices[<%i0%>]++;
+      break;
+  >>
+%>
+>>
+end entwinedSingleCall;
 
 template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates an equation that is an algorithm."
@@ -6296,7 +6388,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions)
+/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -6321,6 +6413,7 @@ end simulationLiteralsFile;
   %>
 
   <%functionBodies(functions,true)%>
+  <%genericCallBodies(genericCalls)%>
 
   #ifdef __cplusplus
   }
@@ -6540,6 +6633,8 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_GENERIC_ASSIGN(__)
+  case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
   case SES_LINEAR(__)
@@ -6548,6 +6643,7 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then eqAttributeIsDiscreteKind(eqAttr)
+  else ''
 end simEqAttrIsDiscreteKind;
 
 template eqAttributeIsDiscreteKind(EquationAttributes eqAtt)
@@ -6571,6 +6667,8 @@ template simEqAttrEval(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_GENERIC_ASSIGN(__)
+  case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
   case SES_LINEAR(__)
@@ -6579,6 +6677,7 @@ template simEqAttrEval(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then eqAttributesEval(eqAttr)
+  else ''
 end simEqAttrEval;
 
 template eqAttributesEval(EquationAttributes eqAtt)

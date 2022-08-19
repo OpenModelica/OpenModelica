@@ -37,8 +37,8 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
-  import NBVariable.{VariablePointers, VarData};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;

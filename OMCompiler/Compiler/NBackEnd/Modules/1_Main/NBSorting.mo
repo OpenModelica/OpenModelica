@@ -435,11 +435,13 @@ public
           _ := match (phase2_adj, phase2_matching)
             case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
+              /*
               for comp_lst in phase2_indices loop
                 print(List.toString(list(super_nodes[i] for i in comp_lst), SuperNode.toString, "", "\t", "\n\t", "\n"));
               end for;
+              */
               comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
-              print(List.toString(comps, function StrongComponent.toString(index = -1), "comps", "\t", "\n\t", "\n"));
+              //print(List.toString(comps, function StrongComponent.toString(index = -1), "comps", "\t", "\n\t", "\n"));
             then ();
 
             else algorithm
@@ -514,6 +516,323 @@ public
     comps := listReverse(comps);
   end tarjanScalar;
 
+
+  uniontype SuperNode
+    record SINGLE
+      "does not belong to an algebraic loop or array"
+      Integer index;
+    end SINGLE;
+
+    record ELEMENT
+      "is part of either an algebraic loop or array"
+      Integer index;
+      Integer parent;
+    end ELEMENT;
+
+    record ALGEBRAIC_LOOP
+      "an algebraic loop of equations"
+      Integer index;
+      list<Integer> eqn_indices;
+    end ALGEBRAIC_LOOP;
+
+    record ARRAY_BUCKET
+      "a bucket of array equations solved for the same cref"
+      Integer index;
+      ComponentRef cref_to_solve;
+      list<Integer> eqn_indices;
+      Integer arr_idx;
+    end ARRAY_BUCKET;
+
+    function toString
+      input SuperNode node;
+      output String str;
+    algorithm
+      str := match node
+        case SINGLE()           then "[" + intString(node.index) + "] single ";
+        case ELEMENT()          then "[" + intString(node.index) + "] scalar element of (" + intString(node.parent) + ")";
+        case ALGEBRAIC_LOOP()   then "[" + intString(node.index) + "] algebraic loop " + List.toString(node.eqn_indices, intString);
+        case ARRAY_BUCKET()     then "[" + intString(node.index) + "] array bucket " + List.toString(node.eqn_indices, intString);
+                                else "ERROR";
+      end match;
+    end toString;
+
+    function isNotArrayBucket
+      input SuperNode node;
+      output Boolean b;
+    algorithm
+      b := match node
+        case ARRAY_BUCKET() then false;
+        else true;
+      end match;
+    end isNotArrayBucket;
+
+    function getEqnIndices
+      input SuperNode node;
+      output list<Integer> eqn_indices;
+    algorithm
+      eqn_indices := match node
+        case SINGLE()         then {node.index};
+        case ALGEBRAIC_LOOP() then node.eqn_indices;
+        case ARRAY_BUCKET()   then node.eqn_indices;
+        case ELEMENT() algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because elements should not be accessed, only their parrents: " + toString(node)});
+        then fail();
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of incorrect super node type."});
+        then fail();
+      end match;
+    end getEqnIndices;
+
+    function create
+      input Adjacency.Matrix adj;
+      input Matching matching;
+      input list<list<Integer>> scc_phase1;
+      input PseudoBucket bucket;
+      output Adjacency.Matrix phase2_adj = adj;
+      output Matching phase2_matching = matching;
+      output array<SuperNode> super_nodes;
+    protected
+      list<list<Integer>> algebraic_loops = list(scc for scc guard(listLength(scc) > 1) in scc_phase1);
+      list<tuple<PseudoBucketKey, PseudoBucketValue>> buckets = UnorderedMap.toList(bucket.bucket);
+      PseudoBucketKey key;
+      PseudoBucketValue val;
+      Integer index, shift = listLength(algebraic_loops) + listLength(buckets);
+      list<Integer> var_lst;
+    algorithm
+      phase2_adj := match (phase2_adj, phase2_matching)
+        case (Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+          //### 0. initialize super nodes ###
+          super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:arrayLength(phase2_adj.m) + shift));
+
+          // ### 3. expand matching ###
+          index := arrayLength(phase2_matching.eqn_to_var);
+          phase2_matching.eqn_to_var := Array.expandToSize(arrayLength(phase2_matching.eqn_to_var) + shift, phase2_matching.eqn_to_var, -1);
+          for i in index+1:index+shift loop
+            phase2_matching.eqn_to_var[i] := i;
+          end for;
+
+/*
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx]) + " -- ");
+          end for;
+          print("\n\n");
+*/
+
+          index := arrayLength(phase2_matching.var_to_eqn);
+          phase2_matching.var_to_eqn := Array.expandToSize(arrayLength(phase2_matching.var_to_eqn) + shift, phase2_matching.var_to_eqn, -1);
+          for i in index+1:index+shift loop
+            phase2_matching.var_to_eqn[i] := i;
+          end for;
+
+          //### 1. adjust transposed matrix ###
+          // 1.1. enlarge transposed matrix by the maximum possible amount of new nodes
+          index := arrayLength(phase2_adj.mT) + 1;
+          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
+          // 1.2. merge all algebraic loop variables of one scc to one single variable
+
+          for scc in algebraic_loops loop
+            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in scc);
+            mergeLoopNodes(super_nodes, var_lst, index, false);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+          end for;
+        /*
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx]) + " -- ");
+          end for;
+          print("\n\n1.3");
+        */
+          // 1.3. merge all for-loop variables of one bucket to one single variable
+          for bucket in buckets loop
+            (key, val) := bucket;
+            //print("eqn idc: " + List.toString(PseudoBucketValue.getIndices(val), intString)+ "\n");
+            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in PseudoBucketValue.getIndices(val));
+            //print("var idc: " + List.toString(var_lst, intString)+ "\n");
+            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(val), var_lst, index, key.eqn_arr_idx, false);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+          end for;
+        /*
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx]) + " -- ");
+          end for;
+          print("\n\n");
+*/
+          /// ### 2. adjust normal matrix ###
+          // 2.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
+          index := arrayLength(phase2_adj.m) + 1;
+          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, arrayLength(phase2_adj.m) + shift);
+          // 2.2 merge all algebraic loop equations of one scc to one single equation
+          for scc in algebraic_loops loop
+            mergeLoopNodes(super_nodes, scc, index, true);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, scc, index);
+          end for;
+          // print("\n\n");
+          // 2.3. merge all for-loop equations of one bucket to one single equation
+          for bucket in buckets loop
+            (key, val) := bucket;
+            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(val), PseudoBucketValue.getIndices(val), index, key.eqn_arr_idx, true);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, PseudoBucketValue.getIndices(val), index);
+          end for;
+        /*
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx]) + " -- ");
+          end for;
+          print("\n\n");
+         */
+          // 2.4. transpose it back to have it consistent (probably not actually necessary for phase2 tarjan but more safe)
+          phase2_adj.mT := Adjacency.Matrix.transposeScalar(phase2_adj.m, arrayLength(phase2_adj.mT));
+
+        then phase2_adj;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+        then fail();
+      end match;
+    /*
+      print(Adjacency.Matrix.toString(adj, "before"));
+      print(Matching.toString(matching, "before"));
+      print(Adjacency.Matrix.toString(phase2_adj, "after"));
+      print(Matching.toString(phase2_matching, "after"));
+      */
+    end create;
+
+    function collapse
+      input list<Integer> comp_indices;
+      input array<SuperNode> super_nodes;
+      input array<list<Integer>> m;
+      input Adjacency.Mapping mapping;
+      input Adjacency.CausalizeModes modes;
+      input array<Integer> var_to_eqn;
+      input array<Integer> eqn_to_var;
+      input VariablePointers vars;
+      input EquationPointers eqns;
+      output StrongComponent comp;
+    protected
+      list<SuperNode> node_comp = list(super_nodes[i] for i in comp_indices);
+      list<list<Integer>> sorted_body_components;
+      list<Integer> sorted_body_indices;
+    algorithm
+      comp := match node_comp
+        local
+          SuperNode node;
+          array<list<Integer>> m_local;
+          array<Integer> var_to_eqn_local, eqn_to_var_local;
+          list<StrongComponent> local_comps = {};
+
+        // a single scalar equation that has nothing to do with arrays
+        case {SINGLE()}
+        then StrongComponent.createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns);
+
+        // a single strong component from phase I
+        case {node as ALGEBRAIC_LOOP()}
+        then StrongComponent.createPseudoScalar(node.eqn_indices, eqn_to_var, mapping, vars, eqns);
+
+        // a single array equation
+        case {node as ARRAY_BUCKET()} algorithm
+          // create local system to determine in what order the equations have to be solved
+          m_local := arrayCreate(arrayLength(m), {});
+          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
+          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
+          // copy adjacency matrix and matching from full system
+          for i in node.eqn_indices loop
+            m_local[i] := m[i];
+            eqn_to_var_local[i] := eqn_to_var[i];
+            var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
+          end for;
+          // sort the scalar components
+          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          sorted_body_indices := List.flatten(sorted_body_components);
+          // if new strong components of size > 1 were created it is an error, this should
+          // have occured in sorting phase I
+          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
+              the body turned out to still have strong components:\n"
+              + List.toString(node_comp, SuperNode.toString, "", "\t", "\n\t", "\n")});
+          end if;
+        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping);
+
+        // entwined array equations
+        case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
+          m_local := arrayCreate(arrayLength(m), {});
+          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
+          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
+          for node in node_comp loop
+            for i in getEqnIndices(node) loop
+              m_local[i] := m[i];
+              eqn_to_var_local[i] := eqn_to_var[i];
+              var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
+            end for;
+          end for;
+          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          sorted_body_indices := List.flatten(sorted_body_components);
+
+          if listLength(sorted_body_components) == listLength(sorted_body_indices) then
+            // create entwined for loop if there was no algebraic loop
+            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, eqn_to_var, mapping, vars, eqns, node_comp);
+          else
+            // create algebraic loop
+            comp := StrongComponent.createPseudoScalar(sorted_body_indices, eqn_to_var, mapping, vars, eqns);
+          end if;
+
+        then comp;
+
+        // create algebraic loop (body components not actually sorted)
+        else algorithm
+          sorted_body_indices := List.flatten(list(getEqnIndices(n) for n in node_comp));
+        then StrongComponent.createPseudoScalar(sorted_body_indices, eqn_to_var, mapping, vars, eqns);
+      end match;
+    end collapse;
+
+  protected
+    function mergeRows
+      input array<list<Integer>> m;
+      input array<Integer> matching;
+      input array<SuperNode> super_nodes;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+    algorithm
+      // merge all rows to one row
+      arrayUpdate(m, new_idx, List.unique(List.flatten(list(m[idx] for idx in rows_to_merge))));
+      // remove the original rows
+      for idx in rows_to_merge loop
+        arrayUpdate(m, idx, {});
+        arrayUpdate(matching, idx, -1);
+      end for;
+      new_idx := new_idx + 1;
+    end mergeRows;
+
+    function mergeArrayNodes
+      input array<SuperNode> super_nodes;
+      input ComponentRef cref_to_solve;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+      input Integer arr_idx;
+      input Boolean update_scalar;
+    algorithm
+      arrayUpdate(super_nodes, new_idx, SuperNode.ARRAY_BUCKET(new_idx, cref_to_solve, rows_to_merge, arr_idx));
+      // this is not necessary but better to debug.
+      if update_scalar then
+        for i in rows_to_merge loop
+          arrayUpdate(super_nodes, i, SuperNode.ELEMENT(i, new_idx));
+        end for;
+      end if;
+    end mergeArrayNodes;
+
+    function mergeLoopNodes
+      input array<SuperNode> super_nodes;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+      input Boolean update_scalar;
+    algorithm
+      arrayUpdate(super_nodes, new_idx, SuperNode.ALGEBRAIC_LOOP(new_idx, rows_to_merge));
+      // this is not necessary but better to debug.
+      if update_scalar then
+        for i in rows_to_merge loop
+          arrayUpdate(super_nodes, i, SuperNode.ELEMENT(i, new_idx));
+        end for;
+      end if;
+    end mergeLoopNodes;
+  end SuperNode;
+
   // ############################################################
   //                Protected Functions and Types
   // ############################################################
@@ -578,306 +897,6 @@ protected
     pre_lst := list(mapping[cand] for cand guard(cand > 0 and mapping[cand] <> idx and mapping[cand] > 0) in m[idx]);
   end predecessors;
 
-  uniontype SuperNode
-    record SINGLE
-      "does not belong to an algebraic loop or array"
-      Integer index;
-    end SINGLE;
-
-    record ELEMENT
-      "is part of either an algebraic loop or array"
-      Integer index;
-      Integer parent;
-    end ELEMENT;
-
-    record ALGEBRAIC_LOOP
-      "an algebraic loop of equations"
-      Integer index;
-      list<Integer> eqn_indices;
-    end ALGEBRAIC_LOOP;
-
-    record ARRAY_BUCKET
-      "a bucket of array equations solved for the same cref"
-      Integer index;
-      ComponentRef cref_to_solve;
-      list<Integer> eqn_indices;
-    end ARRAY_BUCKET;
-
-    function toString
-      input SuperNode node;
-      output String str;
-    algorithm
-      str := match node
-        case SINGLE()           then "[" + intString(node.index) + "] single ";
-        case ELEMENT()          then "[" + intString(node.index) + "] scalar element of (" + intString(node.parent) + ")";
-        case ALGEBRAIC_LOOP()   then "[" + intString(node.index) + "] algebraic loop " + List.toString(node.eqn_indices, intString);
-        case ARRAY_BUCKET()     then "[" + intString(node.index) + "] array bucket " + List.toString(node.eqn_indices, intString);
-                                else "ERROR";
-      end match;
-    end toString;
-
-    function isNotArrayBucket
-      input SuperNode node;
-      output Boolean b;
-    algorithm
-      b := match node
-        case ARRAY_BUCKET() then false;
-        else true;
-      end match;
-    end isNotArrayBucket;
-
-    function getEqnIndices
-      input SuperNode node;
-      output list<Integer> eqn_indices;
-    algorithm
-      eqn_indices := match node
-        case SINGLE()         then {node.index};
-        case ALGEBRAIC_LOOP() then node.eqn_indices;
-        case ARRAY_BUCKET()   then node.eqn_indices;
-        case ELEMENT() algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because elements should not be accessed, only their parrents: " + toString(node)});
-        then fail();
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of incorrect super node type."});
-        then fail();
-      end match;
-    end getEqnIndices;
-
-    function create
-      input Adjacency.Matrix adj;
-      input Matching matching;
-      input list<list<Integer>> scc_phase1;
-      input PseudoBucket bucket;
-      output Adjacency.Matrix phase2_adj = adj;
-      output Matching phase2_matching = matching;
-      output array<SuperNode> super_nodes;
-    protected
-      list<list<Integer>> algebraic_loops = list(scc for scc guard(listLength(scc) > 1) in scc_phase1);
-      list<PseudoBucketValue> buckets = UnorderedMap.valueList(bucket.bucket);
-      Integer index, shift = listLength(algebraic_loops) + listLength(buckets);
-      list<Integer> var_lst;
-    algorithm
-      phase2_adj := match (phase2_adj, phase2_matching)
-        case (Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
-          //### 0. initialize super nodes ###
-          super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:arrayLength(phase2_adj.m) + shift));
-
-          // ### 3. expand matching ###
-          index := arrayLength(phase2_matching.eqn_to_var);
-          phase2_matching.eqn_to_var := Array.expandToSize(arrayLength(phase2_matching.eqn_to_var) + shift, phase2_matching.eqn_to_var, -1);
-          for i in index+1:index+shift loop
-            phase2_matching.eqn_to_var[i] := i;
-          end for;
-
-          for n_idx in 1:arrayLength(super_nodes) loop
-            print("node: " + toString(super_nodes[n_idx]) + " -- ");
-          end for;
-          print("\n\n");
-
-          index := arrayLength(phase2_matching.var_to_eqn);
-          phase2_matching.var_to_eqn := Array.expandToSize(arrayLength(phase2_matching.var_to_eqn) + shift, phase2_matching.var_to_eqn, -1);
-          for i in index+1:index+shift loop
-            phase2_matching.var_to_eqn[i] := i;
-          end for;
-
-          //### 1. adjust transposed matrix ###
-          // 1.1. enlarge transposed matrix by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.mT) + 1;
-          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
-          // 1.2. merge all algebraic loop variables of one scc to one single variable
-
-          for scc in algebraic_loops loop
-            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in scc);
-            mergeLoopNodes(super_nodes, var_lst, index, false);
-            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
-          end for;
-          for n_idx in 1:arrayLength(super_nodes) loop
-            print("node: " + toString(super_nodes[n_idx]) + " -- ");
-          end for;
-          print("\n\n1.3");
-          // 1.3. merge all for-loop variables of one bucket to one single variable
-          for bucket in buckets loop
-            print("eqn idc: " + List.toString(PseudoBucketValue.getIndices(bucket), intString)+ "\n");
-            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in PseudoBucketValue.getIndices(bucket));
-            print("var idc: " + List.toString(var_lst, intString)+ "\n");
-            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(bucket), var_lst, index, false);
-            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
-          end for;
-          for n_idx in 1:arrayLength(super_nodes) loop
-            print("node: " + toString(super_nodes[n_idx]) + " -- ");
-          end for;
-          print("\n\n");
-
-          /// ### 2. adjust normal matrix ###
-          // 2.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.m) + 1;
-          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, arrayLength(phase2_adj.m) + shift);
-          // 2.2 merge all algebraic loop equations of one scc to one single equation
-          for scc in algebraic_loops loop
-            mergeLoopNodes(super_nodes, scc, index, true);
-            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, scc, index);
-          end for;
-          for n_idx in 1:arrayLength(super_nodes) loop
-            print("node: " + toString(super_nodes[n_idx]) + " -- ");
-          end for;
-          print("\n\n");
-          // 2.3. merge all for-loop equations of one bucket to one single equation
-          for bucket in buckets loop
-            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(bucket), PseudoBucketValue.getIndices(bucket), index, true);
-            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, PseudoBucketValue.getIndices(bucket), index);
-          end for;
-          for n_idx in 1:arrayLength(super_nodes) loop
-            print("node: " + toString(super_nodes[n_idx]) + " -- ");
-          end for;
-          print("\n\n");
-          // 2.4. transpose it back to have it consistent (probably not actually necessary for phase2 tarjan but more safe)
-          phase2_adj.mT := Adjacency.Matrix.transposeScalar(phase2_adj.m, arrayLength(phase2_adj.mT));
-
-        then phase2_adj;
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
-        then fail();
-      end match;
-      print(Adjacency.Matrix.toString(adj, "before"));
-      print(Matching.toString(matching, "before"));
-      print(Adjacency.Matrix.toString(phase2_adj, "after"));
-      print(Matching.toString(phase2_matching, "after"));
-    end create;
-
-    function collapse
-      input list<Integer> comp_indices;
-      input array<SuperNode> super_nodes;
-      input array<list<Integer>> m;
-      input Adjacency.Mapping mapping;
-      input Adjacency.CausalizeModes modes;
-      input array<Integer> var_to_eqn;
-      input array<Integer> eqn_to_var;
-      input VariablePointers vars;
-      input EquationPointers eqns;
-      output StrongComponent comp;
-    protected
-      list<SuperNode> node_comp = list(super_nodes[i] for i in comp_indices);
-      list<list<Integer>> sorted_body_components;
-      list<Integer> sorted_body_indices;
-    algorithm
-      comp := match node_comp
-        local
-          SuperNode node;
-          array<list<Integer>> m_local;
-          array<Integer> var_to_eqn_local, eqn_to_var_local;
-          list<StrongComponent> local_comps = {};
-
-        // a single scalar equation that has nothing to do with arrays
-        case {SINGLE()}
-        then StrongComponent.createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns);
-
-        // a single strong component from phase I
-        case {node as ALGEBRAIC_LOOP()}
-        then StrongComponent.createPseudoScalar(node.eqn_indices, eqn_to_var, mapping, vars, eqns);
-
-        // a single array equation
-        case {node as ARRAY_BUCKET()} algorithm
-          // create local system to determine in what order the equations have to be solved
-          m_local := arrayCreate(arrayLength(m), {});
-          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
-          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
-          // copy adjacency matrix and matching from full system
-          for i in node.eqn_indices loop
-            m_local[i] := m[i];
-            eqn_to_var_local[i] := eqn_to_var[i];
-            var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
-          end for;
-          // sort the scalar components
-          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
-          sorted_body_indices := List.flatten(sorted_body_components);
-          // if new strong components of size > 1 were created it is an error, this should
-          // have occured in sorting phase I
-          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
-              the body turned out to still have strong components:\n"
-              + List.toString(list(super_nodes[i] for i in comp_indices), SuperNode.toString, "", "\t", "\n\t", "\n")});
-          end if;
-        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping);
-
-        case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
-          m_local := arrayCreate(arrayLength(m), {});
-          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
-          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
-          for node in node_comp loop
-            for i in getEqnIndices(node) loop
-              m_local[i] := m[i];
-              eqn_to_var_local[i] := eqn_to_var[i];
-              var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
-            end for;
-          end for;
-          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
-          sorted_body_indices := List.flatten(sorted_body_components);
-          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
-              the body turned out to still have strong components:\n"
-              + List.toString(list(super_nodes[i] for i in comp_indices), SuperNode.toString, "", "\t", "\n\t", "\n")});
-          end if;
-          // fail for now: somehow put them all together
-        then fail();
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for the following Phase II strong component:\n"
-            + List.toString(list(super_nodes[i] for i in comp_indices), SuperNode.toString, "", "\t", "\n\t", "\n")});
-        then fail();
-      end match;
-    end collapse;
-
-  protected
-    function mergeRows
-      input array<list<Integer>> m;
-      input array<Integer> matching;
-      input array<SuperNode> super_nodes;
-      input list<Integer> rows_to_merge;
-      input output Integer new_idx;
-    algorithm
-      // merge all rows to one row
-      arrayUpdate(m, new_idx, List.unique(List.flatten(list(m[idx] for idx in rows_to_merge))));
-      // remove the original rows
-      for idx in rows_to_merge loop
-        arrayUpdate(m, idx, {});
-        arrayUpdate(matching, idx, -1);
-      end for;
-      new_idx := new_idx + 1;
-    end mergeRows;
-
-    function mergeArrayNodes
-      input array<SuperNode> super_nodes;
-      input ComponentRef cref_to_solve;
-      input list<Integer> rows_to_merge;
-      input output Integer new_idx;
-      input Boolean update_scalar;
-    algorithm
-      arrayUpdate(super_nodes, new_idx, SuperNode.ARRAY_BUCKET(new_idx, cref_to_solve, rows_to_merge));
-      // this is not necessary but better to debug.
-      if update_scalar then
-        for i in rows_to_merge loop
-          arrayUpdate(super_nodes, i, SuperNode.ELEMENT(i, new_idx));
-        end for;
-      end if;
-    end mergeArrayNodes;
-
-    function mergeLoopNodes
-      input array<SuperNode> super_nodes;
-      input list<Integer> rows_to_merge;
-      input output Integer new_idx;
-      input Boolean update_scalar;
-    algorithm
-      arrayUpdate(super_nodes, new_idx, SuperNode.ALGEBRAIC_LOOP(new_idx, rows_to_merge));
-      // this is not necessary but better to debug.
-      if update_scalar then
-        for i in rows_to_merge loop
-          arrayUpdate(super_nodes, i, SuperNode.ELEMENT(i, new_idx));
-        end for;
-      end if;
-    end mergeLoopNodes;
-
-  end SuperNode;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSorting;

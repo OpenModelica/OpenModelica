@@ -125,6 +125,24 @@ public
       EquationAttributes attr;
     end ARRAY_ASSIGN;
 
+    record GENERIC_ASSIGN
+      "a generic assignment calling a for loop body function with an index list."
+      Integer index;
+      Integer call_index;
+      list<Integer> scal_indices;
+      DAE.ElementSource source;
+      EquationAttributes attr;
+    end GENERIC_ASSIGN;
+
+    record ENTWINED_ASSIGN
+      "entwined generic assignments calling for loop body functions with an index list and a call order."
+      Integer index;
+      list<Integer> call_order;
+      list<Block> single_calls;
+      DAE.ElementSource source;
+      EquationAttributes attr;
+    end ENTWINED_ASSIGN;
+
     record ALIAS
       "Simple alias assignment pointing to the alias equation.
       - alias of will be -1 at the point of creation and computed afterwards"
@@ -200,6 +218,8 @@ public
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
+        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "[" + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10);
+        case ENTWINED_ASSIGN()    then str + List.toString(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "", "\n", "");
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
         case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
         case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
@@ -233,6 +253,8 @@ public
         case ARRAY_RESIDUAL()     then blck.index;
         case SIMPLE_ASSIGN()      then blck.index;
         case ARRAY_ASSIGN()       then blck.index;
+        case GENERIC_ASSIGN()     then blck.index;
+        case ENTWINED_ASSIGN()    then blck.index;
         case ALIAS()              then blck.index;
         case ALGORITHM()          then blck.index;
         case INVERSE_ALGORITHM()  then blck.index;
@@ -258,6 +280,8 @@ public
         case ARRAY_RESIDUAL(attr = attr)     then EquationKind.isDiscrete(attr.kind);
         case SIMPLE_ASSIGN(attr = attr)      then EquationKind.isDiscrete(attr.kind);
         case ARRAY_ASSIGN(attr = attr)       then EquationKind.isDiscrete(attr.kind);
+        case GENERIC_ASSIGN(attr = attr)     then EquationKind.isDiscrete(attr.kind);
+        case ENTWINED_ASSIGN(attr = attr)    then EquationKind.isDiscrete(attr.kind);
         case ALIAS()                         then false; // todo: once this is implemented check in the HT for alias eq discrete
         case ALGORITHM(attr = attr)          then EquationKind.isDiscrete(attr.kind);
         case INVERSE_ALGORITHM(attr = attr)  then EquationKind.isDiscrete(attr.kind);
@@ -473,13 +497,16 @@ public
           Option<SimJacobian> jacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
-          list<Statement> stmts = {};
           SlicingStatus status;
           ComponentRef var_cref;
-          Integer aliasOf;
+          Integer aliasOf, generic_call_index;
           list<Integer> eqn_indices, sizes;
           list<Equation> entwined_eqns = {};
           UnorderedMap<ComponentRef, Expression> replacements;
+          Block single_call;
+          list<Block> single_calls = {};
+          UnorderedMap<ComponentRef, Integer> entwined_index_map;
+          list<Integer> call_order = {};
 
         case StrongComponent.SINGLE_EQUATION() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
@@ -516,9 +543,44 @@ public
           (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
+        case StrongComponent.GENERIC_EQUATION() algorithm
+          // create a generic index list call of a for-loop equation
+          eqn_ptr := Slice.getT(comp.eqn);
+          eqn := Pointer.access(eqn_ptr);
+          if UnorderedMap.contains(eqn_ptr, simCodeIndices.generic_call_map) then
+            // the generic call body was already generated
+            generic_call_index := UnorderedMap.getSafe(eqn_ptr, simCodeIndices.generic_call_map);
+          else
+            // the generic call body was not already generated
+            generic_call_index := simCodeIndices.genericCallIndex;
+            UnorderedMap.add(eqn_ptr, generic_call_index, simCodeIndices.generic_call_map);
+            simCodeIndices.genericCallIndex := simCodeIndices.genericCallIndex + 1;
+          end if;
+          tmp := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
+        case StrongComponent.ENTWINED_EQUATION() algorithm
+          // create generic index list calls for entwined for-loop equations
+          entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+          for slice in comp.entwined_slices loop
+            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, systemType, simcode_map);
+            UnorderedMap.add(getGenericEquationName(slice), getGenericAssignIndex(single_call), entwined_index_map);
+            single_calls := single_call :: single_calls;
+          end for;
+          for tpl in listReverse(comp.entwined_tpl_lst) loop
+            (eqn_ptr, _) := tpl;
+            call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map) :: call_order;
+          end for;
+          // todo: eq attributes and source
+          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, DAE.emptyElementSource, NBEquation.EQ_ATTR_DEFAULT_DYNAMIC);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.TORN_LOOP(strict = strict)algorithm
+          /*
           for i in 1:arrayLength(strict.innerEquations) loop
-            (tmp, simCodeIndices) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, systemType, simcode_map);
+            (tmp, simCodeIndices, _) := fromStrongComponent(strict.innerEquations[i], simCodeIndices, systemType, simcode_map);
             eqns := tmp :: eqns;
           end for;
           for slice in strict.residual_eqns loop
@@ -526,10 +588,10 @@ public
             eqns := tmp :: eqns;
           end for;
           for var_ptr in strict.iteration_vars loop
-            var := Pointer.access(var_ptr);
+            var := Pointer.access(Slice.getT(var_ptr));
             // This does not seem to be correct
             //var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
-            Pointer.update(var_ptr, var);
+            //Pointer.update(var_ptr, var);
             crefs := var.name :: crefs;
           end for;
 
@@ -538,7 +600,8 @@ public
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
-          end if;
+          end if;*/
+          jacobian := NONE();
           system := NONLINEAR_SYSTEM(
             index         = simCodeIndices.equationIndex,
             blcks         = listReverse(eqns),
@@ -574,24 +637,6 @@ public
         then fail();
       end match;
     end fromStrongComponent;
-
-    function fromInnerEquation
-      input BEquation.InnerEquation innerEqn;
-      output Block blck;
-      input output SimCodeIndices simCodeIndices;
-      input System.SystemType systemType;
-      input UnorderedMap<ComponentRef, SimVar> simcode_map;
-    algorithm
-      blck := match innerEqn
-        case BEquation.InnerEquation.INNER_EQUATION()
-          algorithm
-            (blck, simCodeIndices) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map);
-        then blck;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(Pointer.access(innerEqn.eqn))});
-        then fail();
-      end match;
-    end fromInnerEquation;
 
     function createResidual
       input Equation eqn;
@@ -787,7 +832,7 @@ public
       Block blck;
       list<Block> blcks = {};
     algorithm
-      comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in body.then_eqns);
+      comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in body.then_eqns);
       for comp in listReverse(comps) loop
         (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, systemType, simcode_map);
         blcks := blck :: blcks;
@@ -904,6 +949,8 @@ public
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
+        case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
+        case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.source, EquationAttributes.convert(blck.attr));
         case IF() algorithm
           for branch in blck.branches loop
             (exp, blcks) := branch;
@@ -1078,6 +1125,10 @@ public
           blck.continuous := tmp;
           blck.discreteEqs := tmp_lst;
         then blck;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+        then fail();
       end match;
     end fixIndex;
 
@@ -1096,6 +1147,30 @@ public
         str := str + "end when;";
       end if;
     end whenString;
+
+    function getGenericAssignIndex
+      input Block blck;
+      output Integer index;
+    algorithm
+      index := match blck
+        case GENERIC_ASSIGN() then blck.call_index;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+        then fail();
+      end match;
+    end getGenericAssignIndex;
+
+    function getGenericEquationName
+      input StrongComponent comp;
+      output ComponentRef name;
+    algorithm
+      name := match comp
+        case StrongComponent.GENERIC_EQUATION() then Equation.getEqnName(Slice.getT(comp.eqn));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getGenericEquationName;
   end Block;
 
   uniontype LinearSystem

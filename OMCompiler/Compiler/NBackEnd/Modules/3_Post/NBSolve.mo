@@ -186,6 +186,8 @@ public
           Integer index;
           list<Equation> entwined_eqns = {};
           list<Pointer<Equation>> rest, sliced_eqns = {};
+          StrongComponent generic_comp;
+          list<StrongComponent> entwined_slices = {};
 
         case StrongComponent.SINGLE_EQUATION() algorithm
           (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree);
@@ -214,6 +216,11 @@ public
         then ({comp}, Status.IMPLICIT);
 
         case StrongComponent.SLICED_EQUATION(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+          (generic_comp, funcTree, solve_status) := solveGenericEquation(comp, funcTree);
+        then ({generic_comp}, solve_status);
+
+        /* currently not used */
+        case StrongComponent.SLICED_EQUATION(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
           eqn_ptr := Slice.getT(eqn_slice);
           (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(eqn_ptr, eqn_slice.indices, SOME(comp.var_cref), funcTree);
           if slicing_status == NBEquation.SlicingStatus.FAILURE then
@@ -227,7 +234,7 @@ public
               sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
             end for;
             sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
+            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
           else
             Pointer.update(eqn_ptr, Equation.splitIterators(Pointer.access(eqn_ptr)));
             sliced_eqns := {eqn_ptr};
@@ -251,6 +258,17 @@ public
           comp.status := solve_status;
         then ({comp}, solve_status);
 
+        /* for now handle all entwined equations generically and don't try to solve */
+        case StrongComponent.ENTWINED_EQUATION() algorithm
+          for slice in comp.entwined_slices loop
+            (generic_comp, funcTree, solve_status) := solveGenericEquation(slice, funcTree);
+            // make loop on any solve_status != explicit
+            entwined_slices := generic_comp :: entwined_slices;
+          end for;
+          comp.entwined_slices := listReverse(entwined_slices);
+        then ({comp}, NBSolve.Status.EXPLICIT);
+
+        /* currently not used */
         case StrongComponent.ENTWINED_EQUATION() algorithm
           // slice each entwined equation individually
           for slice in comp.entwined_slices loop
@@ -278,12 +296,12 @@ public
               sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
             end for;
             sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
+            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
           else
             // entwine the equations as far as possible
             entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
             sliced_eqns := list(Pointer.create(eqn) for eqn in entwined_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
+            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
           end if;
 
           // safe the slicing replacement in the map
@@ -324,6 +342,27 @@ public
       fail();
     end if;
   end solveStrongComponent;
+
+  function solveGenericEquation
+    input output StrongComponent comp;
+    input output FunctionTree funcTree;
+    output Status solve_status;
+  algorithm
+    (comp, solve_status) := match comp
+      local
+        Slice<EquationPointer> eqn_slice;
+        Equation eqn;
+      case StrongComponent.SLICED_EQUATION(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+        (eqn, funcTree, solve_status, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree);
+        // if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
+        eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+      then (StrongComponent.GENERIC_EQUATION(eqn_slice), Status.EXPLICIT);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + StrongComponent.toString(comp) + "\n"});
+      then fail();
+    end match;
+  end solveGenericEquation;
 
   function solveTrivialStrongComponent
     input output Equation eqn;

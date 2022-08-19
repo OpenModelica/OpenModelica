@@ -190,10 +190,6 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
       then fail();
 
-      case StrongComponent.ALGEBRAIC_LOOP() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for algebraic loop:\n" + StrongComponent.toString(comp)});
-      then fail();
-
       case StrongComponent.TORN_LOOP() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for torn loop:\n" + StrongComponent.toString(comp)});
       then fail();

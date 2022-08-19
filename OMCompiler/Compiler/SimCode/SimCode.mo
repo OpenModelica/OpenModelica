@@ -106,6 +106,7 @@ uniontype SimCode
     list<DAE.Exp> literals "shared literals";
     list<SimCodeFunction.RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
+    list<SimGenericCall> generic_loop_calls;
     list<SimEqSystem> localKnownVars "state and input dependent variables, that are not inserted into any partion";
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
@@ -411,6 +412,24 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_ARRAY_CALL_ASSIGN;
 
+  record SES_GENERIC_ASSIGN
+    "a generic assignment calling a for loop body function with an index list."
+    Integer index;
+    Integer call_index;
+    list<Integer> scal_indices;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_GENERIC_ASSIGN;
+
+  record SES_ENTWINED_ASSIGN
+    "entwined generic assignments calling for loop body functions with an index list and a call order."
+    Integer index;
+    list<Integer> call_order;
+    list<SimEqSystem> single_calls;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_ENTWINED_ASSIGN;
+
   record SES_IFEQUATION
     Integer index;
     list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
@@ -507,6 +526,26 @@ uniontype SimEqSystem
 
 end SimEqSystem;
 
+public uniontype SimGenericCall
+  record SINGLE_GENERIC_CALL
+    Integer index;
+    list<SimIterator> iters;
+    DAE.Exp lhs;
+    DAE.Exp rhs;
+  end SINGLE_GENERIC_CALL;
+
+  record RESIDUAL_GENERIC_CALL
+  end RESIDUAL_GENERIC_CALL;
+end SimGenericCall;
+
+public uniontype SimIterator
+  record SIM_ITERATOR
+    DAE.ComponentRef name;
+    Integer start;
+    Integer step;
+    Integer size;
+  end SIM_ITERATOR;
+end SimIterator;
 
 public
 uniontype DerivativeMatrix

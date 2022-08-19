@@ -88,11 +88,7 @@ public
     String sliceStr;
   algorithm
     str := func(slice.t);
-    if listLength(slice.indices) > maxLength then
-      str := str + "\n\t slice: " + List.toString(List.firstN(slice.indices, maxLength), intString, "", "{", ", ", "") + " ...}";
-    elseif not listEmpty(slice.indices) then
-      str := str + "\n\t slice: " + List.toString(slice.indices, intString);
-    end if;
+      str := str + "\n\t slice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = 10);
   end toString;
 
   function lstToString
