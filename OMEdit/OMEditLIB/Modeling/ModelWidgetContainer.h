@@ -651,6 +651,7 @@ private:
   QStringList mElementsAnnotationsList;
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
+  int mASTID;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

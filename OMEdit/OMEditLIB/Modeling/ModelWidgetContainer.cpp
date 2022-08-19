@@ -718,10 +718,6 @@ QString getComponentName(const QString &qualifiedComponentName)
  */
 void GraphicsView::deleteElement(Element *pElement)
 {
-  int oldASTID;
-  if (MainWindow::instance()->isNewApi() && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    oldASTID = MainWindow::instance()->getOMCProxy()->storeAST();
-  }
   // First remove the connections associated to this element
   int i = 0;
   while(i != mConnectionsList.size()) {
@@ -777,9 +773,8 @@ void GraphicsView::deleteElement(Element *pElement)
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
     pElement->emitDeleted();
   } else {
-    if (MainWindow::instance()->isNewApi()) {
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
       deleteElementFromClass(pElement);
-      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldASTID, mpModelWidget->getModelInstance()->getModelJson(), ""));
     } else {
       mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
     }
@@ -2724,7 +2719,12 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
     deleteConnectionFromClass(pConnectionLineAnnotation);
   } else {
     // Delete the connection
-    mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+      deleteConnectionFromClass(pConnectionLineAnnotation);
+      deleteConnectionFromList(pConnectionLineAnnotation);
+    } else {
+      mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
+    }
   }
 }
 
@@ -4800,6 +4800,8 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mUpdateModelTimer.setSingleShot(true);
     mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
+    mDependsOnModelsList.clear();
+    mASTID = 0;
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -6764,10 +6766,8 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
     file.close();
     return true;
   } else {
-    QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
-                                                                           .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                          Helper::errorLevel));
+    QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(fileName).arg(file.errorString()));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }
@@ -6780,6 +6780,9 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
  */
 void ModelWidget::beginMacro(const QString &text)
 {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+    mASTID = MainWindow::instance()->getOMCProxy()->storeAST();
+  }
   mpUndoStack->beginMacro(text);
   if (mpEditor) {
     QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
@@ -6795,6 +6798,8 @@ void ModelWidget::endMacro()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     createOMSimulatorUndoCommand("");
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+    mpUndoStack->push(new OMCUndoCommand(mpLibraryTreeItem, mASTID, mpModelInstance->getModelJson(), ""));
   }
   mpUndoStack->endMacro();
   if (mpEditor) {
