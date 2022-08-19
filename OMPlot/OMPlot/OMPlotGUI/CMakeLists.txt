@@ -39,8 +39,22 @@ target_link_libraries(OMPlotLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMPlotLib PUBLIC qwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
-add_executable(OMPlot WIN32 MACOSX_BUNDLE main.cpp rc_omplot.rc)
+
+
+if(APPLE)
+  set(MACOSX_BUNDLE_ICON_FILE omplot.ico)
+
+  # The following tells CMake where to find and install the file itself.
+  set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icons/omplot.ico")
+  set_source_files_properties(${app_icon_macos} PROPERTIES
+       MACOSX_PACKAGE_LOCATION "Resources")
+else()
+  set(app_icon_macos "")
+endif()
+
+add_executable(OMPlot WIN32 MACOSX_BUNDLE main.cpp rc_omplot.rc ${app_icon_macos})
 target_link_libraries(OMPlot PRIVATE OMPlotLib)
+
 
 install(TARGETS OMPlotLib)
 install(TARGETS OMPlot
