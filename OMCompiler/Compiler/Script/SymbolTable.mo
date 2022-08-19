@@ -62,7 +62,10 @@ record SYMBOLTABLE
   Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
   list<GlobalScript.Variable> vars "List of variables with values" ;
   Vector<Absyn.Program> cachedAsts;
+  Integer cacheIndex;
 end SYMBOLTABLE;
+
+constant Integer AST_CACHE_MAX_SIZE = 1000;
 
 function reset
   type Program = Absyn.Program;
@@ -71,7 +74,8 @@ algorithm
                  ast=Absyn.PROGRAM({},Absyn.TOP()),
                  explodedAst=NONE(),
                  vars={},
-                 cachedAsts=Vector.new<Program>()
+                 cachedAsts=Vector.new<Program>(),
+                 cacheIndex=0
                  ));
   updateUriMapping({});
 end reset;
@@ -249,10 +253,27 @@ function storeAST
   output Integer id;
 protected
   SymbolTable table;
+  Integer index;
 algorithm
   table := get();
-  Vector.push(table.cachedAsts, getAbsyn());
-  id := Vector.size(table.cachedAsts);
+  id := table.cacheIndex + 1;
+
+  // Handle integer wraparound.
+  if id < 0 then
+    id := 1;
+  end if;
+
+  // Update the index in the symbol table.
+  table.cacheIndex := id;
+  update(table);
+
+  if Vector.size(table.cachedAsts) >= AST_CACHE_MAX_SIZE then
+    // Wrap around if the cache is full.
+    Vector.update(table.cachedAsts, intMod(id-1, AST_CACHE_MAX_SIZE)+1, getAbsyn());
+  else
+    // Otherwise just push a new value onto the vector.
+    Vector.push(table.cachedAsts, getAbsyn());
+  end if;
 end storeAST;
 
 function restoreAST
@@ -262,10 +283,11 @@ protected
   SymbolTable table;
 algorithm
   table := get();
-  success := id <= Vector.size(table.cachedAsts) and id > 0;
+  // Make sure the id is in the current index range.
+  success := id <= table.cacheIndex and id > table.cacheIndex - AST_CACHE_MAX_SIZE and id > 0;
 
   if success then
-    setAbsyn(Vector.get(table.cachedAsts, id));
+    setAbsyn(Vector.get(table.cachedAsts, intMod(id-1, AST_CACHE_MAX_SIZE)+1));
   end if;
 end restoreAST;
 
