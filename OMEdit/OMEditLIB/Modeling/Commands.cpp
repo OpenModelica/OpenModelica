@@ -1736,7 +1736,6 @@ void OMSimulatorUndoCommand::redoInternal()
   restoreClosedModelWidgets();
   // switch to the ModelWidget where the change happened
   switchToEditedModelWidget();
-
 }
 
 /*!
@@ -1792,10 +1791,13 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   }
 }
 
-OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QString &commandText, UndoCommand *pParent)
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, int oldASTID, const QJsonObject &oldModelInstanceJson, const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
+  mOldASTID = oldASTID;
+  mNewASTID = MainWindow::instance()->getOMCProxy()->storeAST();
+  mUndoDoneOnce = false;
   mOldModelInstanceJson = oldModelInstanceJson;
   mNewModelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
   setText(commandText);
@@ -1803,6 +1805,9 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObj
 
 void OMCUndoCommand::redoInternal()
 {
+  if (mUndoDoneOnce) {
+    MainWindow::instance()->getOMCProxy()->restoreAST(mNewASTID);
+  }
   if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInstanceJson);
   }
@@ -1810,6 +1815,8 @@ void OMCUndoCommand::redoInternal()
 
 void OMCUndoCommand::undo()
 {
+  MainWindow::instance()->getOMCProxy()->restoreAST(mOldASTID);
+  mUndoDoneOnce = true;
   if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInstanceJson);
   }
