@@ -1644,6 +1644,14 @@ void Element::removeChildren()
 
 void Element::emitAdded()
 {
+  if (mpLibraryTreeItem) {
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForComponent()), SLOT(handleCoOrdinateSystemUpdated()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
+  }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
@@ -1668,6 +1676,14 @@ void Element::emitChanged()
 
 void Element::emitDeleted()
 {
+  if (mpLibraryTreeItem) {
+    disconnect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), this, SLOT(handleLoaded()));
+    disconnect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), this, SLOT(handleUnloaded()));
+    disconnect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForComponent()), this, SLOT(handleCoOrdinateSystemUpdated()));
+    disconnect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), this, SLOT(handleShapeAdded()));
+    disconnect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), this, SLOT(handleElementAdded()));
+    disconnect(mpLibraryTreeItem, SIGNAL(nameChanged()), this, SLOT(handleNameChanged()));
+  }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
