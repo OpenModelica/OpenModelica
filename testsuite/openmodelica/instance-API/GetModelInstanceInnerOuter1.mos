@@ -37,10 +37,11 @@ getModelInstance(B, prettyPrint=true);
 //               \"inner\": true
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"2:3-4:8\"
+//         }
 //       }
 //     },
 //     {
@@ -50,6 +51,10 @@ getModelInstance(B, prettyPrint=true);
 //         \"inner\": true
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"6:3-9:8\"
+//   }
 // }"
 // endResult

@@ -64,20 +64,22 @@ getModelInstance(M, prettyPrint=true);
 //               \"direction\": \"output\"
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"4:5-8:15\"
+//         }
 //       }
 //     },
 //     {
 //       \"name\": \"state2\",
 //       \"type\": {
 //         \"name\": \"State2\",
-//         \"restriction\": \"model\"
-//       },
-//       \"prefixes\": {
-//
+//         \"restriction\": \"model\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"10:5-11:15\"
+//         }
 //       }
 //     }
 //   ],
@@ -206,6 +208,10 @@ getModelInstance(M, prettyPrint=true);
 //         }
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"2:3-26:8\"
+//   }
 // }"
 // endResult

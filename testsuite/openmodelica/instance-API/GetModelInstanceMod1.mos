@@ -58,9 +58,6 @@ getModelInstance(M, prettyPrint = true);
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 1
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
@@ -68,15 +65,13 @@ getModelInstance(M, prettyPrint = true);
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 2
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"location\": \"2:3-5:8\"
+//                     }
 //                   }
 //                 },
 //                 {
@@ -90,9 +85,6 @@ getModelInstance(M, prettyPrint = true);
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 3
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
@@ -100,21 +92,20 @@ getModelInstance(M, prettyPrint = true);
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 4
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"location\": \"2:3-5:8\"
+//                     }
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"location\": \"7:3-10:8\"
+//               }
 //             }
 //           },
 //           {
@@ -134,22 +125,17 @@ getModelInstance(M, prettyPrint = true);
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 5
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
 //                         \"name\": \"y\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"location\": \"2:3-5:8\"
+//                     }
 //                   }
 //                 },
 //                 {
@@ -160,31 +146,31 @@ getModelInstance(M, prettyPrint = true);
 //                     \"components\": [
 //                       {
 //                         \"name\": \"x\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       },
 //                       {
 //                         \"name\": \"y\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"location\": \"2:3-5:8\"
+//                     }
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"location\": \"7:3-10:8\"
+//               }
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"12:3-15:8\"
+//         }
 //       },
 //       \"modifiers\": {
 //         \"b1\": {
@@ -202,11 +188,12 @@ getModelInstance(M, prettyPrint = true);
 //             \"x\": \"5.0\"
 //           }
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"17:3-20:8\"
+//   }
 // }"
 // endResult

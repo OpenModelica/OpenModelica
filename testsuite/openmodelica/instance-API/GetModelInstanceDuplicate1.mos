@@ -31,23 +31,25 @@ getModelInstance(B, prettyPrint = true);
 //         \"components\": [
 //           {
 //             \"name\": \"x\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"7:5-7:14\"
+//         }
 //       }
 //     }
 //   ],
 //   \"components\": [
 //     {
 //       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//
-//       }
+//       \"type\": \"Real\"
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"6:3-9:8\"
+//   }
 // }"
 // endResult
