@@ -67,6 +67,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  void setText(ModelInstance::Text *pText) {mpText = pText;}
 private:
   Element *mpComponent;
   ModelInstance::Text *mpText;

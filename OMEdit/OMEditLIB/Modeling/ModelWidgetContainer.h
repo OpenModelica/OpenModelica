@@ -168,7 +168,7 @@ public:
   bool isVisualizationView() {return mVisualizationView;}
 
   void drawCoordinateSystem();
-  void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select);
+  void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
   void drawConnectors(ModelInstance::Model *pModelInstance, bool inherited);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited);
@@ -227,7 +227,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram);
+  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
@@ -245,7 +245,7 @@ public:
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
-  void addConnection(ModelInstance::Connection *pConnection, bool inherited, bool addToOMC, bool select);
+  void addConnection(ModelInstance::Connection *pConnection, bool inherited);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
@@ -572,8 +572,8 @@ public:
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadElements();
 
-  void drawModel();
-  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited);
+  void drawModel(bool openingModel);
+  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, bool openingModel);
 
   void loadDiagramView();
   void loadConnections();
@@ -651,7 +651,6 @@ private:
   QStringList mElementsAnnotationsList;
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
-  int mASTID;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

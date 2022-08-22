@@ -215,6 +215,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
   ModelInstance::Element *getModelElement() const {return mpModelElement;}
+  void setModelElement(ModelInstance::Element *pModelElement) {mpModelElement = pModelElement;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() const;
   QString getClassName() const;
@@ -276,6 +277,8 @@ public:
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
   void removeChildren();
+  void removeChildrenNew();
+  void reDrawElementNew();
   void emitAdded();
   void emitTransformChange(bool positionChanged) {emit transformChange(positionChanged);}
   void emitTransformHasChanged();

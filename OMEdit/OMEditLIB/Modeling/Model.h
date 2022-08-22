@@ -447,6 +447,7 @@ private:
   public:
     Element(Model *pParentModel);
     ~Element();
+    void initialize();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
 

@@ -63,6 +63,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  void setBitmap(ModelInstance::Bitmap *pBitmap) {mpBitmap = pBitmap;}
 private:
   ModelInstance::Bitmap *mpBitmap;
 public slots:

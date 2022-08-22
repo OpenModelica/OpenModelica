@@ -1392,10 +1392,8 @@ void LineAnnotation::updateConnectionTransformation()
       if (mLineType == LineAnnotation::ConnectionType) {
         mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
       } else if (mLineType == LineAnnotation::TransitionType) {
-        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
-                                                                                           mSynchronize, mPriority, mOldAnnotation,
-                                                                                           mCondition, mImmediate, mReset, mSynchronize,
-                                                                                           mPriority, getOMCShapeAnnotation()));
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset, mSynchronize, mPriority, mOldAnnotation,
+                                                                                           mCondition, mImmediate, mReset, mSynchronize, mPriority, getOMCShapeAnnotation()));
       } else if (mLineType == LineAnnotation::InitialStateType) {
         mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
       }

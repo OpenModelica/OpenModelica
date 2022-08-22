@@ -1950,9 +1950,6 @@ void MainWindow::undo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
     pModelWidget->updateClassAnnotationIfNeeded();
-    if (isNewApi()) {
-      pModelWidget->emitUpdateModel();
-    }
     pModelWidget->updateModelText();
   } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
              && pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable()) {
@@ -1973,9 +1970,6 @@ void MainWindow::redo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
-    if (isNewApi()) {
-      pModelWidget->emitUpdateModel();
-    }
     pModelWidget->updateModelText();
   } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
              && pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable()) {

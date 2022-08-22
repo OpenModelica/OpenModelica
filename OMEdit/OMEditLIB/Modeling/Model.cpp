@@ -918,8 +918,24 @@ namespace ModelInstance
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;
+    mpModel = 0;
+    initialize();
+  }
+
+  Element::~Element()
+  {
+    if (mpModel) {
+      delete mpModel;
+    }
+  }
+
+  void Element::initialize()
+  {
     mName = "";
     mType = "";
+    if (mpModel) {
+      delete mpModel;
+    }
     mpModel = 0;
     mDims.clear();
     mPublic = true;
@@ -933,13 +949,6 @@ namespace ModelInstance
     mDirection = "";
     mComment = "";
     mHasDialogAnnotation = false;
-  }
-
-  Element::~Element()
-  {
-    if (mpModel) {
-      delete mpModel;
-    }
   }
 
   void Element::deserialize(const QJsonObject &jsonObject)

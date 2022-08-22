@@ -1642,6 +1642,36 @@ void Element::removeChildren()
   mShapesList.clear();
 }
 
+/*!
+ * \brief Element::removeChildrenNew
+ * Removes the complete hirerchy of the Element.
+ */
+void Element::removeChildrenNew()
+{
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    pInheritedElement->removeChildrenNew();
+    delete pInheritedElement;
+  }
+  mInheritedElementsList.clear();
+  foreach (Element *pElement, mElementsList) {
+    pElement->removeChildrenNew();
+    delete pElement;
+  }
+  mElementsList.clear();
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    delete pShapeAnnotation;
+  }
+  mShapesList.clear();
+}
+
+void Element::reDrawElementNew()
+{
+  removeChildrenNew();
+  mpModel = mpModelElement->getModel();
+  drawElement();
+  updateConnections();
+}
+
 void Element::emitAdded()
 {
   if (mpLibraryTreeItem) {

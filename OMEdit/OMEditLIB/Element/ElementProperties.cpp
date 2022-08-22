@@ -1700,9 +1700,13 @@ void ElementParameters::commentLinkClicked(QString link)
 void ElementParameters::updateElementParameters()
 {
   if (MainWindow::instance()->isNewApi()) {
+    ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
+    QString oldModelText = pModelWidget->getEditor()->getPlainTextEdit()->toPlainText();
+    if (!pModelWidget->getLibraryTreeItem()->isTopLevel()) {
+      oldModelText = "within " % pModelWidget->getLibraryTreeItem()->parent()->getNameStructure() % ";\n" % oldModelText;
+    }
+    QString className = pModelWidget->getLibraryTreeItem()->getNameStructure();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    int oldASTID = pOMCProxy->storeAST();
-    QString className = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     bool valueChanged = false;
     // any parameter changed
     foreach (Parameter *pParameter, mParametersList) {
@@ -1794,10 +1798,12 @@ void ElementParameters::updateElementParameters()
     // if valueChanged is true then put the change in the undo stack.
     if (valueChanged) {
       // create OMCUndoCommand
-      const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
-      ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldASTID, oldModelInstance, QString("Update Element %1 Parameters").arg(mpElement->getName())));
+      const QString newModelText = pOMCProxy->listFile(className, false);
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand1(pModelWidget->getLibraryTreeItem(), mpElement, oldModelText, newModelText,
+                                                             QString("Update Element %1 Parameters").arg(mpElement->getName())));
       pModelWidget->updateModelText();
+//      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldASTID, oldModelInstance, QString("Update Element %1 Parameters").arg(mpElement->getName())));
+//      pModelWidget->updateModelText();
     }
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
