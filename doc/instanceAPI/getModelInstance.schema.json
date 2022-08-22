@@ -129,7 +129,7 @@
       }
     }
   },
-  "required": ["name"],
+  "required": ["name", "restriction"],
   "definitions": {
     "comment": {
       "type": "string"
