@@ -1400,7 +1400,12 @@ void GraphicsView::addShapeToList(ShapeAnnotation *pShape, int index)
 void GraphicsView::deleteShape(ShapeAnnotation *pShapeAnnotation)
 {
   pShapeAnnotation->setSelected(false);
-  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+    deleteShapeFromList(pShapeAnnotation);
+    setAddClassAnnotationNeeded(true);
+  } else {
+    mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
+  }
 }
 
 /*!
@@ -2736,7 +2741,12 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 {
   pTransitionLineAnnotation->setSelected(false);
-  mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+    deleteTransitionFromClass(pTransitionLineAnnotation);
+    deleteTransitionFromList(pTransitionLineAnnotation);
+  } else {
+    mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
+  }
 }
 
 /*!
@@ -2747,7 +2757,12 @@ void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 {
   pInitialLineAnnotation->setSelected(false);
-  mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+    deleteInitialStateFromClass(pInitialLineAnnotation);
+    deleteInitialStateFromList(pInitialLineAnnotation);
+  } else {
+    mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
+  }
 }
 
 //! Resets zoom factor to 100%.
