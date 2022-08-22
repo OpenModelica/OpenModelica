@@ -578,7 +578,6 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.TORN_LOOP(strict = strict)algorithm
-          /*
           for i in 1:arrayLength(strict.innerEquations) loop
             (tmp, simCodeIndices, _) := fromStrongComponent(strict.innerEquations[i], simCodeIndices, systemType, simcode_map);
             eqns := tmp :: eqns;
@@ -600,8 +599,7 @@ public
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
-          end if;*/
-          jacobian := NONE();
+          end if;
           system := NONLINEAR_SYSTEM(
             index         = simCodeIndices.equationIndex,
             blcks         = listReverse(eqns),
@@ -671,17 +669,6 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        /* this needs more thought
-        case BEquation.FOR_EQUATION() algorithm
-          rhs := BEquation.getResidualExp(eqn);
-          lhs := Expression.makeZero(
-          forEqn :=
-          eqn := Equation.splitIterators(eqn);
-          // handle these as if they were algorithms
-          stmt := Equation.toStatement(eqn);
-
-        then tmp;
-        */
         case BEquation.FOR_EQUATION() algorithm
           rhs := Equation.getRHS(eqn);
           lhs := Expression.makeZero(Expression.typeOf(rhs));

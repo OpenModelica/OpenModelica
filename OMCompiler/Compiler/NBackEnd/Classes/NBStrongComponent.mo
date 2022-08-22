@@ -447,16 +447,6 @@ public
     entwined := ENTWINED_EQUATION(entwined_slices, entwined_tpl_lst);
   end createPseudoEntwined;
 
-  function createPseudoAlgebraicLoop
-    input list<Integer> eqn_indices;
-    input array<Integer> eqn_to_var;
-    input Mapping mapping;
-    input EquationPointers eqns;
-    input VariablePointers vars;
-    input list<SuperNode> nodes;
-    output StrongComponent entwined;
-  end createPseudoAlgebraicLoop;
-
   function createAlias
     input SystemType systemType;
     input Integer partitionIndex;
@@ -531,7 +521,7 @@ public
       case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.RECORD_EQUATION() then SINGLE_RECORD_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), eqn_slice.indices), Slice.SLICE(eqn, {}), NBSolve.Status.EXPLICIT);
+      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -609,12 +599,11 @@ public
 
       case TORN_LOOP(strict = strict) algorithm
         // collect iteration loop vars
-        /*
+
         for var in strict.iteration_vars loop
           loop_vars := BVariable.getVarName(Slice.getT(var)) :: loop_vars;
         end for;
-*/
-        /*
+
         // traverse residual equations and collect dependencies
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
@@ -625,13 +614,12 @@ public
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(strict.innerEquations[i].eqn)), function Slice.getDependentCrefCausalized(set = set));
-          dependencies := listAppend(tmp, dependencies);
+          collectCrefs(strict.innerEquations[i], map, set, pseudo, jacType);
 
           // collect inner loop variables
-          loop_vars := BVariable.getVarName(Slice.getT(strict.innerEquations[i].var)) :: loop_vars;
+          loop_vars := listAppend(list(BVariable.getVarName(var) for var in getVariables(strict.innerEquations[i])), loop_vars);
         end for;
-*/
+
         // add all dependencies
         for cref in loop_vars loop
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -656,10 +644,10 @@ public
       local
         Tearing strict;
 
-      case TORN_LOOP() algorithm
+      case TORN_LOOP(strict = strict) algorithm
         // ToDo: update linearity here
-//        strict.jac := jac;
-//        comp.strict := strict;
+        strict.jac := jac;
+        comp.strict := strict;
       then comp;
 
       else algorithm
@@ -677,6 +665,29 @@ public
                         else {};
     end match;
   end getLoopResiduals;
+
+  function getVariables
+    "should this return slices?"
+    input StrongComponent comp;
+    output list<Pointer<Variable>> vars;
+  algorithm
+    vars := match comp
+      case SINGLE_EQUATION()          then {comp.var};
+      case SINGLE_ARRAY()             then {comp.var};
+      case SINGLE_ALGORITHM()         then comp.vars;
+      case SINGLE_RECORD_EQUATION()   then {comp.var};
+      case SINGLE_WHEN_EQUATION()     then comp.vars;
+      case SINGLE_IF_EQUATION()       then comp.vars;
+      case SINGLE_IF_EQUATION()       then comp.vars;
+      case SLICED_EQUATION()          then {Slice.getT(comp.var)};
+      case ENTWINED_EQUATION()        then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
+      case TORN_LOOP()                then Tearing.getResidualVars(comp.strict); // + inner?
+      case ALIAS()                    then getVariables(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getVariables;
 
   function isDiscrete
     "checks if all equations are discrete"
@@ -788,10 +799,10 @@ public
           );
 
           else algorithm
-            tearingSet := TEARING_SET(
-              //iteration_vars  = variables, //list(Slice.SLICE(var, {}) for var in variables),
-              //residual_eqns   = equations, //list(Slice.SLICE(eqn, {}) for eqn in equations),
-              //innerEquations  = listArray({}),
+            tearingSet := Tearing.TEARING_SET(
+              iteration_vars  = list(Slice.SLICE(v, {}) for v in VariablePointers.toList(vars)),
+              residual_eqns   = list(Slice.SLICE(e, {}) for e in EquationPointers.toList(eqns)),
+              innerEquations  = listArray({}),
               jac             = NONE());
           then TORN_LOOP(
             idx     = -1,

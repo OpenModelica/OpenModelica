@@ -186,6 +186,11 @@ public
         Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
       then StrongComponent.SLICED_EQUATION(new_cref, new_var_slice, new_eqn_slice, comp.status);
 
+      case StrongComponent.GENERIC_EQUATION() algorithm
+        new_eqn := differentiateEquationPointer(Slice.getT(comp.eqn), diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.GENERIC_EQUATION(Slice.SLICE(new_eqn, comp.eqn.indices));
+
       case StrongComponent.ENTWINED_EQUATION() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
       then fail();
