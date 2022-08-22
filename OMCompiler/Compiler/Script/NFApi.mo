@@ -95,6 +95,7 @@ import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;
 import ElementSource;
+import InstSettings = NFInst.InstSettings;
 
 
 public
@@ -854,13 +855,16 @@ protected
   JSON json;
   InstContext.Type context;
   InstanceTree inst_tree;
+  InstSettings inst_settings;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false);
+
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   cls_node := Inst.lookupRootClass(classPath, top, context);
   cls_node := Inst.instantiateRootClass(cls_node, context);
   inst_tree := buildInstanceTree(cls_node);
-  Inst.instExpressions(cls_node, context = context);
+  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
 
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
@@ -949,10 +953,10 @@ algorithm
     json := JSON.addPair("components", dumpJSONComponents(comps), json);
   end if;
 
-  if root then
-    sections := Class.getSections(InstNode.getClass(node));
-    json := dumpJSONEquations(sections, node, json);
+  sections := Class.getSections(InstNode.getClass(node));
+  json := dumpJSONEquations(sections, node, json);
 
+  if root then
     j := dumpJSONReplaceableElements(node);
     json := JSON.addPairNotNull("replaceable", j, json);
   end if;

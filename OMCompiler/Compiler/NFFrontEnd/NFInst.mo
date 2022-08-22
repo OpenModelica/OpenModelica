@@ -109,6 +109,16 @@ import CheckModel = NFCheckModel;
 
 public
 
+uniontype InstSettings
+  record SETTINGS
+    Boolean mergeExtendsSections "Merge sections from extends clauses if true";
+  end SETTINGS;
+end InstSettings;
+
+constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
+    mergeExtendsSections = true
+  );
+
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being
    a DAE."
@@ -2013,6 +2023,7 @@ function instExpressions
   input InstNode scope = node;
   input output Sections sections = Sections.EMPTY();
   input InstContext.Type context;
+  input InstSettings settings = DEFAULT_SETTINGS;
 protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
@@ -2052,9 +2063,15 @@ algorithm
     case Class.EXPANDED_CLASS(elements = cls_tree)
       algorithm
         // Instantiate expressions in the extends nodes.
-        for ext in ClassTree.getExtends(cls_tree) loop
-          sections := instExpressions(ext, ext, sections, context);
-        end for;
+        if settings.mergeExtendsSections then
+          for ext in ClassTree.getExtends(cls_tree) loop
+            sections := instExpressions(ext, ext, sections, context);
+          end for;
+        else
+          for ext in ClassTree.getExtends(cls_tree) loop
+            _ := instExpressions(ext, ext, sections, context);
+          end for;
+        end if;
 
         // Instantiate expressions in the local components.
         ClassTree.applyLocalComponents(cls_tree,
