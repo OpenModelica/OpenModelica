@@ -41,11 +41,12 @@ getModelInstance(M, prettyPrint = true);
 //       },
 //       \"value\": {
 //         \"binding\": 2
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"2:3-6:8\"
+//   }
 // }"
 // endResult

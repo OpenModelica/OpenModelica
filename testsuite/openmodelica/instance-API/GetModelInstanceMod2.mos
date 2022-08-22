@@ -39,9 +39,6 @@ getModelInstance(M, prettyPrint = true);
 //                 2,
 //                 3
 //               ]
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           },
 //           {
@@ -49,12 +46,13 @@ getModelInstance(M, prettyPrint = true);
 //             \"type\": \"Real\",
 //             \"value\": {
 //               \"binding\": 1
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"2:3-5:8\"
+//         }
 //       },
 //       \"dims\": {
 //         \"absyn\": [
@@ -73,9 +71,6 @@ getModelInstance(M, prettyPrint = true);
 //           \"each\": true,
 //           \"$value\": \"1\"
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     },
 //     {
@@ -93,9 +88,6 @@ getModelInstance(M, prettyPrint = true);
 //                 2,
 //                 3
 //               ]
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           },
 //           {
@@ -103,12 +95,13 @@ getModelInstance(M, prettyPrint = true);
 //             \"type\": \"Real\",
 //             \"value\": {
 //               \"binding\": 2
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"2:3-5:8\"
+//         }
 //       },
 //       \"dims\": {
 //         \"absyn\": [
@@ -125,11 +118,12 @@ getModelInstance(M, prettyPrint = true);
 //           \"each\": true,
 //           \"$value\": \"2\"
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"7:3-10:8\"
+//   }
 // }"
 // endResult

@@ -31,9 +31,6 @@ getModelInstance(M, prettyPrint = true);
 //       \"modifiers\": \"2.0\",
 //       \"value\": {
 //         \"binding\": 2
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     },
 //     {
@@ -60,15 +57,13 @@ getModelInstance(M, prettyPrint = true);
 //                 2,
 //                 3
 //               ]
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"2:3-4:8\"
+//         }
 //       }
 //     },
 //     {
@@ -90,11 +85,12 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           ]
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"6:3-10:8\"
+//   }
 // }"
 // endResult

@@ -96,6 +96,7 @@ import VerifyModel = NFVerifyModel;
 import SCodeUtil;
 import ElementSource;
 import InstSettings = NFInst.InstSettings;
+import Testsuite;
 
 
 public
@@ -939,9 +940,12 @@ algorithm
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
+  json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
   json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
+
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -960,6 +964,8 @@ algorithm
     j := dumpJSONReplaceableElements(node);
     json := JSON.addPairNotNull("replaceable", j, json);
   end if;
+
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
 function dumpJSONNodePath
@@ -1057,7 +1063,7 @@ algorithm
           json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
         end if;
 
-        json := JSON.addPair("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
         json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
       then
         ();
@@ -1142,6 +1148,31 @@ algorithm
   json := JSON.addPairNotNull("attributes", attr_json, json);
 end dumpJSONBuiltinClassComponents;
 
+function dumpJSONClassDims
+  input InstNode node;
+  input SCode.Element element;
+  output JSON json;
+protected
+  Type ty;
+  list<Absyn.Subscript> absyn_dims;
+algorithm
+  ty := InstNode.getType(node);
+
+  if Type.isArray(ty) then
+    absyn_dims := match element
+      case SCode.Element.CLASS(classDef = SCode.ClassDef.DERIVED(typeSpec =
+          Absyn.TypeSpec.TPATH(arrayDim = SOME(absyn_dims))))
+        then absyn_dims;
+
+      else {};
+    end match;
+
+    json := dumpJSONDims(absyn_dims, Type.arrayDims(ty));
+  else
+    json := JSON.makeNull();
+  end if;
+end dumpJSONClassDims;
+
 function dumpJSONDims
   input list<Absyn.Subscript> absynDims;
   input list<Dimension> typedDims;
@@ -1167,33 +1198,11 @@ end dumpJSONDims;
 function dumpJSONAttributes
   input SCode.Attributes attrs;
   input SCode.Prefixes prefs;
-  output JSON json = JSON.emptyObject();
+  output JSON json;
 protected
   String s;
 algorithm
-  if not SCodeUtil.visibilityBool(prefs.visibility) then
-    json := JSON.addPair("public", JSON.makeBoolean(false), json);
-  end if;
-
-  if SCodeUtil.finalBool(prefs.finalPrefix) then
-    json := JSON.addPair("final", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isInner(prefs.innerOuter) then
-    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isOuter(prefs.innerOuter) then
-    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
-  end if;
-
-  if SCodeUtil.replaceableBool(prefs.replaceablePrefix) then
-    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
-  end if;
-
-  if SCodeUtil.redeclareBool(prefs.redeclarePrefix) then
-    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
-  end if;
+  json := dumpJSONSCodePrefixes(prefs);
 
   s := SCodeDump.connectorTypeStr(attrs.connectorType);
   if not stringEmpty(s) then
@@ -1211,6 +1220,60 @@ algorithm
     json := JSON.addPair("direction", JSON.makeString("output"), json);
   end if;
 end dumpJSONAttributes;
+
+function dumpJSONSCodePrefixes
+  input SCode.Prefixes prefixes;
+  output JSON json = JSON.makeNull();
+algorithm
+  if not SCodeUtil.visibilityBool(prefixes.visibility) then
+    json := JSON.addPair("public", JSON.makeBoolean(false), json);
+  end if;
+
+  if SCodeUtil.finalBool(prefixes.finalPrefix) then
+    json := JSON.addPair("final", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isInner(prefixes.innerOuter) then
+    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOuter(prefixes.innerOuter) then
+    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.replaceableBool(prefixes.replaceablePrefix) then
+    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.redeclareBool(prefixes.redeclarePrefix) then
+    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSCodePrefixes;
+
+function dumpJSONClassPrefixes
+  input SCode.Element element;
+  output JSON json;
+protected
+  SCode.Prefixes prefs;
+algorithm
+  json := match element
+    case SCode.CLASS(prefixes = prefs)
+      algorithm
+        json := dumpJSONSCodePrefixes(element.prefixes);
+
+        if SCodeUtil.partialBool(element.partialPrefix) then
+          json := JSON.addPair("partial", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.encapsulatedBool(element.encapsulatedPrefix) then
+          json := JSON.addPair("encapsulated", JSON.makeBoolean(true), json);
+        end if;
+      then
+        json;
+
+    else JSON.makeNull();
+  end match;
+end dumpJSONClassPrefixes;
 
 function dumpJSONCommentOpt
   input Option<SCode.Comment> cmtOpt;
@@ -1313,6 +1376,29 @@ algorithm
     else ();
   end match;
 end dumpJSONAnnotationSubMod;
+
+function dumpJSONSourceInfo
+  input SourceInfo info;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+
+  json := JSON.addPair("location", JSON.makeString(
+    stringAppendList({
+      String(info.lineNumberStart),
+      ":",
+      String(info.columnNumberStart),
+      "-",
+      String(info.lineNumberEnd),
+      ":",
+      String(info.columnNumberEnd)
+      })),
+    json);
+
+  if info.isReadOnly then
+    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSourceInfo;
 
 function dumpJSONAbsynExpression
   input Absyn.Exp exp;

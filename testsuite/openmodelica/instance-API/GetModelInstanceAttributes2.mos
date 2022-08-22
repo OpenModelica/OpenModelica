@@ -57,7 +57,11 @@ getModelInstance(M, prettyPrint = true);
 //               \"inner\": true
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"17:5-17:14\"
+//         }
 //       }
 //     }
 //   ],
@@ -107,10 +111,7 @@ getModelInstance(M, prettyPrint = true);
 //         \"components\": [
 //           {
 //             \"name\": \"e\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           },
 //           {
 //             \"name\": \"f\",
@@ -126,7 +127,11 @@ getModelInstance(M, prettyPrint = true);
 //               \"connector\": \"stream\"
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"2:3-6:8\"
+//         }
 //       },
 //       \"prefixes\": {
 //         \"public\": false,
@@ -139,6 +144,10 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"w\",
 //       \"type\": \"Real\"
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"13:3-21:8\"
+//   }
 // }"
 // endResult

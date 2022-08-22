@@ -128,6 +128,10 @@ getModelInstance(M, prettyPrint=true);
 //         }
 //       ]
 //     }
+//   },
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"2:3-6:8\"
 //   }
 // }"
 // endResult

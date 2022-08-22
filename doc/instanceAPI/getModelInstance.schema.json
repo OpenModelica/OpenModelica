@@ -8,9 +8,43 @@
       "description": "The name of the class",
       "type": "string"
     },
+    "dims": {
+      "description": "The class' dimensions",
+      "$ref": "#/definitions/dimensions"
+    },
     "restriction": {
       "description": "The kind of class",
       "type": "string"
+    },
+    "prefixes": {
+      "description": "The class prefixes",
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "inner": {
+          "type": "boolean"
+        },
+        "outer": {
+          "type": "boolean"
+        },
+        "replaceable": {
+          "type": "repboolean"
+        },
+        "redeclare": {
+          "type": "boolean"
+        },
+        "partial": {
+          "type": "boolean"
+        },
+        "encapsulated": {
+          "type": "boolean"
+        }
+      }
     },
     "modifiers": {
       "description": "Modifier from the SCode",
@@ -127,9 +161,12 @@
           }
         ]
       }
+    },
+    "source": {
+      "$ref": "#/definitions/source"
     }
   },
-  "required": ["name", "restriction"],
+  "required": ["name", "restriction", "source"],
   "definitions": {
     "comment": {
       "type": "string"
@@ -212,24 +249,7 @@
             },
             "dims": {
               "description": "The component's dimensions",
-              "type": "object",
-              "properties": {
-                "absyn": {
-                  "properties": "Dimensions from the Absyn",
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "typed": {
-                  "properties": "Instantiated dimensions",
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": ["absyn", "typed"]
+              "$ref": "#/definitions/dimensions"
             },
             "modifiers": {
               "description": "Modifier from the SCode",
@@ -288,7 +308,7 @@
               "$ref": "#/definitions/annotation"
             }
           },
-          "required": ["name", "type", "modifier", "prefixes"]
+          "required": ["name", "type"]
         }
       ]
     },
@@ -338,6 +358,46 @@
           "minProperties": 1
         }
       ]
+    },
+    "dimensions": {
+      "description": "An element's dimensions",
+      "type": "object",
+      "properties": {
+        "absyn": {
+          "properties": "Dimensions from the Absyn",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "typed": {
+          "properties": "Instantiated dimensions",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["absyn", "typed"]
+    },
+    "source": {
+      "type": "object",
+      "description": "Source file information",
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "The path of the source file"
+        },
+        "location": {
+          "type": "string",
+          "description": "The location in the source file encoded as line_start:col_start-line_end:col_end"
+        },
+        "readonly": {
+          "type": "boolean",
+          "description": "Whether the source file is readable or not"
+        }
+      },
+      "required": ["filename", "location"]
     }
   }
 }

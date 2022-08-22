@@ -41,18 +41,19 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": {
 //         \"name\": \"M\",
 //         \"restriction\": \"model\",
+//         \"prefixes\": {
+//           \"replaceable\": true
+//         },
 //         \"components\": [
 //           {
 //             \"name\": \"x\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"location\": \"5:17-7:10\"
+//         }
 //       }
 //     }
 //   ],
@@ -62,6 +63,10 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": \"Real\"
 //     },
 //     \"M\"
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"location\": \"2:3-10:8\"
+//   }
 // }"
 // endResult
