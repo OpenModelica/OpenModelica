@@ -308,7 +308,7 @@
               "$ref": "#/definitions/annotation"
             }
           },
-          "required": ["name", "type"]
+          "required": ["name"]
         }
       ]
     },

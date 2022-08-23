@@ -7,6 +7,7 @@ GetModelInstanceAnnotation3.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceComment1.mos \
+GetModelInstanceConditional1.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceExp1.mos \

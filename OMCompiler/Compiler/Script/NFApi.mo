@@ -1030,10 +1030,14 @@ algorithm
   elem := InstNode.definition(node);
 
   () := match (comp, elem)
-    case (_, _)
+    case (_, SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
-
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+        json := dumpJSONSCodeMod(elem.modifications, json);
+        json := JSON.addPair("condition", JSON.makeBoolean(false), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := dumpJSONCommentOpt(SOME(elem.comment), InstNode.parent(node), json);
       then
         ();
 
