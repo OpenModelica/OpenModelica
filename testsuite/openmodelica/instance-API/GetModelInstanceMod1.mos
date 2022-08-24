@@ -70,7 +70,10 @@ getModelInstance(M, prettyPrint = true);
 //                     ],
 //                     \"source\": {
 //                       \"filename\": \"<interactive>\",
-//                       \"location\": \"2:3-5:8\"
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
 //                     }
 //                   }
 //                 },
@@ -97,14 +100,20 @@ getModelInstance(M, prettyPrint = true);
 //                     ],
 //                     \"source\": {
 //                       \"filename\": \"<interactive>\",
-//                       \"location\": \"2:3-5:8\"
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
 //                     }
 //                   }
 //                 }
 //               ],
 //               \"source\": {
 //                 \"filename\": \"<interactive>\",
-//                 \"location\": \"7:3-10:8\"
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 8
 //               }
 //             }
 //           },
@@ -134,7 +143,10 @@ getModelInstance(M, prettyPrint = true);
 //                     ],
 //                     \"source\": {
 //                       \"filename\": \"<interactive>\",
-//                       \"location\": \"2:3-5:8\"
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
 //                     }
 //                   }
 //                 },
@@ -155,21 +167,30 @@ getModelInstance(M, prettyPrint = true);
 //                     ],
 //                     \"source\": {
 //                       \"filename\": \"<interactive>\",
-//                       \"location\": \"2:3-5:8\"
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
 //                     }
 //                   }
 //                 }
 //               ],
 //               \"source\": {
 //                 \"filename\": \"<interactive>\",
-//                 \"location\": \"7:3-10:8\"
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 8
 //               }
 //             }
 //           }
 //         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"location\": \"12:3-15:8\"
+//           \"lineStart\": 12,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 15,
+//           \"columnEnd\": 8
 //         }
 //       },
 //       \"modifiers\": {
@@ -193,7 +214,10 @@ getModelInstance(M, prettyPrint = true);
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"location\": \"17:3-20:8\"
+//     \"lineStart\": 17,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 20,
+//     \"columnEnd\": 8
 //   }
 // }"
 // endResult

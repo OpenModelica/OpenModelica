@@ -1387,17 +1387,10 @@ function dumpJSONSourceInfo
 algorithm
   json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
 
-  json := JSON.addPair("location", JSON.makeString(
-    stringAppendList({
-      String(info.lineNumberStart),
-      ":",
-      String(info.columnNumberStart),
-      "-",
-      String(info.lineNumberEnd),
-      ":",
-      String(info.columnNumberEnd)
-      })),
-    json);
+  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
+  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
+  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
+  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
 
   if info.isReadOnly then
     json := JSON.addPair("readonly", JSON.makeBoolean(true), json);

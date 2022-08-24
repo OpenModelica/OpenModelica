@@ -388,9 +388,21 @@
           "type": "string",
           "description": "The path of the source file"
         },
-        "location": {
-          "type": "string",
-          "description": "The location in the source file encoded as line_start:col_start-line_end:col_end"
+        "lineStart": {
+          "type": "integer",
+          "description": "Line number start"
+        },
+        "columnStart": {
+          "type": "integer",
+          "description": "Column number start"
+        },
+        "lineStart": {
+          "type": "integer",
+          "description": "Line number end"
+        },
+        "columnEnd": {
+          "type": "integer",
+          "description": "Column number end"
         },
         "readonly": {
           "type": "boolean",

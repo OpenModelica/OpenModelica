@@ -67,7 +67,10 @@ getModelInstance(M, prettyPrint=true);
 //         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"location\": \"4:5-8:15\"
+//           \"lineStart\": 4,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 15
 //         }
 //       }
 //     },
@@ -78,7 +81,10 @@ getModelInstance(M, prettyPrint=true);
 //         \"restriction\": \"model\",
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"location\": \"10:5-11:15\"
+//           \"lineStart\": 10,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 15
 //         }
 //       }
 //     }
@@ -211,7 +217,10 @@ getModelInstance(M, prettyPrint=true);
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"location\": \"2:3-26:8\"
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 26,
+//     \"columnEnd\": 8
 //   }
 // }"
 // endResult
