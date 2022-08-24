@@ -59,7 +59,10 @@ getModelInstance(M, prettyPrint=true);
 //         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"location\": \"8:5-8:78\"
+//           \"lineStart\": 8,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 78
 //         }
 //       }
 //     }
@@ -76,7 +79,10 @@ getModelInstance(M, prettyPrint=true);
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"location\": \"6:3-10:8\"
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
 //   }
 // }"
 // endResult

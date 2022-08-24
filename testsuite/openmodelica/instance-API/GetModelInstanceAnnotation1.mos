@@ -131,7 +131,10 @@ getModelInstance(M, prettyPrint=true);
 //   },
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"location\": \"2:3-6:8\"
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 6,
+//     \"columnEnd\": 8
 //   }
 // }"
 // endResult
