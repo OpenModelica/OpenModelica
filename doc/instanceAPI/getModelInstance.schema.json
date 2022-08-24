@@ -33,7 +33,7 @@
           "type": "boolean"
         },
         "replaceable": {
-          "type": "repboolean"
+          "type": "boolean"
         },
         "redeclare": {
           "type": "boolean"
