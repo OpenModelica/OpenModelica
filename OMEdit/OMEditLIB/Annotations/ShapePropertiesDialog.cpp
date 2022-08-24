@@ -947,13 +947,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   } else {
     // create a UpdateShapeCommand object and push it to the undo stack.
-    UpdateShapeCommand *pUpdateShapeCommand;
-    pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
+    UpdateShapeCommand *pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateShapeCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpShapeAnnotation->getGraphicsView()->getModelWidget()->emitUpdateModel();
-    }
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   }
   return true;

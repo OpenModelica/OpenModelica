@@ -243,7 +243,14 @@ void GraphicsView::drawCoordinateSystem()
   resize(size());
 }
 
-void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select)
+/*!
+ * \brief GraphicsView::drawShapes
+ * Draws the shapes of the model.
+ * \param pModelInstance
+ * \param inhertied
+ * \param openingModel
+ */
+void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel)
 {
   QList<ModelInstance::Shape*> shapes;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
@@ -252,29 +259,58 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
     shapes = pModelInstance->getDiagramAnnotation()->getGraphics();
   }
 
-  foreach (auto shape, shapes) {
-    ShapeAnnotation *pShapeAnnotation = 0;
-    if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
-      pShapeAnnotation = new LineAnnotation(pLine, inhertied, this);
-    } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
-      pShapeAnnotation = new PolygonAnnotation(pPolygon, inhertied, this);
-    } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
-      pShapeAnnotation = new RectangleAnnotation(pRectangle, inhertied, this);
-    } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
-      pShapeAnnotation = new EllipseAnnotation(pEllipse, inhertied, this);
-    } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
-      pShapeAnnotation = new TextAnnotation(pText, inhertied, this);
-    } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
-      pShapeAnnotation = new BitmapAnnotation(pBitmap, mpModelWidget->getLibraryTreeItem()->mClassInformation.fileName, inhertied, this);
-    }
+  // if inherited or openingModel then simply draw new shapes.
+  if (inhertied || openingModel) {
+    foreach (auto shape, shapes) {
+      ShapeAnnotation *pShapeAnnotation = 0;
+      if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
+        pShapeAnnotation = new LineAnnotation(pLine, inhertied, this);
+      } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
+        pShapeAnnotation = new PolygonAnnotation(pPolygon, inhertied, this);
+      } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
+        pShapeAnnotation = new RectangleAnnotation(pRectangle, inhertied, this);
+      } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
+        pShapeAnnotation = new EllipseAnnotation(pEllipse, inhertied, this);
+      } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
+        pShapeAnnotation = new TextAnnotation(pText, inhertied, this);
+      } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
+        pShapeAnnotation = new BitmapAnnotation(pBitmap, mpModelWidget->getLibraryTreeItem()->mClassInformation.fileName, inhertied, this);
+      }
 
-    if (pShapeAnnotation) {
-      pShapeAnnotation->drawCornerItems();
-      pShapeAnnotation->setCornerItemsActiveOrPassive();
-      pShapeAnnotation->applyTransformation();
-      mpModelWidget->getUndoStack()->push(new AddShapeCommand(pShapeAnnotation));
-      if (select) {
-        pShapeAnnotation->setSelected(true);
+      if (pShapeAnnotation) {
+        pShapeAnnotation->drawCornerItems();
+        pShapeAnnotation->setCornerItemsActiveOrPassive();
+        pShapeAnnotation->applyTransformation();
+        if (pShapeAnnotation->isInheritedShape()) {
+          addInheritedShapeToList(pShapeAnnotation);
+        } else {
+          addShapeToList(pShapeAnnotation, -1);
+        }
+        addItem(pShapeAnnotation);
+        addItem(pShapeAnnotation->getOriginItem());
+      }
+    }
+  } else { // if we are updating the model then update the existing shapes.
+    if (mShapesList.size() == shapes.size()) {
+      for (int i = 0; i < mShapesList.size(); ++i) {
+        if (LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mShapesList.at(i))) {
+          pLineAnnotation->setLine(dynamic_cast<ModelInstance::Line*>(shapes.at(i)));
+        } else if (PolygonAnnotation *pPolygonAnnotation = dynamic_cast<PolygonAnnotation*>(mShapesList.at(i))) {
+          pPolygonAnnotation->setPolygon(dynamic_cast<ModelInstance::Polygon*>(shapes.at(i)));
+        } else if (RectangleAnnotation *pRectangleAnnotation = dynamic_cast<RectangleAnnotation*>(mShapesList.at(i))) {
+          pRectangleAnnotation->setRectangle(dynamic_cast<ModelInstance::Rectangle*>(shapes.at(i)));
+        } else if (EllipseAnnotation *pEllipseAnnotation = dynamic_cast<EllipseAnnotation*>(mShapesList.at(i))) {
+          pEllipseAnnotation->setEllipse(dynamic_cast<ModelInstance::Ellipse*>(shapes.at(i)));
+        } else if (TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(mShapesList.at(i))) {
+          pTextAnnotation->setText(dynamic_cast<ModelInstance::Text*>(shapes.at(i)));
+        } else if (BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(mShapesList.at(i))) {
+          pBitmapAnnotation->setBitmap(dynamic_cast<ModelInstance::Bitmap*>(shapes.at(i)));
+        }
+        // remove and add the shape to keep the correct order fo shapes.
+        removeItem(mShapesList.at(i));
+        removeItem(mShapesList.at(i)->getOriginItem());
+        addItem(mShapesList.at(i));
+        addItem(mShapesList.at(i)->getOriginItem());
       }
     }
   }
@@ -293,7 +329,7 @@ void GraphicsView::drawConnectors(ModelInstance::Model *pModelInstance, bool inh
     QList<ModelInstance::Element*> elements = pModelInstance->getElements();
     foreach (auto pElement, elements) {
       if (pElement->getModel() && pElement->isPublic() && pElement->getModel()->isConnector()) {
-        addElementToView(pElement, inherited, false, true, true, false);
+        addElementToView(pElement, inherited, false);
       }
     }
   }
@@ -313,7 +349,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
     foreach (auto pElement, elements) {
       if (pElement->getModel()) {
         mpModelWidget->addDependsOnModel(pElement->getModel()->getName());
-        addElementToView(pElement, inherited, false, true, false, true);
+        addElementToView(pElement, inherited, false);
       }
     }
   }
@@ -326,7 +362,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
     QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     foreach (auto pConnection, connections) {
-      addConnection(pConnection, inherited, false, false);
+      addConnection(pConnection, inherited);
     }
 
 //    getModelConnections();
@@ -637,12 +673,39 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
   }
 }
 
-void GraphicsView::addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram)
+void GraphicsView::addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject)
 {
-  AddElementCommand *pAddElementCommand = new AddElementCommand(pElement, inherited, addObject, openingClass, addtoIcon, addtoDiagram, this);
-  mpModelWidget->getUndoStack()->push(pAddElementCommand);
-  if (!openingClass) {
+  if (addObject) {
+    AddElementCommand *pAddElementCommand = new AddElementCommand(pElement, inherited, addObject, this);
+    mpModelWidget->getUndoStack()->push(pAddElementCommand);
     mpModelWidget->updateModelText();
+  } else {
+    bool exists = false;
+    if (!inherited) { // Update if element exists
+      foreach (Element *pExistingElement, mElementsList) {
+        if (pExistingElement->getName().compare(pElement->getName()) == 0) {
+          exists = true;
+          pExistingElement->setModelElement(pElement);
+          pExistingElement->reDrawElementNew();
+          // remove and add the element to keep the correct order of elements.
+          removeItem(pExistingElement);
+          removeItem(pExistingElement->getOriginItem());
+          addItem(pExistingElement);
+          addItem(pExistingElement->getOriginItem());
+          break;
+        }
+      }
+    }
+    // Draw new if element doesn't exist
+    if (inherited || !exists) {
+      Element *pIconElement = 0;
+      Element *pDiagramElement = 0;
+      GraphicsView *pIconGraphicsView = mpModelWidget->getIconGraphicsView();
+      GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
+
+      AddElementCommand::createElements(&pIconElement, pIconGraphicsView, &pDiagramElement, pDiagramGraphicsView, pElement, inherited);
+      AddElementCommand::addElementToView(pIconElement, pIconGraphicsView, pDiagramElement, pDiagramGraphicsView, pElement);
+    }
   }
 }
 
@@ -655,11 +718,11 @@ void GraphicsView::addElementToClass(Element *pElement)
      * Always send the full path so that addComponent API doesn't fail when it makes a call to getDefaultPrefixes.
      * I updated the addComponent API to make path relative.
      */
-    pMainWindow->getOMCProxy()->addComponent(pElement->getName(), pElement->getComponentInfo()->getClassName(),
+    pMainWindow->getOMCProxy()->addComponent(pElement->getName(), pElement->getClassName(),
                                              mpModelWidget->getLibraryTreeItem()->getNameStructure(), pElement->getPlacementAnnotation());
     LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
     // get the toplevel class of dragged component
-    QString packageName = StringHandler::getFirstWordBeforeDot(pElement->getLibraryTreeItem()->getNameStructure());
+    QString packageName = StringHandler::getFirstWordBeforeDot(pElement->getClassName());
     LibraryTreeItem *pPackageLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
     // get the top level class of current class
     QString topLevelClassName = StringHandler::getFirstWordBeforeDot(mpModelWidget->getLibraryTreeItem()->getNameStructure());
@@ -724,12 +787,7 @@ void GraphicsView::deleteElement(Element *pElement)
     QString startComponentName = getComponentName(mConnectionsList[i]->getStartComponentName());
     QString endComponentName = getComponentName(mConnectionsList[i]->getEndComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
-      if (MainWindow::instance()->isNewApi()) {
-        deleteConnectionFromClass(mConnectionsList[i]);
-        deleteConnectionFromList(mConnectionsList[i]);
-      } else {
-        deleteConnection(mConnectionsList[i]);
-      }
+      deleteConnection(mConnectionsList[i]);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -741,12 +799,7 @@ void GraphicsView::deleteElement(Element *pElement)
     QString startComponentName = getComponentName(mTransitionsList[i]->getStartComponentName());
     QString endComponentName = getComponentName(mTransitionsList[i]->getEndComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
-      if (MainWindow::instance()->isNewApi()) {
-        deleteTransitionFromClass(mTransitionsList[i]);
-        deleteTransitionFromList(mTransitionsList[i]);
-      } else {
-        deleteTransition(mTransitionsList[i]);
-      }
+      deleteTransition(mTransitionsList[i]);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -757,12 +810,7 @@ void GraphicsView::deleteElement(Element *pElement)
   while(i != mInitialStatesList.size()) {
     QString startComponentName = getComponentName(mInitialStatesList[i]->getStartComponentName());
     if ((startComponentName.compare(pElement->getName()) == 0)) {
-      if (MainWindow::instance()->isNewApi()) {
-        deleteInitialStateFromClass(mInitialStatesList[i]);
-        deleteInitialStateFromList(mInitialStatesList[i]);
-      } else {
-        deleteInitialState(mInitialStatesList[i]);
-      }
+      deleteInitialState(mInitialStatesList[i]);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -773,11 +821,7 @@ void GraphicsView::deleteElement(Element *pElement)
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
     pElement->emitDeleted();
   } else {
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-      deleteElementFromClass(pElement);
-    } else {
-      mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
-    }
+    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
   }
 }
 
@@ -885,7 +929,13 @@ bool GraphicsView::checkElementName(QString elementName)
   return true;
 }
 
-void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool inherited, bool addToOMC, bool select)
+/*!
+ * \brief GraphicsView::addConnection
+ * Adds the connection.
+ * \param pConnection
+ * \param inherited
+ */
+void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool inherited)
 {
   // if connection is valid and has line annotation
   if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getLine()) {
@@ -965,12 +1015,28 @@ void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool in
                                                             .arg(pConnection->getEndConnector()->getName(), connectionString), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
-    LineAnnotation *pConnectionLineAnnotation;
-    pConnectionLineAnnotation = new LineAnnotation(pConnection, pStartConnectorComponent, pEndConnectorComponent, inherited, this);
-    if (select) {
-      pConnectionLineAnnotation->setSelected(true);
+
+    bool exists = false;
+    if (!inherited) { // Update if connection exists
+      foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+        if ((pConnectionLineAnnotation->getStartComponentName().compare(pConnection->getStartConnector()->getName()) == 0)
+            && (pConnectionLineAnnotation->getEndComponentName().compare(pConnection->getEndConnector()->getName()) == 0)) {
+          exists = true;
+          pConnectionLineAnnotation->setLine(pConnection->getLine());
+          // remove and add the connection to keep the correct order of connections.
+          removeItem(pConnectionLineAnnotation);
+          addItem(pConnectionLineAnnotation);
+          break;
+        }
+      }
     }
-    mpModelWidget->getUndoStack()->push(new AddConnectionCommand(pConnectionLineAnnotation, addToOMC));
+    // Draw new if connection doesn't exist
+    if (inherited || !exists) {
+      LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(pConnection, pStartConnectorComponent, pEndConnectorComponent, inherited, this);
+      pConnectionLineAnnotation->drawCornerItems();
+      pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+      addConnectionToView(pConnectionLineAnnotation);
+    }
   }
 }
 
@@ -1400,12 +1466,7 @@ void GraphicsView::addShapeToList(ShapeAnnotation *pShape, int index)
 void GraphicsView::deleteShape(ShapeAnnotation *pShapeAnnotation)
 {
   pShapeAnnotation->setSelected(false);
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-    deleteShapeFromList(pShapeAnnotation);
-    setAddClassAnnotationNeeded(true);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
-  }
+  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
 }
 
 /*!
@@ -2724,12 +2785,7 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
     deleteConnectionFromClass(pConnectionLineAnnotation);
   } else {
     // Delete the connection
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-      deleteConnectionFromClass(pConnectionLineAnnotation);
-      deleteConnectionFromList(pConnectionLineAnnotation);
-    } else {
-      mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
-    }
+    mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
   }
 }
 
@@ -2741,12 +2797,7 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 {
   pTransitionLineAnnotation->setSelected(false);
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-    deleteTransitionFromClass(pTransitionLineAnnotation);
-    deleteTransitionFromList(pTransitionLineAnnotation);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
-  }
+  mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
 }
 
 /*!
@@ -2757,12 +2808,7 @@ void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 {
   pInitialLineAnnotation->setSelected(false);
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-    deleteInitialStateFromClass(pInitialLineAnnotation);
-    deleteInitialStateFromList(pInitialLineAnnotation);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
-  }
+  mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
 }
 
 //! Resets zoom factor to 100%.
@@ -3372,9 +3418,6 @@ void GraphicsView::manhattanizeItems()
   mpModelWidget->beginMacro("Manhattanize");
   emit manhattanize();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3388,9 +3431,6 @@ void GraphicsView::deleteItems()
   mpModelWidget->beginMacro("Delete items");
   emit deleteSignal();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3404,9 +3444,6 @@ void GraphicsView::duplicateItems()
   mpModelWidget->beginMacro("Duplicate by mouse");
   emit mouseDuplicate();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3420,9 +3457,6 @@ void GraphicsView::rotateClockwise()
   mpModelWidget->beginMacro("Rotate clockwise by mouse");
   emit mouseRotateClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3436,9 +3470,6 @@ void GraphicsView::rotateAntiClockwise()
   mpModelWidget->beginMacro("Rotate anti clockwise by mouse");
   emit mouseRotateAntiClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3452,9 +3483,6 @@ void GraphicsView::flipHorizontal()
   mpModelWidget->beginMacro("Flip horizontal by mouse");
   emit mouseFlipHorizontal();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3468,9 +3496,6 @@ void GraphicsView::flipVertical()
   mpModelWidget->beginMacro("Flip vertical by mouse");
   emit mouseFlipVertical();
   mpModelWidget->updateClassAnnotationIfNeeded();
-  if (MainWindow::instance()->isNewApi()) {
-    mpModelWidget->emitUpdateModel();
-  }
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
 }
@@ -3890,9 +3915,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       addClassAnnotation();
     }
     if (hasComponentMoved || hasShapeMoved) {
-      if (MainWindow::instance()->isNewApi()) {
-        mpModelWidget->emitUpdateModel();
-      }
       mpModelWidget->updateModelText();
     }
     // if we have started he undo stack macro then we should end it.
@@ -4137,105 +4159,54 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
   /* handle keys */
   if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_H && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_V && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
-    if (MainWindow::instance()->isNewApi()) {
-      mpModelWidget->emitUpdateModel();
-    }
     mpModelWidget->updateModelText();
   } else {
     QGraphicsView::keyReleaseEvent(event);
@@ -4788,7 +4759,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
       connect(this, SIGNAL(updateModel(QString)), MainWindow::instance(), SLOT(updateModel(QString)));
       QJsonObject modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
       mpModelInstance = new ModelInstance::Model(modelInstanceJson);
-      drawModel();
+      drawModel(true);
     } else {
 
       getModelInheritedClasses();
@@ -4815,8 +4786,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mUpdateModelTimer.setSingleShot(true);
     mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
-    mDependsOnModelsList.clear();
-    mASTID = 0;
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -5122,25 +5091,25 @@ void ModelWidget::loadElements()
   }
 }
 
-void ModelWidget::drawModel()
+void ModelWidget::drawModel(bool openingModel)
 {
   mpIconGraphicsView->drawCoordinateSystem();
   mpDiagramGraphicsView->drawCoordinateSystem();
   clearDependsOnModels();
-  drawModelIconDiagram(mpModelInstance, false);
+  drawModelIconDiagram(mpModelInstance, false, openingModel);
 }
 
-void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited)
+void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, bool openingModel)
 {
   QList<ModelInstance::Extend*> extends = pModelInstance->getExtends();
   foreach (auto pExtend, extends) {
     addDependsOnModel(pExtend->getName());
-    drawModelIconDiagram(pExtend, true);
+    drawModelIconDiagram(pExtend, true, openingModel);
   }
 
-  mpIconGraphicsView->drawShapes(pModelInstance, inherited, false);
+  mpIconGraphicsView->drawShapes(pModelInstance, inherited, openingModel);
   mpIconGraphicsView->drawConnectors(pModelInstance, inherited);
-  mpDiagramGraphicsView->drawShapes(pModelInstance, inherited, false);
+  mpDiagramGraphicsView->drawShapes(pModelInstance, inherited, openingModel);
   mpDiagramGraphicsView->drawElements(pModelInstance, inherited);
   mpDiagramGraphicsView->drawConnections(pModelInstance, inherited);
 }
@@ -5824,8 +5793,13 @@ void ModelWidget::reDrawModelWidget()
 void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  clearGraphicsViews();
-  mpUndoStack->setEnabled(false);
+  // we only remove the inherited stuff and redraw it. The class shapes, connections and elements are udpated.
+  mpIconGraphicsView->removeInheritedClassShapes();
+  mpIconGraphicsView->removeInheritedClassConnections();
+  mpIconGraphicsView->removeInheritedClassElements();
+  mpDiagramGraphicsView->removeInheritedClassShapes();
+  mpDiagramGraphicsView->removeInheritedClassConnections();
+  mpDiagramGraphicsView->removeInheritedClassElements();
   /* get model components, connection and shapes. */
   // Draw icon view
   // reset the CoOrdinateSystem
@@ -5836,11 +5810,15 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
   if (mpDiagramGraphicsView) {
     mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   }
-  if (mpModelInstance) {
-    delete mpModelInstance;
-  }
+  // save the current ModelInstance pointer so we can delete it later.
+  ModelInstance::Model *pOldModelInstance = mpModelInstance;
+  // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(modelInstanceJson);
-  drawModel();
+  drawModel(false);
+  // delete the old ModelInstance
+  if (pOldModelInstance) {
+    delete pOldModelInstance;
+  }
   // update the icon
   mpLibraryTreeItem->handleIconUpdated();
   // if documentation view is visible then update it
@@ -5850,7 +5828,6 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
   updateViewButtonsBasedOnAccess();
   // announce the change.
   emitUpdateModel();
-  mpUndoStack->setEnabled(true);
   QApplication::restoreOverrideCursor();
 }
 
@@ -6114,6 +6091,10 @@ void ModelWidget::updateModelText()
   } else {
     setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
     mUpdateModelTimer.start();
+    if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+      // announce the change.
+      emitUpdateModel();
+    }
   }
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
@@ -6795,9 +6776,6 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
  */
 void ModelWidget::beginMacro(const QString &text)
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-    mASTID = MainWindow::instance()->getOMCProxy()->storeAST();
-  }
   mpUndoStack->beginMacro(text);
   if (mpEditor) {
     QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
@@ -6813,8 +6791,6 @@ void ModelWidget::endMacro()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     createOMSimulatorUndoCommand("");
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
-    mpUndoStack->push(new OMCUndoCommand(mpLibraryTreeItem, mASTID, mpModelInstance->getModelJson(), ""));
   }
   mpUndoStack->endMacro();
   if (mpEditor) {

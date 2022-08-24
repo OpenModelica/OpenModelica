@@ -100,6 +100,7 @@ public:
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void updateTransitionTextPosition();
+  void setLine(ModelInstance::Line *pLine) {mpLine = pLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
   void setStartComponent(Element *pStartComponent) {mpStartComponent = pStartComponent;}

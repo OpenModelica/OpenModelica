@@ -107,10 +107,13 @@ private:
 class AddElementCommand : public UndoCommand
 {
 public:
-  AddElementCommand(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram,
-                    GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
+  AddElementCommand(ModelInstance::Element *pElement, bool inherited, bool addObject, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
+  static void createElements(Element **pIconElement, GraphicsView *pIconGraphicsView, Element **pDiagramElement, GraphicsView *pDiagramGraphicsView,
+                             ModelInstance::Element *pElement, bool inherited);
+  static void addElementToView(Element *pIconElement, GraphicsView *pIconGraphicsView, Element *pDiagramElement, GraphicsView *pDiagramGraphicsView,
+                               ModelInstance::Element *pElement);
 private:
   ModelInstance::Element *mpElement;
   bool mAddObject;
@@ -456,6 +459,25 @@ private:
   int mOldASTID;
   int mNewASTID;
   bool mUndoDoneOnce;
+};
+
+class OMCUndoCommand1 : public UndoCommand
+{
+public:
+  OMCUndoCommand1(LibraryTreeItem *pLibraryTreeItem, Element *pElement, const QString &oldModelText, const QString &newModelText,
+                  const QString &commandText, UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  Element *mpElement;
+  QJsonObject mOldModelInstanceJson;
+  QJsonObject mNewModelInstanceJson;
+  QString mOldModelText;
+  QString mNewModelText;
+  bool mUndoDoneOnce;
+
+  void updateElementWithModelInstance();
 };
 
 #endif // COMMANDS_H

@@ -64,6 +64,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  void setRectangle(ModelInstance::Rectangle *pRectangle) {mpRectangle = pRectangle;}
 private:
   ModelInstance::Rectangle *mpRectangle;
 public slots:
