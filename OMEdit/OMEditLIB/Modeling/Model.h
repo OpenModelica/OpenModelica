@@ -313,24 +313,71 @@ private:
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
+    QStringList getDims() const {return mDims;}
+    QString getRestriction() const {return mRestriction;}
     bool isConnector() const;
+    bool isPublic() const {return mPublic;}
+    bool isFinal() const {return mFinal;}
+    bool isInner() const {return mInner;}
+    bool isOuter() const {return mOuter;}
+    bool isReplaceable() const {return mReplaceable;}
+    bool isRedeclare() const {return mRedeclare;}
+    bool isPartial() const {return mPartial;}
+    bool isEncapsulated() const {return mEncapsulated;}
     QList<Extend *> getExtends() const {return mExtends;}
     QString getComment() const {return mComment;}
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation;}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation;}
+    bool isDocumentationClass() const {return mDocumentationClass;}
+    QString getVersion() const {return mVersion;}
+    QString getVersionDate() const {return mVersionDate;}
+    QString getVersionBuild() const {return mVersionBuild;}
+    QString getDateModified() const {return mDateModified;}
+    QString getPreferredView() const {return mPreferredView;}
+    bool isState() const {return mState;}
+    QString getAccess() const {return mAccess;}
     QList<Element *> getElements() const {return mElements;}
+    QString getFileName() const {return mFileName;}
+    int getLineStart() const {return mLineStart;}
+    int getColumnStart() const {return mColumnStart;}
+    int getLineEnd() const {return mLineEnd;}
+    int getColumnEnd() const {return mColumnEnd;}
+    bool isReadonly() const {return mReadonly;}
     QList<Connection *> getConnections() const {return mConnections;}
   private:
     void initialize();
 
     QJsonObject mModelJson;
     QString mName;
+    QStringList mDims;
     QString mRestriction;
+    bool mPublic;
+    bool mFinal;
+    bool mInner;
+    bool mOuter;
+    bool mReplaceable;
+    bool mRedeclare;
+    bool mPartial;
+    bool mEncapsulated;
     QList<Extend*> mExtends;
     QString mComment;
     IconDiagramAnnotation *mpIconAnnotation;
     IconDiagramAnnotation *mpDiagramAnnotation;
+    bool mDocumentationClass;
+    QString mVersion;
+    QString mVersionDate;
+    QString mVersionBuild;
+    QString mDateModified;
+    QString mPreferredView;
+    bool mState;
+    QString mAccess;
     QList<Element*> mElements;
+    QString mFileName;
+    int mLineStart;
+    int mColumnStart;
+    int mLineEnd;
+    int mColumnEnd;
+    bool mReadonly;
     QList<Connection*> mConnections;
   };
 

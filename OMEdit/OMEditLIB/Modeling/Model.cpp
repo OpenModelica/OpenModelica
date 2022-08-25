@@ -669,8 +669,55 @@ namespace ModelInstance
       mName = mModelJson.value("name").toString();
     }
 
+    if (mModelJson.contains("dims")) {
+      QJsonObject dims = mModelJson.value("dims").toObject();
+
+      if (dims.contains("absyn")) {
+        QJsonArray dimsAbsynArray = dims.value("absyn").toArray();
+        foreach (auto dim, dimsAbsynArray) {
+          mDims.append(dim.toString());
+        }
+      }
+    }
+
     if (mModelJson.contains("restriction")) {
       mRestriction = mModelJson.value("restriction").toString();
+    }
+
+    if (mModelJson.contains("prefixes")) {
+      QJsonObject prefixes = mModelJson.value("prefixes").toObject();
+
+      if (prefixes.contains("public")) {
+        mPublic = prefixes.value("public").toBool();
+      }
+
+      if (prefixes.contains("final")) {
+        mFinal = prefixes.value("final").toBool();
+      }
+
+      if (prefixes.contains("inner")) {
+        mInner = prefixes.value("inner").toBool();
+      }
+
+      if (prefixes.contains("outer")) {
+        mOuter = prefixes.value("outer").toBool();
+      }
+
+      if (prefixes.contains("replaceable")) {
+        mReplaceable = prefixes.value("replaceable").toBool();
+      }
+
+      if (prefixes.contains("redeclare")) {
+        mRedeclare = prefixes.value("redeclare").toBool();
+      }
+
+      if (prefixes.contains("partial")) {
+        mPartial = prefixes.value("partial").toBool();
+      }
+
+      if (prefixes.contains("encapsulated")) {
+        mEncapsulated = prefixes.value("encapsulated").toBool();
+      }
     }
 
     if (mModelJson.contains("extends")) {
@@ -688,11 +735,51 @@ namespace ModelInstance
 
     if (mModelJson.contains("annotation")) {
       QJsonObject annotation = mModelJson.value("annotation").toObject();
+
       if (annotation.contains("Icon")) {
         mpIconAnnotation->deserialize(annotation.value("Icon").toObject());
       }
+
       if (annotation.contains("Diagram")) {
         mpDiagramAnnotation->deserialize(annotation.value("Diagram").toObject());
+      }
+
+      if (annotation.contains("DocumentationClass")) {
+        mDocumentationClass = annotation.value("DocumentationClass").toBool();
+      }
+
+      if (annotation.contains("version")) {
+        mVersion = annotation.value("version").toString();
+      }
+
+      if (annotation.contains("versionDate")) {
+        mVersionDate = annotation.value("versionDate").toString();
+      }
+
+      if (annotation.contains("versionBuild")) {
+        mVersionDate = QString::number(annotation.value("versionBuild").toInt());
+      }
+
+      if (annotation.contains("dateModified")) {
+        mDateModified = annotation.value("dateModified").toString();
+      }
+
+      if (annotation.contains("preferredView")) {
+        mPreferredView = annotation.value("preferredView").toString();
+      }
+
+      if (annotation.contains("__Dymola_state")) {
+        mState = annotation.value("__Dymola_state").toBool();
+      }
+
+      if (annotation.contains("Protection")) {
+        QJsonObject protection = annotation.value("Protection").toObject();
+        if (protection.contains("access")) {
+          QJsonObject access = protection.value("access").toObject();
+          if (access.contains("name")) {
+            mAccess = access.value("name").toString();
+          }
+        }
       }
     }
 
@@ -705,6 +792,34 @@ namespace ModelInstance
           pElement->deserialize(component.toObject());
           mElements.append(pElement);
         }
+      }
+    }
+
+    if (mModelJson.contains("source")) {
+      QJsonObject source = mModelJson.value("source").toObject();
+
+      if (source.contains("filename")) {
+        mFileName = source.value("filename").toString();
+      }
+
+      if (source.contains("lineStart")) {
+        mLineStart = source.value("lineStart").toInt();
+      }
+
+      if (source.contains("columnStart")) {
+        mColumnStart = source.value("columnStart").toInt();
+      }
+
+      if (source.contains("lineEnd")) {
+        mLineEnd = source.value("lineEnd").toInt();
+      }
+
+      if (source.contains("columnEnd")) {
+        mColumnEnd = source.value("columnEnd").toInt();
+      }
+
+      if (source.contains("readonly")) {
+        mReadonly = source.value("readonly").toBool();
       }
     }
 
@@ -737,12 +852,35 @@ namespace ModelInstance
   void Model::initialize()
   {
     mModelJson = QJsonObject();
+    mDims.clear();
     mRestriction = "";
+    mPublic = false;
+    mFinal = false;
+    mInner = false;
+    mOuter = false;
+    mReplaceable = false;
+    mRedeclare = false;
+    mPartial = false;
+    mEncapsulated = false;
     mExtends.clear();
     mComment = "";
     mpIconAnnotation = new IconDiagramAnnotation;
     mpDiagramAnnotation = new IconDiagramAnnotation;
+    mDocumentationClass = false;
+    mVersion = "";
+    mVersionDate = "";
+    mVersionBuild = "";
+    mDateModified = "";
+    mPreferredView = "";
+    mState = false;
+    mAccess = "";
     mElements.clear();
+    mFileName = "";
+    mLineStart = 0;
+    mColumnStart = 0;
+    mLineEnd = 0;
+    mColumnEnd = 0;
+    mReadonly = false;
     mConnections.clear();
   }
 
