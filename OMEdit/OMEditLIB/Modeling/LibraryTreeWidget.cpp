@@ -1137,8 +1137,8 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
       return false;
     }
     // filter the dummy tree item "All" created for search functionality to be at the top
-    if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
-         return false;
+    if (pLibraryTreeItem && pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
+      return false;
     }
     // if any of children matches the filter, then current index matches the filter as well
     int rows = sourceModel()->rowCount(index);
@@ -2595,8 +2595,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     }
     updateLibraryTreeItem(pLibraryTreeItem);
   } else {
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
+    OMCInterface::getClassInformation_res classInformation = MainWindow::instance()->getOMCProxy()->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
     pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
@@ -2621,8 +2620,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
  * \param isSaved
  * \param row
  */
-void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem,
-                                                        bool isSaved, int row)
+void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved, int row)
 {
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
