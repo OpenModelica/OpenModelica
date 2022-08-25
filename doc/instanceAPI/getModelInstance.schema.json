@@ -396,7 +396,7 @@
           "type": "integer",
           "description": "Column number start"
         },
-        "lineStart": {
+        "lineEnd": {
           "type": "integer",
           "description": "Line number end"
         },
