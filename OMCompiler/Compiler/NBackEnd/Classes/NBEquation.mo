@@ -54,6 +54,7 @@ public
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -420,14 +421,6 @@ public
       Option<Integer> recordSize      "NONE() if not a record";
     end ARRAY_EQUATION;
 
-    record SIMPLE_EQUATION
-      Type ty                         "equality type";
-      ComponentRef lhs                "left hand side component reference";
-      ComponentRef rhs                "right hand side component reference";
-      DAE.ElementSource source        "origin of equation";
-      EquationAttributes attr         "Additional Attributes";
-    end SIMPLE_EQUATION;
-
     record RECORD_EQUATION
       Type ty                         "equality type";
       //Integer size                    "size of record";
@@ -488,7 +481,6 @@ public
       str := match eq
         case SCALAR_EQUATION() then str + "[SCAL] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
         case ARRAY_EQUATION()  then str + "[ARRY] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
-        case SIMPLE_EQUATION() then str + "[SIMP] " + s + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
         case RECORD_EQUATION() then str + "[RECD] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s);
@@ -514,7 +506,6 @@ public
       src := match eq
         case SCALAR_EQUATION() then eq.source;
         case ARRAY_EQUATION()  then eq.source;
-        case SIMPLE_EQUATION() then eq.source;
         case RECORD_EQUATION() then eq.source;
         case ALGORITHM()       then eq.source;
         case IF_EQUATION()     then eq.source;
@@ -541,7 +532,6 @@ public
       size := match eqn
         case SCALAR_EQUATION() then 1;
         case ARRAY_EQUATION()  then Type.sizeOf(eqn.ty);
-        case SIMPLE_EQUATION() then Type.sizeOf(eqn.ty);
         case RECORD_EQUATION() then Type.sizeOf(eqn.ty);
         case ALGORITHM()       then eqn.size;
         case IF_EQUATION()     then eqn.size;
@@ -565,7 +555,6 @@ public
       size_lst := match eqn
         case SCALAR_EQUATION() then {1};
         case ARRAY_EQUATION()  then {Type.sizeOf(eqn.ty)}; //needs to be updated to represent the dimensions
-        case SIMPLE_EQUATION() then {Type.sizeOf(eqn.ty)};
         case RECORD_EQUATION() then {Type.sizeOf(eqn.ty)};
         case ALGORITHM()       then {eqn.size};
         case IF_EQUATION()     then {eqn.size};
@@ -682,7 +671,6 @@ public
           Equation body;
         case SCALAR_EQUATION()                then eq.attr;
         case ARRAY_EQUATION()                 then eq.attr;
-        case SIMPLE_EQUATION()                then eq.attr;
         case RECORD_EQUATION()                then eq.attr;
         case ALGORITHM()                      then eq.attr;
         case IF_EQUATION()                    then eq.attr;
@@ -703,7 +691,6 @@ public
           Equation body;
         case SCALAR_EQUATION()  algorithm eq.attr := attr; then eq;
         case ARRAY_EQUATION()   algorithm eq.attr := attr; then eq;
-        case SIMPLE_EQUATION()  algorithm eq.attr := attr; then eq;
         case RECORD_EQUATION()  algorithm eq.attr := attr; then eq;
         case ALGORITHM()        algorithm eq.attr := attr; then eq;
         case IF_EQUATION()      algorithm eq.attr := attr; then eq;
@@ -722,7 +709,6 @@ public
           Equation body;
         case SCALAR_EQUATION()                then eq.source;
         case ARRAY_EQUATION()                 then eq.source;
-        case SIMPLE_EQUATION()                then eq.source;
         case RECORD_EQUATION()                then eq.source;
         case ALGORITHM()                      then eq.source;
         case IF_EQUATION()                    then eq.source;
@@ -784,20 +770,6 @@ public
           end if;
           if not referenceEq(rhs, eq.rhs) then
             eq.rhs := rhs;
-          end if;
-        then eq;
-
-        case SIMPLE_EQUATION() algorithm
-          if isSome(funcCrefOpt) then
-            SOME(funcCref) := funcCrefOpt;
-            lhs_cref := funcCref(eq.lhs);
-            rhs_cref := funcCref(eq.rhs);
-            if not referenceEq(lhs_cref, eq.lhs) then
-              eq.lhs := lhs_cref;
-            end if;
-            if not referenceEq(rhs_cref, eq.rhs) then
-              eq.rhs := rhs_cref;
-            end if;
           end if;
         then eq;
 
@@ -902,13 +874,13 @@ public
       output Expression lhs;
     algorithm
       lhs := match(eq)
-        local
-          ComponentRef cref;
-        case SCALAR_EQUATION(lhs = lhs)   then lhs;
-        case ARRAY_EQUATION(lhs = lhs)    then lhs;
-        case RECORD_EQUATION(lhs = lhs)   then lhs;
-        case SIMPLE_EQUATION(lhs = cref)  then Expression.fromCref(cref);
-        else fail();
+        case SCALAR_EQUATION()                              then eq.lhs;
+        case ARRAY_EQUATION()                               then eq.lhs;
+        case RECORD_EQUATION()                              then eq.lhs;
+        case FOR_EQUATION() guard(listLength(eq.body) == 1) then getLHS(List.first(eq.body));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + Equation.toString(eq)});
+        then fail();
       end match;
     end getLHS;
 
@@ -918,13 +890,13 @@ public
       output Expression rhs;
     algorithm
       rhs := match(eq)
-        local
-          ComponentRef cref;
-        case SCALAR_EQUATION(rhs = rhs)   then rhs;
-        case ARRAY_EQUATION(rhs = rhs)    then rhs;
-        case RECORD_EQUATION(rhs = rhs)   then rhs;
-        case SIMPLE_EQUATION(rhs = cref)  then Expression.fromCref(cref);
-        else fail();
+        case SCALAR_EQUATION()                              then eq.rhs;
+        case ARRAY_EQUATION()                               then eq.rhs;
+        case RECORD_EQUATION()                              then eq.rhs;
+        case FOR_EQUATION() guard(listLength(eq.body) == 1) then getRHS(List.first(eq.body));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + Equation.toString(eq)});
+        then fail();
       end match;
     end getRHS;
 
@@ -934,34 +906,15 @@ public
       input Expression lhs;
     algorithm
       eq := match(eq)
-        local
-          ComponentRef cref;
-          Equation new_eq;
-        case SCALAR_EQUATION()
-          algorithm
-            eq.lhs := lhs;
+        case SCALAR_EQUATION()  algorithm eq.lhs := lhs; then eq;
+        case ARRAY_EQUATION()   algorithm eq.lhs := lhs; then eq;
+        case RECORD_EQUATION()  algorithm eq.lhs := lhs; then eq;
+        case FOR_EQUATION() guard(listLength(eq.body) == 1) algorithm
+          eq.body := {setLHS(List.first(eq.body), lhs)};
         then eq;
-        case ARRAY_EQUATION()
-          algorithm
-            eq.lhs := lhs;
-        then eq;
-        case RECORD_EQUATION()
-          algorithm
-            eq.lhs := lhs;
-        then eq;
-        case SIMPLE_EQUATION()
-          algorithm
-            new_eq := match lhs
-              local ComponentRef cr;
-              case Expression.CREF(cref = cr) algorithm
-                eq.lhs := cr;
-              then eq;
-              case _ guard(Type.isScalar(Expression.typeOf(lhs)))
-              then SCALAR_EQUATION(Expression.typeOf(lhs), lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr);
-              else ARRAY_EQUATION(Expression.typeOf(lhs), lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr, NONE());
-            end match;
-        then new_eq;
-        else fail();
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS could not be set for: " + Equation.toString(eq)});
+        then fail();
       end match;
     end setLHS;
 
@@ -971,33 +924,15 @@ public
       input Expression rhs;
     algorithm
       eq := match(eq)
-        local
-          ComponentRef cref;
-          Equation new_eq;
-        case SCALAR_EQUATION()
-          algorithm
-            eq.rhs := rhs;
+        case SCALAR_EQUATION()  algorithm eq.rhs := rhs; then eq;
+        case ARRAY_EQUATION()   algorithm eq.rhs := rhs; then eq;
+        case RECORD_EQUATION()  algorithm eq.rhs := rhs; then eq;
+        case FOR_EQUATION() guard(listLength(eq.body) == 1) algorithm
+          eq.body := {setRHS(List.first(eq.body), rhs)};
         then eq;
-        case ARRAY_EQUATION()
-          algorithm
-            eq.rhs := rhs;
-        then eq;
-        case RECORD_EQUATION()
-          algorithm
-            eq.rhs := rhs;
-        then eq;
-        case SIMPLE_EQUATION()
-          algorithm
-            new_eq := match rhs
-              local ComponentRef cr;
-              case Expression.CREF(cref = cr) algorithm
-                eq.rhs := cr;
-              then eq;
-              case _ guard(Type.isScalar(Expression.typeOf(rhs)))
-              then SCALAR_EQUATION(eq.ty, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr);
-              else ARRAY_EQUATION(eq.ty, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr, NONE());
-            end match;
-        then new_eq;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS could not be set for: " + Equation.toString(eq)});
+        then fail();
       end match;
     end setRHS;
 
@@ -1058,12 +993,6 @@ public
           eqn.lhs := tmpExp;
         then eqn;
 
-        case Equation.SIMPLE_EQUATION() algorithm
-          tmpCref := eqn.rhs;
-          eqn.rhs := eqn.lhs;
-          eqn.lhs := tmpCref;
-        then eqn;
-
         case Equation.RECORD_EQUATION() algorithm
           tmpExp := eqn.rhs;
           eqn.rhs := eqn.lhs;
@@ -1093,7 +1022,6 @@ public
           eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
           eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
         then eq;
-        case SIMPLE_EQUATION() then eq;
         case RECORD_EQUATION() algorithm
           eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
           eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
@@ -1129,10 +1057,6 @@ public
         then eqn;
 
         case ARRAY_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case SIMPLE_EQUATION() algorithm
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
         then eqn;
 
@@ -1181,12 +1105,6 @@ public
         then eqn;
 
         case ARRAY_EQUATION() algorithm
-          residualVar := EquationAttributes.getResidualVar(eqn.attr);
-          residualVar := BVariable.subIdxName(residualVar, idx);
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case SIMPLE_EQUATION() algorithm
           residualVar := EquationAttributes.getResidualVar(eqn.attr);
           residualVar := BVariable.subIdxName(residualVar, idx);
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
@@ -1241,7 +1159,16 @@ public
       Expression lhs, rhs;
     algorithm
       // get name cref which is the residual
-      residualCref:= Equation.getEqnName(eqn_ptr);
+      residualCref:= match eqn
+        local
+          list<ComponentRef> iterator_names;
+        case FOR_EQUATION() algorithm
+          residualCref := Equation.getEqnName(eqn_ptr);
+          (iterator_names, _) := Iterator.getFrames(eqn.iter);
+          residualCref := ComponentRef.setSubscripts(list(Subscript.INDEX(Expression.fromCref(name)) for name in iterator_names), residualCref);
+        then residualCref;
+        else Equation.getEqnName(eqn_ptr);
+      end match;
       // update RHS and LHS
       lhs := Expression.fromCref(residualCref);
       rhs := Equation.getResidualExp(eqn);
@@ -1268,10 +1195,6 @@ public
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
-        case Equation.SIMPLE_EQUATION() algorithm
-          operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.ADD);
-        then Expression.MULTARY({Expression.fromCref(eqn.rhs)},{Expression.fromCref(eqn.lhs)}, operator);
-
         case Equation.RECORD_EQUATION(ty = Type.COMPLEX(cls = cls_node)) algorithm
           // check if additive inverses exist
           cls := InstNode.getClass(cls_node);
@@ -1288,7 +1211,7 @@ public
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
-        case Equation.FOR_EQUATION() then getResidualExp(List.first(eqn.body));
+        case Equation.FOR_EQUATION() guard(listLength(eqn.body) == 1) then getResidualExp(List.first(eqn.body));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -1303,7 +1226,6 @@ public
     algorithm
       ty := match eq
         case SCALAR_EQUATION()  then eq.ty;
-        case SIMPLE_EQUATION()  then eq.ty;
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
         case FOR_EQUATION()     then eq.ty;
@@ -1809,9 +1731,6 @@ public
 
         case RECORD_EQUATION()
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
-
-        case SIMPLE_EQUATION()
-        then Statement.ASSIGNMENT(Expression.fromCref(eqn.lhs), Expression.fromCref(eqn.rhs), Type.arrayElementType(eqn.ty), eqn.source);
 
         case FOR_EQUATION() algorithm
           ({iter},{range}) := Equation.Iterator.getFrames(eqn.iter);

@@ -141,62 +141,37 @@ public
         Slice<EquationPointer> new_eqn_slice;
         DifferentiationArguments diffArguments;
 
-      case StrongComponent.SINGLE_EQUATION() algorithm
+      case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_EQUATION(new_var, new_eqn, comp.status);
+      then StrongComponent.SINGLE_COMPONENT(new_var, new_eqn, comp.status);
 
-      case StrongComponent.SINGLE_ARRAY() algorithm
-        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ARRAY(new_var, new_eqn, comp.status);
-
-      case StrongComponent.SINGLE_ALGORITHM() algorithm
+      case StrongComponent.MULTI_COMPONENT() algorithm
         new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn, comp.status);
+      then StrongComponent.MULTI_COMPONENT(new_vars, new_eqn, comp.status);
 
-      case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
-        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_RECORD_EQUATION(new_var, new_eqn, comp.status);
-
-      // is this needed? when equations should never be differentiated
-      case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_WHEN_EQUATION(new_vars, new_eqn, comp.status);
-
-      case StrongComponent.SINGLE_IF_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_IF_EQUATION(new_vars, new_eqn, comp.status);
-
-      case StrongComponent.SLICED_EQUATION() algorithm
+      case StrongComponent.SLICED_COMPONENT() algorithm
         (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);
         new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
         new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
         Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
-      then StrongComponent.SLICED_EQUATION(new_cref, new_var_slice, new_eqn_slice, comp.status);
+      then StrongComponent.SLICED_COMPONENT(new_cref, new_var_slice, new_eqn_slice, comp.status);
 
-      case StrongComponent.GENERIC_EQUATION() algorithm
+      case StrongComponent.GENERIC_COMPONENT() algorithm
         new_eqn := differentiateEquationPointer(Slice.getT(comp.eqn), diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.GENERIC_EQUATION(Slice.SLICE(new_eqn, comp.eqn.indices));
+      then StrongComponent.GENERIC_COMPONENT(Slice.SLICE(new_eqn, comp.eqn.indices));
 
-      case StrongComponent.ENTWINED_EQUATION() algorithm
+      case StrongComponent.ENTWINED_COMPONENT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
       then fail();
 
-      case StrongComponent.TORN_LOOP() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for torn loop:\n" + StrongComponent.toString(comp)});
+      case StrongComponent.ALGEBRAIC_LOOP() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for algebraic loop:\n" + StrongComponent.toString(comp)});
       then fail();
 
       case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
@@ -292,22 +267,6 @@ public
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
-
-      case Equation.SIMPLE_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.lhs), diffArguments);
-        (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.rhs), diffArguments);
-        attr := differentiateEquationAttributes(eq.attr, diffArguments);
-        res := match (lhs, rhs, eq.ty)
-
-          // If both are still a componentRef, create simple equation.
-          case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref), _)
-          then Equation.SIMPLE_EQUATION(eq.ty, lhs_cref, rhs_cref, eq.source, attr);
-
-          // check for array type
-          case (_, _ , Type.ARRAY()) then Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, NONE());
-          else Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr);
-        end match;
-      then (res, diffArguments);
 
       case Equation.RECORD_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
@@ -579,8 +538,10 @@ public
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
-      // function body expressions are not lowered (maybe do it?)
+      // function body expressions, empty and wild crefs are not lowered (maybe do it?)
       case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -592,6 +553,12 @@ public
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
 
+
+      // -------------------------------------
+      //    EMPTY and WILD crefs do nothing
+      // -------------------------------------
+      case (Expression.CREF(cref = ComponentRef.EMPTY()), _, _) then (exp, diffArguments);
+      case (Expression.CREF(cref = ComponentRef.WILD()), _, _)  then (exp, diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
@@ -744,6 +711,8 @@ public
   algorithm
     (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(crefExp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)

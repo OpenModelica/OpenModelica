@@ -65,7 +65,7 @@ public
     output String str;
   algorithm
     str := match call
-      case SINGLE_GENERIC_CALL() then "SINGLE_GENERIC_CALL(" + intString(call.index)  + "):\n\t"
+      case SINGLE_GENERIC_CALL() then "single generic call [index " + intString(call.index)  + "]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
         + Expression.toString(call.lhs) + " = " + Expression.toString(call.rhs);
       else "CALL_NOT_SUPPORTED";

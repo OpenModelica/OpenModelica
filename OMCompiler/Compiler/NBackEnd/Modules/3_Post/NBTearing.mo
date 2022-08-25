@@ -148,8 +148,8 @@ public
   algorithm
     (comp, funcTree, index) := match comp
       // create implicit equations
-      case StrongComponent.SINGLE_EQUATION()
-      then tearingNone(StrongComponent.TORN_LOOP(
+      case StrongComponent.SINGLE_COMPONENT()
+      then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
             idx     = index,
             strict  = singleImplicit(comp.var, comp.eqn),
             casual  = NONE(),
@@ -157,19 +157,10 @@ public
             mixed   = false,
             status  = NBSolve.Status.IMPLICIT), funcTree, index, systemType);
 
-      case StrongComponent.SINGLE_ARRAY()
-      then tearingNone(StrongComponent.TORN_LOOP(
+      case StrongComponent.MULTI_COMPONENT()
+      then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
             idx     = index,
-            strict  = singleImplicit(comp.var, comp.eqn),
-            casual  = NONE(),
-            linear  = false,
-            mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), funcTree, index, systemType);
-
-      case StrongComponent.SINGLE_RECORD_EQUATION()
-      then tearingNone(StrongComponent.TORN_LOOP(
-            idx     = index,
-            strict  = singleImplicit(comp.var, comp.eqn),
+            strict  = singleImplicit(List.first(comp.vars), comp.eqn), // this is wrong! need to take all vars
             casual  = NONE(),
             linear  = false,
             mixed   = false,
@@ -250,7 +241,7 @@ protected
     StrongComponent new_comp;
   algorithm
     (comp, index) := match comp
-      case StrongComponent.TORN_LOOP() algorithm
+      case StrongComponent.ALGEBRAIC_LOOP() algorithm
         index := index + 1;
         comp.idx := index;
 
@@ -342,7 +333,7 @@ protected
     residual_comps := list(StrongComponent.fromSolvedEquation(Slice.getT(res)) for res in residual_lst);
 
     tearingSet := TEARING_SET(iteration_lst, residual_lst, listArray(inner_comps), NONE());
-    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed, NBSolve.Status.IMPLICIT);
+    comp := StrongComponent.ALGEBRAIC_LOOP(index, tearingSet, NONE(), false, mixed, NBSolve.Status.IMPLICIT);
 
     // inner equations are part of the jacobian
     (jacobian, funcTree) := BJacobian.nonlinear(

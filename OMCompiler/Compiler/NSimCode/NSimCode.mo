@@ -209,6 +209,10 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
+      if not listEmpty(simCode.generic_loop_calls) then
+        str := str + StringUtil.headline_3("Generic Calls");
+        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
+      end if;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
       end if;
