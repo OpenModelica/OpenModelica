@@ -2314,15 +2314,16 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
              ;separator="\n")
            end match)
-         let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-            let &preExp = buffer "" /*BUFD*/
-            let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
+         let body = (ls.residual |> eq2 hasindex i0 => match eq2
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDeclsRes, &auxFunction)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >> ;separator="\n")
+              <<
+              <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+              <%preExp%>res[<%i0%>] = <%expPart%>;
+              <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+              >> ;separator="\n")
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
@@ -2363,11 +2364,12 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        else
          let &varDecls = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
-         let MatrixA = (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
-           let &preExp = buffer "" /*BUFD*/
-           let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
-             '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
-          ;separator="\n")
+         let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
+              '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
+                ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
          let vectorb = (ls.beqs |> exp hasindex i0 =>
@@ -2422,15 +2424,16 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
-         let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
+         let body = (ls.residual |> eq2 hasindex i0 => match eq2
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDeclsRes, &auxFunction)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >> ;separator="\n")
+              <<
+              <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+              <%preExp%>res[<%i0%>] = <%expPart%>;
+              <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+              >> ;separator="\n")
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */

@@ -237,7 +237,6 @@ public
             case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
               comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
-              //print(List.toString(comps, function StrongComponent.toString(index = -1), "comps", "\t", "\n\t", "\n"));
             then ();
 
             else algorithm

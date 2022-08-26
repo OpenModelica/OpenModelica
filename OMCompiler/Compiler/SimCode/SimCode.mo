@@ -386,6 +386,14 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_RESIDUAL;
 
+  record SES_FOR_RESIDUAL
+    Integer index;
+    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_FOR_RESIDUAL;
+
   record SES_SIMPLE_ASSIGN
     Integer index;
     DAE.ComponentRef cref "left hand side of equation";

@@ -58,7 +58,7 @@ protected
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, IfEquationBody, SlicingStatus};
+  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, IfEquationBody, Iterator, SlicingStatus};
   import BVariable = NBVariable;
   import Jacobian = NBJacobian;
   import Solve = NBSolve;
@@ -101,6 +101,18 @@ public
       DAE.ElementSource source;
       EquationAttributes attr;
     end ARRAY_RESIDUAL;
+
+    record FOR_RESIDUAL
+      "for-loop residual equation of the form
+      for {i in 1:n, j in 1:m, ...} loop
+        0 = exp;
+      end for;"
+      Integer index;
+      list<tuple<ComponentRef, Expression>> iterators;
+      Expression exp;
+      DAE.ElementSource source;
+      EquationAttributes attr;
+    end FOR_RESIDUAL;
 
     record SIMPLE_ASSIGN
       "Simple assignment or solved inner equation of (casual) tearing set
@@ -216,6 +228,7 @@ public
       str := match blck
         case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
+        case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") for " + List.toString(blck.iterators, forTplStr) + "loop;\n  0 = " + Expression.toString(blck.exp) + "\nend for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
@@ -231,6 +244,17 @@ public
                                   else getInstanceName() + " failed.\n";
       end match;
     end toString;
+
+    function forTplStr
+      input tuple<ComponentRef, Expression> tpl;
+      output String str;
+    protected
+      ComponentRef name;
+      Expression range;
+    algorithm
+      (name, range) := tpl;
+      str := ComponentRef.toString(name) + " in " + Expression.toString(range);
+    end forTplStr;
 
     function ifTplStr
       input tuple<Expression, list<Block>> tpl;
@@ -251,6 +275,7 @@ public
       index := match blck
         case RESIDUAL()           then blck.index;
         case ARRAY_RESIDUAL()     then blck.index;
+        case FOR_RESIDUAL()       then blck.index;
         case SIMPLE_ASSIGN()      then blck.index;
         case ARRAY_ASSIGN()       then blck.index;
         case GENERIC_ASSIGN()     then blck.index;
@@ -276,17 +301,18 @@ public
       b := match blck
         local
           EquationAttributes attr;
-        case RESIDUAL(attr = attr)           then EquationKind.isDiscrete(attr.kind);
-        case ARRAY_RESIDUAL(attr = attr)     then EquationKind.isDiscrete(attr.kind);
-        case SIMPLE_ASSIGN(attr = attr)      then EquationKind.isDiscrete(attr.kind);
-        case ARRAY_ASSIGN(attr = attr)       then EquationKind.isDiscrete(attr.kind);
-        case GENERIC_ASSIGN(attr = attr)     then EquationKind.isDiscrete(attr.kind);
-        case ENTWINED_ASSIGN(attr = attr)    then EquationKind.isDiscrete(attr.kind);
-        case ALIAS()                         then false; // todo: once this is implemented check in the HT for alias eq discrete
-        case ALGORITHM(attr = attr)          then EquationKind.isDiscrete(attr.kind);
-        case INVERSE_ALGORITHM(attr = attr)  then EquationKind.isDiscrete(attr.kind);
-        case IF(attr = attr)                 then EquationKind.isDiscrete(attr.kind);
-        case WHEN(attr = attr)               then EquationKind.isDiscrete(attr.kind); // should hopefully always be true
+        case RESIDUAL(attr = attr)          then EquationKind.isDiscrete(attr.kind);
+        case ARRAY_RESIDUAL(attr = attr)    then EquationKind.isDiscrete(attr.kind);
+        case FOR_RESIDUAL(attr = attr)      then EquationKind.isDiscrete(attr.kind);
+        case SIMPLE_ASSIGN(attr = attr)     then EquationKind.isDiscrete(attr.kind);
+        case ARRAY_ASSIGN(attr = attr)      then EquationKind.isDiscrete(attr.kind);
+        case GENERIC_ASSIGN(attr = attr)    then EquationKind.isDiscrete(attr.kind);
+        case ENTWINED_ASSIGN(attr = attr)   then EquationKind.isDiscrete(attr.kind);
+        case ALIAS()                        then false; // todo: once this is implemented check in the HT for alias eq discrete
+        case ALGORITHM(attr = attr)         then EquationKind.isDiscrete(attr.kind);
+        case INVERSE_ALGORITHM(attr = attr) then EquationKind.isDiscrete(attr.kind);
+        case IF(attr = attr)                then EquationKind.isDiscrete(attr.kind);
+        case WHEN(attr = attr)              then EquationKind.isDiscrete(attr.kind); // should hopefully always be true
         else false;
       end match;
     end isDiscrete;
@@ -442,7 +468,7 @@ public
           end match;
 
           blcks := tmp :: blcks;
-          // list reverse necessary? they are unodered anyway
+          // list reverse necessary? they are unordered anyway
         end if;
       end for;
     end createNoReturnBlocks;
@@ -631,7 +657,8 @@ public
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
-          Equation forEqn;
+          list<ComponentRef> names;
+          list<Expression> ranges;
 
         case BEquation.SCALAR_EQUATION() algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, eqn.rhs, eqn.source, eqn.attr);
@@ -643,10 +670,12 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case BEquation.FOR_EQUATION() algorithm
+        // for equations have to be split up before. Since they are not causalized they
+        // they can be executed in any order
+        case BEquation.FOR_EQUATION() guard(listLength(eqn.body) == 1) algorithm
           rhs := Equation.getRHS(eqn);
-          lhs := Expression.makeZero(Expression.typeOf(rhs));
-          tmp := RESIDUAL(simCodeIndices.equationIndex, lhs, eqn.source, eqn.attr);
+          (names, ranges) := Iterator.getFrames(eqn.iter);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -881,6 +910,7 @@ public
         local
           ComponentRef iter;
           Expression range, exp;
+          list<tuple<DAE.ComponentRef, DAE.Exp>> old_iterators = {};
           list<Block> blcks;
           DAE.ComponentRef oldIter;
           DAE.Type oldType;
@@ -890,6 +920,12 @@ public
 
         case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case FOR_RESIDUAL() algorithm
+          for iterator in listReverse(blck.iterators) loop
+            (iter, range) := iterator;
+            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
+          end for;
+        then OldSimCode.SES_FOR_RESIDUAL(blck.index, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
@@ -914,8 +950,8 @@ public
             end if;
           end for;
           if listEmpty(else_branch) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is a
-              is no non-conditional branch in:\n" + Block.toString(blck)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there "
+              + "is no non-conditional branch in:\n" + Block.toString(blck)});
             fail();
           end if;
         then OldSimCode.SES_IFEQUATION(
