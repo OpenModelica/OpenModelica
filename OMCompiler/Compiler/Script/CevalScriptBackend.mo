@@ -3368,11 +3368,23 @@ protected
   Boolean b;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
+  Boolean encrypted_libs;
+  String obfuscate;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := SymbolTable.getSCode();
 
-  if not Flags.isConfigFlagSet(Flags.OBFUSCATE, "none") then
+  // Check if we have any encrypted libraries loaded.
+  encrypted_libs := AbsynUtil.programContainsEncryptedClass(SymbolTable.getAbsyn());
+  obfuscate := Flags.getConfigString(Flags.OBFUSCATE);
+
+  // If we have encrypted libraries and obfuscation isn't already enabled then
+  // enable obfuscation of protected variables.
+  if encrypted_libs and obfuscate == "none" then
+    obfuscate := "protected";
+  end if;
+
+  if obfuscate <> "none" then
     (scode_p, cls_name, _, _, obfuscate_map) := Obfuscate.obfuscateProgram(scode_p, cls_name);
   end if;
 
@@ -3394,7 +3406,7 @@ algorithm
     fail();
   end try;
 
-  if Flags.isConfigFlagSet(Flags.OBFUSCATE, "protected") then
+  if obfuscate == "protected" then
     flatModel := FlatModel.deobfuscatePublicVars(flatModel, obfuscate_map);
   end if;
 end runFrontEndWorkNF;
@@ -8622,7 +8634,7 @@ algorithm
       algorithm
         // if AST contains encrypted class show nothing
         p := SymbolTable.getAbsyn();
-        true := Interactive.astContainsEncryptedClass(p);
+        true := AbsynUtil.programContainsEncryptedClass(p);
         Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
       then
         "";

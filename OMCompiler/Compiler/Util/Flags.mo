@@ -1422,7 +1422,7 @@ constant ConfigFlag SIMULATION = CONFIG_FLAG(151, "simulation",
   Gettext.gettext("Simulates the last model in the given Modelica file."));
 
 constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
-  NONE(), EXTERNAL(), STRING_LIST_FLAG({"none"}),
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("No obfuscation.")),
     ("protected", Gettext.gettext("Obfuscates everything except for public variables.")),

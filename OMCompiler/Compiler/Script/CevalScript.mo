@@ -2979,7 +2979,7 @@ algorithm
       algorithm
         // if AST contains encrypted class show nothing
         p := SymbolTable.getAbsyn();
-        true := Interactive.astContainsEncryptedClass(p);
+        true := AbsynUtil.programContainsEncryptedClass(p);
         Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
       then
         "";

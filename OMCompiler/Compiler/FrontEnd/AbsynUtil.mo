@@ -5944,5 +5944,24 @@ algorithm
   end match;
 end mapSubscriptExp;
 
+public function programContainsEncryptedClass
+  input Absyn.Program inProgram;
+  output Boolean containsEncryptedClass = false;
+protected
+  String fileName;
+algorithm
+  containsEncryptedClass := List.exist(inProgram.classes, isClassEncrypted);
+end programContainsEncryptedClass;
+
+public function isClassEncrypted
+  input Absyn.Class cls;
+  output Boolean isEncrypted;
+protected
+  String fileName;
+algorithm
+  SOURCEINFO(fileName = fileName) := cls.info;
+  isEncrypted := Util.endsWith(fileName, ".moc");
+end isClassEncrypted;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
