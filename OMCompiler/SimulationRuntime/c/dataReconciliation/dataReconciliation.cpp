@@ -234,7 +234,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
 /*
 * create html report for data Reconciliation D.1
 */
-void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, correlationDataWarning &warningCorrelationData)
+void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, double &J, correlationDataWarning &warningCorrelationData)
 {
   ofstream myfile;
   time_t now = time(0);
@@ -320,7 +320,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Final value of the objective function (J*) : </th> \n" << "<td>" << (value*data->modelData->nSetcVars) << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Final value of the objective function (J) : </th> \n" << "<td>" << J << "</td> </tr>\n";
   //myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
 
   if (data->modelData->nSetcVars > 200)
@@ -331,7 +331,15 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   {
     myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << chisquaredvalue[data->modelData->nSetcVars - 1] << "</td> </tr>\n";
   }
-  myfile << "<tr> \n" << "<th align=right> Result of global test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
+  if (J <= chisquaredvalue[data->modelData->nSetcVars - 1])
+  {
+    myfile << "<tr> \n" << "<th align=right> Result of global test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Result of global test : </th> \n" << "<td>" << "FALSE" << "</td> </tr>\n";
+  }
+  myfile << "<tr> \n" << "<th align=right> Quality value (J/Chi-square) : </th> \n" << "<td>" << J/chisquaredvalue[data->modelData->nSetcVars - 1] << "</td> </tr>\n";
   myfile << "</table>\n";
 
   // Auxiliary Conditions
@@ -2153,6 +2161,47 @@ double solveConvergence(DATA *data, matrixData conv_recon_x, matrixData conv_rec
 }
 
 /*
+ * function which calculates qualityValue J = transpose (x_reconciled – x_measured)*Sx^-1*(x_reconciled – x_measured)
+*/
+double calculateQualityValue(matrixData reconciledX, matrixData Sx, csvData measuredX, ofstream & logfile, DATA* data)
+{
+  logfile << "Calculations of Quality Value (J) " << "\n";
+  logfile << "=================================\n";
+
+  printMatrix(reconciledX.data, reconciledX.rows, reconciledX.column, "reconciled_x", logfile);
+  inputData measured_x = getInputData(measuredX, logfile);
+  printMatrix(measured_x.data, measured_x.rows, measured_x.column, "measured_X", logfile);
+  printMatrix(Sx.data, Sx.rows, Sx.column, "Sx", logfile);
+  matrixData measured_xCopy = {measured_x.rows, measured_x.column, measured_x.data};
+  double *newX = (double*) calloc (measured_x.rows * 1, sizeof(double));
+  solveMatrixSubtraction(reconciledX, measured_xCopy, newX, logfile, data);
+  printMatrix(newX, measured_x.rows, measured_x.column, "x_reconciled - measured_X", logfile);
+
+  /* solves (Sx^-1)*(x_reconciled – x_measured)
+   * Solve the inverse of matrix Sx using linear form
+   * Ax=b
+   * where A=Sx and b= (recon_x-x_measured) to avoid inversion of Sx which is
+   * expensive
+   */
+  //solveSystemFstar(conv_sx.rows, 1, conv_sx.data, conv_data1result.data, logfile, data);
+  matrixData sub = {measured_x.rows, measured_x.column, newX};
+  matrixData subCopy = copyMatrix(sub);
+  solveSystemFstar(Sx.rows, 1, Sx.data, newX, logfile, data);
+  printMatrix(newX, measured_x.rows, measured_x.column, "Sx-inverse", logfile);
+
+  matrixData subCopyTranspose = getTransposeMatrix(subCopy);
+
+  double *J = (double*) calloc(subCopyTranspose.rows * measured_x.column, sizeof(double));
+  /*
+   * Solve transpose (x_reconciled – x_measured)*Sx^-1*(x_reconciled – x_measured)
+   */
+  solveMatrixMultiplication(subCopyTranspose.data, newX, subCopyTranspose.rows, subCopyTranspose.column, measured_x.rows, measured_x.column, J, logfile, data);
+  printMatrix(J, subCopyTranspose.rows, measured_x.column, "J", logfile);
+
+  return J[0];
+}
+
+/*
  * Example Function which performs matrix inverse
  * using dgetri_ and dgetrf_ LAPACK routine
  * which is expensive one and not recommended
@@ -2349,11 +2398,15 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   {
     logfile << "***** Value Converged, Convergence Completed******* \n\n";
   }
+
+  double J = calculateQualityValue(reconciled_X, Sx, csvinputs, logfile, data);
+
   logfile << "Final Results:\n";
   logfile << "=============\n";
-  logfile << "Total Iteration to Converge : " << iterationcount << "\n";
-  logfile << "Final Converged Value(J*/r) : " << value << "\n";
-  logfile << "Epsilon                     : " << eps << "\n";
+  logfile << "Total Iteration to Converge               : " << iterationcount << "\n";
+  logfile << "Final Converged Value(J*/r)               : " << value << "\n";
+  logfile << "Final value of the objective function (J) : " << J << "\n";
+  logfile << "Epsilon                                   : " << eps << "\n";
   printMatrixWithHeaders(reconciled_X.data, reconciled_X.rows, reconciled_X.column, csvinputs.headers, "reconciled_X ===> (x - (Sx*Ft*fstar))", logfile);
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
 
@@ -2433,7 +2486,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   printMatrixWithHeaders(newX, xdiag.rows, xdiag.column, csvinputs.headers, "IndividualTests_Value- (recon_x-x)/sqrt(Sx_diag)", logfile);
 
   // create HTML Report for D.1
-  createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, warningCorrelationData);
+  createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData);
 
   free(tmpFstar.data);
   free(tmpfstar.data);
