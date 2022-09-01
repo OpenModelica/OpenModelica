@@ -240,7 +240,7 @@ public
 
       if UnorderedMap.contains(key, bucket.bucket) then
         // if the mode already was found, add this equation to the bucket
-        val := PseudoBucketValue.addIndices(UnorderedMap.getSafe(key, bucket.bucket), eqn_scal_idx, comp_idx);
+        val := PseudoBucketValue.addIndices(UnorderedMap.getSafe(key, bucket.bucket, sourceInfo()), eqn_scal_idx, comp_idx);
         UnorderedMap.add(key, val, bucket.bucket);
       else
         // create a new bucket containing this equation
@@ -275,7 +275,7 @@ public
     protected
       PseudoBucketKey key = PSEUDO_BUCKET_KEY(eqn_start_idx, eqn_arr_idx, mode);
     algorithm
-      val := UnorderedMap.getSafe(key, bucket.bucket);
+      val := UnorderedMap.getSafe(key, bucket.bucket, sourceInfo());
     end get;
 
     function tplSortGt

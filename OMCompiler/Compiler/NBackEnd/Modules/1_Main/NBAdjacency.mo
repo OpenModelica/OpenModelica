@@ -521,7 +521,7 @@ public
       // copy the index for all new variables into the sub map
       for var_ptr in new_vars loop
         var := Pointer.access(var_ptr);
-        UnorderedMap.add(var.name, UnorderedMap.getSafe(var.name, vars.map), sub_map);
+        UnorderedMap.add(var.name, UnorderedMap.getSafe(var.name, vars.map, sourceInfo()), sub_map);
       end for;
 
       // update the equation rows using only the sub_map

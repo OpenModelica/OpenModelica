@@ -368,11 +368,11 @@ public
             // only create rows for derivatives
             if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
-                tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
+                tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
                 for dep in tmp loop
                   // also add inverse dependency (indep var) --> (res/tmp) :: rest
-                  UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map), map);
+                  UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map, sourceInfo()), map);
                 end for;
               end if;
             end if;
@@ -380,7 +380,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in seed_vars loop
-            tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
+            tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.isEqual);
             cols := (cref, tmp) :: cols;
           end for;
 
@@ -492,9 +492,9 @@ public
       row_coloring := arrayCreate(arrayLength(cref_lookup), {});
 
       for i in 1:arrayLength(cref_lookup) loop
-        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map) loop
-          for col_var /* x */ in UnorderedMap.getSafe(row_var, map) loop
-            color := coloring[UnorderedMap.getSafe(col_var, index_lookup)];
+        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()) loop
+          for col_var /* x */ in UnorderedMap.getSafe(row_var, map, sourceInfo()) loop
+            color := coloring[UnorderedMap.getSafe(col_var, index_lookup, sourceInfo())];
             if color > 0 then
               forbidden_colors[color] := i;
             end if;
@@ -503,7 +503,7 @@ public
         (_, color) := Array.findFirstOnTrueWithIdx(forbidden_colors, function intNe(i2 = i));
         coloring[i] := color;
         // also save all row dependencies of this color
-        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map));
+        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()));
         color_exists[color] := true;
       end for;
 

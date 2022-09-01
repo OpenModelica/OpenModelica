@@ -320,12 +320,13 @@ public
      otherwise fails."
     input K key;
     input UnorderedMap<K, V> map;
+    input SourceInfo info;
     output V value;
   algorithm
     if contains(key, map) then
       SOME(value) := get(key, map);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the key did not exist."});
+      Error.addInternalError(getInstanceName() + " failed because the key did not exist.", info);
       fail();
     end if;
   end getSafe;

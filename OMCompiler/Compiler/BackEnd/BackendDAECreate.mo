@@ -298,7 +298,7 @@ algorithm
         UnorderedMap.add(arrayCref, (intSubLst, binding)::arrayBindingExpList, arrayMap);
       else
 
-        ty := match UnorderedMap.getSafe(rec_cref, map)
+        ty := match UnorderedMap.getSafe(rec_cref, map, sourceInfo())
           case ty as DAE.T_COMPLEX() algorithm
             ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
           then ty;
@@ -391,7 +391,7 @@ algorithm
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) guard(UnorderedMap.contains(cref, map)) algorithm
-      exp.ty := UnorderedMap.getSafe(cref, map);
+      exp.ty := UnorderedMap.getSafe(cref, map, sourceInfo());
     then (exp, false);
     else (exp, true);
   end match;
@@ -479,7 +479,7 @@ algorithm
 
     // Update binding in map
     (rec_cref, true) := ComponentReference.crefGetFirstRec(cref);
-    ty := match UnorderedMap.getSafe(rec_cref, map)
+    ty := match UnorderedMap.getSafe(rec_cref, map, sourceInfo())
       case ty as DAE.T_COMPLEX() algorithm
         ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(cref)) for v in ty.varLst);
       then ty;

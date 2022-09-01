@@ -556,7 +556,7 @@ public
 
         case StrongComponent.ALIAS() algorithm
           if UnorderedMap.contains(comp.aliasInfo, simCodeIndices.alias_map) then
-            aliasOf := UnorderedMap.getSafe(comp.aliasInfo, simCodeIndices.alias_map);
+            aliasOf := UnorderedMap.getSafe(comp.aliasInfo, simCodeIndices.alias_map, sourceInfo());
           else
             aliasOf := -1;
           end if;
