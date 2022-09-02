@@ -852,7 +852,7 @@ protected
           if BVariable.checkCref(dep, BVariable.isState) then
             fixed_dependencies := dep :: fixed_dependencies;
           else
-            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map));
+            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map, sourceInfo()));
             fixed_dependencies := listAppend(tmp_dependencies, fixed_dependencies);
           end if;
         end for;

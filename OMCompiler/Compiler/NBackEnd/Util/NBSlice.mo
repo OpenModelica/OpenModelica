@@ -123,7 +123,7 @@ public
     input UnorderedMap<T, IntLst> map;
   algorithm
     if UnorderedMap.contains(t, map) then
-      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map), map);
+      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map, sourceInfo()), map);
     else
       UnorderedMap.addNew(t, {i}, map);
     end if;
@@ -249,7 +249,7 @@ public
     output list<Integer> indices = {};
   algorithm
     for cref in dependencies loop
-      indices := UnorderedMap.getSafe(cref, map) :: indices;
+      indices := UnorderedMap.getSafe(cref, map, sourceInfo()) :: indices;
     end for;
     // remove duplicates and sort
     indices := List.sort(List.unique(indices), intLt);
@@ -269,7 +269,7 @@ public
   algorithm
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped);
       subs := ComponentRef.subscriptsToInteger(cref);
@@ -305,7 +305,7 @@ public
     end for;
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       // build range in reverse, it will be flipped anyway
       scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, true);
 
@@ -370,7 +370,7 @@ public
     end for;
     for cref in dependencies loop
       stripped        := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx     := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _)  := mapping.var_AtS[var_arr_idx];
       sizes           := ComponentRef.sizes(stripped);
       subs            := ComponentRef.subscriptsToExpression(cref);

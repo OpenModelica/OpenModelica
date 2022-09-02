@@ -136,7 +136,7 @@ public
       for comp in Util.getOption(system.strongComponents) loop
         if UnorderedMap.contains(comp, duplicate_map) then
           // strong component already solved -> get alias comps
-          solved_comps := listAppend(UnorderedMap.getSafe(comp, duplicate_map), solved_comps);
+          solved_comps := listAppend(UnorderedMap.getSafe(comp, duplicate_map, sourceInfo()), solved_comps);
         else
           // solve strong component -> create alias comps
           (tmp, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, system.systemType, implicit_index, slicing_map);
@@ -237,7 +237,7 @@ public
           // safe the slicing replacement in the map
           eqn_cref := Equation.getEqnName(eqn_ptr);
           if UnorderedMap.contains(eqn_cref, slicing_map) then
-            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map), sliced_eqns);
+            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map, sourceInfo()), sliced_eqns);
           end if;
           UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
 
@@ -291,7 +291,7 @@ public
           eqn_ptr :: rest := sliced_eqns;
           eqn_cref := Equation.getEqnName(eqn_ptr);
           if UnorderedMap.contains(eqn_cref, slicing_map) then
-            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map), sliced_eqns);
+            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map, sourceInfo()), sliced_eqns);
           end if;
           UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
 

@@ -344,8 +344,8 @@ public
             // get states for dependencies
             dependencies := list(derivativeToStateCref(dep) for dep in dependencies);
           end if;
-          dep_indices := list(SimVar.getIndex(UnorderedMap.getSafe(dep, sim_map)) for dep in dependencies);
-          simPattern := (SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)), List.sort(dep_indices, intGt)) :: simPattern;
+          dep_indices := list(SimVar.getIndex(UnorderedMap.getSafe(dep, sim_map, sourceInfo())) for dep in dependencies);
+          simPattern := (SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map, sourceInfo())), List.sort(dep_indices, intGt)) :: simPattern;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
           fail();
@@ -362,7 +362,7 @@ public
     algorithm
       for group in listReverse(arrayList(coloring.cols)) loop
         try
-          tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)) for cref in group);
+          tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map, sourceInfo())) for cref in group);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get indices for crefs:\n"
             + List.toString(group, ComponentRef.toString)});

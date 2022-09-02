@@ -851,7 +851,7 @@ public
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");
-        var.index := SimVar.getIndex(UnorderedMap.getSafe(cref, simcode_map));
+        var.index := SimVar.getIndex(UnorderedMap.getSafe(cref, simcode_map, sourceInfo()));
         daeModeAlgVars := var :: daeModeAlgVars;
       end for;
     end rewriteAlgebraicVarsIdx;

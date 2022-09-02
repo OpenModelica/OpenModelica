@@ -335,7 +335,7 @@ protected
           UnorderedMap.add(cr1, Pointer.create(set), map);
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
-          set_ptr := UnorderedMap.getSafe(cr1, map);
+          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
           set := Pointer.access(set_ptr);
           if isSome(set.const_opt) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
@@ -353,8 +353,8 @@ protected
       case CREF_TPL(cr_lst = {cr1, cr2}) algorithm
         if (UnorderedMap.contains(cr1, map) and UnorderedMap.contains(cr2, map)) then
           // Merge sets
-          set1_ptr := UnorderedMap.getSafe(cr1, map);
-          set2_ptr := UnorderedMap.getSafe(cr2, map);
+          set1_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
+          set2_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
           set1 := Pointer.access(set1_ptr);
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_ALIAS_SET;
@@ -400,7 +400,7 @@ protected
 
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr1, map);
+          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
           set.simple_variables := cr2 :: set.simple_variables;
@@ -410,7 +410,7 @@ protected
           UnorderedMap.add(cr2, set_ptr, map);
         elseif UnorderedMap.contains(cr2, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr2, map);
+          set_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
           set.simple_variables := cr1 :: set.simple_variables;
