@@ -64,7 +64,7 @@ There is nothing special to be done for linux. You can follow the examples above
 On macOS you need to install:
 - XCode: ```xcode-select –-install```
 - macports: https://guide.macports.org/#installing.macports
-  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph gfortran```
+  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph gfortran openjdk11```
 - Compile OpenModelica via:
   ```
   git clone https://github.com/OpenModelica/OpenModelica.git --recursive
