@@ -3372,7 +3372,7 @@ algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := SymbolTable.getSCode();
 
-  if not Flags.isConfigFlagSet(Flags.OBFUSCATE, "none") then
+  if not Flags.getConfigString(Flags.OBFUSCATE) == "none" then
     (scode_p, cls_name, _, _, obfuscate_map) := Obfuscate.obfuscateProgram(scode_p, cls_name);
   end if;
 
@@ -3394,7 +3394,7 @@ algorithm
     fail();
   end try;
 
-  if Flags.isConfigFlagSet(Flags.OBFUSCATE, "protected") then
+  if Flags.getConfigString(Flags.OBFUSCATE) == "protected" then
     flatModel := FlatModel.deobfuscatePublicVars(flatModel, obfuscate_map);
   end if;
 end runFrontEndWorkNF;
