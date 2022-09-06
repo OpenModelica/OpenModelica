@@ -553,6 +553,8 @@ constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(190, "mergeComponents", false,
   Gettext.gettext("Enables automatic merging of components into arrays."));
 constant DebugFlag DUMP_SLICE = DEBUG_FLAG(191, "dumpSlice", false,
   Gettext.gettext("Dumps information about the slicing process (pseudo-array causalization)."));
+constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(192, "vectorizeBindings", false,
+  Gettext.gettext("Turns on vectorization of bindings when scalarization is turned off."));
 
 public
 // CONFIGURATION FLAGS
