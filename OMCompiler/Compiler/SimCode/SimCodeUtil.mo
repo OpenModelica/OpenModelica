@@ -5698,19 +5698,16 @@ Useable as a function parameter for Expression.traverseExpression."
   input output DAE.Exp e;
   input output tuple<list<DAE.Exp>, Integer> acc;
 algorithm
-  print("old: " + ExpressionDump.printExpStr(e) + "\n");
   (e, acc) := match (e, acc)
     local
       DAE.Exp res;
       Integer i, index;
       list<DAE.Exp> lst, rest;
     case (DAE.CALL(path = Absyn.IDENT("delay"), expLst = DAE.ICONST(i)::rest), (lst, index)) guard(i < 0) algorithm
-      print("here!\n");
       res := DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(index)::rest, e.attr);
     then (res, (res :: lst, index + 1));
     else (e, acc);
   end match;
-  print("new: " + ExpressionDump.printExpStr(e) + "\n");
 end updateDelayExpressions;
 
 public function extractDelayedExpressions
@@ -5746,21 +5743,12 @@ protected
   list<SimCode.SimEqSystem> tmpSysts;
   list<DAE.Exp> new_delayedExps;
 algorithm
-  print("check 1\n");
   for jac in listReverse(SymJacs) loop
-  print("check 2\n");
     tmpCols := {};
     for col in listReverse(jac.columns) loop
-  print("check 3\n");
-      for syst in col.columnEqns loop
-        print("old: " + simEqSystemString(syst) + "\n");
-      end for;
       (tmpSysts, (_, (new_delayedExps, maxDelayedExpIndex))) := traverseExpsEqSystems(col.columnEqns, Expression.traverseSubexpressionsHelper, (updateDelayExpressions, ({}, maxDelayedExpIndex)), {});
       delayedExps := listAppend(List.map(new_delayedExps, extractIdAndExpFromDelayExp), delayedExps);
       col.columnEqns := tmpSysts;
-      for syst in col.columnEqns loop
-        print("new: " + simEqSystemString(syst) + "\n");
-      end for;
       tmpCols := col :: tmpCols;
     end for;
     jac.columns := tmpCols;
