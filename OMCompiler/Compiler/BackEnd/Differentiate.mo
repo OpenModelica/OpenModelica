@@ -1775,7 +1775,7 @@ protected function differentiateCallExpNArg "
 algorithm
   (outDiffedExp,outFunctionTree) := match(name,inExpl,inAttr)
     local
-      DAE.Exp e, e1, e2, cond, etmp;
+      DAE.Exp e, e1, e2, e3, e4, cond, etmp;
       DAE.Exp res, res1, res2;
       list<DAE.Exp> expl, dexpl;
       DAE.Type tp;
@@ -1871,11 +1871,18 @@ algorithm
       then
         (res1, funcs);
 
+    case ("delay", {e1, e2, e3, e4}, _)
+      equation
+        (e, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+      then
+        (DAE.CALL(Absyn.IDENT(name), {e1, e, e3, e3}, inAttr), funcs);
+
     case ("sample", _, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
        (res1, inFunctionTree);
+
     /* floor ceil and interger are expanded by the zeroCrossing index, thus they
        have 2 arguments */
     case ("floor", _, DAE.CALL_ATTR(ty=tp))
