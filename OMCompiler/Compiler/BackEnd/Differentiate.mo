@@ -58,6 +58,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendUtil;
 protected import BackendVariable;
+protected import BackendVarTransform;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
@@ -1362,6 +1363,18 @@ algorithm
   if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
 end createSeedCrefName;
 
+public function isSeedCref
+"Returns true if the cref is prefixed with '$SEED'"
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := matchcontinue(cr)
+    case(DAE.CREF_IDENT())  then (substring(cr.ident, 1, 4) == "Seed");
+    case(DAE.CREF_QUAL())   then isSeedCref(cr.componentRef);
+    else false;
+  end matchcontinue;
+end isSeedCref;
+
 protected function differentiateCalls
 "
 function: differentiateCalls
@@ -1782,6 +1795,8 @@ algorithm
       DAE.FunctionTree funcs;
       String e_str;
       Integer i;
+      list<DAE.ComponentRef> seeds;
+      BackendVarTransform.VariableReplacements repl;
 
     case ("smooth",{DAE.ICONST(i),e2}, DAE.CALL_ATTR(ty=tp))
       equation
@@ -1871,11 +1886,30 @@ algorithm
       then
         (res1, funcs);
 
-    case ("delay", {e1, e2, e3, e4}, _)
-      equation
-        (e, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+    case ("delay", {_, e2, e3, e4}, DAE.CALL_ATTR(ty=tp))
+      algorithm
+        // 1. differentiate delayed expression
+        (e, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+        print("diffed:" + ExpressionDump.printExpStr(e) + "\n");
+        // 2. filter all seeds from e
+        seeds := list(cref for cref guard(isSeedCref(cref)) in Expression.extractUniqueCrefsFromExp(e));
+        // 3. create empty replacement rules
+        repl := BackendVarTransform.emptyReplacements();
+        repl := BackendVarTransform.addReplacements(repl, seeds, List.fill(DAE.ICONST(0), listLength(seeds)), NONE());
+        res := DAE.RCONST(0);
+        // 4. create delayed expression for each seed and multiply each delayed with corresponding seed and create sum
+        for seed in seeds loop
+          repl := BackendVarTransform.addReplacement(repl, seed, DAE.ICONST(1), NONE());
+          // create call with seed replaced by 1 and all other seeds replaced by 0
+          (res1, _) := BackendVarTransform.replaceExp(e, repl, NONE());
+          res1 := DAE.CALL(Absyn.IDENT(name), {DAE.ICONST(-1), res1, e3, e4}, inAttr);
+          // multiply call with correspondings seed and add to rest
+          res := DAE.BINARY(DAE.BINARY(DAE.CREF(seed, tp), DAE.MUL(tp), res1), DAE.ADD(tp), res);
+          repl := BackendVarTransform.addReplacement(repl, seed, DAE.ICONST(0), NONE());
+        end for;
+        (res, _) := ExpressionSimplify.simplify(res);
       then
-        (DAE.CALL(Absyn.IDENT(name), {e1, e, e3, e4}, inAttr), funcs);
+        (res, funcs);
 
     case ("sample", _, DAE.CALL_ATTR(ty=tp))
       equation
