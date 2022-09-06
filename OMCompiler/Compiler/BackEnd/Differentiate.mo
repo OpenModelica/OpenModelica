@@ -1875,7 +1875,7 @@ algorithm
       equation
         (e, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
-        (DAE.CALL(Absyn.IDENT(name), {e1, e, e3, e3}, inAttr), funcs);
+        (DAE.CALL(Absyn.IDENT(name), {e1, e, e3, e4}, inAttr), funcs);
 
     case ("sample", _, DAE.CALL_ATTR(ty=tp))
       equation
