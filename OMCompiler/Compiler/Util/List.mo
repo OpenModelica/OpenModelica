@@ -6374,6 +6374,45 @@ algorithm
   outList := append_reverse(outList, rest);
 end deletePositionsSorted;
 
+public function keepPositions<T>
+  "Takes a list and a list of positions, and deletes all other elements from the
+   list. Note that positions are indexed from 0.
+     Example: keepPositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {1, 3, 4}"
+  input list<T> inList;
+  input list<Integer> inPositions;
+  output list<T> outList;
+protected
+  list<Integer> sorted_pos;
+algorithm
+  sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
+  outList := keepPositionsSorted(inList, sorted_pos);
+end keepPositions;
+
+public function keepPositionsSorted<T>
+  "Takes a list and a sorted list of positions (smallest index first), and
+   deletes all other positions from the list. Note that positions are indexed from 0.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {1, 3, 4}"
+  input list<T> inList;
+  input list<Integer> inPositions;
+  output list<T> outList = {};
+protected
+  Integer i = 0;
+  T e;
+  list<T> rest = inList;
+algorithm
+  for pos in inPositions loop
+    while i <> pos loop
+      _ :: rest := rest;
+      i := i + 1;
+    end while;
+
+    e :: rest := rest;
+    outList := e :: outList;
+    i := i + 1;
+  end for;
+  outList := listReverse(outList);
+end keepPositionsSorted;
+
 public function removeMatchesFirst
   "Removes all matching integers that occur first in a list. If the first
    element doesn't match it returns the list."

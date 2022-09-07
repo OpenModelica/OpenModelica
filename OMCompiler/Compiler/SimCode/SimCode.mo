@@ -381,6 +381,7 @@ uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."
   record SES_RESIDUAL
     Integer index;
+    Integer res_index;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -388,11 +389,23 @@ uniontype SimEqSystem
 
   record SES_FOR_RESIDUAL
     Integer index;
+    Integer res_index;
     list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
   end SES_FOR_RESIDUAL;
+
+  record SES_GENERIC_RESIDUAL
+    "a generic residual calling a for loop body function with an index list."
+    Integer index;
+    Integer res_index;
+    list<Integer> scal_indices;
+    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_GENERIC_RESIDUAL;
 
   record SES_SIMPLE_ASSIGN
     Integer index;

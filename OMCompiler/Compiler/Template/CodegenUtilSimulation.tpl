@@ -74,6 +74,8 @@ template equationIndex(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_FOR_RESIDUAL(__)
+  case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
@@ -118,6 +120,18 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: RESIDUAL
       <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
+    case e as SES_FOR_RESIDUAL(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: FOR_RESIDUAL
+      <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_GENERIC_RESIDUAL(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: GENERIC_RESIDUAL
+      <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
       equation index: <%equationIndex(eq)%>
@@ -137,6 +151,11 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: ARRAY_CALL_ASSIGN
 
       <%dumpCref(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_GENERIC_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SES_GENERIC_ASSIGN call index: <%e.call_index%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<
@@ -169,7 +188,16 @@ template dumpEqs(list<SimEqSystem> eqs)
         <%ls.simJac |> (i1,i2,eq) =>
         <<
         <cell row="<%i1%>" col="<%i2%>">
-          <%match eq case e as SES_RESIDUAL(__) then
+          <%match eq
+            case e as SES_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_FOR_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_GENERIC_RESIDUAL(__) then
             <<
             <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
@@ -350,11 +378,20 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
         <%at.simJac |> (i1,i2,eq) =>
         <<
         <cell row="<%i1%>" col="<%i2%>">
-          <%match eq case e as SES_RESIDUAL(__) then
+          <%match eq
+            case e as SES_RESIDUAL(__) then
             <<
             <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
-           %>
+            case e as SES_FOR_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_GENERIC_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+          %>
         </cell>
         >>
         %>

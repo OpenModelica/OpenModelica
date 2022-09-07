@@ -1591,7 +1591,7 @@ public
         end if;
 
         // flatten potential records
-        for var in listReverse(scalar_vars) loop
+        for var in scalar_vars loop
           if Type.isComplex(var.ty) then
             flattened := true;
             element_vars := Scalarize.scalarizeComplexVariable(var);

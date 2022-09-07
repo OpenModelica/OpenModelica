@@ -410,7 +410,7 @@ public
 
   function makeDAEModeResidualTraverse
     " update later to do both inner and residual equations "
-    input Pointer<Equation> eq_ptr;
+    input output Pointer<Equation> eq_ptr;
     input Pointer<list<StrongComponent>> acc;
   protected
     StrongComponent comp;
@@ -680,7 +680,6 @@ public
       then comp;
 
       // Size > 1 strong component
-      // ToDo: remove unnecessary types! (SINGLE_WHEN, SINGLE_IF etc.)
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
@@ -733,7 +732,7 @@ protected
     output list<Slice<VariablePointer>> acc_vars = {};
     output list<Slice<EquationPointer>> acc_eqns = {};
   protected
-    Integer var_idx, var_arr_idx, eqn_arr_idx;
+    Integer var_idx, var_arr_idx, var_scal_idx, eqn_arr_idx, eqn_scal_idx;
     list<Integer> idx_lst;
     Pointer<Variable> var;
     Pointer<Equation> eqn;
@@ -742,9 +741,11 @@ protected
   algorithm
     // store all component var and eqn indices in maps
     for eqn_idx in comp_indices loop
-      var_idx := eqn_to_var[eqn_idx];
-      var_arr_idx := mapping.var_StA[var_idx];
-      eqn_arr_idx := mapping.eqn_StA[eqn_idx];
+      var_idx           := eqn_to_var[eqn_idx];
+      var_arr_idx       := mapping.var_StA[var_idx];
+      (var_scal_idx, _) := mapping.var_AtS[var_arr_idx];
+      eqn_arr_idx       := mapping.eqn_StA[eqn_idx];
+      (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
 
       // collect variable and equation slices
       idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map) else {};
@@ -753,17 +754,18 @@ protected
       UnorderedMap.add(eqn_arr_idx, eqn_idx :: idx_lst, eqn_map);
     end for;
 
-    // extract variables and equations from maps (check if slices are full)
+    // extract variables and equations from maps
+    // check if slices are full and reduce them to base 0 indexing
     for tpl in UnorderedMap.toList(var_map) loop
       (var_arr_idx, idx_lst)  := tpl;
       var                     := VariablePointers.getVarAt(vars, var_arr_idx);
-      idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else idx_lst;
+      idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else list(i - var_scal_idx for i in idx_lst);
       acc_vars                := Slice.SLICE(var, idx_lst) :: acc_vars;
     end for;
     for tpl in UnorderedMap.toList(eqn_map) loop
       (eqn_arr_idx, idx_lst)  := tpl;
       eqn                     := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
-      idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else idx_lst;
+      idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else list(i - eqn_scal_idx for i in idx_lst);
       acc_eqns                := Slice.SLICE(eqn, idx_lst) :: acc_eqns;
     end for;
   end getLoopVarsAndEqns;

@@ -47,6 +47,7 @@ protected
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
+  import Scalarize = NFScalarize;
   import Statement = NFStatement;
   import Type = NFType;
   import Variable = NFVariable;
@@ -87,6 +88,7 @@ public
       "Single residual equation of the form
       0 = exp"
       Integer index;
+      Integer res_index;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -97,6 +99,7 @@ public
       0 = exp. Structurally equal to RESIDUAL, but the destinction is important
       for code generation."
       Integer index;
+      Integer res_index;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -108,11 +111,23 @@ public
         0 = exp;
       end for;"
       Integer index;
+      Integer res_index;
       list<tuple<ComponentRef, Expression>> iterators;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
     end FOR_RESIDUAL;
+
+    record GENERIC_RESIDUAL
+      "a generic residual calling a for loop body function with an index list."
+      Integer index;
+      Integer res_index;
+      list<Integer> scal_indices;
+      list<tuple<ComponentRef, Expression>> iterators;
+      Expression exp;
+      DAE.ElementSource source;
+      EquationAttributes attr;
+    end GENERIC_RESIDUAL;
 
     record SIMPLE_ASSIGN
       "Simple assignment or solved inner equation of (casual) tearing set
@@ -228,7 +243,8 @@ public
       str := match blck
         case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
-        case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") for " + List.toString(blck.iterators, forTplStr) + "loop;\n  0 = " + Expression.toString(blck.exp) + "\nend for;\n";
+        case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") For-Loop-Residual:\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
+        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toString(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
@@ -525,7 +541,7 @@ public
           Equation eqn;
           SlicingStatus status;
           ComponentRef var_cref;
-          Integer aliasOf, generic_call_index;
+          Integer aliasOf, generic_call_index, residual_index = 0;
           list<Integer> eqn_indices, sizes;
           list<Equation> entwined_eqns = {};
           UnorderedMap<ComponentRef, Expression> replacements;
@@ -593,15 +609,19 @@ public
             eqns := tmp :: eqns;
           end for;
           for slice in strict.residual_eqns loop
-            (tmp, simCodeIndices) := createResidual(Pointer.access(Slice.getT(slice)), simCodeIndices);
+            // kabdelhak: we need to actually slice here -> generic slices are needed for residuals
+            (tmp, simCodeIndices, residual_index) := createResidual(slice, simCodeIndices, residual_index);
             eqns := tmp :: eqns;
           end for;
-          for var_ptr in strict.iteration_vars loop
-            var := Pointer.access(Slice.getT(var_ptr));
-            // This does not seem to be correct
-            //var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
-            //Pointer.update(var_ptr, var);
-            crefs := var.name :: crefs;
+          for slice in strict.iteration_vars loop
+            var := Pointer.access(Slice.getT(slice));
+            if Variable.size(var) > 1 then
+              for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
+                crefs := scal_var.name :: crefs;
+              end for;
+            else
+              crefs := var.name :: crefs;
+            end if;
           end for;
 
           // reactivate this once nonlinear loops actually work
@@ -647,11 +667,14 @@ public
     end fromStrongComponent;
 
     function createResidual
-      input Equation eqn;
+      input Slice<EquationPointer> slice;
       output Block blck;
       input output SimCodeIndices simCodeIndices;
+      input output Integer res_idx;
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
     algorithm
-      blck := match eqn
+      blck := match (eqn, slice.indices)
         local
           Type ty;
           Operator operator;
@@ -660,23 +683,35 @@ public
           list<ComponentRef> names;
           list<Expression> ranges;
 
-        case BEquation.SCALAR_EQUATION() algorithm
-          tmp := RESIDUAL(simCodeIndices.equationIndex, eqn.rhs, eqn.source, eqn.attr);
+        case (BEquation.SCALAR_EQUATION(), {}) algorithm
+          tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + 1;
         then tmp;
 
-        case BEquation.ARRAY_EQUATION() algorithm
-          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, eqn.rhs, eqn.source, eqn.attr);
+        case (BEquation.ARRAY_EQUATION(), {}) algorithm
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized they
         // they can be executed in any order
-        case BEquation.FOR_EQUATION() guard(listLength(eqn.body) == 1) algorithm
+        case (BEquation.FOR_EQUATION(), {}) guard(listLength(eqn.body) == 1) algorithm
           rhs := Equation.getRHS(eqn);
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + Equation.size(Slice.getT(slice));
+        then tmp;
+
+        // generic residual, for loop could not be fully recovered
+        case (BEquation.FOR_EQUATION(), _) guard(listLength(eqn.body) == 1) algorithm
+          rhs := Equation.getRHS(eqn);
+          (names, ranges) := Iterator.getFrames(eqn.iter);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + listLength(slice.indices);
         then tmp;
 
         // ToDo: add all other cases!
@@ -918,14 +953,20 @@ public
           list<tuple<DAE.Exp, list<OldSimCode.SimEqSystem>>> oldBranches = {};
           list<OldSimCode.SimEqSystem> else_branch = {};
 
-        case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case FOR_RESIDUAL() algorithm
           for iterator in listReverse(blck.iterators) loop
             (iter, range) := iterator;
             old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
           end for;
-        then OldSimCode.SES_FOR_RESIDUAL(blck.index, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        then OldSimCode.SES_FOR_RESIDUAL(blck.index, blck.res_index, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case GENERIC_RESIDUAL() algorithm
+          for iterator in listReverse(blck.iterators) loop
+            (iter, range) := iterator;
+            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
+          end for;
+        then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
@@ -1233,6 +1274,7 @@ public
     algorithm
       str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy)
               + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n"
+              + str + "--" + List.toString(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
               + Block.listToString(system.blcks, str + "--");
     end toString;
 

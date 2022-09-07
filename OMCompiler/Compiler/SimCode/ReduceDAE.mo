@@ -332,7 +332,7 @@ protected function addLabelToEquations
       SimCodeVar.SimVars vars,vars_1,vars_2,vars_3;
       list<String> labels,labels2,labels3,labels4,labels5;
       tuple <Integer,Integer> idx,idx2,idx3,idx4;
-      Integer i,indexSys,idxLS,idxNLS,nUnknownsLS,nUnknownsNLS;
+      Integer i,res_i,indexSys,idxLS,idxNLS,nUnknownsLS,nUnknownsNLS;
       list<DAE.ComponentRef> conditions;
       Boolean partOfLinear,tornSystem,initialCall;
       list<BackendDAE.WhenOperator> whenStmtLst;
@@ -349,7 +349,7 @@ protected function addLabelToEquations
     // nothing
     case ({},vars,idx,_,_) then ({},vars,idx,{});
     // residuals
-    case (((eq as SimCode.SES_RESIDUAL(i,e,source, eqAttr)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_RESIDUAL(i,res_i,e,source, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -364,7 +364,7 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_RESIDUAL(i,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_RESIDUAL(i,res_i,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // simple assignments
     case (((eq as SimCode.SES_SIMPLE_ASSIGN(i,cr,e,source, eqAttr)) :: es),vars,idx,_,_)
       equation

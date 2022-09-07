@@ -408,7 +408,7 @@ protected
   end collectPartitions;
 
   function collectPartitionsEquation
-    input Pointer<Equation> eqn;
+    input output Pointer<Equation> eqn;
     input System.SystemType systemType;
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   protected

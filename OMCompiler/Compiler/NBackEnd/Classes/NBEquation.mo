@@ -1152,7 +1152,8 @@ public
     function createResidual
       "Creates a residual equation from a regular equation.
       Expample (for DAEMode): $RES_DAE_idx := rhs."
-      input Pointer<Equation> eqn_ptr;
+      input output Pointer<Equation> eqn_ptr;
+      input Boolean new = false               "set to true if the resulting pointer should be a new one";
     protected
       Equation eqn = Pointer.access(eqn_ptr);
       ComponentRef residualCref;
@@ -1169,12 +1170,15 @@ public
         then residualCref;
         else Equation.getEqnName(eqn_ptr);
       end match;
+
       // update RHS and LHS
       lhs := Expression.fromCref(residualCref);
       rhs := Equation.getResidualExp(eqn);
       eqn := Equation.setLHS(eqn, lhs);
       eqn := Equation.setRHS(eqn, rhs);
-      Pointer.update(eqn_ptr, eqn);
+
+      // update pointer or create new
+      if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
     end createResidual;
 
     function getResidualExp
@@ -2394,7 +2398,7 @@ public
       input EquationPointers equations;
       input MapFunc func;
       partial function MapFunc
-        input Pointer<Equation> e;
+        input output Pointer<Equation> e;
       end MapFunc;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
@@ -2634,7 +2638,7 @@ public
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the names and
       adds it as a tuple to the list in pointer."
-      input Pointer<Equation> eqn_ptr;
+      input output Pointer<Equation> eqn_ptr;
       input Integer mod;
       input Pointer<list<tuple<Integer, Pointer<Equation>>>> hash_lst_ptr;
     protected

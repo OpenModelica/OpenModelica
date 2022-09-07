@@ -169,6 +169,7 @@ end scalarizeVariable;
 
 function scalarizeBackendVariable
   input Variable var;
+  input List<Integer> indices = {};
   input output list<Variable> vars = {};
 protected
   list<ComponentRef> crefs;
@@ -200,7 +201,11 @@ algorithm
       vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
     end for;
   end if;
-  vars := listReverse(vars);
+  // filter sliced variables
+  // ToDo: do this more efficiently and not create them in the first place
+  if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
+    vars := List.keepPositions(vars, indices);
+  end if;
 end scalarizeBackendVariable;
 
 function scalarizeComplexVariable

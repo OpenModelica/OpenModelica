@@ -1483,7 +1483,7 @@ algorithm
     end if;
 
     // generate equations for removed initial equations
-    (removedInitialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempVars, inBackendDAE.shared.functionTree);
+    (removedInitialEquations, (uniqueEqIndex, _), tempVars) := SimCodeUtil.createNonlinearResidualEquations(inRemovedInitialEquationLst, (uniqueEqIndex, 0), tempVars, inBackendDAE.shared.functionTree);
     //removedInitialEquations := listReverse(removedInitialEquations);
 
     ExecStat.execStat("simCode: created initialization part");

@@ -809,7 +809,7 @@ protected
 
   function collectEvents
     "collects all events from an equation pointer."
-    input Pointer<Equation> eqn_ptr;
+    input output Pointer<Equation> eqn_ptr;
     input Pointer<Bucket> bucket_ptr;
   protected
     Equation eqn = Pointer.access(eqn_ptr);

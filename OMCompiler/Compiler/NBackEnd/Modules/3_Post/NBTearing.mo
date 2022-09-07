@@ -203,6 +203,13 @@ public
     residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
+  function setResidualEqns
+    input output Tearing tearing;
+    input list<Slice<EquationPointer>> residuals;
+  algorithm
+    tearing.residual_eqns := residuals;
+  end setResidualEqns;
+
 protected
   // Traverser function
   function tearingTraverser
@@ -239,6 +246,7 @@ protected
     list<StrongComponent> residual_comps;
     Option<Jacobian> jacobian;
     StrongComponent new_comp;
+    list<Slice<EquationPointer>> residuals = {};
   algorithm
     (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP() algorithm
@@ -246,9 +254,10 @@ protected
         comp.idx := index;
 
         // create residual equations
-        for eqn in comp.strict.residual_eqns loop
-          Slice.applyMutable(eqn, Equation.createResidual);
+        for eqn in listReverse(comp.strict.residual_eqns) loop
+          residuals := Slice.apply(eqn, function Equation.createResidual(new = true)) :: residuals;
         end for;
+        comp.strict := setResidualEqns(comp.strict, residuals);
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in comp.strict.residual_eqns);
 
         // update jacobian to take slices (just to have correct inner variables and such)
