@@ -121,6 +121,7 @@ goto rule ## func ## Ex; }}
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
   modelica_boolean omc_AbsynUtil_isDerCref(threadData_t* threadData, void* exp);
+  void* omc_AbsynUtil_setClassCommentsAfterEnd(threadData_t* threadData, void* cl, void *comments);
   #else
   modelica_boolean (*omc_AbsynUtil_isDerCref)(threadData_t* threadData, void* exp);
   #endif
@@ -222,6 +223,24 @@ stored_definition returns [void* ast]
   cl=class_definition_list?
   EOF
     {
+      // The EOF makes us not find the last comment after a class, so we take care of it here
+      void *commentAfter = mmc_mk_nil();
+      int last = LT(1)->getTokenIndex(LT(1));
+      pANTLR3_COMMON_TOKEN tok;
+      while (tok = INPUT->get(INPUT,omc_first_comment++)) {
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+          commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+#endif
+        }
+      }
+      if (!listEmpty(commentAfter) && !listEmpty(cl)) {
+        void *last = cl;
+        while (!listEmpty(MMC_CDR(last))) {
+          last = MMC_CDR(last);
+        }
+        MMC_CAR(last) = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, MMC_CAR(last), listReverseInPlace(commentAfter));
+      }
       ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP);
     }
   ;
@@ -234,8 +253,23 @@ within_clause returns [void* ast]
   finally{ OM_POP(1); }
 
 class_definition_list returns [void* ast]
-@init{ f = NULL; OM_PUSHZ2(cd.ast, cl); } :
-  ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON) cl=class_definition_list?
+@init{ void *commentAfter = 0; f = NULL; OM_PUSHZ3(cd.ast, cl, commentAfter); } :
+  ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON {
+    // Comments between top-level classes need to belong to the class in the AST
+    commentAfter = mmc_mk_nil();
+    int last = LT(1)->getTokenIndex(LT(1));
+    for (;omc_first_comment<last;omc_first_comment++) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+      commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+#endif
+      }
+    }
+    if (!listEmpty(commentAfter)) {
+      cd.ast = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, cd.ast, commentAfter);
+    }
+  }) cl=class_definition_list?
     {
       ast = mmc_mk_cons_typed(Absyn_Class, cd.ast, or_nil(cl));
     }
@@ -243,10 +277,25 @@ class_definition_list returns [void* ast]
   finally{ OM_POP(2); }
 
 class_definition [int final] returns [void* ast]
-@init{ e = 0; p = 0; OM_PUSHZ4(ct, cs.ast, $cs.name, $ast); } :
+@init{ void *commentBefore = 0; e = 0; p = 0; OM_PUSHZ5(ct, cs.ast, $cs.name, $ast, commentBefore); } :
   ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
-      $ast = Absyn__CLASS($cs.name, mmc_mk_bcon(p), mmc_mk_bcon(final), mmc_mk_bcon(e), ct, $cs.ast, PARSER_INFO($start));
+      commentBefore = mmc_mk_nil();
+      int last = LT(1)->getTokenIndex(LT(1));
+      for (;omc_first_comment<last;omc_first_comment++) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+        commentBefore = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBefore);
+#endif
+        }
+      }
+      $ast = Absyn__CLASS($cs.name, mmc_mk_bcon(p), mmc_mk_bcon(final), mmc_mk_bcon(e), ct, $cs.ast,
+#if !defined(OMC_BOOTSTRAPPING)
+      listReverseInPlace(commentBefore),
+      mmc_mk_nil(),
+#endif
+      PARSER_INFO($start));
     }
   ;
   finally{ OM_POP(4); }
@@ -790,14 +839,41 @@ class_modification returns [void* ast]
   finally{ OM_POP(2); }
 
 argument_list returns [void* ast]
-@init { OM_PUSHZ3(a, as, ast); } :
+@init {
+  int first, last;
+  void *commentAst;
+  OM_PUSHZ4(a, as, ast, commentAst);
+  ast = mmc_mk_nil();
+  commentAst = mmc_mk_nil();
+
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
+  for (;first<last;last--) {
+    pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+    if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+      commentAst = mmc_mk_cons_typed(Absyn_ElementArg, Absyn__ELEMENTARGCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),commentAst);
+#endif
+    }
+  }
+} :
   a=argument ( COMMA as=argument_list )?
   {
-    if (!a)
-    {
-       fprintf(stderr, "crap!\n");
+    first = omc_first_comment;
+    last = LT(1)->getTokenIndex(LT(1));
+    omc_first_comment = last;
+    for (;first<last;last--) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+        ast = mmc_mk_cons_typed(Absyn_ElementArg, Absyn__ELEMENTARGCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+#endif
+      }
     }
-    ast = mmc_mk_cons_typed(Absyn_ElementArg, a, or_nil(as));
+    ast = listAppend(or_nil(as), ast);
+    ast = mmc_mk_cons_typed(Absyn_ElementArg, a, ast);
+    ast = listAppend(commentAst, ast);
   }
   ;
   finally{ OM_POP(3); }
@@ -980,6 +1056,7 @@ algorithm_annotation_list [ void **ann, int matchCase] returns [void* ast]
       $ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
     }
   }
+  omc_first_comment = last;
 } :
   (
     { matchCase ? LA(1) != THEN : (LA(1) != END_IDENT && LA(1) != EQUATION && LA(1) != T_ALGORITHM && LA(1)!=INITIAL && LA(1) != PROTECTED && LA(1) != PUBLIC) }?=>
@@ -1286,11 +1363,34 @@ algorithm_elseif returns [void* ast]
   finally{ OM_POP(2); }
 
 equation_list_then returns [void* ast]
-@init{ OM_PUSHZ2(e.ast, es); } :
-    { LA(1) == THEN }? { ast = mmc_mk_nil(); }
-  | (e=equation SEMICOLON es=equation_list_then) { ast = mmc_mk_cons_typed(Absyn_Equation, e.ast, es); }
+@init {
+  OM_PUSHZ3(ast, e.ast, es);
+  int first = 0, last = 0;
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
+} :
+    { LA(1) == THEN }? {
+      ast = mmc_mk_nil();
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
+    }
+  | (e=equation SEMICOLON es=equation_list_then) {
+      ast = es;
+      ast = mmc_mk_cons_typed(Absyn_Equation, e.ast, ast);
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
+    }
   ;
-  finally{ OM_POP(2); }
+  finally{ OM_POP(3); }
 
 equation_list returns [void* ast]
 @init {
@@ -1325,10 +1425,33 @@ equation_list returns [void* ast]
   finally{ OM_POP(3); }
 
 algorithm_list returns [void* ast]
-@init { OM_PUSHZ2(a.ast, as); } :
+@init {
+  OM_PUSHZ3(ast, a.ast, as);
+  int first = 0, last = 0;
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
+} :
   {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR || LA(1) != END_WHILE}?
-    { ast = mmc_mk_nil(); }
-  | a=algorithm SEMICOLON as=algorithm_list { ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, a.ast, as); }
+    {
+      ast = mmc_mk_nil();
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
+    }
+  | a=algorithm SEMICOLON as=algorithm_list {
+     ast = as;
+     ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, a.ast, ast);
+     for (;first<last;last--) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+        ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+      }
+    }
+  }
   ;
   finally{ OM_POP(2); }
 
@@ -1373,7 +1496,21 @@ connector_ref_2 returns [void* ast]
  * 2.2.7 Expressions
  */
 expression[int allowPartEvalFunc] returns [void* ast]
-@init { OM_PUSHZ1(e); } :
+@init {
+  void *commentBefore, *commentAfter;
+  OM_PUSHZ3(e, commentBefore, commentAfter);
+  commentBefore = mmc_mk_nil();
+  commentAfter = mmc_mk_nil();
+  int last = LT(1)->getTokenIndex(LT(1));
+  for (;omc_first_comment<last;omc_first_comment++) {
+    pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+    if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+      commentBefore = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBefore);
+#endif
+    }
+  }
+} :
   ( e=if_expression { $ast = e; }
   | e=simple_expression { $ast = e; }
   | e=code_expression { $ast = e; }
@@ -1387,6 +1524,22 @@ expression[int allowPartEvalFunc] returns [void* ast]
       $ast = e;
     }
   )
+  {
+    int last = LT(1)->getTokenIndex(LT(1));
+    for (;omc_first_comment<last;omc_first_comment++) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+  #if !defined(OMC_BOOTSTRAPPING)
+        commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+  #endif
+      }
+    }
+  #if !defined(OMC_BOOTSTRAPPING)
+    if (!(listEmpty(commentBefore) && listEmpty(commentAfter))) {
+      $ast = Absyn__EXPRESSIONCOMMENT(listReverseInPlace(commentBefore), $ast, listReverseInPlace(commentAfter));
+    }
+  #endif
+  }
   ;
   finally{ OM_POP(1); }
 
@@ -1617,7 +1770,12 @@ primary returns [void* ast]
   | PURE el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("pure"), mmc_mk_nil()),el,mmc_mk_nil()); }
   | LPAR el=output_expression_list[&tupleExpressionIsTuple]
     {
-      $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) : el;
+      $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
+#if defined(OMC_BOOTSTRAPPING)
+      el;
+#else
+      Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
+#endif
     }
   | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
   | LBRACE for_or_el=for_or_expression_list RBRACE

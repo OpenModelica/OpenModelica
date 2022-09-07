@@ -18,8 +18,8 @@ end test;", OpenModelica.Scripting.DiffFormat.color);getErrorString();
 // Result:
 // "model test
 //   M [4;32my[0m;
-// // comment
-//
+// [9;31m[0m// comment
+// [4;32m[0m
 // equation
 //   connect(a, [4;32mc[0m);
 // end test;"

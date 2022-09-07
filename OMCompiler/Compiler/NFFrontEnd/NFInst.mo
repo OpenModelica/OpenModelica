@@ -2339,6 +2339,7 @@ algorithm
       Operator op;
       list<Expression> expl;
       list<list<Expression>> expll;
+      Absyn.Exp absynExp1;
       array<Expression> arr;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
@@ -2369,6 +2370,8 @@ algorithm
         e3 := instExp(absynExp.stop, scope, context, info);
       then
         Expression.RANGE(Type.UNKNOWN(), e1, oe, e3);
+
+    case Absyn.Exp.TUPLE(expressions={absynExp1}) then instExp(absynExp1, scope, context, info);
 
     case Absyn.Exp.TUPLE()
       algorithm
@@ -2436,6 +2439,8 @@ algorithm
       then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.END() then Expression.END();
+
+    case Absyn.Exp.EXPRESSIONCOMMENT() then instExp(absynExp.exp, scope, context, info);
 
     else
       algorithm

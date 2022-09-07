@@ -52,7 +52,7 @@ getErrorString();
 // expected type:
 //   tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>
 // [metamodelica/meta/ComplicatedInteractive.mos:20:1-20:93:writable] Error: In record constructor ComplicatedInteractive.LI2.RecordWithComplicatedTypes: Failed to match types:
-//     actual:   tuple<tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>>
+//     actual:   tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>
 //     expected: (tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>)
 // "
 //

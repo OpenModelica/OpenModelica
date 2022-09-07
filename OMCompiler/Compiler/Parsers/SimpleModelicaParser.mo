@@ -97,13 +97,13 @@ algorithm
   // The other option is to preserve within in OMEdit...
   (t1_updated, t2_updated) := match (within1,within2)
     case (EMPTY(), EMPTY()) then (t1,t2);
-    case (_, EMPTY()) then (t1, within1::t2);
+    case (_, EMPTY()) then (t1, within1::LEAF(newlineToken)::t2);
     case (EMPTY(), _) then (within2::LEAF(newlineToken)::LEAF(newlineToken)::t1, t2);
     else (t1,t2);
   end match;
-  t2_updated := moveComments(t1_updated, t2_updated);
+  // t2_updated := moveComments(t1_updated, t2_updated);
   res := treeDiffWork1(t1_updated, t2_updated, nTokens);
-  res := moveCommentsAfterDiff(res);
+  // res := moveCommentsAfterDiff(res);
 end treeDiff;
 
 partial function CmpParseTreeFunc
@@ -1018,6 +1018,7 @@ algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.CONSTRAINEDBY});
   if b then
     (tokens, tree) := constraining_clause(tokens, tree);
+    (tokens, tree) := comment(tokens, tree); // Not standard Modelica, but some libraries have this
   end if;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end element_replaceable;
@@ -1613,8 +1614,9 @@ algorithm
             tree::trees := trees;
             (found,before,foundTree,after,foundComment) := fixDeletedComments(tree, comments);
             if found then
-              acc := (Diff.Add, listAppend(listReverse(acc2),before))::acc;
-              res := listAppend(listReverse(acc),(Diff.Equal,{foundTree})::(Diff.Add, listAppend(after, trees))::lst);
+              acc := (Diff.Delete, listAppend(listReverse(acc2),before))::acc;
+              res := listAppend(listReverse(acc),(Diff.Equal,{foundTree})::(Diff.Delete, listAppend(after, trees))::lst);
+              print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
               res := removeAddedCommentFromDiff(res, foundComment);
               // Continue until we can't fix more comments
               res := moveCommentsAfterDiff(res);
@@ -2175,13 +2177,14 @@ function filterDiffWhitespace
   output list<tuple<Diff,list<ParseTree>>> diff;
 protected
   list<tuple<Diff,list<ParseTree>>> diffLocal=inDiff;
-  tuple<Diff,list<ParseTree>> diff1;
+  tuple<Diff,list<ParseTree>> diff1, diff2, diff3, diff4;
   Boolean firstIter, lastTokenNewline, hasAddedWS;
-  list<ParseTree> tree, treeLocal, tree1, tree2, tree3;
+  list<ParseTree> tree, treeLocal, tree1, tree2, tree3, tree4;
+  ParseTree tree4First;
   Integer length, level;
   list<Integer> indentation;
   list<Token> tokens;
-  Diff diffEnum;
+  Diff diffEnum, diffEnum1, diffEnum2;
   String indentationStr;
   Token tok;
 algorithm
@@ -2189,31 +2192,29 @@ algorithm
   firstIter := true;
   while not listEmpty(diffLocal) loop
     diffLocal := match diffLocal
-      // ( ... ) is similar to whitespace, and there are some edge cases we can handle here...
-      case ((Diff.Equal,tree1) :: (Diff.Delete, tree2) :: (Diff.Equal,tree3) :: diffLocal)
-        guard min(parseTreeIsWhitespaceOrPar(t) for t in tree1) and
-              min(parseTreeIsWhitespaceOrPar(t) for t in tree3) and
-              1==sum(if parseTreeIsLPar(t) then 1 else 0 for t in tree1) and
-              1==sum(if parseTreeIsRPar(t) then 1 else 0 for t in tree3)
-        algorithm
-          diff := (Diff.Delete, listAppend(tree1, listAppend(tree2, tree3)))::diff;
-        then diffLocal;
+      // Empty node
+      case (_, {})::diffLocal then diffLocal;
       // Do not delete whitespace in-between two tokens
       case ((Diff.Delete, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard if firstIter then min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree) else false
+        guard if firstIter then min(parseTreeIsWhitespaceNotComment(t) for t in tree) else false
         algorithm
           diff := (Diff.Equal, tree)::diff;
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := (Diff.Equal, tree)::diff1::diff;
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Delete, tree)::{})
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := (Diff.Equal, tree)::diff1::diff;
         then {};
+      // Sometimes a comment may move between 2 trees. This can bring it back, keeping the diff smaller.
+      case (Diff.Delete,tree1)::(diff2 as (_, tree2))::(diff3 as (_, tree3))::(Diff.Add, tree4First::tree4)::diffLocal
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree2) and
+              min(parseTreeIsWhitespaceNotComment(t) for t in tree3) and modelicaDiffTokenEq(lastToken(List.last(tree1)),firstTokenInTree(tree4First))
+        then (Diff.Delete,removeLastTokenInTrees(tree1))::(Diff.Equal,{LEAF(lastToken(List.last(tree1)))})::(Diff.Add,removeFirstTokenInTree(tree4First)::tree4)::diff2::diff3::diffLocal;
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,tree2 as (_::_))::_)))
         guard needsWhitespaceBetweenTokens(lastToken(List.last(tree1)), firstTokenInTree(listGet(tree2, 1)))
         algorithm
@@ -2225,13 +2226,25 @@ algorithm
         then (Diff.Delete, tree)::diffLocal;
       // Do not add whitespace for no good reason. Do add whitespace.
       case ((Diff.Add, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard if firstIter then min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree) else false
+        guard if firstIter then min(parseTreeIsWhitespaceNotComment(t) for t in tree) else false
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Add, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := diff1::diff;
         then diffLocal;
+      // NEWLINE ADD WS DEL => NEWLINE WS ADD DEL
+      case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
+        guard parseTreeIsNewLine(List.last(tree1)) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        then diff1::diff3::diff2::diff4::diffLocal;
+      // NEWLINE DEL WS ADD => NEWLINE WS DEL ADD
+      case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
+        guard parseTreeIsNewLine(List.last(tree1)) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        then diff1::diff3::diff2::diff4::diffLocal;
+
+      case ((diffEnum1,tree1)::(diffEnum2, tree2)::diffLocal)
+        guard diffEnum1==diffEnum2
+        then (diffEnum1, listAppend(tree1, tree2))::diffLocal;
       // A normal tree :)
       case diff1::diffLocal
         algorithm
@@ -2240,7 +2253,6 @@ algorithm
     end match;
     firstIter := false;
   end while;
-
   diff := listReverseInPlace(diff);
   // Look for indentation levels, try to fix added \n+WS to indent at the same level
   lastTokenNewline := false;
@@ -2466,7 +2478,7 @@ algorithm
     arrayUpdate(work, arrayLength(work)-commentCount, firstTokenInTree(t));
     commentCount := commentCount + 1;
     return;
-  elseif parseTreeIsWhitespaceOrPar(t) then
+  elseif parseTreeIsWhitespace(t) then
     return;
   end if;
   _ := match t
@@ -2550,6 +2562,44 @@ algorithm
   end match;
 end firstNTokensInTree_reverse;
 
+function removeFirstTokenInTree
+  input output ParseTree t;
+algorithm
+  t := match t
+    local
+      ParseTree node, label;
+      list<ParseTree> nodes;
+    case EMPTY() then fail();
+    case LEAF() then EMPTY();
+    case NODE(label=label, nodes=node::nodes) then makeNode(removeFirstTokenInTree(node) :: nodes, label=label);
+  end match;
+end removeFirstTokenInTree;
+
+function removeLastTokenInTree
+  input output ParseTree t;
+algorithm
+  t := match t
+    local
+      ParseTree node, label;
+      list<ParseTree> nodes, acc;
+    case EMPTY() then fail();
+    case LEAF() then EMPTY();
+    case NODE(label=label, nodes=nodes)
+      algorithm
+        node::nodes := listReverse(nodes);
+      then makeNode(listReverse(removeLastTokenInTree(node) :: nodes), label=label);
+  end match;
+end removeLastTokenInTree;
+
+function removeLastTokenInTrees
+  input output list<ParseTree> ts;
+protected
+  ParseTree t;
+algorithm
+  t :: ts := listReverse(ts);
+  ts := listReverse(removeLastTokenInTree(t)::ts);
+end removeLastTokenInTrees;
+
 function firstTokenInTree
   input ParseTree t;
   output Token token;
@@ -2632,12 +2682,9 @@ function makeNode
   input ParseTree label = EMPTY();
   output ParseTree node;
 algorithm
-  node := match nodes
-    case {}
-      algorithm
-        error({}, nodes, {});
-      then fail();
-    case {node} guard match label case EMPTY() then true; else false; end match then node;
+  node := match (nodes,label)
+    case ({},EMPTY()) then EMPTY();
+    case ({node},EMPTY()) then node;
     else NODE(label, nodes);
   end match;
 end makeNode;
@@ -2718,8 +2765,6 @@ algorithm
               acc := {tree}::acc;
             elseif parseTreeIsWhitespace(tree) then
               acc := acc;
-            elseif parseTreeIsWhitespaceOrPar(tree) then
-              acc := {tree}::acc;
             else
               if foundAdded then
                 Error.addInternalError("Found multiple Add subtrees", sourceInfo());
@@ -2740,7 +2785,7 @@ algorithm
       case (Diff.Delete, lst)
         algorithm
           for tree in lst loop
-            if parseTreeIsWhitespaceOrPar(tree) then
+            if parseTreeIsWhitespace(tree) then
               acc := {tree}::acc;
             else
               if foundDeleted then
@@ -2809,10 +2854,9 @@ algorithm
   for diff in diffs loop
     (d,l) := diff;
     if d == Diff.Add then
-      // We treat parenthesis similar to whitespace because we need to keep them as before since unparsing adds or removes parentheses
-      nadd := nadd+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
+      nadd := nadd+sum(if parseTreeIsWhitespace(t) then 0 else 1 for t in l);
     elseif d == Diff.Delete then
-      ndel := ndel+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
+      ndel := ndel+sum(if parseTreeIsWhitespace(t) then 0 else 1 for t in l);
     end if;
   end for;
 end countDiffAddDelete;
@@ -2864,54 +2908,6 @@ algorithm
     else false;
   end match;
 end parseTreeIsNewLine;
-
-function parseTreeIsLPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then t1.token.id == TokenId.LPAR;
-    else false;
-  end match;
-end parseTreeIsLPar;
-
-function parseTreeIsRPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then t1.token.id == TokenId.RPAR;
-    else false;
-  end match;
-end parseTreeIsRPar;
-
-function parseTreeIsWhitespaceOrPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then listMember(t1.token.id, TokenId.LPAR::TokenId.RPAR::whiteSpaceTokenIds);
-    else false;
-  end match;
-end parseTreeIsWhitespaceOrPar;
-
-function parseTreeIsWhitespaceOrParNotComment
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then listMember(t1.token.id, TokenId.LPAR::TokenId.RPAR::whiteSpaceTokenIdsNotComment);
-    else false;
-  end match;
-end parseTreeIsWhitespaceOrParNotComment;
 
 function parseTreeIsWhitespaceNotComment
   input ParseTree t1;
@@ -3147,7 +3143,7 @@ algorithm
   _ := match tree
     // TODO: Normalize line-endings? We can output mixed CRLF/LF now...
     case LEAF() algorithm Print.printBuf(tokenContent(tree.token)); then ();
-    case EMPTY() algorithm Print.printBuf("<EMPTY>"); then ();
+    case EMPTY() then ();
     case NODE()
       algorithm
         for n in tree.nodes loop

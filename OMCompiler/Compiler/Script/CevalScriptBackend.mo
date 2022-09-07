@@ -1119,11 +1119,13 @@ algorithm
             fail();
           end try;
           if not StringUtil.equalIgnoreSpace(s3, s4) then
+            System.writeFile("SanityCheckFailBefore.mo", s3);
+            System.writeFile("SanityCheckFailAfter.mo", s4);
             if b then
-              Error.addInternalError("After merging the strings, the semantics changed for some reason. Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
               fail();
             else
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
             end if;
             sanityCheckFailed := true;
           end if;
@@ -7642,7 +7644,7 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassComment(cdef);
   file := Testsuite.friendly(file);
@@ -8148,25 +8150,25 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     /* a class with parts */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
                       info = file_info), state_)
       equation
         eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
         parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
+      then outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
                       ,info = file_info), state_)
       equation
         eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
         parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
+      then outClass;
   end match;
 end deleteInitialStateInClass;
 

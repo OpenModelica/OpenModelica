@@ -320,12 +320,13 @@ algorithm
         opt_cl = parsePackageFile(packagefile, strategy, true, within_, id, encrypted);
         // print("Got " + packagefile + "\n");
         if (isSome(opt_cl)) then
-          (class_ as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = Util.getOption(opt_cl);
+          (class_ as Absyn.CLASS(body=Absyn.PARTS(tv,ca,cp,ann,cmt))) = Util.getOption(opt_cl);
           reverseOrder = getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
           path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
           w2 = Absyn.WITHIN(path);
           cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
-          opt_cl = SOME(Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info));
+          class_.body = Absyn.PARTS(tv,ca,cp,ann,cmt);
+          opt_cl = SOME(class_);
         end if;
       then opt_cl;
     case (_,pack,mp,_)
