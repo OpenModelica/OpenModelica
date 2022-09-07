@@ -461,8 +461,8 @@ bool CompositeModelEditor::createConnection(LineAnnotation *pConnectionLineAnnot
   QDomElement connections = getConnectionsElement();
   if (!connections.isNull()) {
     QDomElement connection = mXmlDocument.createElement("Connection");
-    connection.setAttribute("From", pConnectionLineAnnotation->getStartComponentName());
-    connection.setAttribute("To", pConnectionLineAnnotation->getEndComponentName());
+    connection.setAttribute("From", pConnectionLineAnnotation->getStartElementName());
+    connection.setAttribute("To", pConnectionLineAnnotation->getEndElementName());
     connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
     if(!pConnectionLineAnnotation->getAlpha().isEmpty()) {
       connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
@@ -480,14 +480,14 @@ bool CompositeModelEditor::createConnection(LineAnnotation *pConnectionLineAnnot
     connections.appendChild(connection);
     setPlainText(mXmlDocument.toString());
     // check if interfaces are aligned
-    bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+    bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
     pConnectionLineAnnotation->setAligned(aligned);
 
-    if (this->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+    if (this->getInterfaceCausality(pConnectionLineAnnotation->getEndElementName()) ==
         StringHandler::getTLMCausality(StringHandler::TLMInput)) {
       pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
       pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
-    } else if(this->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+    } else if(this->getInterfaceCausality(pConnectionLineAnnotation->getEndElementName()) ==
               StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
       pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
       pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
@@ -505,8 +505,8 @@ bool CompositeModelEditor::createConnection(LineAnnotation *pConnectionLineAnnot
  */
 bool CompositeModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
 {
-  QString startComp = pConnectionLineAnnotation->getStartComponentName();
-  QString endComp = pConnectionLineAnnotation->getEndComponentName();
+  QString startComp = pConnectionLineAnnotation->getStartElementName();
+  QString endComp = pConnectionLineAnnotation->getEndElementName();
 
   int dimensions1 = getInterfaceDimensions(startComp);
   int dimensions2 = getInterfaceDimensions(endComp);
@@ -552,8 +552,8 @@ void CompositeModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnot
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
     QDomElement connection = connectionList.at(i).toElement();
-    if (connection.attribute("From").compare(pConnectionLineAnnotation->getStartComponentName()) == 0 &&
-        connection.attribute("To").compare(pConnectionLineAnnotation->getEndComponentName()) == 0) {
+    if (connection.attribute("From").compare(pConnectionLineAnnotation->getStartElementName()) == 0 &&
+        connection.attribute("To").compare(pConnectionLineAnnotation->getEndElementName()) == 0) {
       connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
       if(connection.hasAttribute("alpha")) {
         connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
@@ -664,9 +664,9 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
           // check if interface is aligned
           foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
             QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("Name"));
-            if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0 ||
-                pConnectionLineAnnotation->getEndComponentName().compare(interfaceName) == 0) {
-              bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+            if (pConnectionLineAnnotation->getStartElementName().compare(interfaceName) == 0 ||
+                pConnectionLineAnnotation->getEndElementName().compare(interfaceName) == 0) {
+              bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
               pConnectionLineAnnotation->setAligned(aligned);
             }
           }
@@ -795,8 +795,8 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
     }
     if (!fromExists || !toExists) {
       foreach (LineAnnotation *pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-        if (pConnectionLineAnnotation->getStartComponentName().compare(from) == 0 ||
-            pConnectionLineAnnotation->getEndComponentName().compare(to) == 0) {
+        if (pConnectionLineAnnotation->getStartElementName().compare(from) == 0 ||
+            pConnectionLineAnnotation->getEndElementName().compare(to) == 0) {
           mpModelWidget->getDiagramGraphicsView()->deleteConnectionFromList(pConnectionLineAnnotation);
           mpModelWidget->getDiagramGraphicsView()->removeItem(pConnectionLineAnnotation);
           pConnectionLineAnnotation->deleteLater();
@@ -1159,8 +1159,8 @@ void CompositeModelEditor::alignInterfaces(QString fromInterface, QString toInte
   // get the relevant connection
   LineAnnotation* pFoundConnectionLineAnnotation = 0;
   foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-    if (pConnectionLineAnnotation->getStartComponentName().compare(fromInterface) == 0 &&
-        pConnectionLineAnnotation->getEndComponentName().compare(toInterface) == 0) {
+    if (pConnectionLineAnnotation->getStartElementName().compare(fromInterface) == 0 &&
+        pConnectionLineAnnotation->getEndElementName().compare(toInterface) == 0) {
       pFoundConnectionLineAnnotation = pConnectionLineAnnotation;
       break;
     }

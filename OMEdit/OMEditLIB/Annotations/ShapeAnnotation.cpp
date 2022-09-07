@@ -1539,7 +1539,7 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
         if (pLineAnnotation) {
           pLineAnnotation->updateOMSConnection();
-          pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
+          pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartElementName(), pLineAnnotation->getEndElementName()));
           pModelWidget->updateModelText();
           return;
         }

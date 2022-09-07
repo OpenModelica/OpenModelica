@@ -208,8 +208,8 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
   // list of interfaces
   QStringList interfaces;
   if (pConnectionLineAnnotation) {
-    interfaces << pConnectionLineAnnotation->getStartComponentName() + "  ->  " + pConnectionLineAnnotation->getEndComponentName();
-    interfaces << pConnectionLineAnnotation->getEndComponentName() + "  ->  " + pConnectionLineAnnotation->getStartComponentName();
+    interfaces << pConnectionLineAnnotation->getStartElementName() + "  ->  " + pConnectionLineAnnotation->getEndElementName();
+    interfaces << pConnectionLineAnnotation->getEndElementName() + "  ->  " + pConnectionLineAnnotation->getStartElementName();
   } else {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     if (pCompositeModelEditor) {

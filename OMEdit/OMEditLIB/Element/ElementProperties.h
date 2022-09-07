@@ -59,6 +59,8 @@ public:
   QString getTab() {return mTab;}
   void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
   QString getGroupBox() {return mGroupBox;}
+  void setGroupBoxDefined(bool groupBoxDefined) {mGroupBoxDefined = groupBoxDefined;}
+  bool isGroupBoxDefined() const {return mGroupBoxDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
   bool isShowStartAttribute() {return mShowStartAttribute;}
   void updateNameLabel();
@@ -93,6 +95,7 @@ private:
   ModelInstance::Element *mpElement;
   QString mTab;
   QString mGroupBox;
+  bool mGroupBoxDefined;
   bool mShowStartAttribute;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
@@ -193,8 +196,9 @@ private:
   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
   void createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert = false);
-  void fetchComponentModifiers();
-  void fetchExtendsModifiers();
+  void fetchElementExtendsModifiers();
+  void fetchElementModifiers();
+  void fetchClassExtendsModifiers();
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:

@@ -569,11 +569,11 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         /* Ticket:4204
          * If we have extend component then call Element::getParameterDisplayString from root component.
          */
-        textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
+        textValue = mpComponent->getRootParentElement()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
-          QString unit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "unit");
-          QString displayUnit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "displayUnit");
-          Element *pElement = mpComponent->getRootParentComponent()->getElementByName(variable);
+          QString unit = mpComponent->getRootParentElement()->getParameterModifierValue(variable, "unit");
+          QString displayUnit = mpComponent->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+          Element *pElement = mpComponent->getRootParentElement()->getElementByName(variable);
           if (pElement) {
             if (displayUnit.isEmpty()) {
               displayUnit = pElement->getDerivedClassModifierValue("displayUnit");

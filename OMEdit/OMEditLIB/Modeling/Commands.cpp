@@ -318,94 +318,6 @@ void AddComponentCommand::undo()
   mpDiagramGraphicsView->deleteElementFromClass(mpDiagramComponent);
 }
 
-AddElementCommand::AddElementCommand(ModelInstance::Element *pElement, bool inherited, bool addObject, GraphicsView *pGraphicsView, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpElement = pElement;
-  mAddObject = addObject;
-  mpIconElement = 0;
-  mpDiagramElement = 0;
-  mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
-  mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
-  mpGraphicsView = pGraphicsView;
-  setText(QString("Add Element %1").arg(mpElement->getName()));
-
-  AddElementCommand::createElements(&mpIconElement, mpIconGraphicsView, &mpDiagramElement, mpDiagramGraphicsView, mpElement, inherited);
-  // only select the component of the active Icon/Diagram View
-  if (addObject) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpGraphicsView->clearSelection(mpIconElement);
-    } else {
-      mpGraphicsView->clearSelection(mpDiagramElement);
-    }
-  }
-}
-
-void AddElementCommand::redoInternal()
-{
-  AddElementCommand::addElementToView(mpIconElement, mpIconGraphicsView, mpDiagramElement, mpDiagramGraphicsView, mpElement);
-//  if (mAddObject) {
-//    mpDiagramGraphicsView->addElementToClass(mpDiagramComponent);
-//    UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
-//    if (mpDiagramComponent->getComponentInfo()->isArray()) {
-//      QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
-//      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-//      const QString arrayIndex = QString("{%1}").arg(mpDiagramComponent->getComponentInfo()->getArrayIndex());
-//      if (!pOMCProxy->setComponentDimensions(modelName, mpDiagramComponent->getComponentInfo()->getName(), arrayIndex)) {
-//        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
-//        pOMCProxy->printMessagesStringInternal();
-//      }
-//    }
-//  }
-}
-
-void AddElementCommand::undo()
-{
-
-}
-
-void AddElementCommand::createElements(Element **pIconElement, GraphicsView *pIconGraphicsView, Element **pDiagramElement, GraphicsView *pDiagramGraphicsView,
-                                       ModelInstance::Element *pElement, bool inherited)
-{
-  // if element is of connector type.
-  if (pElement && pElement->getModel()->isConnector()) {
-    // Connector type components exists on icon view as well
-    *pIconElement = new Element(pElement, inherited, pIconGraphicsView);
-  }
-  *pDiagramElement = new Element(pElement, inherited, pDiagramGraphicsView);
-}
-
-void AddElementCommand::addElementToView(Element *pIconElement, GraphicsView *pIconGraphicsView, Element *pDiagramElement, GraphicsView *pDiagramGraphicsView,
-                                         ModelInstance::Element *pElement)
-{
-  // if component is of connector type && containing class is Modelica type.
-  if (pIconElement && pElement->getModel()->isConnector()) {
-    // Connector type components exists on icon view as well
-    if (pIconElement->mTransformation.isValid() && pIconElement->mTransformation.getVisible()) {
-      pIconGraphicsView->addItem(pIconElement);
-      pIconGraphicsView->addItem(pIconElement->getOriginItem());
-    }
-    if (pIconElement->isInheritedElement()) {
-      pIconGraphicsView->addInheritedElementToList(pIconElement);
-    } else {
-      pIconGraphicsView->addElementToList(pIconElement);
-    }
-    // hide the element if it is connector and is protected
-    pIconElement->setVisible(pElement->isPublic());
-  }
-  if (pDiagramElement) {
-    if (pDiagramElement->mTransformation.isValid() && pDiagramElement->mTransformation.getVisible()) {
-      pDiagramGraphicsView->addItem(pDiagramElement);
-      pDiagramGraphicsView->addItem(pDiagramElement->getOriginItem());
-    }
-    if (pDiagramElement->isInheritedElement()) {
-      pDiagramGraphicsView->addInheritedElementToList(pDiagramElement);
-    } else {
-      pDiagramGraphicsView->addElementToList(pDiagramElement);
-    }
-  }
-}
-
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
                                                                              const bool positionChanged, const bool moveConnectorsTogether, UndoCommand *pParent)
   : UndoCommand(pParent)
@@ -751,7 +663,7 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
 {
   mpComponent = pComponent;
   mpGraphicsView = pGraphicsView;
-  if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+  if (pGraphicsView->getModelWidget()->isNewApi()) {
 
   } else {
     // save component modifiers before deleting if any
@@ -831,7 +743,7 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
   mpGraphicsView->addElementToClass(mpComponent);
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica && MainWindow::instance()->isNewApi()) {
+  if (pModelWidget->isNewApi()) {
 
   } else {
     UpdateComponentAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getComponentInfo());
@@ -850,7 +762,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mAddConnection = addConnection;
-  setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(), mpConnectionLineAnnotation->getEndComponentName()));
+  setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(), mpConnectionLineAnnotation->getEndElementName()));
 
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
@@ -862,7 +774,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
  */
 void AddConnectionCommand::redoInternal()
 {
-  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation, false);
   if (mAddConnection) {
     if (!mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation)) {
       setFailed(true);
@@ -887,7 +799,7 @@ UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLine
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mOldAnnotation = oldAnnotaton;
   mNewAnnotation = newAnnotation;
-  setText(QString("Update Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(), mpConnectionLineAnnotation->getEndComponentName()));
+  setText(QString("Update Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(), mpConnectionLineAnnotation->getEndElementName()));
 }
 
 /*!
@@ -921,8 +833,8 @@ UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *p
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mOldCompositeModelConnection = oldCompositeModelConnection;
   mNewCompositeModelConnection = newCompositeModelConnection;
-  setText(QString("Update CompositeModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
-                                                                          mpConnectionLineAnnotation->getEndComponentName()));
+  setText(QString("Update CompositeModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(),
+                                                                          mpConnectionLineAnnotation->getEndElementName()));
 }
 
 /*!
@@ -955,7 +867,7 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
   : UndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  setText(QString("Delete Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(), mpConnectionLineAnnotation->getEndComponentName()));
+  setText(QString("Delete Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(), mpConnectionLineAnnotation->getEndElementName()));
 }
 
 /*!
@@ -974,7 +886,7 @@ void DeleteConnectionCommand::redoInternal()
  */
 void DeleteConnectionCommand::undo()
 {
-  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation, false);
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation, true);
 }
 
@@ -983,7 +895,7 @@ AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnota
 {
   mpTransitionLineAnnotation = pTransitionLineAnnotation;
   mAddTransition = addTransition;
-  setText(QString("Add Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartComponentName(), mpTransitionLineAnnotation->getEndComponentName()));
+  setText(QString("Add Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartElementName(), mpTransitionLineAnnotation->getEndElementName()));
 
   mpTransitionLineAnnotation->updateToolTip();
   mpTransitionLineAnnotation->drawCornerItems();
@@ -999,19 +911,19 @@ void AddTransitionCommand::redoInternal()
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component transition details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setHasTransition(true);
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentElement()->setHasTransition(true);
   } else if (pStartComponent) {
     pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setHasTransition(true);
   }
   // Add the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
-  if (pEndComponent && pEndComponent->getRootParentComponent()) {
-    pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentComponent()->setHasTransition(true);
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
+  if (pEndComponent && pEndComponent->getRootParentElement()) {
+    pEndComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentElement()->setHasTransition(true);
   } else if (pEndComponent) {
     pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->setHasTransition(true);
@@ -1035,19 +947,19 @@ void AddTransitionCommand::undo()
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setHasTransition(false);
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentElement()->setHasTransition(false);
   } else if (pStartComponent) {
     pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setHasTransition(false);
   }
   // Remove the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
-  if (pEndComponent && pEndComponent->getRootParentComponent()) {
-    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentComponent()->setHasTransition(false);
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
+  if (pEndComponent && pEndComponent->getRootParentElement()) {
+    pEndComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentElement()->setHasTransition(false);
   } else if (pEndComponent) {
     pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->setHasTransition(false);
@@ -1079,8 +991,8 @@ UpdateTransitionCommand::UpdateTransitionCommand(LineAnnotation *pTransitionLine
   mNewSynchronize = newSynchronize;
   mNewPriority = newPriority;
   mNewAnnotation = newAnnotation;
-  setText(QString("Update Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartComponentName(),
-                                                              mpTransitionLineAnnotation->getEndComponentName()));
+  setText(QString("Update Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartElementName(),
+                                                              mpTransitionLineAnnotation->getEndElementName()));
 }
 
 /*!
@@ -1133,19 +1045,19 @@ void DeleteTransitionCommand::redoInternal()
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setHasTransition(false);
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentElement()->setHasTransition(false);
   } else if (pStartComponent) {
     pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setHasTransition(false);
   }
   // Remove the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
-  if (pEndComponent && pEndComponent->getRootParentComponent()) {
-    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentComponent()->setHasTransition(false);
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
+  if (pEndComponent && pEndComponent->getRootParentElement()) {
+    pEndComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentElement()->setHasTransition(false);
   } else if (pEndComponent) {
     pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->setHasTransition(false);
@@ -1164,19 +1076,19 @@ void DeleteTransitionCommand::undo()
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setHasTransition(true);
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentElement()->setHasTransition(true);
   } else if (pStartComponent) {
     pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setHasTransition(true);
   }
   // Add the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
-  if (pEndComponent && pEndComponent->getRootParentComponent()) {
-    pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentComponent()->setHasTransition(true);
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
+  if (pEndComponent && pEndComponent->getRootParentElement()) {
+    pEndComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentElement()->setHasTransition(true);
   } else if (pEndComponent) {
     pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->setHasTransition(true);
@@ -1191,9 +1103,9 @@ AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLine
 {
   mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
   mAddInitialState = addInitialState;
-  setText(QString("Add InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+  setText(QString("Add InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartElementName()));
 
-  mpInitialStateLineAnnotation->setToolTip(QString("<b>initialState</b>(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+  mpInitialStateLineAnnotation->setToolTip(QString("<b>initialState</b>(%1)").arg(mpInitialStateLineAnnotation->getStartElementName()));
   mpInitialStateLineAnnotation->drawCornerItems();
   mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
 }
@@ -1207,10 +1119,10 @@ void AddInitialStateCommand::redoInternal()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component transition details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->addConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->getRootParentComponent()->setIsInitialState(true);
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->addConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->getRootParentElement()->setIsInitialState(true);
   } else if (pStartComponent) {
     pStartComponent->addConnectionDetails(mpInitialStateLineAnnotation);
     pStartComponent->setIsInitialState(true);
@@ -1231,10 +1143,10 @@ void AddInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->getRootParentComponent()->setIsInitialState(false);
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->removeConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->getRootParentElement()->setIsInitialState(false);
   } else if (pStartComponent) {
     pStartComponent->removeConnectionDetails(mpInitialStateLineAnnotation);
     pStartComponent->setIsInitialState(false);
@@ -1251,7 +1163,7 @@ UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialSta
   mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
   mOldAnnotation = oldAnnotaton;
   mNewAnnotation = newAnnotation;
-  setText(QString("Update InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+  setText(QString("Update InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartElementName()));
 }
 
 /*!
@@ -1293,10 +1205,10 @@ void DeleteInitialStateCommand::redoInternal()
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
 //    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setIsInitialState(false);
+    pStartComponent->getRootParentElement()->setIsInitialState(false);
   } else if (pStartComponent) {
     //pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setIsInitialState(false);
@@ -1315,10 +1227,10 @@ void DeleteInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
-  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
 //    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentComponent()->setIsInitialState(true);
+    pStartComponent->getRootParentElement()->setIsInitialState(true);
   } else if (pStartComponent) {
 //    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->setIsInitialState(true);
@@ -1806,76 +1718,27 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   }
 }
 
-OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, int oldASTID, const QJsonObject &oldModelInstanceJson, const QString &commandText, UndoCommand *pParent)
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mOldASTID = oldASTID;
-  mNewASTID = MainWindow::instance()->getOMCProxy()->storeAST();
+  mOldModelText = mpLibraryTreeItem->getModelWidget()->getModelTextForOMCUndoCommand();
+  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure(), false);
   mUndoDoneOnce = false;
-  mOldModelInstanceJson = oldModelInstanceJson;
-  mNewModelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
   setText(commandText);
 }
 
 void OMCUndoCommand::redoInternal()
 {
   if (mUndoDoneOnce) {
-    MainWindow::instance()->getOMCProxy()->restoreAST(mNewASTID);
+    MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpLibraryTreeItem->getFileName());
   }
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
-    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInstanceJson);
-  }
+  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true));
 }
 
 void OMCUndoCommand::undo()
 {
-  MainWindow::instance()->getOMCProxy()->restoreAST(mOldASTID);
-  mUndoDoneOnce = true;
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
-    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInstanceJson);
-  }
-}
-
-OMCUndoCommand1::OMCUndoCommand1(LibraryTreeItem *pLibraryTreeItem, Element *pElement, const QString &oldModelText, const QString &newModelText,
-                                 const QString &commandText, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  mpElement = pElement;
-  mOldModelText = oldModelText;
-  mNewModelText = newModelText;
-  mUndoDoneOnce = false;
-  setText(commandText);
-}
-
-void OMCUndoCommand1::redoInternal()
-{
-  if (mUndoDoneOnce) {
-    MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpLibraryTreeItem->getFileName());
-  }
-  updateElementWithModelInstance();
-}
-
-void OMCUndoCommand1::undo()
-{
   MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpLibraryTreeItem->getFileName());
   mUndoDoneOnce = true;
-  updateElementWithModelInstance();
-}
-
-void OMCUndoCommand1::updateElementWithModelInstance()
-{
-  QJsonObject modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
-  if (modelInstanceJson.contains("components")) {
-    QJsonArray components = modelInstanceJson.value("components").toArray();
-    foreach (QJsonValue component, components) {
-      QJsonObject componentObject = component.toObject();
-      if (componentObject.contains("name") && componentObject.value("name").toString().compare(mpElement->getName()) == 0) {
-        mpElement->getModelElement()->initialize();
-        mpElement->getModelElement()->deserialize(componentObject);
-        mpElement->reDrawElementNew();
-      }
-    }
-  }
+  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true));
 }
