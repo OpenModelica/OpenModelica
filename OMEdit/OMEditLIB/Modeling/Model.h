@@ -336,6 +336,7 @@ private:
     QString getPreferredView() const {return mPreferredView;}
     bool isState() const {return mState;}
     QString getAccess() const {return mAccess;}
+    void addElement(Element *pElement) {mElements.append(pElement);}
     QList<Element *> getElements() const {return mElements;}
     QString getFileName() const {return mFileName;}
     int getLineStart() const {return mLineStart;}
@@ -499,8 +500,11 @@ private:
     void serialize(QJsonObject &jsonObject) const;
 
     Model *getParentModel() const {return mpParentModel;}
+    void setName(const QString &name) {mName = name;}
     QString getName() const {return mName;}
+    void setType(const QString &type) {mType = type;}
     QString getType() const {return mType;}
+    void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
     QString getDimensions() const {return mDims.join(", ");}

@@ -103,14 +103,14 @@ public:
   void setLine(ModelInstance::Line *pLine) {mpLine = pLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
-  void setStartComponent(Element *pStartComponent) {mpStartComponent = pStartComponent;}
-  Element* getStartComponent() {return mpStartComponent;}
-  void setStartComponentName(QString name) {mStartComponentName = name;}
-  QString getStartComponentName() {return mStartComponentName;}
-  void setEndComponent(Element *pEndComponent) {mpEndComponent = pEndComponent;}
-  Element* getEndComponent() {return mpEndComponent;}
-  void setEndComponentName(QString name) {mEndComponentName = name;}
-  QString getEndComponentName() {return mEndComponentName;}
+  void setStartElement(Element *pStartElement) {mpStartElement = pStartElement;}
+  Element* getStartElement() {return mpStartElement;}
+  void setStartElementName(QString name) {mStartElementName = name;}
+  QString getStartElementName() {return mStartElementName;}
+  void setEndElement(Element *pEndElement) {mpEndElement = pEndElement;}
+  Element* getEndElement() {return mpEndElement;}
+  void setEndElementName(QString name) {mEndElementName = name;}
+  QString getEndElementName() {return mEndElementName;}
   void setCondition(QString condition) {mCondition = condition;}
   QString getCondition() {return mCondition;}
   void setImmediate(bool immediate) {mImmediate = immediate;}
@@ -153,10 +153,10 @@ protected:
 
   private:
   LineType mLineType;
-  Element *mpStartComponent;
-  QString mStartComponentName;
-  Element *mpEndComponent;
-  QString mEndComponentName;
+  Element *mpStartElement;
+  QString mStartElementName;
+  Element *mpEndElement;
+  QString mEndElementName;
   bool mStartAndEndComponentsSelected;
   QString mCondition;
   bool mImmediate;

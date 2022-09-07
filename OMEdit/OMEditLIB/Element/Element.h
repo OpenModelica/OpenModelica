@@ -196,7 +196,7 @@ public:
     Port  /* Port Element. */
   };
 
-  Element(ModelInstance::Element *pModelElement, bool inherited, GraphicsView *pGraphicsView);
+  Element(ModelInstance::Element *pModelElement, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
   Element(ModelInstance::Model *pModel, Element *pParentElement);
   Element(ModelInstance::Element *pModelElement, Element *pParentElement, Element *pRootParentElement);
 
@@ -222,8 +222,8 @@ public:
   QString getComment() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceComponent() {return mpReferenceComponent;}
-  Element* getParentComponent() {return mpParentComponent;}
-  Element* getRootParentComponent();
+  Element* getParentElement() {return mpParentComponent;}
+  Element* getRootParentElement();
   ElementType getElementType() {return mElementType;}
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
@@ -308,6 +308,8 @@ public:
 private:
   ModelInstance::Element *mpModelElement;
   ModelInstance::Model *mpModel;
+  QString mName;
+  QString mClassName;
   Element *mpReferenceComponent;
   Element *mpParentComponent;
   LibraryTreeItem *mpLibraryTreeItem;
