@@ -575,7 +575,7 @@ public
           eqn := Pointer.access(eqn_ptr);
           if UnorderedMap.contains(eqn_ptr, simCodeIndices.generic_call_map) then
             // the generic call body was already generated
-            generic_call_index := UnorderedMap.getSafe(eqn_ptr, simCodeIndices.generic_call_map);
+            generic_call_index := UnorderedMap.getSafe(eqn_ptr, simCodeIndices.generic_call_map, sourceInfo());
           else
             // the generic call body was not already generated
             generic_call_index := simCodeIndices.genericCallIndex;
@@ -596,7 +596,7 @@ public
           end for;
           for tpl in listReverse(comp.entwined_tpl_lst) loop
             (eqn_ptr, _) := tpl;
-            call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map) :: call_order;
+            call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
           end for;
           // todo: eq attributes and source
           tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, DAE.emptyElementSource, NBEquation.EQ_ATTR_DEFAULT_DYNAMIC);

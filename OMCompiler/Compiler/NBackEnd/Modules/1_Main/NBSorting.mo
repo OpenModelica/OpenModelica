@@ -149,7 +149,7 @@ public
     algorithm
       if UnorderedMap.contains(key, bucket.bucket) then
         // if the mode already was found, add this equation to the bucket
-        val := UnorderedMap.getSafe(key, bucket.bucket);
+        val := UnorderedMap.getSafe(key, bucket.bucket, sourceInfo());
         val.eqn_scal_indices := eqn_scal_idx :: val.eqn_scal_indices;
         UnorderedMap.add(key, val, bucket.bucket);
       else

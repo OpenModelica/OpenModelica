@@ -57,9 +57,6 @@ public
     Expression rhs;
   end SINGLE_GENERIC_CALL;
 
-  record RESIDUAL_GENERIC_CALL
-  end RESIDUAL_GENERIC_CALL;
-
   function toString
     input SimGenericCall call;
     output String str;

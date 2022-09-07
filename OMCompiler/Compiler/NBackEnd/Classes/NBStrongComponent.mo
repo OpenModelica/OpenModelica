@@ -368,7 +368,7 @@ public
     // create individual slices
     for tpl in UnorderedMap.toList(elem_map) loop
       (arr_idx, scal_indices) := tpl;
-      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map), listReverse(scal_indices), eqns, mapping) :: entwined_slices;
+      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), listReverse(scal_indices), eqns, mapping) :: entwined_slices;
     end for;
 
     // create scalar list for fallback
@@ -748,9 +748,9 @@ protected
       (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
 
       // collect variable and equation slices
-      idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map) else {};
+      idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map, sourceInfo()) else {};
       UnorderedMap.add(var_arr_idx, var_idx :: idx_lst, var_map);
-      idx_lst := if UnorderedMap.contains(eqn_arr_idx, eqn_map) then UnorderedMap.getSafe(eqn_arr_idx, eqn_map) else {};
+      idx_lst := if UnorderedMap.contains(eqn_arr_idx, eqn_map) then UnorderedMap.getSafe(eqn_arr_idx, eqn_map, sourceInfo()) else {};
       UnorderedMap.add(eqn_arr_idx, eqn_idx :: idx_lst, eqn_map);
     end for;
 

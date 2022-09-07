@@ -554,9 +554,6 @@ public uniontype SimGenericCall
     DAE.Exp lhs;
     DAE.Exp rhs;
   end SINGLE_GENERIC_CALL;
-
-  record RESIDUAL_GENERIC_CALL
-  end RESIDUAL_GENERIC_CALL;
 end SimGenericCall;
 
 public uniontype SimIterator
