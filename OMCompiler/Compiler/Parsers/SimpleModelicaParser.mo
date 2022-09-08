@@ -2242,7 +2242,7 @@ protected
   tuple<Diff,list<ParseTree>> diff1, diff2, diff3, diff4;
   Boolean firstIter, lastTokenNewline, hasAddedWS;
   list<ParseTree> tree, treeLocal, tree1, tree2, tree3, tree4;
-  ParseTree tree4First;
+  ParseTree tree4First,t1,t2,t3;
   Integer length, level;
   list<Integer> indentation;
   list<Token> tokens;
@@ -2317,6 +2317,11 @@ algorithm
         algorithm
           diff := diff1::diff;
         then diffLocal;
+      // DEL(IDENT) + ADD(IDENT, WS) => ADD(IDENT)
+      case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
+        guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t2) and parseTreeIsWhitespaceNotComment(t3)
+        then diff1::(Diff.Add,{t2})::diffLocal;
+
       // EQ(NEWLINE) + ADD(NEWLINE, ...) => EQ(NEWLINE) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2)::diffLocal)
         guard parseTreeIsNewLine(List.last(tree1)) and parseTreeIsNewLine(List.first(tree2))
@@ -3055,6 +3060,18 @@ algorithm
     else false;
   end match;
 end parseTreeIsComment;
+
+function parseTreeIsOnlyIdent
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.IDENT;
+    else false;
+  end match;
+end parseTreeIsOnlyIdent;
 
 function parseTreeFilterWhitespace
   input output ParseTree t;

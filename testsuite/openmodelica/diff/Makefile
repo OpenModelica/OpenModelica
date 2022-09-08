@@ -8,6 +8,7 @@ AddComponent.mos \
 AddComponent2.mos \
 AddDeleteComponent.mos \
 ChangeSourceFile.mos \
+ClosedDoors.mos \
 LargeFileChange.mos \
 ListFile.mos \
 MoveComment.mos \
