@@ -722,7 +722,7 @@ public
 protected
   function getLoopVarsAndEqns
     "adds the equation and matched variable to accumulated lists.
-    used to collect algebraic loops
+    used to collect algebraic loops.
     ToDo: currently assumes full dependency - update with Slice structures!"
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
