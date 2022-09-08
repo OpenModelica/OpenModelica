@@ -25,6 +25,7 @@ ticket4153.mos \
 ticket4368.mos \
 ticket5360.mos \
 ticket5949.mos \
+TwoWayFlowElementBuoyancy.mos \
 UTF8.mos \
 ticket4781.mos
 
