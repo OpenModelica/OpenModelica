@@ -566,11 +566,17 @@ algorithm
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
     // append datareconciliation jacobians equation to SymbolicJacs for correct generation of equations in model_info.json
     SymbolicJacs := List.flatten({SymbolicJacsFMI, SymbolicJacs, SymbolicJacsStateSelect, SymbolicJacsdatarecon});
+    (delayedExps, maxDelayedExpIndex, SymbolicJacsNLS) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsNLS);
+    (delayedExps, maxDelayedExpIndex, SymbolicJacs) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacs);
+    (delayedExps, maxDelayedExpIndex, SymbolicJacsTemp) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsTemp);
+    (delayedExps, maxDelayedExpIndex, SymbolicJacsStateSelectInternal) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsStateSelectInternal);
+
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
     if debug then execStat("simCode: create Jacobian linear code"); end if;
 
     SymbolicJacs := List.flatten({listReverse(SymbolicJacsNLS), SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelectInternal});
+
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := collectAllSeedVars(SymbolicJacs);
@@ -5686,6 +5692,24 @@ algorithm
   end match;
 end collectDelayExpressions;
 
+protected function updateDelayExpressions
+"Put expression into a list and update the index if it is a call to delay().
+Useable as a function parameter for Expression.traverseExpression."
+  input output DAE.Exp e;
+  input output tuple<list<DAE.Exp>, Integer> acc;
+algorithm
+  (e, acc) := match (e, acc)
+    local
+      DAE.Exp res;
+      Integer i, index;
+      list<DAE.Exp> lst, rest;
+    case (DAE.CALL(path = Absyn.IDENT("delay"), expLst = DAE.ICONST(i)::rest), (lst, index)) guard(i < 0) algorithm
+      res := DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(index)::rest, e.attr);
+    then (res, (res :: lst, index + 1));
+    else (e, acc);
+  end match;
+end updateDelayExpressions;
+
 public function extractDelayedExpressions
   input BackendDAE.BackendDAE dlow;
   output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
@@ -5708,6 +5732,30 @@ algorithm
         fail();
   end matchcontinue;
 end extractDelayedExpressions;
+
+public function extractJacobianDelayedExpressions
+  input output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  input output Integer maxDelayedExpIndex;
+  input output list<SimCode.JacobianMatrix> SymJacs;
+protected
+  list<SimCode.JacobianMatrix> tmpJacs = {};
+  list<SimCode.JacobianColumn> tmpCols;
+  list<SimCode.SimEqSystem> tmpSysts;
+  list<DAE.Exp> new_delayedExps;
+algorithm
+  for jac in listReverse(SymJacs) loop
+    tmpCols := {};
+    for col in listReverse(jac.columns) loop
+      (tmpSysts, (_, (new_delayedExps, maxDelayedExpIndex))) := traverseExpsEqSystems(col.columnEqns, Expression.traverseSubexpressionsHelper, (updateDelayExpressions, ({}, maxDelayedExpIndex)), {});
+      delayedExps := listAppend(List.map(new_delayedExps, extractIdAndExpFromDelayExp), delayedExps);
+      col.columnEqns := tmpSysts;
+      tmpCols := col :: tmpCols;
+    end for;
+    jac.columns := tmpCols;
+    tmpJacs := jac :: tmpJacs;
+  end for;
+  SymJacs := tmpJacs;
+end extractJacobianDelayedExpressions;
 
 function extractIdAndExpFromDelayExp
   input DAE.Exp delayCallExp;
