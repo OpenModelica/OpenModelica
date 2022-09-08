@@ -3682,7 +3682,7 @@ algorithm
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
        (simequations, uniqueEqIndex, tempvars, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
-       (resEqs, (uniqueEqIndex, 0), tempvars) = createNonlinearResidualEquations(reqns, (uniqueEqIndex, 0), tempvars, ishared.functionTree);
+       (resEqs, (uniqueEqIndex, _), tempvars) = createNonlinearResidualEquations(reqns, (uniqueEqIndex, 0), tempvars, ishared.functionTree);
        eqs = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
