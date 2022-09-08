@@ -7006,6 +7006,43 @@ template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr,
   >>
 end equationNames_Partial;
 
+template genericCallBodies(list<SimGenericCall> genericCalls)
+ "Generates the body for a set of generic calls."
+::=
+  (genericCalls |> call => genericCallBody(call); separator="\n\n")
+end genericCallBodies;
+
+template genericCallBody(SimGenericCall call)
+::= match call
+  case SINGLE_GENERIC_CALL() then
+  let &sub = buffer ""
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let lhs_ = daeExp(lhs, contextOther, &preExp, &varDecls, &auxFunction)
+  let rhs_ = daeExp(rhs, contextOther, &preExp, &varDecls, &auxFunction)
+  let iter_ = (iters |> iter => genericIterator(iter, contextOther, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+  <<
+  void genericCall_<%index%>(DATA *data, threadData_t *threadData, int idx)
+  {
+    int tmp = idx;
+    <%iter_%>
+    <%lhs_%> = <%rhs_%>;
+  }
+  >>
+end genericCallBody;
+
+template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR() then
+  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  <<
+  int <%iter_%>_loc = tmp % <%size%>;
+  int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
+  tmp /= <%size%>;
+  >>
+end genericIterator;
+
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;
 
