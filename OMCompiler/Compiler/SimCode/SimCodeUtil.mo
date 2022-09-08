@@ -745,7 +745,6 @@ algorithm
     );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
-
     simCode := setSimCodeLiterals(simCode, listReverse(lits));
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
@@ -3497,7 +3496,7 @@ algorithm
 
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars, inFuncs);
       // create symbolic jacobian for simulation
-      (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+      (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars, true);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, false, clockIndex), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars);
 
@@ -4656,8 +4655,8 @@ algorithm
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
-        nonlinearPat = {};//sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
-        nonlinearPatT = {};//sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+        nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
+        nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
 
         // set sparse pattern
         coloring = sortColoring(seedVars, sparseColoring);
@@ -5079,8 +5078,8 @@ algorithm
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
         sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
 
-        nonlinearPat = {};//sortSparsePattern(seedIndexVars, nonlinearpattern, false);
-        nonlinearPatT = {};//sortSparsePattern(seedIndexVars, nonlinearpatternT, false);
+        nonlinearPat = sortSparsePattern(seedIndexVars, nonlinearpattern, false);
+        nonlinearPatT = sortSparsePattern(seedIndexVars, nonlinearpatternT, false);
 
         maxColor = listLength(colsColors);
         nRows =  listLength(diffedVars);
