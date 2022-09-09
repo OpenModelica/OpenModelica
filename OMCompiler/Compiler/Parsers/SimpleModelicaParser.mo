@@ -2317,7 +2317,11 @@ algorithm
         algorithm
           diff := diff1::diff;
         then diffLocal;
-      // DEL(IDENT) + ADD(IDENT, WS) => ADD(IDENT)
+      // DEL(IDENT) + ADD(WS, IDENT) => DEL(IDENT) + ADD(IDENT)
+      case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
+        guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t3) and parseTreeIsWhitespaceNotComment(t2)
+        then diff1::(Diff.Add,{t3})::diffLocal;
+      // DEL(IDENT) + ADD(IDENT, WS) => DEL(IDENT) + ADD(IDENT)
       case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
         guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t2) and parseTreeIsWhitespaceNotComment(t3)
         then diff1::(Diff.Add,{t2})::diffLocal;

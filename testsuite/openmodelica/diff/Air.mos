@@ -1,0 +1,27 @@
+// depends: AirBefore.mo
+// status: correct
+// Checks that there is no extra space before R_s
+
+before:=readFile("AirBefore.mo");getErrorString();
+loadFile("AirAfter.mo");getErrorString();
+diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain);getErrorString();
+// Result:
+// "within;
+// package Air
+//   constant GasProperties dryair(
+//     cv =   cpAir
+//              -R);
+// end Air;
+// "
+// ""
+// true
+// ""
+// "within;
+// package Air
+//   constant GasProperties dryair(
+//     cv =   cpAir
+//              -R_s);
+// end Air;
+// "
+// ""
+// endResult
