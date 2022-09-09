@@ -15,6 +15,7 @@ ListFile.mos \
 MoveComment.mos \
 MoveComponent.mos \
 MoveConnection.mos \
+multipoleFluidTemperature.mos \
 removeComponentModifiers.mos \
 SimilarNamesAnnotation.mos \
 SubExpParenthesis.mos \

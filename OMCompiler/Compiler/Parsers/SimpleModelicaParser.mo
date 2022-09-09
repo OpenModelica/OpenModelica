@@ -401,20 +401,24 @@ end algorithm_section;
 
 function statement
   extends partialParser;
+  output String label="$statement";
 protected
   TokenId id;
   Boolean b;
 algorithm
   (tokens, tree, id) := peek(tokens, tree);
-  if id==TokenId.BREAK or id==TokenId.RETURN then
+  if id==TokenId.BREAK then
     (tokens, tree) := consume(tokens, tree);
+    label := "$"+String(id);
   elseif listMember(id, First.component_reference) then
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ASSIGN);
     if b then
       (tokens, tree) := expression(tokens, tree);
+      label := "$assign";
     else
       (tokens, tree) := function_call_args(tokens, tree);
+      label := "$statement_call";
     end if;
   elseif id==TokenId.IF then
     (tokens, tree) := consume(tokens, tree);
@@ -436,6 +440,7 @@ algorithm
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.IF);
+    label := "$if";
   elseif id==TokenId.WHEN then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -452,6 +457,7 @@ algorithm
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHEN);
+    label := "$when";
   elseif id==TokenId.FOR then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := for_indices(tokens, tree);
@@ -459,6 +465,7 @@ algorithm
     (tokens, tree) := statement_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.FOR);
+    label := "$for";
   elseif id==TokenId.WHILE then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -466,12 +473,14 @@ algorithm
     (tokens, tree) := statement_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHILE);
+    label := "$while";
   else
     (tokens, tree) := expression(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ASSIGN);
     if b then
       (tokens, tree) := expression(tokens, tree);
     end if;
+    label := "$assign_expression";
   end if;
   (tokens, tree) := comment(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
@@ -482,6 +491,7 @@ function statement_list
 protected
   TokenId id;
   Boolean b;
+  String label;
 algorithm
   outTree := {};
   while true loop
@@ -489,10 +499,10 @@ algorithm
     if b then
       break;
     end if;
-    (tokens, tree) := statement(tokens, tree);
+    (tokens, tree, label) := statement(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, label)))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
