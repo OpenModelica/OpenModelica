@@ -407,7 +407,7 @@ protected
   Boolean b;
 algorithm
   (tokens, tree, id) := peek(tokens, tree);
-  if id==TokenId.BREAK then
+  if id==TokenId.BREAK or id==TokenId.RETURN then
     (tokens, tree) := consume(tokens, tree);
     label := "$"+String(id);
   elseif listMember(id, First.component_reference) then
