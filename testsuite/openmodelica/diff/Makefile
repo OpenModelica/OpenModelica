@@ -7,6 +7,7 @@ AddComment.mos \
 AddComponent.mos \
 AddComponent2.mos \
 AddDeleteComponent.mos \
+Air.mos \
 ChangeSourceFile.mos \
 ClosedDoors.mos \
 LargeFileChange.mos \
