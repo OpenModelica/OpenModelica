@@ -60,6 +60,11 @@ namespace ModelInstance
     }
   }
 
+  bool Point::operator==(const Point &point)
+  {
+    return (point.x() == this->x()) && (point.y() == this->y());
+  }
+
   Extent::Extent() = default;
 
   Extent::Extent(const Point &extent1, const Point extent2)
@@ -253,6 +258,11 @@ namespace ModelInstance
     }
   }
 
+  bool Color::operator==(const Color &color) const
+  {
+    return color.getColor() == this->getColor();
+  }
+
   FilledShape::FilledShape()
   {
     mPattern = "LinePattern::Solid";
@@ -405,6 +415,28 @@ namespace ModelInstance
         mSmooth = smooth.value("name").toString();
       }
     }
+  }
+
+  void Line::addPoint(const QPointF &point)
+  {
+    mPoints.append(Point(point.x(), point.y()));
+  }
+
+  void Line::setColor(const QColor &color)
+  {
+    mColor.setColor(color);
+  }
+
+  bool Line::operator==(const Line &line) const
+  {
+    return (line.getPoints() == this->getPoints()) &&
+        (line.getColor() == this->getColor()) &&
+        (line.getPattern() == this->getPattern()) &&
+        (line.getThickness() == this->getThickness()) &&
+        (line.getStartArrow() == this->getStartArrow()) &&
+        (line.getEndArrow() == this->getEndArrow()) &&
+        (line.getArrowSize() == this->getArrowSize()) &&
+        (line.getSmooth() == this->getSmooth());
   }
 
   Polygon::Polygon()
@@ -1070,6 +1102,7 @@ namespace ModelInstance
   void Element::initialize()
   {
     mName = "";
+    mCondition = true;
     mType = "";
     if (mpModel) {
       delete mpModel;
@@ -1093,6 +1126,10 @@ namespace ModelInstance
   {
     if (jsonObject.contains("name")) {
       mName = jsonObject.value("name").toString();
+    }
+
+    if (jsonObject.contains("condition")) {
+      mCondition = jsonObject.value("condition").toBool();
     }
 
     if (jsonObject.contains("type")) {
