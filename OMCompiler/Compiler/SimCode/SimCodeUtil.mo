@@ -3024,9 +3024,9 @@ public function createNonlinearResidualEquations
 protected
   Integer eq_idx, res_idx;
 algorithm
-  (eq_idx, res_idx) := idx_tpl;
   try
     for eq in listReverse(eqs) loop
+      (eq_idx, res_idx) := idx_tpl;
       eqSystems := match eq
         local
           DAE.Exp res_exp, e1, e2, e, lhse;
