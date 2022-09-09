@@ -52,6 +52,7 @@ interactive_api_simulations.mos \
 interactive_test.mos \
 ListAnnotation.mos \
 ListExpressions.mos \
+ListImport.mos \
 ListMultilineComment.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \

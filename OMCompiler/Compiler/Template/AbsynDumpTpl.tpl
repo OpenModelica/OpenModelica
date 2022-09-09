@@ -412,7 +412,7 @@ match elem
     '<%prefix_str%><%attr_str%><%ty_str%><%dim_str%> <%comps_str%>'
   case IMPORT(__) then
     let imp_str = dumpImport(import_)
-    'import <%imp_str%>'
+    'import <%imp_str%><%dumpCommentOpt(comment)%>'
 end dumpElementSpec;
 
 template dumpElementAttr(Absyn.ElementAttributes attr)
