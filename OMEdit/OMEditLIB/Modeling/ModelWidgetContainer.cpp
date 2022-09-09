@@ -2993,6 +2993,9 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
     }
     removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
+  } else if (mpModelWidget->isNewApi()) {
+    removeItem(pConnectionLineAnnotation);
+    deleteConnectionFromClass(pConnectionLineAnnotation);
   } else {
     mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
   }
