@@ -10,33 +10,21 @@ system("diff -u PipeBefore.mo PipeMerged.mo");
 */
 // Result:
 // "within;
-// function multipoleFluidTemperature
-// algorithm
-//   for i in j loop
-//     z := C();
-//     rbm := 'abs'();
-//     x := D();
-//     for j in 1:nPip loop
-//       rbm := 'abs'(X);
-//     end for;
-//   end for;
-// end multipoleFluidTemperature;
+// model Pipe
+// record k
+//   SI.Units.Length K=0;
+// end k;
+// end Pipe;
 // "
 // ""
 // true
 // ""
 // "within;
-// function multipoleFluidTemperature
-// algorithm
-//   for i in j loop
-//     z := C();
-//     rbm := [4;32mabs[0m();
-//     x := D();
-//     for j in 1:nPip loop
-//       rbm := [4;32mabs[0m(X);
-//     end for;
-//   end for;
-// end multipoleFluidTemperature;
+// model Pipe
+// record k
+//   SIunits.Length K=0;
+// end k;
+// end Pipe;
 // "
 // ""
 // endResult
