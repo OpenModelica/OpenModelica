@@ -522,6 +522,7 @@ end equation_section;
 
 function _equation
   extends partialParser;
+  output String label = "$equation";
 protected
   TokenId id;
   Boolean b;
@@ -547,6 +548,7 @@ algorithm
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.IF);
+    label := "$if_equation";
   elseif id==TokenId.WHEN then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -563,6 +565,7 @@ algorithm
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHEN);
+    label := "$when_equation";
   elseif id==TokenId.FOR then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := for_indices(tokens, tree);
@@ -570,6 +573,7 @@ algorithm
     (tokens, tree) := equation_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.FOR);
+    label := "$for_equation";
   elseif id==TokenId.CONNECT then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
@@ -577,11 +581,15 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.COMMA);
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
+    label := "$connect_equation";
   else
     (tokens, tree) := expression(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EQUALS);
     if b then
       (tokens, tree) := expression(tokens, tree);
+      label := "$equality_equation";
+    else
+      label := "$singleton_equation";
     end if;
   end if;
   (tokens, tree) := comment(tokens, tree);
@@ -593,6 +601,7 @@ function equation_list
 protected
   TokenId id;
   Boolean b;
+  String label;
 algorithm
   outTree := {};
   while true loop
@@ -600,10 +609,10 @@ algorithm
     if b then
       break;
     end if;
-    (tokens, tree) := _equation(tokens, tree);
+    (tokens, tree, label) := _equation(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, label)))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
@@ -1264,6 +1273,7 @@ function primary
 protected
   TokenId id;
   Boolean b;
+  String label = "expression";
 algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.UNSIGNED_INTEGER, TokenId.UNSIGNED_REAL, TokenId.FALSE, TokenId.TRUE, TokenId.END, TokenId.STRING});
   if b then
@@ -1274,8 +1284,7 @@ algorithm
   (tokens, tree, id) := peek(tokens, tree);
   if id==TokenId.LPAR then
     (tokens, tree) := output_expression_list(tokens, tree);
-    // outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "parenthesis")))::inTree;
-    // return;
+    label := "$parenthesis";
   elseif id==TokenId.LBRACE then
     (tokens, tree) := scan(tokens, tree, TokenId.LBRACE);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.RBRACE}); // Easier than checking First(expression), etc
@@ -1283,6 +1292,7 @@ algorithm
       (tokens, tree) := function_arguments(tokens, tree);
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACE);
+    label := "$array";
   elseif id==TokenId.LBRACK then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression_list(tokens, tree);
@@ -1294,12 +1304,14 @@ algorithm
       (tokens, tree) := expression_list(tokens, tree);
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACK);
+    label := "$matrix";
   elseif listMember(id, {TokenId.DER, TokenId.INITIAL}) then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
     end if;
+    label := "$initial";
   elseif listMember(id, {TokenId.DOT, TokenId.IDENT, TokenId.FUNCTION}) then
     if id == TokenId.FUNCTION then
       // Function partial applications sort of looks like a normal call
@@ -1309,11 +1321,12 @@ algorithm
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
+      label := "$call";
     end if;
   else
     error(tokens, tree, {});
   end if;
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, label)));
 end primary;
 
 function function_call_args
