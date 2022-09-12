@@ -7,21 +7,21 @@ res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.pl
 
 // Result:
 // "within;
-// model Pipe
-// record k
-//   SI.Units.Length K=0;
-// end k;
-// end Pipe;
+// partial model PartialTwoPortRLC
+// equation
+//   R_actual = R*(M + Modelica.SIunits.Conversions.to_degC(T_heatPort))/
+//     (M + Modelica.SIunits.Conversions.to_degC(T_ref));
+// end PartialTwoPortRLC;
 // "
 // ""
 // true
 // ""
 // "within;
-// model Pipe
-// record k
-//   SIunits.Length K=0;
-// end k;
-// end Pipe;
+// partial model PartialTwoPortRLC
+// equation
+//   R_actual = R* (M + Modelica.Units.SI.Conversions.to_degC(T_heatPort)) /
+//     (M + Modelica.Units.SI.Conversions.to_degC(T_ref));
+// end PartialTwoPortRLC;
 // "
 // ""
 // endResult
