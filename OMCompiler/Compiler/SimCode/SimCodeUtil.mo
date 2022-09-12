@@ -15396,12 +15396,14 @@ algorithm
   (fileName) := matchcontinue code
     local
       String str, locations;
+      list<String> locations_lst;
     case SimCode.SIMCODE()
       algorithm
         fileName := code.fileNamePrefix + ".bat";
         File.open(file,fileName,File.Mode.Write);
 
-        locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        (locations_lst, _) := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        locations := stringDelimitList(locations_lst, ";");
         locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
         str := "@echo off\n"
                 + "SET PATH=" + locations + ";%PATH%;\n"
@@ -15435,17 +15437,37 @@ protected function getDirectoriesForDLLsFromLinkLibs
    (We do have MakefileParams.libDirs which seems to be empty).
   "
   input list<String> libsAndLinkDirs;
-  output String outLocations;
+  output list<String> outLocations = {};
+  output list<String> outLibs = {};
 algorithm
-
-  outLocations := "";
   for str in libsAndLinkDirs loop
     if Util.stringStartsWith("\"-L", str) then
-      outLocations := outLocations + System.trim(str, "\"-L") + ";";
+      outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
+    elseif Util.stringStartsWith("-l", str) then
+      outLibs := listAppend({System.trim(str, "-l")}, outLibs);
     end if;
   end for;
-
+  outLocations := listReverse(outLocations);
+  outLibs := listReverse(outLibs);
 end getDirectoriesForDLLsFromLinkLibs;
+
+public function getCmakeLinkLibrariesCode
+  "Generate CMake code to find and link all input libraries."
+  input list<String> libs;
+  output String cmakecode = "";
+protected
+  list<String> locations;
+  list<String> libraries;
+algorithm
+  (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
+  for lib in libraries loop
+    cmakecode := cmakecode + "find_library(" + lib + "\n" +
+                 "             NAMES " + lib + "\n" +
+                 "             PATHS " + stringDelimitList(locations, "\n                   ") + ")\n" +
+                 "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n";
+  end for;
+end getCmakeLinkLibrariesCode;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
