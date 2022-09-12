@@ -1,0 +1,42 @@
+// depends: PipeBefore.mo
+// status: correct
+
+before:=readFile("PipeBefore.mo");getErrorString();
+loadFile("PipeAfter.mo");getErrorString();
+res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain);getErrorString();
+/*
+writeFile("PipeMerged.mo", diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain));getErrorString();
+system("diff -u PipeBefore.mo PipeMerged.mo");
+*/
+// Result:
+// "within;
+// function multipoleFluidTemperature
+// algorithm
+//   for i in j loop
+//     z := C();
+//     rbm := 'abs'();
+//     x := D();
+//     for j in 1:nPip loop
+//       rbm := 'abs'(X);
+//     end for;
+//   end for;
+// end multipoleFluidTemperature;
+// "
+// ""
+// true
+// ""
+// "within;
+// function multipoleFluidTemperature
+// algorithm
+//   for i in j loop
+//     z := C();
+//     rbm := [4;32mabs[0m();
+//     x := D();
+//     for j in 1:nPip loop
+//       rbm := [4;32mabs[0m(X);
+//     end for;
+//   end for;
+// end multipoleFluidTemperature;
+// "
+// ""
+// endResult

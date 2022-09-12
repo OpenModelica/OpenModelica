@@ -2064,6 +2064,7 @@ algorithm
     res := fixMoveOperations(res, compare);
     (nadd, ndel) := countDiffAddDelete(res);
   end if;
+  res := filterDiffWhitespace(res);
   if debug then
     print("nadd: " + String(nadd) + " ndel: " + String(ndel) + "\n");
     print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
@@ -2327,6 +2328,11 @@ algorithm
         algorithm
           diff := diff1::diff;
         then diffLocal;
+      // DEL(..., NOT(NEWLINE)) ADD(..., NEWLINE) EQUAL(...) => DEL(..., NOT(NEWLINE)) ADD(...) EQUAL(...)
+      case ((diff1 as (Diff.Delete,tree1))::(Diff.Add, tree2)::diffLocal as ((Diff.Equal, tree3)::_))
+        guard (not parseTreeIsNewLine(List.last(tree1))) and parseTreeIsNewLine(List.last(tree2))
+        then diff1::(Diff.Add, List.stripLast(tree2))::diffLocal;
+
       // DEL(IDENT) + ADD(WS, IDENT) => DEL(IDENT) + ADD(IDENT)
       case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
         guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t3) and parseTreeIsWhitespaceNotComment(t2)
@@ -2336,11 +2342,14 @@ algorithm
         guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t2) and parseTreeIsWhitespaceNotComment(t3)
         then diff1::(Diff.Add,{t2})::diffLocal;
 
+      // EQ(...) + ADD(..., NOT(NEWLINE)) + EQ(END, ...) => EQ(...) + ADD(..., NEWLINE) + EQ(END, ...)
+      case (diff1 as (Diff.Equal,_))::(Diff.Add,tree2)::diffLocal as (Diff.Equal,t1::_)::_
+        guard not parseTreeIsNewLine(List.last(tree2)) and parseTreeIsOnlyEnd(t1)
+        then diff1::(Diff.Add,listAppend(tree2, {LEAF(makeToken(TokenId.NEWLINE, "\n"))}))::diffLocal;
+
       // EQ(NEWLINE) + ADD(NEWLINE, ...) => EQ(NEWLINE) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2)::diffLocal)
         guard parseTreeIsNewLine(List.last(tree1)) and parseTreeIsNewLine(List.first(tree2))
-        algorithm
-          print("New case\n");
         then diff1::(Diff.Add, listRest(tree2))::diffLocal;
       // NEWLINE ADD WS DEL => NEWLINE WS ADD DEL
       case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
@@ -3086,6 +3095,18 @@ algorithm
     else false;
   end match;
 end parseTreeIsOnlyIdent;
+
+function parseTreeIsOnlyEnd
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.END;
+    else false;
+  end match;
+end parseTreeIsOnlyEnd;
 
 function parseTreeFilterWhitespace
   input output ParseTree t;

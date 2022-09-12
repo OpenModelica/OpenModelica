@@ -16,6 +16,7 @@ MoveComment.mos \
 MoveComponent.mos \
 MoveConnection.mos \
 multipoleFluidTemperature.mos \
+Pipe.mos \
 removeComponentModifiers.mos \
 SimilarNamesAnnotation.mos \
 SubExpParenthesis.mos \
