@@ -50,6 +50,7 @@ add_library(${FMU_NAME} SHARED
 
 
 target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
+@FMU_ADDITIONAL_LIBS@
 
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
