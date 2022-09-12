@@ -35,14 +35,14 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real $DER.x
 // ### Equation:
 // 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
-// BLOCK 2: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
@@ -53,14 +53,14 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 2 ODE System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real k
 // ### Equation:
 // 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 2: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real z
@@ -77,14 +77,14 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real $DER.x
 // ### Equation:
 // 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
-// BLOCK 2: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
@@ -95,14 +95,14 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 2 ODE System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real k
 // ### Equation:
 // 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 2: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real z
@@ -119,35 +119,35 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real k
 // ### Equation:
 // 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 2: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real z
 // ### Equation:
 // 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
-// BLOCK 3: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real x
 // ### Equation:
 // 	[SCAL] (1) x = $START.x ($RES_SIM_5)
 //
-// BLOCK 4: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 4: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
 // 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
-// BLOCK 5: Single Equation (status = Solve.UNPROCESSED)
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	Real $DER.x
@@ -165,7 +165,7 @@ simulate(partitioning); getErrorString();
 // ========================================
 //
 // --- Alias of INI[1 | 5] ---
-// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real $DER.x
@@ -173,7 +173,7 @@ simulate(partitioning); getErrorString();
 // 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // --- Alias of INI[1 | 4] ---
-// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
@@ -191,7 +191,7 @@ simulate(partitioning); getErrorString();
 // ========================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real k
@@ -199,7 +199,7 @@ simulate(partitioning); getErrorString();
 // 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real z
@@ -216,35 +216,35 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real k
 // ### Equation:
 // 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real z
 // ### Equation:
 // 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
-// BLOCK 3: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real x
 // ### Equation:
 // 	[SCAL] (1) x = $START.x ($RES_SIM_5)
 //
-// BLOCK 4: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
 // 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
-// BLOCK 5: Single Equation (status = Solve.EXPLICIT)
+// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real $DER.x

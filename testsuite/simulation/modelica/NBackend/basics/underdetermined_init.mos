@@ -42,7 +42,8 @@ simulate(underdetermined_init); getErrorString();
 // Not overdetermined.
 // (1) Unmatched variables:
 // ****************************************
-// 	[STAT] (1) Real y (start = 2.0);
+// 	[STAT] (1) Real y (start = 2.0)
+// 	 slice: {};
 //
 // (0) Unmatched equations:
 // ****************************************

@@ -229,21 +229,20 @@ public
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
         // phase 2 tarjan
-        if not PseudoBucket.isEmpty(bucket) then
-          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
-          // kabdelhak: this matching is superfluous, SuperNode.create always returns these types.
-          // it is just safer if something is changed in the future
-          _ := match (phase2_adj, phase2_matching)
-            case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
-              phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
-              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
-            then ();
+        (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
 
-            else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
-            then fail();
-          end match;
-        end if;
+        // kabdelhak: this matching is superfluous, SuperNode.create always returns these types.
+        // it is just safer if something is changed in the future
+        _ := match (phase2_adj, phase2_matching)
+          case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+            phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
+            comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
+          then ();
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+          then fail();
+        end match;
       then comps;
 
       case (Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX(), Matching.ARRAY_MATCHING()) algorithm
