@@ -1572,7 +1572,7 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
   Element *pStartComponent = 0;
   Element *pBusStartComponent = mpConnectionLineAnnotation->getStartElement();
   if (pBusStartComponent && pBusStartComponent->getRootParentElement()) {
-    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentElement(), startConnectorName);
+    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorElement(pBusStartComponent->getRootParentElement(), startConnectorName);
   } else if (pBusStartComponent) {
     pStartComponent = mpGraphicsView->getElementObject(startConnectorName);
   }
@@ -1580,7 +1580,7 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
   Element *pEndComponent = 0;
   Element *pBusEndComponent = mpConnectionLineAnnotation->getEndElement();
   if (pBusEndComponent && pBusEndComponent->getRootParentElement()) {
-    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentElement(), endConnectorName);
+    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorElement(pBusEndComponent->getRootParentElement(), endConnectorName);
   } else if (pBusEndComponent) {
     pEndComponent = mpGraphicsView->getElementObject(endConnectorName);
   }
@@ -1622,7 +1622,7 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   Element *pStartComponent = 0;
   Element *pBusStartComponent = mpConnectionLineAnnotation->getStartElement();
   if (pBusStartComponent && pBusStartComponent->getRootParentElement()) {
-    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentElement(), startConnectorName);
+    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorElement(pBusStartComponent->getRootParentElement(), startConnectorName);
   } else if (pBusStartComponent) {
     pStartComponent = mpGraphicsView->getElementObject(startConnectorName);
   }
@@ -1631,7 +1631,7 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   Element *pEndComponent = 0;
   Element *pBusEndComponent = mpConnectionLineAnnotation->getEndElement();
   if (pBusEndComponent && pBusEndComponent->getRootParentElement()) {
-    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentElement(), endConnectorName);
+    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorElement(pBusEndComponent->getRootParentElement(), endConnectorName);
   } else if (pBusEndComponent) {
     pEndComponent = mpGraphicsView->getElementObject(endConnectorName);
   }

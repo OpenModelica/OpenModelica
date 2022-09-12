@@ -68,7 +68,7 @@ public:
   // Used for icon/diagram inherited shape
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
-  LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView);
   // Used for reading a connection
   LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView);
   LineAnnotation(ModelInstance::Connection *pConnection, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView);
@@ -101,6 +101,7 @@ public:
   void updateEndPoint(QPointF point);
   void updateTransitionTextPosition();
   void setLine(ModelInstance::Line *pLine) {mpLine = pLine;}
+  ModelInstance::Line* getLine() {return mpLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
   void setStartElement(Element *pStartElement) {mpStartElement = pStartElement;}
@@ -144,6 +145,7 @@ public:
   void showOMSConnection();
   void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
+  void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
 private:
@@ -157,7 +159,7 @@ protected:
   QString mStartElementName;
   Element *mpEndElement;
   QString mEndElementName;
-  bool mStartAndEndComponentsSelected;
+  bool mStartAndEndElementsSelected;
   QString mCondition;
   bool mImmediate;
   bool mReset;

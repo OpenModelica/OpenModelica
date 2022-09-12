@@ -222,7 +222,7 @@ public:
   QString getComment() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceComponent() {return mpReferenceComponent;}
-  Element* getParentElement() {return mpParentComponent;}
+  Element* getParentElement() {return mpParentElement;}
   Element* getRootParentElement();
   ElementType getElementType() {return mElementType;}
   QString getTransformationString() {return mTransformationString;}
@@ -249,7 +249,6 @@ public:
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<Element*> getElementsList() {return mElementsList;}
-  QList<Element*> getComponentsList() {return mElementsList;}
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}
   void setOldPosition(QPointF oldPosition) {mOldPosition = oldPosition;}
@@ -311,7 +310,7 @@ private:
   QString mName;
   QString mClassName;
   Element *mpReferenceComponent;
-  Element *mpParentComponent;
+  Element *mpParentElement;
   LibraryTreeItem *mpLibraryTreeItem;
   ElementInfo *mpElementInfo;
   GraphicsView *mpGraphicsView;

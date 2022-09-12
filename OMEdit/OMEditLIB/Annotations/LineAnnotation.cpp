@@ -51,7 +51,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -85,7 +85,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, Graph
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -118,7 +118,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -145,7 +145,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -179,7 +179,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   mpGraphicsView->addItem(mpOriginItem);
 }
 
-LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView)
+LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpOriginItem = 0;
@@ -189,11 +189,11 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
   // set the start component
-  setStartElement(pStartComponent);
+  setStartElement(pStartElement);
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -202,16 +202,16 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
-    /* Use the linecolor of the first shape of the start component for the connection line.
+    /* Use the linecolor of the first shape of the start element for the connection line.
      * If there is no shape then look in the inherited shapes.
      * Or use black color if no shape is found even in inheritance.
      * Dymola is doing it the way explained above. The Modelica specification doesn't say anything about it.
      */
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      if (pStartComponent->getShapesList().size() > 0) {
-        mLineColor = pStartComponent->getShapesList().at(0)->getLineColor();
+      if (pStartElement->getShapesList().size() > 0) {
+        mLineColor = pStartElement->getShapesList().at(0)->getLineColor();
       } else {
-        mLineColor = findLineColorForConnection(pStartComponent);
+        mLineColor = findLineColorForConnection(pStartElement);
       }
     }
     mpTextAnnotation = 0;
@@ -229,24 +229,26 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setOldAnnotation("");
 
   ElementInfo *pInfo = getStartElement()->getComponentInfo();
-  bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
-  int dimensions = pInfo->getDimensions();
+  if (pInfo) {
+    bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
+    int dimensions = pInfo->getDimensions();
 
-  setDelay("1e-4");
-  if(tlm && dimensions>1) {         //3D connection, use Zf and Zfr
-    setZf("10000");
-    setZfr("100");
-    setAlpha("0.2");
-  }
-  else if(tlm && dimensions == 1) { //1D connection, only Zf
-    setZf("10000");
-    setZfr("");
-    setAlpha("0.2");
-  }
-  else {                            //Signal connection, no TLM parameters
-    setZf("");
-    setZfr("");
-    setAlpha("");
+    setDelay("1e-4");
+    if(tlm && dimensions>1) {         //3D connection, use Zf and Zfr
+      setZf("10000");
+      setZfr("100");
+      setAlpha("0.2");
+    }
+    else if(tlm && dimensions == 1) { //1D connection, only Zf
+      setZf("10000");
+      setZfr("");
+      setAlpha("0.2");
+    }
+    else {                            //Signal connection, no TLM parameters
+      setZf("");
+      setZfr("");
+      setAlpha("");
+    }
   }
 }
 
@@ -266,7 +268,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   // set the end component
   setEndElement(pEndComponent);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -310,7 +312,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   // set the end component
   setEndElement(pEndComponent);
   setEndElementName(pConnection->getEndConnector()->getName());
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -354,7 +356,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
   // set the end component
   setEndElement(pEndComponent);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition(condition);
   setImmediate(immediate.contains("true"));
   setReset(reset.contains("true"));
@@ -397,7 +399,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
   // set the end component
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -433,7 +435,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -474,7 +476,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setStartElementName("");
   setEndElement(0);
   setEndElementName("");
-  mStartAndEndComponentsSelected = false;
+  mStartAndEndElementsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -522,7 +524,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   foreach (QString point, pointsList) {
     QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
     if (linePoints.size() >= 2) {
-      addPoint(QPointF(linePoints.at(0).toFloat(), linePoints.at(1).toFloat()));
+      addPoint(QPointF(linePoints.at(0).toDouble(), linePoints.at(1).toDouble()));
     }
   }
   // 5th item of list contains the color.
@@ -1309,8 +1311,8 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
     }
   } else {
     if (mpStartElement) {
-      Element *pComponent = qobject_cast<Element*>(sender());
-      if (pComponent == mpStartElement->getRootParentElement()) {
+      Element *pElement = qobject_cast<Element*>(sender());
+      if (pElement == mpStartElement->getRootParentElement()) {
         updateStartPoint(mpGraphicsView->roundPoint(mpStartElement->mapToScene(mpStartElement->boundingRect().center())));
         if (mLineType == LineAnnotation::TransitionType) {
           QRectF sceneRectF = mpStartElement->sceneBoundingRect();
@@ -1331,8 +1333,8 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
       }
     }
     if (mpEndElement) {
-      Element *pComponent = qobject_cast<Element*>(sender());
-      if (pComponent == mpEndElement->getRootParentElement()) {
+      Element *pElement = qobject_cast<Element*>(sender());
+      if (pElement == mpEndElement->getRootParentElement()) {
         updateEndPoint(mpGraphicsView->roundPoint(mpEndElement->mapToScene(mpEndElement->boundingRect().center())));
         if (mLineType == LineAnnotation::TransitionType) {
           QRectF sceneRectF = mpEndElement->sceneBoundingRect();
@@ -1358,6 +1360,10 @@ void LineAnnotation::updateConnectionAnnotation()
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else {
+    // update the ModelInstance::Line with new annotation
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      updateLine();
+    }
     // get the connection line annotation.
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
@@ -1378,11 +1384,11 @@ void LineAnnotation::updateConnectionTransformation()
    */
   if (mpStartElement && mpStartElement->getRootParentElement()->isSelected()
       && mpEndElement && mpEndElement->getRootParentElement()->isSelected()
-      && mpStartElement->getRootParentElement() != mpEndElement->getRootParentElement() && !mStartAndEndComponentsSelected) {
-      mStartAndEndComponentsSelected = true;
+      && mpStartElement->getRootParentElement() != mpEndElement->getRootParentElement() && !mStartAndEndElementsSelected) {
+      mStartAndEndElementsSelected = true;
       return;
-  } else if (mStartAndEndComponentsSelected) {
-    mStartAndEndComponentsSelected = false;
+  } else if (mStartAndEndElementsSelected) {
+    mStartAndEndElementsSelected = false;
   }
 
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
@@ -2103,7 +2109,7 @@ QString CreateConnectionDialog::getComponentConnectionName(GraphicsView *pGraphi
         componentName += QString("[%1]").arg(pComponentSpinBox1->value());
       }
     } else if (pComponent1->isConnectorSizing()) {  // If the component1 is a connectorSizing then use the component2 to find the connectorSizing value.
-      int numberOfComponentConnections = pGraphicsView->numberOfComponentConnections(pComponent1);
+      int numberOfComponentConnections = pGraphicsView->numberOfElementConnections(pComponent1);
       if (pComponent2->isExpandableConnector()) {
         componentName += QString("[%1]").arg(++numberOfComponentConnections);
       } else if (pComponent2->getParentElement() && pRootComponent2->isArray() && !pRootComponent2->isConnectorSizing()) {
@@ -2370,6 +2376,25 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
   setSynchronize(synchronize);
   setPriority(priority);
   getTextAnnotation()->setTextString("%condition");
+}
+
+/*!
+ * \brief LineAnnotation::updateLine
+ * Updates the Line object with the annotation.
+ */
+void LineAnnotation::updateLine()
+{
+  mpLine->clearPoints();
+  foreach (QPointF point, mPoints) {
+    mpLine->addPoint(point);
+  }
+  mpLine->setColor(mLineColor);
+  mpLine->setLinePattern(StringHandler::getLinePatternString(mLinePattern));
+  mpLine->setThickness(mLineThickness);
+  mpLine->setStartArrow(StringHandler::getArrowString(mArrow.at(0)));
+  mpLine->setEndArrow(StringHandler::getArrowString(mArrow.at(1)));
+  mpLine->setArrowSize(mArrowSize);
+  mpLine->setSmooth(StringHandler::getSmoothString(mSmooth));
 }
 
 void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)

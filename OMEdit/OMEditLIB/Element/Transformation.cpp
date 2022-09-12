@@ -104,36 +104,36 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
         // get the visible value
         mVisible = list.at(0).contains("true");
         // origin x position
-        mOriginDiagram.setX(list.at(1).toFloat(&mHasOriginDiagramX));
+        mOriginDiagram.setX(list.at(1).toDouble(&mHasOriginDiagramX));
         // origin y position
-        mOriginDiagram.setY(list.at(2).toFloat(&mHasOriginDiagramY));
+        mOriginDiagram.setY(list.at(2).toDouble(&mHasOriginDiagramY));
         // extent1 x
-        mExtent1Diagram.setX(list.at(3).toFloat());
+        mExtent1Diagram.setX(list.at(3).toDouble());
         // extent1 y
-        mExtent1Diagram.setY(list.at(4).toFloat());
+        mExtent1Diagram.setY(list.at(4).toDouble());
         // extent2 x
-        mExtent2Diagram.setX(list.at(5).toFloat());
+        mExtent2Diagram.setX(list.at(5).toDouble());
         // extent2 y
-        mExtent2Diagram.setY(list.at(6).toFloat());
+        mExtent2Diagram.setY(list.at(6).toDouble());
         // rotate angle
-        mRotateAngleDiagram = list.at(7).toFloat();
+        mRotateAngleDiagram = list.at(7).toDouble();
         // get transformations of icon now
         // origin x position
         bool hasExtent1X, hasExtent1Y, hasExtent2X, hasExtent2Y, hasRotation = false;
-        mOriginIcon.setX(list.at(8).toFloat(&mHasOriginIconX));
+        mOriginIcon.setX(list.at(8).toDouble(&mHasOriginIconX));
         // origin y position
-        mOriginIcon.setY(list.at(9).toFloat(&mHasOriginIconY));
+        mOriginIcon.setY(list.at(9).toDouble(&mHasOriginIconY));
         // extent1 x
-        mExtent1Icon.setX(list.at(10).toFloat(&hasExtent1X));
+        mExtent1Icon.setX(list.at(10).toDouble(&hasExtent1X));
         // extent1 y
-        mExtent1Icon.setY(list.at(11).toFloat(&hasExtent1Y));
+        mExtent1Icon.setY(list.at(11).toDouble(&hasExtent1Y));
         // extent1 x
-        mExtent2Icon.setX(list.at(12).toFloat(&hasExtent2X));
+        mExtent2Icon.setX(list.at(12).toDouble(&hasExtent2X));
         // extent1 y
-        mExtent2Icon.setY(list.at(13).toFloat(&hasExtent2Y));
+        mExtent2Icon.setY(list.at(13).toDouble(&hasExtent2Y));
         // rotate angle
         if (list.size() > 14) {
-          mRotateAngleIcon = list.at(14).toFloat(&hasRotation);
+          mRotateAngleIcon = list.at(14).toDouble(&hasRotation);
         }
         /* Ticket:4215
          * Only use transformation values when no iconTransformation value is available. Don't mix.

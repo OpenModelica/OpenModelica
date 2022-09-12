@@ -677,7 +677,7 @@ void GraphicsView::addElementToView(ModelInstance::Element *pElement, bool inher
     GraphicsView *pIconGraphicsView = mpModelWidget->getIconGraphicsView();
     GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
     // look in diagram scene elements
-    Element *pExistingDiagramElement = pDiagramGraphicsView->getOutOfSceneElementObject(pElement->getName());
+    Element *pExistingDiagramElement = pDiagramGraphicsView->getOutOfSceneElement(pElement->getName());
     if (pExistingDiagramElement) {
       exists = true;
       pExistingDiagramElement->setModelElement(pElement);
@@ -688,7 +688,7 @@ void GraphicsView::addElementToView(ModelInstance::Element *pElement, bool inher
       pDiagramGraphicsView->deleteElementFromOutOfSceneList(pExistingDiagramElement);
       if (pElement->getModel()->isConnector()) {
         // look in icon scene elements
-        Element *pExistingIconElement = pIconGraphicsView->getOutOfSceneElementObject(pElement->getName());
+        Element *pExistingIconElement = pIconGraphicsView->getOutOfSceneElement(pElement->getName());
         if (pExistingIconElement) {
           pExistingIconElement->setModelElement(pElement);
           pExistingIconElement->reDrawElementNew();
@@ -844,13 +844,12 @@ void GraphicsView::deleteElement(Element *pElement)
     QString endComponentName = getComponentName(mConnectionsList[i]->getEndElementName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
-        removeConnectionFromView(mConnectionsList[i]);
         deleteConnectionFromClass(mConnectionsList[i]);
-        ++i;
+        removeConnectionFromView(mConnectionsList[i]);
       } else {
         deleteConnection(mConnectionsList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -862,32 +861,12 @@ void GraphicsView::deleteElement(Element *pElement)
     QString endComponentName = getComponentName(mTransitionsList[i]->getEndElementName());
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
-        // Remove the start element connection details.
-        LineAnnotation *pTransitionLineAnnotation = mTransitionsList[i];
-        Element *pStartElement = pTransitionLineAnnotation->getStartElement();
-        if (pStartElement && pStartElement->getRootParentElement()) {
-          pStartElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
-          pStartElement->getRootParentElement()->setHasTransition(false);
-        } else if (pStartElement) {
-          pStartElement->removeConnectionDetails(pTransitionLineAnnotation);
-          pStartElement->setHasTransition(false);
-        }
-        // Remove the end element connection details.
-        Element *pEndElement = pTransitionLineAnnotation->getEndElement();
-        if (pEndElement && pEndElement->getRootParentElement()) {
-          pEndElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
-          pEndElement->getRootParentElement()->setHasTransition(false);
-        } else if (pEndElement) {
-          pEndElement->removeConnectionDetails(pTransitionLineAnnotation);
-          pEndElement->setHasTransition(false);
-        }
-        removeItem(pTransitionLineAnnotation);
-        deleteTransitionFromClass(pTransitionLineAnnotation);
-        ++i;
+        deleteTransitionFromClass(mTransitionsList[i]);
+        removeTransitionFromView(mTransitionsList[i]);
       } else {
         deleteTransition(mTransitionsList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -898,21 +877,12 @@ void GraphicsView::deleteElement(Element *pElement)
     QString startComponentName = getComponentName(mInitialStatesList[i]->getStartElementName());
     if ((startComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
-        // Remove the start element connection details.
-        LineAnnotation *pInitialLineAnnotation = mInitialStatesList[i];
-        Element *pStartElement = pInitialLineAnnotation->getStartElement();
-        if (pStartElement && pStartElement->getRootParentElement()) {
-          pStartElement->getRootParentElement()->setIsInitialState(false);
-        } else if (pStartElement) {
-          pStartElement->setIsInitialState(false);
-        }
-        removeItem(pInitialLineAnnotation);
-        deleteInitialStateFromClass(pInitialLineAnnotation);
-        ++i;
+        deleteInitialStateFromClass(mInitialStatesList[i]);
+        removeInitialStateFromView(mInitialStatesList[i]);
       } else {
         deleteInitialState(mInitialStatesList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -970,14 +940,13 @@ Element* GraphicsView::getElementObject(QString elementName)
 }
 
 /*!
- * \brief GraphicsView::getOutOfSceneElementObject
+ * \brief GraphicsView::getOutOfSceneElement
  * Finds the element from OutOfSceneElementsList
  * \param elementName
  * \return
  */
-Element *GraphicsView::getOutOfSceneElementObject(QString elementName)
+Element *GraphicsView::getOutOfSceneElement(const QString &elementName)
 {
-  // look in out of scene elements
   for (int i = mOutOfSceneElementsList.size(); --i >= 0;) {
     if (mOutOfSceneElementsList.at(i)->getName().compare(elementName) == 0) {
       return mOutOfSceneElementsList.at(i);
@@ -1052,6 +1021,32 @@ bool GraphicsView::checkElementName(QString elementName)
 }
 
 /*!
+ * \brief GraphicsView::connectionExists
+ * Checks if the connection already exists.
+ * \param startElementName
+ * \param endElementName
+ * \param inherited
+ * \return
+ */
+bool GraphicsView::connectionExists(const QString &startElementName, const QString &endElementName, bool inherited)
+{
+  QList<LineAnnotation*> connections;
+  if (!inherited) {
+    connections = mConnectionsList;
+  } else {
+    connections = mInheritedConnectionsList;
+  }
+  foreach (LineAnnotation *pConnectionLineAnnotation, connections) {
+    if (pConnectionLineAnnotation->getStartElementName().compare(startElementName) == 0 && pConnectionLineAnnotation->getEndElementName().compare(endElementName) == 0) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Connection connect(%1, %2) already exists.").arg(startElementName, endElementName),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
  * \brief GraphicsView::addConnection
  * Adds the connection.
  * \param pConnection
@@ -1060,79 +1055,71 @@ bool GraphicsView::checkElementName(QString elementName)
 void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool inherited)
 {
   // if connection is valid and has line annotation
-  if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getLine()) {
-    MainWindow *pMainWindow = MainWindow::instance();
-    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getLine()
+      && !connectionExists(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName(), inherited)) {
     QString connectionString = QString("{%1, %2}").arg(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName());
-    // get start and end components
-    QStringList startComponentList = pConnection->getStartConnector()->getNameParts();
-    QStringList endComponentList = pConnection->getEndConnector()->getNameParts();
-    // get start component
-    Element *pStartComponent = 0;
-    if (startComponentList.size() > 0) {
-      QString startComponentName = startComponentList.at(0);
-      if (startComponentName.contains("[")) {
-        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+    // get start and end elements
+    QStringList startElementList = pConnection->getStartConnector()->getNameParts();
+    QStringList endElementList = pConnection->getEndConnector()->getNameParts();
+    // get start element
+    Element *pStartElement = 0;
+    if (startElementList.size() > 0) {
+      QString startElementName = startElementList.at(0);
+      if (startElementName.contains("[")) {
+        startElementName = startElementName.mid(0, startElementName.indexOf("["));
       }
-      pStartComponent = getElementObject(startComponentName);
+      pStartElement = getElementObject(startElementName);
     }
     // get start connector
-    Element *pStartConnectorComponent = 0;
-    Element *pEndConnectorComponent = 0;
-    if (pStartComponent) {
-      // if a component type is connector then we only get one item in startComponentList
-      // check the startcomponentlist
-      if (startComponentList.size() < 2
-          || (pStartComponent->getLibraryTreeItem()
-              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pStartConnectorComponent = pStartComponent;
-      } else if (pStartComponent->getLibraryTreeItem()
-                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pStartConnectorComponent = pStartComponent;
+    Element *pStartConnectorElement = 0;
+    Element *pEndConnectorElement = 0;
+    if (pStartElement) {
+      // if a element type is connector then we only get one item in startElementList
+      // check the startElementlist
+      // if conditional connector and condition is false then connect with the red cross box
+      if (startElementList.size() < 2 || pStartElement->isExpandableConnector() || !pStartElement->getModelElement()->getCondition()) {
+        pStartConnectorElement = pStartElement;
       } else {
-        // look for port from the parent component
-        QString startComponentName = startComponentList.at(1);
-        if (startComponentName.contains("[")) {
-          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+        // look for port from the parent element
+        QString startElementName = startElementList.at(1);
+        if (startElementName.contains("[")) {
+          startElementName = startElementName.mid(0, startElementName.indexOf("["));
         }
-        pStartConnectorComponent = mpModelWidget->getConnectorComponent(pStartComponent, startComponentName);
+        pStartConnectorElement = mpModelWidget->getConnectorElement(pStartElement, startElementName);
       }
     }
-    // show error message if start component is not found.
-    if (!pStartConnectorComponent) {
+    // show error message if start element is not found.
+    if (!pStartConnectorElement) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(pConnection->getStartConnector()->getName(), connectionString), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
-    // get end component
-    Element *pEndComponent = 0;
-    if (endComponentList.size() > 0) {
-      QString endComponentName = endComponentList.at(0);
-      if (endComponentName.contains("[")) {
-        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+    // get end element
+    Element *pEndElement = 0;
+    if (endElementList.size() > 0) {
+      QString endElementName = endElementList.at(0);
+      if (endElementName.contains("[")) {
+        endElementName = endElementName.mid(0, endElementName.indexOf("["));
       }
-      pEndComponent = getElementObject(endComponentName);
+      pEndElement = getElementObject(endElementName);
     }
     // get the end connector
-    if (pEndComponent) {
-      // if a component type is connector then we only get one item in endComponentList
-      // check the endcomponentlist
-      if (endComponentList.size() < 2 || (pEndComponent->getLibraryTreeItem() && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pEndConnectorComponent = pEndComponent;
-      } else if (pEndComponent->getLibraryTreeItem() && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pEndConnectorComponent = pEndComponent;
+    if (pEndElement) {
+      // if a element type is connector then we only get one item in endElementList
+      // check the endElementList
+      // if conditional connector and condition is false then connect with the red cross box
+      if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelElement()->getCondition()) {
+        pEndConnectorElement = pEndElement;
       } else {
-        QString endComponentName = endComponentList.at(1);
-        if (endComponentName.contains("[")) {
-          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+        QString endElementName = endElementList.at(1);
+        if (endElementName.contains("[")) {
+          endElementName = endElementName.mid(0, endElementName.indexOf("["));
         }
-        pEndConnectorComponent = mpModelWidget->getConnectorComponent(pEndComponent, endComponentName);
+        pEndConnectorElement = mpModelWidget->getConnectorElement(pEndElement, endElementName);
       }
     }
     // show error message if end component is not found.
-    if (!pEndConnectorComponent) {
+    if (!pEndConnectorElement) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(pConnection->getEndConnector()->getName(), connectionString), Helper::scriptingKind, Helper::errorLevel));
       return;
@@ -1140,21 +1127,21 @@ void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool in
 
     bool exists = false;
     if (!inherited) { // Update if connection exists
-      foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
-        if ((pConnectionLineAnnotation->getStartElementName().compare(pConnection->getStartConnector()->getName()) == 0)
-            && (pConnectionLineAnnotation->getEndElementName().compare(pConnection->getEndConnector()->getName()) == 0)) {
-          exists = true;
-          pConnectionLineAnnotation->setLine(pConnection->getLine());
-          // remove and add the connection to keep the correct order of connections.
-          removeItem(pConnectionLineAnnotation);
-          addItem(pConnectionLineAnnotation);
-          break;
-        }
+      LineAnnotation *pConnectionLineAnnotation = getOutOfSceneConnection(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName());
+      if (pConnectionLineAnnotation) {
+        exists = true;
+        pConnectionLineAnnotation->setStartElement(pStartConnectorElement);
+        pConnectionLineAnnotation->setEndElement(pEndConnectorElement);
+        pConnectionLineAnnotation->setLine(pConnection->getLine());
+        addConnectionDetails(pConnectionLineAnnotation);
+        addItem(pConnectionLineAnnotation);
+        addConnectionToList(pConnectionLineAnnotation);
+        deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
       }
     }
     // Draw new if connection doesn't exist
     if (inherited || !exists) {
-      LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(pConnection, pStartConnectorComponent, pEndConnectorComponent, inherited, this);
+      LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(pConnection, pStartConnectorElement, pEndConnectorElement, inherited, this);
       pConnectionLineAnnotation->drawCornerItems();
       pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
       addConnectionToView(pConnectionLineAnnotation, inherited);
@@ -1189,6 +1176,34 @@ QString updateConnectionIndexes(const QString &connectionComponentName, int &com
 }
 
 /*!
+ * \brief GraphicsView::addConnectionDetails
+ * Adds connection details by linking with start and end connector.
+ * \param pConnectionLineAnnotation
+ */
+void GraphicsView::addConnectionDetails(LineAnnotation *pConnectionLineAnnotation)
+{
+  // Add the start element connection details.
+  Element *pStartElement = pConnectionLineAnnotation->getStartElement();
+  if (pStartElement) {
+    if (pStartElement->getRootParentElement()) {
+      pStartElement->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pStartElement->addConnectionDetails(pConnectionLineAnnotation);
+    }
+  }
+  // Add the end element connection details.
+  Element *pEndElement = pConnectionLineAnnotation->getEndElement();
+  if (pEndElement) {
+    if (pEndElement->getRootParentElement()) {
+      pEndElement->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pEndElement->addConnectionDetails(pConnectionLineAnnotation);
+    }
+  }
+  pConnectionLineAnnotation->updateToolTip();
+}
+
+/*!
  * \brief GraphicsView::addConnectionToView
  * Adds the connection to the view
  * \param pConnectionLineAnnotation
@@ -1196,33 +1211,17 @@ QString updateConnectionIndexes(const QString &connectionComponentName, int &com
  */
 void GraphicsView::addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited)
 {
-  // Add the start component connection details.
-  Element *pStartComponent = pConnectionLineAnnotation->getStartElement();
-  if (pStartComponent) {
-    if (pStartComponent->getRootParentElement()) {
-      pStartComponent->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
-    } else {
-      pStartComponent->addConnectionDetails(pConnectionLineAnnotation);
-    }
-  }
-  // Add the end component connection details.
-  Element *pEndComponent = pConnectionLineAnnotation->getEndElement();
-  if (pEndComponent) {
-    if (pEndComponent->getRootParentElement()) {
-      pEndComponent->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
-    } else {
-      pEndComponent->addConnectionDetails(pConnectionLineAnnotation);
-    }
-  }
-  pConnectionLineAnnotation->updateToolTip();
+  addConnectionDetails(pConnectionLineAnnotation);
   if (inherited) {
     addInheritedConnectionToList(pConnectionLineAnnotation);
   } else {
     addConnectionToList(pConnectionLineAnnotation);
   }
-  deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
   addItem(pConnectionLineAnnotation);
-  pConnectionLineAnnotation->emitAdded();
+  if (!mpModelWidget->isNewApi()) {
+    deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
+    pConnectionLineAnnotation->emitAdded();
+  }
 }
 
 /*!
@@ -1260,12 +1259,12 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
   } else {
     MainWindow *pMainWindow = MainWindow::instance();
     // update connectorSizing on start component if exists
-    bool isStartComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartElement());
+    bool isStartComponentConnectorSizing = GraphicsView::updateElementConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartElement());
     // update connectorSizing on end component if exists
-    bool isEndComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndElement());
+    bool isEndComponentConnectorSizing = GraphicsView::updateElementConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndElement());
     if (deleteUndo) {
       if (isStartComponentConnectorSizing) {
-        int connectionIndex = numberOfComponentConnections(pConnectionLineAnnotation->getStartElement(), pConnectionLineAnnotation) + 1;
+        int connectionIndex = numberOfElementConnections(pConnectionLineAnnotation->getStartElement(), pConnectionLineAnnotation) + 1;
         QString newStartComponentName = updateConnectionIndexes(pConnectionLineAnnotation->getStartElementName(), connectionIndex);
         if (!newStartComponentName.isEmpty()) {
           pConnectionLineAnnotation->setStartElementName(newStartComponentName);
@@ -1273,7 +1272,7 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
         }
       }
       if (isEndComponentConnectorSizing) {
-        int connectionIndex = numberOfComponentConnections(pConnectionLineAnnotation->getEndElement(), pConnectionLineAnnotation) + 1;
+        int connectionIndex = numberOfElementConnections(pConnectionLineAnnotation->getEndElement(), pConnectionLineAnnotation) + 1;
         QString newEndComponentName = updateConnectionIndexes(pConnectionLineAnnotation->getEndElementName(), connectionIndex);
         if (!newEndComponentName.isEmpty()) {
           pConnectionLineAnnotation->setEndElementName(newEndComponentName);
@@ -1294,32 +1293,32 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 }
 
 /*!
- * \brief componentIndexesRangeInConnection
- * Returns the component array index in connection.
+ * \brief elementIndexesRangeInConnection
+ * Returns the element array index in connection.
  * It could be just index or range e.g., 1:3
- * \param connectionComponentName
+ * \param connectionElementName
  * \return
  */
-QStringList componentIndexesRangeInConnection(const QString &connectionComponentName)
+QStringList elementIndexesRangeInConnection(const QString &connectionElementName)
 {
-  int endIndex = connectionComponentName.lastIndexOf(']');
-  int startIndex = connectionComponentName.lastIndexOf('[', endIndex);
+  int endIndex = connectionElementName.lastIndexOf(']');
+  int startIndex = connectionElementName.lastIndexOf('[', endIndex);
   if (startIndex > -1 && endIndex > -1) {
-    return connectionComponentName.mid(startIndex + 1, endIndex - startIndex - 1).split(':');
+    return connectionElementName.mid(startIndex + 1, endIndex - startIndex - 1).split(':');
   }
   return QStringList();
 }
 
 /*!
- * \brief componentIndexInConnection
- * Return the component array index used in connection.
+ * \brief elementIndexInConnection
+ * Return the element array index used in connection.
  * If the index is range then the start of range is returned e.g., 1:3 returns 1 and 2:4 returns 2.
- * \param connectionComponentName
+ * \param connectionElementName
  * \return
  */
-int componentIndexInConnection(const QString &connectionComponentName)
+int elementIndexInConnection(const QString &connectionElementName)
 {
-  QStringList range = componentIndexesRangeInConnection(connectionComponentName);
+  QStringList range = elementIndexesRangeInConnection(connectionElementName);
   return range.value(0, "0").toInt();
 }
 
@@ -1330,6 +1329,8 @@ int componentIndexInConnection(const QString &connectionComponentName)
  */
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
+  // unselect the connection so it will not receive further signals
+  pConnectionLineAnnotation->setSelected(false);
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -1341,17 +1342,17 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
     // delete the connection
     if (pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(), mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
       // update connectorSizing on start component if exists
-      bool isStartComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartElement());
+      bool isStartComponentConnectorSizing = GraphicsView::updateElementConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartElement());
       // update connectorSizing on end component if exists
-      bool isEndComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndElement());
+      bool isEndComponentConnectorSizing = GraphicsView::updateElementConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndElement());
       // if the component is connectorSizing then get the index used in deleted connection
       int startConnectionIndex = 0;
       if (isStartComponentConnectorSizing) {
-        startConnectionIndex = componentIndexInConnection(pConnectionLineAnnotation->getStartElementName());
+        startConnectionIndex = elementIndexInConnection(pConnectionLineAnnotation->getStartElementName());
       }
       int endConnectionIndex = 0;
       if (isEndComponentConnectorSizing) {
-        endConnectionIndex = componentIndexInConnection(pConnectionLineAnnotation->getEndElementName());
+        endConnectionIndex = elementIndexInConnection(pConnectionLineAnnotation->getEndElementName());
       }
       if (isStartComponentConnectorSizing || isEndComponentConnectorSizing) {
         // update the connections if some middle connectorSizing connection is removed
@@ -1364,14 +1365,14 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
           // start component matches
           QString startComponentName = pOtherConnectionLineAnnotation->getStartElementName();
           if (pOtherConnectionLineAnnotation->getStartElement() == pConnectionLineAnnotation->getStartElement()) {
-            if (componentIndexInConnection(startComponentName) > startConnectionIndex) {
+            if (elementIndexInConnection(startComponentName) > startConnectionIndex) {
               pOtherConnectionLineAnnotation->setStartElementName(updateConnectionIndexes(startComponentName, startConnectionIndex));
               startConnectionIndex++;
               updateConnection = true;
             }
           }
           if (pOtherConnectionLineAnnotation->getStartElement() == pConnectionLineAnnotation->getEndElement()) {
-            if (componentIndexInConnection(startComponentName) > endConnectionIndex) {
+            if (elementIndexInConnection(startComponentName) > endConnectionIndex) {
               pOtherConnectionLineAnnotation->setStartElementName(updateConnectionIndexes(startComponentName, endConnectionIndex));
               endConnectionIndex++;
               updateConnection = true;
@@ -1380,14 +1381,14 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
           // end component matches
           QString endComponentName = pOtherConnectionLineAnnotation->getEndElementName();
           if (pOtherConnectionLineAnnotation->getEndElement() == pConnectionLineAnnotation->getEndElement()) {
-            if (componentIndexInConnection(endComponentName) > endConnectionIndex) {
+            if (elementIndexInConnection(endComponentName) > endConnectionIndex) {
               pOtherConnectionLineAnnotation->setEndElementName(updateConnectionIndexes(endComponentName, endConnectionIndex));
               endConnectionIndex++;
               updateConnection = true;
             }
           }
           if (pOtherConnectionLineAnnotation->getEndElement() == pConnectionLineAnnotation->getStartElement()) {
-            if (componentIndexInConnection(endComponentName) > startConnectionIndex) {
+            if (elementIndexInConnection(endComponentName) > startConnectionIndex) {
               pOtherConnectionLineAnnotation->setEndElementName(updateConnectionIndexes(endComponentName, startConnectionIndex));
               startConnectionIndex++;
               updateConnection = true;
@@ -1421,34 +1422,44 @@ void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnota
 }
 
 /*!
+ * \brief GraphicsView::removeConnectionDetails
+ * Removes connection details that are linked with start and end connector.
+ * \param pConnectionLineAnnotation
+ */
+void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnotation)
+{
+  // Remove the start element connection details.
+  Element *pStartElement = pConnectionLineAnnotation->getStartElement();
+  if (pStartElement) {
+    if (pStartElement->getRootParentElement()) {
+      pStartElement->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pStartElement->removeConnectionDetails(pConnectionLineAnnotation);
+    }
+  }
+  // Remove the end element connection details.
+  Element *pEndElement = pConnectionLineAnnotation->getEndElement();
+  if (pEndElement) {
+    if (pEndElement->getRootParentElement()) {
+      pEndElement->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pEndElement->removeConnectionDetails(pConnectionLineAnnotation);
+    }
+  }
+}
+
+/*!
  * \brief GraphicsView::removeConnectionFromView
  * Removes the connection from the view.
  * \param pConnectionLineAnnotation
  */
 void GraphicsView::removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation)
 {
-  // Remove the start component connection details.
-  Element *pStartComponent = pConnectionLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
-  } else if (pStartComponent) {
-    pStartComponent->removeConnectionDetails(pConnectionLineAnnotation);
-  }
-  // Remove the end component connection details.
-  Element *pEndComponent = pConnectionLineAnnotation->getEndElement();
-  if (pEndComponent && pEndComponent->getRootParentElement()) {
-    pEndComponent->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
-  } else if (pEndComponent) {
-    pEndComponent->removeConnectionDetails(pConnectionLineAnnotation);
-  }
-  if (mpModelWidget->isNewApi()) {
-    removeItem(pConnectionLineAnnotation);
-  } else {
-    deleteConnectionFromList(pConnectionLineAnnotation);
-    addConnectionToOutOfSceneList(pConnectionLineAnnotation);
-    removeItem(pConnectionLineAnnotation);
-    pConnectionLineAnnotation->emitDeleted();
-  }
+  removeConnectionDetails(pConnectionLineAnnotation);
+  deleteConnectionFromList(pConnectionLineAnnotation);
+  addConnectionToOutOfSceneList(pConnectionLineAnnotation);
+  removeItem(pConnectionLineAnnotation);
+  pConnectionLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -1464,35 +1475,53 @@ void GraphicsView::removeConnectionsFromView()
 }
 
 /*!
- * \brief GraphicsView::numberOfComponentConnections
- * Counts the number of connections of the component.
- * \param pComponent
+ * \brief GraphicsView::numberOfElementConnections
+ * Counts the number of connections of the element.
+ * \param pElement
  * \param pExcludeConnectionLineAnnotation
  * \return
  */
-int GraphicsView::numberOfComponentConnections(Element *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation)
+int GraphicsView::numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation)
 {
   int connections = 0;
   foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
     if (pExcludeConnectionLineAnnotation && pExcludeConnectionLineAnnotation == pConnectionLineAnnotation) {
       continue;
     }
-    if (pConnectionLineAnnotation->getStartElement() == pComponent || pConnectionLineAnnotation->getEndElement() == pComponent) {
+    if (pConnectionLineAnnotation->getStartElement() == pElement || pConnectionLineAnnotation->getEndElement() == pElement) {
       // always count one connection if we are in here. Then look for array connections.
       connections++;
-      QString connectionComponentName;
-      if (pConnectionLineAnnotation->getStartElement() == pComponent) {
-        connectionComponentName = pConnectionLineAnnotation->getStartElementName();
+      QString connectionElementName;
+      if (pConnectionLineAnnotation->getStartElement() == pElement) {
+        connectionElementName = pConnectionLineAnnotation->getStartElementName();
       } else {
-        connectionComponentName = pConnectionLineAnnotation->getEndElementName();
+        connectionElementName = pConnectionLineAnnotation->getEndElementName();
       }
-      QStringList range = componentIndexesRangeInConnection(connectionComponentName);
+      QStringList range = elementIndexesRangeInConnection(connectionElementName);
       if (range.size() > 1) {
         connections += (range.at(1).toInt() - range.at(0).toInt());
       }
     }
   }
   return connections;
+}
+
+/*!
+ * \brief GraphicsView::getOutOfSceneConnection
+ * Finds the connection from mOutOfSceneConnectionsList
+ * \param startConnectorName
+ * \param endConnectorName
+ * \return
+ */
+LineAnnotation *GraphicsView::getOutOfSceneConnection(const QString &startConnectorName, const QString &endConnectorName)
+{
+  for (int i = mOutOfSceneConnectionsList.size(); --i >= 0;) {
+    LineAnnotation *pConnectionLineAnnotation = mOutOfSceneConnectionsList.at(i);
+    if ((pConnectionLineAnnotation->getStartElementName().compare(startConnectorName) == 0) && (pConnectionLineAnnotation->getEndElementName().compare(endConnectorName) == 0)) {
+      return pConnectionLineAnnotation;
+    }
+  }
+  return 0;
 }
 
 /*!
@@ -1510,6 +1539,50 @@ void GraphicsView::addTransitionToClass(LineAnnotation *pTransitionLineAnnotatio
                                QString("annotate=$annotation(%1,%2)").arg(pTransitionLineAnnotation->getShapeAnnotation())
                                .arg(pTransitionLineAnnotation->getTextAnnotation()->getShapeAnnotation()))) {
   }
+}
+
+/*!
+ * \brief GraphicsView::removeTransitionDetails
+ * Removes tranistion details that are linked with start and end connector.
+ * \param pTransitionLineAnnotation
+ */
+void GraphicsView::removeTransitionDetails(LineAnnotation *pTransitionLineAnnotation)
+{
+  // Remove the start element connection details.
+  Element *pStartElement = pTransitionLineAnnotation->getStartElement();
+  if (pStartElement && pStartElement->getRootParentElement()) {
+    pStartElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
+    pStartElement->getRootParentElement()->setHasTransition(false);
+  } else if (pStartElement) {
+    pStartElement->removeConnectionDetails(pTransitionLineAnnotation);
+    pStartElement->setHasTransition(false);
+  }
+  // Remove the end element connection details.
+  Element *pEndElement = pTransitionLineAnnotation->getEndElement();
+  if (pEndElement && pEndElement->getRootParentElement()) {
+    pEndElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
+    pEndElement->getRootParentElement()->setHasTransition(false);
+  } else if (pEndElement) {
+    pEndElement->removeConnectionDetails(pTransitionLineAnnotation);
+    pEndElement->setHasTransition(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeTransitionFromView
+ * Removes the transition from the view.
+ * \param pTransitionLineAnnotation
+ */
+void GraphicsView::removeTransitionFromView(LineAnnotation *pTransitionLineAnnotation)
+{
+  removeTransitionDetails(pTransitionLineAnnotation);
+  deleteTransitionFromList(pTransitionLineAnnotation);
+  addTransitionToOutOfSceneList(pTransitionLineAnnotation);
+  pTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  pTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  pTransitionLineAnnotation->updateTransitionTextPosition();
+  removeItem(pTransitionLineAnnotation);
+  pTransitionLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -1550,6 +1623,38 @@ void GraphicsView::addInitialStateToClass(LineAnnotation *pInitialStateLineAnnot
                                  pInitialStateLineAnnotation->getStartElementName(),
                                  QString("annotate=").append(pInitialStateLineAnnotation->getShapeAnnotation()))) {
   }
+}
+
+/*!
+ * \brief GraphicsView::removeInitialStateDetails
+ * Removes initial state details that are linked with start connector.
+ * \param pInitialStateLineAnnotation
+ */
+void GraphicsView::removeInitialStateDetails(LineAnnotation *pInitialStateLineAnnotation)
+{
+  // Remove the start initial state details.
+  Element *pStartComponent = pInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->removeConnectionDetails(pInitialStateLineAnnotation);
+    pStartComponent->getRootParentElement()->setIsInitialState(false);
+  } else if (pStartComponent) {
+    pStartComponent->removeConnectionDetails(pInitialStateLineAnnotation);
+    pStartComponent->setIsInitialState(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeInitialStateFromView
+ * Removes the initial state from the view.
+ * \param pInitialStateLineAnnotation
+ */
+void GraphicsView::removeInitialStateFromView(LineAnnotation *pInitialStateLineAnnotation)
+{
+  removeInitialStateDetails(pInitialStateLineAnnotation);
+  deleteInitialStateFromList(pInitialStateLineAnnotation);
+  addInitialStateToOutOfSceneList(pInitialStateLineAnnotation);
+  removeItem(pInitialStateLineAnnotation);
+  pInitialStateLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -1761,9 +1866,9 @@ void GraphicsView::removeClassComponents()
 
 /*!
  * \brief GraphicsView::removeElementsFromView
- * Removes all the elements from the view.
+ * Removes all the elements from the scene and add them to mOutOfSceneElementsList.
  */
-void GraphicsView::removeElementsFromView()
+void GraphicsView::removeElementsFromScene()
 {
   foreach (Element *pElement, mElementsList) {
     removeItem(pElement->getOriginItem());
@@ -1841,6 +1946,20 @@ void GraphicsView::removeOutOfSceneShapes()
   foreach (ShapeAnnotation *pShapeAnnotation, mOutOfSceneShapesList) {
     deleteShapeFromOutOfSceneList(pShapeAnnotation);
     delete pShapeAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeConnectionsFromScene
+ * Removes all the connections from the scene and add them to mOutOfSceneConnectionsList.
+ */
+void GraphicsView::removeConnectionsFromScene()
+{
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    removeConnectionDetails(pConnectionLineAnnotation);
+    removeItem(pConnectionLineAnnotation);
+    addConnectionToOutOfSceneList(pConnectionLineAnnotation);
+    deleteConnectionFromList(pConnectionLineAnnotation);
   }
 }
 
@@ -2505,35 +2624,36 @@ Element *GraphicsView::elementAtPosition(QPoint position)
 }
 
 /*!
- * \brief GraphicsView::connectorComponentAtPosition
- * Returns the connector component at the position.
+ * \brief GraphicsView::connectorElementAtPosition
+ * Returns the connector element at the position.
  * \param position
  * \return
  */
-Element* GraphicsView::connectorComponentAtPosition(QPoint position)
+Element* GraphicsView::connectorElementAtPosition(QPoint position)
 {
   /* Ticket:4215
-   * Allow making connection from the connectors which are under some other shape or component.
+   * Allow making connection from the connectors which are under some other shape or element.
    * itemAt() only returns the top level item.
-   * Use items() to get all items at position and then return the first connector component from the list.
+   * Use items() to get all items at position and then return the first connector element from the list.
    */
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
-    if (pComponent) {
-      Element *pRootComponent = pComponent->getRootParentElement();
-      if (pRootComponent && pRootComponent->isSelected()) {
+    Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
+    if (pElement) {
+      Element *pRootElement = pElement->getRootParentElement();
+      if (pRootElement && pRootElement->isSelected()) {
         return 0;
-      } else if (pRootComponent && !pRootComponent->isSelected()) {
+      } else if (pRootElement && !pRootElement->isSelected()) {
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
-            ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
-             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
-              pComponent->getElementType() == Element::Port) ||
-             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
-              (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getLibraryTreeItem()->getOMSBusConnector()
-               || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || pComponent->getElementType() == Element::Port)))) {
-          return pComponent;
+            ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
+            (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
+            (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
+             pElement->getElementType() == Element::Port) ||
+            (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+             (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
+              || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->getElementType() == Element::Port)))) {
+          return pElement;
         }
       }
     }
@@ -2542,24 +2662,24 @@ Element* GraphicsView::connectorComponentAtPosition(QPoint position)
 }
 
 /*!
- * \brief GraphicsView::stateComponentAtPosition
- * Returns the state component at the position.
+ * \brief GraphicsView::stateElementAtPosition
+ * Returns the state element at the position.
  * \param position
  * \return
  */
-Element* GraphicsView::stateComponentAtPosition(QPoint position)
+Element* GraphicsView::stateElementAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
-    if (pComponent) {
-      Element *pRootComponent = pComponent->getRootParentElement();
-      if (pRootComponent && !pRootComponent->isSelected()) {
+    Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
+    if (pElement) {
+      Element *pRootElement = pElement->getRootParentElement();
+      if (pRootElement && !pRootElement->isSelected()) {
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
-            ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
-              !pComponent->getLibraryTreeItem()->isNonExisting() && pComponent->getLibraryTreeItem()->isState()))) {
-          return pComponent;
+            ((pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
+              !pElement->getLibraryTreeItem()->isNonExisting() && pElement->getLibraryTreeItem()->isState()))) {
+          return pElement;
         }
       }
     }
@@ -2568,20 +2688,20 @@ Element* GraphicsView::stateComponentAtPosition(QPoint position)
 }
 
 /*!
- * \brief GraphicsView::updateComponentConnectorSizingParameter
- * Updates the component's connectorSizing parameter via the modifier.
+ * \brief GraphicsView::updateElementConnectorSizingParameter
+ * Updates the Element's connectorSizing parameter via the modifier.
  * \param pGraphicsView
  * \param className
- * \param pComponent
+ * \param pElement
  * \return
  */
-bool GraphicsView::updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pComponent)
+bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pElement)
 {
   // if connectorSizing then set a new value for the connectorSizing parameter.
-  if (pComponent && pComponent->isConnectorSizing()) {
-    QString parameter = pComponent->getComponentInfo()->getArrayIndex();
-    int numberOfComponentConnections = pGraphicsView->numberOfComponentConnections(pComponent);
-    QString modifierKey = QString("%1.%2").arg(pComponent->getRootParentElement()->getName()).arg(parameter);
+  if (pElement && pElement->isConnectorSizing()) {
+    QString parameter = pElement->getComponentInfo()->getArrayIndex();
+    int numberOfComponentConnections = pGraphicsView->numberOfElementConnections(pElement);
+    QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
     MainWindow::instance()->getOMCProxy()->setComponentModifierValue(className, modifierKey, QString::number(numberOfComponentConnections));
     return true;
   }
@@ -2591,19 +2711,19 @@ bool GraphicsView::updateComponentConnectorSizingParameter(GraphicsView *pGraphi
 /*!
  * \brief GraphicsView::addConnection
  * Adds the connection to GraphicsView.
- * \param pComponent
+ * \param pElement
  */
-void GraphicsView::addConnection(Element *pComponent)
+void GraphicsView::addConnection(Element *pElement)
 {
-  // When clicking the start component
+  // When clicking the start element
   if (!isCreatingConnection()) {
     QPointF startPos;
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      startPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
+      startPos = roundPoint(pElement->mapToScene(pElement->boundingRect().center()));
     } else {
-      startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+      startPos = snapPointToGrid(pElement->mapToScene(pElement->boundingRect().center()));
     }
-    mpConnectionLineAnnotation = new LineAnnotation(LineAnnotation::ConnectionType, pComponent, this);
+    mpConnectionLineAnnotation = new LineAnnotation(LineAnnotation::ConnectionType, pElement, this);
     setIsCreatingConnection(true);
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
@@ -2612,27 +2732,27 @@ void GraphicsView::addConnection(Element *pComponent)
      * If we are starting connection from expandable connector or (array && !connectorSizing) connector
      * then set the line thickness to 0.5
      */
-    Element *pRootParentComponent = pComponent->getParentElement() ? pComponent->getRootParentElement() : 0;
-    if (pComponent->isExpandableConnector()
-        || (pComponent->isArray() && !pComponent->isConnectorSizing())
-        || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing())))) {
+    Element *pRootParentElement = pElement->getParentElement() ? pElement->getRootParentElement() : 0;
+    if (pElement->isExpandableConnector()
+        || (pElement->isArray() && !pElement->isConnectorSizing())
+        || (pRootParentElement && (pRootParentElement->isExpandableConnector() || (pRootParentElement->isArray() && !pRootParentElement->isConnectorSizing())))) {
       mpConnectionLineAnnotation->setLineThickness(0.5);
     }
-  } else { // When clicking the end component
+  } else { // When clicking the end element
     setIsCreatingConnection(false);
-    mpConnectionLineAnnotation->setEndElement(pComponent);
-    // update the last point to the center of component
+    mpConnectionLineAnnotation->setEndElement(pElement);
+    // update the last point to the center of element
     QPointF newPos;
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      newPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
+      newPos = roundPoint(pElement->mapToScene(pElement->boundingRect().center()));
     } else {
-      newPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+      newPos = snapPointToGrid(pElement->mapToScene(pElement->boundingRect().center()));
     }
     mpConnectionLineAnnotation->updateEndPoint(newPos);
     // check if connection is valid
-    Element *pStartComponent = mpConnectionLineAnnotation->getStartElement();
+    Element *pStartElement = mpConnectionLineAnnotation->getStartElement();
     MainWindow *pMainWindow = MainWindow::instance();
-    if (pStartComponent == pComponent) {
+    if (pStartElement == pElement) {
       QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information), GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
       removeCurrentConnection();
     } else {
@@ -2640,51 +2760,59 @@ void GraphicsView::addConnection(Element *pComponent)
        * Only set the connection line thickness to 0.5 when both connectors are either expandable or (array && !connectorSizing).
        * Otherwise set it to 0.25 i.e., default.
        */
-      Element *pStartRootParentComponent = pStartComponent->getParentElement() ? pStartComponent->getRootParentElement() : 0;
-      Element *pRootParentComponent = pComponent->getParentElement() ? pComponent->getRootParentElement() : 0;
+      Element *pStartRootParentElement = pStartElement->getParentElement() ? pStartElement->getRootParentElement() : 0;
+      Element *pRootParentElement = pElement->getParentElement() ? pElement->getRootParentElement() : 0;
 
-      if ((pStartComponent->isExpandableConnector() || (pStartComponent->isArray() && !pStartComponent->isConnectorSizing())
-           || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || (pStartRootParentComponent->isArray() && !pStartRootParentComponent->isConnectorSizing()))))
-          && (pComponent->isExpandableConnector() || (pComponent->isArray() && !pComponent->isConnectorSizing())
-              || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing()))))) {
+      if ((pStartElement->isExpandableConnector() || (pStartElement->isArray() && !pStartElement->isConnectorSizing())
+           || (pStartRootParentElement && (pStartRootParentElement->isExpandableConnector() || (pStartRootParentElement->isArray() && !pStartRootParentElement->isConnectorSizing()))))
+          && (pElement->isExpandableConnector() || (pElement->isArray() && !pElement->isConnectorSizing())
+              || (pRootParentElement && (pRootParentElement->isExpandableConnector() || (pRootParentElement->isArray() && !pRootParentElement->isConnectorSizing()))))) {
         mpConnectionLineAnnotation->setLineThickness(0.5);
       } else {
         /* Ticket:4956
          * If the start connector is either expandable or array and the end connector is not then change the line color to end connector.
          */
-        if ((pStartComponent->isExpandableConnector() || pStartComponent->isArray()
-             || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || pStartRootParentComponent->isArray())))
-            && (!(pComponent->isExpandableConnector() || pComponent->isArray()
-                || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || pRootParentComponent->isArray()))))) {
-          if (pComponent->getLibraryTreeItem()) {
-            if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
-              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
+        if ((pStartElement->isExpandableConnector() || pStartElement->isArray()
+             || (pStartRootParentElement && (pStartRootParentElement->isExpandableConnector() || pStartRootParentElement->isArray())))
+            && (!(pElement->isExpandableConnector() || pElement->isArray()
+                || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
+          if (mpModelWidget->isNewApi() && pElement->getModel()) {
+            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getIconAnnotation()->getGraphics();
+            if (!shapes.isEmpty()) {
+              mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor().getColor());
+            } else if (pElement->getShapesList().size() > 0) {
+              ShapeAnnotation *pShapeAnnotation = pElement->getShapesList().at(0);
+              mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
+            }
+          } else if (pElement->getLibraryTreeItem()) {
+            if (!pElement->getLibraryTreeItem()->getModelWidget()) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pElement->getLibraryTreeItem(), false);
             }
             ShapeAnnotation *pShapeAnnotation;
-            if (pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
-                && pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
-              pShapeAnnotation = pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
+            if (pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
+                && pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
+              pShapeAnnotation = pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
               mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
-            } else if (pComponent->getShapesList().size() > 0) {
-              ShapeAnnotation *pShapeAnnotation = pComponent->getShapesList().at(0);
+            } else if (pElement->getShapesList().size() > 0) {
+              ShapeAnnotation *pShapeAnnotation = pElement->getShapesList().at(0);
               mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
             }
           }
         }
         mpConnectionLineAnnotation->setLineThickness(0.25);
       }
-      // check if any of starting or ending components are array
+      // check if any of starting or ending elements are array
       bool showConnectionArrayDialog = false;
-      if ((pStartComponent->isExpandableConnector() || (pStartComponent->isArray() && !pStartComponent->isConnectorSizing())
-           || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || (pStartRootParentComponent->isArray() && !pStartRootParentComponent->isConnectorSizing()))))
-          || (pComponent->isExpandableConnector() || (pComponent->isArray() && !pComponent->isConnectorSizing())
-              || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing()))))) {
+      if ((pStartElement->isExpandableConnector() || (pStartElement->isArray() && !pStartElement->isConnectorSizing())
+           || (pStartRootParentElement && (pStartRootParentElement->isExpandableConnector() || (pStartRootParentElement->isArray() && !pStartRootParentElement->isConnectorSizing()))))
+          || (pElement->isExpandableConnector() || (pElement->isArray() && !pElement->isConnectorSizing())
+              || (pRootParentElement && (pRootParentElement->isExpandableConnector() || (pRootParentElement->isArray() && !pRootParentElement->isConnectorSizing()))))) {
         showConnectionArrayDialog = true;
       }
-      // check if any starting or ending components are bus
+      // check if any starting or ending elements are bus
       bool showBusConnectionDialog = false;
-      if ((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getOMSBusConnector())
-        || (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+      if ((pStartElement->getLibraryTreeItem() && pStartElement->getLibraryTreeItem()->getOMSBusConnector())
+        || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSBusConnector())) {
         showBusConnectionDialog = true;
       }
       // if connectorSizing annotation is set then don't show the CreateConnectionDialog
@@ -2700,58 +2828,58 @@ void GraphicsView::addConnection(Element *pComponent)
         if (!pBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
-      } else if ((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector())
-                 && (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+      } else if ((pStartElement->getLibraryTreeItem() && pStartElement->getLibraryTreeItem()->getOMSTLMBusConnector())
+                 && (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSTLMBusConnector())) {
         TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(this, mpConnectionLineAnnotation);
         // if user cancels the tlm bus connection
         if (!pTLMBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {
-        QString startComponentName, endComponentName;
+        QString startElementName, endElementName;
         if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-          if (pStartComponent->getParentElement()) {
-            startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentElement()->getName()).arg(pStartComponent->getName());
+          if (pStartElement->getParentElement()) {
+            startElementName = QString("%1.%2").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName());
           } else {
-            startComponentName = pStartComponent->getName();
+            startElementName = pStartElement->getName();
           }
-          if (pComponent->getParentElement()) {
-            endComponentName = QString("%1.%2").arg(pComponent->getRootParentElement()->getName()).arg(pComponent->getName());
+          if (pElement->getParentElement()) {
+            endElementName = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName());
           } else {
-            endComponentName = pComponent->getName();
+            endElementName = pElement->getName();
           }
         } else {
-          int numberOfStartComponentConnections = numberOfComponentConnections(pStartComponent);
-          if (pStartComponent->getParentElement()) {
-            if (pStartComponent->isConnectorSizing()) {
-              startComponentName = QString("%1.%2[%3]").arg(pStartComponent->getRootParentElement()->getName()).arg(pStartComponent->getName()).arg(++numberOfStartComponentConnections);
+          int numberOfStartElementConnections = numberOfElementConnections(pStartElement);
+          if (pStartElement->getParentElement()) {
+            if (pStartElement->isConnectorSizing()) {
+              startElementName = QString("%1.%2[%3]").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName()).arg(++numberOfStartElementConnections);
             } else {
-              startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentElement()->getName()).arg(pStartComponent->getName());
+              startElementName = QString("%1.%2").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName());
             }
           } else {
-            if (pStartComponent->isConnectorSizing()) {
-              startComponentName = QString("%1[%2]").arg(pStartComponent->getName()).arg(++numberOfStartComponentConnections);
+            if (pStartElement->isConnectorSizing()) {
+              startElementName = QString("%1[%2]").arg(pStartElement->getName()).arg(++numberOfStartElementConnections);
             } else {
-              startComponentName = pStartComponent->getName();
+              startElementName = pStartElement->getName();
             }
           }
-          int numberOfEndComponentConnections = numberOfComponentConnections(pComponent);
-          if (pComponent->getParentElement()) {
-            if (pComponent->isConnectorSizing()) {
-              endComponentName = QString("%1.%2[%3]").arg(pComponent->getRootParentElement()->getName()).arg(pComponent->getName()).arg(++numberOfEndComponentConnections);
+          int numberOfEndComponentConnections = numberOfElementConnections(pElement);
+          if (pElement->getParentElement()) {
+            if (pElement->isConnectorSizing()) {
+              endElementName = QString("%1.%2[%3]").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName()).arg(++numberOfEndComponentConnections);
             } else {
-              endComponentName = QString("%1.%2").arg(pComponent->getRootParentElement()->getName()).arg(pComponent->getName());
+              endElementName = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName());
             }
           } else {
-            if (pComponent->isConnectorSizing()) {
-              endComponentName = QString("%1[%2]").arg(pComponent->getName()).arg(++numberOfEndComponentConnections);
+            if (pElement->isConnectorSizing()) {
+              endElementName = QString("%1[%2]").arg(pElement->getName()).arg(++numberOfEndComponentConnections);
             } else {
-              endComponentName = pComponent->getName();
+              endElementName = pElement->getName();
             }
           }
         }
-        mpConnectionLineAnnotation->setStartElementName(startComponentName);
-        mpConnectionLineAnnotation->setEndElementName(endComponentName);
+        mpConnectionLineAnnotation->setStartElementName(startElementName);
+        mpConnectionLineAnnotation->setEndElementName(endElementName);
         if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
           CompositeModelEditor* editor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
           if (!editor->okToConnect(mpConnectionLineAnnotation)) {
@@ -2777,9 +2905,22 @@ void GraphicsView::addConnection(Element *pComponent)
             removeCurrentConnection();
           }
         } else {
-          mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-          mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
-          mpModelWidget->updateModelText();
+          if (mpModelWidget->isNewApi()) {
+            if (!connectionExists(startElementName, endElementName, false)) {
+              mpConnectionLineAnnotation->setLine(new ModelInstance::Line);
+              mpConnectionLineAnnotation->updateLine();
+              addConnectionToView(mpConnectionLineAnnotation, false);
+              addConnectionToClass(mpConnectionLineAnnotation);
+              mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), "Add Connection"));
+              mpModelWidget->updateModelText();
+            } else {
+              removeCurrentConnection();
+            }
+          } else {
+            mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+            mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+            mpModelWidget->updateModelText();
+          }
         }
       }
     }
@@ -2887,7 +3028,6 @@ void GraphicsView::removeCurrentTransition()
  */
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
-  pConnectionLineAnnotation->setSelected(false);
   // if deleting a bus connection
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     if (pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()
@@ -2926,6 +3066,9 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
         }
       }
     }
+    removeConnectionFromView(pConnectionLineAnnotation);
+    deleteConnectionFromClass(pConnectionLineAnnotation);
+  } else if (mpModelWidget->isNewApi()) {
     removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
   } else {
@@ -3917,14 +4060,14 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     }
   }
   // if some item is clicked
-  if (Element *pComponent = connectorComponentAtPosition(event->pos())) {
+  if (Element *pComponent = connectorElementAtPosition(event->pos())) {
     if (!isCreatingConnection()) {
       mpClickedComponent = pComponent;
     } else if (isCreatingConnection()) {
       addConnection(pComponent);  // end the connection
       eventConsumed = true; // consume the event so that connection line or end component will not become selected
     }
-  } else if (Element *pComponent = stateComponentAtPosition(event->pos())) {
+  } else if (Element *pComponent = stateElementAtPosition(event->pos())) {
     if (!isCreatingTransition()) {
       mpClickedState = pComponent;
     } else if (isCreatingTransition()) {
@@ -3969,7 +4112,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
-  if (connectorComponentAtPosition(event->pos()) || stateComponentAtPosition(event->pos())) {
+  if (connectorElementAtPosition(event->pos()) || stateElementAtPosition(event->pos())) {
     setCrossCursor = true;
     /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
    * Calling this function a second time restores the original widgets' cursors.
@@ -5352,7 +5495,7 @@ void ModelWidget::getModelConnections()
 /*!
  * \brief ModelWidget::getMetaModelSubModels
  * \brief ModelWidget::detectMultipleDeclarations
- * detect multiple declarations of a component instance
+ * detect multiple declarations of a element instance
  */
 void ModelWidget::detectMultipleDeclarations()
 {
@@ -5433,7 +5576,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
       if (startComponentName.contains("[")) {
         startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
       }
-      pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+      pStartConnectorComponent = getConnectorElement(pStartComponent, startComponentName);
     }
   }
   // show error message if start component is not found.
@@ -5465,7 +5608,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
       if (endComponentName.contains("[")) {
         endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
       }
-      pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
+      pEndConnectorComponent = getConnectorElement(pEndComponent, endComponentName);
     }
   }
   // show error message if end component is not found.
@@ -5837,35 +5980,35 @@ void ModelWidget::addUpdateDeleteOMSElementIcon(const QString &iconPath)
 }
 
 /*!
- * \brief ModelWidget::getConnectorComponent
- * Finds the Port Component within the Component.
- * \param pConnectorComponent
+ * \brief ModelWidget::getConnectorElement
+ * Finds the Port Element within the Element.
+ * \param pConnectorElement
  * \param connectorName
  * \return
  */
-Element* ModelWidget::getConnectorComponent(Element *pConnectorComponent, QString connectorName)
+Element* ModelWidget::getConnectorElement(Element *pConnectorElement, QString connectorName)
 {
-  Element *pConnectorComponentFound = 0;
-  foreach (Element *pComponent, pConnectorComponent->getComponentsList()) {
-    if (pComponent->getName().compare(connectorName) == 0) {
-      pConnectorComponentFound = pComponent;
-      return pConnectorComponentFound;
+  Element *pConnectorElementFound = 0;
+  foreach (Element *pElement, pConnectorElement->getElementsList()) {
+    if (pElement->getName().compare(connectorName) == 0) {
+      pConnectorElementFound = pElement;
+      return pConnectorElementFound;
     }
-    foreach (Element *pInheritedComponent, pComponent->getInheritedElementsList()) {
-      pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
-      if (pConnectorComponentFound) {
-        return pConnectorComponentFound;
+    foreach (Element *pInheritedElement, pElement->getInheritedElementsList()) {
+      pConnectorElementFound = getConnectorElement(pInheritedElement, connectorName);
+      if (pConnectorElementFound) {
+        return pConnectorElementFound;
       }
     }
   }
-  /* if port is not found in components list then look into the inherited components list. */
-  foreach (Element *pInheritedComponent, pConnectorComponent->getInheritedElementsList()) {
-    pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
-    if (pConnectorComponentFound) {
-      return pConnectorComponentFound;
+  /* if port is not found in elements list then look into the inherited elements list. */
+  foreach (Element *pInheritedElement, pConnectorElement->getInheritedElementsList()) {
+    pConnectorElementFound = getConnectorElement(pInheritedElement, connectorName);
+    if (pConnectorElementFound) {
+      return pConnectorElementFound;
     }
   }
-  return pConnectorComponentFound;
+  return pConnectorElementFound;
 }
 
 void ModelWidget::clearGraphicsViews()
@@ -5968,8 +6111,9 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   // Remove all elements from the scene
-  mpIconGraphicsView->removeElementsFromView();
-  mpDiagramGraphicsView->removeElementsFromView();
+  mpIconGraphicsView->removeElementsFromScene();
+  mpDiagramGraphicsView->removeElementsFromScene();
+  mpDiagramGraphicsView->removeConnectionsFromScene();
   // We only remove the inherited stuff and redraw it. The class shapes, connections and elements are updated.
   mpIconGraphicsView->removeInheritedClassShapes();
   mpIconGraphicsView->removeInheritedClassConnections();
@@ -6332,7 +6476,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     resultFile << "\"" << "time\",";
     int nActiveInterfaces = 0;
     foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
-      foreach (Element *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
+      foreach (Element *pInterfaceComponent, pSubModelComponent->getElementsList()) {
         QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
         /*!
          * \note Don't check for connection.
@@ -6358,7 +6502,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     resultFile << "\n" << "0,";
     nActiveInterfaces = 0;
     foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
-      foreach (Element *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
+      foreach (Element *pInterfaceComponent, pSubModelComponent->getElementsList()) {
         /*!
          * \note Don't check for connection.
          * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
@@ -6651,7 +6795,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         continue;
       }
       bool visited = false;
-      foreach (Element *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
+      foreach (Element *pInterfaceComponent, pSubModelComponent->getElementsList()) {
         QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
 
 
@@ -7097,7 +7241,7 @@ QList<QVariant> ModelWidget::toOMSensData()
   QList<Element*> pInheritedAndComposedComponents;
   QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getElementsList() + mpDiagramGraphicsView->getInheritedElementsList();
   for (Element *pComponent : pTopMostComponents) {
-    pInheritedAndComposedComponents = pComponent->getComponentsList() + pComponent->getInheritedElementsList();
+    pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
     pInheritedAndComposedComponents.append(pComponent);
     for (auto component : pInheritedAndComposedComponents) {
       ElementInfo *pComponentInfo = component->getComponentInfo();
@@ -7255,10 +7399,10 @@ IconDiagramMap ModelWidget::getIconDiagramMap(QString mapAnnotation)
   QStringList mapAnnotationValues = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(mapAnnotation));
   if (mapAnnotationValues.length() == 6) {
     QPointF point1, point2;
-    point1.setX(mapAnnotationValues.at(1).toFloat());
-    point1.setY(mapAnnotationValues.at(2).toFloat());
-    point2.setX(mapAnnotationValues.at(3).toFloat());
-    point2.setY(mapAnnotationValues.at(4).toFloat());
+    point1.setX(mapAnnotationValues.at(1).toDouble());
+    point1.setY(mapAnnotationValues.at(2).toDouble());
+    point2.setX(mapAnnotationValues.at(3).toDouble());
+    point2.setY(mapAnnotationValues.at(4).toDouble());
     map.mExtent.clear();
     map.mExtent.append(point1);
     map.mExtent.append(point2);
@@ -7798,7 +7942,7 @@ void ModelWidget::getCompositeModelConnections()
       continue;
     }
     // get start interface point
-    Element *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
+    Element *pStartInterfacePointComponent = getConnectorElement(pStartSubModelComponent, startConnectionList.at(1));
     if (!pStartInterfacePointComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(1))
@@ -7818,7 +7962,7 @@ void ModelWidget::getCompositeModelConnections()
       continue;
     }
     // get end interface point
-    Element *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
+    Element *pEndInterfacePointComponent = getConnectorElement(pEndSubModelComponent, endConnectionList.at(1));
     if (!pEndInterfacePointComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(1))
@@ -8033,7 +8177,7 @@ void ModelWidget::drawOMSModelConnections()
         if (startConnectionList.size() > 1) {
           // get start connector component
           QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
-          pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectorName);
+          pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
           if (!pStartConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                        .arg(startConnectorName, pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
@@ -8058,7 +8202,7 @@ void ModelWidget::drawOMSModelConnections()
         if (endConnectionList.size() > 1) {
           // get end connector component
           QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
-          pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectorName);
+          pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
           if (!pEndConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                        .arg(endConnectorName, pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
