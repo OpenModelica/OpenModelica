@@ -15469,5 +15469,16 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
+public function make2CMakeInclude
+  "Convert makefile include directories to CMake include directories"
+  input list<String> includes;
+  output String cmakecode = "";
+algorithm
+  for include in includes loop
+    cmakecode := cmakecode + "\n                                               " +
+                 "\"" + System.trim(include, "\"-I") + "\"";
+  end for;
+end make2CMakeInclude;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
