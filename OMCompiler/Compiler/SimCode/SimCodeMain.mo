@@ -916,8 +916,9 @@ algorithm
           cmakelistsStr := System.stringReplace(cmakelistsStr, "@WITH_SUNDIALS@", "");
         end if;
 
-        // Check for external libraries
+        // Add external libraries and includes
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
