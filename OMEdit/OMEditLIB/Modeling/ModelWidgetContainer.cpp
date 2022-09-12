@@ -845,11 +845,11 @@ void GraphicsView::deleteElement(Element *pElement)
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
         deleteConnectionFromClass(mConnectionsList[i]);
-        ++i;
+        removeConnectionFromView(mConnectionsList[i]);
       } else {
         deleteConnection(mConnectionsList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -862,11 +862,11 @@ void GraphicsView::deleteElement(Element *pElement)
     if ((startComponentName.compare(pElement->getName()) == 0) || (endComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
         deleteTransitionFromClass(mTransitionsList[i]);
-        ++i;
+        removeTransitionFromView(mTransitionsList[i]);
       } else {
         deleteTransition(mTransitionsList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -878,11 +878,11 @@ void GraphicsView::deleteElement(Element *pElement)
     if ((startComponentName.compare(pElement->getName()) == 0)) {
       if (mpModelWidget->isNewApi()) {
         deleteInitialStateFromClass(mInitialStatesList[i]);
-        ++i;
+        removeInitialStateFromView(mInitialStatesList[i]);
       } else {
         deleteInitialState(mInitialStatesList[i]);
-        i = 0;   //Restart iteration if map has changed
       }
+      i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
@@ -1127,8 +1127,7 @@ void GraphicsView::addConnection(ModelInstance::Connection *pConnection, bool in
 
     bool exists = false;
     if (!inherited) { // Update if connection exists
-      LineAnnotation *pConnectionLineAnnotation = getOutOfSceneConnection(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName(),
-                                                                          pConnection->getLine());
+      LineAnnotation *pConnectionLineAnnotation = getOutOfSceneConnection(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName());
       if (pConnectionLineAnnotation) {
         exists = true;
         pConnectionLineAnnotation->setStartElement(pStartConnectorElement);
@@ -1330,6 +1329,8 @@ int elementIndexInConnection(const QString &connectionElementName)
  */
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
+  // unselect the connection so it will not receive further signals
+  pConnectionLineAnnotation->setSelected(false);
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -1510,15 +1511,13 @@ int GraphicsView::numberOfElementConnections(Element *pElement, LineAnnotation *
  * Finds the connection from mOutOfSceneConnectionsList
  * \param startConnectorName
  * \param endConnectorName
- * \param pLine
  * \return
  */
-LineAnnotation *GraphicsView::getOutOfSceneConnection(const QString &startConnectorName, const QString &endConnectorName, ModelInstance::Line *pLine)
+LineAnnotation *GraphicsView::getOutOfSceneConnection(const QString &startConnectorName, const QString &endConnectorName)
 {
   for (int i = mOutOfSceneConnectionsList.size(); --i >= 0;) {
     LineAnnotation *pConnectionLineAnnotation = mOutOfSceneConnectionsList.at(i);
-    if ((pConnectionLineAnnotation->getStartElementName().compare(startConnectorName) == 0) && (pConnectionLineAnnotation->getEndElementName().compare(endConnectorName) == 0)
-        && (pConnectionLineAnnotation->getLine() == pLine)) {
+    if ((pConnectionLineAnnotation->getStartElementName().compare(startConnectorName) == 0) && (pConnectionLineAnnotation->getEndElementName().compare(endConnectorName) == 0)) {
       return pConnectionLineAnnotation;
     }
   }
@@ -1540,6 +1539,50 @@ void GraphicsView::addTransitionToClass(LineAnnotation *pTransitionLineAnnotatio
                                QString("annotate=$annotation(%1,%2)").arg(pTransitionLineAnnotation->getShapeAnnotation())
                                .arg(pTransitionLineAnnotation->getTextAnnotation()->getShapeAnnotation()))) {
   }
+}
+
+/*!
+ * \brief GraphicsView::removeTransitionDetails
+ * Removes tranistion details that are linked with start and end connector.
+ * \param pTransitionLineAnnotation
+ */
+void GraphicsView::removeTransitionDetails(LineAnnotation *pTransitionLineAnnotation)
+{
+  // Remove the start element connection details.
+  Element *pStartElement = pTransitionLineAnnotation->getStartElement();
+  if (pStartElement && pStartElement->getRootParentElement()) {
+    pStartElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
+    pStartElement->getRootParentElement()->setHasTransition(false);
+  } else if (pStartElement) {
+    pStartElement->removeConnectionDetails(pTransitionLineAnnotation);
+    pStartElement->setHasTransition(false);
+  }
+  // Remove the end element connection details.
+  Element *pEndElement = pTransitionLineAnnotation->getEndElement();
+  if (pEndElement && pEndElement->getRootParentElement()) {
+    pEndElement->getRootParentElement()->removeConnectionDetails(pTransitionLineAnnotation);
+    pEndElement->getRootParentElement()->setHasTransition(false);
+  } else if (pEndElement) {
+    pEndElement->removeConnectionDetails(pTransitionLineAnnotation);
+    pEndElement->setHasTransition(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeTransitionFromView
+ * Removes the transition from the view.
+ * \param pTransitionLineAnnotation
+ */
+void GraphicsView::removeTransitionFromView(LineAnnotation *pTransitionLineAnnotation)
+{
+  removeTransitionDetails(pTransitionLineAnnotation);
+  deleteTransitionFromList(pTransitionLineAnnotation);
+  addTransitionToOutOfSceneList(pTransitionLineAnnotation);
+  pTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  pTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  pTransitionLineAnnotation->updateTransitionTextPosition();
+  removeItem(pTransitionLineAnnotation);
+  pTransitionLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -1580,6 +1623,38 @@ void GraphicsView::addInitialStateToClass(LineAnnotation *pInitialStateLineAnnot
                                  pInitialStateLineAnnotation->getStartElementName(),
                                  QString("annotate=").append(pInitialStateLineAnnotation->getShapeAnnotation()))) {
   }
+}
+
+/*!
+ * \brief GraphicsView::removeInitialStateDetails
+ * Removes initial state details that are linked with start connector.
+ * \param pInitialStateLineAnnotation
+ */
+void GraphicsView::removeInitialStateDetails(LineAnnotation *pInitialStateLineAnnotation)
+{
+  // Remove the start initial state details.
+  Element *pStartComponent = pInitialStateLineAnnotation->getStartElement();
+  if (pStartComponent && pStartComponent->getRootParentElement()) {
+    pStartComponent->getRootParentElement()->removeConnectionDetails(pInitialStateLineAnnotation);
+    pStartComponent->getRootParentElement()->setIsInitialState(false);
+  } else if (pStartComponent) {
+    pStartComponent->removeConnectionDetails(pInitialStateLineAnnotation);
+    pStartComponent->setIsInitialState(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeInitialStateFromView
+ * Removes the initial state from the view.
+ * \param pInitialStateLineAnnotation
+ */
+void GraphicsView::removeInitialStateFromView(LineAnnotation *pInitialStateLineAnnotation)
+{
+  removeInitialStateDetails(pInitialStateLineAnnotation);
+  deleteInitialStateFromList(pInitialStateLineAnnotation);
+  addInitialStateToOutOfSceneList(pInitialStateLineAnnotation);
+  removeItem(pInitialStateLineAnnotation);
+  pInitialStateLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -2832,7 +2907,8 @@ void GraphicsView::addConnection(Element *pElement)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              mpConnectionLineAnnotation->initializeLine();
+              mpConnectionLineAnnotation->setLine(new ModelInstance::Line);
+              mpConnectionLineAnnotation->updateLine();
               addConnectionToView(mpConnectionLineAnnotation, false);
               addConnectionToClass(mpConnectionLineAnnotation);
               mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), "Add Connection"));
@@ -2952,7 +3028,6 @@ void GraphicsView::removeCurrentTransition()
  */
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
-  pConnectionLineAnnotation->setSelected(false);
   // if deleting a bus connection
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     if (pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()
@@ -2994,7 +3069,7 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
     removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
   } else if (mpModelWidget->isNewApi()) {
-    removeItem(pConnectionLineAnnotation);
+    removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
   } else {
     mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
@@ -7324,10 +7399,10 @@ IconDiagramMap ModelWidget::getIconDiagramMap(QString mapAnnotation)
   QStringList mapAnnotationValues = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(mapAnnotation));
   if (mapAnnotationValues.length() == 6) {
     QPointF point1, point2;
-    point1.setX(mapAnnotationValues.at(1).toFloat());
-    point1.setY(mapAnnotationValues.at(2).toFloat());
-    point2.setX(mapAnnotationValues.at(3).toFloat());
-    point2.setY(mapAnnotationValues.at(4).toFloat());
+    point1.setX(mapAnnotationValues.at(1).toDouble());
+    point1.setY(mapAnnotationValues.at(2).toDouble());
+    point2.setX(mapAnnotationValues.at(3).toDouble());
+    point2.setY(mapAnnotationValues.at(4).toDouble());
     map.mExtent.clear();
     map.mExtent.append(point1);
     map.mExtent.append(point2);

@@ -96,9 +96,9 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizationFMU* pVisual
 void FMUSettingsDialog::saveSimSettings()
 {
   //step size
-  bool isFloat = true;
-  double stepSize = mpStepSizeLineEdit->text().toFloat(&isFloat);
-  if (!isFloat) {
+  bool isDouble = true;
+  double stepSize = mpStepSizeLineEdit->text().toDouble(&isDouble);
+  if (!isDouble) {
     stepSize = 0.0001;
   }
   //handle events

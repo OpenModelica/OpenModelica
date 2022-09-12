@@ -752,13 +752,13 @@ void OptionsDialog::readLineStyleSettings()
   if (mpSettings->contains("linestyle/pattern"))
     mpLineStylePage->setLinePattern(mpSettings->value("linestyle/pattern").toString());
   if (mpSettings->contains("linestyle/thickness"))
-    mpLineStylePage->setLineThickness(mpSettings->value("linestyle/thickness").toFloat());
+    mpLineStylePage->setLineThickness(mpSettings->value("linestyle/thickness").toDouble());
   if (mpSettings->contains("linestyle/startArrow"))
     mpLineStylePage->setLineStartArrow(mpSettings->value("linestyle/startArrow").toString());
   if (mpSettings->contains("linestyle/endArrow"))
     mpLineStylePage->setLineEndArrow(mpSettings->value("linestyle/endArrow").toString());
   if (mpSettings->contains("linestyle/arrowSize"))
-    mpLineStylePage->setLineArrowSize(mpSettings->value("linestyle/arrowSize").toFloat());
+    mpLineStylePage->setLineArrowSize(mpSettings->value("linestyle/arrowSize").toDouble());
   if (mpSettings->contains("linestyle/smooth"))
     mpLineStylePage->setLineSmooth(mpSettings->value("linestyle/smooth").toBool());
 }
@@ -798,7 +798,7 @@ void OptionsDialog::readPlottingSettings()
     mpPlottingPage->setCurvePattern(mpSettings->value("curvestyle/pattern").toInt());
   }
   if (mpSettings->contains("curvestyle/thickness")) {
-    mpPlottingPage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
+    mpPlottingPage->setCurveThickness(mpSettings->value("curvestyle/thickness").toDouble());
   }
   if (mpSettings->contains("variableFilter/interval")) {
     mpPlottingPage->getFilterIntervalSpinBox()->setValue(mpSettings->value("variableFilter/interval").toInt());

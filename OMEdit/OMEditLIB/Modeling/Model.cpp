@@ -62,7 +62,7 @@ namespace ModelInstance
 
   bool Point::operator==(const Point &point)
   {
-    return (point.x() == this->x()) && (point.y() == this->y());
+    return (qFuzzyCompare(point.x(), this->x()) && qFuzzyCompare(point.y(), this->y()));
   }
 
   Extent::Extent() = default;
@@ -260,13 +260,13 @@ namespace ModelInstance
 
   bool Color::operator==(const Color &color) const
   {
-    return color.getColor() == this->getColor();
+    return (color.getColor() == this->getColor());
   }
 
   FilledShape::FilledShape()
   {
-    mPattern = "LinePattern::Solid";
-    mFillPattern = "FillPattern::None";
+    mPattern = "LinePattern.Solid";
+    mFillPattern = "FillPattern.None";
     mLineThickness = 0.25;
   }
 
@@ -325,7 +325,7 @@ namespace ModelInstance
   Line::Line()
   {
     mPoints.clear();
-    mPattern = "LinePattern::Solid";
+    mPattern = "LinePattern.Solid";
     mThickness = 0.25;
     mArrow[0] = "Arrow.None";
     mArrow[1] = "Arrow.None";

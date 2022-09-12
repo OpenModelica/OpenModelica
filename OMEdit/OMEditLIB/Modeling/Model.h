@@ -187,6 +187,7 @@ private:
 
     void addPoint(const QPointF &point);
     QList<Point> getPoints() const {return mPoints;}
+    void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
     Color getColor() const {return mColor;}
     void setLinePattern(const QString &pattern) {mPattern = pattern;}

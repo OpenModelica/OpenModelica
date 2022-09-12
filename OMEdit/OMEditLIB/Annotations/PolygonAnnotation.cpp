@@ -127,7 +127,7 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   foreach (QString point, pointsList) {
     QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
     if (polygonPoints.size() >= 2) {
-      mPoints.append(QPointF(polygonPoints.at(0).toFloat(), polygonPoints.at(1).toFloat()));
+      mPoints.append(QPointF(polygonPoints.at(0).toDouble(), polygonPoints.at(1).toDouble()));
     }
   }
   /* The polygon is automatically closed, if the first and the last points are not identical. */

@@ -524,7 +524,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   foreach (QString point, pointsList) {
     QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
     if (linePoints.size() >= 2) {
-      addPoint(QPointF(linePoints.at(0).toFloat(), linePoints.at(1).toFloat()));
+      addPoint(QPointF(linePoints.at(0).toDouble(), linePoints.at(1).toDouble()));
     }
   }
   // 5th item of list contains the color.
@@ -1311,8 +1311,8 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
     }
   } else {
     if (mpStartElement) {
-      Element *pComponent = qobject_cast<Element*>(sender());
-      if (pComponent == mpStartElement->getRootParentElement()) {
+      Element *pElement = qobject_cast<Element*>(sender());
+      if (pElement == mpStartElement->getRootParentElement()) {
         updateStartPoint(mpGraphicsView->roundPoint(mpStartElement->mapToScene(mpStartElement->boundingRect().center())));
         if (mLineType == LineAnnotation::TransitionType) {
           QRectF sceneRectF = mpStartElement->sceneBoundingRect();
@@ -1333,8 +1333,8 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
       }
     }
     if (mpEndElement) {
-      Element *pComponent = qobject_cast<Element*>(sender());
-      if (pComponent == mpEndElement->getRootParentElement()) {
+      Element *pElement = qobject_cast<Element*>(sender());
+      if (pElement == mpEndElement->getRootParentElement()) {
         updateEndPoint(mpGraphicsView->roundPoint(mpEndElement->mapToScene(mpEndElement->boundingRect().center())));
         if (mLineType == LineAnnotation::TransitionType) {
           QRectF sceneRectF = mpEndElement->sceneBoundingRect();
@@ -1360,6 +1360,10 @@ void LineAnnotation::updateConnectionAnnotation()
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else {
+    // update the ModelInstance::Line with new annotation
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      updateLine();
+    }
     // get the connection line annotation.
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
@@ -2375,12 +2379,12 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
 }
 
 /*!
- * \brief LineAnnotation::initializeLine
- * Initializes the Line object with the annotation.
+ * \brief LineAnnotation::updateLine
+ * Updates the Line object with the annotation.
  */
-void LineAnnotation::initializeLine()
+void LineAnnotation::updateLine()
 {
-  mpLine = new ModelInstance::Line;
+  mpLine->clearPoints();
   foreach (QPointF point, mPoints) {
     mpLine->addPoint(point);
   }

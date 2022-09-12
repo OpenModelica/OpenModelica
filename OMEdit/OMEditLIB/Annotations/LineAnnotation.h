@@ -145,7 +145,7 @@ public:
   void showOMSConnection();
   void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
-  void initializeLine();
+  void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
 private:

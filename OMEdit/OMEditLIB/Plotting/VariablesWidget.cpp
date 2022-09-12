@@ -2749,11 +2749,11 @@ void VariablesWidget::pauseVisualization()
 void VariablesWidget::visulizationTimeChanged()
 {
   QString time = mpTimeTextBox->text();
-  bool isFloat = true;
+  bool isDouble = true;
   double start = mpTimeManager->getStartTime();
   double end = mpTimeManager->getEndTime();
-  double value = time.toFloat(&isFloat);
-  if (isFloat && value >= 0.0) {
+  double value = time.toDouble(&isDouble);
+  if (isDouble && value >= 0.0) {
     if (value < start) {
       value = start;
     } else if (value > end) {
@@ -2772,9 +2772,9 @@ void VariablesWidget::visulizationTimeChanged()
 void VariablesWidget::visualizationSpeedChanged()
 {
   QString speed = mpSpeedComboBox->lineEdit()->text();
-  bool isFloat = true;
-  double value = speed.toFloat(&isFloat);
-  if (isFloat && value > 0.0) {
+  bool isDouble = true;
+  double value = speed.toDouble(&isDouble);
+  if (isDouble && value > 0.0) {
     mpTimeManager->setSpeedUp(value);
   }
 }
