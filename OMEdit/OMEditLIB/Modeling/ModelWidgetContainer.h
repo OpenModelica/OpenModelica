@@ -72,6 +72,22 @@ class TextAnnotation;
 class BitmapAnnotation;
 class NetworkAccessManager;
 
+class ModelInfo
+{
+public:
+  ModelInfo();
+  Element* getIconElement(const QString &name) const;
+  Element* getDiagramElement(const QString &name) const;
+  LineAnnotation* getConnection(const QString &startElementName, const QString &endElementName) const;
+
+  QString mName;
+  QList<Element*> mIconElementsList;
+  QList<Element*> mDiagramElementsList;
+  QList<LineAnnotation*> mConnectionsList;
+  QList<LineAnnotation*> mTransitionsList;
+  QList<LineAnnotation*> mInitialStatesList;
+};
+
 class GraphicsScene : public QGraphicsScene
 {
   Q_OBJECT
@@ -169,8 +185,8 @@ public:
 
   void drawCoordinateSystem();
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
-  void drawElements(ModelInstance::Model *pModelInstance, bool inherited);
-  void drawConnections(ModelInstance::Model *pModelInstance, bool inherited);
+  void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
+  void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -226,7 +242,6 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Element *pElement, bool inherited);
   void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
@@ -238,7 +253,6 @@ public:
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
-  Element* getOutOfSceneElement(const QString &elementName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(QString elementName, int number = 0);
   bool checkElementName(QString elementName);
@@ -247,7 +261,7 @@ public:
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   bool connectionExists(const QString &startElementName, const QString &endElementName, bool inherited);
-  void addConnection(ModelInstance::Connection *pConnection, bool inherited);
+  void addConnection(ModelInstance::Connection *pConnection, bool inherited, const ModelInfo &modelInfo);
   void addConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
@@ -263,7 +277,6 @@ public:
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
-  LineAnnotation* getOutOfSceneConnection(const QString &startConnectorName, const QString &endConnectorName);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
   void removeTransitionDetails(LineAnnotation *pTransitionLineAnnotation);
@@ -585,8 +598,8 @@ public:
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadElements();
 
-  void drawModel(bool openingModel);
-  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, bool openingModel);
+  void drawModel(const ModelInfo &modelInfo);
+  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
   void loadDiagramView();
   void loadConnections();
@@ -599,7 +612,7 @@ public:
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
-  void reDrawModelWidget(const QJsonObject &modelInstanceJson);
+  void reDrawModelWidget(const QJsonObject &modelInstanceJson, const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
@@ -623,6 +636,7 @@ public:
   void processPendingModelUpdate();
   void emitUpdateModel();
   void updateModelIfDependsOn(const QString &modelName);
+  ModelInfo createModelInfo() const;
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -646,7 +660,7 @@ private:
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;
-  bool mComponentsLoaded;
+  bool mElementsLoaded;
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;

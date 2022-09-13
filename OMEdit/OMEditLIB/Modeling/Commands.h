@@ -429,13 +429,15 @@ private:
 class OMCUndoCommand : public UndoCommand
 {
 public:
-  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QString &commandText, UndoCommand *pParent = 0);
+  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   QString mOldModelText;
+  ModelInfo mOldModelInfo;
   QString mNewModelText;
+  ModelInfo mNewModelInfo;
   bool mUndoDoneOnce;
 };
 
