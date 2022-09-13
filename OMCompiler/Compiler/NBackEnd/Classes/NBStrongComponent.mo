@@ -743,9 +743,7 @@ protected
     for eqn_idx in comp_indices loop
       var_idx           := eqn_to_var[eqn_idx];
       var_arr_idx       := mapping.var_StA[var_idx];
-      (var_scal_idx, _) := mapping.var_AtS[var_arr_idx];
       eqn_arr_idx       := mapping.eqn_StA[eqn_idx];
-      (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
 
       // collect variable and equation slices
       idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map, sourceInfo()) else {};
@@ -758,12 +756,14 @@ protected
     // check if slices are full and reduce them to base 0 indexing
     for tpl in UnorderedMap.toList(var_map) loop
       (var_arr_idx, idx_lst)  := tpl;
+      (var_scal_idx, _)       := mapping.var_AtS[var_arr_idx];
       var                     := VariablePointers.getVarAt(vars, var_arr_idx);
       idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else list(i - var_scal_idx for i in idx_lst);
       acc_vars                := Slice.SLICE(var, idx_lst) :: acc_vars;
     end for;
     for tpl in UnorderedMap.toList(eqn_map) loop
       (eqn_arr_idx, idx_lst)  := tpl;
+      (eqn_scal_idx, _)       := mapping.eqn_AtS[eqn_arr_idx];
       eqn                     := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
       idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else list(i - eqn_scal_idx for i in idx_lst);
       acc_eqns                := Slice.SLICE(eqn, idx_lst) :: acc_eqns;

@@ -3049,18 +3049,22 @@ match system
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
             let forPart = (iterators |> iterator => match iterator
                 case (cref, range as DAE.RANGE()) then
-                let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
-                <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>;separator="\n")
+                  let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
+                  <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
+                ;separator="\n")
             let endForPart = (iterators |> iterator => "}")
             let indexShift = (iterators |> iterator => match iterator
-                case (cref,_) then '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>';separator="+")
+                case (cref, range as DAE.RANGE()) then
+                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
+                ;separator="+")
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
-            <%preExp%>res[<%res_index%>+<%indexShift%>-1] = <%expPart%>;
+            <%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;
             <%endForPart%>
             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
             >>
