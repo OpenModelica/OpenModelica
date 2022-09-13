@@ -56,6 +56,7 @@
 
 #include "newton_diagnostics.h"
 #include "../simulation_info_json.h"
+#include "../../util/jacobian_util.h"
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -660,26 +661,51 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   n_idx[4] = 4;
   n_idx[5] = 5;*/
 
-  // --------------------------------------------------------------------------------------------------------------------------------
-  //  DC circuit case
-  // --------------------------------------------------------------------------------------------------------------------------------
+   // --------------------------------------------------------------------------------------------------------------------------------
+   //  DC circuit case
+   // --------------------------------------------------------------------------------------------------------------------------------
 
-  // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-  unsigned p = 3;
-  double w0[p];
-  unsigned w_idx[p];
+   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
+   unsigned p = 3;
+   double w0[p];
+   unsigned w_idx[p];
 
-  w_idx[0] = 2;  // var^3
-  w_idx[1] = 3;  // var^4
-  w_idx[2] = 4;  // var^5
+   // w_idx are the indices of the independent variable in vector x0
+   w_idx[0] = 2;  // var^3
+   w_idx[1] = 3;  // var^4
+   w_idx[2] = 4;  // var^5
 
-  // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-  double n[p];
-  unsigned n_idx[p];
+   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
+   double n[p];
+   unsigned n_idx[p];
 
-  n_idx[0] = 1;  // f^2
-  n_idx[1] = 3;  // f^4
-  n_idx[2] = 4;  // f^5
+   // n_idx are the indices of the non-linear functions in vector f, fx, fxx, etc
+   n_idx[0] = 1;  // f^2
+   n_idx[1] = 3;  // f^4
+   n_idx[2] = 4;  // f^5
+
+   // NONLINEAR_PATTERN* nonlinearPattern is part of NONLINEAR_SYSTEM_DATA
+   // non-linear dependents: unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
+   // non-linear functions : unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
+   // NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+   //unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, int var_idx);
+   //unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, int eqn_idx);
+   //printf("\n\n   Non-linear varaibles of all equations ....%d\n",systemData->nonlinearPattern->numberOfNonlinear);
+   printf("\n\n   Non-linear variables of all equations ....\n");
+   if (!systemData->nonlinearPattern)
+      printf("   systemData->nonlinearPattern empty ....\n");
+   else
+   {
+      printf("   systemData->nonlinearPattern exists ....\n");
+      for ( unsigned int i = 0; i < systemData->nonlinearPattern->numberOfNonlinear; i++)
+      {
+         unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, i);
+         printf("f_%d vars: ", i);
+         for (unsigned int j = 0 ; j < systemData->nonlinearPattern->numberOfEqns; j++)
+            printf("%d, ", j);
+         printf("\n");
+      }
+   }
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
