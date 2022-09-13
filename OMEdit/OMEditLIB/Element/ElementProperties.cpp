@@ -1725,6 +1725,7 @@ void ElementParameters::updateElementParameters()
 {
   if (MainWindow::instance()->isNewApi()) {
     ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
+    ModelInfo oldModelInfo = pModelWidget->createModelInfo();
     QString className = pModelWidget->getLibraryTreeItem()->getNameStructure();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     bool valueChanged = false;
@@ -1817,7 +1818,8 @@ void ElementParameters::updateElementParameters()
     }
     // if valueChanged is true then put the change in the undo stack.
     if (valueChanged) {
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), QString("Update Element %1 Parameters").arg(mpElement->getName())));
+      ModelInfo newModelInfo = pModelWidget->createModelInfo();
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Update Element %1 Parameters").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {
@@ -2203,7 +2205,7 @@ void ElementAttributes::updateElementAttributes()
     causality = "";
   }
   if (MainWindow::instance()->isNewApi()) {
-    ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
+    ModelInfo oldModelInfo = pModelWidget->createModelInfo();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
     bool attributesChanged = false;
@@ -2263,7 +2265,8 @@ void ElementAttributes::updateElementAttributes()
     }
     // push the attributes updated change to the stack
     if (attributesChanged) {
-      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), QString("Update Element %1 Attributes").arg(mpElement->getName())));
+      ModelInfo newModelInfo = pModelWidget->createModelInfo();
+      pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Update Element %1 Attributes").arg(mpElement->getName())));
       pModelWidget->updateModelText();
     }
   } else {
