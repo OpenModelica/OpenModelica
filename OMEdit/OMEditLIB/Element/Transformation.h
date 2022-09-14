@@ -60,7 +60,6 @@ public:
   bool getVisible() const {return mVisible;}
   bool getVisibleIcon() const {return mVisibleIcon;}
   void adjustPosition(qreal x, qreal y);
-  bool hasOrigin();
   void setOrigin(QPointF origin);
   QPointF getOrigin() const;
   void setExtent1(QPointF extent);
@@ -80,16 +79,12 @@ private:
   qreal mHeight;
   bool mVisible;
   QPointF mOriginDiagram;
-  bool mHasOriginDiagramX;
-  bool mHasOriginDiagramY;
   QPointF mExtent1Diagram;
   QPointF mExtent2Diagram;
   qreal mRotateAngleDiagram;
   QPointF mPositionDiagram;
   bool mVisibleIcon;
   QPointF mOriginIcon;
-  bool mHasOriginIconX;
-  bool mHasOriginIconY;
   QPointF mExtent1Icon;
   QPointF mExtent2Icon;
   qreal mRotateAngleIcon;
@@ -101,9 +96,6 @@ private:
   qreal getWidth() const {return mWidth;}
   qreal getHeight() const {return mHeight;}
   void adjustPositionDiagram(qreal x, qreal y);
-  bool hasOriginDiagramX() const {return mHasOriginDiagramX;}
-  bool hasOriginDiagramY() const {return mHasOriginDiagramY;}
-  bool hasOriginDiagram() const {return hasOriginDiagramX() && hasOriginDiagramY();}
   void setOriginDiagram(QPointF origin);
   QPointF getOriginDiagram() const {return mOriginDiagram;}
   void setExtent1Diagram(QPointF extent) {mExtent1Diagram = extent;}
@@ -115,9 +107,6 @@ private:
   QPointF getPositionDiagram() const;
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
-  bool hasOriginIconX() const {return mHasOriginIconX;}
-  bool hasOriginIconY() const {return mHasOriginIconY;}
-  bool hasOriginIcon() {return hasOriginIconX() && hasOriginIconY();}
   void setOriginIcon(QPointF origin);
   QPointF getOriginIcon() const {return mOriginIcon;}
   void setExtent1Icon(QPointF extent) {mExtent1Icon = extent;}

@@ -1295,10 +1295,8 @@ QString Element::getTransformationAnnotation(bool ModelicaSyntax)
     annotationString.append(ModelicaSyntax ? "transformation(" : "transformation=transformation(");
   }
   // add the origin
-  if (mTransformation.hasOrigin()) {
-    annotationString.append("origin={").append(QString::number(mTransformation.getOrigin().x())).append(",");
-    annotationString.append(QString::number(mTransformation.getOrigin().y())).append("}, ");
-  }
+  annotationString.append("origin={").append(QString::number(mTransformation.getOrigin().x())).append(",");
+  annotationString.append(QString::number(mTransformation.getOrigin().y())).append("}, ");
   // add extent points
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
@@ -1363,13 +1361,8 @@ QString Element::getOMCTransformationAnnotation(QPointF position)
   // add the origin
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(position.x(), position.y());
-  if (mTransformation.hasOrigin()) {
-    annotationString.append(QString::number(mTransformation.getOrigin().x())).append(",");
-    annotationString.append(QString::number(mTransformation.getOrigin().y())).append(",");
-  } else {
-    annotationString.append("-,");
-    annotationString.append("-,");
-  }
+  annotationString.append(QString::number(mTransformation.getOrigin().x())).append(",");
+  annotationString.append(QString::number(mTransformation.getOrigin().y())).append(",");
   // add extent points
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
@@ -1608,7 +1601,6 @@ void Element::createClassElements()
 void Element::applyRotation(qreal angle)
 {
   Transformation oldTransformation = mTransformation;
-  setOriginAndExtents();
   if (angle == 360) {
     angle = 0;
   }
@@ -2755,10 +2747,8 @@ void Element::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y
 void Element::showResizerItems()
 {
   // show the origin item
-  if (mTransformation.hasOrigin()) {
-    mpOriginItem->setPos(mTransformation.getOrigin());
-    mpOriginItem->setActive();
-  }
+  mpOriginItem->setPos(mTransformation.getOrigin());
+  mpOriginItem->setActive();
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -2793,22 +2783,6 @@ void Element::getScale(qreal *sx, qreal *sy)
   } else {
     *sx = transform().m12() / (sin(angle * (M_PI / 180)));
     *sy = -transform().m21() / (sin(angle * (M_PI / 180)));
-  }
-}
-
-void Element::setOriginAndExtents()
-{
-  if (!mTransformation.hasOrigin()) {
-    QPointF extent1, extent2;
-    qreal sx, sy;
-    getScale(&sx, &sy);
-    extent1.setX(sx * boundingRect().left());
-    extent1.setY(sy * boundingRect().top());
-    extent2.setX(sx * boundingRect().right());
-    extent2.setY(sy * boundingRect().bottom());
-    mTransformation.setOrigin(scenePos());
-    mTransformation.setExtent1(extent1);
-    mTransformation.setExtent2(extent2);
   }
 }
 
@@ -3014,12 +2988,10 @@ void Element::updatePlacementAnnotation()
       ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       QPointF extent1 = mTransformation.getExtent1();
       QPointF extent2 = mTransformation.getExtent2();
-      if (mTransformation.hasOrigin()) {
-        extent1.setX(extent1.x() + mTransformation.getOrigin().x());
-        extent1.setY(extent1.y() + mTransformation.getOrigin().y());
-        extent2.setX(extent2.x() + mTransformation.getOrigin().x());
-        extent2.setY(extent2.y() + mTransformation.getOrigin().y());
-      }
+      extent1.setX(extent1.x() + mTransformation.getOrigin().x());
+      extent1.setY(extent1.y() + mTransformation.getOrigin().y());
+      extent2.setX(extent2.x() + mTransformation.getOrigin().x());
+      extent2.setY(extent2.y() + mTransformation.getOrigin().y());
       elementGeometry.x1 = extent1.x();
       elementGeometry.y1 = extent1.y();
       elementGeometry.x2 = extent2.x();
@@ -3077,9 +3049,7 @@ void Element::updatePlacementAnnotation()
  */
 void Element::updateOriginItem()
 {
-  if (mTransformation.hasOrigin()) {
-    mpOriginItem->setPos(mTransformation.getOrigin());
-  }
+  mpOriginItem->setPos(mTransformation.getOrigin());
 }
 
 /*!
@@ -3453,7 +3423,7 @@ void Element::duplicate()
 
 /*!
  * \brief Element::rotateClockwise
- * Rotates the component clockwise.
+ * Rotates the element clockwise.
  */
 void Element::rotateClockwise()
 {
@@ -3466,7 +3436,7 @@ void Element::rotateClockwise()
 
 /*!
  * \brief Element::rotateAntiClockwise
- * Rotates the Element anti clockwise.
+ * Rotates the element anti clockwise.
  */
 void Element::rotateAntiClockwise()
 {
@@ -3479,53 +3449,41 @@ void Element::rotateAntiClockwise()
 
 /*!
  * \brief Element::flipHorizontal
- * Flips the component horizontally.
+ * Flips the element horizontally.
  */
 void Element::flipHorizontal()
 {
   Transformation oldTransformation = mTransformation;
-  setOriginAndExtents();
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
-  // do the flipping based on the component angle.
-  qreal angle = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
-  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270)) {
-    mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
-    mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
-  } else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360)) {
-    mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
-    mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
-  }
+  // invert x value of extents and the angle
+  mTransformation.setExtent1(QPointF(-extent1.x(), extent1.y()));
+  mTransformation.setExtent2(QPointF(-extent2.x(), extent2.y()));
+  mTransformation.setRotateAngle(-mTransformation.getRotateAngle());
   updateElementTransformations(oldTransformation, false);
   showResizerItems();
 }
 
 /*!
  * \brief Element::flipVertical
- * Flips the component vertically.
+ * Flips the element vertically.
  */
 void Element::flipVertical()
 {
   Transformation oldTransformation = mTransformation;
-  setOriginAndExtents();
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
-  // do the flipping based on the component angle.
-  qreal angle = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
-  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270)) {
-    mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
-    mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
-  } else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360)) {
-    mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
-    mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
-  }
+  // invert y value of extents and the angle
+  mTransformation.setExtent1(QPointF(extent1.x(), -extent1.y()));
+  mTransformation.setExtent2(QPointF(extent2.x(), -extent2.y()));
+  mTransformation.setRotateAngle(-mTransformation.getRotateAngle());
   updateElementTransformations(oldTransformation, false);
   showResizerItems();
 }
 
 /*!
  * \brief Element::moveUp
- * Slot that moves component upwards depending on the grid step size value
+ * Slot that moves element upwards depending on the grid step size value
  * \sa moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft(), moveCtrlRight()
  */
@@ -3538,7 +3496,7 @@ void Element::moveUp()
 
 /*!
  * \brief Element::moveShiftUp
- * Slot that moves component upwards depending on the grid step size value multiplied by 5
+ * Slot that moves element upwards depending on the grid step size value multiplied by 5
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3551,7 +3509,7 @@ void Element::moveShiftUp()
 
 /*!
  * \brief Element::moveCtrlUp
- * Slot that moves component one pixel upwards
+ * Slot that moves element one pixel upwards
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3564,7 +3522,7 @@ void Element::moveCtrlUp()
 
 /*!
  * \brief Element::moveDown
- * Slot that moves component downwards depending on the grid step size value
+ * Slot that moves element downwards depending on the grid step size value
  * \sa moveUp(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3577,7 +3535,7 @@ void Element::moveDown()
 
 /*!
  * \brief Element::moveShiftDown
- * Slot that moves component downwards depending on the grid step size value multiplied by 5
+ * Slot that moves element downwards depending on the grid step size value multiplied by 5
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3590,7 +3548,7 @@ void Element::moveShiftDown()
 
 /*!
  * \brief Element::moveCtrlDown
- * Slot that moves component one pixel downwards
+ * Slot that moves element one pixel downwards
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3603,7 +3561,7 @@ void Element::moveCtrlDown()
 
 /*!
  * \brief Element::moveLeft
- * Slot that moves component leftwards depending on the grid step size value
+ * Slot that moves element leftwards depending on the grid step size value
  * \sa moveUp(), moveDown(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3616,7 +3574,7 @@ void Element::moveLeft()
 
 /*!
  * \brief Element::moveShiftLeft
- * Slot that moves component leftwards depending on the grid step size value multiplied by 5
+ * Slot that moves element leftwards depending on the grid step size value multiplied by 5
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3629,7 +3587,7 @@ void Element::moveShiftLeft()
 
 /*!
  * \brief Element::moveCtrlLeft
- * Slot that moves component one pixel leftwards
+ * Slot that moves element one pixel leftwards
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
  * moveCtrlDown() and moveCtrlRight()
  */
@@ -3642,7 +3600,7 @@ void Element::moveCtrlLeft()
 
 /*!
  * \brief Element::moveRight
- * Slot that moves component rightwards depending on the grid step size value
+ * Slot that moves element rightwards depending on the grid step size value
  * \sa moveUp(), moveDown(), moveLeft(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3655,7 +3613,7 @@ void Element::moveRight()
 
 /*!
  * \brief Element::moveShiftRight
- * Slot that moves component rightwards depending on the grid step size value multiplied by 5
+ * Slot that moves element rightwards depending on the grid step size value multiplied by 5
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveCtrlUp(), moveCtrlDown(),
  * moveCtrlLeft() and moveCtrlRight()
  */
@@ -3668,7 +3626,7 @@ void Element::moveShiftRight()
 
 /*!
  * \brief Element::moveCtrlRight
- * Slot that moves component one pixel rightwards
+ * Slot that moves element one pixel rightwards
  * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
  * moveCtrlDown() and moveCtrlLeft()
  */
@@ -3679,8 +3637,11 @@ void Element::moveCtrlRight()
   updateElementTransformations(oldTransformation, true);
 }
 
-//! Slot that opens up the component parameters dialog.
-//! @see showAttributes()
+/*!
+ * \brief Element::showParameters
+ * Slot that opens up the element parameters dialog.
+ * @see showAttributes()
+ */
 void Element::showParameters()
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -3706,8 +3667,11 @@ void Element::showParameters()
   pElementParameters->exec();
 }
 
-//! Slot that opens up the component attributes dialog.
-//! @see showParameters()
+/*!
+ * \brief Element::showAttributes
+ * Slot that opens up the element attributes dialog.
+ * @see showParameters()
+ */
 void Element::showAttributes()
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -3726,12 +3690,12 @@ void Element::showAttributes()
 
 void Element::fetchInterfaceData()
 {
-    MainWindow::instance()->fetchInterfaceData(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this->getName());
+  MainWindow::instance()->fetchInterfaceData(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this->getName());
 }
 
 /*!
  * \brief Element::openClass
- * Slot that opens up the component Modelica class in a new tab/window.
+ * Slot that opens up the element Modelica class in a new tab/window.
  */
 void Element::openClass()
 {
