@@ -57,7 +57,7 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -66,7 +66,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -78,7 +78,7 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -87,7 +87,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -99,7 +99,7 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -108,7 +108,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -121,15 +121,14 @@ val(x[3],1);
 // ========================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[i]
 // ### Equation:
-// 	[FOR-] (10) ($RES_SIM_0_1)
-// 	[----] for i in 1:1:10 loop
+// 	[FOR-] (10) ($RES_SIM_0)
+// 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -141,15 +140,14 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[i]
 // ### Equation:
-// 	[FOR-] (10) ($RES_SIM_0_1)
-// 	[----] for i in 1:1:10 loop
+// 	[FOR-] (10) ($RES_SIM_0)
+// 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for1_res.mat",
@@ -170,7 +168,15 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -179,14 +185,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-//
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[11]
-// ### Equation:
-// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -198,7 +197,15 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -207,14 +214,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-//
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[11]
-// ### Equation:
-// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -226,7 +226,15 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i]
@@ -235,14 +243,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-//
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[11]
-// ### Equation:
-// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -255,23 +256,23 @@ val(x[3],1);
 // ========================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	x[i]
-// ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1_1)
-// 	[----] for i in 1:1:10 loop
-// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
-// 	[----] end for;
-//
-// --- Alias of INI[1 | 2] ---
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[11]
 // ### Equation:
 // 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1)
+// 	[----] for i in 1:10 loop
+// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -283,22 +284,22 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	x[i]
-// ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1_1)
-// 	[----] for i in 1:1:10 loop
-// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
-// 	[----] end for;
-//
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[11]
 // ### Equation:
 // 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
+//
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1)
+// 	[----] for i in 1:10 loop
+// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for2_res.mat",
@@ -319,14 +320,15 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1 + i]
@@ -335,7 +337,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = x[i + 1] + sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -347,14 +349,15 @@ val(x[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1 + i]
@@ -363,7 +366,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = x[i + 1] + sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -375,14 +378,15 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1 + i]
@@ -391,7 +395,7 @@ val(x[3],1);
 // 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[i] = x[i + 1] + sin(CAST(Real, i) * time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -404,23 +408,23 @@ val(x[3],1);
 // ========================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[1 + i]
 // ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1_1)
-// 	[----] for i in 1:1:10 loop
+// 	[FOR-] (10) ($RES_SIM_1)
+// 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[1 + i] = -(sin(CAST(Real, i) * time) - x[i])
 // 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################################################################
 //
@@ -432,22 +436,22 @@ val(x[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[1 + i]
 // ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1_1)
-// 	[----] for i in 1:1:10 loop
+// 	[FOR-] (10) ($RES_SIM_1)
+// 	[----] for i in 1:10 loop
 // 	[----]   [SCAL] (1) x[1 + i] = -(sin(CAST(Real, i) * time) - x[i])
 // 	[----] end for;
+// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for3_res.mat",

@@ -60,7 +60,7 @@ val(y[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, i]
@@ -69,7 +69,10 @@ val(y[3],1);
 // 	[----] for i in 1:4 loop
 // 	[----]   [SCAL] (1) x[i, i] = CAST(Real, i) * cos(time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3}
+// 	 slice: {3, 2, 1, 0}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
 // ### Variable:
 // 	y[j]
 // ### Equation:
@@ -77,9 +80,9 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {0, 5, 10, 15}
+// 	 slice: {15, 10, 5, 0}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, j]
@@ -88,7 +91,7 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {4, 8, 12, 1, 9, 13, 2, 6, 14, 3 ...}
+// 	 slice: {11, 7, 3, 14, 6, 2, 13, 9, 1, 12, ...}
 //
 // ################################################################################
 //
@@ -100,7 +103,7 @@ val(y[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, i]
@@ -109,7 +112,10 @@ val(y[3],1);
 // 	[----] for i in 1:4 loop
 // 	[----]   [SCAL] (1) x[i, i] = CAST(Real, i) * cos(time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3}
+// 	 slice: {3, 2, 1, 0}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
 // ### Variable:
 // 	y[j]
 // ### Equation:
@@ -117,9 +123,9 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {0, 5, 10, 15}
+// 	 slice: {15, 10, 5, 0}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, j]
@@ -128,7 +134,7 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {4, 8, 12, 1, 9, 13, 2, 6, 14, 3 ...}
+// 	 slice: {11, 7, 3, 14, 6, 2, 13, 9, 1, 12, ...}
 //
 // ################################################################################
 //
@@ -140,7 +146,7 @@ val(y[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, i]
@@ -149,7 +155,10 @@ val(y[3],1);
 // 	[----] for i in 1:4 loop
 // 	[----]   [SCAL] (1) x[i, i] = CAST(Real, i) * cos(time)
 // 	[----] end for;
-// 	 slice: {0, 1, 2, 3}
+// 	 slice: {3, 2, 1, 0}
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
+// ----------------------------------------
 // ### Variable:
 // 	y[j]
 // ### Equation:
@@ -157,9 +166,9 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {0, 5, 10, 15}
+// 	 slice: {15, 10, 5, 0}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[i, j]
@@ -168,7 +177,7 @@ val(y[3],1);
 // 	[----] for {i in 1:4, j in 1:4} loop
 // 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----] end for;
-// 	 slice: {4, 8, 12, 1, 9, 13, 2, 6, 14, 3 ...}
+// 	 slice: {11, 7, 3, 14, 6, 2, 13, 9, 1, 12, ...}
 //
 // ################################################################################
 //
@@ -181,32 +190,34 @@ val(y[3],1);
 // ========================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-//
 // ### Equation:
-// 	[FOR-] (4) ($RES_SIM_1_1)
-// 	[----] for $k1 in 1:1:4 loop
-// 	[----]   [SCAL] (1) x[$k1, $k1] = CAST(Real, $k1) * cos(time)
-// 	[----]   [SCAL] (1) y[$k1] = -(CAST(Real, $k1) * sin(CAST(Real, $k1) * time) - x[$k1, $k1])
+// 	[FOR-] (4) ($RES_SIM_1)
+// 	[----] for i in 1:4 loop
+// 	[----]   [SCAL] (1) x[i, i] = CAST(Real, i) * cos(time)
 // 	[----] end for;
+// 	 slice: {3, 2, 1, 0}
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[i, j]
 // ### Equation:
-// 	[FOR-] (16) ($RES_SIM_0_1)
-// 	[----] for j in 1:1:4 loop
-// 	[----]   [FOR-] (16) ($RES_SIM_0)
-// 	[----]   [----] for i in 1:1:4 loop
-// 	[----]   [----]   [-IF-] (1) if i <> j then
-// 	[----]   [----]   [----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
-// 	[----]   [----]   [----] end if;
-// 	[----]   [----] end for;
+// 	[FOR-] (16) ($RES_SIM_0)
+// 	[----] for {i in 1:4, j in 1:4} loop
+// 	[----]   [SCAL] (1) y[j] = -(CAST(Real, i) * sin(CAST(Real, j) * time) - x[i, j])
 // 	[----] end for;
+// 	 slice: {15, 10, 5, 0}
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Equation:
+// 	[FOR-] (16) ($RES_SIM_0)
+// 	[----] for {i in 1:4, j in 1:4} loop
+// 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+// 	 slice: {11, 7, 3, 14, 6, 2, 13, 9, 1, 12, ...}
 //
 // ################################################################################
 //
@@ -218,31 +229,32 @@ val(y[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-//
 // ### Equation:
-// 	[FOR-] (4) ($RES_SIM_1_1)
-// 	[----] for $k1 in 1:1:4 loop
-// 	[----]   [SCAL] (1) x[$k1, $k1] = CAST(Real, $k1) * cos(time)
-// 	[----]   [SCAL] (1) y[$k1] = -(CAST(Real, $k1) * sin(CAST(Real, $k1) * time) - x[$k1, $k1])
+// 	[FOR-] (4) ($RES_SIM_1)
+// 	[----] for i in 1:4 loop
+// 	[----]   [SCAL] (1) x[i, i] = CAST(Real, i) * cos(time)
 // 	[----] end for;
+// 	 slice: {3, 2, 1, 0}
 //
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
-// ### Variable:
-// 	x[i, j]
 // ### Equation:
-// 	[FOR-] (16) ($RES_SIM_0_1)
-// 	[----] for j in 1:1:4 loop
-// 	[----]   [FOR-] (16) ($RES_SIM_0)
-// 	[----]   [----] for i in 1:1:4 loop
-// 	[----]   [----]   [-IF-] (1) if i <> j then
-// 	[----]   [----]   [----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
-// 	[----]   [----]   [----] end if;
-// 	[----]   [----] end for;
+// 	[FOR-] (16) ($RES_SIM_0)
+// 	[----] for {i in 1:4, j in 1:4} loop
+// 	[----]   [SCAL] (1) y[j] = -(CAST(Real, i) * sin(CAST(Real, j) * time) - x[i, j])
 // 	[----] end for;
+// 	 slice: {15, 10, 5, 0}
+//
+// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Equation:
+// 	[FOR-] (16) ($RES_SIM_0)
+// 	[----] for {i in 1:4, j in 1:4} loop
+// 	[----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+// 	 slice: {11, 7, 3, 14, 6, 2, 13, 9, 1, 12, ...}
 //
 // record SimulationResult
 //     resultFile = "diagonal_slice_for1_res.mat",
@@ -252,8 +264,8 @@ val(y[3],1);
 // "
 // end SimulationResult;
 // ""
-// 1.381773290676036
-// 3.06471526029183
+// 1.682941969615793
+// 3.365883939231586
 // ################################################################################
 //
 // 	[ODE] Differential-Algebraic: (Causalize)
@@ -264,64 +276,50 @@ val(y[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	y[1]
 // ### Equation:
 // 	[SCAL] (1) y[1] = 2.0 ($RES_SIM_4)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = 1.0 ($RES_SIM_5)
+// 	 slice: {}
 //
-// BLOCK 3: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Algebraic Loop (Linear = false, Mixed = false)
 // ----------------------------------------
-// ### Variable:
-// 	y[i]
-// ### Equation:
-// 	[FOR-] (3) ($RES_SIM_1)
-// 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2}
-// ### Variable:
-// 	x[j]
-// ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {0, 1, 2}
-//
-// BLOCK 4: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	y[5]
-// ### Equation:
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	[ALGB] (10) Real[10] x
+// 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// 	[ALGB] (10) Real[10] y
+// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// ### Residual Equations:
 // 	[SCAL] (1) y[5] = x[4] ($RES_SIM_2)
-//
-// BLOCK 5: Entwined Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[j]
-// ### Equation:
+// 	 slice: {};
 // 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {3, 4, 5, 6, 7, 8}
-// ### Variable:
-// 	y[i]
-// ### Equation:
+// [----] for j in 2:10 loop
+// [----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
+// [----] end for;
+// 	 slice: {};
 // 	[FOR-] (5) ($RES_SIM_0)
-// 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4}
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (3) ($RES_SIM_1)
+// [----] for i in 2:4 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// ### Inner Equations:
 //
 // ################################################################################
 //
@@ -333,64 +331,50 @@ val(y[3],1);
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	y[1]
 // ### Equation:
 // 	[SCAL] (1) y[1] = 2.0 ($RES_SIM_4)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = 1.0 ($RES_SIM_5)
+// 	 slice: {}
 //
-// BLOCK 3: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Algebraic Loop (Linear = false, Mixed = false)
 // ----------------------------------------
-// ### Variable:
-// 	y[i]
-// ### Equation:
-// 	[FOR-] (3) ($RES_SIM_1)
-// 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2}
-// ### Variable:
-// 	x[j]
-// ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {0, 1, 2}
-//
-// BLOCK 4: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	y[5]
-// ### Equation:
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	[ALGB] (10) Real[10] x
+// 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// 	[ALGB] (10) Real[10] y
+// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// ### Residual Equations:
 // 	[SCAL] (1) y[5] = x[4] ($RES_SIM_2)
-//
-// BLOCK 5: Entwined Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[j]
-// ### Equation:
+// 	 slice: {};
 // 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {3, 4, 5, 6, 7, 8}
-// ### Variable:
-// 	y[i]
-// ### Equation:
+// [----] for j in 2:10 loop
+// [----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
+// [----] end for;
+// 	 slice: {};
 // 	[FOR-] (5) ($RES_SIM_0)
-// 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4}
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (3) ($RES_SIM_1)
+// [----] for i in 2:4 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// ### Inner Equations:
 //
 // ################################################################################
 //
@@ -402,64 +386,50 @@ val(y[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = 1.0 ($RES_SIM_5)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.UNPROCESSED)
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
 // 	y[1]
 // ### Equation:
 // 	[SCAL] (1) y[1] = 2.0 ($RES_SIM_4)
+// 	 slice: {}
 //
-// BLOCK 3: Entwined Equation (status = Solve.UNPROCESSED)
+// BLOCK 3: Algebraic Loop (Linear = false, Mixed = false)
 // ----------------------------------------
-// ### Variable:
-// 	x[j]
-// ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {0, 1, 2, 3}
-// ### Variable:
-// 	y[i]
-// ### Equation:
-// 	[FOR-] (3) ($RES_SIM_1)
-// 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2}
-//
-// BLOCK 4: Sliced Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	y[5]
-// ### Equation:
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	[ALGB] (10) Real[10] x
+// 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// 	[ALGB] (10) Real[10] y
+// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// ### Residual Equations:
 // 	[SCAL] (1) y[5] = x[4] ($RES_SIM_2)
-//
-// BLOCK 5: Entwined Equation (status = Solve.UNPROCESSED)
-// ----------------------------------------
-// ### Variable:
-// 	x[j]
-// ### Equation:
+// 	 slice: {};
 // 	[FOR-] (9) ($RES_SIM_3)
-// 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
-// 	[----] end for;
-// 	 slice: {4, 5, 6, 7, 8}
-// ### Variable:
-// 	y[i]
-// ### Equation:
+// [----] for j in 2:10 loop
+// [----]   [SCAL] (1) x[j] = y[j - 1] * sin(time)
+// [----] end for;
+// 	 slice: {};
 // 	[FOR-] (5) ($RES_SIM_0)
-// 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) y[i] = x[i - 1]
-// 	[----] end for;
-// 	 slice: {0, 1, 2, 3, 4}
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (3) ($RES_SIM_1)
+// [----] for i in 2:4 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1]
+// [----] end for;
+// 	 slice: {};
+// ### Inner Equations:
 //
 // ################################################################################
 //
@@ -472,60 +442,169 @@ val(y[3],1);
 // ========================================
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	y[1]
 // ### Equation:
 // 	[SCAL] (1) y[1] = 2.0 ($RES_SIM_4)
+// 	 slice: {}
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = 1.0 ($RES_SIM_5)
+// 	 slice: {}
 //
-// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 3: Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	[ALGB] (10) Real[10] x
+// 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// 	[ALGB] (10) Real[10] y
+// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// ### Residual Equations:
+// 	[SCAL] (1) $RES_SIM_2 = x[4] - y[5] ($RES_SIM_2)
+// 	 slice: {};
+// 	[FOR-] (9) ($RES_SIM_3)
+// [----] for j in 2:10 loop
+// [----]   [SCAL] (1) $RES_SIM_3[j] = y[(-1) + j] * sin(time) - x[j]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (5) ($RES_SIM_0)
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (3) ($RES_SIM_1)
+// [----] for i in 2:4 loop
+// [----]   [SCAL] (1) $RES_SIM_1[i] = x[(-1) + i] - y[i]
+// [----] end for;
+// 	 slice: {};
+// ### Inner Equations:
+//
+// ################################################################################
+//
+// 	[NLS] Jacobian ODE_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (4/18)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_2
+// (2)       [JACV] (9) Real[9] $pDER_ODE_NLS_JAC_1.$RES_SIM_3
+// (3)       [JACV] (5) Real[5] $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// (4)       [JACV] (3) Real[3] $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+//
+// Seed Variables (2/20)
+// ****************************************
+// (1)       [SEED] (10) Real[10] $SEED_ODE_NLS_JAC_1.y
+// (2)       [SEED] (10) Real[10] $SEED_ODE_NLS_JAC_1.x
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_2
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_2 = $SEED_ODE_NLS_JAC_1.x[4] - $SEED_ODE_NLS_JAC_1.y[5] ($RES_ODE_NLS_JAC_1_0)
+//
+// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (3) ($RES_SIM_1_1)
-// 	[----] for $k1 in 2:1:4 loop
-// 	[----]   [SCAL] (1) y[$k1] = x[(-1) + $k1]
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
+// 	[FOR-] (9) ($RES_ODE_NLS_JAC_1_1)
+// 	[----] for j in 2:10 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_3[j] = $SEED_ODE_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_ODE_NLS_JAC_1.x[j]
 // 	[----] end for;
+// 	 slice: {}
 //
-// --- Alias of INI[1 | 5] ---
-// BLOCK 4: Sliced Equation (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	y[5]
-// ### Equation:
-// 	[SCAL] (1) y[5] = x[4] ($RES_SIM_2)
-//
-// BLOCK 5: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 3: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3_2)
-// 	[----] for $k1 in 6:1:10 loop
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
-// 	[----]   [SCAL] (1) y[$k1] = x[(-1) + $k1]
+// 	[FOR-] (5) ($RES_ODE_NLS_JAC_1_2)
+// 	[----] for i in 6:10 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i]
 // 	[----] end for;
+// 	 slice: {}
 //
-// BLOCK 6: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 4: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3_1)
-// 	[----] for $k1 in 5:1:5 loop
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
+// 	[FOR-] (3) ($RES_ODE_NLS_JAC_1_3)
+// 	[----] for i in 2:4 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i]
 // 	[----] end for;
+// 	 slice: {}
+//
+// ========================================
+// Sparsity Pattern (nnz: 2)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (y[10])	 affects:	{}
+// (y[9])	 affects:	{}
+// (y[8])	 affects:	{}
+// (y[7])	 affects:	{}
+// (y[6])	 affects:	{}
+// (y[5])	 affects:	{$RES_SIM_2}
+// (y[4])	 affects:	{}
+// (y[3])	 affects:	{}
+// (y[2])	 affects:	{}
+// (y[1])	 affects:	{}
+// (x[10])	 affects:	{}
+// (x[9])	 affects:	{}
+// (x[8])	 affects:	{}
+// (x[7])	 affects:	{}
+// (x[6])	 affects:	{}
+// (x[5])	 affects:	{}
+// (x[4])	 affects:	{$RES_SIM_2}
+// (x[3])	 affects:	{}
+// (x[2])	 affects:	{}
+// (x[1])	 affects:	{}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_1[3])	 depends on:	{}
+// ($RES_SIM_1[2])	 depends on:	{}
+// ($RES_SIM_1[1])	 depends on:	{}
+// ($RES_SIM_0[5])	 depends on:	{}
+// ($RES_SIM_0[4])	 depends on:	{}
+// ($RES_SIM_0[3])	 depends on:	{}
+// ($RES_SIM_0[2])	 depends on:	{}
+// ($RES_SIM_0[1])	 depends on:	{}
+// ($RES_SIM_3[9])	 depends on:	{}
+// ($RES_SIM_3[8])	 depends on:	{}
+// ($RES_SIM_3[7])	 depends on:	{}
+// ($RES_SIM_3[6])	 depends on:	{}
+// ($RES_SIM_3[5])	 depends on:	{}
+// ($RES_SIM_3[4])	 depends on:	{}
+// ($RES_SIM_3[3])	 depends on:	{}
+// ($RES_SIM_3[2])	 depends on:	{}
+// ($RES_SIM_3[1])	 depends on:	{}
+// ($RES_SIM_2)	 depends on:	{y[5],x[4]}
+//
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y[10],y[9],y[8],y[7],y[6],y[4],y[3],y[2],y[1],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {$RES_SIM_2}
+//
+// Color (2)
+//   - Column: {y[5]}
+//   - Row:    {$RES_SIM_2}
+//
 //
 // ################################################################################
 //
@@ -537,58 +616,168 @@ val(y[3],1);
 // CONTINUOUS 1 INI System
 // ========================================
 //
-// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	x[1]
 // ### Equation:
 // 	[SCAL] (1) x[1] = 1.0 ($RES_SIM_5)
+// 	 slice: {}
 //
-// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	y[1]
 // ### Equation:
 // 	[SCAL] (1) y[1] = 2.0 ($RES_SIM_4)
+// 	 slice: {}
 //
-// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 3: Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	[ALGB] (10) Real[10] x
+// 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
+// 	[ALGB] (10) Real[10] y
+// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// ### Residual Equations:
+// 	[SCAL] (1) $RES_SIM_2 = x[4] - y[5] ($RES_SIM_2)
+// 	 slice: {};
+// 	[FOR-] (9) ($RES_SIM_3)
+// [----] for j in 2:10 loop
+// [----]   [SCAL] (1) $RES_SIM_3[j] = y[(-1) + j] * sin(time) - x[j]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (5) ($RES_SIM_0)
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i]
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (3) ($RES_SIM_1)
+// [----] for i in 2:4 loop
+// [----]   [SCAL] (1) $RES_SIM_1[i] = x[(-1) + i] - y[i]
+// [----] end for;
+// 	 slice: {};
+// ### Inner Equations:
+//
+// ################################################################################
+//
+// 	[NLS] Jacobian INI_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (4/18)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_2
+// (2)       [JACV] (9) Real[9] $pDER_INI_NLS_JAC_1.$RES_SIM_3
+// (3)       [JACV] (5) Real[5] $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// (4)       [JACV] (3) Real[3] $pDER_INI_NLS_JAC_1.$RES_SIM_1
+//
+// Seed Variables (2/20)
+// ****************************************
+// (1)       [SEED] (10) Real[10] $SEED_INI_NLS_JAC_1.y
+// (2)       [SEED] (10) Real[10] $SEED_INI_NLS_JAC_1.x
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_2
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_2 = $SEED_INI_NLS_JAC_1.x[4] - $SEED_INI_NLS_JAC_1.y[5] ($RES_INI_NLS_JAC_1_0)
+//
+// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3_2)
-// 	[----] for $k1 in 5:1:5 loop
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
+// 	[FOR-] (9) ($RES_INI_NLS_JAC_1_1)
+// 	[----] for j in 2:10 loop
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_3[j] = $SEED_INI_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_INI_NLS_JAC_1.x[j]
 // 	[----] end for;
+// 	 slice: {}
 //
-// BLOCK 4: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 3: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3_1)
-// 	[----] for $k1 in 2:1:4 loop
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
-// 	[----]   [SCAL] (1) y[$k1] = x[(-1) + $k1]
+// 	[FOR-] (5) ($RES_INI_NLS_JAC_1_2)
+// 	[----] for i in 6:10 loop
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0[i] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i]
 // 	[----] end for;
+// 	 slice: {}
 //
-// BLOCK 5: Sliced Equation (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	y[5]
-// ### Equation:
-// 	[SCAL] (1) y[5] = x[4] ($RES_SIM_2)
-//
-// BLOCK 6: Sliced Equation (status = Solve.EXPLICIT)
+// BLOCK 4: Sliced Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (9) ($RES_SIM_3_3)
-// 	[----] for $k1 in 6:1:10 loop
-// 	[----]   [SCAL] (1) x[$k1] = y[(-1) + $k1] * sin(time)
-// 	[----]   [SCAL] (1) y[$k1] = x[(-1) + $k1]
+// 	[FOR-] (3) ($RES_INI_NLS_JAC_1_3)
+// 	[----] for i in 2:4 loop
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_1[i] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i]
 // 	[----] end for;
+// 	 slice: {}
+//
+// ========================================
+// Sparsity Pattern (nnz: 2)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (y[10])	 affects:	{}
+// (y[9])	 affects:	{}
+// (y[8])	 affects:	{}
+// (y[7])	 affects:	{}
+// (y[6])	 affects:	{}
+// (y[5])	 affects:	{$RES_SIM_2}
+// (y[4])	 affects:	{}
+// (y[3])	 affects:	{}
+// (y[2])	 affects:	{}
+// (y[1])	 affects:	{}
+// (x[10])	 affects:	{}
+// (x[9])	 affects:	{}
+// (x[8])	 affects:	{}
+// (x[7])	 affects:	{}
+// (x[6])	 affects:	{}
+// (x[5])	 affects:	{}
+// (x[4])	 affects:	{$RES_SIM_2}
+// (x[3])	 affects:	{}
+// (x[2])	 affects:	{}
+// (x[1])	 affects:	{}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_1[3])	 depends on:	{}
+// ($RES_SIM_1[2])	 depends on:	{}
+// ($RES_SIM_1[1])	 depends on:	{}
+// ($RES_SIM_0[5])	 depends on:	{}
+// ($RES_SIM_0[4])	 depends on:	{}
+// ($RES_SIM_0[3])	 depends on:	{}
+// ($RES_SIM_0[2])	 depends on:	{}
+// ($RES_SIM_0[1])	 depends on:	{}
+// ($RES_SIM_3[9])	 depends on:	{}
+// ($RES_SIM_3[8])	 depends on:	{}
+// ($RES_SIM_3[7])	 depends on:	{}
+// ($RES_SIM_3[6])	 depends on:	{}
+// ($RES_SIM_3[5])	 depends on:	{}
+// ($RES_SIM_3[4])	 depends on:	{}
+// ($RES_SIM_3[3])	 depends on:	{}
+// ($RES_SIM_3[2])	 depends on:	{}
+// ($RES_SIM_3[1])	 depends on:	{}
+// ($RES_SIM_2)	 depends on:	{y[5],x[4]}
+//
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y[10],y[9],y[8],y[7],y[6],y[4],y[3],y[2],y[1],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {$RES_SIM_2}
+//
+// Color (2)
+//   - Column: {y[5]}
+//   - Row:    {$RES_SIM_2}
+//
 //
 // record SimulationResult
 //     resultFile = "entwine_for1_res.mat",
