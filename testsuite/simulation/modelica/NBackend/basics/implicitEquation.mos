@@ -35,6 +35,7 @@ simulate(implicitEquation); getErrorString();
 // INIT
 // ----------------------------------------
 //   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{x}
 //   --(1) 0 = sin(time) - (x + x ^ 3.0) - x ^ 2.0
 //
 // Algebraic Partition 1

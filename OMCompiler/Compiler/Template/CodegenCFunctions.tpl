@@ -1303,7 +1303,7 @@ end functionBodies;
 template functionBodiesParModelica(list<Function> functions)
  "Generates the body for a set of functions."
 ::=
-  (functions |> fn => functionBodyParModelica(fn, false) ;separator="\n")
+  (functions |> fn => functionBodyParModelica(fn, false); separator="\n")
 end functionBodiesParModelica;
 
 template functionBody(Function fn, Boolean inFunc, Boolean isSimulation)

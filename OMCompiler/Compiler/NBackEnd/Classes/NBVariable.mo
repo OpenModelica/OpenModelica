@@ -956,7 +956,7 @@ public
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
@@ -1591,7 +1591,7 @@ public
         end if;
 
         // flatten potential records
-        for var in listReverse(scalar_vars) loop
+        for var in scalar_vars loop
           if Type.isComplex(var.ty) then
             flattened := true;
             element_vars := Scalarize.scalarizeComplexVariable(var);

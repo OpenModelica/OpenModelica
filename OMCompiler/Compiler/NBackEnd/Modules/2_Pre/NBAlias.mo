@@ -230,11 +230,6 @@ protected
           non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
-
-          // if we replaced variables by constants it is possible that new simple equations formed
-          if not listEmpty(const_vars) then
-            (varData, eqData) := aliasDefault(varData, eqData);
-          end if;
       then (varData, eqData);
 
       else algorithm
@@ -304,11 +299,6 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
-
-      case BEquation.SIMPLE_EQUATION() algorithm
-        crefTpl := findCrefs(Expression.fromCref(eq.rhs), crefTpl);
-        crefTpl := findCrefs(Expression.fromCref(eq.lhs), crefTpl);
-      then crefTpl;
 
       case BEquation.SCALAR_EQUATION() guard(isSimple(eq.lhs) and isSimple(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);

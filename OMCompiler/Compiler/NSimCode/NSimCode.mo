@@ -60,7 +60,7 @@ protected
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
   import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
@@ -69,6 +69,7 @@ protected
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
   import NSimJacobian.SimJacobian;
+  import SimGenericCall = NSimGenericCall;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.SimVar;
   import NSimVar.SimVars;
@@ -108,7 +109,6 @@ public
       Integer booleanAliasIndex;
       Integer stringAliasIndex;
 
-
       Integer equationIndex;
       Integer linearSystemIndex;
       Integer nonlinearSystemIndex;
@@ -116,8 +116,10 @@ public
       Integer jacobianIndex;
       Integer residualIndex;
       Integer implicitIndex; // this can be removed i think -> moved to solve
+      Integer genericCallIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
+      UnorderedMap<EquationPointer, Integer> generic_call_map;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
@@ -128,8 +130,9 @@ public
       0,0,0,0,
       0,0,0,0,
       1,0,0,
-      0,0,0,
-      UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual)
+      0,0,0,0,
+      UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
+      UnorderedMap.new<Integer>(Equation.hash, Equation.equalName)
     );
   end EMPTY_SIM_CODE_INDICES;
 
@@ -139,6 +142,7 @@ public
       list<Expression> literals                         "shared literals";
       list<SimCodeFunction.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes             "Names of all external functions that are called";
+      list<SimGenericCall> generic_loop_calls           "Generic for-loop and array calls";
       list<SimStrongComponent.Block> independent        "state and strictly input dependent variables. they are not inserted into any partion";
       list<SimStrongComponent.Block> allSim             "All simulation system blocks";
       list<list<SimStrongComponent.Block>> ode          "Only ode blocks for integrator";
@@ -205,6 +209,10 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
+      if not listEmpty(simCode.generic_loop_calls) then
+        str := str + StringUtil.headline_3("Generic Calls");
+        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
+      end if;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
       end if;
@@ -243,6 +251,7 @@ public
           SimCodeIndices simCodeIndices;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
+          list<SimGenericCall> generic_loop_calls;
           list<SimStrongComponent.Block> independent, allSim = {}, nominal, min, max, param, no_ret, algorithms;
           list<SimStrongComponent.Block> event_blocks = {}, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
@@ -268,6 +277,7 @@ public
 
             literals := {};
             externalFunctionIncludes := {};
+
             independent := {};
             nominal := {};
             min := {};
@@ -345,6 +355,8 @@ public
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
+            generic_loop_calls := list(SimGenericCall.fromEquation(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
+
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
             simCode := SIM_CODE(
@@ -352,6 +364,7 @@ public
               literals                  = literals,
               recordDecls               = recordDecls,
               externalFunctionIncludes  = externalFunctionIncludes,
+              generic_loop_calls        = generic_loop_calls,
               independent               = independent,
               allSim                    = allSim,
               ode                       = ode,
@@ -425,6 +438,7 @@ public
         literals                      = {}, // usally set by a traversal below...
         recordDecls                   = simCode.recordDecls, // ToDo: convert this to new structures
         externalFunctionIncludes      = simCode.externalFunctionIncludes,
+        generic_loop_calls            = list(SimGenericCall.convert(gc) for gc in simCode.generic_loop_calls),
         localKnownVars                = SimStrongComponent.Block.convertList(simCode.independent),
         allEquations                  = SimStrongComponent.Block.convertList(simCode.allSim),
         odeEquations                  = SimStrongComponent.Block.convertListList(simCode.ode),

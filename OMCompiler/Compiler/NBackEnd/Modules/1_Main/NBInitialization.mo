@@ -98,7 +98,7 @@ public
         then bdae;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create initial system!"});
         then fail();
       end match;
 
@@ -117,7 +117,7 @@ public
         end if;
       end if;
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to apply modules!"});
     end try;
   end main;
 

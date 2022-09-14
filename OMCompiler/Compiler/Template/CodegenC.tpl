@@ -2314,15 +2314,18 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
              ;separator="\n")
            end match)
-         let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-            let &preExp = buffer "" /*BUFD*/
-            let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
+         let body = (ls.residual |> eq2 hasindex i0 => match eq2
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDeclsRes, &auxFunction)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >> ;separator="\n")
+              <<
+              <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+              <%preExp%>res[<%i0%>] = <%expPart%>;
+              <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+              >>
+            case SES_FOR_RESIDUAL(__) then "case 1"
+          ;separator="\n")
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
@@ -2363,10 +2366,12 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        else
          let &varDecls = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
-         let MatrixA = (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
-           let &preExp = buffer "" /*BUFD*/
-           let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
-             '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
+         let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
+              '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
+            case SES_FOR_RESIDUAL(__) then "case 2"
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
@@ -2422,15 +2427,18 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
-         let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
+         let body = (ls.residual |> eq2 hasindex i0 => match eq2
+            case SES_RESIDUAL(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let expPart = daeExp(exp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDeclsRes, &auxFunction)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >> ;separator="\n")
+              <<
+              <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+              <%preExp%>res[<%i0%>] = <%expPart%>;
+              <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+              >>
+            case SES_FOR_RESIDUAL(__) then "case 3"
+           ;separator="\n")
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
@@ -2446,15 +2454,18 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
-         let body2 = (at.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp2 = buffer "" /*BUFD*/
-         let expPart2 = daeExp(eq2.exp, contextSimulationDiscrete,
+         let body2 = (at.residual |> eq2 hasindex i0 => match eq2
+           case SES_RESIDUAL(__) then
+             let &preExp2 = buffer "" /*BUFD*/
+             let expPart2 = daeExp(exp, contextSimulationDiscrete,
                               &preExp2 /*BUFC*/, &varDeclsRes2, &auxFunction2)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp2%>res[<%i0%>] = <%expPart2%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >> ;separator="\n")
+             <<
+             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+             <%preExp2%>res[<%i0%>] = <%expPart2%>;
+             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+             >>
+            case SES_FOR_RESIDUAL(__) then "case 4"
+           ;separator="\n")
          let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
            <<
            /* static at data for <%crefStrNoUnderscore(varName(var))%> */
@@ -2526,10 +2537,12 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          // for strict tearing set
          let &varDecls = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
-         let MatrixA = (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
-           let &preExp = buffer "" /*BUFD*/
-           let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
-             '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
+         let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
+           case SES_RESIDUAL(__) then
+             let &preExp = buffer "" /*BUFD*/
+             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
+               '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
+           case SES_FOR_RESIDUAL(__) then "case 5"
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
@@ -2548,10 +2561,12 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          // for casual tearing set
          let &varDecls3 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
-         let MatrixA2 = (at.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
-           let &preExp3 = buffer "" /*BUFD*/
-           let expPart3 = daeExp(eq.exp, contextSimulationDiscrete, &preExp3,  &varDecls3, &auxFunction2)
-             '<%preExp3%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart3%>, <%i0%>, linearSystemData, threadData);'
+         let MatrixA2 = (at.simJac |> (row, col, eq) hasindex i0 => match eq
+           case SES_RESIDUAL(__) then
+             let &preExp3 = buffer "" /*BUFD*/
+             let expPart3 = daeExp(exp, contextSimulationDiscrete, &preExp3,  &varDecls3, &auxFunction2)
+               '<%preExp3%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart3%>, <%i0%>, linearSystemData, threadData);'
+           case SES_FOR_RESIDUAL(__) then "case 6"
           ;separator="\n")
 
          let &varDecls4 = buffer "" /*BUFD*/
@@ -2559,7 +2574,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
            let &preExp4 = buffer "" /*BUFD*/
            let expPart4 = daeExp(exp, contextSimulationDiscrete, &preExp4, &varDecls4, &auxFunction2)
              '<%preExp4%>linearSystemData->setBElement(<%i0%>, <%expPart4%>, linearSystemData, threadData);'
-          ;separator="\n")
+           ;separator="\n")
          let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
            <<
            /* static at data for <%crefStrNoUnderscore(varName(var))%> */
@@ -2765,6 +2780,10 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
   match eq
   case e as SES_RESIDUAL(__)
    then ""
+  case e as SES_FOR_RESIDUAL(__)
+   then ""
+  case e as SES_GENERIC_RESIDUAL(__)
+   then ""
   else
     let &eqs += equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefixStr, false)
     <<
@@ -2781,6 +2800,10 @@ template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String
   let () = tmpTickReset(0)
   match eq
   case e as SES_RESIDUAL(__)
+   then ""
+  case e as SES_FOR_RESIDUAL(__)
+   then ""
+  case e as SES_GENERIC_RESIDUAL(__)
    then ""
   else
     let &eqs += equation_impl(-1, -1, eq, contextJacobian, modelNamePrefixStr, false)
@@ -3012,14 +3035,64 @@ match system
         <%known%>
         >>
       else
-        (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-          let &preExp = buffer ""
-          let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-          <<
-          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-          <%preExp%>res[<%i0%>] = <%expPart%>;
-          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-          >>
+        (nls.eqs |> eq2 hasindex i0 => match eq2
+          case SES_RESIDUAL(__) then
+            let &preExp = buffer ""
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            <<
+            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+            <%preExp%>res[<%res_index%>] = <%expPart%>;
+            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+            >>
+          case SES_FOR_RESIDUAL(__) then
+            let &preExp = buffer ""
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let forPart = (iterators |> iterator => match iterator
+                case (cref, range as DAE.RANGE()) then
+                  let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
+                  <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
+                ;separator="\n")
+            let endForPart = (iterators |> iterator => "}")
+            let indexShift = (iterators |> iterator => match iterator
+                case (cref, range as DAE.RANGE()) then
+                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                  '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
+                ;separator="+")
+            <<
+            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+            <%forPart%>
+            <%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;
+            <%endForPart%>
+            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+            >>
+          case SES_GENERIC_RESIDUAL(__) then
+            let &preExp = buffer ""
+            let idx_len = listLength(scal_indices)
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let iter_ = (iterators |> iterator => match iterator
+                case (cref, range as DAE.RANGE()) then
+                let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+                let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
+                <<
+                const int <%iter%>_size = <%stop%> - <%start%> / <%step%> + 1;
+                int <%iter%>_loc = tmp % <%iter%>_size;
+                int <%iter%> = <%step%> * <%iter%>_loc + <%start%>;
+                tmp /= <%iter%>_size;
+                >>;separator="\n")
+            <<
+            const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+            for(int i_=0; i_<<%idx_len%>; i_++)
+            {
+              int tmp = idx_lst[i_];
+              <%iter_%>
+              <%preExp%>res[<%res_index%>+i_] = <%expPart%>;
+            }
+            >>
         ;separator="\n")
     let residualFunctionHeader =
       if intEq(whichSet, 0) then
@@ -3462,6 +3535,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       }
       >>
     end match
+  case SES_FOR_RESIDUAL(__) then "case 8"
   else
     let &eqs += equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, true)
     equation_call(eq, modelNamePrefix)
@@ -5411,6 +5485,10 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationSimpleAssign(e, context, &varD, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
+  case e as SES_GENERIC_ASSIGN(__)
+    then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+  case e as SES_ENTWINED_ASSIGN(__)
+    then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_IFEQUATION(__)
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
   case e as SES_ALGORITHM(__)
@@ -5434,6 +5512,10 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationWhen(e, context, &varD, &tempeqns)
   case e as SES_RESIDUAL(__)
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+  case e as SES_FOR_RESIDUAL(__)
+    then "NOT IMPLEMENTED EQUATION SES_FOR_RESIDUAL"
+  case e as SES_GENERIC_RESIDUAL(__)
+    then "NOT IMPLEMENTED EQUATION SES_GENERIC_RESIDUAL"
   case e as SES_MIXED(__)
     then equationMixed(e, context, &eqfuncs, modelNamePrefix, init)
   else
@@ -5513,6 +5595,12 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         case e as SES_ARRAY_CALL_ASSIGN(__)
         then equationArrayCallAssign(e, context, &varD, &tempeqns)
 
+        case e as SES_GENERIC_ASSIGN(__)
+        then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+
+        case e as SES_ENTWINED_ASSIGN(__)
+        then equationEntwinedAssign(e, context, &varD, &tempeqns, modelNamePrefix)
+
         case e as SES_IFEQUATION(__)
         then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix, init)
 
@@ -5535,6 +5623,12 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
 
         case e as SES_RESIDUAL(__)
         then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+
+        case e as SES_FOR_RESIDUAL(__)
+        then "NOT IMPLEMENTED EQUATION SES_FOR_RESIDUAL"
+
+        case e as SES_GENERIC_RESIDUAL(__)
+        then "NOT IMPLEMENTED EQUATION SES_GENERIC_RESIDUAL"
 
         case e as SES_MIXED(__)
         then
@@ -5840,6 +5934,88 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 <%endModelicaLine()%>
 >>
 end equationArrayCallAssign;
+
+template equationGenericAssign(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+ "Generate a call for a generic for-loop structure with an index-list."
+::=
+<<
+<%modelicaLine(eqInfo(eq))%>
+<%match eq
+
+case eqn as SES_GENERIC_ASSIGN() then
+  let idx_len = listLength(scal_indices)
+  <<
+  const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+  for(int i=0; i<<%idx_len%>; i++)
+    genericCall_<%call_index%>(data, threadData, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+  >>
+%>
+<%endModelicaLine()%>
+>>
+end equationGenericAssign;
+
+template equationEntwinedAssign(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+ "Generate a call for entwined generic for-loop structures with an index-lists and a call order."
+
+::=
+<<
+<%modelicaLine(eqInfo(eq))%>
+<%match eq
+
+case eqn as SES_ENTWINED_ASSIGN() then
+  let call_num = listLength(single_calls)
+  let call_order_len = listLength(call_order)
+  <<
+  int call_indices[<%call_num%>] = {<%(single_calls |> call => '0'; separator=", ")%>};
+  const int call_order[<%call_order_len%>] = {<%(call_order |> idx => '<%idx%>'; separator=", ")%>};
+  <%(single_calls |> call hasindex i0 => entwinedSingleCallIndices(call, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+  for(int i=0; i<<%call_order_len%>; i++)
+  {
+    switch(call_order[i])
+    {
+    <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
+      default:
+        throwStreamPrint(NULL, "Call index %i at pos %i unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
+        break;
+    }
+  }
+  >>
+%>
+<%endModelicaLine()%>
+>>
+end equationEntwinedAssign;
+
+template entwinedSingleCallIndices(SimEqSystem eq, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+::=
+<<
+<%match eq
+case eqn as SES_GENERIC_ASSIGN() then
+  let idx_len = listLength(scal_indices)
+  <<
+  const int idx_lst_<%call_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+  >>
+%>
+>>
+end entwinedSingleCallIndices;
+
+template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
+                                 Text &varDecls, Text &auxFunction, String modelNamePrefix)
+::=
+<<
+<%match eq
+case eqn as SES_GENERIC_ASSIGN() then
+  <<
+    case <%call_index%>:
+      genericCall_<%call_index%>(data, threadData, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
+      call_indices[<%i0%>]++;
+      break;
+  >>
+%>
+>>
+end entwinedSingleCall;
 
 template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates an equation that is an algorithm."
@@ -6296,7 +6472,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions)
+/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -6321,6 +6497,7 @@ end simulationLiteralsFile;
   %>
 
   <%functionBodies(functions,true)%>
+  <%genericCallBodies(genericCalls)%>
 
   #ifdef __cplusplus
   }
@@ -6537,9 +6714,13 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_FOR_RESIDUAL(__)
+  case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_GENERIC_ASSIGN(__)
+  case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
   case SES_LINEAR(__)
@@ -6548,6 +6729,7 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then eqAttributeIsDiscreteKind(eqAttr)
+  else ''
 end simEqAttrIsDiscreteKind;
 
 template eqAttributeIsDiscreteKind(EquationAttributes eqAtt)
@@ -6568,9 +6750,13 @@ template simEqAttrEval(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_FOR_RESIDUAL(__)
+  case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_GENERIC_ASSIGN(__)
+  case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
   case SES_LINEAR(__)
@@ -6579,6 +6765,7 @@ template simEqAttrEval(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then eqAttributesEval(eqAttr)
+  else ''
 end simEqAttrEval;
 
 template eqAttributesEval(EquationAttributes eqAtt)
@@ -6822,6 +7009,43 @@ template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr,
     break;
   >>
 end equationNames_Partial;
+
+template genericCallBodies(list<SimGenericCall> genericCalls)
+ "Generates the body for a set of generic calls."
+::=
+  (genericCalls |> call => genericCallBody(call); separator="\n\n")
+end genericCallBodies;
+
+template genericCallBody(SimGenericCall call)
+::= match call
+  case SINGLE_GENERIC_CALL() then
+  let &sub = buffer ""
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let lhs_ = daeExp(lhs, contextOther, &preExp, &varDecls, &auxFunction)
+  let rhs_ = daeExp(rhs, contextOther, &preExp, &varDecls, &auxFunction)
+  let iter_ = (iters |> iter => genericIterator(iter, contextOther, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+  <<
+  void genericCall_<%index%>(DATA *data, threadData_t *threadData, int idx)
+  {
+    int tmp = idx;
+    <%iter_%>
+    <%lhs_%> = <%rhs_%>;
+  }
+  >>
+end genericCallBody;
+
+template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR() then
+  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  <<
+  int <%iter_%>_loc = tmp % <%size%>;
+  int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
+  tmp /= <%size%>;
+  >>
+end genericIterator;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;

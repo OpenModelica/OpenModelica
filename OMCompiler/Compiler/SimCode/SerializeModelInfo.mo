@@ -469,6 +469,42 @@ algorithm
       File.write(file, "}");
     then true;
 
+    case SimCode.SES_FOR_RESIDUAL() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_GENERIC_RESIDUAL() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
     case SimCode.SES_SIMPLE_ASSIGN() equation
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
@@ -490,6 +526,48 @@ algorithm
       serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_GENERIC_ASSIGN() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      if (assign_type==1) then
+        File.writeEscape(file, "\",\"tag\":\"torn\"",escape=JSON);
+      elseif (assign_type==2) then
+        File.writeEscape(file, "\",\"tag\":\"jacobian\"",escape=JSON);
+      else
+        File.writeEscape(file, "\",\"tag\":\"assign\"",escape=JSON);
+      end if;
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_ENTWINED_ASSIGN() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      if (assign_type==1) then
+        File.writeEscape(file, "\",\"tag\":\"torn\"",escape=JSON);
+      elseif (assign_type==2) then
+        File.writeEscape(file, "\",\"tag\":\"jacobian\"",escape=JSON);
+      else
+        File.writeEscape(file, "\",\"tag\":\"assign\"",escape=JSON);
+      end if;
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");

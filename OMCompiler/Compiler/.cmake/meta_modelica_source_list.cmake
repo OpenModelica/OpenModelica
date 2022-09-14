@@ -387,6 +387,7 @@ set(OMC_MM_BACKEND_SOURCES
     # "NSimCode";
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimGenericCall.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimStrongComponent.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimVar.mo

@@ -1,4 +1,4 @@
-TEST = ../../../rtest -v
+TEST = ../../../../rtest -v
 
 TESTFILES = \
 emptyModel.mos \
@@ -9,7 +9,6 @@ RSE.mos \
 RSE2.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
-minimalTearing.mos \
 underdetermined_init.mos \
 partitioning.mos \
 
@@ -17,6 +16,7 @@ partitioning.mos \
 # Run make failingtest
 FAILINGTESTFILES = \
 simpleForLoop.mos \
+minimalTearing.mos \
 solveSingleEquation.mos \
 StaticIR.mos \
 detectStates.mos \
