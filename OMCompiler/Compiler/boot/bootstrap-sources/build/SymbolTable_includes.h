@@ -13,6 +13,7 @@ extern "C" {
 #include "Lookup.h"
 #include "SymbolTable.h"
 #include "System.h"
+#include "Vector.h"
 #ifdef __cplusplus
 }
 #endif

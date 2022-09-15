@@ -8,8 +8,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern struct record_description Absyn_Class_CLASS__desc;
-extern struct record_description Absyn_ClassDef_PARTS__desc;
 extern struct record_description Absyn_ClassPart_PROTECTED__desc;
 extern struct record_description Absyn_ClassPart_PUBLIC__desc;
 extern struct record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc;
@@ -51,16 +49,6 @@ extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
 extern struct record_description SCode_ConnectorType_STREAM__desc;
 extern struct record_description SCode_ConstrainClass_CONSTRAINCLASS__desc;
 extern struct record_description SCode_ConstraintSection_CONSTRAINTS__desc;
-extern struct record_description SCode_EEquation_EQ__ASSERT__desc;
-extern struct record_description SCode_EEquation_EQ__CONNECT__desc;
-extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
-extern struct record_description SCode_EEquation_EQ__FOR__desc;
-extern struct record_description SCode_EEquation_EQ__IF__desc;
-extern struct record_description SCode_EEquation_EQ__NORETCALL__desc;
-extern struct record_description SCode_EEquation_EQ__PDE__desc;
-extern struct record_description SCode_EEquation_EQ__REINIT__desc;
-extern struct record_description SCode_EEquation_EQ__TERMINATE__desc;
-extern struct record_description SCode_EEquation_EQ__WHEN__desc;
 extern struct record_description SCode_Each_EACH__desc;
 extern struct record_description SCode_Each_NOT__EACH__desc;
 extern struct record_description SCode_Element_CLASS__desc;
@@ -70,7 +58,16 @@ extern struct record_description SCode_Element_EXTENDS__desc;
 extern struct record_description SCode_Element_IMPORT__desc;
 extern struct record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
 extern struct record_description SCode_Enum_ENUM__desc;
-extern struct record_description SCode_Equation_EQUATION__desc;
+extern struct record_description SCode_Equation_EQ__ASSERT__desc;
+extern struct record_description SCode_Equation_EQ__CONNECT__desc;
+extern struct record_description SCode_Equation_EQ__EQUALS__desc;
+extern struct record_description SCode_Equation_EQ__FOR__desc;
+extern struct record_description SCode_Equation_EQ__IF__desc;
+extern struct record_description SCode_Equation_EQ__NORETCALL__desc;
+extern struct record_description SCode_Equation_EQ__PDE__desc;
+extern struct record_description SCode_Equation_EQ__REINIT__desc;
+extern struct record_description SCode_Equation_EQ__TERMINATE__desc;
+extern struct record_description SCode_Equation_EQ__WHEN__desc;
 extern struct record_description SCode_ExternalDecl_EXTERNALDECL__desc;
 extern struct record_description SCode_Final_FINAL__desc;
 extern struct record_description SCode_Final_NOT__FINAL__desc;

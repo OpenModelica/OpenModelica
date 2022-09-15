@@ -1056,6 +1056,19 @@ DAE_Element_WHEN__EQUATION__desc__fields
 extern struct record_description DAE_Element_WHEN__EQUATION__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_Element_INITIAL__FOR__EQUATION__desc_added
+#define DAE_Element_INITIAL__FOR__EQUATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_Element_INITIAL__FOR__EQUATION__desc__fields[7] = {"type_","iterIsArray","iter","index","range","equations","source"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_Element_INITIAL__FOR__EQUATION__desc = {
+"DAE_Element_INITIAL__FOR__EQUATION",
+"DAE.Element.INITIAL_FOR_EQUATION",
+DAE_Element_INITIAL__FOR__EQUATION__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_Element_INITIAL__FOR__EQUATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Element_FOR__EQUATION__desc_added
 #define DAE_Element_FOR__EQUATION__desc_added
 ADD_METARECORD_DEFINITIONS const char* DAE_Element_FOR__EQUATION__desc__fields[7] = {"type_","iterIsArray","iter","index","range","equations","source"};
@@ -1574,6 +1587,19 @@ DAE_Element_FOR__EQUATION__desc__fields
 #endif
 #else
 extern struct record_description DAE_Element_FOR__EQUATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_Element_INITIAL__FOR__EQUATION__desc_added
+#define DAE_Element_INITIAL__FOR__EQUATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_Element_INITIAL__FOR__EQUATION__desc__fields[7] = {"type_","iterIsArray","iter","index","range","equations","source"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_Element_INITIAL__FOR__EQUATION__desc = {
+"DAE_Element_INITIAL__FOR__EQUATION",
+"DAE.Element.INITIAL_FOR_EQUATION",
+DAE_Element_INITIAL__FOR__EQUATION__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_Element_INITIAL__FOR__EQUATION__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Element_WHEN__EQUATION__desc_added
@@ -1964,6 +1990,32 @@ DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc__fields
 #endif
 #else
 extern struct record_description DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+#define DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields[2] = {"inputParam","inverseCall"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc = {
+"DAE_FunctionDefinition_FUNCTION__INVERSE",
+"DAE.FunctionDefinition.FUNCTION_INVERSE",
+DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+#define DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields[2] = {"inputParam","inverseCall"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc = {
+"DAE_FunctionDefinition_FUNCTION__INVERSE",
+"DAE.FunctionDefinition.FUNCTION_INVERSE",
+DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc_added
@@ -2839,7 +2891,7 @@ extern struct record_description DAE_Statement_STMT__IF__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Statement_STMT__FOR__desc_added
 #define DAE_Statement_STMT__FOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__FOR__desc__fields[7] = {"type_","iterIsArray","iter","index","range","statementLst","source"};
+ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__FOR__desc__fields[6] = {"type_","iterIsArray","iter","range","statementLst","source"};
 ADD_METARECORD_DEFINITIONS struct record_description DAE_Statement_STMT__FOR__desc = {
 "DAE_Statement_STMT__FOR",
 "DAE.Statement.STMT_FOR",
@@ -2852,7 +2904,7 @@ extern struct record_description DAE_Statement_STMT__FOR__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Statement_STMT__PARFOR__desc_added
 #define DAE_Statement_STMT__PARFOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__PARFOR__desc__fields[8] = {"type_","iterIsArray","iter","index","range","statementLst","loopPrlVars","source"};
+ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__PARFOR__desc__fields[7] = {"type_","iterIsArray","iter","range","statementLst","loopPrlVars","source"};
 ADD_METARECORD_DEFINITIONS struct record_description DAE_Statement_STMT__PARFOR__desc = {
 "DAE_Statement_STMT__PARFOR",
 "DAE.Statement.STMT_PARFOR",
@@ -3151,7 +3203,7 @@ extern struct record_description DAE_Statement_STMT__WHILE__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Statement_STMT__PARFOR__desc_added
 #define DAE_Statement_STMT__PARFOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__PARFOR__desc__fields[8] = {"type_","iterIsArray","iter","index","range","statementLst","loopPrlVars","source"};
+ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__PARFOR__desc__fields[7] = {"type_","iterIsArray","iter","range","statementLst","loopPrlVars","source"};
 ADD_METARECORD_DEFINITIONS struct record_description DAE_Statement_STMT__PARFOR__desc = {
 "DAE_Statement_STMT__PARFOR",
 "DAE.Statement.STMT_PARFOR",
@@ -3164,7 +3216,7 @@ extern struct record_description DAE_Statement_STMT__PARFOR__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_Statement_STMT__FOR__desc_added
 #define DAE_Statement_STMT__FOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__FOR__desc__fields[7] = {"type_","iterIsArray","iter","index","range","statementLst","source"};
+ADD_METARECORD_DEFINITIONS const char* DAE_Statement_STMT__FOR__desc__fields[6] = {"type_","iterIsArray","iter","range","statementLst","source"};
 ADD_METARECORD_DEFINITIONS struct record_description DAE_Statement_STMT__FOR__desc = {
 "DAE_Statement_STMT__FOR",
 "DAE.Statement.STMT_FOR",
@@ -5216,17 +5268,17 @@ DAE_ClockKind_INFERRED__CLOCK__desc__fields
 extern struct record_description DAE_ClockKind_INFERRED__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ClockKind_INTEGER__CLOCK__desc_added
-#define DAE_ClockKind_INTEGER__CLOCK__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_INTEGER__CLOCK__desc__fields[2] = {"intervalCounter","resolution"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_INTEGER__CLOCK__desc = {
-"DAE_ClockKind_INTEGER__CLOCK",
-"DAE.ClockKind.INTEGER_CLOCK",
-DAE_ClockKind_INTEGER__CLOCK__desc__fields
+#ifndef DAE_ClockKind_RATIONAL__CLOCK__desc_added
+#define DAE_ClockKind_RATIONAL__CLOCK__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_RATIONAL__CLOCK__desc__fields[2] = {"intervalCounter","resolution"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_RATIONAL__CLOCK__desc = {
+"DAE_ClockKind_RATIONAL__CLOCK",
+"DAE.ClockKind.RATIONAL_CLOCK",
+DAE_ClockKind_RATIONAL__CLOCK__desc__fields
 };
 #endif
 #else
-extern struct record_description DAE_ClockKind_INTEGER__CLOCK__desc;
+extern struct record_description DAE_ClockKind_RATIONAL__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ClockKind_REAL__CLOCK__desc_added
@@ -5242,17 +5294,17 @@ DAE_ClockKind_REAL__CLOCK__desc__fields
 extern struct record_description DAE_ClockKind_REAL__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ClockKind_BOOLEAN__CLOCK__desc_added
-#define DAE_ClockKind_BOOLEAN__CLOCK__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_BOOLEAN__CLOCK__desc__fields[2] = {"condition","startInterval"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc = {
-"DAE_ClockKind_BOOLEAN__CLOCK",
-"DAE.ClockKind.BOOLEAN_CLOCK",
-DAE_ClockKind_BOOLEAN__CLOCK__desc__fields
+#ifndef DAE_ClockKind_EVENT__CLOCK__desc_added
+#define DAE_ClockKind_EVENT__CLOCK__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_EVENT__CLOCK__desc__fields[2] = {"condition","startInterval"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_EVENT__CLOCK__desc = {
+"DAE_ClockKind_EVENT__CLOCK",
+"DAE.ClockKind.EVENT_CLOCK",
+DAE_ClockKind_EVENT__CLOCK__desc__fields
 };
 #endif
 #else
-extern struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc;
+extern struct record_description DAE_ClockKind_EVENT__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ClockKind_SOLVER__CLOCK__desc_added
@@ -5281,17 +5333,17 @@ DAE_ClockKind_SOLVER__CLOCK__desc__fields
 extern struct record_description DAE_ClockKind_SOLVER__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ClockKind_BOOLEAN__CLOCK__desc_added
-#define DAE_ClockKind_BOOLEAN__CLOCK__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_BOOLEAN__CLOCK__desc__fields[2] = {"condition","startInterval"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc = {
-"DAE_ClockKind_BOOLEAN__CLOCK",
-"DAE.ClockKind.BOOLEAN_CLOCK",
-DAE_ClockKind_BOOLEAN__CLOCK__desc__fields
+#ifndef DAE_ClockKind_EVENT__CLOCK__desc_added
+#define DAE_ClockKind_EVENT__CLOCK__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_EVENT__CLOCK__desc__fields[2] = {"condition","startInterval"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_EVENT__CLOCK__desc = {
+"DAE_ClockKind_EVENT__CLOCK",
+"DAE.ClockKind.EVENT_CLOCK",
+DAE_ClockKind_EVENT__CLOCK__desc__fields
 };
 #endif
 #else
-extern struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc;
+extern struct record_description DAE_ClockKind_EVENT__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ClockKind_REAL__CLOCK__desc_added
@@ -5307,17 +5359,17 @@ DAE_ClockKind_REAL__CLOCK__desc__fields
 extern struct record_description DAE_ClockKind_REAL__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ClockKind_INTEGER__CLOCK__desc_added
-#define DAE_ClockKind_INTEGER__CLOCK__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_INTEGER__CLOCK__desc__fields[2] = {"intervalCounter","resolution"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_INTEGER__CLOCK__desc = {
-"DAE_ClockKind_INTEGER__CLOCK",
-"DAE.ClockKind.INTEGER_CLOCK",
-DAE_ClockKind_INTEGER__CLOCK__desc__fields
+#ifndef DAE_ClockKind_RATIONAL__CLOCK__desc_added
+#define DAE_ClockKind_RATIONAL__CLOCK__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_ClockKind_RATIONAL__CLOCK__desc__fields[2] = {"intervalCounter","resolution"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_ClockKind_RATIONAL__CLOCK__desc = {
+"DAE_ClockKind_RATIONAL__CLOCK",
+"DAE.ClockKind.RATIONAL_CLOCK",
+DAE_ClockKind_RATIONAL__CLOCK__desc__fields
 };
 #endif
 #else
-extern struct record_description DAE_ClockKind_INTEGER__CLOCK__desc;
+extern struct record_description DAE_ClockKind_RATIONAL__CLOCK__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ClockKind_INFERRED__CLOCK__desc_added
@@ -7673,19 +7725,6 @@ DAE_ComponentRef_CREF__IDENT__desc__fields
 extern struct record_description DAE_ComponentRef_CREF__IDENT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ComponentRef_CREF__ITER__desc_added
-#define DAE_ComponentRef_CREF__ITER__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ComponentRef_CREF__ITER__desc__fields[4] = {"ident","index","identType","subscriptLst"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ComponentRef_CREF__ITER__desc = {
-"DAE_ComponentRef_CREF__ITER",
-"DAE.ComponentRef.CREF_ITER",
-DAE_ComponentRef_CREF__ITER__desc__fields
-};
-#endif
-#else
-extern struct record_description DAE_ComponentRef_CREF__ITER__desc;
-#endif
-#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ComponentRef_OPTIMICA__ATTR__INST__CREF__desc_added
 #define DAE_ComponentRef_OPTIMICA__ATTR__INST__CREF__desc_added
 ADD_METARECORD_DEFINITIONS const char* DAE_ComponentRef_OPTIMICA__ATTR__INST__CREF__desc__fields[2] = {"componentRef","instant"};
@@ -7736,19 +7775,6 @@ DAE_ComponentRef_OPTIMICA__ATTR__INST__CREF__desc__fields
 #endif
 #else
 extern struct record_description DAE_ComponentRef_OPTIMICA__ATTR__INST__CREF__desc;
-#endif
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef DAE_ComponentRef_CREF__ITER__desc_added
-#define DAE_ComponentRef_CREF__ITER__desc_added
-ADD_METARECORD_DEFINITIONS const char* DAE_ComponentRef_CREF__ITER__desc__fields[4] = {"ident","index","identType","subscriptLst"};
-ADD_METARECORD_DEFINITIONS struct record_description DAE_ComponentRef_CREF__ITER__desc = {
-"DAE_ComponentRef_CREF__ITER",
-"DAE.ComponentRef.CREF_ITER",
-DAE_ComponentRef_CREF__ITER__desc__fields
-};
-#endif
-#else
-extern struct record_description DAE_ComponentRef_CREF__ITER__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_ComponentRef_CREF__IDENT__desc_added

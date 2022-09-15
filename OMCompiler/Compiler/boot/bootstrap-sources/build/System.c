@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/System.c"
+#define OMC_FILE "System.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "System.h"
@@ -11,12 +11,22 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,2,_OMC_LIT0_data);
 #define _OMC_LIT1_data "MB"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,2,_OMC_LIT1_data);
 #define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
-#define _OMC_LIT2_data ""
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT2,0,_OMC_LIT2_data);
+#define _OMC_LIT2_data "System.realpath failed"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT2,22,_OMC_LIT2_data);
 #define _OMC_LIT2 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT2)
-#define _OMC_LIT3_data " \f\n\r	\v"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT3,6,_OMC_LIT3_data);
+#define _OMC_LIT3_data "System.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT3,9,_OMC_LIT3_data);
 #define _OMC_LIT3 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT3)
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT4_6,0.0);
+#define _OMC_LIT4_6 MMC_REFREALLIT(_OMC_LIT_STRUCT4_6)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT4,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT3,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1091)),MMC_IMMEDIATE(MMC_TAGFIXNUM(5)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1091)),MMC_IMMEDIATE(MMC_TAGFIXNUM(72)),_OMC_LIT4_6}};
+#define _OMC_LIT4 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT4)
+#define _OMC_LIT5_data ""
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT5,0,_OMC_LIT5_data);
+#define _OMC_LIT5 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT5)
+#define _OMC_LIT6_data " \f\n\r	\v"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT6,6,_OMC_LIT6_data);
+#define _OMC_LIT6 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT6)
 #include "util/modelica.h"
 #include "System_includes.h"
 #if !defined(PROTECTED_FUNCTION_STATIC)
@@ -25,6 +35,9 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT3,6,_OMC_LIT3_data);
 PROTECTED_FUNCTION_STATIC modelica_string omc_System_dladdr___dladdr(threadData_t *threadData, modelica_metatype _symbol, modelica_string *out_name);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_dladdr___dladdr,2,0) {(void*) boxptr_System_dladdr___dladdr,0}};
 #define boxvar_System_dladdr___dladdr MMC_REFSTRUCTLIT(boxvar_lit_System_dladdr___dladdr)
+PROTECTED_FUNCTION_STATIC modelica_string omc_System_realpath_system__realpath(threadData_t *threadData, modelica_string _path);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_System_realpath_system__realpath,2,0) {(void*) boxptr_System_realpath_system__realpath,0}};
+#define boxvar_System_realpath_system__realpath MMC_REFSTRUCTLIT(boxvar_lit_System_realpath_system__realpath)
 PROTECTED_FUNCTION_STATIC modelica_integer omc_System_intRandom0(threadData_t *threadData);
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_System_intRandom0(threadData_t *threadData);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_intRandom0,2,0) {(void*) boxptr_System_intRandom0,0}};
@@ -176,13 +189,14 @@ modelica_string omc_System_dladdr(threadData_t *threadData, modelica_metatype _s
 modelica_string _info = NULL;
 modelica_string _file = NULL;
 modelica_string _name = NULL;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _file = omc_System_dladdr___dladdr(threadData, _symbol ,&_name);
-tmpMeta[0] = stringAppend(_file,_OMC_LIT0);
-tmpMeta[1] = stringAppend(tmpMeta[0],_name);
-_info = tmpMeta[1];
+tmpMeta1 = stringAppend(_file,_OMC_LIT0);
+tmpMeta2 = stringAppend(tmpMeta1,_name);
+_info = tmpMeta2;
 _return: OMC_LABEL_UNUSED
 if (out_file) { *out_file = _file; }
 if (out_name) { *out_name = _name; }
@@ -224,32 +238,38 @@ _previousAlarm = omc_System_alarm(threadData, tmp1);
 out_previousAlarm = mmc_mk_icon(_previousAlarm);
 return out_previousAlarm;
 }
-modelica_boolean omc_System_stat(threadData_t *threadData, modelica_string _filename, modelica_real *out_st_size, modelica_real *out_st_mtime)
+modelica_boolean omc_System_stat(threadData_t *threadData, modelica_string _filename, modelica_real *out_st_size, modelica_real *out_st_mtime, modelica_integer *out_fileType)
 {
 double _st_size_ext;
 double _st_mtime_ext;
+int _fileType_ext;
 int _success_ext;
 modelica_boolean _success;
 modelica_real _st_size;
 modelica_real _st_mtime;
-_success_ext = SystemImpl__stat(MMC_STRINGDATA(_filename), &_st_size_ext, &_st_mtime_ext);
+modelica_integer _fileType;
+_success_ext = SystemImpl__stat(MMC_STRINGDATA(_filename), &_st_size_ext, &_st_mtime_ext, &_fileType_ext);
 _st_size = (modelica_real)_st_size_ext;
 _st_mtime = (modelica_real)_st_mtime_ext;
+_fileType = (modelica_integer)_fileType_ext;
 _success = (modelica_boolean)_success_ext;
 if (out_st_size) { *out_st_size = _st_size; }
 if (out_st_mtime) { *out_st_mtime = _st_mtime; }
+if (out_fileType) { *out_fileType = _fileType; }
 return _success;
 }
-modelica_metatype boxptr_System_stat(threadData_t *threadData, modelica_metatype _filename, modelica_metatype *out_st_size, modelica_metatype *out_st_mtime)
+modelica_metatype boxptr_System_stat(threadData_t *threadData, modelica_metatype _filename, modelica_metatype *out_st_size, modelica_metatype *out_st_mtime, modelica_metatype *out_fileType)
 {
 modelica_real _st_size;
 modelica_real _st_mtime;
+modelica_integer _fileType;
 modelica_boolean _success;
 modelica_metatype out_success;
-_success = omc_System_stat(threadData, _filename, &_st_size, &_st_mtime);
+_success = omc_System_stat(threadData, _filename, &_st_size, &_st_mtime, &_fileType);
 out_success = mmc_mk_icon(_success);
 if (out_st_size) { *out_st_size = mmc_mk_rcon(_st_size); }
 if (out_st_mtime) { *out_st_mtime = mmc_mk_rcon(_st_mtime); }
+if (out_fileType) { *out_fileType = mmc_mk_icon(_fileType); }
 return out_success;
 }
 modelica_string omc_System_ctime(threadData_t *threadData, modelica_real _t)
@@ -437,12 +457,59 @@ tmp2 = mmc_unbox_integer(_sphinx);
 _text = omc_System_getSimulationHelpText(threadData, tmp1, tmp2);
 return _text;
 }
-modelica_string omc_System_realpath(threadData_t *threadData, modelica_string _path)
+PROTECTED_FUNCTION_STATIC modelica_string omc_System_realpath_system__realpath(threadData_t *threadData, modelica_string _path)
 {
 const char* _fullpath_ext;
 modelica_string _fullpath = NULL;
 _fullpath_ext = System_realpath(MMC_STRINGDATA(_path));
 _fullpath = (modelica_string)mmc_mk_scon(_fullpath_ext);
+return _fullpath;
+}
+DLLExport
+modelica_string omc_System_realpath(threadData_t *threadData, modelica_string _path)
+{
+modelica_string _fullpath = NULL;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+{
+{
+volatile mmc_switch_type tmp3;
+int tmp4;
+tmp3 = 0;
+MMC_TRY_INTERNAL(mmc_jumper)
+tmp2_top:
+threadData->mmc_jumper = &new_mmc_jumper;
+for (; tmp3 < 2; tmp3++) {
+switch (MMC_SWITCH_CAST(tmp3)) {
+case 0: {
+_fullpath = omc_System_realpath_system__realpath(threadData, _path);
+goto tmp2_done;
+}
+case 1: {
+omc_Error_addInternalError(threadData, _OMC_LIT2, _OMC_LIT4);
+goto goto_1;
+goto tmp2_done;
+}
+}
+goto tmp2_end;
+tmp2_end: ;
+}
+goto goto_1;
+tmp2_done:
+(void)tmp3;
+MMC_RESTORE_INTERNAL(mmc_jumper);
+goto tmp2_done2;
+goto_1:;
+MMC_CATCH_INTERNAL(mmc_jumper);
+if (++tmp3 < 2) {
+goto tmp2_top;
+}
+MMC_THROW_INTERNAL();
+tmp2_done2:;
+}
+}
+;
+_return: OMC_LABEL_UNUSED
 return _fullpath;
 }
 modelica_integer omc_System_numBits(threadData_t *threadData)
@@ -1665,6 +1732,27 @@ _outInteger = omc_System_cd(threadData, _inString);
 out_outInteger = mmc_mk_icon(_outInteger);
 return out_outInteger;
 }
+void omc_System_loadModelCallBack(threadData_t *threadData, modelica_string _modelName)
+{
+SystemImpl__loadModelCallBack(threadData, MMC_STRINGDATA(_modelName));
+return;
+}
+modelica_boolean omc_System_loadModelCallBackDefined(threadData_t *threadData)
+{
+int _isDefined_ext;
+modelica_boolean _isDefined;
+_isDefined_ext = SystemImpl__loadModelCallBackDefined(threadData);
+_isDefined = (modelica_boolean)_isDefined_ext;
+return _isDefined;
+}
+modelica_metatype boxptr_System_loadModelCallBackDefined(threadData_t *threadData)
+{
+modelica_boolean _isDefined;
+modelica_metatype out_isDefined;
+_isDefined = omc_System_loadModelCallBackDefined(threadData);
+out_isDefined = mmc_mk_icon(_isDefined);
+return out_isDefined;
+}
 void omc_System_plotCallBack(threadData_t *threadData, modelica_boolean _externalWindow, modelica_string _filename, modelica_string _title, modelica_string _grid, modelica_string _plotType, modelica_string _logX, modelica_string _logY, modelica_string _xLabel, modelica_string _yLabel, modelica_string _x1, modelica_string _x2, modelica_string _y1, modelica_string _y2, modelica_string _curveWidth, modelica_string _curveStyle, modelica_string _legendPosition, modelica_string _footer, modelica_string _autoScale, modelica_string _variables)
 {
 int _externalWindow_ext;
@@ -1841,23 +1929,27 @@ _outFuncHandle = omc_System_lookupFunction(threadData, tmp1, _inFunc);
 out_outFuncHandle = mmc_mk_icon(_outFuncHandle);
 return out_outFuncHandle;
 }
-modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _inPrintDebug)
+modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _relativePath, modelica_boolean _printDebug)
 {
-int _inPrintDebug_ext;
+int _relativePath_ext;
+int _printDebug_ext;
 int _outLibHandle_ext;
 modelica_integer _outLibHandle;
-_inPrintDebug_ext = (int)_inPrintDebug;
-_outLibHandle_ext = System_loadLibrary(MMC_STRINGDATA(_inLib), _inPrintDebug_ext);
+_relativePath_ext = (int)_relativePath;
+_printDebug_ext = (int)_printDebug;
+_outLibHandle_ext = System_loadLibrary(MMC_STRINGDATA(_inLib), _relativePath_ext, _printDebug_ext);
 _outLibHandle = (modelica_integer)_outLibHandle_ext;
 return _outLibHandle;
 }
-modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _inPrintDebug)
+modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _relativePath, modelica_metatype _printDebug)
 {
 modelica_integer tmp1;
+modelica_integer tmp2;
 modelica_integer _outLibHandle;
 modelica_metatype out_outLibHandle;
-tmp1 = mmc_unbox_integer(_inPrintDebug);
-_outLibHandle = omc_System_loadLibrary(threadData, _inLib, tmp1);
+tmp1 = mmc_unbox_integer(_relativePath);
+tmp2 = mmc_unbox_integer(_printDebug);
+_outLibHandle = omc_System_loadLibrary(threadData, _inLib, tmp1, tmp2);
 out_outLibHandle = mmc_mk_icon(_outLibHandle);
 return out_outLibHandle;
 }
@@ -2120,7 +2212,7 @@ modelica_string omc_System_trimWhitespace(threadData_t *threadData, modelica_str
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_System_trim(threadData, _inString, _OMC_LIT3);
+_outString = omc_System_trim(threadData, _inString, _OMC_LIT6);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }

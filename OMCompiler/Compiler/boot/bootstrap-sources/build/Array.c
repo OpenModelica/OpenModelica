@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Array.c"
+#define OMC_FILE "Array.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Array.h"
@@ -14,6 +14,278 @@ PROTECTED_FUNCTION_STATIC modelica_metatype omc_Array_downheap(threadData_t *thr
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Array_downheap(threadData_t *threadData, modelica_metatype __omcQ_24in_5FinArray, modelica_metatype _n, modelica_metatype _vIn);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_downheap,2,0) {(void*) boxptr_Array_downheap,0}};
 #define boxvar_Array_downheap MMC_REFSTRUCTLIT(boxvar_lit_Array_downheap)
+DLLExport
+modelica_metatype omc_Array_generate(threadData_t *threadData, modelica_integer _n, modelica_fnptr _generator)
+{
+modelica_metatype _arr = NULL;
+modelica_metatype _e = NULL;
+modelica_metatype tmpMeta1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+modelica_integer tmp4;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+if((_n <= ((modelica_integer) 0)))
+{
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_arr = listArray(tmpMeta1);
+}
+else
+{
+_e = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 2)))) : ((modelica_metatype(*)(threadData_t*)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 1)))) (threadData);
+_arr = arrayCreateNoInit(_n, _e);
+arrayUpdateNoBoundsChecking(_arr, ((modelica_integer) 1), _e);
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _n;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
+{
+arrayUpdateNoBoundsChecking(_arr, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 2)))) : ((modelica_metatype(*)(threadData_t*)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_generator), 1)))) (threadData));
+}
+}
+}
+_return: OMC_LABEL_UNUSED
+return _arr;
+}
+modelica_metatype boxptr_Array_generate(threadData_t *threadData, modelica_metatype _n, modelica_fnptr _generator)
+{
+modelica_integer tmp1;
+modelica_metatype _arr = NULL;
+tmp1 = mmc_unbox_integer(_n);
+_arr = omc_Array_generate(threadData, tmp1, _generator);
+return _arr;
+}
+DLLExport
+modelica_metatype omc_Array_fromScalar(threadData_t *threadData, modelica_metatype _e)
+{
+modelica_metatype _arr = NULL;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_arr = arrayCreate(((modelica_integer) 1), _e);
+_return: OMC_LABEL_UNUSED
+return _arr;
+}
+DLLExport
+modelica_metatype omc_Array_threadMap(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _func)
+{
+modelica_metatype _outArray = NULL;
+modelica_metatype _res = NULL;
+modelica_integer _len1;
+modelica_integer _len2;
+modelica_metatype tmpMeta1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+modelica_integer tmp4;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+if((arrayLength(_arr1) == ((modelica_integer) 0)))
+{
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
+goto _return;
+}
+_len1 = arrayLength(_arr1);
+_len2 = arrayLength(_arr2);
+if((_len1 != _len2))
+{
+MMC_THROW_INTERNAL();
+}
+_res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))), arrayGetNoBoundsChecking(_arr1, ((modelica_integer) 1)), arrayGetNoBoundsChecking(_arr2, ((modelica_integer) 1))) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, arrayGetNoBoundsChecking(_arr1, ((modelica_integer) 1)), arrayGetNoBoundsChecking(_arr2, ((modelica_integer) 1)));
+_outArray = arrayCreateNoInit(_len1, _res);
+arrayUpdateNoBoundsChecking(_outArray, ((modelica_integer) 1), _res);
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _len1;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
+{
+arrayUpdateNoBoundsChecking(_outArray, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))), arrayGetNoBoundsChecking(_arr1, _i), arrayGetNoBoundsChecking(_arr2, _i)) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, arrayGetNoBoundsChecking(_arr1, _i), arrayGetNoBoundsChecking(_arr2, _i)));
+}
+}
+_return: OMC_LABEL_UNUSED
+return _outArray;
+}
+DLLExport
+modelica_metatype omc_Array_transpose(threadData_t *threadData, modelica_metatype _arr)
+{
+modelica_metatype _outArray = NULL;
+modelica_integer _c_len;
+modelica_integer _r_len;
+modelica_metatype _val = NULL;
+modelica_metatype _row = NULL;
+modelica_integer tmp1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+modelica_integer tmp4;
+modelica_integer tmp5;
+modelica_integer tmp6;
+modelica_integer tmp7;
+modelica_integer tmp8;
+modelica_integer tmp9;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+if((arrayLength(_arr) == ((modelica_integer) 0)))
+{
+_outArray = _arr;
+goto _return;
+}
+_row = arrayGetNoBoundsChecking(_arr, ((modelica_integer) 1));
+if((arrayLength(_row) == ((modelica_integer) 0)))
+{
+_outArray = _arr;
+goto _return;
+}
+_val = arrayGetNoBoundsChecking(_row, ((modelica_integer) 1));
+_c_len = arrayLength(_arr);
+_r_len = arrayLength(_row);
+_outArray = arrayCreateNoInit(_r_len, _row);
+tmp1 = ((modelica_integer) 1); tmp2 = 1; tmp3 = _r_len;
+if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+{
+arrayUpdateNoBoundsChecking(_outArray, _i, arrayCreateNoInit(_c_len, _val));
+}
+}
+tmp7 = ((modelica_integer) 1); tmp8 = 1; tmp9 = _r_len;
+if(!(((tmp8 > 0) && (tmp7 > tmp9)) || ((tmp8 < 0) && (tmp7 < tmp9))))
+{
+modelica_integer _r;
+for(_r = ((modelica_integer) 1); in_range_integer(_r, tmp7, tmp9); _r += tmp8)
+{
+tmp4 = ((modelica_integer) 1); tmp5 = 1; tmp6 = _c_len;
+if(!(((tmp5 > 0) && (tmp4 > tmp6)) || ((tmp5 < 0) && (tmp4 < tmp6))))
+{
+modelica_integer _c;
+for(_c = ((modelica_integer) 1); in_range_integer(_c, tmp4, tmp6); _c += tmp5)
+{
+_val = arrayGetNoBoundsChecking(arrayGetNoBoundsChecking(_arr, _c), _r);
+arrayUpdateNoBoundsChecking(arrayGetNoBoundsChecking(_outArray, _r), _c, _val);
+}
+}
+}
+}
+_return: OMC_LABEL_UNUSED
+return _outArray;
+}
+DLLExport
+modelica_boolean omc_Array_mapBoolAnd(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func)
+{
+modelica_boolean _res;
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_res = 0;
+{
+modelica_metatype _e;
+for (tmpMeta1 = _arr, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
+{
+_e = arrayGet(tmpMeta1,tmp3);
+if((!mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, _e))))
+{
+goto _return;
+}
+}
+}
+_res = 1;
+_return: OMC_LABEL_UNUSED
+return _res;
+}
+modelica_metatype boxptr_Array_mapBoolAnd(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func)
+{
+modelica_boolean _res;
+modelica_metatype out_res;
+_res = omc_Array_mapBoolAnd(threadData, _arr, _func);
+out_res = mmc_mk_icon(_res);
+return out_res;
+}
+DLLExport
+modelica_metatype omc_Array_mapFold(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func, modelica_metatype _arg, modelica_metatype *out_outArg)
+{
+modelica_metatype _outArray = NULL;
+modelica_metatype _outArg = NULL;
+modelica_integer _len;
+modelica_metatype _res = NULL;
+modelica_metatype tmpMeta1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+modelica_integer tmp4;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_outArg = _arg;
+_len = arrayLength(_arr);
+if((_len == ((modelica_integer) 0)))
+{
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
+}
+else
+{
+_res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))), arrayGetNoBoundsChecking(_arr, ((modelica_integer) 1)), _outArg ,&_outArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, arrayGetNoBoundsChecking(_arr, ((modelica_integer) 1)), _outArg ,&_outArg);
+_outArray = arrayCreateNoInit(_len, _res);
+arrayUpdateNoBoundsChecking(_outArray, ((modelica_integer) 1), _res);
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _len;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
+{
+_res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 2))), arrayGetNoBoundsChecking(_arr, _i), _outArg ,&_outArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_func), 1)))) (threadData, arrayGetNoBoundsChecking(_arr, _i), _outArg ,&_outArg);
+arrayUpdateNoBoundsChecking(_outArray, _i, _res);
+}
+}
+}
+_return: OMC_LABEL_UNUSED
+if (out_outArg) { *out_outArg = _outArg; }
+return _outArray;
+}
+DLLExport
+modelica_integer omc_Array_compare(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _compFn)
+{
+modelica_integer _res;
+modelica_integer _l1;
+modelica_integer _l2;
+modelica_integer tmp1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_l1 = arrayLength(_arr1);
+_l2 = arrayLength(_arr2);
+_res = ((_l1 == _l2)?((modelica_integer) 0):((_l1 > _l2)?((modelica_integer) 1):((modelica_integer) -1)));
+if((_res != ((modelica_integer) 0)))
+{
+goto _return;
+}
+tmp1 = ((modelica_integer) 1); tmp2 = 1; tmp3 = _l1;
+if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+{
+_res = mmc_unbox_integer((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_compFn), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_compFn), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_compFn), 2))), arrayGetNoBoundsChecking(_arr1, _i), arrayGetNoBoundsChecking(_arr2, _i)) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_compFn), 1)))) (threadData, arrayGetNoBoundsChecking(_arr1, _i), arrayGetNoBoundsChecking(_arr2, _i)));
+if((_res != ((modelica_integer) 0)))
+{
+goto _return;
+}
+}
+}
+_return: OMC_LABEL_UNUSED
+return _res;
+}
+modelica_metatype boxptr_Array_compare(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _compFn)
+{
+modelica_integer _res;
+modelica_metatype out_res;
+_res = omc_Array_compare(threadData, _arr1, _arr2, _compFn);
+out_res = mmc_mk_icon(_res);
+return out_res;
+}
 DLLExport
 modelica_metatype omc_Array_maxElement(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _lessFn)
 {
@@ -72,16 +344,17 @@ DLLExport
 modelica_boolean omc_Array_all(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _fn)
 {
 modelica_boolean _res;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _arr, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _arr, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 if((!mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 1)))) (threadData, _e))))
 {
 _res = 0;
@@ -106,38 +379,38 @@ modelica_metatype omc_Array_remove(threadData_t *threadData, modelica_metatype _
 {
 modelica_metatype _outArr = NULL;
 modelica_integer _len;
-modelica_integer tmp1;
+modelica_metatype tmpMeta1;
 modelica_integer tmp2;
 modelica_integer tmp3;
 modelica_integer tmp4;
 modelica_integer tmp5;
 modelica_integer tmp6;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_integer tmp7;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _len = arrayLength(_arr);
 if((_len <= ((modelica_integer) 1)))
 {
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outArr = listArray(tmpMeta[0]);
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArr = listArray(tmpMeta1);
 }
 else
 {
 _outArr = arrayCreateNoInit(((modelica_integer) -1) + _len, arrayGet(_arr,((modelica_integer) 1)) /* DAE.ASUB */);
-tmp1 = ((modelica_integer) 1); tmp2 = 1; tmp3 = ((modelica_integer) -1) + _index;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp2 = ((modelica_integer) 1); tmp3 = 1; tmp4 = ((modelica_integer) -1) + _index;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
 {
 arrayUpdateNoBoundsChecking(_outArr, _i, arrayGetNoBoundsChecking(_arr, _i));
 }
 }
-tmp4 = ((modelica_integer) 1) + _index; tmp5 = 1; tmp6 = ((modelica_integer) -1) + _len;
-if(!(((tmp5 > 0) && (tmp4 > tmp6)) || ((tmp5 < 0) && (tmp4 < tmp6))))
+tmp5 = ((modelica_integer) 1) + _index; tmp6 = 1; tmp7 = ((modelica_integer) -1) + _len;
+if(!(((tmp6 > 0) && (tmp5 > tmp7)) || ((tmp6 < 0) && (tmp5 < tmp7))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 1) + _index; in_range_integer(_i, tmp4, tmp6); _i += tmp5)
+for(_i = ((modelica_integer) 1) + _index; in_range_integer(_i, tmp5, tmp7); _i += tmp6)
 {
 arrayUpdateNoBoundsChecking(_outArr, ((modelica_integer) -1) + _i, arrayGetNoBoundsChecking(_arr, _i));
 }
@@ -159,16 +432,17 @@ modelica_metatype omc_Array_insertList(threadData_t *threadData, modelica_metaty
 {
 modelica_metatype _arr = NULL;
 modelica_integer _i;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _arr = __omcQ_24in_5Farr;
 _i = _startPos;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _lst; !listEmpty(tmpMeta[0]); tmpMeta[0]=MMC_CDR(tmpMeta[0]))
+for (tmpMeta1 = _lst; !listEmpty(tmpMeta1); tmpMeta1=MMC_CDR(tmpMeta1))
 {
-_e = MMC_CAR(tmpMeta[0]);
+_e = MMC_CAR(tmpMeta1);
 arrayUpdate(_arr,_i,_e);
 _i = ((modelica_integer) 1) + _i;
 }
@@ -188,16 +462,17 @@ DLLExport
 modelica_boolean omc_Array_exist(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _pred)
 {
 modelica_boolean _exists;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _arr, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _arr, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 if(mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_pred), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_pred), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_pred), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_pred), 1)))) (threadData, _e)))
 {
 _exists = 1;
@@ -491,28 +766,29 @@ DLLExport
 modelica_metatype omc_Array_getRange(threadData_t *threadData, modelica_integer _inStart, modelica_integer _inEnd, modelica_metatype _inArray)
 {
 modelica_metatype _outList = NULL;
+modelica_metatype tmpMeta1;
 modelica_metatype _value = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
+modelica_metatype tmpMeta2;
 modelica_integer tmp3;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_integer tmp4;
+modelica_integer tmp5;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outList = tmpMeta[0];
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outList = tmpMeta1;
 if((_inStart > arrayLength(_inArray)))
 {
 MMC_THROW_INTERNAL();
 }
-tmp1 = _inStart; tmp2 = 1; tmp3 = _inEnd;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp3 = _inStart; tmp4 = 1; tmp5 = _inEnd;
+if(!(((tmp4 > 0) && (tmp3 > tmp5)) || ((tmp4 < 0) && (tmp3 < tmp5))))
 {
 modelica_integer _i;
-for(_i = _inStart; in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = _inStart; in_range_integer(_i, tmp3, tmp5); _i += tmp4)
 {
 _value = arrayGet(_inArray, _i);
-tmpMeta[1] = mmc_mk_cons(_value, _outList);
-_outList = tmpMeta[1];
+tmpMeta2 = mmc_mk_cons(_value, _outList);
+_outList = tmpMeta2;
 }
 }
 _return: OMC_LABEL_UNUSED
@@ -523,7 +799,7 @@ modelica_metatype boxptr_Array_getRange(threadData_t *threadData, modelica_metat
 modelica_integer tmp1;
 modelica_integer tmp2;
 modelica_metatype _outList = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta3;
 tmp1 = mmc_unbox_integer(_inStart);
 tmp2 = mmc_unbox_integer(_inEnd);
 _outList = omc_Array_getRange(threadData, tmp1, tmp2, _inArray);
@@ -734,10 +1010,12 @@ modelica_integer _arr_len;
 modelica_integer _lst_len;
 modelica_metatype _e = NULL;
 modelica_metatype _rest = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_integer tmp3;
-modelica_metatype tmpMeta[3] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_metatype tmpMeta3;
+modelica_integer tmp4;
+modelica_integer tmp5;
+modelica_integer tmp6;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _arr_len = arrayLength(_arr);
@@ -757,18 +1035,18 @@ _lst_len = listLength(_lst);
 _outArray = arrayCreateNoInit(_arr_len + _lst_len, arrayGet(_arr,((modelica_integer) 1)) /* DAE.ASUB */);
 omc_Array_copy(threadData, _arr, _outArray);
 _rest = _lst;
-tmp1 = ((modelica_integer) 1) + _arr_len; tmp2 = 1; tmp3 = _arr_len + _lst_len;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp4 = ((modelica_integer) 1) + _arr_len; tmp5 = 1; tmp6 = _arr_len + _lst_len;
+if(!(((tmp5 > 0) && (tmp4 > tmp6)) || ((tmp5 < 0) && (tmp4 < tmp6))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 1) + _arr_len; in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 1) + _arr_len; in_range_integer(_i, tmp4, tmp6); _i += tmp5)
 {
-tmpMeta[0] = _rest;
-if (listEmpty(tmpMeta[0])) MMC_THROW_INTERNAL();
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-_e = tmpMeta[1];
-_rest = tmpMeta[2];
+tmpMeta1 = _rest;
+if (listEmpty(tmpMeta1)) MMC_THROW_INTERNAL();
+tmpMeta2 = MMC_CAR(tmpMeta1);
+tmpMeta3 = MMC_CDR(tmpMeta1);
+_e = tmpMeta2;
+_rest = tmpMeta3;
 arrayUpdateNoBoundsChecking(_outArray, _i, _e);
 }
 }
@@ -799,11 +1077,11 @@ DLLExport
 modelica_metatype omc_Array_consToElement(threadData_t *threadData, modelica_integer _inIndex, modelica_metatype _inElement, modelica_metatype _inArray)
 {
 modelica_metatype _outArray = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = mmc_mk_cons(_inElement, arrayGet(_inArray,_inIndex) /* DAE.ASUB */);
-_outArray = arrayUpdate(_inArray, _inIndex, tmpMeta[0]);
+tmpMeta1 = mmc_mk_cons(_inElement, arrayGet(_inArray,_inIndex) /* DAE.ASUB */);
+_outArray = arrayUpdate(_inArray, _inIndex, tmpMeta1);
 _return: OMC_LABEL_UNUSED
 return _outArray;
 }
@@ -1065,17 +1343,18 @@ DLLExport
 modelica_metatype omc_Array_fold6(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg1, modelica_metatype _inArg2, modelica_metatype _inArg3, modelica_metatype _inArg4, modelica_metatype _inArg5, modelica_metatype _inArg6, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg1, _inArg2, _inArg3, _inArg4, _inArg5, _inArg6, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg1, _inArg2, _inArg3, _inArg4, _inArg5, _inArg6, _outResult);
 }
 }
@@ -1086,17 +1365,18 @@ DLLExport
 modelica_metatype omc_Array_fold5(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg1, modelica_metatype _inArg2, modelica_metatype _inArg3, modelica_metatype _inArg4, modelica_metatype _inArg5, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg1, _inArg2, _inArg3, _inArg4, _inArg5, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg1, _inArg2, _inArg3, _inArg4, _inArg5, _outResult);
 }
 }
@@ -1107,17 +1387,18 @@ DLLExport
 modelica_metatype omc_Array_fold4(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg1, modelica_metatype _inArg2, modelica_metatype _inArg3, modelica_metatype _inArg4, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg1, _inArg2, _inArg3, _inArg4, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg1, _inArg2, _inArg3, _inArg4, _outResult);
 }
 }
@@ -1128,17 +1409,18 @@ DLLExport
 modelica_metatype omc_Array_fold3(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg1, modelica_metatype _inArg2, modelica_metatype _inArg3, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg1, _inArg2, _inArg3, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg1, _inArg2, _inArg3, _outResult);
 }
 }
@@ -1149,17 +1431,18 @@ DLLExport
 modelica_metatype omc_Array_fold2(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg1, modelica_metatype _inArg2, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg1, _inArg2, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg1, _inArg2, _outResult);
 }
 }
@@ -1170,17 +1453,18 @@ DLLExport
 modelica_metatype omc_Array_fold1(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inArg, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _inArg, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _inArg, _outResult);
 }
 }
@@ -1191,17 +1475,18 @@ DLLExport
 modelica_metatype omc_Array_fold(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue)
 {
 modelica_metatype _outResult = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outResult = _inStartValue;
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 _outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _e, _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _e, _outResult);
 }
 }
@@ -1215,15 +1500,17 @@ modelica_metatype _outArray = NULL;
 modelica_integer _i;
 modelica_integer _len;
 modelica_metatype _res = NULL;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_metatype tmpMeta3;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _i = ((modelica_integer) 2);
 _len = listLength(_inList);
 if((_len == ((modelica_integer) 0)))
 {
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outArray = listArray(tmpMeta[0]);
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
 }
 else
 {
@@ -1232,9 +1519,9 @@ _outArray = arrayCreateNoInit(_len, _res);
 arrayUpdate(_outArray, ((modelica_integer) 1), _res);
 {
 modelica_metatype _e;
-for (tmpMeta[0] = listRest(_inList); !listEmpty(tmpMeta[0]); tmpMeta[0]=MMC_CDR(tmpMeta[0]))
+for (tmpMeta2 = listRest(_inList); !listEmpty(tmpMeta2); tmpMeta2=MMC_CDR(tmpMeta2))
 {
-_e = MMC_CAR(tmpMeta[0]);
+_e = MMC_CAR(tmpMeta2);
 arrayUpdate(_outArray, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, _e));
 _i = ((modelica_integer) 1) + _i;
 }
@@ -1246,16 +1533,17 @@ return _outArray;
 DLLExport
 void omc_Array_map0(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inFunc)
 {
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((void(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), _e) : ((void(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, _e);
 }
 }
@@ -1268,28 +1556,28 @@ modelica_metatype omc_Array_map1Ind(threadData_t *threadData, modelica_metatype 
 modelica_metatype _outArray = NULL;
 modelica_integer _len;
 modelica_metatype _res = NULL;
-modelica_integer tmp1;
+modelica_metatype tmpMeta1;
 modelica_integer tmp2;
 modelica_integer tmp3;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _len = arrayLength(_inArray);
 if((_len == ((modelica_integer) 0)))
 {
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outArray = listArray(tmpMeta[0]);
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
 }
 else
 {
 _res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1)), mmc_mk_integer(((modelica_integer) 1)), _inArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1)), mmc_mk_integer(((modelica_integer) 1)), _inArg);
 _outArray = arrayCreateNoInit(_len, _res);
 arrayUpdate(_outArray, ((modelica_integer) 1), _res);
-tmp1 = ((modelica_integer) 2); tmp2 = 1; tmp3 = _len;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _len;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
 {
 arrayUpdate(_outArray, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, _i), mmc_mk_integer(_i), _inArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, _i), mmc_mk_integer(_i), _inArg));
 }
@@ -1304,28 +1592,28 @@ modelica_metatype omc_Array_map1(threadData_t *threadData, modelica_metatype _in
 modelica_metatype _outArray = NULL;
 modelica_integer _len;
 modelica_metatype _res = NULL;
-modelica_integer tmp1;
+modelica_metatype tmpMeta1;
 modelica_integer tmp2;
 modelica_integer tmp3;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _len = arrayLength(_inArray);
 if((_len == ((modelica_integer) 0)))
 {
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outArray = listArray(tmpMeta[0]);
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
 }
 else
 {
 _res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1)), _inArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1)), _inArg);
 _outArray = arrayCreateNoInit(_len, _res);
 arrayUpdate(_outArray, ((modelica_integer) 1), _res);
-tmp1 = ((modelica_integer) 2); tmp2 = 1; tmp3 = _len;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _len;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
 {
 arrayUpdate(_outArray, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, _i), _inArg) : ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, _i), _inArg));
 }
@@ -1340,28 +1628,28 @@ modelica_metatype omc_Array_map(threadData_t *threadData, modelica_metatype _inA
 modelica_metatype _outArray = NULL;
 modelica_integer _len;
 modelica_metatype _res = NULL;
-modelica_integer tmp1;
+modelica_metatype tmpMeta1;
 modelica_integer tmp2;
 modelica_integer tmp3;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _len = arrayLength(_inArray);
 if((_len == ((modelica_integer) 0)))
 {
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outArray = listArray(tmpMeta[0]);
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outArray = listArray(tmpMeta1);
 }
 else
 {
 _res = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1))) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, ((modelica_integer) 1)));
 _outArray = arrayCreateNoInit(_len, _res);
 arrayUpdateNoBoundsChecking(_outArray, ((modelica_integer) 1), _res);
-tmp1 = ((modelica_integer) 2); tmp2 = 1; tmp3 = _len;
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp2 = ((modelica_integer) 2); tmp3 = 1; tmp4 = _len;
+if(!(((tmp3 > 0) && (tmp2 > tmp4)) || ((tmp3 < 0) && (tmp2 < tmp4))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 2); in_range_integer(_i, tmp2, tmp4); _i += tmp3)
 {
 arrayUpdateNoBoundsChecking(_outArray, _i, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), arrayGetNoBoundsChecking(_inArray, _i)) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, arrayGetNoBoundsChecking(_inArray, _i)));
 }
@@ -1375,16 +1663,17 @@ modelica_metatype omc_Array_select(threadData_t *threadData, modelica_metatype _
 {
 modelica_metatype _outArray = NULL;
 modelica_integer _i;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _i = ((modelica_integer) 1);
 _outArray = arrayCreateNoInit(listLength(_inIndices), arrayGet(_inArray,((modelica_integer) 1)) /* DAE.ASUB */);
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inIndices; !listEmpty(tmpMeta[0]); tmpMeta[0]=MMC_CDR(tmpMeta[0]))
+for (tmpMeta1 = _inIndices; !listEmpty(tmpMeta1); tmpMeta1=MMC_CDR(tmpMeta1))
 {
-_e = MMC_CAR(tmpMeta[0]);
+_e = MMC_CAR(tmpMeta1);
 arrayUpdate(_outArray, _i, arrayGet(_inArray, mmc_unbox_integer(_e)));
 _i = ((modelica_integer) 1) + _i;
 }
@@ -1398,9 +1687,10 @@ modelica_metatype omc_Array_findFirstOnTrueWithIdx(threadData_t *threadData, mod
 modelica_metatype _outElement = NULL;
 modelica_integer _idxOut;
 modelica_integer _idx;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _idxOut = ((modelica_integer) -1);
@@ -1408,9 +1698,9 @@ _idx = ((modelica_integer) 1);
 _outElement = mmc_mk_none();
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 if(mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 1)))) (threadData, _e)))
 {
 _idxOut = _idx;
@@ -1436,17 +1726,18 @@ DLLExport
 modelica_metatype omc_Array_findFirstOnTrue(threadData_t *threadData, modelica_metatype _inArray, modelica_fnptr _inPredicate)
 {
 modelica_metatype _outElement = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_integer tmp3;
+modelica_integer tmp4;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outElement = mmc_mk_none();
 {
 modelica_metatype _e;
-for (tmpMeta[0] = _inArray, tmp2 = arrayLength(tmpMeta[0]), tmp1 = 1; tmp1 <= tmp2; tmp1++)
+for (tmpMeta1 = _inArray, tmp4 = arrayLength(tmpMeta1), tmp3 = 1; tmp3 <= tmp4; tmp3++)
 {
-_e = arrayGet(tmpMeta[0],tmp1);
+_e = arrayGet(tmpMeta1,tmp3);
 if(mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 2))), _e) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inPredicate), 1)))) (threadData, _e)))
 {
 _outElement = mmc_mk_some(_e);
@@ -1476,11 +1767,11 @@ _inArray = __omcQ_24in_5FinArray;
 _n = arrayLength(_inArray);
 tmp4 = ((modelica_integer) 2);
 if (tmp4 == 0) {MMC_THROW_INTERNAL();}
-tmp1 = ((modelica_integer) -1) + ldiv(_n,tmp4).quot; tmp2 = ((modelica_integer) -1); tmp3 = ((modelica_integer) 0);
+tmp1 = ((modelica_integer) -1) + modelica_div_integer(_n,tmp4).quot; tmp2 = ((modelica_integer) -1); tmp3 = ((modelica_integer) 0);
 if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
 {
 modelica_integer _v;
-for(_v = ((modelica_integer) -1) + ldiv(_n,tmp4).quot; in_range_integer(_v, tmp1, tmp3); _v += tmp2)
+for(_v = ((modelica_integer) -1) + modelica_div_integer(_n,tmp4).quot; in_range_integer(_v, tmp1, tmp3); _v += tmp2)
 {
 _inArray = omc_Array_downheap(threadData, _inArray, _n, _v);
 }
@@ -1550,27 +1841,31 @@ modelica_metatype omc_Array_mapNoCopy__1(threadData_t *threadData, modelica_meta
 modelica_metatype _outArray = NULL;
 modelica_metatype _outArg = NULL;
 modelica_metatype _e = NULL;
-modelica_integer tmp1;
-modelica_integer tmp2;
-modelica_integer tmp3;
-modelica_metatype tmpMeta[5] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_metatype tmpMeta3;
+modelica_metatype tmpMeta4;
+modelica_metatype tmpMeta5;
+modelica_integer tmp6;
+modelica_integer tmp7;
+modelica_integer tmp8;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outArray = _inArray;
 _outArg = _inArg;
-tmp1 = ((modelica_integer) 1); tmp2 = 1; tmp3 = arrayLength(_inArray);
-if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+tmp6 = ((modelica_integer) 1); tmp7 = 1; tmp8 = arrayLength(_inArray);
+if(!(((tmp7 > 0) && (tmp6 > tmp8)) || ((tmp7 < 0) && (tmp6 < tmp8))))
 {
 modelica_integer _i;
-for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp6, tmp8); _i += tmp7)
 {
-tmpMeta[0] = mmc_mk_box2(0, arrayGetNoBoundsChecking(_inArray, _i), _outArg);
-tmpMeta[1] = mmc_mk_box2(0, arrayGetNoBoundsChecking(_inArray, _i), _outArg);
-tmpMeta[2] = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), tmpMeta[1]) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, tmpMeta[0]);
-tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 1));
-tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
-_e = tmpMeta[3];
-_outArg = tmpMeta[4];
+tmpMeta1 = mmc_mk_box2(0, arrayGetNoBoundsChecking(_inArray, _i), _outArg);
+tmpMeta2 = mmc_mk_box2(0, arrayGetNoBoundsChecking(_inArray, _i), _outArg);
+tmpMeta3 = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 2))), tmpMeta2) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFunc), 1)))) (threadData, tmpMeta1);
+tmpMeta4 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta3), 1));
+tmpMeta5 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta3), 2));
+_e = tmpMeta4;
+_outArg = tmpMeta5;
 arrayUpdate(_inArray, _i, _e);
 }
 }

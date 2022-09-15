@@ -28,7 +28,6 @@ extern struct record_description Absyn_ForIterator_ITERATOR__desc;
 extern struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
 extern struct record_description Absyn_IsField_NONFIELD__desc;
-extern struct record_description Absyn_NamedArg_NAMEDARG__desc;
 extern struct record_description Absyn_Path_IDENT__desc;
 extern struct record_description Absyn_Subscript_SUBSCRIPT__desc;
 extern struct record_description Absyn_TypeSpec_TPATH__desc;
@@ -45,16 +44,6 @@ extern struct record_description SCode_Comment_COMMENT__desc;
 extern struct record_description SCode_ConnectorType_FLOW__desc;
 extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
 extern struct record_description SCode_ConnectorType_STREAM__desc;
-extern struct record_description SCode_EEquation_EQ__ASSERT__desc;
-extern struct record_description SCode_EEquation_EQ__CONNECT__desc;
-extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
-extern struct record_description SCode_EEquation_EQ__FOR__desc;
-extern struct record_description SCode_EEquation_EQ__IF__desc;
-extern struct record_description SCode_EEquation_EQ__NORETCALL__desc;
-extern struct record_description SCode_EEquation_EQ__PDE__desc;
-extern struct record_description SCode_EEquation_EQ__REINIT__desc;
-extern struct record_description SCode_EEquation_EQ__TERMINATE__desc;
-extern struct record_description SCode_EEquation_EQ__WHEN__desc;
 extern struct record_description SCode_Each_EACH__desc;
 extern struct record_description SCode_Each_NOT__EACH__desc;
 extern struct record_description SCode_Element_CLASS__desc;
@@ -64,7 +53,16 @@ extern struct record_description SCode_Element_EXTENDS__desc;
 extern struct record_description SCode_Element_IMPORT__desc;
 extern struct record_description SCode_Encapsulated_ENCAPSULATED__desc;
 extern struct record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
-extern struct record_description SCode_Equation_EQUATION__desc;
+extern struct record_description SCode_Equation_EQ__ASSERT__desc;
+extern struct record_description SCode_Equation_EQ__CONNECT__desc;
+extern struct record_description SCode_Equation_EQ__EQUALS__desc;
+extern struct record_description SCode_Equation_EQ__FOR__desc;
+extern struct record_description SCode_Equation_EQ__IF__desc;
+extern struct record_description SCode_Equation_EQ__NORETCALL__desc;
+extern struct record_description SCode_Equation_EQ__PDE__desc;
+extern struct record_description SCode_Equation_EQ__REINIT__desc;
+extern struct record_description SCode_Equation_EQ__TERMINATE__desc;
+extern struct record_description SCode_Equation_EQ__WHEN__desc;
 extern struct record_description SCode_Final_FINAL__desc;
 extern struct record_description SCode_Final_NOT__FINAL__desc;
 extern struct record_description SCode_Mod_MOD__desc;
@@ -95,6 +93,73 @@ extern struct record_description SCode_Variability_VAR__desc;
 extern struct record_description SCode_Visibility_PROTECTED__desc;
 extern struct record_description SCode_Visibility_PUBLIC__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_boolean omc_SCodeUtil_isNonEmptyAlgorithm(threadData_t *threadData, modelica_metatype _alg);
+DLLExport
+modelica_metatype boxptr_SCodeUtil_isNonEmptyAlgorithm(threadData_t *threadData, modelica_metatype _alg);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_isNonEmptyAlgorithm,2,0) {(void*) boxptr_SCodeUtil_isNonEmptyAlgorithm,0}};
+#define boxvar_SCodeUtil_isNonEmptyAlgorithm MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_isNonEmptyAlgorithm)
+DLLExport
+modelica_metatype omc_SCodeUtil_lookupModInMod(threadData_t *threadData, modelica_string _name, modelica_metatype _mod);
+#define boxptr_SCodeUtil_lookupModInMod omc_SCodeUtil_lookupModInMod
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupModInMod,2,0) {(void*) boxptr_SCodeUtil_lookupModInMod,0}};
+#define boxvar_SCodeUtil_lookupModInMod MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupModInMod)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapStatementExps(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fstmt, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapStatementExps omc_SCodeUtil_mapStatementExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatementExps,2,0) {(void*) boxptr_SCodeUtil_mapStatementExps,0}};
+#define boxvar_SCodeUtil_mapStatementExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatementExps)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapStatements(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fstmt, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapStatements omc_SCodeUtil_mapStatements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatements,2,0) {(void*) boxptr_SCodeUtil_mapStatements,0}};
+#define boxvar_SCodeUtil_mapStatements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatements)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapStatementsList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fstatements, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapStatementsList omc_SCodeUtil_mapStatementsList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatementsList,2,0) {(void*) boxptr_SCodeUtil_mapStatementsList,0}};
+#define boxvar_SCodeUtil_mapStatementsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapStatementsList)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapAlgorithmStatements(threadData_t *threadData, modelica_metatype __omcQ_24in_5Falg, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapAlgorithmStatements omc_SCodeUtil_mapAlgorithmStatements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapAlgorithmStatements,2,0) {(void*) boxptr_SCodeUtil_mapAlgorithmStatements,0}};
+#define boxvar_SCodeUtil_mapAlgorithmStatements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapAlgorithmStatements)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapEquationExps(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapEquationExps omc_SCodeUtil_mapEquationExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquationExps,2,0) {(void*) boxptr_SCodeUtil_mapEquationExps,0}};
+#define boxvar_SCodeUtil_mapEquationExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquationExps)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapEquations(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapEquations omc_SCodeUtil_mapEquations
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquations,2,0) {(void*) boxptr_SCodeUtil_mapEquations,0}};
+#define boxvar_SCodeUtil_mapEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquations)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapEquationsList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feql, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapEquationsList omc_SCodeUtil_mapEquationsList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquationsList,2,0) {(void*) boxptr_SCodeUtil_mapEquationsList,0}};
+#define boxvar_SCodeUtil_mapEquationsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapEquationsList)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapElementsClassDef(threadData_t *threadData, modelica_metatype __omcQ_24in_5FclassDef, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapElementsClassDef omc_SCodeUtil_mapElementsClassDef
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElementsClassDef,2,0) {(void*) boxptr_SCodeUtil_mapElementsClassDef,0}};
+#define boxvar_SCodeUtil_mapElementsClassDef MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElementsClassDef)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapElement(threadData_t *threadData, modelica_metatype __omcQ_24in_5Felement, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapElement omc_SCodeUtil_mapElement
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElement,2,0) {(void*) boxptr_SCodeUtil_mapElement,0}};
+#define boxvar_SCodeUtil_mapElement MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElement)
+DLLExport
+modelica_metatype omc_SCodeUtil_mapElements(threadData_t *threadData, modelica_metatype __omcQ_24in_5Felements, modelica_fnptr _func);
+#define boxptr_SCodeUtil_mapElements omc_SCodeUtil_mapElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElements,2,0) {(void*) boxptr_SCodeUtil_mapElements,0}};
+#define boxvar_SCodeUtil_mapElements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapElements)
+DLLExport
+modelica_boolean omc_SCodeUtil_classDefHasSections(threadData_t *threadData, modelica_metatype _cdef, modelica_boolean _checkExternal);
+DLLExport
+modelica_metatype boxptr_SCodeUtil_classDefHasSections(threadData_t *threadData, modelica_metatype _cdef, modelica_metatype _checkExternal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_classDefHasSections,2,0) {(void*) boxptr_SCodeUtil_classDefHasSections,0}};
+#define boxvar_SCodeUtil_classDefHasSections MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_classDefHasSections)
 DLLExport
 modelica_boolean omc_SCodeUtil_hasNamedExternalCall(threadData_t *threadData, modelica_string _name, modelica_metatype _def);
 DLLExport
@@ -146,12 +211,6 @@ DLLExport
 modelica_metatype boxptr_SCodeUtil_stripCommentsFromWhenEqBranch(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fbranch, modelica_metatype _stripAnn, modelica_metatype _stripCmt);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_stripCommentsFromWhenEqBranch,2,0) {(void*) boxptr_SCodeUtil_stripCommentsFromWhenEqBranch,0}};
 #define boxvar_SCodeUtil_stripCommentsFromWhenEqBranch MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_stripCommentsFromWhenEqBranch)
-DLLExport
-modelica_metatype omc_SCodeUtil_stripCommentsFromEEquation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_boolean _stripAnn, modelica_boolean _stripCmt);
-DLLExport
-modelica_metatype boxptr_SCodeUtil_stripCommentsFromEEquation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_metatype _stripAnn, modelica_metatype _stripCmt);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_stripCommentsFromEEquation,2,0) {(void*) boxptr_SCodeUtil_stripCommentsFromEEquation,0}};
-#define boxvar_SCodeUtil_stripCommentsFromEEquation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_stripCommentsFromEEquation)
 DLLExport
 modelica_metatype omc_SCodeUtil_stripCommentsFromEquation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_boolean _stripAnn, modelica_boolean _stripCmt);
 DLLExport
@@ -404,6 +463,16 @@ modelica_metatype omc_SCodeUtil_setElementVisibility(threadData_t *threadData, m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_setElementVisibility,2,0) {(void*) boxptr_SCodeUtil_setElementVisibility,0}};
 #define boxvar_SCodeUtil_setElementVisibility MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_setElementVisibility)
 DLLExport
+modelica_metatype omc_SCodeUtil_elementVisibility(threadData_t *threadData, modelica_metatype _element);
+#define boxptr_SCodeUtil_elementVisibility omc_SCodeUtil_elementVisibility
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_elementVisibility,2,0) {(void*) boxptr_SCodeUtil_elementVisibility,0}};
+#define boxvar_SCodeUtil_elementVisibility MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_elementVisibility)
+DLLExport
+modelica_metatype omc_SCodeUtil_elementInnerOuter(threadData_t *threadData, modelica_metatype _element);
+#define boxptr_SCodeUtil_elementInnerOuter omc_SCodeUtil_elementInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_elementInnerOuter,2,0) {(void*) boxptr_SCodeUtil_elementInnerOuter,0}};
+#define boxvar_SCodeUtil_elementInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_elementInnerOuter)
+DLLExport
 modelica_boolean omc_SCodeUtil_isRestrictionImpure(threadData_t *threadData, modelica_metatype _inRestr, modelica_boolean _hasZeroOutputPreMSL3_2);
 DLLExport
 modelica_metatype boxptr_SCodeUtil_isRestrictionImpure(threadData_t *threadData, modelica_metatype _inRestr, modelica_metatype _hasZeroOutputPreMSL3_2);
@@ -490,15 +559,15 @@ modelica_metatype boxptr_SCodeUtil_equationsContainReinit(threadData_t *threadDa
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_equationsContainReinit,2,0) {(void*) boxptr_SCodeUtil_equationsContainReinit,0}};
 #define boxvar_SCodeUtil_equationsContainReinit MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_equationsContainReinit)
 DLLExport
+modelica_metatype omc_SCodeUtil_getClassBody(threadData_t *threadData, modelica_metatype _inClass);
+#define boxptr_SCodeUtil_getClassBody omc_SCodeUtil_getClassBody
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getClassBody,2,0) {(void*) boxptr_SCodeUtil_getClassBody,0}};
+#define boxvar_SCodeUtil_getClassBody MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getClassBody)
+DLLExport
 modelica_metatype omc_SCodeUtil_getClassDef(threadData_t *threadData, modelica_metatype _inClass);
 #define boxptr_SCodeUtil_getClassDef omc_SCodeUtil_getClassDef
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getClassDef,2,0) {(void*) boxptr_SCodeUtil_getClassDef,0}};
 #define boxvar_SCodeUtil_getClassDef MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getClassDef)
-DLLExport
-modelica_metatype omc_SCodeUtil_makeEquation(threadData_t *threadData, modelica_metatype _inEEq);
-#define boxptr_SCodeUtil_makeEquation omc_SCodeUtil_makeEquation
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_makeEquation,2,0) {(void*) boxptr_SCodeUtil_makeEquation,0}};
-#define boxvar_SCodeUtil_makeEquation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_makeEquation)
 DLLExport
 modelica_metatype omc_SCodeUtil_setClassPrefixes(threadData_t *threadData, modelica_metatype _inPrefixes, modelica_metatype _cl);
 #define boxptr_SCodeUtil_setClassPrefixes omc_SCodeUtil_setClassPrefixes
@@ -658,9 +727,8 @@ modelica_metatype omc_SCodeUtil_getInlineTypeAnnotationFromCmt(threadData_t *thr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getInlineTypeAnnotationFromCmt,2,0) {(void*) boxptr_SCodeUtil_getInlineTypeAnnotationFromCmt,0}};
 #define boxvar_SCodeUtil_getInlineTypeAnnotationFromCmt MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getInlineTypeAnnotationFromCmt)
 DLLExport
-modelica_boolean omc_SCodeUtil_getEvaluateAnnotation(threadData_t *threadData, modelica_metatype _inCommentOpt);
-DLLExport
-modelica_metatype boxptr_SCodeUtil_getEvaluateAnnotation(threadData_t *threadData, modelica_metatype _inCommentOpt);
+modelica_metatype omc_SCodeUtil_getEvaluateAnnotation(threadData_t *threadData, modelica_metatype _cmt);
+#define boxptr_SCodeUtil_getEvaluateAnnotation omc_SCodeUtil_getEvaluateAnnotation
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getEvaluateAnnotation,2,0) {(void*) boxptr_SCodeUtil_getEvaluateAnnotation,0}};
 #define boxvar_SCodeUtil_getEvaluateAnnotation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getEvaluateAnnotation)
 DLLExport
@@ -698,6 +766,16 @@ modelica_metatype omc_SCodeUtil_lookupNamedAnnotations(threadData_t *threadData,
 #define boxptr_SCodeUtil_lookupNamedAnnotations omc_SCodeUtil_lookupNamedAnnotations
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedAnnotations,2,0) {(void*) boxptr_SCodeUtil_lookupNamedAnnotations,0}};
 #define boxvar_SCodeUtil_lookupNamedAnnotations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedAnnotations)
+DLLExport
+modelica_metatype omc_SCodeUtil_lookupNamedBooleanAnnotation(threadData_t *threadData, modelica_metatype _ann, modelica_string _name);
+#define boxptr_SCodeUtil_lookupNamedBooleanAnnotation omc_SCodeUtil_lookupNamedBooleanAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedBooleanAnnotation,2,0) {(void*) boxptr_SCodeUtil_lookupNamedBooleanAnnotation,0}};
+#define boxvar_SCodeUtil_lookupNamedBooleanAnnotation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedBooleanAnnotation)
+DLLExport
+modelica_metatype omc_SCodeUtil_lookupNamedAnnotationBinding(threadData_t *threadData, modelica_metatype _ann, modelica_string _name);
+#define boxptr_SCodeUtil_lookupNamedAnnotationBinding omc_SCodeUtil_lookupNamedAnnotationBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedAnnotationBinding,2,0) {(void*) boxptr_SCodeUtil_lookupNamedAnnotationBinding,0}};
+#define boxvar_SCodeUtil_lookupNamedAnnotationBinding MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_lookupNamedAnnotationBinding)
 DLLExport
 modelica_metatype omc_SCodeUtil_lookupNamedAnnotation(threadData_t *threadData, modelica_metatype _ann, modelica_string _name);
 #define boxptr_SCodeUtil_lookupNamedAnnotation omc_SCodeUtil_lookupNamedAnnotation
@@ -1003,10 +1081,10 @@ modelica_metatype omc_SCodeUtil_getStatementInfo(threadData_t *threadData, model
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getStatementInfo,2,0) {(void*) boxptr_SCodeUtil_getStatementInfo,0}};
 #define boxvar_SCodeUtil_getStatementInfo MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getStatementInfo)
 DLLExport
-modelica_metatype omc_SCodeUtil_getEEquationInfo(threadData_t *threadData, modelica_metatype _inEEquation);
-#define boxptr_SCodeUtil_getEEquationInfo omc_SCodeUtil_getEEquationInfo
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getEEquationInfo,2,0) {(void*) boxptr_SCodeUtil_getEEquationInfo,0}};
-#define boxvar_SCodeUtil_getEEquationInfo MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getEEquationInfo)
+modelica_metatype omc_SCodeUtil_getEquationInfo(threadData_t *threadData, modelica_metatype _inEquation);
+#define boxptr_SCodeUtil_getEquationInfo omc_SCodeUtil_getEquationInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_getEquationInfo,2,0) {(void*) boxptr_SCodeUtil_getEquationInfo,0}};
+#define boxvar_SCodeUtil_getEquationInfo MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_getEquationInfo)
 DLLExport
 modelica_string omc_SCodeUtil_isBuiltinFunction(threadData_t *threadData, modelica_metatype _cl, modelica_metatype _inVars, modelica_metatype _outVars);
 #define boxptr_SCodeUtil_isBuiltinFunction omc_SCodeUtil_isBuiltinFunction
@@ -1041,79 +1119,68 @@ DLLExport
 modelica_metatype boxptr_SCodeUtil_elementIsClass(threadData_t *threadData, modelica_metatype _el);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_elementIsClass,2,0) {(void*) boxptr_SCodeUtil_elementIsClass,0}};
 #define boxvar_SCodeUtil_elementIsClass MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_elementIsClass)
-#define boxptr_SCodeUtil_traverseBranchExps omc_SCodeUtil_traverseBranchExps
+#define boxptr_SCodeUtil_mapFoldBranchExps omc_SCodeUtil_mapFoldBranchExps
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseStatementExps(threadData_t *threadData, modelica_metatype _inStatement, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
-#define boxptr_SCodeUtil_traverseStatementExps omc_SCodeUtil_traverseStatementExps
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementExps,2,0) {(void*) boxptr_SCodeUtil_traverseStatementExps,0}};
-#define boxvar_SCodeUtil_traverseStatementExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementExps)
+modelica_metatype omc_SCodeUtil_mapFoldStatementExps(threadData_t *threadData, modelica_metatype _inStatement, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
+#define boxptr_SCodeUtil_mapFoldStatementExps omc_SCodeUtil_mapFoldStatementExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementExps,2,0) {(void*) boxptr_SCodeUtil_mapFoldStatementExps,0}};
+#define boxvar_SCodeUtil_mapFoldStatementExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementExps)
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseStatementListExps(threadData_t *threadData, modelica_metatype _inStatements, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
-#define boxptr_SCodeUtil_traverseStatementListExps omc_SCodeUtil_traverseStatementListExps
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementListExps,2,0) {(void*) boxptr_SCodeUtil_traverseStatementListExps,0}};
-#define boxvar_SCodeUtil_traverseStatementListExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementListExps)
-#define boxptr_SCodeUtil_traverseBranchStatements omc_SCodeUtil_traverseBranchStatements
+modelica_metatype omc_SCodeUtil_mapFoldStatementListExps(threadData_t *threadData, modelica_metatype _inStatements, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
+#define boxptr_SCodeUtil_mapFoldStatementListExps omc_SCodeUtil_mapFoldStatementListExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementListExps,2,0) {(void*) boxptr_SCodeUtil_mapFoldStatementListExps,0}};
+#define boxvar_SCodeUtil_mapFoldStatementListExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementListExps)
+#define boxptr_SCodeUtil_mapFoldBranchStatements omc_SCodeUtil_mapFoldBranchStatements
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseStatements2(threadData_t *threadData, modelica_metatype _inStatement, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseStatements2 omc_SCodeUtil_traverseStatements2
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatements2,2,0) {(void*) boxptr_SCodeUtil_traverseStatements2,0}};
-#define boxvar_SCodeUtil_traverseStatements2 MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatements2)
+modelica_metatype omc_SCodeUtil_mapFoldStatements(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fstmt, modelica_fnptr _traverser, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_SCodeUtil_mapFoldStatements omc_SCodeUtil_mapFoldStatements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatements,2,0) {(void*) boxptr_SCodeUtil_mapFoldStatements,0}};
+#define boxvar_SCodeUtil_mapFoldStatements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatements)
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseStatements(threadData_t *threadData, modelica_metatype _inStatement, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseStatements omc_SCodeUtil_traverseStatements
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatements,2,0) {(void*) boxptr_SCodeUtil_traverseStatements,0}};
-#define boxvar_SCodeUtil_traverseStatements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatements)
+modelica_metatype omc_SCodeUtil_mapFoldStatementsList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fstatements, modelica_fnptr _traverser, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_SCodeUtil_mapFoldStatementsList omc_SCodeUtil_mapFoldStatementsList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementsList,2,0) {(void*) boxptr_SCodeUtil_mapFoldStatementsList,0}};
+#define boxvar_SCodeUtil_mapFoldStatementsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldStatementsList)
+#define boxptr_SCodeUtil_mapFoldForIteratorExps omc_SCodeUtil_mapFoldForIteratorExps
+#define boxptr_SCodeUtil_mapFoldElseWhenExps omc_SCodeUtil_mapFoldElseWhenExps
+#define boxptr_SCodeUtil_mapFoldSubscriptExps omc_SCodeUtil_mapFoldSubscriptExps
+#define boxptr_SCodeUtil_mapFoldComponentRefExps omc_SCodeUtil_mapFoldComponentRefExps
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseStatementsList(threadData_t *threadData, modelica_metatype _inStatements, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseStatementsList omc_SCodeUtil_traverseStatementsList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementsList,2,0) {(void*) boxptr_SCodeUtil_traverseStatementsList,0}};
-#define boxvar_SCodeUtil_traverseStatementsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseStatementsList)
-#define boxptr_SCodeUtil_traverseForIteratorExps omc_SCodeUtil_traverseForIteratorExps
-#define boxptr_SCodeUtil_traverseNamedArgExps omc_SCodeUtil_traverseNamedArgExps
-#define boxptr_SCodeUtil_traverseElseWhenExps omc_SCodeUtil_traverseElseWhenExps
-#define boxptr_SCodeUtil_traverseSubscriptExps omc_SCodeUtil_traverseSubscriptExps
-#define boxptr_SCodeUtil_traverseComponentRefExps omc_SCodeUtil_traverseComponentRefExps
+modelica_metatype omc_SCodeUtil_mapFoldEquationExps(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_fnptr _traverser, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_SCodeUtil_mapFoldEquationExps omc_SCodeUtil_mapFoldEquationExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationExps,2,0) {(void*) boxptr_SCodeUtil_mapFoldEquationExps,0}};
+#define boxvar_SCodeUtil_mapFoldEquationExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationExps)
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseEEquationExps(threadData_t *threadData, modelica_metatype _inEEquation, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
-#define boxptr_SCodeUtil_traverseEEquationExps omc_SCodeUtil_traverseEEquationExps
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationExps,2,0) {(void*) boxptr_SCodeUtil_traverseEEquationExps,0}};
-#define boxvar_SCodeUtil_traverseEEquationExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationExps)
+modelica_metatype omc_SCodeUtil_mapFoldEquationListExps(threadData_t *threadData, modelica_metatype _inEquations, modelica_fnptr _traverser, modelica_metatype _inArg, modelica_metatype *out_outArg);
+#define boxptr_SCodeUtil_mapFoldEquationListExps omc_SCodeUtil_mapFoldEquationListExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationListExps,2,0) {(void*) boxptr_SCodeUtil_mapFoldEquationListExps,0}};
+#define boxvar_SCodeUtil_mapFoldEquationListExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationListExps)
+#define boxptr_SCodeUtil_mapFoldElseWhenEquations omc_SCodeUtil_mapFoldElseWhenEquations
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseEEquationListExps(threadData_t *threadData, modelica_metatype _inEEquations, modelica_fnptr _traverser, modelica_metatype _inArg, modelica_metatype *out_outArg);
-#define boxptr_SCodeUtil_traverseEEquationListExps omc_SCodeUtil_traverseEEquationListExps
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationListExps,2,0) {(void*) boxptr_SCodeUtil_traverseEEquationListExps,0}};
-#define boxvar_SCodeUtil_traverseEEquationListExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationListExps)
-#define boxptr_SCodeUtil_traverseElseWhenEEquations omc_SCodeUtil_traverseElseWhenEEquations
+modelica_metatype omc_SCodeUtil_mapFoldEquations(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_fnptr _traverser, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_SCodeUtil_mapFoldEquations omc_SCodeUtil_mapFoldEquations
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquations,2,0) {(void*) boxptr_SCodeUtil_mapFoldEquations,0}};
+#define boxvar_SCodeUtil_mapFoldEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquations)
 DLLExport
-modelica_metatype omc_SCodeUtil_traverseEEquations2(threadData_t *threadData, modelica_metatype _inEEquation, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseEEquations2 omc_SCodeUtil_traverseEEquations2
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquations2,2,0) {(void*) boxptr_SCodeUtil_traverseEEquations2,0}};
-#define boxvar_SCodeUtil_traverseEEquations2 MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquations2)
-DLLExport
-modelica_metatype omc_SCodeUtil_traverseEEquations(threadData_t *threadData, modelica_metatype _inEEquation, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseEEquations omc_SCodeUtil_traverseEEquations
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquations,2,0) {(void*) boxptr_SCodeUtil_traverseEEquations,0}};
-#define boxvar_SCodeUtil_traverseEEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquations)
-DLLExport
-modelica_metatype omc_SCodeUtil_traverseEEquationsList(threadData_t *threadData, modelica_metatype _inEEquations, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
-#define boxptr_SCodeUtil_traverseEEquationsList omc_SCodeUtil_traverseEEquationsList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationsList,2,0) {(void*) boxptr_SCodeUtil_traverseEEquationsList,0}};
-#define boxvar_SCodeUtil_traverseEEquationsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_traverseEEquationsList)
+modelica_metatype omc_SCodeUtil_mapFoldEquationsList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feql, modelica_fnptr _traverser, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_SCodeUtil_mapFoldEquationsList omc_SCodeUtil_mapFoldEquationsList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationsList,2,0) {(void*) boxptr_SCodeUtil_mapFoldEquationsList,0}};
+#define boxvar_SCodeUtil_mapFoldEquationsList MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_mapFoldEquationsList)
 DLLExport
 modelica_metatype omc_SCodeUtil_foldStatementsExps(threadData_t *threadData, modelica_metatype _inStatement, modelica_fnptr _inFunc, modelica_metatype _inArg);
 #define boxptr_SCodeUtil_foldStatementsExps omc_SCodeUtil_foldStatementsExps
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_foldStatementsExps,2,0) {(void*) boxptr_SCodeUtil_foldStatementsExps,0}};
 #define boxvar_SCodeUtil_foldStatementsExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_foldStatementsExps)
 DLLExport
-modelica_metatype omc_SCodeUtil_foldEEquationsExps(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _inFunc, modelica_metatype _inArg);
-#define boxptr_SCodeUtil_foldEEquationsExps omc_SCodeUtil_foldEEquationsExps
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEEquationsExps,2,0) {(void*) boxptr_SCodeUtil_foldEEquationsExps,0}};
-#define boxvar_SCodeUtil_foldEEquationsExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEEquationsExps)
+modelica_metatype omc_SCodeUtil_foldEquationsExps(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _inFunc, modelica_metatype _inArg);
+#define boxptr_SCodeUtil_foldEquationsExps omc_SCodeUtil_foldEquationsExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEquationsExps,2,0) {(void*) boxptr_SCodeUtil_foldEquationsExps,0}};
+#define boxvar_SCodeUtil_foldEquationsExps MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEquationsExps)
 DLLExport
-modelica_metatype omc_SCodeUtil_foldEEquations(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _inFunc, modelica_metatype _inArg);
-#define boxptr_SCodeUtil_foldEEquations omc_SCodeUtil_foldEEquations
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEEquations,2,0) {(void*) boxptr_SCodeUtil_foldEEquations,0}};
-#define boxvar_SCodeUtil_foldEEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEEquations)
+modelica_metatype omc_SCodeUtil_foldEquations(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _inFunc, modelica_metatype _inArg);
+#define boxptr_SCodeUtil_foldEquations omc_SCodeUtil_foldEquations
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEquations,2,0) {(void*) boxptr_SCodeUtil_foldEquations,0}};
+#define boxvar_SCodeUtil_foldEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_foldEquations)
 DLLExport
 modelica_boolean omc_SCodeUtil_isClass(threadData_t *threadData, modelica_metatype _inElement);
 DLLExport
@@ -1150,11 +1217,6 @@ DLLExport
 modelica_metatype boxptr_SCodeUtil_emptyModOrEquality(threadData_t *threadData, modelica_metatype _mod);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_emptyModOrEquality,2,0) {(void*) boxptr_SCodeUtil_emptyModOrEquality,0}};
 #define boxvar_SCodeUtil_emptyModOrEquality MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_emptyModOrEquality)
-DLLExport
-modelica_metatype omc_SCodeUtil_equationFileInfo(threadData_t *threadData, modelica_metatype _eq);
-#define boxptr_SCodeUtil_equationFileInfo omc_SCodeUtil_equationFileInfo
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_equationFileInfo,2,0) {(void*) boxptr_SCodeUtil_equationFileInfo,0}};
-#define boxvar_SCodeUtil_equationFileInfo MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_equationFileInfo)
 DLLExport
 modelica_metatype omc_SCodeUtil_statementToAlgorithmItem(threadData_t *threadData, modelica_metatype _stmt);
 #define boxptr_SCodeUtil_statementToAlgorithmItem omc_SCodeUtil_statementToAlgorithmItem
@@ -1193,15 +1255,15 @@ modelica_metatype omc_SCodeUtil_findIteratorIndexedCrefsInStatements(threadData_
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInStatements,2,0) {(void*) boxptr_SCodeUtil_findIteratorIndexedCrefsInStatements,0}};
 #define boxvar_SCodeUtil_findIteratorIndexedCrefsInStatements MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInStatements)
 DLLExport
-modelica_metatype omc_SCodeUtil_findIteratorIndexedCrefsInEEquation(threadData_t *threadData, modelica_metatype _inEq, modelica_string _inIterator, modelica_metatype _inCrefs);
-#define boxptr_SCodeUtil_findIteratorIndexedCrefsInEEquation omc_SCodeUtil_findIteratorIndexedCrefsInEEquation
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEEquation,2,0) {(void*) boxptr_SCodeUtil_findIteratorIndexedCrefsInEEquation,0}};
-#define boxvar_SCodeUtil_findIteratorIndexedCrefsInEEquation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEEquation)
+modelica_metatype omc_SCodeUtil_findIteratorIndexedCrefsInEquation(threadData_t *threadData, modelica_metatype _inEq, modelica_string _inIterator, modelica_metatype _inCrefs);
+#define boxptr_SCodeUtil_findIteratorIndexedCrefsInEquation omc_SCodeUtil_findIteratorIndexedCrefsInEquation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEquation,2,0) {(void*) boxptr_SCodeUtil_findIteratorIndexedCrefsInEquation,0}};
+#define boxvar_SCodeUtil_findIteratorIndexedCrefsInEquation MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEquation)
 DLLExport
-modelica_metatype omc_SCodeUtil_findIteratorIndexedCrefsInEEquations(threadData_t *threadData, modelica_metatype _inEqs, modelica_string _inIterator, modelica_metatype _inCrefs);
-#define boxptr_SCodeUtil_findIteratorIndexedCrefsInEEquations omc_SCodeUtil_findIteratorIndexedCrefsInEEquations
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEEquations,2,0) {(void*) boxptr_SCodeUtil_findIteratorIndexedCrefsInEEquations,0}};
-#define boxvar_SCodeUtil_findIteratorIndexedCrefsInEEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEEquations)
+modelica_metatype omc_SCodeUtil_findIteratorIndexedCrefsInEquations(threadData_t *threadData, modelica_metatype _inEqs, modelica_string _inIterator, modelica_metatype _inCrefs);
+#define boxptr_SCodeUtil_findIteratorIndexedCrefsInEquations omc_SCodeUtil_findIteratorIndexedCrefsInEquations
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEquations,2,0) {(void*) boxptr_SCodeUtil_findIteratorIndexedCrefsInEquations,0}};
+#define boxvar_SCodeUtil_findIteratorIndexedCrefsInEquations MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_findIteratorIndexedCrefsInEquations)
 DLLExport
 modelica_metatype omc_SCodeUtil_setClassPartialPrefix(threadData_t *threadData, modelica_metatype _partialPrefix, modelica_metatype _cl);
 #define boxptr_SCodeUtil_setClassPartialPrefix omc_SCodeUtil_setClassPartialPrefix
@@ -1246,12 +1308,6 @@ DLLExport
 modelica_metatype boxptr_SCodeUtil_modEqual(threadData_t *threadData, modelica_metatype _mod1, modelica_metatype _mod2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_modEqual,2,0) {(void*) boxptr_SCodeUtil_modEqual,0}};
 #define boxvar_SCodeUtil_modEqual MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_modEqual)
-DLLExport
-modelica_boolean omc_SCodeUtil_equationEqual(threadData_t *threadData, modelica_metatype _eqn1, modelica_metatype _eqn2);
-DLLExport
-modelica_metatype boxptr_SCodeUtil_equationEqual(threadData_t *threadData, modelica_metatype _eqn1, modelica_metatype _eqn2);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_equationEqual,2,0) {(void*) boxptr_SCodeUtil_equationEqual,0}};
-#define boxvar_SCodeUtil_equationEqual MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_equationEqual)
 DLLExport
 modelica_boolean omc_SCodeUtil_enumEqual(threadData_t *threadData, modelica_metatype _e1, modelica_metatype _e2);
 DLLExport

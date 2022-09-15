@@ -59,7 +59,7 @@ extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SCode_Comment_COMMENT__desc;
-extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
+extern struct record_description SCode_Equation_EQ__EQUALS__desc;
 extern struct record_description SCode_Initial_NON__INITIAL__desc;
 extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
 extern struct record_description SCode_Variability_PARAM__desc;

@@ -9,6 +9,44 @@
 extern "C" {
 #endif
 DLLExport
+modelica_metatype omc_Array_generate(threadData_t *threadData, modelica_integer _n, modelica_fnptr _generator);
+DLLExport
+modelica_metatype boxptr_Array_generate(threadData_t *threadData, modelica_metatype _n, modelica_fnptr _generator);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_generate,2,0) {(void*) boxptr_Array_generate,0}};
+#define boxvar_Array_generate MMC_REFSTRUCTLIT(boxvar_lit_Array_generate)
+DLLExport
+modelica_metatype omc_Array_fromScalar(threadData_t *threadData, modelica_metatype _e);
+#define boxptr_Array_fromScalar omc_Array_fromScalar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_fromScalar,2,0) {(void*) boxptr_Array_fromScalar,0}};
+#define boxvar_Array_fromScalar MMC_REFSTRUCTLIT(boxvar_lit_Array_fromScalar)
+DLLExport
+modelica_metatype omc_Array_threadMap(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _func);
+#define boxptr_Array_threadMap omc_Array_threadMap
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_threadMap,2,0) {(void*) boxptr_Array_threadMap,0}};
+#define boxvar_Array_threadMap MMC_REFSTRUCTLIT(boxvar_lit_Array_threadMap)
+DLLExport
+modelica_metatype omc_Array_transpose(threadData_t *threadData, modelica_metatype _arr);
+#define boxptr_Array_transpose omc_Array_transpose
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_transpose,2,0) {(void*) boxptr_Array_transpose,0}};
+#define boxvar_Array_transpose MMC_REFSTRUCTLIT(boxvar_lit_Array_transpose)
+DLLExport
+modelica_boolean omc_Array_mapBoolAnd(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func);
+DLLExport
+modelica_metatype boxptr_Array_mapBoolAnd(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_mapBoolAnd,2,0) {(void*) boxptr_Array_mapBoolAnd,0}};
+#define boxvar_Array_mapBoolAnd MMC_REFSTRUCTLIT(boxvar_lit_Array_mapBoolAnd)
+DLLExport
+modelica_metatype omc_Array_mapFold(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _func, modelica_metatype _arg, modelica_metatype *out_outArg);
+#define boxptr_Array_mapFold omc_Array_mapFold
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_mapFold,2,0) {(void*) boxptr_Array_mapFold,0}};
+#define boxvar_Array_mapFold MMC_REFSTRUCTLIT(boxvar_lit_Array_mapFold)
+DLLExport
+modelica_integer omc_Array_compare(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _compFn);
+DLLExport
+modelica_metatype boxptr_Array_compare(threadData_t *threadData, modelica_metatype _arr1, modelica_metatype _arr2, modelica_fnptr _compFn);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_compare,2,0) {(void*) boxptr_Array_compare,0}};
+#define boxvar_Array_compare MMC_REFSTRUCTLIT(boxvar_lit_Array_compare)
+DLLExport
 modelica_metatype omc_Array_maxElement(threadData_t *threadData, modelica_metatype _arr, modelica_fnptr _lessFn);
 #define boxptr_Array_maxElement omc_Array_maxElement
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Array_maxElement,2,0) {(void*) boxptr_Array_maxElement,0}};

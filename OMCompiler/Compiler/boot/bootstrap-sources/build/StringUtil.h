@@ -9,6 +9,21 @@
 extern "C" {
 #endif
 DLLExport
+modelica_string omc_StringUtil_stripFileExtension(threadData_t *threadData, modelica_string __omcQ_24in_5Ffilename);
+#define boxptr_StringUtil_stripFileExtension omc_StringUtil_stripFileExtension
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_stripFileExtension,2,0) {(void*) boxptr_StringUtil_stripFileExtension,0}};
+#define boxvar_StringUtil_stripFileExtension MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_stripFileExtension)
+DLLExport
+modelica_string omc_StringUtil_stripBOM(threadData_t *threadData, modelica_string __omcQ_24in_5Fs, modelica_string *out_bom);
+#define boxptr_StringUtil_stripBOM omc_StringUtil_stripBOM
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_stripBOM,2,0) {(void*) boxptr_StringUtil_stripBOM,0}};
+#define boxvar_StringUtil_stripBOM MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_stripBOM)
+DLLExport
+modelica_string omc_StringUtil_convertCharNonAsciiToHex(threadData_t *threadData, modelica_string __omcQ_24in_5Fs);
+#define boxptr_StringUtil_convertCharNonAsciiToHex omc_StringUtil_convertCharNonAsciiToHex
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_convertCharNonAsciiToHex,2,0) {(void*) boxptr_StringUtil_convertCharNonAsciiToHex,0}};
+#define boxvar_StringUtil_convertCharNonAsciiToHex MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_convertCharNonAsciiToHex)
+DLLExport
 modelica_boolean omc_StringUtil_endsWithNewline(threadData_t *threadData, modelica_string _str);
 DLLExport
 modelica_metatype boxptr_StringUtil_endsWithNewline(threadData_t *threadData, modelica_metatype _str);
@@ -84,6 +99,26 @@ DLLExport
 modelica_metatype boxptr_StringUtil_findChar(threadData_t *threadData, modelica_metatype _inString, modelica_metatype _inChar, modelica_metatype _inStartPos, modelica_metatype _inEndPos);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_findChar,2,0) {(void*) boxptr_StringUtil_findChar,0}};
 #define boxvar_StringUtil_findChar MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_findChar)
+DLLExport
+modelica_string omc_StringUtil_headline__4(threadData_t *threadData, modelica_string _title);
+#define boxptr_StringUtil_headline__4 omc_StringUtil_headline__4
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_headline__4,2,0) {(void*) boxptr_StringUtil_headline__4,0}};
+#define boxvar_StringUtil_headline__4 MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_headline__4)
+DLLExport
+modelica_string omc_StringUtil_headline__3(threadData_t *threadData, modelica_string _title);
+#define boxptr_StringUtil_headline__3 omc_StringUtil_headline__3
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_headline__3,2,0) {(void*) boxptr_StringUtil_headline__3,0}};
+#define boxvar_StringUtil_headline__3 MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_headline__3)
+DLLExport
+modelica_string omc_StringUtil_headline__2(threadData_t *threadData, modelica_string _title);
+#define boxptr_StringUtil_headline__2 omc_StringUtil_headline__2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_headline__2,2,0) {(void*) boxptr_StringUtil_headline__2,0}};
+#define boxvar_StringUtil_headline__2 MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_headline__2)
+DLLExport
+modelica_string omc_StringUtil_headline__1(threadData_t *threadData, modelica_string _title);
+#define boxptr_StringUtil_headline__1 omc_StringUtil_headline__1
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_headline__1,2,0) {(void*) boxptr_StringUtil_headline__1,0}};
+#define boxvar_StringUtil_headline__1 MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_headline__1)
 #ifdef __cplusplus
 }
 #endif

@@ -55,6 +55,18 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_buildEnv,2,0) {(void*) boxp
 #define boxvar_SymbolTable_buildEnv MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_buildEnv)
 #define boxptr_SymbolTable_addVarToVarList omc_SymbolTable_addVarToVarList
 DLLExport
+modelica_boolean omc_SymbolTable_restoreAST(threadData_t *threadData, modelica_integer _id);
+DLLExport
+modelica_metatype boxptr_SymbolTable_restoreAST(threadData_t *threadData, modelica_metatype _id);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_restoreAST,2,0) {(void*) boxptr_SymbolTable_restoreAST,0}};
+#define boxvar_SymbolTable_restoreAST MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_restoreAST)
+DLLExport
+modelica_integer omc_SymbolTable_storeAST(threadData_t *threadData);
+DLLExport
+modelica_metatype boxptr_SymbolTable_storeAST(threadData_t *threadData);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_storeAST,2,0) {(void*) boxptr_SymbolTable_storeAST,0}};
+#define boxvar_SymbolTable_storeAST MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_storeAST)
+DLLExport
 void omc_SymbolTable_deleteVarFirstEntry(threadData_t *threadData, modelica_string _inIdent);
 #define boxptr_SymbolTable_deleteVarFirstEntry omc_SymbolTable_deleteVarFirstEntry
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_deleteVarFirstEntry,2,0) {(void*) boxptr_SymbolTable_deleteVarFirstEntry,0}};

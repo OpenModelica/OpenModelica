@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstHashTable.c"
+#define OMC_FILE "InstHashTable.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "InstHashTable.h"
@@ -17,7 +17,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT3,72,_OMC_LIT3_data);
 #define _OMC_LIT3 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT3)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT4,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT3}};
 #define _OMC_LIT4 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT4)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT5,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(90)),_OMC_LIT0,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT1,_OMC_LIT2,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT4}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT5,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(85)),_OMC_LIT0,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT1,_OMC_LIT2,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT4}};
 #define _OMC_LIT5 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT5)
 #define _OMC_LIT6_data "OPAQUE_VALUE"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT6,12,_OMC_LIT6_data);
@@ -50,11 +50,11 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_InstHashTable_opaqVal,2,0) {(void*) box
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_InstHashTable_emptyInstHashTableSized(threadData_t *threadData, modelica_integer _size)
 {
 modelica_metatype _hashTable = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = mmc_mk_box4(0, boxvar_AbsynUtil_pathHashMod, boxvar_AbsynUtil_pathEqual, boxvar_AbsynUtil_pathStringDefault, boxvar_InstHashTable_opaqVal);
-_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta[0]);
+tmpMeta1 = mmc_mk_box4(0, boxvar_AbsynUtil_pathHashMod, boxvar_AbsynUtil_pathEqual, boxvar_AbsynUtil_pathStringDefault, boxvar_InstHashTable_opaqVal);
+_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta1);
 _return: OMC_LABEL_UNUSED
 return _hashTable;
 }
@@ -88,7 +88,6 @@ return _str;
 DLLExport
 void omc_InstHashTable_addToInstCache(threadData_t *threadData, modelica_metatype _fullEnvPathPlusClass, modelica_metatype _fullInstOpt, modelica_metatype _partialInstOpt)
 {
-modelica_metatype tmpMeta[6] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -114,80 +113,107 @@ if (0 != tmp5) goto goto_1;
 goto tmp2_done;
 }
 case 1: {
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
 if (optionNone(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
+tmpMeta6 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
 if (optionNone(tmp3_2)) goto tmp2_end;
-tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
+tmpMeta7 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
 tmp3 += 4;
 _instHash = getGlobalRoot(((modelica_integer) 9));
-tmpMeta[0] = mmc_mk_cons(_fullInstOpt, mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
-tmpMeta[1] = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta[0]);
-_instHash = omc_BaseHashTable_add(threadData, tmpMeta[1], _instHash);
+tmpMeta8 = mmc_mk_cons(_fullInstOpt, mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
+tmpMeta9 = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta8);
+_instHash = omc_BaseHashTable_add(threadData, tmpMeta9, _instHash);
 setGlobalRoot(((modelica_integer) 9), _instHash);
 goto tmp2_done;
 }
 case 2: {
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+modelica_metatype tmpMeta17;
 if (!optionNone(tmp3_1)) goto tmp2_end;
 if (optionNone(tmp3_2)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
+tmpMeta10 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
 _instHash = getGlobalRoot(((modelica_integer) 9));
-tmpMeta[0] = omc_BaseHashTable_get(threadData, _fullEnvPathPlusClass, _instHash);
-if (listEmpty(tmpMeta[0])) goto goto_1;
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-if (listEmpty(tmpMeta[2])) goto goto_1;
-tmpMeta[3] = MMC_CAR(tmpMeta[2]);
-tmpMeta[4] = MMC_CDR(tmpMeta[2]);
-if (!listEmpty(tmpMeta[4])) goto goto_1;
-_opt = tmpMeta[1];
-tmpMeta[0] = mmc_mk_cons(_opt, mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
-tmpMeta[1] = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta[0]);
-_instHash = omc_BaseHashTable_add(threadData, tmpMeta[1], _instHash);
+tmpMeta11 = omc_BaseHashTable_get(threadData, _fullEnvPathPlusClass, _instHash);
+if (listEmpty(tmpMeta11)) goto goto_1;
+tmpMeta12 = MMC_CAR(tmpMeta11);
+tmpMeta13 = MMC_CDR(tmpMeta11);
+if (listEmpty(tmpMeta13)) goto goto_1;
+tmpMeta14 = MMC_CAR(tmpMeta13);
+tmpMeta15 = MMC_CDR(tmpMeta13);
+if (!listEmpty(tmpMeta15)) goto goto_1;
+_opt = tmpMeta12;
+tmpMeta16 = mmc_mk_cons(_opt, mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
+tmpMeta17 = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta16);
+_instHash = omc_BaseHashTable_add(threadData, tmpMeta17, _instHash);
 setGlobalRoot(((modelica_integer) 9), _instHash);
 goto tmp2_done;
 }
 case 3: {
+modelica_metatype tmpMeta18;
+modelica_metatype tmpMeta19;
+modelica_metatype tmpMeta20;
 if (!optionNone(tmp3_1)) goto tmp2_end;
 if (optionNone(tmp3_2)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
+tmpMeta18 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
 tmp3 += 2;
 _instHash = getGlobalRoot(((modelica_integer) 9));
-tmpMeta[0] = mmc_mk_cons(mmc_mk_none(), mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
-tmpMeta[1] = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta[0]);
-_instHash = omc_BaseHashTable_add(threadData, tmpMeta[1], _instHash);
+tmpMeta19 = mmc_mk_cons(mmc_mk_none(), mmc_mk_cons(_partialInstOpt, MMC_REFSTRUCTLIT(mmc_nil)));
+tmpMeta20 = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta19);
+_instHash = omc_BaseHashTable_add(threadData, tmpMeta20, _instHash);
 setGlobalRoot(((modelica_integer) 9), _instHash);
 goto tmp2_done;
 }
 case 4: {
+modelica_metatype tmpMeta21;
+modelica_metatype tmpMeta22;
+modelica_metatype tmpMeta23;
+modelica_metatype tmpMeta24;
+modelica_metatype tmpMeta25;
+modelica_metatype tmpMeta26;
+modelica_metatype tmpMeta27;
+modelica_metatype tmpMeta28;
+modelica_metatype tmpMeta29;
 if (optionNone(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
+tmpMeta21 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
 if (!optionNone(tmp3_2)) goto tmp2_end;
 _instHash = getGlobalRoot(((modelica_integer) 9));
-tmpMeta[0] = omc_BaseHashTable_get(threadData, _fullEnvPathPlusClass, _instHash);
-if (listEmpty(tmpMeta[0])) goto goto_1;
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-if (listEmpty(tmpMeta[2])) goto goto_1;
-tmpMeta[3] = MMC_CAR(tmpMeta[2]);
-tmpMeta[4] = MMC_CDR(tmpMeta[2]);
-if (optionNone(tmpMeta[3])) goto goto_1;
-tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 1));
-if (!listEmpty(tmpMeta[4])) goto goto_1;
-_lst = tmpMeta[2];
-tmpMeta[0] = mmc_mk_cons(_fullInstOpt, _lst);
-tmpMeta[1] = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta[0]);
-_instHash = omc_BaseHashTable_add(threadData, tmpMeta[1], _instHash);
+tmpMeta22 = omc_BaseHashTable_get(threadData, _fullEnvPathPlusClass, _instHash);
+if (listEmpty(tmpMeta22)) goto goto_1;
+tmpMeta23 = MMC_CAR(tmpMeta22);
+tmpMeta24 = MMC_CDR(tmpMeta22);
+if (listEmpty(tmpMeta24)) goto goto_1;
+tmpMeta25 = MMC_CAR(tmpMeta24);
+tmpMeta26 = MMC_CDR(tmpMeta24);
+if (optionNone(tmpMeta25)) goto goto_1;
+tmpMeta27 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta25), 1));
+if (!listEmpty(tmpMeta26)) goto goto_1;
+_lst = tmpMeta24;
+tmpMeta28 = mmc_mk_cons(_fullInstOpt, _lst);
+tmpMeta29 = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta28);
+_instHash = omc_BaseHashTable_add(threadData, tmpMeta29, _instHash);
 setGlobalRoot(((modelica_integer) 9), _instHash);
 goto tmp2_done;
 }
 case 5: {
+modelica_metatype tmpMeta30;
+modelica_metatype tmpMeta31;
+modelica_metatype tmpMeta32;
 if (optionNone(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
+tmpMeta30 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
 if (!optionNone(tmp3_2)) goto tmp2_end;
 _instHash = getGlobalRoot(((modelica_integer) 9));
-tmpMeta[0] = mmc_mk_cons(_fullInstOpt, mmc_mk_cons(mmc_mk_none(), MMC_REFSTRUCTLIT(mmc_nil)));
-tmpMeta[1] = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta[0]);
-_instHash = omc_BaseHashTable_add(threadData, tmpMeta[1], _instHash);
+tmpMeta31 = mmc_mk_cons(_fullInstOpt, mmc_mk_cons(mmc_mk_none(), MMC_REFSTRUCTLIT(mmc_nil)));
+tmpMeta32 = mmc_mk_box2(0, _fullEnvPathPlusClass, tmpMeta31);
+_instHash = omc_BaseHashTable_add(threadData, tmpMeta32, _instHash);
 setGlobalRoot(((modelica_integer) 9), _instHash);
 goto tmp2_done;
 }

@@ -27,6 +27,11 @@ extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
 extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
 extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
+DLLExport
+void omc_Builtin_clearInitialGraph(threadData_t *threadData);
+#define boxptr_Builtin_clearInitialGraph omc_Builtin_clearInitialGraph
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Builtin_clearInitialGraph,2,0) {(void*) boxptr_Builtin_clearInitialGraph,0}};
+#define boxvar_Builtin_clearInitialGraph MMC_REFSTRUCTLIT(boxvar_lit_Builtin_clearInitialGraph)
 #define boxptr_Builtin_getSetInitialGraph omc_Builtin_getSetInitialGraph
 DLLExport
 modelica_metatype omc_Builtin_initialGraph(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype *out_graph);

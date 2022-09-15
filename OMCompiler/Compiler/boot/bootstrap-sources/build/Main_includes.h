@@ -21,7 +21,7 @@ extern "C" {
 #include "FGraph.h"
 #include "Flags.h"
 #include "FlagsUtil.h"
-#include "GC.h"
+#include "GCExt.h"
 #include "Global.h"
 #include "Interactive.h"
 #include "InteractiveUtil.h"

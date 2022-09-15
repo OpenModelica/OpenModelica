@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern struct record_description SourceInfo_SOURCEINFO__desc;
 DLLExport
 modelica_real omc_System_getSizeOfData(threadData_t *threadData, modelica_metatype _data, modelica_real *out_raw_sz, modelica_real *out_nonSharedStringSize);
 DLLExport
@@ -103,12 +104,12 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_System_alarm,2,0) {(void*) boxptr_Syste
 #define boxvar_System_alarm MMC_REFSTRUCTLIT(boxvar_lit_System_alarm)
 extern int SystemImpl__alarm(int /*_seconds*/);
 DLLExport
-modelica_boolean omc_System_stat(threadData_t *threadData, modelica_string _filename, modelica_real *out_st_size, modelica_real *out_st_mtime);
+modelica_boolean omc_System_stat(threadData_t *threadData, modelica_string _filename, modelica_real *out_st_size, modelica_real *out_st_mtime, modelica_integer *out_fileType);
 DLLExport
-modelica_metatype boxptr_System_stat(threadData_t *threadData, modelica_metatype _filename, modelica_metatype *out_st_size, modelica_metatype *out_st_mtime);
+modelica_metatype boxptr_System_stat(threadData_t *threadData, modelica_metatype _filename, modelica_metatype *out_st_size, modelica_metatype *out_st_mtime, modelica_metatype *out_fileType);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_stat,2,0) {(void*) boxptr_System_stat,0}};
 #define boxvar_System_stat MMC_REFSTRUCTLIT(boxvar_lit_System_stat)
-extern int SystemImpl__stat(const char* /*_filename*/, double* /*_st_size*/, double* /*_st_mtime*/);
+extern int SystemImpl__stat(const char* /*_filename*/, double* /*_st_size*/, double* /*_st_mtime*/, int* /*_fileType*/);
 DLLExport
 modelica_string omc_System_ctime(threadData_t *threadData, modelica_real _t);
 DLLExport
@@ -196,12 +197,13 @@ modelica_metatype boxptr_System_getSimulationHelpText(threadData_t *threadData, 
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_getSimulationHelpText,2,0) {(void*) boxptr_System_getSimulationHelpText,0}};
 #define boxvar_System_getSimulationHelpText MMC_REFSTRUCTLIT(boxvar_lit_System_getSimulationHelpText)
 extern const char* System_getSimulationHelpTextSphinx(int /*_detailed*/, int /*_sphinx*/);
+#define boxptr_System_realpath_system__realpath omc_System_realpath_system__realpath
+extern const char* System_realpath(const char* /*_path*/);
 DLLExport
 modelica_string omc_System_realpath(threadData_t *threadData, modelica_string _path);
 #define boxptr_System_realpath omc_System_realpath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_realpath,2,0) {(void*) boxptr_System_realpath,0}};
 #define boxvar_System_realpath MMC_REFSTRUCTLIT(boxvar_lit_System_realpath)
-extern const char* System_realpath(const char* /*_path*/);
 DLLExport
 modelica_integer omc_System_numBits(threadData_t *threadData);
 DLLExport
@@ -767,6 +769,19 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_System_cd,2,0) {(void*) boxptr_System_c
 #define boxvar_System_cd MMC_REFSTRUCTLIT(boxvar_lit_System_cd)
 extern int SystemImpl__chdir(const char* /*_inString*/);
 DLLExport
+void omc_System_loadModelCallBack(threadData_t *threadData, modelica_string _modelName);
+#define boxptr_System_loadModelCallBack omc_System_loadModelCallBack
+static const MMC_DEFSTRUCTLIT(boxvar_lit_System_loadModelCallBack,2,0) {(void*) boxptr_System_loadModelCallBack,0}};
+#define boxvar_System_loadModelCallBack MMC_REFSTRUCTLIT(boxvar_lit_System_loadModelCallBack)
+extern void SystemImpl__loadModelCallBack(OpenModelica_threadData_ThreadData*, const char* /*_modelName*/);
+DLLExport
+modelica_boolean omc_System_loadModelCallBackDefined(threadData_t *threadData);
+DLLExport
+modelica_metatype boxptr_System_loadModelCallBackDefined(threadData_t *threadData);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_System_loadModelCallBackDefined,2,0) {(void*) boxptr_System_loadModelCallBackDefined,0}};
+#define boxvar_System_loadModelCallBackDefined MMC_REFSTRUCTLIT(boxvar_lit_System_loadModelCallBackDefined)
+extern int SystemImpl__loadModelCallBackDefined(OpenModelica_threadData_ThreadData*);
+DLLExport
 void omc_System_plotCallBack(threadData_t *threadData, modelica_boolean _externalWindow, modelica_string _filename, modelica_string _title, modelica_string _grid, modelica_string _plotType, modelica_string _logX, modelica_string _logY, modelica_string _xLabel, modelica_string _yLabel, modelica_string _x1, modelica_string _x2, modelica_string _y1, modelica_string _y2, modelica_string _curveWidth, modelica_string _curveStyle, modelica_string _legendPosition, modelica_string _footer, modelica_string _autoScale, modelica_string _variables);
 DLLExport
 void boxptr_System_plotCallBack(threadData_t *threadData, modelica_metatype _externalWindow, modelica_metatype _filename, modelica_metatype _title, modelica_metatype _grid, modelica_metatype _plotType, modelica_metatype _logX, modelica_metatype _logY, modelica_metatype _xLabel, modelica_metatype _yLabel, modelica_metatype _x1, modelica_metatype _x2, modelica_metatype _y1, modelica_metatype _y2, modelica_metatype _curveWidth, modelica_metatype _curveStyle, modelica_metatype _legendPosition, modelica_metatype _footer, modelica_metatype _autoScale, modelica_metatype _variables);
@@ -848,12 +863,12 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_System_lookupFunction,2,0) {(void*) box
 #define boxvar_System_lookupFunction MMC_REFSTRUCTLIT(boxvar_lit_System_lookupFunction)
 extern int System_lookupFunction(int /*_inLibHandle*/, const char* /*_inFunc*/);
 DLLExport
-modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _inPrintDebug);
+modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _relativePath, modelica_boolean _printDebug);
 DLLExport
-modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _inPrintDebug);
+modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _relativePath, modelica_metatype _printDebug);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_loadLibrary,2,0) {(void*) boxptr_System_loadLibrary,0}};
 #define boxvar_System_loadLibrary MMC_REFSTRUCTLIT(boxvar_lit_System_loadLibrary)
-extern int System_loadLibrary(const char* /*_inLib*/, int /*_inPrintDebug*/);
+extern int System_loadLibrary(const char* /*_inLib*/, int /*_relativePath*/, int /*_printDebug*/);
 DLLExport
 modelica_string omc_System_getLDFlags(threadData_t *threadData);
 #define boxptr_System_getLDFlags omc_System_getLDFlags

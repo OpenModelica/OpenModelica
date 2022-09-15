@@ -1,12 +1,46 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/BackendInterface.c"
+#define OMC_FILE "BackendInterface.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "BackendInterface.h"
+#define _OMC_LIT0_data ""
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,0,_OMC_LIT0_data);
+#define _OMC_LIT0 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT0)
+#define _OMC_LIT1_data "default"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,7,_OMC_LIT1_data);
+#define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT2,2,1) {_OMC_LIT1,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT2 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT2)
 #include "util/modelica.h"
 #include "BackendInterface_includes.h"
+DLLExport
+modelica_metatype omc_BackendInterface_appendLibrary(threadData_t *threadData, modelica_metatype _modelName, modelica_string _modelicaPath, modelica_boolean *out_success)
+{
+modelica_metatype _program = NULL;
+modelica_boolean _success;
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_program = omc_SymbolTable_getAbsyn(threadData);
+tmpMeta2 = mmc_mk_box4(0, _modelName, _OMC_LIT0, _OMC_LIT2, mmc_mk_boolean(0));
+tmpMeta1 = mmc_mk_cons(tmpMeta2, MMC_REFSTRUCTLIT(mmc_nil));
+_program = omc_CevalScript_loadModel(threadData, tmpMeta1, _modelicaPath, _program, 1, 1, 1, 0, 0, _OMC_LIT0 ,&_success);
+omc_SymbolTable_setAbsyn(threadData, _program);
+_return: OMC_LABEL_UNUSED
+if (out_success) { *out_success = _success; }
+return _program;
+}
+modelica_metatype boxptr_BackendInterface_appendLibrary(threadData_t *threadData, modelica_metatype _modelName, modelica_metatype _modelicaPath, modelica_metatype *out_success)
+{
+modelica_boolean _success;
+modelica_metatype _program = NULL;
+_program = omc_BackendInterface_appendLibrary(threadData, _modelName, _modelicaPath, &_success);
+if (out_success) { *out_success = mmc_mk_icon(_success); }
+return _program;
+}
 DLLExport
 modelica_metatype omc_BackendInterface_rewriteFrontEnd(threadData_t *threadData, modelica_metatype _inExp, modelica_boolean *out_isChanged)
 {

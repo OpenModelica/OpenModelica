@@ -15,7 +15,6 @@ extern struct record_description Absyn_Path_QUALIFIED__desc;
 extern struct record_description Absyn_Subscript_NOSUB__desc;
 extern struct record_description Absyn_Subscript_SUBSCRIPT__desc;
 extern struct record_description DAE_ComponentRef_CREF__IDENT__desc;
-extern struct record_description DAE_ComponentRef_CREF__ITER__desc;
 extern struct record_description DAE_ComponentRef_CREF__QUAL__desc;
 extern struct record_description DAE_ComponentRef_WILD__desc;
 extern struct record_description DAE_Exp_CREF__desc;
@@ -34,6 +33,18 @@ extern struct record_description Flags_FlagData_BOOL__FLAG__desc;
 extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_boolean omc_ComponentReference_isWild(threadData_t *threadData, modelica_metatype _cref);
+DLLExport
+modelica_metatype boxptr_ComponentReference_isWild(threadData_t *threadData, modelica_metatype _cref);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_isWild,2,0) {(void*) boxptr_ComponentReference_isWild,0}};
+#define boxvar_ComponentReference_isWild MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_isWild)
+DLLExport
+modelica_boolean omc_ComponentReference_isTime(threadData_t *threadData, modelica_metatype _cref);
+DLLExport
+modelica_metatype boxptr_ComponentReference_isTime(threadData_t *threadData, modelica_metatype _cref);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_isTime,2,0) {(void*) boxptr_ComponentReference_isTime,0}};
+#define boxvar_ComponentReference_isTime MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_isTime)
 DLLExport
 modelica_metatype omc_ComponentReference_createDifferentiatedCrefName(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inX, modelica_string _inMatrixName);
 #define boxptr_ComponentReference_createDifferentiatedCrefName omc_ComponentReference_createDifferentiatedCrefName
@@ -258,7 +269,7 @@ modelica_metatype omc_ComponentReference_crefSetLastType(threadData_t *threadDat
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_crefSetLastType,2,0) {(void*) boxptr_ComponentReference_crefSetLastType,0}};
 #define boxvar_ComponentReference_crefSetLastType MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_crefSetLastType)
 DLLExport
-modelica_metatype omc_ComponentReference_crefSetType(threadData_t *threadData, modelica_metatype _inRef, modelica_metatype _newType);
+modelica_metatype omc_ComponentReference_crefSetType(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_metatype _ty);
 #define boxptr_ComponentReference_crefSetType omc_ComponentReference_crefSetType
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_crefSetType,2,0) {(void*) boxptr_ComponentReference_crefSetType,0}};
 #define boxvar_ComponentReference_crefSetType MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_crefSetType)
@@ -438,6 +449,7 @@ modelica_metatype omc_ComponentReference_crefTypeFull2(threadData_t *threadData,
 #define boxptr_ComponentReference_crefTypeFull2 omc_ComponentReference_crefTypeFull2
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_crefTypeFull2,2,0) {(void*) boxptr_ComponentReference_crefTypeFull2,0}};
 #define boxvar_ComponentReference_crefTypeFull2 MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_crefTypeFull2)
+#define boxptr_ComponentReference_crefTypeFullComputeDims omc_ComponentReference_crefTypeFullComputeDims
 DLLExport
 modelica_metatype omc_ComponentReference_crefRest(threadData_t *threadData, modelica_metatype _inCref);
 #define boxptr_ComponentReference_crefRest omc_ComponentReference_crefRest
@@ -468,6 +480,12 @@ modelica_metatype omc_ComponentReference_crefArrayGetFirstCref(threadData_t *thr
 #define boxptr_ComponentReference_crefArrayGetFirstCref omc_ComponentReference_crefArrayGetFirstCref
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_crefArrayGetFirstCref,2,0) {(void*) boxptr_ComponentReference_crefArrayGetFirstCref,0}};
 #define boxvar_ComponentReference_crefArrayGetFirstCref MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_crefArrayGetFirstCref)
+DLLExport
+modelica_metatype omc_ComponentReference_crefGetFirstRec(threadData_t *threadData, modelica_metatype _cref, modelica_boolean *out_isRec);
+DLLExport
+modelica_metatype boxptr_ComponentReference_crefGetFirstRec(threadData_t *threadData, modelica_metatype _cref, modelica_metatype *out_isRec);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ComponentReference_crefGetFirstRec,2,0) {(void*) boxptr_ComponentReference_crefGetFirstRec,0}};
+#define boxvar_ComponentReference_crefGetFirstRec MMC_REFSTRUCTLIT(boxvar_lit_ComponentReference_crefGetFirstRec)
 DLLExport
 modelica_boolean omc_ComponentReference_crefIsRec(threadData_t *threadData, modelica_metatype _cref, modelica_boolean _isRecIn);
 DLLExport

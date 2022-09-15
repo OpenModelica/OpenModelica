@@ -12,8 +12,8 @@ extern struct record_description Absyn_Path_IDENT__desc;
 extern struct record_description Absyn_Path_QUALIFIED__desc;
 extern struct record_description ClassInf_State_UNKNOWN__desc;
 extern struct record_description DAE_ClassPrefix_CLASSPRE__desc;
-extern struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc;
-extern struct record_description DAE_ClockKind_INTEGER__CLOCK__desc;
+extern struct record_description DAE_ClockKind_EVENT__CLOCK__desc;
+extern struct record_description DAE_ClockKind_RATIONAL__CLOCK__desc;
 extern struct record_description DAE_ClockKind_REAL__CLOCK__desc;
 extern struct record_description DAE_ClockKind_SOLVER__CLOCK__desc;
 extern struct record_description DAE_ComponentPrefix_NOCOMPPRE__desc;
@@ -73,11 +73,11 @@ modelica_metatype omc_PrefixUtil_removeCompPrefixFromExps(threadData_t *threadDa
 static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_removeCompPrefixFromExps,2,0) {(void*) boxptr_PrefixUtil_removeCompPrefixFromExps,0}};
 #define boxvar_PrefixUtil_removeCompPrefixFromExps MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_removeCompPrefixFromExps)
 DLLExport
-modelica_boolean omc_PrefixUtil_haveSubs(threadData_t *threadData, modelica_metatype _pre);
+modelica_boolean omc_PrefixUtil_hasSubs(threadData_t *threadData, modelica_metatype _pre);
 DLLExport
-modelica_metatype boxptr_PrefixUtil_haveSubs(threadData_t *threadData, modelica_metatype _pre);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_haveSubs,2,0) {(void*) boxptr_PrefixUtil_haveSubs,0}};
-#define boxvar_PrefixUtil_haveSubs MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_haveSubs)
+modelica_metatype boxptr_PrefixUtil_hasSubs(threadData_t *threadData, modelica_metatype _pre);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_hasSubs,2,0) {(void*) boxptr_PrefixUtil_hasSubs,0}};
+#define boxvar_PrefixUtil_hasSubs MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_hasSubs)
 DLLExport
 void omc_PrefixUtil_writeComponentPrefix(threadData_t *threadData, modelica_complex _file, modelica_metatype _pre, modelica_integer _escape);
 DLLExport

@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/HashTableCrToExpOption.c"
+#define OMC_FILE "HashTableCrToExpOption.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "HashTableCrToExpOption.h"
@@ -49,7 +49,6 @@ PROTECTED_FUNCTION_STATIC modelica_string omc_HashTableCrToExpOption_printExpOti
 {
 modelica_string _outStr = NULL;
 modelica_string tmp1 = 0;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -63,12 +62,15 @@ tmp4 = 0;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
 if (optionNone(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 1));
-_exp = tmpMeta[0];
-tmpMeta[0] = stringAppend(_OMC_LIT0,omc_ExpressionDump_printExpStr(threadData, _exp));
-tmpMeta[1] = stringAppend(tmpMeta[0],_OMC_LIT1);
-tmp1 = tmpMeta[1];
+tmpMeta6 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 1));
+_exp = tmpMeta6;
+tmpMeta7 = stringAppend(_OMC_LIT0,omc_ExpressionDump_printExpStr(threadData, _exp));
+tmpMeta8 = stringAppend(tmpMeta7,_OMC_LIT1);
+tmp1 = tmpMeta8;
 goto tmp3_done;
 }
 case 1: {
@@ -94,11 +96,11 @@ DLLExport
 modelica_metatype omc_HashTableCrToExpOption_emptyHashTableSized(threadData_t *threadData, modelica_integer _size)
 {
 modelica_metatype _hashTable = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = mmc_mk_box4(0, boxvar_ComponentReference_hashComponentRefMod, boxvar_ComponentReference_crefEqual, boxvar_ComponentReference_printComponentRefStr, boxvar_HashTableCrToExpOption_printExpOtionStr);
-_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta[0]);
+tmpMeta1 = mmc_mk_box4(0, boxvar_ComponentReference_hashComponentRefMod, boxvar_ComponentReference_crefEqual, boxvar_ComponentReference_printComponentRefStr, boxvar_HashTableCrToExpOption_printExpOtionStr);
+_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta1);
 _return: OMC_LABEL_UNUSED
 return _hashTable;
 }

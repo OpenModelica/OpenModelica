@@ -3,6 +3,7 @@ extern "C" {
 #endif
 #include "AbsynToSCode.h"
 #include "AbsynUtil.h"
+#include "Dump.h"
 #include "FGraph.h"
 #include "FGraphBuild.h"
 #include "FMod.h"

@@ -1017,290 +1017,264 @@ SCode_ExternalDecl_EXTERNALDECL__desc__fields
 extern struct record_description SCode_ExternalDecl_EXTERNALDECL__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_Equation_EQUATION__desc_added
-#define SCode_Equation_EQUATION__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQUATION__desc__fields[1] = {"eEquation"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQUATION__desc = {
-"SCode_Equation_EQUATION",
-"SCode.Equation.EQUATION",
-SCode_Equation_EQUATION__desc__fields
+#ifndef SCode_Equation_EQ__IF__desc_added
+#define SCode_Equation_EQ__IF__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__IF__desc__fields[5] = {"condition","thenBranch","elseBranch","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__IF__desc = {
+"SCode_Equation_EQ__IF",
+"SCode.Equation.EQ_IF",
+SCode_Equation_EQ__IF__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_Equation_EQUATION__desc;
+extern struct record_description SCode_Equation_EQ__IF__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_Equation_EQUATION__desc_added
-#define SCode_Equation_EQUATION__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQUATION__desc__fields[1] = {"eEquation"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQUATION__desc = {
-"SCode_Equation_EQUATION",
-"SCode.Equation.EQUATION",
-SCode_Equation_EQUATION__desc__fields
+#ifndef SCode_Equation_EQ__EQUALS__desc_added
+#define SCode_Equation_EQ__EQUALS__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__EQUALS__desc__fields[4] = {"expLeft","expRight","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__EQUALS__desc = {
+"SCode_Equation_EQ__EQUALS",
+"SCode.Equation.EQ_EQUALS",
+SCode_Equation_EQ__EQUALS__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_Equation_EQUATION__desc;
+extern struct record_description SCode_Equation_EQ__EQUALS__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__IF__desc_added
-#define SCode_EEquation_EQ__IF__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__IF__desc__fields[5] = {"condition","thenBranch","elseBranch","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__IF__desc = {
-"SCode_EEquation_EQ__IF",
-"SCode.EEquation.EQ_IF",
-SCode_EEquation_EQ__IF__desc__fields
+#ifndef SCode_Equation_EQ__PDE__desc_added
+#define SCode_Equation_EQ__PDE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__PDE__desc__fields[5] = {"expLeft","expRight","domain","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__PDE__desc = {
+"SCode_Equation_EQ__PDE",
+"SCode.Equation.EQ_PDE",
+SCode_Equation_EQ__PDE__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__IF__desc;
+extern struct record_description SCode_Equation_EQ__PDE__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__EQUALS__desc_added
-#define SCode_EEquation_EQ__EQUALS__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__EQUALS__desc__fields[4] = {"expLeft","expRight","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__EQUALS__desc = {
-"SCode_EEquation_EQ__EQUALS",
-"SCode.EEquation.EQ_EQUALS",
-SCode_EEquation_EQ__EQUALS__desc__fields
+#ifndef SCode_Equation_EQ__CONNECT__desc_added
+#define SCode_Equation_EQ__CONNECT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__CONNECT__desc__fields[4] = {"crefLeft","crefRight","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__CONNECT__desc = {
+"SCode_Equation_EQ__CONNECT",
+"SCode.Equation.EQ_CONNECT",
+SCode_Equation_EQ__CONNECT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
+extern struct record_description SCode_Equation_EQ__CONNECT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__PDE__desc_added
-#define SCode_EEquation_EQ__PDE__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__PDE__desc__fields[5] = {"expLeft","expRight","domain","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__PDE__desc = {
-"SCode_EEquation_EQ__PDE",
-"SCode.EEquation.EQ_PDE",
-SCode_EEquation_EQ__PDE__desc__fields
+#ifndef SCode_Equation_EQ__FOR__desc_added
+#define SCode_Equation_EQ__FOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__FOR__desc__fields[5] = {"index","range","eEquationLst","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__FOR__desc = {
+"SCode_Equation_EQ__FOR",
+"SCode.Equation.EQ_FOR",
+SCode_Equation_EQ__FOR__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__PDE__desc;
+extern struct record_description SCode_Equation_EQ__FOR__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__CONNECT__desc_added
-#define SCode_EEquation_EQ__CONNECT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__CONNECT__desc__fields[4] = {"crefLeft","crefRight","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__CONNECT__desc = {
-"SCode_EEquation_EQ__CONNECT",
-"SCode.EEquation.EQ_CONNECT",
-SCode_EEquation_EQ__CONNECT__desc__fields
+#ifndef SCode_Equation_EQ__WHEN__desc_added
+#define SCode_Equation_EQ__WHEN__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__WHEN__desc__fields[5] = {"condition","eEquationLst","elseBranches","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__WHEN__desc = {
+"SCode_Equation_EQ__WHEN",
+"SCode.Equation.EQ_WHEN",
+SCode_Equation_EQ__WHEN__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__CONNECT__desc;
+extern struct record_description SCode_Equation_EQ__WHEN__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__FOR__desc_added
-#define SCode_EEquation_EQ__FOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__FOR__desc__fields[5] = {"index","range","eEquationLst","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__FOR__desc = {
-"SCode_EEquation_EQ__FOR",
-"SCode.EEquation.EQ_FOR",
-SCode_EEquation_EQ__FOR__desc__fields
+#ifndef SCode_Equation_EQ__ASSERT__desc_added
+#define SCode_Equation_EQ__ASSERT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__ASSERT__desc__fields[5] = {"condition","message","level","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__ASSERT__desc = {
+"SCode_Equation_EQ__ASSERT",
+"SCode.Equation.EQ_ASSERT",
+SCode_Equation_EQ__ASSERT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__FOR__desc;
+extern struct record_description SCode_Equation_EQ__ASSERT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__WHEN__desc_added
-#define SCode_EEquation_EQ__WHEN__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__WHEN__desc__fields[5] = {"condition","eEquationLst","elseBranches","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__WHEN__desc = {
-"SCode_EEquation_EQ__WHEN",
-"SCode.EEquation.EQ_WHEN",
-SCode_EEquation_EQ__WHEN__desc__fields
+#ifndef SCode_Equation_EQ__TERMINATE__desc_added
+#define SCode_Equation_EQ__TERMINATE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__TERMINATE__desc__fields[3] = {"message","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__TERMINATE__desc = {
+"SCode_Equation_EQ__TERMINATE",
+"SCode.Equation.EQ_TERMINATE",
+SCode_Equation_EQ__TERMINATE__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__WHEN__desc;
+extern struct record_description SCode_Equation_EQ__TERMINATE__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__ASSERT__desc_added
-#define SCode_EEquation_EQ__ASSERT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__ASSERT__desc__fields[5] = {"condition","message","level","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__ASSERT__desc = {
-"SCode_EEquation_EQ__ASSERT",
-"SCode.EEquation.EQ_ASSERT",
-SCode_EEquation_EQ__ASSERT__desc__fields
+#ifndef SCode_Equation_EQ__REINIT__desc_added
+#define SCode_Equation_EQ__REINIT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__REINIT__desc__fields[4] = {"cref","expReinit","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__REINIT__desc = {
+"SCode_Equation_EQ__REINIT",
+"SCode.Equation.EQ_REINIT",
+SCode_Equation_EQ__REINIT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__ASSERT__desc;
+extern struct record_description SCode_Equation_EQ__REINIT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__TERMINATE__desc_added
-#define SCode_EEquation_EQ__TERMINATE__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__TERMINATE__desc__fields[3] = {"message","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__TERMINATE__desc = {
-"SCode_EEquation_EQ__TERMINATE",
-"SCode.EEquation.EQ_TERMINATE",
-SCode_EEquation_EQ__TERMINATE__desc__fields
+#ifndef SCode_Equation_EQ__NORETCALL__desc_added
+#define SCode_Equation_EQ__NORETCALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__NORETCALL__desc__fields[3] = {"exp","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__NORETCALL__desc = {
+"SCode_Equation_EQ__NORETCALL",
+"SCode.Equation.EQ_NORETCALL",
+SCode_Equation_EQ__NORETCALL__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__TERMINATE__desc;
+extern struct record_description SCode_Equation_EQ__NORETCALL__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__REINIT__desc_added
-#define SCode_EEquation_EQ__REINIT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__REINIT__desc__fields[4] = {"cref","expReinit","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__REINIT__desc = {
-"SCode_EEquation_EQ__REINIT",
-"SCode.EEquation.EQ_REINIT",
-SCode_EEquation_EQ__REINIT__desc__fields
+#ifndef SCode_Equation_EQ__NORETCALL__desc_added
+#define SCode_Equation_EQ__NORETCALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__NORETCALL__desc__fields[3] = {"exp","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__NORETCALL__desc = {
+"SCode_Equation_EQ__NORETCALL",
+"SCode.Equation.EQ_NORETCALL",
+SCode_Equation_EQ__NORETCALL__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__REINIT__desc;
+extern struct record_description SCode_Equation_EQ__NORETCALL__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__NORETCALL__desc_added
-#define SCode_EEquation_EQ__NORETCALL__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__NORETCALL__desc__fields[3] = {"exp","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__NORETCALL__desc = {
-"SCode_EEquation_EQ__NORETCALL",
-"SCode.EEquation.EQ_NORETCALL",
-SCode_EEquation_EQ__NORETCALL__desc__fields
+#ifndef SCode_Equation_EQ__REINIT__desc_added
+#define SCode_Equation_EQ__REINIT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__REINIT__desc__fields[4] = {"cref","expReinit","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__REINIT__desc = {
+"SCode_Equation_EQ__REINIT",
+"SCode.Equation.EQ_REINIT",
+SCode_Equation_EQ__REINIT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__NORETCALL__desc;
+extern struct record_description SCode_Equation_EQ__REINIT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__NORETCALL__desc_added
-#define SCode_EEquation_EQ__NORETCALL__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__NORETCALL__desc__fields[3] = {"exp","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__NORETCALL__desc = {
-"SCode_EEquation_EQ__NORETCALL",
-"SCode.EEquation.EQ_NORETCALL",
-SCode_EEquation_EQ__NORETCALL__desc__fields
+#ifndef SCode_Equation_EQ__TERMINATE__desc_added
+#define SCode_Equation_EQ__TERMINATE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__TERMINATE__desc__fields[3] = {"message","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__TERMINATE__desc = {
+"SCode_Equation_EQ__TERMINATE",
+"SCode.Equation.EQ_TERMINATE",
+SCode_Equation_EQ__TERMINATE__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__NORETCALL__desc;
+extern struct record_description SCode_Equation_EQ__TERMINATE__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__REINIT__desc_added
-#define SCode_EEquation_EQ__REINIT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__REINIT__desc__fields[4] = {"cref","expReinit","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__REINIT__desc = {
-"SCode_EEquation_EQ__REINIT",
-"SCode.EEquation.EQ_REINIT",
-SCode_EEquation_EQ__REINIT__desc__fields
+#ifndef SCode_Equation_EQ__ASSERT__desc_added
+#define SCode_Equation_EQ__ASSERT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__ASSERT__desc__fields[5] = {"condition","message","level","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__ASSERT__desc = {
+"SCode_Equation_EQ__ASSERT",
+"SCode.Equation.EQ_ASSERT",
+SCode_Equation_EQ__ASSERT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__REINIT__desc;
+extern struct record_description SCode_Equation_EQ__ASSERT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__TERMINATE__desc_added
-#define SCode_EEquation_EQ__TERMINATE__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__TERMINATE__desc__fields[3] = {"message","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__TERMINATE__desc = {
-"SCode_EEquation_EQ__TERMINATE",
-"SCode.EEquation.EQ_TERMINATE",
-SCode_EEquation_EQ__TERMINATE__desc__fields
+#ifndef SCode_Equation_EQ__WHEN__desc_added
+#define SCode_Equation_EQ__WHEN__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__WHEN__desc__fields[5] = {"condition","eEquationLst","elseBranches","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__WHEN__desc = {
+"SCode_Equation_EQ__WHEN",
+"SCode.Equation.EQ_WHEN",
+SCode_Equation_EQ__WHEN__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__TERMINATE__desc;
+extern struct record_description SCode_Equation_EQ__WHEN__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__ASSERT__desc_added
-#define SCode_EEquation_EQ__ASSERT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__ASSERT__desc__fields[5] = {"condition","message","level","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__ASSERT__desc = {
-"SCode_EEquation_EQ__ASSERT",
-"SCode.EEquation.EQ_ASSERT",
-SCode_EEquation_EQ__ASSERT__desc__fields
+#ifndef SCode_Equation_EQ__FOR__desc_added
+#define SCode_Equation_EQ__FOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__FOR__desc__fields[5] = {"index","range","eEquationLst","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__FOR__desc = {
+"SCode_Equation_EQ__FOR",
+"SCode.Equation.EQ_FOR",
+SCode_Equation_EQ__FOR__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__ASSERT__desc;
+extern struct record_description SCode_Equation_EQ__FOR__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__WHEN__desc_added
-#define SCode_EEquation_EQ__WHEN__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__WHEN__desc__fields[5] = {"condition","eEquationLst","elseBranches","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__WHEN__desc = {
-"SCode_EEquation_EQ__WHEN",
-"SCode.EEquation.EQ_WHEN",
-SCode_EEquation_EQ__WHEN__desc__fields
+#ifndef SCode_Equation_EQ__CONNECT__desc_added
+#define SCode_Equation_EQ__CONNECT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__CONNECT__desc__fields[4] = {"crefLeft","crefRight","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__CONNECT__desc = {
+"SCode_Equation_EQ__CONNECT",
+"SCode.Equation.EQ_CONNECT",
+SCode_Equation_EQ__CONNECT__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__WHEN__desc;
+extern struct record_description SCode_Equation_EQ__CONNECT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__FOR__desc_added
-#define SCode_EEquation_EQ__FOR__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__FOR__desc__fields[5] = {"index","range","eEquationLst","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__FOR__desc = {
-"SCode_EEquation_EQ__FOR",
-"SCode.EEquation.EQ_FOR",
-SCode_EEquation_EQ__FOR__desc__fields
+#ifndef SCode_Equation_EQ__PDE__desc_added
+#define SCode_Equation_EQ__PDE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__PDE__desc__fields[5] = {"expLeft","expRight","domain","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__PDE__desc = {
+"SCode_Equation_EQ__PDE",
+"SCode.Equation.EQ_PDE",
+SCode_Equation_EQ__PDE__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__FOR__desc;
+extern struct record_description SCode_Equation_EQ__PDE__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__CONNECT__desc_added
-#define SCode_EEquation_EQ__CONNECT__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__CONNECT__desc__fields[4] = {"crefLeft","crefRight","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__CONNECT__desc = {
-"SCode_EEquation_EQ__CONNECT",
-"SCode.EEquation.EQ_CONNECT",
-SCode_EEquation_EQ__CONNECT__desc__fields
+#ifndef SCode_Equation_EQ__EQUALS__desc_added
+#define SCode_Equation_EQ__EQUALS__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__EQUALS__desc__fields[4] = {"expLeft","expRight","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__EQUALS__desc = {
+"SCode_Equation_EQ__EQUALS",
+"SCode.Equation.EQ_EQUALS",
+SCode_Equation_EQ__EQUALS__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__CONNECT__desc;
+extern struct record_description SCode_Equation_EQ__EQUALS__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__PDE__desc_added
-#define SCode_EEquation_EQ__PDE__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__PDE__desc__fields[5] = {"expLeft","expRight","domain","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__PDE__desc = {
-"SCode_EEquation_EQ__PDE",
-"SCode.EEquation.EQ_PDE",
-SCode_EEquation_EQ__PDE__desc__fields
+#ifndef SCode_Equation_EQ__IF__desc_added
+#define SCode_Equation_EQ__IF__desc_added
+ADD_METARECORD_DEFINITIONS const char* SCode_Equation_EQ__IF__desc__fields[5] = {"condition","thenBranch","elseBranch","comment","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SCode_Equation_EQ__IF__desc = {
+"SCode_Equation_EQ__IF",
+"SCode.Equation.EQ_IF",
+SCode_Equation_EQ__IF__desc__fields
 };
 #endif
 #else
-extern struct record_description SCode_EEquation_EQ__PDE__desc;
-#endif
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__EQUALS__desc_added
-#define SCode_EEquation_EQ__EQUALS__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__EQUALS__desc__fields[4] = {"expLeft","expRight","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__EQUALS__desc = {
-"SCode_EEquation_EQ__EQUALS",
-"SCode.EEquation.EQ_EQUALS",
-SCode_EEquation_EQ__EQUALS__desc__fields
-};
-#endif
-#else
-extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
-#endif
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef SCode_EEquation_EQ__IF__desc_added
-#define SCode_EEquation_EQ__IF__desc_added
-ADD_METARECORD_DEFINITIONS const char* SCode_EEquation_EQ__IF__desc__fields[5] = {"condition","thenBranch","elseBranch","comment","info"};
-ADD_METARECORD_DEFINITIONS struct record_description SCode_EEquation_EQ__IF__desc = {
-"SCode_EEquation_EQ__IF",
-"SCode.EEquation.EQ_IF",
-SCode_EEquation_EQ__IF__desc__fields
-};
-#endif
-#else
-extern struct record_description SCode_EEquation_EQ__IF__desc;
+extern struct record_description SCode_Equation_EQ__IF__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef SCode_AlgorithmSection_ALGORITHM__desc_added

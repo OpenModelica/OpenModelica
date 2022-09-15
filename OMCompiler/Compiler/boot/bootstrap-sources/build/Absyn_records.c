@@ -109,7 +109,7 @@ extern struct record_description Absyn_Within_WITHIN__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Class_CLASS__desc_added
 #define Absyn_Class_CLASS__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[7] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[9] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","commentsBeforeEnd","commentsAfterEnd","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Class_CLASS__desc = {
 "Absyn_Class_CLASS",
 "Absyn.Class.CLASS",
@@ -122,7 +122,7 @@ extern struct record_description Absyn_Class_CLASS__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Class_CLASS__desc_added
 #define Absyn_Class_CLASS__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[7] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[9] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","commentsBeforeEnd","commentsAfterEnd","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Class_CLASS__desc = {
 "Absyn_Class_CLASS",
 "Absyn.Class.CLASS",
@@ -1925,6 +1925,32 @@ Absyn_ElementArg_REDECLARATION__desc__fields
 #endif
 #else
 extern struct record_description Absyn_ElementArg_REDECLARATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+#define Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields[1] = {"comment"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc = {
+"Absyn_ElementArg_ELEMENTARGCOMMENT",
+"Absyn.ElementArg.ELEMENTARGCOMMENT",
+Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields
+};
+#endif
+#else
+extern struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+#define Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields[1] = {"comment"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc = {
+"Absyn_ElementArg_ELEMENTARGCOMMENT",
+"Absyn.ElementArg.ELEMENTARGCOMMENT",
+Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields
+};
+#endif
+#else
+extern struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
@@ -2835,6 +2861,32 @@ Absyn_Exp_DOT__desc__fields
 #endif
 #else
 extern struct record_description Absyn_Exp_DOT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+#define Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_EXPRESSIONCOMMENT__desc__fields[3] = {"commentsBefore","exp","commentsAfter"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc = {
+"Absyn_Exp_EXPRESSIONCOMMENT",
+"Absyn.Exp.EXPRESSIONCOMMENT",
+Absyn_Exp_EXPRESSIONCOMMENT__desc__fields
+};
+#endif
+#else
+extern struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+#define Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_EXPRESSIONCOMMENT__desc__fields[3] = {"commentsBefore","exp","commentsAfter"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc = {
+"Absyn_Exp_EXPRESSIONCOMMENT",
+"Absyn.Exp.EXPRESSIONCOMMENT",
+Absyn_Exp_EXPRESSIONCOMMENT__desc__fields
+};
+#endif
+#else
+extern struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Exp_DOT__desc_added

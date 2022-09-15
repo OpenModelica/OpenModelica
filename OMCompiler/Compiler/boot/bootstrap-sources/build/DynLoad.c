@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/DynLoad.c"
+#define OMC_FILE "DynLoad.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "DynLoad.h"
@@ -11,10 +11,10 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,41,_OMC_LIT0_data);
 #define _OMC_LIT1_data "\n"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,1,_OMC_LIT1_data);
 #define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
-#define _OMC_LIT2_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Util/DynLoad.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT2,64,_OMC_LIT2_data);
+#define _OMC_LIT2_data "DynLoad.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT2,10,_OMC_LIT2_data);
 #define _OMC_LIT2 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT2)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT3_6,1591169649.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT3_6,0.0);
 #define _OMC_LIT3_6 MMC_REFREALLIT(_OMC_LIT_STRUCT3_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT3,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT2,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(70)),MMC_IMMEDIATE(MMC_TAGFIXNUM(5)),MMC_IMMEDIATE(MMC_TAGFIXNUM(70)),MMC_IMMEDIATE(MMC_TAGFIXNUM(156)),_OMC_LIT3_6}};
 #define _OMC_LIT3 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT3)
@@ -55,15 +55,15 @@ DLLExport
 modelica_metatype omc_DynLoad_executeFunction(threadData_t *threadData, modelica_integer _handle, modelica_metatype _values, modelica_boolean _debug)
 {
 modelica_metatype _outVal = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 omc_StackOverflow_clearStacktraceMessages(threadData);
 _outVal = omc_DynLoad_executeFunction_executeFunction__internal(threadData, _handle, _values, _debug);
 if(omc_StackOverflow_hasStacktraceMessages(threadData))
 {
-tmpMeta[0] = stringAppend(_OMC_LIT0,stringDelimitList(omc_StackOverflow_readableStacktraceMessages(threadData), _OMC_LIT1));
-omc_Error_addInternalError(threadData, tmpMeta[0], _OMC_LIT3);
+tmpMeta1 = stringAppend(_OMC_LIT0,stringDelimitList(omc_StackOverflow_readableStacktraceMessages(threadData), _OMC_LIT1));
+omc_Error_addInternalError(threadData, tmpMeta1, _OMC_LIT3);
 }
 _return: OMC_LABEL_UNUSED
 return _outVal;

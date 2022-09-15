@@ -78,6 +78,11 @@ void omc_BaseHashTable_dumpHashTable(threadData_t *threadData, modelica_metatype
 static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTable,2,0) {(void*) boxptr_BaseHashTable_dumpHashTable,0}};
 #define boxvar_BaseHashTable_dumpHashTable MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTable)
 DLLExport
+modelica_metatype omc_BaseHashTable_getOrDefault(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable, modelica_metatype _default);
+#define boxptr_BaseHashTable_getOrDefault omc_BaseHashTable_getOrDefault
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_getOrDefault,2,0) {(void*) boxptr_BaseHashTable_getOrDefault,0}};
+#define boxvar_BaseHashTable_getOrDefault MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_getOrDefault)
+DLLExport
 modelica_metatype omc_BaseHashTable_get(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable);
 #define boxptr_BaseHashTable_get omc_BaseHashTable_get
 static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_get,2,0) {(void*) boxptr_BaseHashTable_get,0}};

@@ -259,7 +259,6 @@ DLLExport
 modelica_metatype boxptr_Inst_instClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inStore, modelica_metatype _inMod, modelica_metatype _inPrefix, modelica_metatype _inClass, modelica_metatype _inInstDims, modelica_metatype _inImplicit, modelica_metatype _inCallingScope, modelica_metatype _inGraph, modelica_metatype _inSets, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outStore, modelica_metatype *out_outDae, modelica_metatype *out_outSets, modelica_metatype *out_outType, modelica_metatype *out_outState, modelica_metatype *out_optDerAttr, modelica_metatype *out_outGraph);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Inst_instClass,2,0) {(void*) boxptr_Inst_instClass,0}};
 #define boxvar_Inst_instClass MMC_REFSTRUCTLIT(boxvar_lit_Inst_instClass)
-#define boxptr_Inst_instClassInProgram omc_Inst_instClassInProgram
 #define boxptr_Inst_makeTopComponentPrefix omc_Inst_makeTopComponentPrefix
 DLLExport
 modelica_metatype omc_Inst_instantiatePartialClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inIH, modelica_metatype _inProgram, modelica_metatype _inPath, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outDAElist);
@@ -267,9 +266,9 @@ modelica_metatype omc_Inst_instantiatePartialClass(threadData_t *threadData, mod
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Inst_instantiatePartialClass,2,0) {(void*) boxptr_Inst_instantiatePartialClass,0}};
 #define boxvar_Inst_instantiatePartialClass MMC_REFSTRUCTLIT(boxvar_lit_Inst_instantiatePartialClass)
 DLLExport
-modelica_metatype omc_Inst_instantiateClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inIH, modelica_metatype _inProgram, modelica_metatype _inPath, modelica_boolean _doSCodeDep, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outDAElist);
+modelica_metatype omc_Inst_instantiateClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inIH, modelica_metatype _inProgram, modelica_metatype _inPath, modelica_boolean _doSCodeDep, modelica_boolean _relaxedFrontEnd, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outDAElist);
 DLLExport
-modelica_metatype boxptr_Inst_instantiateClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inIH, modelica_metatype _inProgram, modelica_metatype _inPath, modelica_metatype _doSCodeDep, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outDAElist);
+modelica_metatype boxptr_Inst_instantiateClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inIH, modelica_metatype _inProgram, modelica_metatype _inPath, modelica_metatype _doSCodeDep, modelica_metatype _relaxedFrontEnd, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outDAElist);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Inst_instantiateClass,2,0) {(void*) boxptr_Inst_instantiateClass,0}};
 #define boxvar_Inst_instantiateClass MMC_REFSTRUCTLIT(boxvar_lit_Inst_instantiateClass)
 #ifdef __cplusplus

@@ -23,6 +23,7 @@ void SystemImpl__fflush(void)
 {
 fflush(NULL);
 }
+#include "Error.h"
 #include "System.h"
 #ifdef __cplusplus
 }

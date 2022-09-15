@@ -18,7 +18,6 @@ extern "C" {
 #include "InstUtil.h"
 #include "List.h"
 #include "Lookup.h"
-#include "ModelicaExternalC.h"
 #include "Mutable.h"
 #include "Print.h"
 #include "SCodeUtil.h"

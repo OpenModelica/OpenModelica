@@ -9,6 +9,21 @@
 extern "C" {
 #endif
 DLLExport
+modelica_metatype omc_Pointer_applyMapFold(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fmutable, modelica_fnptr _func, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_Pointer_applyMapFold omc_Pointer_applyMapFold
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Pointer_applyMapFold,2,0) {(void*) boxptr_Pointer_applyMapFold,0}};
+#define boxvar_Pointer_applyMapFold MMC_REFSTRUCTLIT(boxvar_lit_Pointer_applyMapFold)
+DLLExport
+modelica_metatype omc_Pointer_applyFold(threadData_t *threadData, modelica_metatype _mutable, modelica_fnptr _func);
+#define boxptr_Pointer_applyFold omc_Pointer_applyFold
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Pointer_applyFold,2,0) {(void*) boxptr_Pointer_applyFold,0}};
+#define boxvar_Pointer_applyFold MMC_REFSTRUCTLIT(boxvar_lit_Pointer_applyFold)
+DLLExport
+modelica_metatype omc_Pointer_apply(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fmutable, modelica_fnptr _func);
+#define boxptr_Pointer_apply omc_Pointer_apply
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Pointer_apply,2,0) {(void*) boxptr_Pointer_apply,0}};
+#define boxvar_Pointer_apply MMC_REFSTRUCTLIT(boxvar_lit_Pointer_apply)
+DLLExport
 modelica_metatype omc_Pointer_access(threadData_t *threadData, modelica_metatype _mutable);
 #define boxptr_Pointer_access omc_Pointer_access
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Pointer_access,2,0) {(void*) boxptr_Pointer_access,0}};

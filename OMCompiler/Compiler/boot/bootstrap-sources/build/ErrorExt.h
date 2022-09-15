@@ -137,6 +137,13 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ErrorExt_getNumMessages,2,0) {(void*) b
 #define boxvar_ErrorExt_getNumMessages MMC_REFSTRUCTLIT(boxvar_lit_ErrorExt_getNumMessages)
 extern int Error_getNumMessages(OpenModelica_threadData_ThreadData*);
 DLLExport
+modelica_string omc_ErrorExt_printCheckpointMessagesStr(threadData_t *threadData, modelica_boolean _warningsAsErrors);
+DLLExport
+modelica_metatype boxptr_ErrorExt_printCheckpointMessagesStr(threadData_t *threadData, modelica_metatype _warningsAsErrors);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ErrorExt_printCheckpointMessagesStr,2,0) {(void*) boxptr_ErrorExt_printCheckpointMessagesStr,0}};
+#define boxvar_ErrorExt_printCheckpointMessagesStr MMC_REFSTRUCTLIT(boxvar_lit_ErrorExt_printCheckpointMessagesStr)
+extern const char* Error_printCheckpointMessagesStr(OpenModelica_threadData_ThreadData*, int /*_warningsAsErrors*/);
+DLLExport
 modelica_string omc_ErrorExt_printMessagesStr(threadData_t *threadData, modelica_boolean _warningsAsErrors);
 DLLExport
 modelica_metatype boxptr_ErrorExt_printMessagesStr(threadData_t *threadData, modelica_metatype _warningsAsErrors);

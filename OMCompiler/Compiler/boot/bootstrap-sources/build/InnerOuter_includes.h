@@ -8,11 +8,8 @@ extern "C" {
 #include "ConnectUtil.h"
 #include "DAEUtil.h"
 #include "Debug.h"
-#include "Dump.h"
-#include "ElementSource.h"
 #include "Error.h"
 #include "ErrorExt.h"
-#include "Expression.h"
 #include "FCore.h"
 #include "FGraph.h"
 #include "FNode.h"
@@ -24,9 +21,6 @@ extern "C" {
 #include "Lookup.h"
 #include "Mod.h"
 #include "PrefixUtil.h"
-#include "System.h"
-#include "Util.h"
-#include "VarTransform.h"
 #ifdef __cplusplus
 }
 #endif

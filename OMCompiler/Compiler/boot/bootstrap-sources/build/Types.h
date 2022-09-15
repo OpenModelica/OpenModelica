@@ -105,6 +105,11 @@ extern struct record_description Values_Value_RECORD__desc;
 extern struct record_description Values_Value_STRING__desc;
 extern struct record_description Values_Value_TUPLE__desc;
 DLLExport
+modelica_metatype omc_Types_getBasicType(threadData_t *threadData, modelica_metatype _ty);
+#define boxptr_Types_getBasicType omc_Types_getBasicType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_getBasicType,2,0) {(void*) boxptr_Types_getBasicType,0}};
+#define boxvar_Types_getBasicType MMC_REFSTRUCTLIT(boxvar_lit_Types_getBasicType)
+DLLExport
 modelica_boolean omc_Types_isExpandableConnector(threadData_t *threadData, modelica_metatype _ty);
 DLLExport
 modelica_metatype boxptr_Types_isExpandableConnector(threadData_t *threadData, modelica_metatype _ty);
@@ -1009,6 +1014,12 @@ modelica_metatype omc_Types_makeEnumerationType(threadData_t *threadData, modeli
 #define boxptr_Types_makeEnumerationType omc_Types_makeEnumerationType
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_makeEnumerationType,2,0) {(void*) boxptr_Types_makeEnumerationType,0}};
 #define boxvar_Types_makeEnumerationType MMC_REFSTRUCTLIT(boxvar_lit_Types_makeEnumerationType)
+DLLExport
+modelica_metatype omc_Types_getNthEnumLiteral(threadData_t *threadData, modelica_metatype _ty, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_Types_getNthEnumLiteral(threadData_t *threadData, modelica_metatype _ty, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_getNthEnumLiteral,2,0) {(void*) boxptr_Types_getNthEnumLiteral,0}};
+#define boxvar_Types_getNthEnumLiteral MMC_REFSTRUCTLIT(boxvar_lit_Types_getNthEnumLiteral)
 #define boxptr_Types_makeElementReturnTypeSingle omc_Types_makeElementReturnTypeSingle
 #define boxptr_Types_makeElementReturnType omc_Types_makeElementReturnType
 DLLExport
@@ -1405,6 +1416,12 @@ modelica_metatype boxptr_Types_isClockOrSubTypeClock(threadData_t *threadData, m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_isClockOrSubTypeClock,2,0) {(void*) boxptr_Types_isClockOrSubTypeClock,0}};
 #define boxvar_Types_isClockOrSubTypeClock MMC_REFSTRUCTLIT(boxvar_lit_Types_isClockOrSubTypeClock)
 DLLExport
+modelica_boolean omc_Types_isEnumerationOrSubTypeEnumeration(threadData_t *threadData, modelica_metatype _inType);
+DLLExport
+modelica_metatype boxptr_Types_isEnumerationOrSubTypeEnumeration(threadData_t *threadData, modelica_metatype _inType);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_isEnumerationOrSubTypeEnumeration,2,0) {(void*) boxptr_Types_isEnumerationOrSubTypeEnumeration,0}};
+#define boxvar_Types_isEnumerationOrSubTypeEnumeration MMC_REFSTRUCTLIT(boxvar_lit_Types_isEnumerationOrSubTypeEnumeration)
+DLLExport
 modelica_boolean omc_Types_isIntegerOrSubTypeInteger(threadData_t *threadData, modelica_metatype _inType);
 DLLExport
 modelica_metatype boxptr_Types_isIntegerOrSubTypeInteger(threadData_t *threadData, modelica_metatype _inType);
@@ -1455,6 +1472,12 @@ modelica_metatype omc_Types_getRecordPath(threadData_t *threadData, modelica_met
 #define boxptr_Types_getRecordPath omc_Types_getRecordPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_getRecordPath,2,0) {(void*) boxptr_Types_getRecordPath,0}};
 #define boxvar_Types_getRecordPath MMC_REFSTRUCTLIT(boxvar_lit_Types_getRecordPath)
+DLLExport
+modelica_boolean omc_Types_recordHasConstVar(threadData_t *threadData, modelica_metatype _ty);
+DLLExport
+modelica_metatype boxptr_Types_recordHasConstVar(threadData_t *threadData, modelica_metatype _ty);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_recordHasConstVar,2,0) {(void*) boxptr_Types_recordHasConstVar,0}};
+#define boxvar_Types_recordHasConstVar MMC_REFSTRUCTLIT(boxvar_lit_Types_recordHasConstVar)
 DLLExport
 modelica_boolean omc_Types_isRecord(threadData_t *threadData, modelica_metatype _tp);
 DLLExport

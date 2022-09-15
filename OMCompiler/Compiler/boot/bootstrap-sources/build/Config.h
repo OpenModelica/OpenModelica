@@ -115,8 +115,9 @@ modelica_metatype boxptr_Config_versionStringToStd(threadData_t *threadData, mod
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Config_versionStringToStd,2,0) {(void*) boxptr_Config_versionStringToStd,0}};
 #define boxvar_Config_versionStringToStd MMC_REFSTRUCTLIT(boxvar_lit_Config_versionStringToStd)
 DLLExport
-void omc_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_string _inLibraryName);
-#define boxptr_Config_setLanguageStandardFromMSL omc_Config_setLanguageStandardFromMSL
+void omc_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_string _inLibraryName, modelica_boolean _force);
+DLLExport
+void boxptr_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_metatype _inLibraryName, modelica_metatype _force);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Config_setLanguageStandardFromMSL,2,0) {(void*) boxptr_Config_setLanguageStandardFromMSL,0}};
 #define boxvar_Config_setLanguageStandardFromMSL MMC_REFSTRUCTLIT(boxvar_lit_Config_setLanguageStandardFromMSL)
 DLLExport
@@ -405,6 +406,12 @@ modelica_string omc_Config_simulationCodeTarget(threadData_t *threadData);
 #define boxptr_Config_simulationCodeTarget omc_Config_simulationCodeTarget
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Config_simulationCodeTarget,2,0) {(void*) boxptr_Config_simulationCodeTarget,0}};
 #define boxvar_Config_simulationCodeTarget MMC_REFSTRUCTLIT(boxvar_lit_Config_simulationCodeTarget)
+DLLExport
+modelica_boolean omc_Config_simulation(threadData_t *threadData);
+DLLExport
+modelica_metatype boxptr_Config_simulation(threadData_t *threadData);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Config_simulation,2,0) {(void*) boxptr_Config_simulation,0}};
+#define boxvar_Config_simulation MMC_REFSTRUCTLIT(boxvar_lit_Config_simulation)
 DLLExport
 modelica_boolean omc_Config_simulationCg(threadData_t *threadData);
 DLLExport

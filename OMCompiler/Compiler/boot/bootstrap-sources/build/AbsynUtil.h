@@ -17,17 +17,10 @@ extern struct record_description Absyn_Algorithm_ALG__PARFOR__desc;
 extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
 extern struct record_description Absyn_Algorithm_ALG__WHEN__A__desc;
 extern struct record_description Absyn_Algorithm_ALG__WHILE__desc;
-extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEM__desc;
 extern struct record_description Absyn_Annotation_ANNOTATION__desc;
 extern struct record_description Absyn_Case_CASE__desc;
 extern struct record_description Absyn_Case_ELSE__desc;
-extern struct record_description Absyn_Class_CLASS__desc;
-extern struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc;
-extern struct record_description Absyn_ClassDef_DERIVED__desc;
-extern struct record_description Absyn_ClassDef_ENUMERATION__desc;
-extern struct record_description Absyn_ClassDef_OVERLOAD__desc;
 extern struct record_description Absyn_ClassDef_PARTS__desc;
-extern struct record_description Absyn_ClassDef_PDER__desc;
 extern struct record_description Absyn_ClassPart_ALGORITHMS__desc;
 extern struct record_description Absyn_ClassPart_EQUATIONS__desc;
 extern struct record_description Absyn_ClassPart_PROTECTED__desc;
@@ -38,8 +31,11 @@ extern struct record_description Absyn_ComponentRef_CREF__IDENT__desc;
 extern struct record_description Absyn_ComponentRef_CREF__QUAL__desc;
 extern struct record_description Absyn_Direction_BIDIR__desc;
 extern struct record_description Absyn_Element_ELEMENT__desc;
+extern struct record_description Absyn_ElementArg_MODIFICATION__desc;
 extern struct record_description Absyn_ElementItem_ELEMENTITEM__desc;
 extern struct record_description Absyn_ElementSpec_CLASSDEF__desc;
+extern struct record_description Absyn_EqMod_EQMOD__desc;
+extern struct record_description Absyn_EqMod_NOMOD__desc;
 extern struct record_description Absyn_Equation_EQ__CONNECT__desc;
 extern struct record_description Absyn_Equation_EQ__EQUALS__desc;
 extern struct record_description Absyn_Equation_EQ__FAILURE__desc;
@@ -48,7 +44,6 @@ extern struct record_description Absyn_Equation_EQ__IF__desc;
 extern struct record_description Absyn_Equation_EQ__NORETCALL__desc;
 extern struct record_description Absyn_Equation_EQ__PDE__desc;
 extern struct record_description Absyn_Equation_EQ__WHEN__E__desc;
-extern struct record_description Absyn_EquationItem_EQUATIONITEM__desc;
 extern struct record_description Absyn_Exp_ARRAY__desc;
 extern struct record_description Absyn_Exp_AS__desc;
 extern struct record_description Absyn_Exp_BINARY__desc;
@@ -56,7 +51,9 @@ extern struct record_description Absyn_Exp_CALL__desc;
 extern struct record_description Absyn_Exp_CONS__desc;
 extern struct record_description Absyn_Exp_CREF__desc;
 extern struct record_description Absyn_Exp_DOT__desc;
+extern struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
 extern struct record_description Absyn_Exp_IFEXP__desc;
+extern struct record_description Absyn_Exp_INTEGER__desc;
 extern struct record_description Absyn_Exp_LBINARY__desc;
 extern struct record_description Absyn_Exp_LIST__desc;
 extern struct record_description Absyn_Exp_LUNARY__desc;
@@ -65,6 +62,7 @@ extern struct record_description Absyn_Exp_MATRIX__desc;
 extern struct record_description Absyn_Exp_PARTEVALFUNCTION__desc;
 extern struct record_description Absyn_Exp_RANGE__desc;
 extern struct record_description Absyn_Exp_RELATION__desc;
+extern struct record_description Absyn_Exp_STRING__desc;
 extern struct record_description Absyn_Exp_TUPLE__desc;
 extern struct record_description Absyn_Exp_UNARY__desc;
 extern struct record_description Absyn_ForIterator_ITERATOR__desc;
@@ -78,7 +76,6 @@ extern struct record_description Absyn_NamedArg_NAMEDARG__desc;
 extern struct record_description Absyn_Path_FULLYQUALIFIED__desc;
 extern struct record_description Absyn_Path_IDENT__desc;
 extern struct record_description Absyn_Path_QUALIFIED__desc;
-extern struct record_description Absyn_Restriction_R__FUNCTION__desc;
 extern struct record_description Absyn_Subscript_SUBSCRIPT__desc;
 extern struct record_description Absyn_TypeSpec_TPATH__desc;
 extern struct record_description ErrorTypes_Message_MESSAGE__desc;
@@ -86,6 +83,90 @@ extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
 extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_metatype omc_AbsynUtil_mapSubscriptExp(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fsub, modelica_fnptr _func);
+#define boxptr_AbsynUtil_mapSubscriptExp omc_AbsynUtil_mapSubscriptExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_mapSubscriptExp,2,0) {(void*) boxptr_AbsynUtil_mapSubscriptExp,0}};
+#define boxvar_AbsynUtil_mapSubscriptExp MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_mapSubscriptExp)
+DLLExport
+modelica_metatype omc_AbsynUtil_mapCrefExps(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_fnptr _func);
+#define boxptr_AbsynUtil_mapCrefExps omc_AbsynUtil_mapCrefExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_mapCrefExps,2,0) {(void*) boxptr_AbsynUtil_mapCrefExps,0}};
+#define boxvar_AbsynUtil_mapCrefExps MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_mapCrefExps)
+DLLExport
+modelica_metatype omc_AbsynUtil_createChoiceArray(threadData_t *threadData, modelica_metatype _inChoices);
+#define boxptr_AbsynUtil_createChoiceArray omc_AbsynUtil_createChoiceArray
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_createChoiceArray,2,0) {(void*) boxptr_AbsynUtil_createChoiceArray,0}};
+#define boxvar_AbsynUtil_createChoiceArray MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_createChoiceArray)
+DLLExport
+modelica_metatype omc_AbsynUtil_mapAnnotationBindingInEqMod(threadData_t *threadData, modelica_metatype __omcQ_24in_5FeqMod, modelica_fnptr _func);
+#define boxptr_AbsynUtil_mapAnnotationBindingInEqMod omc_AbsynUtil_mapAnnotationBindingInEqMod
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBindingInEqMod,2,0) {(void*) boxptr_AbsynUtil_mapAnnotationBindingInEqMod,0}};
+#define boxvar_AbsynUtil_mapAnnotationBindingInEqMod MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBindingInEqMod)
+DLLExport
+modelica_metatype omc_AbsynUtil_mapAnnotationBindingInArg(threadData_t *threadData, modelica_metatype __omcQ_24in_5Farg, modelica_metatype _path, modelica_fnptr _func, modelica_boolean *out_found);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_mapAnnotationBindingInArg(threadData_t *threadData, modelica_metatype __omcQ_24in_5Farg, modelica_metatype _path, modelica_fnptr _func, modelica_metatype *out_found);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBindingInArg,2,0) {(void*) boxptr_AbsynUtil_mapAnnotationBindingInArg,0}};
+#define boxvar_AbsynUtil_mapAnnotationBindingInArg MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBindingInArg)
+DLLExport
+modelica_metatype omc_AbsynUtil_mapAnnotationBinding(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fann, modelica_metatype _path, modelica_fnptr _func, modelica_boolean *out_found);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_mapAnnotationBinding(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fann, modelica_metatype _path, modelica_fnptr _func, modelica_metatype *out_found);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBinding,2,0) {(void*) boxptr_AbsynUtil_mapAnnotationBinding,0}};
+#define boxvar_AbsynUtil_mapAnnotationBinding MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_mapAnnotationBinding)
+DLLExport
+modelica_metatype omc_AbsynUtil_setCommentAnnotation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcomment, modelica_metatype _ann);
+#define boxptr_AbsynUtil_setCommentAnnotation omc_AbsynUtil_setCommentAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_setCommentAnnotation,2,0) {(void*) boxptr_AbsynUtil_setCommentAnnotation,0}};
+#define boxvar_AbsynUtil_setCommentAnnotation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_setCommentAnnotation)
+DLLExport
+modelica_metatype omc_AbsynUtil_setClassDefAnnotation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcdef, modelica_metatype _ann);
+#define boxptr_AbsynUtil_setClassDefAnnotation omc_AbsynUtil_setClassDefAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassDefAnnotation,2,0) {(void*) boxptr_AbsynUtil_setClassDefAnnotation,0}};
+#define boxvar_AbsynUtil_setClassDefAnnotation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassDefAnnotation)
+DLLExport
+modelica_metatype omc_AbsynUtil_setClassAnnotation(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcls, modelica_metatype _ann);
+#define boxptr_AbsynUtil_setClassAnnotation omc_AbsynUtil_setClassAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassAnnotation,2,0) {(void*) boxptr_AbsynUtil_setClassAnnotation,0}};
+#define boxvar_AbsynUtil_setClassAnnotation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassAnnotation)
+DLLExport
+modelica_metatype omc_AbsynUtil_getClassDefAnnotation(threadData_t *threadData, modelica_metatype _cdef);
+#define boxptr_AbsynUtil_getClassDefAnnotation omc_AbsynUtil_getClassDefAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassDefAnnotation,2,0) {(void*) boxptr_AbsynUtil_getClassDefAnnotation,0}};
+#define boxvar_AbsynUtil_getClassDefAnnotation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassDefAnnotation)
+DLLExport
+modelica_metatype omc_AbsynUtil_getClassAnnotation(threadData_t *threadData, modelica_metatype _cls);
+#define boxptr_AbsynUtil_getClassAnnotation omc_AbsynUtil_getClassAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassAnnotation,2,0) {(void*) boxptr_AbsynUtil_getClassAnnotation,0}};
+#define boxvar_AbsynUtil_getClassAnnotation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassAnnotation)
+DLLExport
+modelica_boolean omc_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _path, modelica_string _name);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _path, modelica_metatype _name);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains,2,0) {(void*) boxptr_AbsynUtil_pathContains,0}};
+#define boxvar_AbsynUtil_pathContains MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains)
+DLLExport
+modelica_metatype omc_AbsynUtil_pathReplaceFirst(threadData_t *threadData, modelica_metatype _path, modelica_metatype _prefix);
+#define boxptr_AbsynUtil_pathReplaceFirst omc_AbsynUtil_pathReplaceFirst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirst,2,0) {(void*) boxptr_AbsynUtil_pathReplaceFirst,0}};
+#define boxvar_AbsynUtil_pathReplaceFirst MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirst)
+DLLExport
+modelica_metatype omc_AbsynUtil_setClassCommentsAfterEnd(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl, modelica_metatype _comments);
+#define boxptr_AbsynUtil_setClassCommentsAfterEnd omc_AbsynUtil_setClassCommentsAfterEnd
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassCommentsAfterEnd,2,0) {(void*) boxptr_AbsynUtil_setClassCommentsAfterEnd,0}};
+#define boxvar_AbsynUtil_setClassCommentsAfterEnd MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassCommentsAfterEnd)
+DLLExport
+modelica_metatype omc_AbsynUtil_makeCall(threadData_t *threadData, modelica_metatype _name, modelica_metatype _posArgs, modelica_metatype _namedArgs);
+#define boxptr_AbsynUtil_makeCall omc_AbsynUtil_makeCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_makeCall,2,0) {(void*) boxptr_AbsynUtil_makeCall,0}};
+#define boxvar_AbsynUtil_makeCall MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_makeCall)
+DLLExport
+modelica_boolean omc_AbsynUtil_crefIsWild(threadData_t *threadData, modelica_metatype _cref);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_crefIsWild(threadData_t *threadData, modelica_metatype _cref);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsWild,2,0) {(void*) boxptr_AbsynUtil_crefIsWild,0}};
+#define boxvar_AbsynUtil_crefIsWild MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsWild)
 DLLExport
 modelica_boolean omc_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass);
 DLLExport
@@ -226,6 +307,12 @@ modelica_metatype omc_AbsynUtil_crefExplode(threadData_t *threadData, modelica_m
 #define boxptr_AbsynUtil_crefExplode omc_AbsynUtil_crefExplode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefExplode,2,0) {(void*) boxptr_AbsynUtil_crefExplode,0}};
 #define boxvar_AbsynUtil_crefExplode MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefExplode)
+DLLExport
+modelica_metatype omc_AbsynUtil_makeIntegerSubscript(threadData_t *threadData, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_makeIntegerSubscript(threadData_t *threadData, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_makeIntegerSubscript,2,0) {(void*) boxptr_AbsynUtil_makeIntegerSubscript,0}};
+#define boxvar_AbsynUtil_makeIntegerSubscript MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_makeIntegerSubscript)
 DLLExport
 modelica_metatype omc_AbsynUtil_makeSubscript(threadData_t *threadData, modelica_metatype _inExp);
 #define boxptr_AbsynUtil_makeSubscript omc_AbsynUtil_makeSubscript
@@ -409,11 +496,6 @@ modelica_metatype boxptr_AbsynUtil_expContainsInitial(threadData_t *threadData, 
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_expContainsInitial,2,0) {(void*) boxptr_AbsynUtil_expContainsInitial,0}};
 #define boxvar_AbsynUtil_expContainsInitial MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_expContainsInitial)
 DLLExport
-modelica_metatype omc_AbsynUtil_pathSetLastIdent(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _inLastIdent);
-#define boxptr_AbsynUtil_pathSetLastIdent omc_AbsynUtil_pathSetLastIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetLastIdent,0}};
-#define boxvar_AbsynUtil_pathSetLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent)
-DLLExport
 modelica_string omc_AbsynUtil_componentName(threadData_t *threadData, modelica_metatype _c);
 #define boxptr_AbsynUtil_componentName omc_AbsynUtil_componentName
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_componentName,2,0) {(void*) boxptr_AbsynUtil_componentName,0}};
@@ -430,25 +512,31 @@ modelica_metatype boxptr_AbsynUtil_isParts(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_isParts,2,0) {(void*) boxptr_AbsynUtil_isParts,0}};
 #define boxvar_AbsynUtil_isParts MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_isParts)
 DLLExport
+modelica_boolean omc_AbsynUtil_isExternalPart(threadData_t *threadData, modelica_metatype _inClassPart);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_isExternalPart(threadData_t *threadData, modelica_metatype _inClassPart);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_isExternalPart,2,0) {(void*) boxptr_AbsynUtil_isExternalPart,0}};
+#define boxvar_AbsynUtil_isExternalPart MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_isExternalPart)
+DLLExport
 modelica_metatype omc_AbsynUtil_getExternalDecl(threadData_t *threadData, modelica_metatype _inCls);
 #define boxptr_AbsynUtil_getExternalDecl omc_AbsynUtil_getExternalDecl
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getExternalDecl,2,0) {(void*) boxptr_AbsynUtil_getExternalDecl,0}};
 #define boxvar_AbsynUtil_getExternalDecl MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getExternalDecl)
 #define boxptr_AbsynUtil_filterNestedClassesParts omc_AbsynUtil_filterNestedClassesParts
 DLLExport
-modelica_metatype omc_AbsynUtil_filterNestedClasses(threadData_t *threadData, modelica_metatype _cl);
+modelica_metatype omc_AbsynUtil_filterNestedClasses(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl);
 #define boxptr_AbsynUtil_filterNestedClasses omc_AbsynUtil_filterNestedClasses
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_filterNestedClasses,2,0) {(void*) boxptr_AbsynUtil_filterNestedClasses,0}};
 #define boxvar_AbsynUtil_filterNestedClasses MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_filterNestedClasses)
 #define boxptr_AbsynUtil_getFunctionInterfaceParts omc_AbsynUtil_getFunctionInterfaceParts
 DLLExport
-modelica_metatype omc_AbsynUtil_getFunctionInterface(threadData_t *threadData, modelica_metatype _cl);
+modelica_metatype omc_AbsynUtil_getFunctionInterface(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl);
 #define boxptr_AbsynUtil_getFunctionInterface omc_AbsynUtil_getFunctionInterface
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getFunctionInterface,2,0) {(void*) boxptr_AbsynUtil_getFunctionInterface,0}};
 #define boxvar_AbsynUtil_getFunctionInterface MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getFunctionInterface)
 #define boxptr_AbsynUtil_stripClassDefComment omc_AbsynUtil_stripClassDefComment
 DLLExport
-modelica_metatype omc_AbsynUtil_getShortClass(threadData_t *threadData, modelica_metatype _cl);
+modelica_metatype omc_AbsynUtil_getShortClass(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl);
 #define boxptr_AbsynUtil_getShortClass omc_AbsynUtil_getShortClass
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getShortClass,2,0) {(void*) boxptr_AbsynUtil_getShortClass,0}};
 #define boxvar_AbsynUtil_getShortClass MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getShortClass)
@@ -709,11 +797,6 @@ modelica_string omc_AbsynUtil_getFileNameFromInfo(threadData_t *threadData, mode
 #define boxptr_AbsynUtil_getFileNameFromInfo omc_AbsynUtil_getFileNameFromInfo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getFileNameFromInfo,2,0) {(void*) boxptr_AbsynUtil_getFileNameFromInfo,0}};
 #define boxvar_AbsynUtil_getFileNameFromInfo MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getFileNameFromInfo)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathReplaceIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _last);
-#define boxptr_AbsynUtil_pathReplaceIdent omc_AbsynUtil_pathReplaceIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceIdent,2,0) {(void*) boxptr_AbsynUtil_pathReplaceIdent,0}};
-#define boxvar_AbsynUtil_pathReplaceIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceIdent)
 #define boxptr_AbsynUtil_getIteratorIndexedCrefs omc_AbsynUtil_getIteratorIndexedCrefs
 #define boxptr_AbsynUtil_findIteratorIndexedCrefs__traverser omc_AbsynUtil_findIteratorIndexedCrefs__traverser
 DLLExport
@@ -726,12 +809,6 @@ modelica_string omc_AbsynUtil_getClassName(threadData_t *threadData, modelica_me
 #define boxptr_AbsynUtil_getClassName omc_AbsynUtil_getClassName
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassName,2,0) {(void*) boxptr_AbsynUtil_getClassName,0}};
 #define boxvar_AbsynUtil_getClassName MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getClassName)
-DLLExport
-modelica_boolean omc_AbsynUtil_eachEqual(threadData_t *threadData, modelica_metatype _each1, modelica_metatype _each2);
-DLLExport
-modelica_metatype boxptr_AbsynUtil_eachEqual(threadData_t *threadData, modelica_metatype _each1, modelica_metatype _each2);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_eachEqual,2,0) {(void*) boxptr_AbsynUtil_eachEqual,0}};
-#define boxvar_AbsynUtil_eachEqual MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_eachEqual)
 DLLExport
 modelica_boolean omc_AbsynUtil_expEqual(threadData_t *threadData, modelica_metatype _exp1, modelica_metatype _exp2);
 DLLExport
@@ -775,9 +852,9 @@ modelica_metatype boxptr_AbsynUtil_crefFirstEqual(threadData_t *threadData, mode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstEqual,2,0) {(void*) boxptr_AbsynUtil_crefFirstEqual,0}};
 #define boxvar_AbsynUtil_crefFirstEqual MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstEqual)
 DLLExport
-modelica_boolean omc_AbsynUtil_crefEqual(threadData_t *threadData, modelica_metatype _iCr1, modelica_metatype _iCr2);
+modelica_boolean omc_AbsynUtil_crefEqual(threadData_t *threadData, modelica_metatype _cref1, modelica_metatype _cref2);
 DLLExport
-modelica_metatype boxptr_AbsynUtil_crefEqual(threadData_t *threadData, modelica_metatype _iCr1, modelica_metatype _iCr2);
+modelica_metatype boxptr_AbsynUtil_crefEqual(threadData_t *threadData, modelica_metatype _cref1, modelica_metatype _cref2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefEqual,2,0) {(void*) boxptr_AbsynUtil_crefEqual,0}};
 #define boxvar_AbsynUtil_crefEqual MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefEqual)
 DLLExport
@@ -837,6 +914,11 @@ modelica_string omc_AbsynUtil_crefSecondIdent(threadData_t *threadData, modelica
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSecondIdent,2,0) {(void*) boxptr_AbsynUtil_crefSecondIdent,0}};
 #define boxvar_AbsynUtil_crefSecondIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSecondIdent)
 DLLExport
+modelica_metatype omc_AbsynUtil_crefSetFirstIdent(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_string _ident);
+#define boxptr_AbsynUtil_crefSetFirstIdent omc_AbsynUtil_crefSetFirstIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstIdent,2,0) {(void*) boxptr_AbsynUtil_crefSetFirstIdent,0}};
+#define boxvar_AbsynUtil_crefSetFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstIdent)
+DLLExport
 modelica_string omc_AbsynUtil_crefFirstIdent(threadData_t *threadData, modelica_metatype _inCref);
 #define boxptr_AbsynUtil_crefFirstIdent omc_AbsynUtil_crefFirstIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstIdent,2,0) {(void*) boxptr_AbsynUtil_crefFirstIdent,0}};
@@ -847,7 +929,7 @@ modelica_metatype omc_AbsynUtil_joinCrefs(threadData_t *threadData, modelica_met
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_joinCrefs,2,0) {(void*) boxptr_AbsynUtil_joinCrefs,0}};
 #define boxvar_AbsynUtil_joinCrefs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_joinCrefs)
 DLLExport
-modelica_metatype omc_AbsynUtil_crefStripLastSubs(threadData_t *threadData, modelica_metatype _inComponentRef);
+modelica_metatype omc_AbsynUtil_crefStripLastSubs(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref);
 #define boxptr_AbsynUtil_crefStripLastSubs omc_AbsynUtil_crefStripLastSubs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefStripLastSubs,0}};
 #define boxvar_AbsynUtil_crefStripLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLastSubs)
@@ -857,10 +939,21 @@ modelica_metatype omc_AbsynUtil_crefGetLastSubs(threadData_t *threadData, modeli
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefGetLastSubs,0}};
 #define boxvar_AbsynUtil_crefGetLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastSubs)
 DLLExport
-modelica_metatype omc_AbsynUtil_crefGetLastIdent(threadData_t *threadData, modelica_metatype _inComponentRef);
+modelica_string omc_AbsynUtil_crefGetLastIdent(threadData_t *threadData, modelica_metatype _cref);
 #define boxptr_AbsynUtil_crefGetLastIdent omc_AbsynUtil_crefGetLastIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastIdent,2,0) {(void*) boxptr_AbsynUtil_crefGetLastIdent,0}};
 #define boxvar_AbsynUtil_crefGetLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastIdent)
+#define boxptr_AbsynUtil_stripCommentExpressionsHelper omc_AbsynUtil_stripCommentExpressionsHelper
+DLLExport
+modelica_metatype omc_AbsynUtil_stripCommentExpressions(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fexp);
+#define boxptr_AbsynUtil_stripCommentExpressions omc_AbsynUtil_stripCommentExpressions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_stripCommentExpressions,2,0) {(void*) boxptr_AbsynUtil_stripCommentExpressions,0}};
+#define boxvar_AbsynUtil_stripCommentExpressions MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_stripCommentExpressions)
+DLLExport
+modelica_string omc_AbsynUtil_getString(threadData_t *threadData, modelica_metatype _exp);
+#define boxptr_AbsynUtil_getString omc_AbsynUtil_getString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getString,2,0) {(void*) boxptr_AbsynUtil_getString,0}};
+#define boxvar_AbsynUtil_getString MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getString)
 DLLExport
 modelica_metatype omc_AbsynUtil_getSubsFromCref(threadData_t *threadData, modelica_metatype _cr, modelica_boolean _includeSubs, modelica_boolean _includeFunctions);
 DLLExport
@@ -874,15 +967,25 @@ modelica_metatype boxptr_AbsynUtil_crefHasSubscripts(threadData_t *threadData, m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefHasSubscripts,2,0) {(void*) boxptr_AbsynUtil_crefHasSubscripts,0}};
 #define boxvar_AbsynUtil_crefHasSubscripts MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefHasSubscripts)
 DLLExport
-modelica_metatype omc_AbsynUtil_crefSetLastSubs(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inSubscripts);
+modelica_metatype omc_AbsynUtil_crefSetLastSubs(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_metatype _inSubscripts);
 #define boxptr_AbsynUtil_crefSetLastSubs omc_AbsynUtil_crefSetLastSubs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefSetLastSubs,0}};
 #define boxvar_AbsynUtil_crefSetLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetLastSubs)
 DLLExport
-modelica_metatype omc_AbsynUtil_crefLastSubs(threadData_t *threadData, modelica_metatype _inComponentRef);
+modelica_metatype omc_AbsynUtil_crefSetFirstSubs(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_metatype _subscripts);
+#define boxptr_AbsynUtil_crefSetFirstSubs omc_AbsynUtil_crefSetFirstSubs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstSubs,2,0) {(void*) boxptr_AbsynUtil_crefSetFirstSubs,0}};
+#define boxvar_AbsynUtil_crefSetFirstSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstSubs)
+DLLExport
+modelica_metatype omc_AbsynUtil_crefLastSubs(threadData_t *threadData, modelica_metatype _cref);
 #define boxptr_AbsynUtil_crefLastSubs omc_AbsynUtil_crefLastSubs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefLastSubs,0}};
 #define boxvar_AbsynUtil_crefLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefLastSubs)
+DLLExport
+modelica_metatype omc_AbsynUtil_crefFirstSubs(threadData_t *threadData, modelica_metatype _cref);
+#define boxptr_AbsynUtil_crefFirstSubs omc_AbsynUtil_crefFirstSubs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstSubs,2,0) {(void*) boxptr_AbsynUtil_crefFirstSubs,0}};
+#define boxvar_AbsynUtil_crefFirstSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstSubs)
 DLLExport
 modelica_boolean omc_AbsynUtil_crefIsQual(threadData_t *threadData, modelica_metatype _inComponentRef);
 DLLExport
@@ -896,12 +999,12 @@ modelica_metatype boxptr_AbsynUtil_crefIsIdent(threadData_t *threadData, modelic
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsIdent,2,0) {(void*) boxptr_AbsynUtil_crefIsIdent,0}};
 #define boxvar_AbsynUtil_crefIsIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsIdent)
 DLLExport
-modelica_string omc_AbsynUtil_crefFirstIdentNoSubs(threadData_t *threadData, modelica_metatype _inCref);
+modelica_string omc_AbsynUtil_crefFirstIdentNoSubs(threadData_t *threadData, modelica_metatype _cref);
 #define boxptr_AbsynUtil_crefFirstIdentNoSubs omc_AbsynUtil_crefFirstIdentNoSubs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstIdentNoSubs,2,0) {(void*) boxptr_AbsynUtil_crefFirstIdentNoSubs,0}};
 #define boxvar_AbsynUtil_crefFirstIdentNoSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefFirstIdentNoSubs)
 DLLExport
-modelica_string omc_AbsynUtil_crefLastIdent(threadData_t *threadData, modelica_metatype _inComponentRef);
+modelica_string omc_AbsynUtil_crefLastIdent(threadData_t *threadData, modelica_metatype _cref);
 #define boxptr_AbsynUtil_crefLastIdent omc_AbsynUtil_crefLastIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefLastIdent,2,0) {(void*) boxptr_AbsynUtil_crefLastIdent,0}};
 #define boxvar_AbsynUtil_crefLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefLastIdent)
@@ -931,11 +1034,6 @@ modelica_metatype omc_AbsynUtil_crefToPath(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefToPath,2,0) {(void*) boxptr_AbsynUtil_crefToPath,0}};
 #define boxvar_AbsynUtil_crefToPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefToPath)
 DLLExport
-modelica_metatype omc_AbsynUtil_stripFirst(threadData_t *threadData, modelica_metatype _inPath);
-#define boxptr_AbsynUtil_stripFirst omc_AbsynUtil_stripFirst
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_stripFirst,2,0) {(void*) boxptr_AbsynUtil_stripFirst,0}};
-#define boxvar_AbsynUtil_stripFirst MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_stripFirst)
-DLLExport
 modelica_metatype omc_AbsynUtil_splitQualAndIdentPath(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype *out_outPath2);
 #define boxptr_AbsynUtil_splitQualAndIdentPath omc_AbsynUtil_splitQualAndIdentPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_splitQualAndIdentPath,2,0) {(void*) boxptr_AbsynUtil_splitQualAndIdentPath,0}};
@@ -946,25 +1044,10 @@ modelica_metatype omc_AbsynUtil_crefStripLast(threadData_t *threadData, modelica
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLast,2,0) {(void*) boxptr_AbsynUtil_crefStripLast,0}};
 #define boxvar_AbsynUtil_crefStripLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLast)
 DLLExport
-modelica_metatype omc_AbsynUtil_stripLastOpt(threadData_t *threadData, modelica_metatype _inPath);
-#define boxptr_AbsynUtil_stripLastOpt omc_AbsynUtil_stripLastOpt
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_stripLastOpt,2,0) {(void*) boxptr_AbsynUtil_stripLastOpt,0}};
-#define boxvar_AbsynUtil_stripLastOpt MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_stripLastOpt)
-DLLExport
 modelica_metatype omc_AbsynUtil_stripLast(threadData_t *threadData, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_stripLast omc_AbsynUtil_stripLast
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_stripLast,2,0) {(void*) boxptr_AbsynUtil_stripLast,0}};
 #define boxvar_AbsynUtil_stripLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_stripLast)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathAppendList(threadData_t *threadData, modelica_metatype _inPathLst);
-#define boxptr_AbsynUtil_pathAppendList omc_AbsynUtil_pathAppendList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathAppendList,2,0) {(void*) boxptr_AbsynUtil_pathAppendList,0}};
-#define boxvar_AbsynUtil_pathAppendList MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathAppendList)
-DLLExport
-modelica_metatype omc_AbsynUtil_selectPathsOpt(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
-#define boxptr_AbsynUtil_selectPathsOpt omc_AbsynUtil_selectPathsOpt
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_selectPathsOpt,2,0) {(void*) boxptr_AbsynUtil_selectPathsOpt,0}};
-#define boxvar_AbsynUtil_selectPathsOpt MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_selectPathsOpt)
 DLLExport
 modelica_metatype omc_AbsynUtil_joinPathsOptSuffix(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
 #define boxptr_AbsynUtil_joinPathsOptSuffix omc_AbsynUtil_joinPathsOptSuffix
@@ -981,7 +1064,7 @@ modelica_metatype omc_AbsynUtil_joinPaths(threadData_t *threadData, modelica_met
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_joinPaths,2,0) {(void*) boxptr_AbsynUtil_joinPaths,0}};
 #define boxvar_AbsynUtil_joinPaths MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_joinPaths)
 DLLExport
-modelica_metatype omc_AbsynUtil_getNamedFuncArgNamesAndValues(threadData_t *threadData, modelica_metatype _inNamedArgList, modelica_metatype *out_outExpList);
+modelica_metatype omc_AbsynUtil_getNamedFuncArgNamesAndValues(threadData_t *threadData, modelica_metatype _namedArgs, modelica_metatype *out_values);
 #define boxptr_AbsynUtil_getNamedFuncArgNamesAndValues omc_AbsynUtil_getNamedFuncArgNamesAndValues
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getNamedFuncArgNamesAndValues,2,0) {(void*) boxptr_AbsynUtil_getNamedFuncArgNamesAndValues,0}};
 #define boxvar_AbsynUtil_getNamedFuncArgNamesAndValues MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getNamedFuncArgNamesAndValues)
@@ -1019,28 +1102,6 @@ modelica_metatype boxptr_AbsynUtil_getCrefsFromSubs(threadData_t *threadData, mo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getCrefsFromSubs,2,0) {(void*) boxptr_AbsynUtil_getCrefsFromSubs,0}};
 #define boxvar_AbsynUtil_getCrefsFromSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getCrefsFromSubs)
 DLLExport
-modelica_metatype omc_AbsynUtil_pathContainedIn(threadData_t *threadData, modelica_metatype _subPath, modelica_metatype _path);
-#define boxptr_AbsynUtil_pathContainedIn omc_AbsynUtil_pathContainedIn
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainedIn,2,0) {(void*) boxptr_AbsynUtil_pathContainedIn,0}};
-#define boxvar_AbsynUtil_pathContainedIn MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainedIn)
-DLLExport
-modelica_boolean omc_AbsynUtil_pathContainsString(threadData_t *threadData, modelica_metatype _p1, modelica_string _str);
-DLLExport
-modelica_metatype boxptr_AbsynUtil_pathContainsString(threadData_t *threadData, modelica_metatype _p1, modelica_metatype _str);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsString,2,0) {(void*) boxptr_AbsynUtil_pathContainsString,0}};
-#define boxvar_AbsynUtil_pathContainsString MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsString)
-DLLExport
-modelica_boolean omc_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _fullPath, modelica_metatype _pathId);
-DLLExport
-modelica_metatype boxptr_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _fullPath, modelica_metatype _pathId);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains,2,0) {(void*) boxptr_AbsynUtil_pathContains,0}};
-#define boxvar_AbsynUtil_pathContains MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains)
-DLLExport
-modelica_metatype omc_AbsynUtil_crefRemovePrefix(threadData_t *threadData, modelica_metatype _prefixCr, modelica_metatype _cr);
-#define boxptr_AbsynUtil_crefRemovePrefix omc_AbsynUtil_crefRemovePrefix
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefRemovePrefix,2,0) {(void*) boxptr_AbsynUtil_crefRemovePrefix,0}};
-#define boxvar_AbsynUtil_crefRemovePrefix MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefRemovePrefix)
-DLLExport
 modelica_metatype omc_AbsynUtil_removePartialPrefix(threadData_t *threadData, modelica_metatype _inPrefix, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_removePartialPrefix omc_AbsynUtil_removePartialPrefix
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_removePartialPrefix,2,0) {(void*) boxptr_AbsynUtil_removePartialPrefix,0}};
@@ -1050,12 +1111,6 @@ modelica_metatype omc_AbsynUtil_removePrefix(threadData_t *threadData, modelica_
 #define boxptr_AbsynUtil_removePrefix omc_AbsynUtil_removePrefix
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_removePrefix,2,0) {(void*) boxptr_AbsynUtil_removePrefix,0}};
 #define boxvar_AbsynUtil_removePrefix MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_removePrefix)
-DLLExport
-modelica_boolean omc_AbsynUtil_crefPrefixOf(threadData_t *threadData, modelica_metatype _prefixCr, modelica_metatype _cr);
-DLLExport
-modelica_metatype boxptr_AbsynUtil_crefPrefixOf(threadData_t *threadData, modelica_metatype _prefixCr, modelica_metatype _cr);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefPrefixOf,2,0) {(void*) boxptr_AbsynUtil_crefPrefixOf,0}};
-#define boxvar_AbsynUtil_crefPrefixOf MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefPrefixOf)
 DLLExport
 modelica_boolean omc_AbsynUtil_pathPrefixOf(threadData_t *threadData, modelica_metatype _prefixPath, modelica_metatype _path);
 DLLExport
@@ -1068,15 +1123,15 @@ modelica_metatype omc_AbsynUtil_crefReplaceFirstIdent(threadData_t *threadData, 
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefReplaceFirstIdent,2,0) {(void*) boxptr_AbsynUtil_crefReplaceFirstIdent,0}};
 #define boxvar_AbsynUtil_crefReplaceFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefReplaceFirstIdent)
 DLLExport
+modelica_metatype omc_AbsynUtil_crefReplaceFirst(threadData_t *threadData, modelica_metatype _cref, modelica_metatype _replacement);
+#define boxptr_AbsynUtil_crefReplaceFirst omc_AbsynUtil_crefReplaceFirst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefReplaceFirst,2,0) {(void*) boxptr_AbsynUtil_crefReplaceFirst,0}};
+#define boxvar_AbsynUtil_crefReplaceFirst MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefReplaceFirst)
+DLLExport
 modelica_metatype omc_AbsynUtil_addSubscriptsLast(threadData_t *threadData, modelica_metatype _icr, modelica_metatype _i);
 #define boxptr_AbsynUtil_addSubscriptsLast omc_AbsynUtil_addSubscriptsLast
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_addSubscriptsLast,2,0) {(void*) boxptr_AbsynUtil_addSubscriptsLast,0}};
 #define boxvar_AbsynUtil_addSubscriptsLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_addSubscriptsLast)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathReplaceFirstIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _replPath);
-#define boxptr_AbsynUtil_pathReplaceFirstIdent omc_AbsynUtil_pathReplaceFirstIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirstIdent,2,0) {(void*) boxptr_AbsynUtil_pathReplaceFirstIdent,0}};
-#define boxvar_AbsynUtil_pathReplaceFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirstIdent)
 #define boxptr_AbsynUtil_pathToStringListWork omc_AbsynUtil_pathToStringListWork
 DLLExport
 modelica_metatype omc_AbsynUtil_pathToStringList(threadData_t *threadData, modelica_metatype _path);
@@ -1101,11 +1156,6 @@ modelica_metatype omc_AbsynUtil_suffixPath(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_suffixPath,2,0) {(void*) boxptr_AbsynUtil_suffixPath,0}};
 #define boxvar_AbsynUtil_suffixPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_suffixPath)
 DLLExport
-modelica_metatype omc_AbsynUtil_prefixOptPath(threadData_t *threadData, modelica_string _prefix, modelica_metatype _optPath);
-#define boxptr_AbsynUtil_prefixOptPath omc_AbsynUtil_prefixOptPath
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixOptPath,2,0) {(void*) boxptr_AbsynUtil_prefixOptPath,0}};
-#define boxvar_AbsynUtil_prefixOptPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixOptPath)
-DLLExport
 modelica_metatype omc_AbsynUtil_prefixPath(threadData_t *threadData, modelica_string _prefix, modelica_metatype _path);
 #define boxptr_AbsynUtil_prefixPath omc_AbsynUtil_prefixPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixPath,2,0) {(void*) boxptr_AbsynUtil_prefixPath,0}};
@@ -1126,17 +1176,34 @@ modelica_metatype omc_AbsynUtil_pathRest(threadData_t *threadData, modelica_meta
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathRest,2,0) {(void*) boxptr_AbsynUtil_pathRest,0}};
 #define boxvar_AbsynUtil_pathRest MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathRest)
 DLLExport
+modelica_metatype omc_AbsynUtil_pathSetNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_pathSetNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _ident, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetNthIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetNthIdent,0}};
+#define boxvar_AbsynUtil_pathSetNthIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetNthIdent)
+DLLExport
+modelica_string omc_AbsynUtil_pathNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_pathNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathNthIdent,2,0) {(void*) boxptr_AbsynUtil_pathNthIdent,0}};
+#define boxvar_AbsynUtil_pathNthIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathNthIdent)
+DLLExport
 modelica_string omc_AbsynUtil_pathSecondIdent(threadData_t *threadData, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_pathSecondIdent omc_AbsynUtil_pathSecondIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSecondIdent,2,0) {(void*) boxptr_AbsynUtil_pathSecondIdent,0}};
 #define boxvar_AbsynUtil_pathSecondIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSecondIdent)
 DLLExport
-modelica_metatype omc_AbsynUtil_pathFirstPath(threadData_t *threadData, modelica_metatype _inPath);
+modelica_metatype omc_AbsynUtil_pathFirstPath(threadData_t *threadData, modelica_metatype _path);
 #define boxptr_AbsynUtil_pathFirstPath omc_AbsynUtil_pathFirstPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstPath,2,0) {(void*) boxptr_AbsynUtil_pathFirstPath,0}};
 #define boxvar_AbsynUtil_pathFirstPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstPath)
 DLLExport
-modelica_string omc_AbsynUtil_pathFirstIdent(threadData_t *threadData, modelica_metatype _inPath);
+modelica_metatype omc_AbsynUtil_pathSetFirstIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident);
+#define boxptr_AbsynUtil_pathSetFirstIdent omc_AbsynUtil_pathSetFirstIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetFirstIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetFirstIdent,0}};
+#define boxvar_AbsynUtil_pathSetFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetFirstIdent)
+DLLExport
+modelica_string omc_AbsynUtil_pathFirstIdent(threadData_t *threadData, modelica_metatype _path);
 #define boxptr_AbsynUtil_pathFirstIdent omc_AbsynUtil_pathFirstIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstIdent,2,0) {(void*) boxptr_AbsynUtil_pathFirstIdent,0}};
 #define boxvar_AbsynUtil_pathFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstIdent)
@@ -1146,16 +1213,15 @@ modelica_metatype omc_AbsynUtil_pathLast(threadData_t *threadData, modelica_meta
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLast,2,0) {(void*) boxptr_AbsynUtil_pathLast,0}};
 #define boxvar_AbsynUtil_pathLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLast)
 DLLExport
-modelica_string omc_AbsynUtil_pathLastIdent(threadData_t *threadData, modelica_metatype _inPath);
+modelica_metatype omc_AbsynUtil_pathSetLastIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident);
+#define boxptr_AbsynUtil_pathSetLastIdent omc_AbsynUtil_pathSetLastIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetLastIdent,0}};
+#define boxvar_AbsynUtil_pathSetLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent)
+DLLExport
+modelica_string omc_AbsynUtil_pathLastIdent(threadData_t *threadData, modelica_metatype _path);
 #define boxptr_AbsynUtil_pathLastIdent omc_AbsynUtil_pathLastIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathLastIdent,0}};
 #define boxvar_AbsynUtil_pathLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLastIdent)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathTwoLastIdents(threadData_t *threadData, modelica_metatype _inPath);
-#define boxptr_AbsynUtil_pathTwoLastIdents omc_AbsynUtil_pathTwoLastIdents
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathTwoLastIdents,2,0) {(void*) boxptr_AbsynUtil_pathTwoLastIdents,0}};
-#define boxvar_AbsynUtil_pathTwoLastIdents MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathTwoLastIdents)
-#define boxptr_AbsynUtil_stringListPathReversed2 omc_AbsynUtil_stringListPathReversed2
 DLLExport
 modelica_metatype omc_AbsynUtil_stringListPathReversed(threadData_t *threadData, modelica_metatype _inStrings);
 #define boxptr_AbsynUtil_stringListPathReversed omc_AbsynUtil_stringListPathReversed
@@ -1262,27 +1328,17 @@ modelica_metatype boxptr_AbsynUtil_typeSpecEqual(threadData_t *threadData, model
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_typeSpecEqual,2,0) {(void*) boxptr_AbsynUtil_typeSpecEqual,0}};
 #define boxvar_AbsynUtil_typeSpecEqual MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_typeSpecEqual)
 DLLExport
-modelica_boolean omc_AbsynUtil_pathEqualCaseInsensitive(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
+modelica_boolean omc_AbsynUtil_pathEqualCaseInsensitive(threadData_t *threadData, modelica_metatype _path1, modelica_metatype _path2);
 DLLExport
-modelica_metatype boxptr_AbsynUtil_pathEqualCaseInsensitive(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
+modelica_metatype boxptr_AbsynUtil_pathEqualCaseInsensitive(threadData_t *threadData, modelica_metatype _path1, modelica_metatype _path2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathEqualCaseInsensitive,2,0) {(void*) boxptr_AbsynUtil_pathEqualCaseInsensitive,0}};
 #define boxvar_AbsynUtil_pathEqualCaseInsensitive MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathEqualCaseInsensitive)
 DLLExport
-modelica_boolean omc_AbsynUtil_pathEqual(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
+modelica_boolean omc_AbsynUtil_pathEqual(threadData_t *threadData, modelica_metatype _path1, modelica_metatype _path2);
 DLLExport
-modelica_metatype boxptr_AbsynUtil_pathEqual(threadData_t *threadData, modelica_metatype _inPath1, modelica_metatype _inPath2);
+modelica_metatype boxptr_AbsynUtil_pathEqual(threadData_t *threadData, modelica_metatype _path1, modelica_metatype _path2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathEqual,2,0) {(void*) boxptr_AbsynUtil_pathEqual,0}};
 #define boxvar_AbsynUtil_pathEqual MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathEqual)
-DLLExport
-modelica_string omc_AbsynUtil_printComponentRefStr(threadData_t *threadData, modelica_metatype _cr);
-#define boxptr_AbsynUtil_printComponentRefStr omc_AbsynUtil_printComponentRefStr
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_printComponentRefStr,2,0) {(void*) boxptr_AbsynUtil_printComponentRefStr,0}};
-#define boxvar_AbsynUtil_printComponentRefStr MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_printComponentRefStr)
-DLLExport
-modelica_string omc_AbsynUtil_expComponentRefStr(threadData_t *threadData, modelica_metatype _aexp);
-#define boxptr_AbsynUtil_expComponentRefStr omc_AbsynUtil_expComponentRefStr
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_expComponentRefStr,2,0) {(void*) boxptr_AbsynUtil_expComponentRefStr,0}};
-#define boxvar_AbsynUtil_expComponentRefStr MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_expComponentRefStr)
 DLLExport
 modelica_metatype omc_AbsynUtil_crefExp(threadData_t *threadData, modelica_metatype _cr);
 #define boxptr_AbsynUtil_crefExp omc_AbsynUtil_crefExp
@@ -1339,7 +1395,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_makeIdentPathFromString,2,0) 
 #define boxptr_AbsynUtil_traverseAlgorithmBidirElse omc_AbsynUtil_traverseAlgorithmBidirElse
 #define boxptr_AbsynUtil_traverseEquationBidirElse omc_AbsynUtil_traverseEquationBidirElse
 DLLExport
-modelica_metatype omc_AbsynUtil_traverseEquationBidir(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
+modelica_metatype omc_AbsynUtil_traverseEquationBidir(threadData_t *threadData, modelica_metatype __omcQ_24in_5Feq, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
 #define boxptr_AbsynUtil_traverseEquationBidir omc_AbsynUtil_traverseEquationBidir
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationBidir,2,0) {(void*) boxptr_AbsynUtil_traverseEquationBidir,0}};
 #define boxvar_AbsynUtil_traverseEquationBidir MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationBidir)
@@ -1349,7 +1405,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationBidir,2,0) {(
 #define boxptr_AbsynUtil_traverseEquationItemListBidir omc_AbsynUtil_traverseEquationItemListBidir
 #define boxptr_AbsynUtil_traverseClassPartBidir omc_AbsynUtil_traverseClassPartBidir
 DLLExport
-modelica_metatype omc_AbsynUtil_traverseMatchCase(threadData_t *threadData, modelica_metatype _inMatchCase, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
+modelica_metatype omc_AbsynUtil_traverseMatchCase(threadData_t *threadData, modelica_metatype __omcQ_24in_5FmatchCase, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
 #define boxptr_AbsynUtil_traverseMatchCase omc_AbsynUtil_traverseMatchCase
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseMatchCase,2,0) {(void*) boxptr_AbsynUtil_traverseMatchCase,0}};
 #define boxvar_AbsynUtil_traverseMatchCase MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseMatchCase)
@@ -1364,7 +1420,7 @@ modelica_metatype omc_AbsynUtil_traverseExpBidirNamedArg(threadData_t *threadDat
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirNamedArg,2,0) {(void*) boxptr_AbsynUtil_traverseExpBidirNamedArg,0}};
 #define boxvar_AbsynUtil_traverseExpBidirNamedArg MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirNamedArg)
 DLLExport
-modelica_metatype omc_AbsynUtil_traverseExpBidirFunctionArgs(threadData_t *threadData, modelica_metatype _inArgs, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
+modelica_metatype omc_AbsynUtil_traverseExpBidirFunctionArgs(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fargs, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
 #define boxptr_AbsynUtil_traverseExpBidirFunctionArgs omc_AbsynUtil_traverseExpBidirFunctionArgs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirFunctionArgs,2,0) {(void*) boxptr_AbsynUtil_traverseExpBidirFunctionArgs,0}};
 #define boxvar_AbsynUtil_traverseExpBidirFunctionArgs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirFunctionArgs)
@@ -1374,12 +1430,12 @@ modelica_metatype omc_AbsynUtil_traverseExpBidirElseIf(threadData_t *threadData,
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirElseIf,2,0) {(void*) boxptr_AbsynUtil_traverseExpBidirElseIf,0}};
 #define boxvar_AbsynUtil_traverseExpBidirElseIf MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirElseIf)
 DLLExport
-modelica_metatype omc_AbsynUtil_traverseExpBidirSubs(threadData_t *threadData, modelica_metatype _inSubscript, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype _inArg, modelica_metatype *out_arg);
+modelica_metatype omc_AbsynUtil_traverseExpBidirSubs(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fsubscript, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
 #define boxptr_AbsynUtil_traverseExpBidirSubs omc_AbsynUtil_traverseExpBidirSubs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirSubs,2,0) {(void*) boxptr_AbsynUtil_traverseExpBidirSubs,0}};
 #define boxvar_AbsynUtil_traverseExpBidirSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirSubs)
 DLLExport
-modelica_metatype omc_AbsynUtil_traverseExpBidirCref(threadData_t *threadData, modelica_metatype _inCref, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype _inArg, modelica_metatype *out_arg);
+modelica_metatype omc_AbsynUtil_traverseExpBidirCref(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_fnptr _enterFunc, modelica_fnptr _exitFunc, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
 #define boxptr_AbsynUtil_traverseExpBidirCref omc_AbsynUtil_traverseExpBidirCref
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirCref,2,0) {(void*) boxptr_AbsynUtil_traverseExpBidirCref,0}};
 #define boxvar_AbsynUtil_traverseExpBidirCref MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirCref)
@@ -1414,42 +1470,6 @@ modelica_metatype omc_AbsynUtil_traverseExp(threadData_t *threadData, modelica_m
 #define boxptr_AbsynUtil_traverseExp omc_AbsynUtil_traverseExp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExp,2,0) {(void*) boxptr_AbsynUtil_traverseExp,0}};
 #define boxvar_AbsynUtil_traverseExp MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExp)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseExpAlgItemTupleList(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseExpAlgItemTupleList omc_AbsynUtil_traverseExpAlgItemTupleList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpAlgItemTupleList,2,0) {(void*) boxptr_AbsynUtil_traverseExpAlgItemTupleList,0}};
-#define boxvar_AbsynUtil_traverseExpAlgItemTupleList MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpAlgItemTupleList)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseAlgorithmItemList(threadData_t *threadData, modelica_metatype _inAlgorithmItemList, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseAlgorithmItemList omc_AbsynUtil_traverseAlgorithmItemList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithmItemList,2,0) {(void*) boxptr_AbsynUtil_traverseAlgorithmItemList,0}};
-#define boxvar_AbsynUtil_traverseAlgorithmItemList MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithmItemList)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseAlgorithmItem(threadData_t *threadData, modelica_metatype _inAlgorithmItem, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseAlgorithmItem omc_AbsynUtil_traverseAlgorithmItem
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithmItem,2,0) {(void*) boxptr_AbsynUtil_traverseAlgorithmItem,0}};
-#define boxvar_AbsynUtil_traverseAlgorithmItem MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithmItem)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseAlgorithm(threadData_t *threadData, modelica_metatype _inAlgorithm, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseAlgorithm omc_AbsynUtil_traverseAlgorithm
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithm,2,0) {(void*) boxptr_AbsynUtil_traverseAlgorithm,0}};
-#define boxvar_AbsynUtil_traverseAlgorithm MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseAlgorithm)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseExpEqItemTupleList(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseExpEqItemTupleList omc_AbsynUtil_traverseExpEqItemTupleList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpEqItemTupleList,2,0) {(void*) boxptr_AbsynUtil_traverseExpEqItemTupleList,0}};
-#define boxvar_AbsynUtil_traverseExpEqItemTupleList MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpEqItemTupleList)
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseEquationItemList(threadData_t *threadData, modelica_metatype _inEquationItemList, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseEquationItemList omc_AbsynUtil_traverseEquationItemList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationItemList,2,0) {(void*) boxptr_AbsynUtil_traverseEquationItemList,0}};
-#define boxvar_AbsynUtil_traverseEquationItemList MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationItemList)
-#define boxptr_AbsynUtil_traverseEquationItem omc_AbsynUtil_traverseEquationItem
-DLLExport
-modelica_metatype omc_AbsynUtil_traverseEquation(threadData_t *threadData, modelica_metatype _inEquation, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
-#define boxptr_AbsynUtil_traverseEquation omc_AbsynUtil_traverseEquation
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquation,2,0) {(void*) boxptr_AbsynUtil_traverseEquation,0}};
-#define boxvar_AbsynUtil_traverseEquation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquation)
 #ifdef __cplusplus
 }
 #endif

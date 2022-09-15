@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SimCodeUtil.c"
+#define OMC_FILE "SimCodeUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "SimCodeUtil.h"
@@ -43,7 +43,7 @@ _hash = ((modelica_integer) 0);
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",90,3,90,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",90,3,90,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -122,7 +122,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",56,3,56,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",56,3,56,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -141,7 +141,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",48,3,48,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",48,3,48,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }
@@ -160,7 +160,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",40,3,40,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",40,3,40,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 }
 }
@@ -179,7 +179,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",32,3,32,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",32,3,32,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT4));
 }
 }
@@ -198,7 +198,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",24,3,24,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",24,3,24,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT5));
 }
 }
@@ -225,7 +225,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",18,3,18,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",18,3,18,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT6));
 }
 }
@@ -244,7 +244,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",11,3,11,35,0};
+FILE_INFO info = {"SimCodeUtil.mo",11,3,11,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT7));
 }
 }

@@ -64,6 +64,18 @@ modelica_metatype omc_List_separateOnTrue(threadData_t *threadData, modelica_met
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_separateOnTrue,2,0) {(void*) boxptr_List_separateOnTrue,0}};
 #define boxvar_List_separateOnTrue MMC_REFSTRUCTLIT(boxvar_lit_List_separateOnTrue)
 DLLExport
+modelica_boolean omc_List_any(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
+DLLExport
+modelica_metatype boxptr_List_any(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_any,2,0) {(void*) boxptr_List_any,0}};
+#define boxvar_List_any MMC_REFSTRUCTLIT(boxvar_lit_List_any)
+DLLExport
+modelica_boolean omc_List_none(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
+DLLExport
+modelica_metatype boxptr_List_none(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_none,2,0) {(void*) boxptr_List_none,0}};
+#define boxvar_List_none MMC_REFSTRUCTLIT(boxvar_lit_List_none)
+DLLExport
 modelica_boolean omc_List_all(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
 DLLExport
 modelica_metatype boxptr_List_all(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
@@ -223,9 +235,9 @@ modelica_metatype boxptr_List_hasOneElement(threadData_t *threadData, modelica_m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_hasOneElement,2,0) {(void*) boxptr_List_hasOneElement,0}};
 #define boxvar_List_hasOneElement MMC_REFSTRUCTLIT(boxvar_lit_List_hasOneElement)
 DLLExport
-modelica_string omc_List_toString(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inPrintFunc, modelica_string _inListNameStr, modelica_string _inBeginStr, modelica_string _inDelimitStr, modelica_string _inEndStr, modelica_boolean _inPrintEmpty);
+modelica_string omc_List_toString(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inPrintFunc, modelica_string _inListNameStr, modelica_string _inBeginStr, modelica_string _inDelimitStr, modelica_string _inEndStr, modelica_boolean _inPrintEmpty, modelica_integer _maxLength);
 DLLExport
-modelica_metatype boxptr_List_toString(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inPrintFunc, modelica_metatype _inListNameStr, modelica_metatype _inBeginStr, modelica_metatype _inDelimitStr, modelica_metatype _inEndStr, modelica_metatype _inPrintEmpty);
+modelica_metatype boxptr_List_toString(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inPrintFunc, modelica_metatype _inListNameStr, modelica_metatype _inBeginStr, modelica_metatype _inDelimitStr, modelica_metatype _inEndStr, modelica_metatype _inPrintEmpty, modelica_metatype _maxLength);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_toString,2,0) {(void*) boxptr_List_toString,0}};
 #define boxvar_List_toString MMC_REFSTRUCTLIT(boxvar_lit_List_toString)
 DLLExport
@@ -264,6 +276,16 @@ DLLExport
 modelica_metatype boxptr_List_removeMatchesFirst(threadData_t *threadData, modelica_metatype _inList, modelica_metatype _inN);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_removeMatchesFirst,2,0) {(void*) boxptr_List_removeMatchesFirst,0}};
 #define boxvar_List_removeMatchesFirst MMC_REFSTRUCTLIT(boxvar_lit_List_removeMatchesFirst)
+DLLExport
+modelica_metatype omc_List_keepPositionsSorted(threadData_t *threadData, modelica_metatype _inList, modelica_metatype _inPositions);
+#define boxptr_List_keepPositionsSorted omc_List_keepPositionsSorted
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_keepPositionsSorted,2,0) {(void*) boxptr_List_keepPositionsSorted,0}};
+#define boxvar_List_keepPositionsSorted MMC_REFSTRUCTLIT(boxvar_lit_List_keepPositionsSorted)
+DLLExport
+modelica_metatype omc_List_keepPositions(threadData_t *threadData, modelica_metatype _inList, modelica_metatype _inPositions);
+#define boxptr_List_keepPositions omc_List_keepPositions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_keepPositions,2,0) {(void*) boxptr_List_keepPositions,0}};
+#define boxvar_List_keepPositions MMC_REFSTRUCTLIT(boxvar_lit_List_keepPositions)
 DLLExport
 modelica_metatype omc_List_deletePositionsSorted(threadData_t *threadData, modelica_metatype _inList, modelica_metatype _inPositions);
 #define boxptr_List_deletePositionsSorted omc_List_deletePositionsSorted
@@ -309,6 +331,11 @@ modelica_metatype omc_List_find1(threadData_t *threadData, modelica_metatype _in
 #define boxptr_List_find1 omc_List_find1
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_find1,2,0) {(void*) boxptr_List_find1,0}};
 #define boxvar_List_find1 MMC_REFSTRUCTLIT(boxvar_lit_List_find1)
+DLLExport
+modelica_metatype omc_List_findOption(threadData_t *threadData, modelica_metatype _lst, modelica_fnptr _fn);
+#define boxptr_List_findOption omc_List_findOption
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_findOption,2,0) {(void*) boxptr_List_findOption,0}};
+#define boxvar_List_findOption MMC_REFSTRUCTLIT(boxvar_lit_List_findOption)
 DLLExport
 modelica_metatype omc_List_find(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc);
 #define boxptr_List_find omc_List_find
@@ -1653,6 +1680,12 @@ DLLExport
 modelica_metatype boxptr_List_intRange(threadData_t *threadData, modelica_metatype _inStop);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_intRange,2,0) {(void*) boxptr_List_intRange,0}};
 #define boxvar_List_intRange MMC_REFSTRUCTLIT(boxvar_lit_List_intRange)
+DLLExport
+modelica_metatype omc_List_repeat(threadData_t *threadData, modelica_metatype _inElement, modelica_integer _inCount);
+DLLExport
+modelica_metatype boxptr_List_repeat(threadData_t *threadData, modelica_metatype _inElement, modelica_metatype _inCount);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_repeat,2,0) {(void*) boxptr_List_repeat,0}};
+#define boxvar_List_repeat MMC_REFSTRUCTLIT(boxvar_lit_List_repeat)
 DLLExport
 modelica_metatype omc_List_fill(threadData_t *threadData, modelica_metatype _inElement, modelica_integer _inCount);
 DLLExport

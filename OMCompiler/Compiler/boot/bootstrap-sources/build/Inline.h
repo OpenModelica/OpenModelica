@@ -105,6 +105,11 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_replaceArgs,2,0) {(void*) boxptr
 #define boxvar_Inline_replaceArgs MMC_REFSTRUCTLIT(boxvar_lit_Inline_replaceArgs)
 #define boxptr_Inline_getRhsExp omc_Inline_getRhsExp
 DLLExport
+modelica_metatype omc_Inline_getFunction(threadData_t *threadData, modelica_metatype _p, modelica_metatype _fns);
+#define boxptr_Inline_getFunction omc_Inline_getFunction
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_getFunction,2,0) {(void*) boxptr_Inline_getFunction,0}};
+#define boxvar_Inline_getFunction MMC_REFSTRUCTLIT(boxvar_lit_Inline_getFunction)
+DLLExport
 modelica_metatype omc_Inline_getFunctionBody(threadData_t *threadData, modelica_metatype _p, modelica_metatype _fns, modelica_metatype *out_oComment);
 #define boxptr_Inline_getFunctionBody omc_Inline_getFunctionBody
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_getFunctionBody,2,0) {(void*) boxptr_Inline_getFunctionBody,0}};

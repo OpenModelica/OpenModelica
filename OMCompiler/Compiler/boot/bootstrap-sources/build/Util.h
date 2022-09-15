@@ -51,6 +51,16 @@ modelica_metatype omc_Util_applyTuple31(threadData_t *threadData, modelica_metat
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Util_applyTuple31,2,0) {(void*) boxptr_Util_applyTuple31,0}};
 #define boxvar_Util_applyTuple31 MMC_REFSTRUCTLIT(boxvar_lit_Util_applyTuple31)
 DLLExport
+modelica_metatype omc_Util_applyTuple22(threadData_t *threadData, modelica_metatype _inTuple, modelica_fnptr _func);
+#define boxptr_Util_applyTuple22 omc_Util_applyTuple22
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Util_applyTuple22,2,0) {(void*) boxptr_Util_applyTuple22,0}};
+#define boxvar_Util_applyTuple22 MMC_REFSTRUCTLIT(boxvar_lit_Util_applyTuple22)
+DLLExport
+modelica_metatype omc_Util_applyTuple21(threadData_t *threadData, modelica_metatype _inTuple, modelica_fnptr _func);
+#define boxptr_Util_applyTuple21 omc_Util_applyTuple21
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Util_applyTuple21,2,0) {(void*) boxptr_Util_applyTuple21,0}};
+#define boxvar_Util_applyTuple21 MMC_REFSTRUCTLIT(boxvar_lit_Util_applyTuple21)
+DLLExport
 modelica_real omc_Util_profilertock2(threadData_t *threadData);
 DLLExport
 modelica_metatype boxptr_Util_profilertock2(threadData_t *threadData);

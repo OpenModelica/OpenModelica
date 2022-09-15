@@ -40,7 +40,7 @@ mmc_mk_icon(0),
 mmc_mk_icon(0));
 #endif
 }
-#include "GC.h"
+#include "GCExt.h"
 #ifdef __cplusplus
 }
 #endif

@@ -29,7 +29,6 @@ extern "C" {
 #include "InstUtil.h"
 #include "List.h"
 #include "Lookup.h"
-#include "NFInstUtil.h"
 #include "Patternm.h"
 #include "PrefixUtil.h"
 #include "SCodeDump.h"

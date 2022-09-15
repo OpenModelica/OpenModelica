@@ -75,11 +75,6 @@ modelica_string omc_SCodeDump_printInitialStr(threadData_t *threadData, modelica
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeDump_printInitialStr,2,0) {(void*) boxptr_SCodeDump_printInitialStr,0}};
 #define boxvar_SCodeDump_printInitialStr MMC_REFSTRUCTLIT(boxvar_lit_SCodeDump_printInitialStr)
 DLLExport
-modelica_string omc_SCodeDump_equationStr2(threadData_t *threadData, modelica_metatype _eqns, modelica_metatype _options);
-#define boxptr_SCodeDump_equationStr2 omc_SCodeDump_equationStr2
-static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeDump_equationStr2,2,0) {(void*) boxptr_SCodeDump_equationStr2,0}};
-#define boxvar_SCodeDump_equationStr2 MMC_REFSTRUCTLIT(boxvar_lit_SCodeDump_equationStr2)
-DLLExport
 modelica_string omc_SCodeDump_unparseVariability(threadData_t *threadData, modelica_metatype _inVariability);
 #define boxptr_SCodeDump_unparseVariability omc_SCodeDump_unparseVariability
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeDump_unparseVariability,2,0) {(void*) boxptr_SCodeDump_unparseVariability,0}};
@@ -145,7 +140,7 @@ modelica_string omc_SCodeDump_printModStr(threadData_t *threadData, modelica_met
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeDump_printModStr,2,0) {(void*) boxptr_SCodeDump_printModStr,0}};
 #define boxvar_SCodeDump_printModStr MMC_REFSTRUCTLIT(boxvar_lit_SCodeDump_printModStr)
 DLLExport
-modelica_string omc_SCodeDump_equationStr(threadData_t *threadData, modelica_metatype _inEEquation, modelica_metatype _options);
+modelica_string omc_SCodeDump_equationStr(threadData_t *threadData, modelica_metatype _inEquation, modelica_metatype _options);
 #define boxptr_SCodeDump_equationStr omc_SCodeDump_equationStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeDump_equationStr,2,0) {(void*) boxptr_SCodeDump_equationStr,0}};
 #define boxvar_SCodeDump_equationStr MMC_REFSTRUCTLIT(boxvar_lit_SCodeDump_equationStr)

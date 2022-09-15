@@ -12,6 +12,7 @@ extern "C" {
 #include "HashTableCrToExpOption.h"
 #include "List.h"
 #include "StateMachineFlatten.h"
+#include "Types.h"
 #include "Util.h"
 #ifdef __cplusplus
 }

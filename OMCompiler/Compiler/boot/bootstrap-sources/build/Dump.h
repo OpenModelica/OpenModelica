@@ -409,10 +409,10 @@ void omc_Dump_printElementspec(threadData_t *threadData, modelica_metatype _inEl
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printElementspec,2,0) {(void*) boxptr_Dump_printElementspec,0}};
 #define boxvar_Dump_printElementspec MMC_REFSTRUCTLIT(boxvar_lit_Dump_printElementspec)
 DLLExport
-modelica_string omc_Dump_unparseInnerouterStr(threadData_t *threadData, modelica_metatype _inInnerOuter);
-#define boxptr_Dump_unparseInnerouterStr omc_Dump_unparseInnerouterStr
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseInnerouterStr,2,0) {(void*) boxptr_Dump_unparseInnerouterStr,0}};
-#define boxvar_Dump_unparseInnerouterStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseInnerouterStr)
+modelica_string omc_Dump_unparseInnerOuterStr(threadData_t *threadData, modelica_metatype _inInnerOuter);
+#define boxptr_Dump_unparseInnerOuterStr omc_Dump_unparseInnerOuterStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseInnerOuterStr,2,0) {(void*) boxptr_Dump_unparseInnerOuterStr,0}};
+#define boxvar_Dump_unparseInnerOuterStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseInnerOuterStr)
 #define boxptr_Dump_printInnerouter omc_Dump_printInnerouter
 #define boxptr_Dump_printElement omc_Dump_printElement
 DLLExport
@@ -430,6 +430,11 @@ modelica_string omc_Dump_unparseElementItemStr(threadData_t *threadData, modelic
 #define boxptr_Dump_unparseElementItemStr omc_Dump_unparseElementItemStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseElementItemStr,2,0) {(void*) boxptr_Dump_unparseElementItemStr,0}};
 #define boxvar_Dump_unparseElementItemStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseElementItemStr)
+DLLExport
+modelica_metatype omc_Dump_shouldSeparateAfterElementArg(threadData_t *threadData, modelica_metatype _args);
+#define boxptr_Dump_shouldSeparateAfterElementArg omc_Dump_shouldSeparateAfterElementArg
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_shouldSeparateAfterElementArg,2,0) {(void*) boxptr_Dump_shouldSeparateAfterElementArg,0}};
+#define boxvar_Dump_shouldSeparateAfterElementArg MMC_REFSTRUCTLIT(boxvar_lit_Dump_shouldSeparateAfterElementArg)
 DLLExport
 modelica_string omc_Dump_unparseElementArgStr(threadData_t *threadData, modelica_metatype _inElementArg);
 #define boxptr_Dump_unparseElementArgStr omc_Dump_unparseElementArgStr

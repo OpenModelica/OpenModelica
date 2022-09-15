@@ -26,7 +26,7 @@ extern "C" {
 #include "FNode.h"
 #include "FUnitCheck.h"
 #include "Flags.h"
-#include "GC.h"
+#include "GCExt.h"
 #include "HashTable5.h"
 #include "InnerOuter.h"
 #include "Inst.h"

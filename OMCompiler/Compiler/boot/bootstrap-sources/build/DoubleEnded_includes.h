@@ -1,7 +1,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "GC.h"
+#include "GCExt.h"
 #include "Mutable.h"
 #ifdef __cplusplus
 }

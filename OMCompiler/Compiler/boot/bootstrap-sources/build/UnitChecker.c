@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/UnitChecker.c"
+#define OMC_FILE "UnitChecker.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "UnitChecker.h"
@@ -25,7 +25,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/UnitChecker.mo",16,3,16,35,0};
+FILE_INFO info = {"UnitChecker.mo",16,3,16,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -53,7 +53,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/UnitChecker.mo",8,3,8,35,0};
+FILE_INFO info = {"UnitChecker.mo",8,3,8,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }

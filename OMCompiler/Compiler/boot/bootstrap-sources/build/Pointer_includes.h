@@ -16,6 +16,7 @@ static inline void* pointerAccess(void *ptr)
 {
 return MMC_STRUCTDATA(ptr)[0];
 }
+#include "Pointer.h"
 #ifdef __cplusplus
 }
 #endif

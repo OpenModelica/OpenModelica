@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ErrorExt.c"
+#define OMC_FILE "ErrorExt.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "ErrorExt.h"
@@ -204,6 +204,24 @@ modelica_metatype out_num;
 _num = omc_ErrorExt_getNumMessages(threadData);
 out_num = mmc_mk_icon(_num);
 return out_num;
+}
+modelica_string omc_ErrorExt_printCheckpointMessagesStr(threadData_t *threadData, modelica_boolean _warningsAsErrors)
+{
+int _warningsAsErrors_ext;
+const char* _outString_ext;
+modelica_string _outString = NULL;
+_warningsAsErrors_ext = (int)_warningsAsErrors;
+_outString_ext = Error_printCheckpointMessagesStr(threadData, _warningsAsErrors_ext);
+_outString = (modelica_string)mmc_mk_scon(_outString_ext);
+return _outString;
+}
+modelica_metatype boxptr_ErrorExt_printCheckpointMessagesStr(threadData_t *threadData, modelica_metatype _warningsAsErrors)
+{
+modelica_integer tmp1;
+modelica_string _outString = NULL;
+tmp1 = mmc_unbox_integer(_warningsAsErrors);
+_outString = omc_ErrorExt_printCheckpointMessagesStr(threadData, tmp1);
+return _outString;
 }
 modelica_string omc_ErrorExt_printMessagesStr(threadData_t *threadData, modelica_boolean _warningsAsErrors)
 {

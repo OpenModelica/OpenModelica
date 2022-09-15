@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/HashTableCrILst.c"
+#define OMC_FILE "HashTableCrILst.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "HashTableCrILst.h"
@@ -20,12 +20,13 @@ DLLExport
 modelica_string omc_HashTableCrILst_printIntListStr(threadData_t *threadData, modelica_metatype _ilst)
 {
 modelica_string _res = NULL;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = stringAppend(_OMC_LIT0,stringDelimitList(omc_List_map(threadData, _ilst, boxvar_intString), _OMC_LIT1));
-tmpMeta[1] = stringAppend(tmpMeta[0],_OMC_LIT2);
-_res = tmpMeta[1];
+tmpMeta1 = stringAppend(_OMC_LIT0,stringDelimitList(omc_List_map(threadData, _ilst, boxvar_intString), _OMC_LIT1));
+tmpMeta2 = stringAppend(tmpMeta1,_OMC_LIT2);
+_res = tmpMeta2;
 _return: OMC_LABEL_UNUSED
 return _res;
 }
@@ -33,11 +34,11 @@ DLLExport
 modelica_metatype omc_HashTableCrILst_emptyHashTableSized(threadData_t *threadData, modelica_integer _size)
 {
 modelica_metatype _hashTable = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = mmc_mk_box4(0, boxvar_ComponentReference_hashComponentRefMod, boxvar_ComponentReference_crefEqual, boxvar_ComponentReference_printComponentRefStr, boxvar_HashTableCrILst_printIntListStr);
-_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta[0]);
+tmpMeta1 = mmc_mk_box4(0, boxvar_ComponentReference_hashComponentRefMod, boxvar_ComponentReference_crefEqual, boxvar_ComponentReference_printComponentRefStr, boxvar_HashTableCrILst_printIntListStr);
+_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta1);
 _return: OMC_LABEL_UNUSED
 return _hashTable;
 }

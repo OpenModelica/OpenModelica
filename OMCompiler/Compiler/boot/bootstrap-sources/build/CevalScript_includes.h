@@ -3,6 +3,7 @@ extern "C" {
 #endif
 #include "AbsynUtil.h"
 #include "BaseHashSet.h"
+#include "Builtin.h"
 #include "Ceval.h"
 #include "CevalFunction.h"
 #include "CevalScript.h"
@@ -28,7 +29,7 @@ extern "C" {
 #include "FNode.h"
 #include "Flags.h"
 #include "FlagsUtil.h"
-#include "GC.h"
+#include "GCExt.h"
 #include "GenerateAPIFunctionsTpl.h"
 #include "Gettext.h"
 #include "Graph.h"

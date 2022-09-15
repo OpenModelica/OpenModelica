@@ -18,6 +18,7 @@ extern "C" {
 #include "List.h"
 #include "Static.h"
 #include "Types.h"
+#include "UnorderedMap.h"
 #include "Util.h"
 #include "ValuesUtil.h"
 #ifdef __cplusplus

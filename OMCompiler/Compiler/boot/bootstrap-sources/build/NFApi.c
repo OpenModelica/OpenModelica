@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/NFApi.c"
+#define OMC_FILE "NFApi.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "NFApi.h"
@@ -10,6 +10,15 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,0,_OMC_LIT0_data);
 #define _OMC_LIT0 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT0)
 #include "util/modelica.h"
 #include "NFApi_includes.h"
+DLLExport
+modelica_metatype omc_NFApi_getInheritedClasses(threadData_t *threadData, modelica_metatype _classPath, modelica_metatype _program)
+{
+modelica_metatype _extendsPaths = NULL;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_return: OMC_LABEL_UNUSED
+return _extendsPaths;
+}
 DLLExport
 modelica_metatype omc_NFApi_mkFullyQual(threadData_t *threadData, modelica_metatype _absynProgram, modelica_metatype _classPath, modelica_metatype _pathToQualify)
 {
@@ -24,11 +33,11 @@ DLLExport
 modelica_metatype omc_NFApi_evaluateAnnotations(threadData_t *threadData, modelica_metatype _absynProgram, modelica_metatype _classPath, modelica_metatype _inElements)
 {
 modelica_metatype _outStringLst = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_outStringLst = tmpMeta[0];
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_outStringLst = tmpMeta1;
 _return: OMC_LABEL_UNUSED
 return _outStringLst;
 }
