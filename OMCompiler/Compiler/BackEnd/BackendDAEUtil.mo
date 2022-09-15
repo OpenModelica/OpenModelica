@@ -10295,7 +10295,7 @@ algorithm
     local
       BackendDAE.Jacobian jac;
     case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(jac=jac), linear=false)   then SymbolicJacobian.getNonLinearVariables(jac);
-    case BackendDAE.EQUATIONSYSTEM(jac=jac, jacType=BackendDAE.JAC_NONLINEAR())                 then SymbolicJacobian.getNonLinearVariables(jac);
+    case BackendDAE.EQUATIONSYSTEM(jac=jac, jacType=BackendDAE.JAC_GENERIC())                   then SymbolicJacobian.getNonLinearVariables(jac);
                                                                                                 else {};
   end match;
   vars := BackendVariable.addVars(nonlinear_iteration_vars, vars);
