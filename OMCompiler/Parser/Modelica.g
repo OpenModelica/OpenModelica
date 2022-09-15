@@ -291,10 +291,8 @@ class_definition [int final] returns [void* ast]
         }
       }
       $ast = Absyn__CLASS($cs.name, mmc_mk_bcon(p), mmc_mk_bcon(final), mmc_mk_bcon(e), ct, $cs.ast,
-#if !defined(OMC_BOOTSTRAPPING)
       listReverseInPlace(commentBefore),
       mmc_mk_nil(),
-#endif
       PARSER_INFO($start));
     }
   ;
