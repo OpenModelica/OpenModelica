@@ -5262,11 +5262,14 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String 
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
   let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
     generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
+  let jacGenericCalls = (JacobianMatrixes |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
 
   <<
   <%jacMats%>
 
   <%initialjacMats%>
+
+  <%jacGenericCalls%>
   >>
 end functionAnalyticJacobians;
 
@@ -5945,10 +5948,11 @@ template equationGenericAssign(SimEqSystem eq, Context context,
 
 case eqn as SES_GENERIC_ASSIGN() then
   let idx_len = listLength(scal_indices)
+  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   <<
   const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
   for(int i=0; i<<%idx_len%>; i++)
-    genericCall_<%call_index%>(data, threadData, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%call_index%>(data, threadData<%jac%>, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
   >>
 %>
 <%endModelicaLine()%>
@@ -6007,9 +6011,10 @@ template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
 <<
 <%match eq
 case eqn as SES_GENERIC_ASSIGN() then
+  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   <<
     case <%call_index%>:
-      genericCall_<%call_index%>(data, threadData, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
+      genericCall_<%call_index%>(data, threadData<%jac%>, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
       call_indices[<%i0%>]++;
       break;
   >>
@@ -6497,7 +6502,7 @@ end simulationLiteralsFile;
   %>
 
   <%functionBodies(functions,true)%>
-  <%genericCallBodies(genericCalls)%>
+  <%genericCallBodies(genericCalls, contextOther)%>
 
   #ifdef __cplusplus
   }
@@ -7010,24 +7015,25 @@ template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr,
   >>
 end equationNames_Partial;
 
-template genericCallBodies(list<SimGenericCall> genericCalls)
+template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
-  (genericCalls |> call => genericCallBody(call); separator="\n\n")
+  (genericCalls |> call => genericCallBody(call, context); separator="\n\n")
 end genericCallBodies;
 
-template genericCallBody(SimGenericCall call)
+template genericCallBody(SimGenericCall call, Context context)
 ::= match call
   case SINGLE_GENERIC_CALL() then
   let &sub = buffer ""
   let &preExp = buffer ""
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
-  let lhs_ = daeExp(lhs, contextOther, &preExp, &varDecls, &auxFunction)
-  let rhs_ = daeExp(rhs, contextOther, &preExp, &varDecls, &auxFunction)
-  let iter_ = (iters |> iter => genericIterator(iter, contextOther, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
+  let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
+  let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+  let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
   <<
-  void genericCall_<%index%>(DATA *data, threadData_t *threadData, int idx)
+  void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
   {
     int tmp = idx;
     <%iter_%>

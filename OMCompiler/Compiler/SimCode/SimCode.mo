@@ -89,11 +89,12 @@ uniontype JacobianMatrix
     Integer maxColorCols;
     Integer jacobianIndex;
     Integer partitionIndex;
+    list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0, NONE());
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0, {}, NONE());
 
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 

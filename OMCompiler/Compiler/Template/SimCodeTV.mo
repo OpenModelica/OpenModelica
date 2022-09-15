@@ -391,6 +391,7 @@ package SimCode
       Integer maxColorCols;
       Integer jacobianIndex;
       Integer partitionIndex;
+      list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
     end JAC_MATRIX;
   end JacobianMatrix;
