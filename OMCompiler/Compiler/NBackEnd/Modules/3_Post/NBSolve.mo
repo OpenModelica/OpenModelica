@@ -344,7 +344,7 @@ public
         (eqn, funcTree, solve_status, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree);
         // if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
         eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
-      then (StrongComponent.GENERIC_COMPONENT(eqn_slice), Status.EXPLICIT);
+      then (StrongComponent.GENERIC_COMPONENT(comp.var_cref, eqn_slice), Status.EXPLICIT);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + StrongComponent.toString(comp) + "\n"});

@@ -1102,6 +1102,11 @@ public
           indices.equationIndex := indices.equationIndex + 1;
         then blck;
 
+        case GENERIC_ASSIGN() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
         case ALIAS() algorithm
           blck.index := indices.equationIndex;
           indices.equationIndex := indices.equationIndex + 1;

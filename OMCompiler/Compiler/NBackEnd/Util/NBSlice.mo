@@ -403,6 +403,7 @@ public
     input list<ComponentRef> dependencies                         "dependent var crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map      "hash table to check for relevance";
     input Iterator iter                                           "iterator frames";
+    input list<Integer> slice = {}                                "optional slice, empty least means all";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
     ComponentRef stripped;
@@ -420,8 +421,8 @@ public
 
     // get new subscripts for row cref
     subs := ComponentRef.subscriptsToExpression(row_cref);
-    //subs := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(row_cref));
     new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+    new_row_cref_subs := if not listEmpty(slice) then List.keepPositions(new_row_cref_subs, slice) else new_row_cref_subs;
 
     // reapply new subscripts for each frame location
     stripped := ComponentRef.stripSubscriptsAll(row_cref);
@@ -430,12 +431,12 @@ public
       new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_row_crefs;
     end for;
 
-    // get the scalar crefs for each cref
+    // get the scalar crefs for each column cref
     if not listEmpty(dependencies) then
       for cref in dependencies loop
         subs := ComponentRef.subscriptsToExpression(cref);
-        //subs     := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref));
         new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+        new_subs := if not listEmpty(slice) then List.keepPositions(new_subs, slice) else new_row_cref_subs;
 
         if listLength(new_subs) <> listLength(new_row_crefs) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
