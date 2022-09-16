@@ -18,6 +18,7 @@ MoveConnection.mos \
 multipoleFluidTemperature.mos \
 Pipe.mos \
 removeComponentModifiers.mos \
+RLC.mos \
 SimilarNamesAnnotation.mos \
 SubExpParenthesis.mos \
 Tables.mos \

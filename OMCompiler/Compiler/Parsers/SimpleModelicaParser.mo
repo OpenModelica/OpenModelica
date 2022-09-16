@@ -522,6 +522,7 @@ end equation_section;
 
 function _equation
   extends partialParser;
+  output String label = "$equation";
 protected
   TokenId id;
   Boolean b;
@@ -547,6 +548,7 @@ algorithm
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.IF);
+    label := "$if_equation";
   elseif id==TokenId.WHEN then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -563,6 +565,7 @@ algorithm
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHEN);
+    label := "$when_equation";
   elseif id==TokenId.FOR then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := for_indices(tokens, tree);
@@ -570,6 +573,7 @@ algorithm
     (tokens, tree) := equation_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.FOR);
+    label := "$for_equation";
   elseif id==TokenId.CONNECT then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
@@ -577,11 +581,15 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.COMMA);
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
+    label := "$connect_equation";
   else
     (tokens, tree) := expression(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EQUALS);
     if b then
       (tokens, tree) := expression(tokens, tree);
+      label := "$equality_equation";
+    else
+      label := "$singleton_equation";
     end if;
   end if;
   (tokens, tree) := comment(tokens, tree);
@@ -593,6 +601,7 @@ function equation_list
 protected
   TokenId id;
   Boolean b;
+  String label;
 algorithm
   outTree := {};
   while true loop
@@ -600,10 +609,10 @@ algorithm
     if b then
       break;
     end if;
-    (tokens, tree) := _equation(tokens, tree);
+    (tokens, tree, label) := _equation(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, label)))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
@@ -1264,6 +1273,7 @@ function primary
 protected
   TokenId id;
   Boolean b;
+  String label = "expression";
 algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.UNSIGNED_INTEGER, TokenId.UNSIGNED_REAL, TokenId.FALSE, TokenId.TRUE, TokenId.END, TokenId.STRING});
   if b then
@@ -1274,8 +1284,7 @@ algorithm
   (tokens, tree, id) := peek(tokens, tree);
   if id==TokenId.LPAR then
     (tokens, tree) := output_expression_list(tokens, tree);
-    // outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "parenthesis")))::inTree;
-    // return;
+    label := "$parenthesis";
   elseif id==TokenId.LBRACE then
     (tokens, tree) := scan(tokens, tree, TokenId.LBRACE);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.RBRACE}); // Easier than checking First(expression), etc
@@ -1283,6 +1292,7 @@ algorithm
       (tokens, tree) := function_arguments(tokens, tree);
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACE);
+    label := "$array";
   elseif id==TokenId.LBRACK then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression_list(tokens, tree);
@@ -1294,12 +1304,14 @@ algorithm
       (tokens, tree) := expression_list(tokens, tree);
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACK);
+    label := "$matrix";
   elseif listMember(id, {TokenId.DER, TokenId.INITIAL}) then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
     end if;
+    label := "$initial";
   elseif listMember(id, {TokenId.DOT, TokenId.IDENT, TokenId.FUNCTION}) then
     if id == TokenId.FUNCTION then
       // Function partial applications sort of looks like a normal call
@@ -1309,11 +1321,12 @@ algorithm
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
+      label := "$call";
     end if;
   else
     error(tokens, tree, {});
   end if;
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, label)));
 end primary;
 
 function function_call_args
@@ -2252,8 +2265,8 @@ protected
   list<tuple<Diff,list<ParseTree>>> diffLocal=inDiff;
   tuple<Diff,list<ParseTree>> diff1, diff2, diff3, diff4;
   Boolean firstIter, lastTokenNewline, hasAddedWS;
-  list<ParseTree> tree, treeLocal, tree1, tree2, tree3, tree4;
-  ParseTree tree4First,t1,t2,t3;
+  list<ParseTree> tree, treeLocal, tree1, tree2, tree3, tree4, treeLast;
+  ParseTree tree4First,t1,t2,t3,firstTreeSecondLast,firstTreeLast;
   Integer length, level;
   list<Integer> indentation;
   list<Token> tokens;
@@ -2268,6 +2281,15 @@ algorithm
     // print(String(diffEnum) + ":\n");
     // print(parseTreeStr(tree));
     // print("\n");
+    (_, treeLast) := List.first(diffLocal);
+    (firstTreeSecondLast, firstTreeLast) := match treeLast
+      case {} then (EMPTY(),EMPTY());
+      case {firstTreeLast} then (EMPTY(),firstTreeLast);
+      else
+        algorithm
+          {firstTreeSecondLast,firstTreeLast} := List.lastN(treeLast,2);
+        then (firstTreeSecondLast,firstTreeLast);
+    end match;
     diffLocal := match diffLocal
       // Empty node
       case (_, {})::diffLocal then diffLocal;
@@ -2303,15 +2325,15 @@ algorithm
       // Sometimes a comment may move between 2 trees. This can bring it back, keeping the diff smaller.
       case (Diff.Delete,tree1)::(diff2 as (_, tree2))::(diff3 as (_, tree3))::(Diff.Add, tree4First::tree4)::diffLocal
         guard min(parseTreeIsWhitespaceNotComment(t) for t in tree2) and
-              min(parseTreeIsWhitespaceNotComment(t) for t in tree3) and modelicaDiffTokenEq(lastToken(List.last(tree1)),firstTokenInTree(tree4First))
-        then (Diff.Delete,removeLastTokenInTrees(tree1))::(Diff.Equal,{LEAF(lastToken(List.last(tree1)))})::(Diff.Add,removeFirstTokenInTree(tree4First)::tree4)::diff2::diff3::diffLocal;
+              min(parseTreeIsWhitespaceNotComment(t) for t in tree3) and modelicaDiffTokenEq(lastToken(firstTreeLast),firstTokenInTree(tree4First))
+        then (Diff.Delete,removeLastTokenInTrees(tree1))::(Diff.Equal,{LEAF(lastToken(firstTreeLast))})::(Diff.Add,removeFirstTokenInTree(tree4First)::tree4)::diff2::diff3::diffLocal;
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,tree2 as (_::_))::_)))
-        guard needsWhitespaceBetweenTokens(lastToken(List.last(tree1)), firstTokenInTree(listGet(tree2, 1)))
+        guard needsWhitespaceBetweenTokens(lastToken(firstTreeLast), firstTokenInTree(listGet(tree2, 1)))
         algorithm
           diff := (Diff.Equal, {LEAF(makeToken(TokenId.WHITESPACE, " "))})::diff1::diff;
         then diffLocal;
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(diff2 as (Diff.Add, tree2 as (_::_)))::diffLocal)
-        guard needsWhitespaceBetweenTokens(lastToken(List.last(tree1)), firstTokenInTree(listGet(tree2, 1)))
+        guard needsWhitespaceBetweenTokens(lastToken(firstTreeLast), firstTokenInTree(listGet(tree2, 1)))
         algorithm
           diffLocal := diff1::(Diff.Equal, {LEAF(makeToken(TokenId.WHITESPACE, " "))})::diff2::diffLocal;
         then diffLocal;
@@ -2330,7 +2352,7 @@ algorithm
         then diffLocal;
       // DEL(..., NOT(NEWLINE)) ADD(..., NEWLINE) EQUAL(...) => DEL(..., NOT(NEWLINE)) ADD(...) EQUAL(...)
       case ((diff1 as (Diff.Delete,tree1))::(Diff.Add, tree2)::diffLocal as ((Diff.Equal, tree3)::_))
-        guard (not parseTreeIsNewLine(List.last(tree1))) and parseTreeIsNewLine(List.last(tree2))
+        guard (not parseTreeIsNewLine(firstTreeLast)) and parseTreeIsNewLine(List.last(tree2))
         then diff1::(Diff.Add, List.stripLast(tree2))::diffLocal;
 
       // DEL(IDENT) + ADD(WS, IDENT) => DEL(IDENT) + ADD(IDENT)
@@ -2347,17 +2369,27 @@ algorithm
         guard not parseTreeIsNewLine(List.last(tree2)) and parseTreeIsOnlyEnd(t1)
         then diff1::(Diff.Add,listAppend(tree2, {LEAF(makeToken(TokenId.NEWLINE, "\n"))}))::diffLocal;
 
+      // EQ(...) + ADD(WS, ...) => EQ(...) + ADD(...)
+      case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2 as _::_::_)::diffLocal)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.second(tree2))) and parseTreeIsWhitespaceNotComment(List.first(tree2)) and not parseTreeIsNewLine(firstTreeLast)
+        then diff1::(Diff.Add, listRest(tree2))::diffLocal;
+
+      // ADD(..., WS) EQ(...) => ADD(...) + EQ(...)
+      case ((Diff.Add,tree1 as _::_::_)::(diff2 as (Diff.Equal, tree2))::diffLocal)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.first(tree2))) and not (parseTreeIsNewLine(firstTreeSecondLast) or parseTreeIsLineComment(firstTreeSecondLast)) and parseTreeIsWhitespaceNotCommentOrNewline(firstTreeLast)
+        then (Diff.Add, List.stripLast(tree1))::diff2::diffLocal;
+
       // EQ(NEWLINE) + ADD(NEWLINE, ...) => EQ(NEWLINE) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2)::diffLocal)
-        guard parseTreeIsNewLine(List.last(tree1)) and parseTreeIsNewLine(List.first(tree2))
+        guard parseTreeIsNewLine(firstTreeLast) and parseTreeIsNewLine(List.first(tree2))
         then diff1::(Diff.Add, listRest(tree2))::diffLocal;
       // NEWLINE ADD WS DEL => NEWLINE WS ADD DEL
       case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
-        guard parseTreeIsNewLine(List.last(tree1)) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        guard parseTreeIsNewLine(firstTreeLast) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
         then diff1::diff3::diff2::diff4::diffLocal;
       // NEWLINE DEL WS ADD => NEWLINE WS DEL ADD
       case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
-        guard parseTreeIsNewLine(List.last(tree1)) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        guard parseTreeIsNewLine(firstTreeLast) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
         then diff1::diff3::diff2::diff4::diffLocal;
 
       case ((diffEnum1,tree1)::(diffEnum2, tree2)::diffLocal)
@@ -3055,7 +3087,7 @@ protected
   TokenId id;
 algorithm
   b := match t1
-    case LEAF() then listMember(t1.token.id, {TokenId.NEWLINE});
+    case LEAF() then t1.token.id == TokenId.NEWLINE;
     else false;
   end match;
 end parseTreeIsNewLine;
@@ -3072,6 +3104,18 @@ algorithm
   end match;
 end parseTreeIsWhitespaceNotComment;
 
+function parseTreeIsWhitespaceNotCommentOrNewline
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.WHITESPACE;
+    else false;
+  end match;
+end parseTreeIsWhitespaceNotCommentOrNewline;
+
 function parseTreeIsComment
   input ParseTree t1;
   output Boolean b;
@@ -3083,6 +3127,18 @@ algorithm
     else false;
   end match;
 end parseTreeIsComment;
+
+function parseTreeIsLineComment
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.LINE_COMMENT;
+    else false;
+  end match;
+end parseTreeIsLineComment;
 
 function parseTreeIsOnlyIdent
   input ParseTree t1;
@@ -3394,7 +3450,7 @@ protected
     TokenId.SLASH_EW,
     TokenId.STAR,
     TokenId.STAR_EW,
-    TokenId.STRING,
+    // TokenId.STRING, Not OK for string comments
     TokenId.UNSIGNED_INTEGER,
     TokenId.UNSIGNED_REAL,
     TokenId.WHITESPACE

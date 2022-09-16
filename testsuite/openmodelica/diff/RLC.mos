@@ -1,0 +1,27 @@
+// depends: RLCBefore.mo
+// status: correct
+
+before:=readFile("RLCBefore.mo");getErrorString();
+loadFile("RLCAfter.mo");getErrorString();
+res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain);getErrorString();
+
+// Result:
+// "within;
+// partial model PartialTwoPortRLC
+// equation
+//   R_actual = R*(M + Modelica.SIunits.Conversions.to_degC(T_heatPort))/
+//     (M + Modelica.SIunits.Conversions.to_degC(T_ref));
+// end PartialTwoPortRLC;
+// "
+// ""
+// true
+// ""
+// "within;
+// partial model PartialTwoPortRLC
+// equation
+//   R_actual = R*(M + Modelica.Units.SI.Conversions.to_degC(T_heatPort))/
+//     (M + Modelica.Units.SI.Conversions.to_degC(T_ref));
+// end PartialTwoPortRLC;
+// "
+// ""
+// endResult
