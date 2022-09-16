@@ -11,6 +11,7 @@ Air.mos \
 ChangeSourceFile.mos \
 ClosedDoors.mos \
 LargeFileChange.mos \
+LimPID.mos \
 ListFile.mos \
 MoveComment.mos \
 MoveComponent.mos \
