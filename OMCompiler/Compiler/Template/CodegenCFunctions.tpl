@@ -540,14 +540,14 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
-      // This function should eventualy replace the default 'modelica' record constructor funcition
+      // This function should eventually replace the default 'modelica' record constructor funcition
       // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
       // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
 
       // This function is not needed anymore. If you want to know how a record
       // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
       // splitRecordAssignmentToMemberAssignments (simCode). Basically the record is
-      // split up assignments generated for each memeber individualy.
+      // split up assignments generated for each member individually.
       // void <%copy_to_vars_name_p%>(void* v_src <%copy_to_vars_inputs%>);
       // #define <%copy_to_vars_name%>(src,...) <%copy_to_vars_name_p%>(&src, __VA_ARGS__)
 
@@ -1211,7 +1211,7 @@ template extType(Type type, Boolean isInput, Boolean isArray, Boolean returnType
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then '<%underscorePath(rname)%><%if returnType then "" else "*"%>'
+                      then '<%underscorePath(rname)%>'
   case T_METATYPE(__)
   case T_METABOXED(__)
        then "modelica_metatype"
@@ -1246,6 +1246,17 @@ template extFunDefArg(SimExtArg extArg)
 ::=
   let &auxFunction = buffer ""
   match extArg
+  case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_= t as T_COMPLEX(complexClassType=RECORD(__))) then
+    let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+    let typeStr = extType(t,ii,ia,false)
+    <<
+    <%typeStr%>* /*<%name%>*/
+    >>
+  case SIMEXTARGEXP(type_= t as T_COMPLEX(complexClassType=RECORD(__))) then
+    let typeStr = extType(type_,true,false,false)
+    <<
+    <%typeStr%>*
+    >>
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let typeStr = extType(t,ii,ia,false)
@@ -2455,10 +2466,19 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
       else
         error(sourceInfo(), 'Got function pointer that is not a CREF_IDENT: <%crefStr(c)%>, <%unparseType(ty)%>'))
     else
-      let &varDecls += '<%extType(ty,true,false,false)%> <%extVarName(c)%>;<%\n%>'
-      <<
-      <%extVarName(c)%> = (<%extType(ty,true,false,false)%>)<%match ty case T_COMPLEX(complexClassType=RECORD(__)) then "&" else ""%><%contextCrefNoPrevExp(c,contextFunction,&auxFunction)%>;<%\n%>
-      >>
+      let lhs = extVarName(c)
+      let rhs = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+      let &varDecls += '<%extType(ty,true,false,false)%> <%lhs%>;<%\n%>'
+      match ty case T_COMPLEX(complexClassType=RECORD(__)) then
+        let rec_typename = expTypeShort(ty)
+        <<
+        <%expTypeShort(ty)%>_copy(<%rhs%>, <%lhs%>);
+        >>
+        else
+        <<
+        <%lhs%> = (<%extType(ty,true,false,false)%>)<%rhs%>;
+        >>
+
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
       ""
@@ -2562,6 +2582,13 @@ case SIMEXTARG(outputIndex=oi, isInput=isInput, isArray=true, cref=c, type_=ty) 
         'unpack_integer_array(&<%var_name%>);'
     case "string" then 'unpack_string_array(&<%var_name%>, <%var_name%>_c89);'
     else ""
+case SIMEXTARG(outputIndex=oi, isArray=false, type_ = ty as T_COMPLEX(complexClassType=RECORD(__)), cref=c) then
+    let rhs = extVarName(c)
+    let lhs = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+    let rec_typename = expTypeShort(ty)
+    <<
+    <%expTypeShort(ty)%>_copy(<%rhs%>, <%lhs%>);
+    >>
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let cr = '<%extVarName(c)%>'
     <<
@@ -2603,8 +2630,12 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
     let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(<%arg_name%>);<%\n%>'
     '(<%extType(t,isInput,true,false)%>) <%name%>_c89'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
-    let cr = match t case T_STRING(__) then contextCrefNoPrevExp(c,contextFunction,&auxFunction) else extVarName(c)
-    (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)
+    match t
+    case T_STRING(__) then
+      let cr = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
+      'MMC_STRINGDATA(<%cr%>)'
+    case T_COMPLEX(complexClassType=RECORD(__)) then '&<%extVarName(c)%>'
+    else extVarName(c)
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then
