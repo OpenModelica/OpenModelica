@@ -69,7 +69,7 @@ import ExpressionDumpTpl.*;
 
     let &functionsHeader = buffer ""
     let &functionsHeader += redirectToFile('<%fileNamePrefix%>_functions.h')
-    let &functionsHeader += simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls)
+    let &functionsHeader += simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, sc.generic_loop_calls)
     let &functionsHeader += closeFile()
 
     let &includes = buffer ""
@@ -1750,7 +1750,7 @@ end globalDataAliasVarArray;
 template symJacDefinition(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let symbolicJacsDefine = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
+  let symbolicJacsDefine = (JacobianMatrixes |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     <<
     #if defined(__cplusplus)
     extern "C" {
@@ -1758,6 +1758,7 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrixes, String modelNam
       #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
       int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+      <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
     #if defined(__cplusplus)
     }
     #endif
@@ -6533,7 +6534,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
 
 end simulationParModelicaKernelsFile;
 
-/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls)
+/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -6550,6 +6551,7 @@ end simulationParModelicaKernelsFile;
   <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n\n"%>
   <%\n%>
   <%functionHeaders(functions, true, staticPrototypes)%>
+  <%genericCallHeaders(genericCalls, contextOther)%>
   #include "<%filePrefix%>_model.h"
   <%\n%>
   <%if staticPrototypes then
@@ -7018,29 +7020,27 @@ end equationNames_Partial;
 template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
-  (genericCalls |> call => genericCallBody(call, context); separator="\n\n")
+  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
+  (genericCalls |> call => match call
+    case SINGLE_GENERIC_CALL() then
+      let &sub = buffer ""
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &auxFunction = buffer ""
+      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      <<
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      {
+        int tmp = idx;
+        <%iter_%>
+        <%lhs_%> = <%rhs_%>;
+      }
+      >>;
+  separator="\n\n")
 end genericCallBodies;
 
-template genericCallBody(SimGenericCall call, Context context)
-::= match call
-  case SINGLE_GENERIC_CALL() then
-  let &sub = buffer ""
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
-  let &auxFunction = buffer ""
-  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
-  let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
-  let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
-  let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
-  <<
-  void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
-  {
-    int tmp = idx;
-    <%iter_%>
-    <%lhs_%> = <%rhs_%>;
-  }
-  >>
-end genericCallBody;
 
 template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
@@ -7052,6 +7052,15 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
   tmp /= <%size%>;
   >>
 end genericIterator;
+
+template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
+ "Generates the header for a set of generic calls."
+::=
+  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
+  (genericCalls |> call => match call
+    case SINGLE_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>;
+  separator="\n\n")
+end genericCallHeaders;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;
