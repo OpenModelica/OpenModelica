@@ -550,8 +550,7 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
     { //cad node
       //std::cout<<"It's a stl and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
-
-      if (node)
+      if (node.valid())
       {
         osg::ref_ptr<osg::Material> material = new osg::Material();
         material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
@@ -856,7 +855,7 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
         QImage* qim = new QImage(QString::fromStdString(imagePath));
         image = convertImage(*qim);
         delete qim;
-        if (image.get())
+        if (image.valid())
         {
           image->setInternalTextureFormat(GL_RGBA);
         }
@@ -865,7 +864,7 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
       {
         image = osgDB::readImageFile(imagePath);
       }
-      if (image.get())
+      if (image.valid())
       {
         osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
         texture->setDataVariance(osg::Object::DYNAMIC);
@@ -894,7 +893,7 @@ void UpdateVisitor::changeColor(osg::StateSet* ss, float r, float g, float b)
   if (ss)
   {
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
-    if (!material.get()) material = new osg::Material();
+    if (!material.valid()) material = new osg::Material();
     material->setDiffuse(osg::Material::FRONT, osg::Vec4f(r / 255, g / 255, b / 255, 1.0));
     ss->setAttribute(material.get());
   }
@@ -911,7 +910,7 @@ void UpdateVisitor::changeTransparency(osg::StateSet* ss, float transpCoeff)
     ss->setMode(GL_BLEND, osg::StateAttribute::ON);
     ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
-    if (!material.get()) material = new osg::Material();
+    if (!material.valid()) material = new osg::Material();
     material->setTransparency(osg::Material::FRONT_AND_BACK, transpCoeff);
     ss->setAttributeAndModes(material.get(), osg::StateAttribute::OVERRIDE);
   }

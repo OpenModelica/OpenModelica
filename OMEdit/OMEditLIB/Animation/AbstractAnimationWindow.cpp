@@ -416,7 +416,7 @@ bool AbstractAnimationWindow::loadVisualization()
     mpVisualization->setUpScene();
     mpVisualization->initVisualization();
     //add scene for the chosen visualization
-    mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode());
+    mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode().get());
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
