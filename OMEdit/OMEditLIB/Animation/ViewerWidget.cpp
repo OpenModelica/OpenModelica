@@ -88,6 +88,7 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   mpGraphicsWindow = new osgViewer::GraphicsWindowEmbedded(x(), y(), width(), height());
   mpViewer = new Viewer;
   mpSceneView = new osgViewer::View();
+  mpFrameMutex = new OpenThreads::Mutex();
   mpAnimationWidget = qobject_cast<AbstractAnimationWindow*>(parent);
   // add a scene to viewer
   mpViewer->addView(mpSceneView);
@@ -120,31 +121,51 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
 
 /*!
  * \brief ViewerWidget::paintEvent
- * Reimplementation of the paintEvent.\n
+ * Reimplementation of QOpenGLWidget::paintEvent().
  * \sa ViewerWidget::paintGL()
  */
 void ViewerWidget::paintEvent(QPaintEvent* /* paintEvent */)
 {
+  paintGL();
+}
+
+/*!
+ * \brief ViewerWidget::paintGL
+ * Reimplementation of QOpenGLWidget::paintGL().
+ * \note Synchronized frame rendering can lead to a deadlock
+ *       in situations where a new paint event is fired while
+ *       a frame is currently being rendered, and specifically
+ *       MessagesWidget::addPendingMessage() shall be used instead of
+ *       MessagesWidget::addGUIMessage() when #mpFrameMutex is locked.
+ * \sa ViewerWidget::paintEvent()
+ * \sa ViewerWidget::frame()
+ */
+void ViewerWidget::paintGL()
+{
+  mpFrameMutex->lock();
+  frame();
+  mpFrameMutex->unlock();
+  MessagesWidget::instance()->showPendingMessages();
+}
+
+/*!
+ * \brief ViewerWidget::frame
+ * Renders the animation frame.
+ * \sa ViewerWidget::paintGL()
+ */
+void ViewerWidget::frame()
+{
   makeCurrent();
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
-  paintGL();
+  mpViewer->frame();
   painter.end();
   doneCurrent();
 }
 
 /*!
- * \brief ViewerWidget::paintGL
- * Renders the animation frame.
- * \sa ViewerWidget::paintEvent()
- */
-void ViewerWidget::paintGL()
-{
-  mpViewer->frame();
-}
-
-/*!
  * \brief ViewerWidget::resizeGL
+ * Reimplementation of QOpenGLWidget::resizeGL().
  * Resizes the graphics window.
  * \param width
  * \param height

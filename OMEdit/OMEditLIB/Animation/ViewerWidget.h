@@ -40,6 +40,8 @@
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 
+#include <OpenThreads/Mutex>
+
 #include <iostream>
 
 #include <QMenu>
@@ -75,9 +77,11 @@ class ViewerWidget : public GLWidget
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   osgViewer::View* getSceneView() {return mpSceneView;}
+  OpenThreads::Mutex* getFrameMutex() {return mpFrameMutex;}
   std::string getSelectedVisualizer() {return mSelectedVisualizer;}
   void setSelectedVisualizer(std::string visualizer) {mSelectedVisualizer = visualizer;}
   void pickVisualizer(int x, int y);
+  void frame();
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent) override;
   virtual void paintGL() override;
@@ -95,6 +99,7 @@ private:
   osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
   osg::ref_ptr<Viewer> mpViewer;
   osgViewer::View* mpSceneView;
+  OpenThreads::Mutex* mpFrameMutex;
   std::string mSelectedVisualizer;
   AbstractAnimationWindow *mpAnimationWidget;
 public slots:

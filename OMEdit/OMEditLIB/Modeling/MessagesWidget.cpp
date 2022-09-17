@@ -462,6 +462,8 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mSuppressMessagesList << "libpng warning*" /* libpng warning comes from QWebView default images. */
                         << "Gtk-Message:*" /* Gtk warning comes when Qt tries to open the native dialogs. */;
 #endif
+  mPendingMessagesQueue.clear();
+  mShowingPendingMessages = false;
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -619,6 +621,36 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   }
   mpMessagesTabWidget->setCurrentWidget(mpAllMessageWidget);
   emit MessageAdded();
+}
+
+/*!
+ * \brief MessagesWidget::addPendingMessage
+ * Adds the error message to the container of pending messages.
+ * \param messageItem
+ */
+void MessagesWidget::addPendingMessage(MessageItem messageItem)
+{
+  QMutexLocker locker(&mPendingMessagesMutex);
+  mPendingMessagesQueue.enqueue(messageItem);
+}
+
+/*!
+ * \brief MessagesWidget::showPendingMessages
+ * Shows the error messages from the container of pending messages.
+ */
+void MessagesWidget::showPendingMessages()
+{
+  QMutexLocker locker(&mPendingMessagesMutex);
+  if (!mShowingPendingMessages) {
+    mShowingPendingMessages = true;
+    while (!mPendingMessagesQueue.isEmpty()) {
+      MessageItem messageItem = mPendingMessagesQueue.dequeue();
+      locker.unlock();
+      addGUIMessage(messageItem);
+      locker.relock();
+    }
+    mShowingPendingMessages = false;
+  }
 }
 
 /*!
