@@ -48,7 +48,42 @@
 #include <osg/StateAttribute>
 #include <osg/Texture2D>
 #include <osgDB/ReadFile>
+#include <osgGA/OrbitManipulator>
 #include <osgUtil/CullVisitor>
+
+#include <OpenThreads/ScopedLock>
+
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <limits>
+#include <map>
+#include <unordered_map>
+#include <vector>
+
+// Specializations required for std::map and std::unordered_map to work with const std::reference_wrapper as keys
+
+template<typename T>
+struct std::hash<const std::reference_wrapper<T>> {
+  std::size_t operator()(const std::reference_wrapper<T>& ref) const {
+    return reinterpret_cast<std::uintptr_t>(&ref.get());
+  }
+};
+
+template<typename T>
+struct std::less<const std::reference_wrapper<T>> {
+  bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const {
+    return &lhs.get() < &rhs.get();
+  }
+};
+
+template<typename T>
+struct std::equal_to<const std::reference_wrapper<T>> {
+  bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const {
+    return &lhs.get() == &rhs.get();
+  }
+};
 
 // Definition required for static constexpr members being ODR-used
 
@@ -521,6 +556,366 @@ void VisualizationAbstract::startVisualization()
 void VisualizationAbstract::pauseVisualization()
 {
   mpTimeManager->setPause(true);
+}
+
+/*!
+ * \brief   Adjust scaling of vector visualizers.
+ * \details Choose suitable scales for the radius and the length of vector visualizers.
+ *          Scaling is completely decoupled for radius and length.
+ *          Only adjustable-radius vectors will have their radius adjusted, as well as
+ *          only adjustable-length vectors will have their length adjusted.
+ *          <hr>
+ *          Adjustment of the radius scale is implemented as a heuristic
+ *          that makes the radius of adjustable-radius vectors
+ *          equal to the median value of
+ *          - the radii of fixed-radius vectors and
+ *          - the radii of relevant shapes,
+ *          plus or minus some constant factor (default: -10%).
+ *          <hr>
+ *          Adjustment of the length scale is implemented as a heuristic
+ *          that adjusts the length of adjustable-length vectors
+ *          for each vector quantity independently
+ *          (all adjustable-length vectors of the same vector quantity
+ *          will see their length scaled with the same factor for consistent comparison)
+ *          by performing a binary search (dichotomy), the aim of which is to
+ *          increase the lengths as much as possible for vectors to be clearly visible,
+ *          while ensuring that the following two constraints are satisfied,
+ *          the first one having priority over the second one:
+ *          - the vector lengths must be greater than that of their respective heads,
+ *            plus or minus some constant margin (default: +10%),
+ *            so that all the shaft lengths are guaranteed to be greater than zero;
+ *          - the final camera distance to the focal center must not be greater than
+ *            the initial distance obtained without drawing adjustable-length vectors,
+ *            plus or minus some constant margin (default: +10%),
+ *            so that the model size (and thus its first appearance) remains similar.
+ *          The model size is computed from the bounding spheres of all the nodes in the model,
+ *          and the home position of the camera is defined as a function of the model size.
+ *          <hr>
+ *          Hence, scaling vectors can be seen like scaling bounding spheres, and this explains why
+ *          the radius is scaled before the length as it affects the bounding sphere of the vector.
+ *          <hr>
+ *          During the binary search, floating-point numbers are treated as integer bit patterns,
+ *          thus considering quantities as if they were given in units in the last place (ULP).
+ *          This allows to stop the search when a constant precision is reached (default: 4096ulp)
+ *          instead of doing comparisons between numbers with a constant floating-point tolerance.
+ *          The value of the length scale is technically bounded from zero to infinity, and
+ *          the initial guess for the search is chosen as the default value provided by the MSL.
+ *          Since this is expected to be a good initial guess in general, for faster convergence
+ *          the search can be reduced to a smaller interval (initial minimum and maximum bounds).
+ *          However, those bounds shall be moved if the optimal value ends up being outside.
+ *          For this purpose, a moving horizon can be constantly enabled (default: true)
+ *          which automatically adapts the bounds such that, starting from an empty interval,
+ *          the search continues either below or above the current value,
+ *          shifting the bounds towards a constant horizon (default: 16777216ulp)
+ *          that is either subtracted from or added to the current value.
+ *          Whenever it moves, the default horizon has the effect of halving or doubling the value.
+ * \note    Implemented heuristics do not consider time-varying inputs (e.g., length of vectors),
+ *          they rather try to fit vectors with their initial attributes nicely in the scene.
+ * \note    For debugging purposes, MessagesWidget::addPendingMessage() shall be used
+ *          instead of MessagesWidget::addGUIMessage() when \p mutex is locked.
+ * \param[in] view OSG view of the scene composed of at least one camera.
+ * \param[in] mutex OT mutex for synchronization of frame rendering.
+ * \param[in] frame VW frame function to trigger frame rendering.
+ */
+void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex, std::function<void()> frame)
+{
+  /* Return early if there is nothing to do */
+  if (view == nullptr || getBaseData()->_vectors.size() == 0) {
+    return;
+  }
+
+  /* Constants to be tuned for well-performing heuristics */
+  constexpr int8_t factorRadius   = -10; // Factor for vector radius greater than median of fixed radii in percent [%]
+  constexpr int8_t marginLength   = +10; // Margin for vector length greater than length of its head(s) in percent [%]
+  constexpr int8_t marginDistance = +10; // Margin for home distance greater than initial home distance in percent [%]
+  constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place [ulp]
+  constexpr uint32_t hulp = 0x01000000;  // Move this horizon in units in the last place [ulp]
+  constexpr uint32_t pulp = 0x00001000;  // Minimum precision in units in the last place [ulp]
+
+  /* Cancel out transform scales before adjustments begin */
+  OpenThreads::ScopedPointerLock<OpenThreads::Mutex> lock(mutex); // Wait for any previous frame to complete rendering, and lock until adjustments are finished
+  for (VectorObject& vector : getBaseData()->_vectors) {
+    vector.setAutoScaleCancellationRequired(true);
+  }
+  if (!frame) frame = std::bind(&osgViewer::ViewerBase::frame, view->getViewerBase(), USE_REFERENCE_TIME);
+  frame(); // Work-around for osg::AutoTransform::computeBound() (see OSG commits 25abad8 & 92092a5 & 5c48904)
+
+  /* Adjustable-radius vectors */
+  {
+    // Initialize containers of relevant shapes as well as fixed- and adjustable-radius vectors
+    std::vector<ShapeObject>& relevantShapes = getBaseData()->_shapes;
+    std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
+    std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
+    for (VectorObject& vector : getBaseData()->_vectors) {
+      if (vector.isAdjustableRadius() && vector.getRadius() > 0) {
+        adjustableRadiusVectors.push_back(vector);
+      } else {
+        fixedRadiusVectors.push_back(vector);
+      }
+    }
+
+    // Proceed with scaling adjustable-radius vectors
+    if (adjustableRadiusVectors.size() > 0) {
+      float scale = 1;
+
+      // Browse radii only if there are any fixed-radius vectors or relevant shapes
+      if (fixedRadiusVectors.size() > 0 || relevantShapes.size() > 0) {
+        std::vector<float> radii;
+
+        // Store the radius of fixed-radius vectors
+        for (VectorObject& vector : fixedRadiusVectors) {
+          const float radius = vector.getRadius();
+
+          // Take into account visible vectors only
+          if (radius > 0) {
+            radii.push_back(radius);
+          }
+        }
+
+        // Store the radius of relevant shapes
+        for (ShapeObject& shape : relevantShapes) {
+          // Consider OpenSceneGraph shape drawables only
+          if (shape._type.compare("dxf") == 0 || shape._type.compare("stl") == 0) {
+            continue;
+          }
+
+          // For the world component, discard axis labels and arrow heads
+          if (shape._id.rfind("world.", 0) == 0) {
+            if (shape._id.compare("world.x_arrowLine") != 0 &&
+                shape._id.compare("world.y_arrowLine") != 0 &&
+                shape._id.compare("world.z_arrowLine") != 0 &&
+                shape._id.compare("world.gravityArrowLine") != 0) {
+              continue;
+            }
+          }
+
+          // Take the main dimension orthogonal to the principal direction
+          float radius = shape._width.exp / 2;
+          if (shape._type == "sphere") {
+            radius = shape._length.exp / 2;
+          } else if (shape._type == "spring") {
+            radius = shape._width.exp;
+          }
+
+          // Take into account visible shapes only
+          if (radius > 0) {
+            radii.push_back(radius);
+          }
+        }
+
+        // Compute the median of the radii (see https://stackoverflow.com/a/34077478)
+        const size_t s = radii.size();
+        if (s > 0) {
+          float median = radii[0];
+          if (s > 1) {
+            const size_t n = s / 2;
+            const std::vector<float>::iterator beg = radii.begin();
+            const std::vector<float>::iterator end = radii.end();
+            const std::vector<float>::iterator mid = beg + n;
+            std::nth_element(beg, mid, end);
+            if (s & 1) { // Odd-sized container
+              median = *mid;
+            } else { // Even-sized container
+              // Following statement is equivalent to, but on average faster than:
+              // const std::vector<float>::iterator max = beg;
+              // std::nth_element(beg, max, mid, std::greater<float>{});
+              const std::vector<float>::iterator max = std::max_element(beg, mid);
+              // Average of left & right middle values (avoid overflow)
+              median = *max + (*mid - *max) * .5f;
+            }
+          }
+
+          // Scale the default radius
+          scale = median / VectorObject::kRadius * (1.f + factorRadius / 100.f);
+        }
+      }
+
+      // Apply the radius scale to all adjustable-radius vectors
+      for (VectorObject& vector : adjustableRadiusVectors) {
+        vector.setScaleRadius(scale);
+        updateVisualizer(vector, false);
+      }
+
+      // Recompute the home position
+      view->home();
+    }
+  }
+
+  /* Adjustable-length vectors */
+  {
+    // Initialize a container of adjustable-length vectors
+    std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
+    for (VectorObject& vector : getBaseData()->_vectors) {
+      if (vector.isAdjustableLength() && vector.getLength() > 0) {
+        adjustableLengthVectors.push_back(vector);
+      }
+    }
+
+    // Proceed with scaling adjustable-length vectors
+    if (adjustableLengthVectors.size() > 0) {
+      // Initialize a map of actual transform scales, one for each adjustable-length vector
+      std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
+      for (VectorObject& vector : adjustableLengthVectors) {
+        transformScales[vector] = vector.getScaleTransf();
+      }
+
+      // Update the bounds of the whole scene without any adjustable-length vectors
+      for (VectorObject& vector : adjustableLengthVectors) {
+        vector.setScaleTransf(0);
+        updateVisualizer(vector, false);
+      }
+
+      // Get the initial camera distance to the focal center
+      view->home();
+      const osgGA::OrbitManipulator* manipulator = static_cast<osgGA::OrbitManipulator*>(view->getCameraManipulator());
+      const double initialDistance = manipulator->getDistance();
+
+      // Initialize a map of adjustable-length vectors paired with their length scale, and grouped by their respective quantity
+      std::map<const VectorQuantity, std::pair<float, std::vector<std::reference_wrapper<VectorObject>>>> data;
+      for (VectorQuantity quantity = VectorQuantity::BEGIN; quantity != VectorQuantity::END; ++quantity) {
+        float scale = 1;
+        switch (quantity) {
+          case VectorQuantity::force:
+            scale /= VectorObject::kScaleForce;
+            break;
+          case VectorQuantity::torque:
+            scale /= VectorObject::kScaleTorque;
+            break;
+          default:
+            break;
+        }
+        for (VectorObject& vector : adjustableLengthVectors) {
+          if (vector.getQuantity() == quantity) {
+            data[quantity].first = scale;
+            data[quantity].second.push_back(vector);
+          }
+        }
+      }
+
+      // Iterate over each quantity separately to adjust the related length scale
+      for (std::pair<const VectorQuantity, std::pair<float, std::vector<std::reference_wrapper<VectorObject>>>>& pair : data) {
+        float& scale = pair.second.first;
+        std::vector<std::reference_wrapper<VectorObject>>& vectors = pair.second.second;
+
+        // Make the vectors of the current quantity visible again
+        // (the update is not necessary here because it is done inside and after the while loop in any case)
+        for (VectorObject& vector : vectors) {
+          vector.setScaleTransf(transformScales[vector]);
+        }
+
+        // Adjust the length scale for the current quantity as long as the criteria have not been met
+        constexpr size_t fbytes = sizeof(float);
+        constexpr size_t ubytes = sizeof(uint32_t);
+        constexpr size_t bytes = std::min(fbytes, ubytes);
+        constexpr float fmin = 0.f;
+        constexpr float fmax = std::numeric_limits<float>::max();
+        const     float fval = scale;
+        uint32_t umin = 0;
+        uint32_t umax = 0;
+        uint32_t uval = 0;
+        memcpy(&umin, &fmin, bytes);
+        memcpy(&umax, &fmax, bytes);
+        memcpy(&uval, &fval, bytes);
+        uint32_t min = umin;
+        uint32_t max = umax;
+        uint32_t val = uval;
+        bool isMinBelowLimit = false;
+        bool isMaxAboveLimit = false;
+        bool movedMinAlready = false;
+        bool movedMaxAlready = false;
+        bool squeezedTooMuch = false;
+        bool unzoomedTooMuch = false;
+        bool fulfilledWishes = false;
+        while (!fulfilledWishes) {
+          memset(&scale, 0x0, fbytes);
+          memcpy(&scale, &val, bytes);
+
+          // Apply the new length scale to the vectors of the current quantity
+          for (VectorObject& vector : vectors) {
+            vector.setScaleLength(scale);
+            updateVisualizer(vector, false);
+          }
+
+          // Get the new camera distance to the focal center
+          view->home();
+          const double distance = manipulator->getDistance();
+
+          // Determine if the new length scale has squeezed the vectors too much or unzoomed the scene too much
+          squeezedTooMuch = false;
+          for (VectorObject& vector : vectors) {
+            if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
+              squeezedTooMuch = true;
+              break;
+            }
+          }
+          unzoomedTooMuch = distance > initialDistance * (1.f + marginDistance / 100.f);
+
+          // Perform a floating-point binary search,
+          // assuming non-negative as well as non-NaN values,
+          // and interpreting the (assumed) IEEE 754 standard-compliant
+          // floating-point numbers (see https://en.wikipedia.org/wiki/IEEE_754)
+          // as integer bit patterns (see https://stackoverflow.com/questions/44991042),
+          // i.e., using ULP arithmetic (see https://en.wikipedia.org/wiki/Unit_in_the_last_place).
+          // For the sake of simplicity, the compiler is let optimize some of the operations and comparisons below.
+          // Binary search is a synonym for dichotomy or bisection method (see https://en.wikipedia.org/wiki/Bisection_method).
+          fulfilledWishes = true;
+          if (!squeezedTooMuch && unzoomedTooMuch) {
+            // Move binary search to lower half (floored)
+            isMaxAboveLimit = unzoomedTooMuch;
+            movedMaxAlready = true;
+            if (movingHorizon && !movedMinAlready) {
+              min = umax - umin > hulp && val > umin + hulp ? val - hulp : umin;
+            }
+            if (val > min) {
+              max = val;
+              if (max - min > pulp || !isMinBelowLimit) {
+                val = max - min <= pulp ? min : min + ((max - min) >> 1);
+                fulfilledWishes = false;
+              }
+            }
+          } else {
+            // Move binary search to higher half (ceiled)
+            isMinBelowLimit = squeezedTooMuch;
+            movedMinAlready = true;
+            if (movingHorizon && !movedMaxAlready) {
+              max = umax - umin > hulp && val < umax - hulp ? val + hulp : umax;
+            }
+            if (val < max) {
+              min = val;
+              if (max - min > pulp || !isMaxAboveLimit || isMinBelowLimit) {
+                val = max - min <= pulp ? max : min + ((max - min + 1) >> 1);
+                fulfilledWishes = false;
+              }
+            }
+          }
+        }
+
+        // Make the vectors of the current quantity invisible again
+        // (until all length scales have been carefully adjusted)
+        for (VectorObject& vector : vectors) {
+          vector.setScaleTransf(0);
+          updateVisualizer(vector, false);
+        }
+      }
+
+      // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scale
+      for (VectorObject& vector : adjustableLengthVectors) {
+        vector.setScaleTransf(transformScales[vector]);
+        updateVisualizer(vector, false);
+      }
+
+      // Recompute the home position
+      view->home();
+    }
+  }
+
+  /* Counterbalance transform scales in the next cull traversal after adjustments are finished */
+  if (mutex) mutex->unlock();
+  MessagesWidget::instance()->showPendingMessages(); // Give a preemption chance to update widgets that may lead to a frame rendering
+  if (mutex) mutex->  lock();
+  for (VectorObject& vector : getBaseData()->_vectors) {
+    vector.setAutoScaleCancellationRequired(true);
+  }
 }
 
 

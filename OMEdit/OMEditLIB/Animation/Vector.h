@@ -38,7 +38,9 @@
 #include <limits>
 
 /*! Equivalent to Modelica.Mechanics.MultiBody.Types.VectorQuantity */
-enum class VectorQuantity {force = 1, torque, velocity, acceleration, angularVelocity, angularAcceleration, relativePosition};
+enum class VectorQuantity {force = 1, torque, velocity, acceleration, angularVelocity, angularAcceleration, relativePosition, END, BEGIN = force};
+
+VectorQuantity& operator++(VectorQuantity& quantity);
 
 std::ostream& operator<<(std::ostream& os, const VectorQuantity quantity);
 
@@ -72,8 +74,8 @@ public:
   static constexpr float kRadius      = 0.0125; //!< Modelica.Mechanics.MultiBody.World.defaultArrowDiameter / 2 = 1 / 40 / 2 = 0.0125
   static constexpr float kHeadLength  = 0.1000; //!< Modelica.Mechanics.MultiBody.Types.Defaults.ArrowHeadLengthFraction * (2 * kRadius) = 4 * 0.025 = 0.1000
   static constexpr float kHeadRadius  = 0.0375; //!< Modelica.Mechanics.MultiBody.Types.Defaults.ArrowHeadWidthFraction * (2 * kRadius) / 2 = 3 * 0.025 / 2 = 0.0375
-  static constexpr float kScaleForce  =   1200; //!< Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque.world.defaultN_to_m = 1200
-  static constexpr float kScaleTorque =    120; //!< Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque.world.defaultNm_to_m = 120
+  static constexpr float kScaleForce  =   1000; //!< Modelica.Mechanics.MultiBody.World.defaultN_to_m = 1000
+  static constexpr float kScaleTorque =   1000; //!< Modelica.Mechanics.MultiBody.World.defaultNm_to_m = 1000
   static constexpr char  kAutoScaleRenderBinName[] = "RenderBin"; //!< See class RenderBinPrototypeList in osgUtil/RenderBin.cpp
   static constexpr int   kAutoScaleRenderBinNum    = std::numeric_limits<int>::max(); //!< To be rendered last
 private:

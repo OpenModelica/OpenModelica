@@ -31,6 +31,12 @@
 
 #include "Vector.h"
 
+VectorQuantity& operator++(VectorQuantity& quantity)
+{
+  quantity = static_cast<VectorQuantity>(static_cast<int>(quantity) + 1);
+  return quantity;
+}
+
 std::ostream& operator<<(std::ostream& os, const VectorQuantity quantity)
 {
   switch (quantity)

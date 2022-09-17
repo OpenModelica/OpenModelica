@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <iostream>
+#include <functional>
 
 #include <QColor>
 #include <QImage>
@@ -56,6 +57,9 @@
 #include <osg/RenderInfo>
 #include <osgUtil/RenderBin>
 #include <osgUtil/RenderLeaf>
+#include <osgViewer/View>
+
+#include <OpenThreads/Mutex>
 
 #include "ExtraShapes.h"
 
@@ -212,6 +216,7 @@ public:
   void setUpScene();
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
+  void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
   void sceneUpdate();
   void updateVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
   void modifyVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
