@@ -43,14 +43,13 @@
 #include <QImage>
 #include <QOpenGLContext> // must be included before OSG headers
 
-#include <osg/NodeVisitor>
-#include <osg/Geode>
 #include <osg/MatrixTransform>
-#include <osg/ShapeDrawable>
-#include <osg/Material>
-#include <osgDB/ReadFile>
-#include <osg/Texture2D>
-#include <osg/TexMat>
+#include <osg/StateSet>
+#include <osg/Image>
+#include <osg/Geode>
+#include <osg/Group>
+#include <osg/Node>
+#include <osg/NodeVisitor>
 
 #include "ExtraShapes.h"
 

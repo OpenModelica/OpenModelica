@@ -40,12 +40,13 @@
 
 #include <QOpenGLContext> // must be included before OSG headers
 
-#include <osg/Image>
+#include <osg/Drawable>
+#include <osg/Material>
 #include <osg/Shape>
-#include <osg/Node>
-#include <osgDB/Export>
-#include <osgDB/Registry>
-#include <osgDB/WriteFile>
+#include <osg/ShapeDrawable>
+#include <osg/StateAttribute>
+#include <osg/Texture2D>
+#include <osgDB/ReadFile>
 
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
   : _shapes(),
