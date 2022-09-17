@@ -627,8 +627,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
  */
 void MessagesWidget::clearMessages()
 {
-  mpAllMessageWidget->clearAllTabsMessages();
-  mpNotificationMessageWidget->clearAllTabsMessages();
-  mpWarningMessageWidget->clearAllTabsMessages();
-  mpErrorMessageWidget->clearAllTabsMessages();
+  mpAllMessageWidget->clearThisTabMessages();
+  mpNotificationMessageWidget->clearThisTabMessages();
+  mpWarningMessageWidget->clearThisTabMessages();
+  mpErrorMessageWidget->clearThisTabMessages();
 }
