@@ -46,6 +46,7 @@ public:
   ~VectorObject() = default;
   VectorObject(const VectorObject&) = default;
   VectorObject& operator=(const VectorObject&) = default;
+  VectorObject* asVector() override final {return this;}
   void dumpVisualizerAttributes() const override;
   float getScale() const;
   float getLength() const;

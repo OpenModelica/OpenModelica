@@ -57,6 +57,28 @@ OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path
 }
 
 /*!
+ * \brief OMVisualBase::getVisualizerObjectByIdx
+ * get the AbstractVisualizerObject with the same visualizerIdx
+ *\param the index of the visualizer
+ *\return the selected visualizer
+ */
+AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size_t visualizerIdx)
+{
+  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
+  visualizers.reserve(_shapes.size() + _vectors.size());
+  for (ShapeObject& shape : _shapes) {
+    visualizers.push_back(shape);
+  }
+  for (VectorObject& vector : _vectors) {
+    visualizers.push_back(vector);
+  }
+  if (visualizerIdx < visualizers.size()) {
+    return &visualizers.at(visualizerIdx).get();
+  }
+  return nullptr;
+}
+
+/*!
  * \brief OMVisualBase::getVisualizerObjectByID
  * get the AbstractVisualizerObject with the same visualizerID
  *\param the name of the visualizer
@@ -374,17 +396,55 @@ TimeManager* VisualizationAbstract::getTimeManager() const
   return mpTimeManager;
 }
 
-void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName)
+void VisualizationAbstract::updateVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
 {
   int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
   AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
-  visualizer->setStateSetAction(StateSetAction::modify);
+  osg::ref_ptr<osg::Node> child = getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
   mpUpdateVisitor->_visualizer = visualizer;
-  osg::ref_ptr<osg::Node> child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  child->accept(*mpUpdateVisitor);
+}
+
+void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
+{
+  int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
+  AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
+  osg::ref_ptr<osg::Node> child = getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
+  mpUpdateVisitor->_visualizer = visualizer;
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  visualizer->setStateSetAction(StateSetAction::modify);
   child->accept(*mpUpdateVisitor);
   visualizer->setStateSetAction(StateSetAction::update);
 }
 
+void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
+  mpUpdateVisitor->_visualizer = visualizer;
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  visualizer->getTransformNode()->accept(*mpUpdateVisitor);
+}
+
+void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
+  mpUpdateVisitor->_visualizer = visualizer;
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  visualizer->setStateSetAction(StateSetAction::modify);
+  visualizer->getTransformNode()->accept(*mpUpdateVisitor);
+  visualizer->setStateSetAction(StateSetAction::update);
+}
+
+void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
+  mpUpdateVisitor->_visualizer = &visualizer;
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  visualizer.getTransformNode()->accept(*mpUpdateVisitor);
+}
+
+void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
+  mpUpdateVisitor->_visualizer = &visualizer;
+  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
+  visualizer.setStateSetAction(StateSetAction::modify);
+  visualizer.getTransformNode()->accept(*mpUpdateVisitor);
+  visualizer.setStateSetAction(StateSetAction::update);
+}
 
 void VisualizationAbstract::sceneUpdate()
 {
@@ -415,8 +475,8 @@ void VisualizationAbstract::sceneUpdate()
 void VisualizationAbstract::setUpScene()
 {
   // Build scene graph.
-  mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
-  mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_vectors);
+  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_shapes);
+  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_vectors);
 }
 
 VisType VisualizationAbstract::getVisType() const
@@ -428,8 +488,6 @@ OMVisualBase* VisualizationAbstract::getBaseData() const
 {
   return mpOMVisualBase;
 }
-
-
 
 OMVisScene* VisualizationAbstract::getOMVisScene() const
 {
@@ -482,9 +540,9 @@ OSGScene::OSGScene()
 {
 }
 
-void OSGScene::setUpScene(const std::vector<ShapeObject>& shapes)
+void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
 {
-  for (const ShapeObject& shape : shapes)
+  for (ShapeObject& shape : shapes)
   {
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
 
@@ -536,12 +594,14 @@ void OSGScene::setUpScene(const std::vector<ShapeObject>& shapes)
     }
 
     _rootNode->addChild(transf.get());
+
+    shape.setTransformNode(transf);
   }
 }
 
-void OSGScene::setUpScene(const std::vector<VectorObject>& vectors)
+void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 {
-  for (const VectorObject& vector : vectors)
+  for (VectorObject& vector : vectors)
   {
     Q_UNUSED(vector);
 
@@ -572,6 +632,8 @@ void OSGScene::setUpScene(const std::vector<VectorObject>& vectors)
     transf->addChild(geode.get());
 
     _rootNode->addChild(transf.get());
+
+    vector.setTransformNode(transf);
   }
 }
 
@@ -592,7 +654,8 @@ void OSGScene::setPath(const std::string path)
 
 
 UpdateVisitor::UpdateVisitor()
-  : _visualizer(nullptr)
+  : _visualizer(nullptr),
+    _changeMaterialProperties(true)
 {
   setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
 }
@@ -623,7 +686,7 @@ void UpdateVisitor::apply(osg::Geode& node)
     {
     case VisualizerType::shape:
      {
-      ShapeObject* shape = static_cast<ShapeObject*>(_visualizer);
+      ShapeObject* shape = _visualizer->asShape();
       if (shape->_type.compare("dxf") != 0 and shape->_type.compare("stl") != 0)
       {
         //it's a drawable and not a cad file so we have to create a new drawable
@@ -675,7 +738,7 @@ void UpdateVisitor::apply(osg::Geode& node)
 
     case VisualizerType::vector:
      {
-      VectorObject* vector = static_cast<VectorObject*>(_visualizer);
+      VectorObject* vector = _visualizer->asVector();
 
       const float vectorRadius = vector->getRadius();
       const float vectorLength = vector->getLength();
@@ -738,12 +801,14 @@ void UpdateVisitor::apply(osg::Geode& node)
 
   }//end switch action
 
-  //set color
-  if (!_visualizer->isShape() or static_cast<ShapeObject*>(_visualizer)->_type.compare("dxf") != 0)
-    changeColor(ss.get(), _visualizer->_color[0].exp, _visualizer->_color[1].exp, _visualizer->_color[2].exp);
+  if (_changeMaterialProperties) {
+    //set color
+    if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0)
+      changeColor(ss.get(), _visualizer->_color[0].exp, _visualizer->_color[1].exp, _visualizer->_color[2].exp);
 
-  //set transparency
-  changeTransparency(ss.get(), _visualizer->getTransparency());
+    //set transparency
+    changeTransparency(ss.get(), _visualizer->getTransparency());
+  }
 
   node.setStateSet(ss.get());
   traverse(node);

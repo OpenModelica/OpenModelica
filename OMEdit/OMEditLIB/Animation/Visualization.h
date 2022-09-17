@@ -81,6 +81,7 @@ public:
   void changeTransparency(osg::StateSet* ss, float transpCoeff);
 public:
   AbstractVisualizerObject* _visualizer;
+  bool _changeMaterialProperties;
 };
 
 class InfoVisitor : public osg::NodeVisitor
@@ -104,8 +105,8 @@ public:
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
-  void setUpScene(const std::vector<ShapeObject>& shapes);
-  void setUpScene(const std::vector<VectorObject>& vectors);
+  void setUpScene(std::vector<ShapeObject>& shapes);
+  void setUpScene(std::vector<VectorObject>& vectors);
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
@@ -139,6 +140,7 @@ public:
   const std::string getModelFile() const;
   const std::string getPath() const;
   const std::string getXMLFileName() const;
+  AbstractVisualizerObject* getVisualizerObjectByIdx(const std::size_t visualizerIdx);
   AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
   int getVisualizerObjectIndexByID(const std::string& visualizerID);
 private:
@@ -165,7 +167,12 @@ public:
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
   void sceneUpdate();
-  void modifyVisualizer(const std::string& visualizerName);
+  void updateVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
+  void modifyVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
   virtual void simulate(TimeManager& omvm) = 0;
   virtual void updateScene(const double time) = 0;
 

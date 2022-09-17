@@ -78,8 +78,8 @@ public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   osgViewer::View* getSceneView() {return mpSceneView;}
   OpenThreads::Mutex* getFrameMutex() {return mpFrameMutex;}
-  std::string getSelectedVisualizer() {return mSelectedVisualizer;}
-  void setSelectedVisualizer(std::string visualizer) {mSelectedVisualizer = visualizer;}
+  AbstractVisualizerObject* getSelectedVisualizer() {return mpSelectedVisualizer;}
+  void setSelectedVisualizer(AbstractVisualizerObject* visualizer) {mpSelectedVisualizer = visualizer;}
   void pickVisualizer(int x, int y);
   void frame();
 protected:
@@ -100,8 +100,8 @@ private:
   osg::ref_ptr<Viewer> mpViewer;
   osgViewer::View* mpSceneView;
   OpenThreads::Mutex* mpFrameMutex;
-  std::string mSelectedVisualizer;
-  AbstractAnimationWindow *mpAnimationWidget;
+  AbstractAnimationWindow* mpAnimationWidget;
+  AbstractVisualizerObject* mpSelectedVisualizer;
 public slots:
   void changeVisualizerTransparency();
   void makeVisualizerInvisible();

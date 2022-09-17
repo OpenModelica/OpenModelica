@@ -101,6 +101,7 @@ std::string VisualizerAttribute::getValueString() const
 AbstractVisualizerObject::AbstractVisualizerObject(const VisualizerType type)
     : mVisualizerType(type),
       mStateSetAction(StateSetAction::update),
+      mTransformNode(nullptr),
       mTextureImagePath(""),
       mTransparency(0.0),
       _id(""),

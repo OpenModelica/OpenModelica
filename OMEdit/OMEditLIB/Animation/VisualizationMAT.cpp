@@ -112,10 +112,6 @@ void VisualizationMAT::updateVisAttributes(const double time)
   // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
 
-  rAndT rT;
-  osg::ref_ptr<osg::Node> child = nullptr;
-  unsigned int visualizerIdx = 0;
-
   try
   {
     for (ShapeObject& shape : mpOMVisualBase->_shapes)
@@ -161,7 +157,7 @@ void VisualizationMAT::updateVisAttributes(const double time)
 
       updateVisualizerAttributeMAT(shape._extra, time);
 
-      rT = rotateModelica2OSG(
+      rAndT rT = rotateModelica2OSG(
           osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
                        shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
                        shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
@@ -173,12 +169,9 @@ void VisualizationMAT::updateVisAttributes(const double time)
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
 
       // Update the shapes
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
+      updateVisualizer(shape);
       //shape.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
-      child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
     }
 
     for (VectorObject& vector : mpOMVisualBase->_vectors)
@@ -216,7 +209,7 @@ void VisualizationMAT::updateVisAttributes(const double time)
 
       updateVisualizerAttributeMAT(vector._twoHeadedArrow, time);
 
-      rT = rotateModelica2OSG(
+      rAndT rT = rotateModelica2OSG(
           osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
                        vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
                        vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
@@ -226,12 +219,9 @@ void VisualizationMAT::updateVisAttributes(const double time)
       assemblePokeMatrix(vector._mat, rT._T, rT._r);
 
       // Update the vectors
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&vector);
+      updateVisualizer(vector);
       //vector.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
-      child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
     }
   }
   catch (std::exception& ex)
