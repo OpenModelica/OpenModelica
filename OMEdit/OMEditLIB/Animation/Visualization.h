@@ -39,6 +39,7 @@
 #include <memory.h>
 #include <iostream>
 
+#include <QColor>
 #include <QImage>
 #include <QOpenGLContext> // must be included before OSG headers
 
@@ -77,8 +78,8 @@ public:
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
-  void changeColor(osg::StateSet* ss, float r, float g, float b);
-  void changeTransparency(osg::StateSet* ss, float transpCoeff);
+  void changeColor(osg::StateSet* ss, const QColor color);
+  void changeTransparency(osg::StateSet* ss, const float transparency);
 public:
   AbstractVisualizerObject* _visualizer;
   bool _changeMaterialProperties;

@@ -800,7 +800,7 @@ void UpdateVisitor::apply(osg::Geode& node)
   if (_changeMaterialProperties) {
     //set color
     if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0)
-      changeColor(node.getOrCreateStateSet(), _visualizer->_color[0].exp, _visualizer->_color[1].exp, _visualizer->_color[2].exp);
+      changeColor(node.getOrCreateStateSet(), _visualizer->getColor());
 
     //set transparency
     changeTransparency(node.getOrCreateStateSet(), _visualizer->getTransparency());
@@ -884,13 +884,13 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
  * \brief UpdateVisitor::changeColor
  * changes color for a geode
  */
-void UpdateVisitor::changeColor(osg::StateSet* ss, float r, float g, float b)
+void UpdateVisitor::changeColor(osg::StateSet* ss, const QColor color)
 {
   if (ss)
   {
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     if (!material.valid()) material = new osg::Material();
-    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(r / 255, g / 255, b / 255, 1.0));
+    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
     ss->setAttribute(material.get());
   }
 }
@@ -899,16 +899,16 @@ void UpdateVisitor::changeColor(osg::StateSet* ss, float r, float g, float b)
  * \brief UpdateVisitor::changeTransparency
  * changes transparency for a geode
  */
-void UpdateVisitor::changeTransparency(osg::StateSet* ss, float transpCoeff)
+void UpdateVisitor::changeTransparency(osg::StateSet* ss, const float transparency)
 {
-  if (ss and _visualizer->getTransparency())
+  if (ss)
   {
-    ss->setMode(GL_BLEND, osg::StateAttribute::ON);
-    ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     if (!material.valid()) material = new osg::Material();
-    material->setTransparency(osg::Material::FRONT_AND_BACK, transpCoeff);
+    material->setTransparency(osg::Material::FRONT_AND_BACK, transparency);
     ss->setAttributeAndModes(material.get(), osg::StateAttribute::OVERRIDE);
+    ss->setMode(GL_BLEND, transparency ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    ss->setRenderingHint(transparency ? osg::StateSet::TRANSPARENT_BIN : osg::StateSet::OPAQUE_BIN);
   }
 }
 
