@@ -43,6 +43,8 @@
 #include <QImage>
 #include <QOpenGLContext> // must be included before OSG headers
 
+#include <osg/Transform>
+#include <osg/AutoTransform>
 #include <osg/MatrixTransform>
 #include <osg/StateSet>
 #include <osg/Image>
@@ -50,6 +52,10 @@
 #include <osg/Group>
 #include <osg/Node>
 #include <osg/NodeVisitor>
+#include <osg/NodeCallback>
+#include <osg/RenderInfo>
+#include <osgUtil/RenderBin>
+#include <osgUtil/RenderLeaf>
 
 #include "ExtraShapes.h"
 
@@ -60,6 +66,8 @@
 #include "AbstractVisualizer.h"
 #include "Shape.h"
 #include "Vector.h"
+
+class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
 
 struct UserSimSettingsMAT
 {
@@ -74,6 +82,8 @@ public:
   UpdateVisitor(const UpdateVisitor& uv) = delete;
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node) override;
+  virtual void apply(osg::Transform& node) override;
+  virtual void apply(osg::AutoTransform& node); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
@@ -98,10 +108,45 @@ private:
   unsigned int _level;
 };
 
+class AutoTransformDrawCallback : public osgUtil::RenderBin::DrawCallback
+{
+public:
+  AutoTransformDrawCallback();
+  ~AutoTransformDrawCallback() = default;
+  AutoTransformDrawCallback(const AutoTransformDrawCallback& callback) = delete;
+  AutoTransformDrawCallback& operator=(const AutoTransformDrawCallback& callback) = delete;
+  virtual void drawImplementation(osgUtil::RenderBin* bin, osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous) override;
+};
+
+class AutoTransformCullCallback : public osg::NodeCallback
+{
+public:
+  AutoTransformCullCallback(VisualizationAbstract* visualization);
+  ~AutoTransformCullCallback() = default;
+  AutoTransformCullCallback(const AutoTransformCullCallback& callback) = delete;
+  AutoTransformCullCallback& operator=(const AutoTransformCullCallback& callback) = delete;
+  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) override; // Work-around for osg::Callback::run(osg::Object*, osg::Object*) (see OSG commit 977ec20)
+protected:
+  osg::ref_ptr<AutoTransformDrawCallback> _atDrawCallback;
+  VisualizationAbstract* mpVisualization;
+};
+
+class AutoTransformVisualizer : public osg::AutoTransform
+{
+public:
+  AutoTransformVisualizer(AbstractVisualizerObject* visualizer);
+  ~AutoTransformVisualizer() = default;
+  AutoTransformVisualizer(const AutoTransformVisualizer& transform) = delete;
+  AutoTransformVisualizer& operator=(const AutoTransformVisualizer& transform) = delete;
+  AbstractVisualizerObject* getVisualizerObject() const {return mpVisualizer;}
+protected:
+  AbstractVisualizerObject* mpVisualizer;
+};
+
 class OSGScene
 {
 public:
-  OSGScene();
+  OSGScene(VisualizationAbstract* visualization);
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
@@ -111,6 +156,7 @@ public:
   std::string getPath() const;
   void setPath(const std::string path);
 private:
+  osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
 };
@@ -118,7 +164,7 @@ private:
 class OMVisScene
 {
 public:
-  OMVisScene();
+  OMVisScene(VisualizationAbstract* visualization);
   ~OMVisScene() = default;
   OMVisScene(const OMVisScene& omvv) = delete;
   OMVisScene& operator=(const OMVisScene& omvv) = delete;

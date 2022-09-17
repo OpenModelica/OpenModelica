@@ -120,7 +120,7 @@ if test "$WITH_OSG" = 0; then
   AC_MSG_RESULT("Disabled OSG")
 else
   QMAKE_CONFIG_OSG="CONFIG += osg"
-  LIBOSG="-losg -losgViewer -losgDB -losgGA -lOpenThreads"
+  LIBOSG="-losg -losgViewer -losgUtil -losgDB -losgGA -lOpenThreads -lGL"
   AC_MSG_RESULT("OSG is enabled")
 fi
 

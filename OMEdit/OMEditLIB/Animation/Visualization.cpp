@@ -39,6 +39,7 @@
 #endif
 
 #include <QOpenGLContext> // must be included before OSG headers
+#include <osg/GL> // for having direct access to glClear()
 
 #include <osg/Drawable>
 #include <osg/Material>
@@ -47,6 +48,12 @@
 #include <osg/StateAttribute>
 #include <osg/Texture2D>
 #include <osgDB/ReadFile>
+#include <osgUtil/CullVisitor>
+
+// Definition required for static constexpr members being ODR-used
+
+constexpr char VectorObject::kAutoScaleRenderBinName[];
+
 
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
   : _shapes(),
@@ -371,7 +378,7 @@ VisualizationAbstract::VisualizationAbstract()
 VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
   : _visType(visType),
     mpOMVisualBase(nullptr),
-    mpOMVisScene(new OMVisScene()),
+    mpOMVisScene(new OMVisScene(this)),
     mpUpdateVisitor(new UpdateVisitor()),
     mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
 {
@@ -517,8 +524,65 @@ void VisualizationAbstract::pauseVisualization()
 }
 
 
-OMVisScene::OMVisScene()
-  : _scene()
+AutoTransformDrawCallback::AutoTransformDrawCallback()
+{
+}
+
+void AutoTransformDrawCallback::drawImplementation(osgUtil::RenderBin* bin, osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous)
+{
+  glClear(GL_DEPTH_BUFFER_BIT); // Render on top of everything drawn so far
+  bin->drawImplementation(renderInfo, previous);
+}
+
+AutoTransformCullCallback::AutoTransformCullCallback(VisualizationAbstract* visualization)
+  : _atDrawCallback(new AutoTransformDrawCallback()),
+    mpVisualization(visualization)
+{
+}
+
+void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv)
+{
+  if (node && nv && nv->getVisitorType() == osg::NodeVisitor::CULL_VISITOR) {
+    osg::ref_ptr<osg::AutoTransform> at = dynamic_cast<osg::AutoTransform*>(node->asTransform()); // Work-around for osg::Transform::asAutoTransform() (see OSG commit a4b0dc7)
+    if (at.valid()) {
+      osg::ref_ptr<osgUtil::CullVisitor> cv = dynamic_cast<osgUtil::CullVisitor*>(nv); // Work-around for osg::NodeVisitor::asCullVisitor() (see OSG commit 8fc287c)
+      if (cv.valid()) {
+        osg::ref_ptr<osgUtil::RenderBin> rb = cv->getCurrentRenderBin();
+        if (rb.valid()) {
+          rb->setDrawCallback(rb->getBinNum() == VectorObject::kAutoScaleRenderBinNum ? _atDrawCallback.get() : nullptr);
+        }
+      }
+      if (mpVisualization) {
+        AbstractVisualizerObject* visualizer = nullptr;
+        osg::ref_ptr<AutoTransformVisualizer> atv = dynamic_cast<AutoTransformVisualizer*>(at.get()); // Work-around for avoiding search in containers
+        if (atv.valid()) {
+          visualizer = atv->getVisualizerObject();
+        } else {
+          std::size_t visualizerIdx = mpVisualization->getOMVisScene()->getScene().getRootNode()->getChildIndex(node);
+          visualizer = mpVisualization->getBaseData()->getVisualizerObjectByIdx(visualizerIdx);
+        }
+        if (visualizer && visualizer->isVector()) {
+          VectorObject* vector = visualizer->asVector();
+          if (vector->getAutoScaleCancellationRequired()) {
+            vector->setAutoScaleCancellationRequired(false);
+            vector->setScaleTransf(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+            mpVisualization->updateVisualizer(vector, false);
+          }
+        }
+      }
+    }
+  }
+  traverse(node, nv);
+}
+
+AutoTransformVisualizer::AutoTransformVisualizer(AbstractVisualizerObject* visualizer)
+  : mpVisualizer(visualizer)
+{
+}
+
+
+OMVisScene::OMVisScene(VisualizationAbstract* visualization)
+  : _scene(visualization)
 {
 }
 
@@ -535,8 +599,9 @@ OSGScene& OMVisScene::getScene()
 }
 
 
-OSGScene::OSGScene()
-  : _rootNode(new osg::Group()),
+OSGScene::OSGScene(VisualizationAbstract* visualization)
+  : _atCullCallback(new AutoTransformCullCallback(visualization)),
+    _rootNode(new osg::Group()),
     _path("")
 {
 }
@@ -603,9 +668,14 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 {
   for (VectorObject& vector : vectors)
   {
-    Q_UNUSED(vector);
-
-    osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
+    osg::ref_ptr<AutoTransformVisualizer> transf = new AutoTransformVisualizer(&vector);
+    transf->setAutoRotateMode(osg::AutoTransform::NO_ROTATION);
+    transf->setAutoScaleTransitionWidthRatio(0);
+    transf->setAutoScaleToScreen(vector.isScaleInvariant());
+    transf->setCullingActive(!vector.isScaleInvariant()); // Work-around for osg::AutoTransform::setAutoScaleToScreen(bool) (see OSG commit 5c48904)
+    transf->getOrCreateStateSet()->setMode(GL_NORMALIZE, vector.isScaleInvariant() ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    transf->getOrCreateStateSet()->setRenderBinDetails(VectorObject::kAutoScaleRenderBinNum - !vector.isDrawnOnTop(), VectorObject::kAutoScaleRenderBinName);
+    transf->addCullCallback(_atCullCallback.get());
 
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw0 = new osg::ShapeDrawable(); // shaft cylinder
     shapeDraw0->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
@@ -657,6 +727,29 @@ UpdateVisitor::UpdateVisitor()
     _changeMaterialProperties(true)
 {
   setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
+}
+
+/**
+ Transform
+ */
+void UpdateVisitor::apply(osg::Transform& node)
+{
+  try {
+    apply(dynamic_cast<osg::AutoTransform&>(node)); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
+  } catch (const std::bad_cast& exception) {
+    NodeVisitor::apply(node);
+  }
+}
+
+/**
+ AutoTransform
+ */
+void UpdateVisitor::apply(osg::AutoTransform& node)
+{
+  //std::cout<<"AT "<<node.className()<<"  "<<node.getName()<<std::endl;
+  node.setPosition(_visualizer->_mat.getTrans());
+  node.setRotation(_visualizer->_mat.getRotate());
+  traverse(node);
 }
 
 /**
