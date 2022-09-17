@@ -688,6 +688,7 @@ void UpdateVisitor::apply(osg::Geode& node)
       {
         //it's a drawable and not a cad file so we have to create a new drawable
         osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
+        draw->dirtyBound();
         draw->dirtyDisplayList();
         if (shape->_type == "pipe")
         {
@@ -752,16 +753,19 @@ void UpdateVisitor::apply(osg::Geode& node)
       head2Shape->setCenter(head2Shape->getCenter() - vectorDirection * head2Shape->getBaseOffset());
 
       osg::ref_ptr<osg::Drawable> draw0 = node.getDrawable(0); // shaft cylinder
+      draw0->dirtyBound();
       draw0->dirtyDisplayList();
       draw0->setShape(shaftShape.get());
       //std::cout<<"VECTOR shaft "<<draw0->getShape()->className()<<std::endl;
 
       osg::ref_ptr<osg::Drawable> draw1 = node.getDrawable(1); // first head cone
+      draw1->dirtyBound();
       draw1->dirtyDisplayList();
       draw1->setShape(head1Shape.get());
       //std::cout<<"VECTOR first head "<<draw1->getShape()->className()<<std::endl;
 
       osg::ref_ptr<osg::Drawable> draw2 = node.getDrawable(2); // second head cone
+      draw2->dirtyBound();
       draw2->dirtyDisplayList();
       if (vector->isTwoHeadedArrow())
       {
