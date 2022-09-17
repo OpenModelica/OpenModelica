@@ -691,18 +691,15 @@ void UpdateVisitor::apply(osg::Geode& node)
         draw->dirtyDisplayList();
         if (shape->_type == "pipe")
         {
-          node.removeDrawable(draw.get());
-          draw = new Pipecylinder(shape->_width.exp * shape->_extra.exp / 2, shape->_width.exp / 2, shape->_length.exp);
+          node.setDrawable(0, new Pipecylinder(shape->_width.exp * shape->_extra.exp / 2, shape->_width.exp / 2, shape->_length.exp));
         }
         else if (shape->_type == "pipecylinder")
         {
-          node.removeDrawable(draw.get());
-          draw = new Pipecylinder(shape->_width.exp * shape->_extra.exp / 2, shape->_width.exp / 2, shape->_length.exp);
+          node.setDrawable(0, new Pipecylinder(shape->_width.exp * shape->_extra.exp / 2, shape->_width.exp / 2, shape->_length.exp));
         }
         else if (shape->_type == "spring")
         {
-          node.removeDrawable(draw.get());
-          draw = new Spring(shape->_width.exp, shape->_height.exp, shape->_extra.exp, shape->_length.exp);
+          node.setDrawable(0, new Spring(shape->_width.exp, shape->_height.exp, shape->_extra.exp, shape->_length.exp));
         }
         else if (shape->_type == "box")
         {
@@ -728,7 +725,6 @@ void UpdateVisitor::apply(osg::Geode& node)
           draw->setShape(new osg::Capsule(osg::Vec3f(), 0.1, 0.5));
         }
         //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
-        node.addDrawable(draw.get());
       }
       break;
      }//end case type shape
