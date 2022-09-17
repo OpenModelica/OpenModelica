@@ -702,28 +702,30 @@ void UpdateVisitor::apply(osg::Geode& node)
         {
           node.setDrawable(0, new Spring(shape->_width.exp, shape->_height.exp, shape->_extra.exp, shape->_length.exp));
         }
-        else if (shape->_type == "box")
-        {
-          draw->setShape(new osg::Box(osg::Vec3f(), shape->_width.exp, shape->_height.exp, shape->_length.exp));
-        }
         else if (shape->_type == "cone")
         {
-          draw->setShape(new osg::Cone(osg::Vec3f(), shape->_width.exp / 2, shape->_length.exp));
+          osg::ref_ptr<osg::Cone> cone = new osg::Cone(osg::Vec3f(0, 0, 0), shape->_width.exp / 2, shape->_length.exp);
+          cone->setCenter(cone->getCenter() - osg::Vec3f(0, 0, cone->getBaseOffset())); // Cancel out undesired offset
+          draw->setShape(cone.get());
+        }
+        else if (shape->_type == "box")
+        {
+          draw->setShape(new osg::Box(osg::Vec3f(0, 0, shape->_length.exp / 2), shape->_width.exp, shape->_height.exp, shape->_length.exp));
         }
         else if (shape->_type == "cylinder")
         {
-          draw->setShape(new osg::Cylinder(osg::Vec3f(), shape->_width.exp / 2, shape->_length.exp));
+          draw->setShape(new osg::Cylinder(osg::Vec3f(0, 0, shape->_length.exp / 2), shape->_width.exp / 2, shape->_length.exp));
         }
         else if (shape->_type == "sphere")
         {
-          draw->setShape(new osg::Sphere(osg::Vec3f(), shape->_length.exp / 2));
+          draw->setShape(new osg::Sphere(osg::Vec3f(0, 0, shape->_length.exp / 2), shape->_length.exp / 2));
         }
         else
         {
           MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                                 QString(QObject::tr("Unknown type %1, we make a capsule.")).arg(shape->_type.c_str()),
                                                                 Helper::scriptingKind, Helper::errorLevel));
-          draw->setShape(new osg::Capsule(osg::Vec3f(), 0.1, 0.5));
+          draw->setShape(new osg::Capsule(osg::Vec3f(0, 0, 0), 0.1, 0.5));
         }
         //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
       }
@@ -734,20 +736,22 @@ void UpdateVisitor::apply(osg::Geode& node)
      {
       VectorObject* vector = _visualizer->asVector();
 
+      const bool  headAtOrigin = vector->hasHeadAtOrigin();
       const float vectorRadius = vector->getRadius();
       const float vectorLength = vector->getLength();
-      const float headRadius = vector->getHeadRadius();
-      const float headLength = vector->getHeadLength();
-      const float shaftRadius = vectorRadius;
-      const float shaftLength = vectorLength > headLength ? vectorLength - headLength : 0;
-      const osg::Vec3f vectorDirection = osg::Vec3f(0, 0, 1); // axis of symmetry directed from tail to head of arrow
-      const osg::Vec3f shaftPosition = vectorDirection * (- headLength / 2); // center of cylinder shifted for top of shaft to meet bottom of first head
-      const osg::Vec3f head1Position = vectorDirection * (vectorLength / 2 - headLength); // base of first cone (offset added by osg::Cone is canceled below)
-      const osg::Vec3f head2Position = head1Position - vectorDirection * headLength / 2; // base of second cone (offset added by osg::Cone is canceled below)
+      const float   headRadius = vector->getHeadRadius();
+      const float   headLength = vector->getHeadLength();
+      const float  shaftRadius = vectorRadius;
+      const float  shaftLength = vectorLength > headLength ? vectorLength - headLength : 0;
+      const osg::Vec3f vectorDirection = osg::Vec3f(0, 0, 1);                                                  // axis directed from tail to head of arrow
+      const osg::Vec3f offsetPosition = vectorDirection * (headAtOrigin ? -vectorLength : 0);                  // origin placed upon tail or head of arrow
+      const osg::Vec3f shaftPosition = offsetPosition + vectorDirection * (vectorLength - headLength) / 2;     // center of    cylinder (shifted for top of shaft to meet bottom of first head)
+      const osg::Vec3f head1Position = offsetPosition + vectorDirection * (vectorLength - headLength);         // base   of  first cone (offset added by osg::Cone is canceled below)
+      const osg::Vec3f head2Position = offsetPosition + vectorDirection * (vectorLength - headLength * 3 / 2); // base   of second cone (offset added by osg::Cone is canceled below)
 
       osg::ref_ptr<osg::Cylinder> shaftShape = new osg::Cylinder(shaftPosition, shaftRadius, shaftLength);
-      osg::ref_ptr<osg::Cone> head1Shape = new osg::Cone(head1Position, headRadius, headLength);
-      osg::ref_ptr<osg::Cone> head2Shape = new osg::Cone(head2Position, headRadius, headLength);
+      osg::ref_ptr<osg::Cone>     head1Shape = new osg::Cone    (head1Position,  headRadius,  headLength);
+      osg::ref_ptr<osg::Cone>     head2Shape = new osg::Cone    (head2Position,  headRadius,  headLength);
 
       head1Shape->setCenter(head1Shape->getCenter() - vectorDirection * head1Shape->getBaseOffset());
       head2Shape->setCenter(head2Shape->getCenter() - vectorDirection * head2Shape->getBaseOffset());
@@ -1042,7 +1046,7 @@ void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f&
   }
 }
 
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, float length/*, float width, float height*/, std::string type)
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type)
 {
   rAndT res;
 
@@ -1052,47 +1056,28 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::
   //std::cout << "wDir " << dirs._wDir[0] << ", " << dirs._wDir[1] << ", " << dirs._wDir[2] << std::endl;
   //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
 
-  osg::Matrix3 T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                                       hDir[0],       hDir[1],       hDir[2],
-                                 dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+  osg::Matrix3 T0;
+  if (type == "stl" || type == "dxf")
+  {
+    T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
+                      dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                            hDir[0],       hDir[1],       hDir[2]);
+  } else {
+    T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                            hDir[0],       hDir[1],       hDir[2],
+                      dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+  }
   //std::cout << "T0 " << T0[0] << ", " << T0[1] << ", " << T0[2] << std::endl;
   //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5] << std::endl;
   //std::cout << "   " << T0[6] << ", " << T0[7] << ", " << T0[8] << std::endl;
 
-  // Since in OSG, the rotation starts at the center of symmetry and in MSL at the end of the body,
-  // we need an offset here of half the length for some geometries
-  osg::Vec3f r_offset = dirs._lDir * length / 2;
-
-  if (type == "stl" || type == "dxf")
-  {
-    res._r = V3mulMat3(r_shape, T);
-    T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
-                      dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                            hDir[0],       hDir[1],       hDir[2]);
-  }
-  else if (type == "sphere")
-  {
-    res._r = V3mulMat3(r_shape + r_offset, T);
-    T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
-                      dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                            hDir[0],       hDir[1],       hDir[2]);
-  }
-  else if (type == "pipe" || type == "pipecylinder" || type == "spring" || type == "cone")
-  {
-    res._r = V3mulMat3(r_shape, T);
-  }
-  else/* if (type == "box" || type == "cylinder")*/
-  {
-    res._r = V3mulMat3(r_shape + r_offset, T);
-  }
-
-  res._r = res._r + r;
+  res._r = V3mulMat3(r_shape, T) + r;
   res._T = Mat3mulMat3(T0, T);
 
   return res;
 }
 
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir, float length)
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir)
 {
   rAndT res;
 
@@ -1118,11 +1103,7 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir, float len
   //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5] << std::endl;
   //std::cout << "   " << T0[6] << ", " << T0[7] << ", " << T0[8] << std::endl;
 
-  // Since in OSG, the rotation starts at the center of symmetry and in MSL at the end of the body,
-  // we need an offset here of half the length of the vector
-  osg::Vec3f r_offset = dirs._lDir * length / 2;
-
-  res._r = V3mulMat3(r_offset, T) + r;
+  res._r = r;
   res._T = Mat3mulMat3(T0, T);
 
   return res;
