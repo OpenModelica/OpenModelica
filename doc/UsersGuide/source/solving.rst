@@ -126,7 +126,7 @@ The solver utilizes by default the sparsity pattern of the ODE Jacobian and
 solves the corresponding non-linear system in case of an implicit chosen RK
 scheme using KINSOL.
 
-GBODE is highly configurable and The following simulation flags can be used to
+GBODE is highly configurable and the following simulation flags can be used to
 adjust the behavior of the solver for specific simulation problems:
 :ref:`gbratio <simflag-gbratio>`,
 :ref:`gbm <simflag-gbm>`,
