@@ -601,21 +601,23 @@ template recordCopyExternalDefs(String rec_name, list<Variable> variables)
  to make sure that the data is not interpreted wrong due to the size differences.
  See #8591 for more info."
 ::=
-  let &varCopies = buffer ""
+  let &varCopiesTo = buffer ""
+  let &varCopiesFrom = buffer ""
   let &auxFunction = buffer ""
   let dst_pref = 'dst->'
   let src_pref = 'src->'
-  let _ = (variables |> var => recordMemberCopyExternals(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
+  let _ = (variables |> var => recordMemberCopyToFromExternal(var, src_pref, dst_pref, true, &varCopiesTo, &auxFunction) ;separator="\n")
+  let _ = (variables |> var => recordMemberCopyToFromExternal(var, src_pref, dst_pref, false, &varCopiesFrom, &auxFunction) ;separator="\n")
   <<
   void <%rec_name%>_copy_to_external_p(void* v_src, void* v_dst) {
     <%rec_name%>* src = (<%rec_name%>*)(v_src);
     <%rec_name%>_external* dst = (<%rec_name%>_external*)(v_dst);
-    <%varCopies%>
+    <%varCopiesTo%>
   }
   void <%rec_name%>_copy_from_external_p(void* v_src, void* v_dst) {
     <%rec_name%>_external* src = (<%rec_name%>_external*)(v_src);
     <%rec_name%>* dst = (<%rec_name%>*)(v_dst);
-    <%varCopies%>
+    <%varCopiesFrom%>
   }
   >>
 end recordCopyExternalDefs;
@@ -692,7 +694,7 @@ case var as VARIABLE(__) then
   end match
 end recordMemberCopy;
 
-template recordMemberCopyExternals(Variable var, String src_pref, String dst_pref, Text &varCopies, Text &auxFunction)
+template recordMemberCopyToFromExternal(Variable var, String src_pref, String dst_pref, Boolean copy_to, Text &varCopies, Text &auxFunction)
   "Generates code for copying memembers of a record during a record copy  to/from the version
    of the record created for use with external C code.
    Right now this does not support copying of array or record record memebers. It only handles
@@ -705,17 +707,21 @@ case var as VARIABLE(__) then
 
   match ty
     case ty as T_ARRAY(__) then
-      let &varCopies += 'assert("Copying of array record members to/from external functions is not yet supported.");<%\n%>'
+      let &varCopies += 'assert("0, Copying of array record members to/from external functions is not yet supported.");<%\n%>'
       ""
     case ty as T_COMPLEX(complexClassType=RECORD(__)) then
-      let &varCopies += 'assert("Copying of record record members to/from external functions is not yet supported.");<%\n%>'
+      let recType = expTypeShort(ty)
+      let &varCopies += if copy_to then
+                          '<%recType%>_copy_to_external(<%srcName%>, <%dstName%>);<%\n%>'
+                        else
+                          '<%recType%>_copy_from_external(<%srcName%>, <%dstName%>);<%\n%>'
       ""
     else
       let &varCopies += '<%dstName%> = <%srcName%>;<%\n%>'
       ""
 
   end match
-end recordMemberCopyExternals;
+end recordMemberCopyToFromExternal;
 
 template recordConstructorDef(String ctor_name, String rec_name, list<Variable> variables)
  "Generates code for constructing a record. This means allocating memory for all
@@ -1315,14 +1321,14 @@ template extFunDefArg(SimExtArg extArg)
 ::=
   let &auxFunction = buffer ""
   match extArg
-  case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_= t as T_COMPLEX(complexClassType=RECORD(__))) then
+  case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_= ty as T_COMPLEX(complexClassType=RECORD(__))) then
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
-    let typeStr = extType(t,ii,ia,false)
+    let typeStr = expTypeShort(ty)
     <<
-    <%typeStr%>* /*<%name%>*/
+    <%typeStr%>_external* /*<%name%>*/
     >>
-  case SIMEXTARGEXP(type_= t as T_COMPLEX(complexClassType=RECORD(__))) then
-    let typeStr = extType(type_,true,false,false)
+  case SIMEXTARGEXP(type_= ty as T_COMPLEX(complexClassType=RECORD(__))) then
+    let typeStr = expTypeShort(ty)
     <<
     <%typeStr%>*
     >>
