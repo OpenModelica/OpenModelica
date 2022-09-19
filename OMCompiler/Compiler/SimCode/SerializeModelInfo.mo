@@ -514,12 +514,13 @@ algorithm
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
+      File.write(file, "\"");
       if (assign_type==1) then
-        File.write(file, "\",\"tag\":\"torn\",\"defines\":[\"");
+        File.write(file, ",\"tag\":\"torn\",\"defines\":[\"");
       elseif (assign_type==2) then
-        File.write(file, "\",\"tag\":\"jacobian\",\"defines\":[\"");
+        File.write(file, ",\"tag\":\"jacobian\",\"defines\":[\"");
       else
-        File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
+        File.write(file, ",\"tag\":\"assign\",\"defines\":[\"");
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
@@ -540,12 +541,13 @@ algorithm
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
+      File.write(file, "\"");
       if (assign_type==1) then
-        File.writeEscape(file, "\",\"tag\":\"torn\"",escape=JSON);
+        File.write(file, ",\"tag\":\"torn\",\"defines\":[\"");
       elseif (assign_type==2) then
-        File.writeEscape(file, "\",\"tag\":\"jacobian\"",escape=JSON);
+        File.write(file, ",\"tag\":\"jacobian\",\"defines\":[\"");
       else
-        File.writeEscape(file, "\",\"tag\":\"assign\"",escape=JSON);
+        File.write(file, ",\"tag\":\"assign\",\"defines\":[\"");
       end if;
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
@@ -562,11 +564,11 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       if (assign_type==1) then
-        File.writeEscape(file, "\",\"tag\":\"torn\"",escape=JSON);
+        File.write(file, "\",\"tag\":\"torn\",\"defines\":[\"");
       elseif (assign_type==2) then
-        File.writeEscape(file, "\",\"tag\":\"jacobian\"",escape=JSON);
+        File.write(file, "\",\"tag\":\"jacobian\",\"defines\":[\"");
       else
-        File.writeEscape(file, "\",\"tag\":\"assign\"",escape=JSON);
+        File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
       end if;
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
