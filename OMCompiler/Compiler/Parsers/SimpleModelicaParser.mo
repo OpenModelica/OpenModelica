@@ -1109,12 +1109,18 @@ function expression
 protected
   TokenId id;
   Boolean b;
+  list<ParseTree> ifTrees = inTree;
 algorithm
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.IF);
   if b then
     (tokens, tree) := expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$if_cond"))), ifTrees);
+    tree := {};
+
     (tokens, tree) := scan(tokens, tree, TokenId.THEN);
     (tokens, tree) := expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$then"))), ifTrees);
+    tree := {};
     while true loop
       (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ELSEIF);
       if not b then
@@ -1123,12 +1129,17 @@ algorithm
       (tokens, tree) := expression(tokens, tree);
       (tokens, tree) := scan(tokens, tree, TokenId.THEN);
       (tokens, tree) := expression(tokens, tree);
+      ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$else_if"))), ifTrees);
+      tree := {};
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.ELSE);
     (tokens, tree) := expression(tokens, tree);
-  else
-    (tokens, tree) := simple_expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$else"))), ifTrees);
+    tree := {};
+    outTree := makeNodePrependTree({}, ifTrees);
+    return;
   end if;
+  (tokens, tree) := simple_expression(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end expression;
 
