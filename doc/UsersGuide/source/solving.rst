@@ -140,7 +140,6 @@ adjust the behavior of the solver for specific simulation problems:
 :ref:`gbfint <simflag-gbint>`,
 :ref:`gbferr <simflag-gberr>`.
 
-
 This solver will replace obsolete and no longer maintained solvers providing a
 lot more using the following simulation flags:
 
