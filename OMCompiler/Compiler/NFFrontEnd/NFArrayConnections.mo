@@ -499,7 +499,7 @@ protected
   algorithm
     for var1 in vars1 loop
       for var2 in vars2 loop
-        if ComponentRef.firstName(var1) == ComponentRef.firstName(var2) then
+        if Type.isEqual(ComponentRef.nodeType(var1), ComponentRef.nodeType(var2)) then
           l := generateConnector(var1, inds1);
           r := generateConnector(var2, inds2);
           ty := Expression.typeOf(l);
