@@ -1630,7 +1630,7 @@ algorithm
             (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
 
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, false);
           else
             vars := List.map(varlst, typesVar);
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
@@ -2590,11 +2590,12 @@ algorithm
       Absyn.Path name;
       String str,sname;
       Option<String> alias;
-    case (SimCodeFunction.RECORD_DECL_FULL(sname, _, name, vars),_)
+      Boolean extConvert;
+    case (SimCodeFunction.RECORD_DECL_FULL(sname, _, name, vars, extConvert),_)
       equation
         str = stringDelimitList(List.map(vars, variableString), "\n");
         (alias,ht) = aliasRecordDeclarations2(str, name, inHt);
-      then (SimCodeFunction.RECORD_DECL_FULL(sname, alias, name, vars),ht);
+      then (SimCodeFunction.RECORD_DECL_FULL(sname, alias, name, vars, extConvert),ht);
     else (inDecl,inHt);
   end match;
 end aliasRecordDeclarations;
