@@ -533,8 +533,13 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
 
       <<
       <% match aliasName
-      case SOME(str) then 'typedef <%str%> <%rec_name%>;'
-      else <<
+      case SOME(str) then
+      <<
+      typedef <%str%> <%rec_name%>;
+      typedef <%str%>_external <%rec_name%>_external;
+      >>
+      else
+      <<
       typedef struct {
         <%r.variables |> var as VARIABLE(__) => '<%varType(var)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
       } <%rec_name%>;
