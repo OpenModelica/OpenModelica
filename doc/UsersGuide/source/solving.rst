@@ -102,6 +102,70 @@ CVODE has the following solver specific flags:
 :ref:`cvodeNonlinearSolverIteration <simflag-cvodeNonlinearSolverIteration>`,
 :ref:`cvodeLinearMultistepMethod <simflag-cvodeLinearMultistepMethod>`.
 
+GBODE
+~~~~~
+
+GBODE stands for Generic Bi-rate ordinary differential equation (ODE) solver
+and is a generic implementation for any Runge-Kutta (RK) scheme
+:cite:`Hairer2000`. In GBODE there are already many different implicit and
+explicit RK methods (e.g. SDIRK, ESDIRK, Gauss, Radau, Lobatto, Fehlberg,
+DOPRI45, Merson) with different approximation order configurable and ready to
+use. New RK schemes can easily be added, if the corresponding Butcher tableau
+is available. By default the solver runs in single-rate mode using the
+embedded RK scheme ESDIRK4 :cite:`KENNEDY2019221` with variable-step-size
+control and efficient event handling.
+
+The bi-rate mode can be utilized using the simulation flag
+:ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
+states with respect to all states. These states will then be automatically
+detected during integration based on the estimated approximation error and
+afterwards refined using an appropriate inner step-size control and
+interpolated values of the slow states.
+
+The solver utilizes by default the sparsity pattern of the ODE Jacobian and
+solves the corresponding non-linear system in case of an implicit chosen RK
+scheme using KINSOL.
+
+GBODE is highly configurable and the following simulation flags can be used to
+adjust the behavior of the solver for specific simulation problems:
+:ref:`gbratio <simflag-gbratio>`,
+:ref:`gbm <simflag-gbm>`,
+:ref:`gbctrl <simflag-gbctrl>`,
+:ref:`gbnls <simflag-gbnls>`,
+:ref:`gbint <simflag-gbint>`,
+:ref:`gberr <simflag-gberr>`,
+:ref:`gbfm <simflag-gbm>`,
+:ref:`gbfctrl <simflag-gbctrl>`,
+:ref:`gbfnls <simflag-gbnls>`,
+:ref:`gbfint <simflag-gbint>`,
+:ref:`gbferr <simflag-gberr>`.
+
+This solver will replace obsolete and no longer maintained solvers providing a
+lot more using the following simulation flags:
+
+.. code-block::
+
+  old: -s=euler
+  new: -s=gbode -gbm=expl_euler -gbctrl=const
+
+  old: -s=heun
+  new: -s=gbode -gbm=heun -gbctrl=const
+
+  old: -s=impeuler
+  new: -s=gbode -gbm=impl_euler -gbctrl=const
+
+  old: -s=trapezoid
+  new: -s=gbode -gbm=trapezoid -gbctrl=const
+
+  old: -s=imprungekutta
+  new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
+
+  old: -s=irksco
+  new: -s=gbode -gbm=trapezoid
+
+  old: -s=rungekuttaSsc
+  new: -s=gbode -gbm=rungekuttaSsc
+
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
