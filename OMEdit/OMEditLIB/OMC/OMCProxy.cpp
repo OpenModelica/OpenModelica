@@ -1003,6 +1003,28 @@ StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
 }
 
 /*!
+ * \brief OMCProxy::setParameterValue
+ * Sets the parameter value.
+ * \param className
+ * \param parameter
+ * \param value
+ * \return
+ */
+bool OMCProxy::setParameterValue(const QString &className, const QString &parameter, const QString &value)
+{
+  QString expression = QString("setParameterValue(%1, %2, %3)").arg(className, parameter, value);
+  sendCommand(expression);
+  if (getResult().toLower().compare("ok") == 0) {
+    return true;
+  } else {
+    QString msg = tr("Unable to set the parameter value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+    return false;
+  }
+}
+
+/*!
   Gets the parameter value.
   \param className - is the name of the class whose parameter value is retrieved.
   \return the parameter value.

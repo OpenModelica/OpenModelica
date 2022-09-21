@@ -888,7 +888,7 @@ void ElementParameters::setUpDialog()
   // Component class name
   mpComponentClassNameLabel = new Label(Helper::path);
   if (MainWindow::instance()->isNewApi()) {
-    mpComponentClassNameTextBox = new Label(mpElement->getModelElement()->getModel()->getName());
+    mpComponentClassNameTextBox = new Label(mpElement->getModel()->getName());
   } else {
     mpComponentClassNameTextBox = new Label(mpElement->getComponentInfo()->getClassName());
   }
@@ -901,7 +901,7 @@ void ElementParameters::setUpDialog()
   if (mpElement->getLibraryTreeItem()) {
     mpComponentClassCommentTextBox->setText(mpElement->getLibraryTreeItem()->mClassInformation.comment);
   } else {
-    mpComponentClassCommentTextBox->setText(mpElement->getModelElement()->getModel()->getComment());
+    mpComponentClassCommentTextBox->setText(mpElement->getModel()->getComment());
   }
   connect(mpComponentClassCommentTextBox, SIGNAL(linkActivated(QString)), SLOT(commentLinkClicked(QString)));
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
@@ -2074,7 +2074,7 @@ void ElementAttributes::initializeDialog()
     mpNameTextBox->setText(mpElement->getModelElement()->getName());
     mpNameTextBox->setCursorPosition(0);
     // get dimensions
-    QString dimensions = mpElement->getModelElement()->getDimensions();
+    QString dimensions = mpElement->getModelElement()->getAbsynDimensionsString();
     mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
     // get Comment
     mpCommentTextBox->setText(mpElement->getModelElement()->getComment());
@@ -2244,7 +2244,7 @@ void ElementAttributes::updateElementAttributes()
     }
     // update the component dimensions
     const QString dimensions = StringHandler::removeFirstLastSquareBrackets(mpDimensionsTextBox->text());
-    if (mpElement->getModelElement()->getDimensions().compare(dimensions) != 0) {
+    if (mpElement->getModelElement()->getAbsynDimensionsString().compare(dimensions) != 0) {
       const QString arrayIndex = QString("{%1}").arg(dimensions);
       if (pOMCProxy->setComponentDimensions(modelName, mpElement->getName(), arrayIndex)) {
         attributesChanged = true;

@@ -261,7 +261,6 @@ public:
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   bool connectionExists(const QString &startElementName, const QString &endElementName, bool inherited);
-  void addConnection(ModelInstance::Connection *pConnection, bool inherited, const ModelInfo &modelInfo);
   void addConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
