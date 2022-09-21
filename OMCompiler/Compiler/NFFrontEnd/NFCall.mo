@@ -65,6 +65,7 @@ import NFFunction.TypedArg;
 import NFInstNode.CachedData;
 import Operator = NFOperator;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
 import SCodeUtil;
 import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
@@ -392,6 +393,11 @@ public
     // and subscripting it with an iterator for each dim and creating a map call.
     if MatchedFunction.isVectorized(matchedFunc) then
       call := vectorizeCall(call, matchedFunc.mk, scope, info);
+    end if;
+
+    if Function.isExternal(func) then
+      updateExternalRecordArgs(args);
+      updateExternalRecordArgsInType(ty);
     end if;
   end matchTypedNormalCall;
 
@@ -1994,6 +2000,30 @@ public
       then fail();
     end match;
   end getNameAndArgs;
+
+  function updateExternalRecordArgs
+    input list<Expression> args;
+  algorithm
+    for arg in args loop
+      updateExternalRecordArgsInType(Expression.typeOf(arg));
+    end for;
+  end updateExternalRecordArgs;
+
+  function updateExternalRecordArgsInType
+    input Type ty;
+  protected
+    InstNode node;
+    Class cls;
+    Restriction res;
+  algorithm
+    if Type.isRecord(ty) then
+      node := Type.complexNode(ty);
+      cls := InstNode.getClass(node);
+      res := Restriction.setExternalRecord(Class.restriction(cls));
+      cls := Class.setRestriction(res, cls);
+      InstNode.updateClass(cls, node);
+    end if;
+  end updateExternalRecordArgsInType;
 
 protected
   function instNormalCall

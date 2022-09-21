@@ -323,6 +323,16 @@ public
     end match;
   end isImpureCall;
 
+  function isExternalCall
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isExternal(exp.call);
+      else false;
+    end match;
+  end isExternalCall;
+
   function isCallNamed
     input Expression exp;
     input String name;
@@ -6053,7 +6063,15 @@ public
     end match;
   end toJSON;
 
-
+  function tupleElements
+    input Expression exp;
+    output list<Expression> expl;
+  algorithm
+    expl := match exp
+      case TUPLE() then exp.elements;
+      else {exp};
+    end match;
+  end tupleElements;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

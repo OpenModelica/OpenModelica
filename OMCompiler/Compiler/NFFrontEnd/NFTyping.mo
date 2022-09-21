@@ -3142,6 +3142,10 @@ algorithm
         end if;
 
         checkAssignment(e1, e2, var, context, info);
+
+        if Expression.isExternalCall(e2) then
+          Call.updateExternalRecordArgs(Expression.tupleElements(e1));
+        end if;
       then
         Statement.ASSIGNMENT(e1, e2, ty1, st.source);
 
@@ -3322,6 +3326,10 @@ algorithm
   end if;
 
   eq := Equation.EQUALITY(e1, e2, ty, source);
+
+  if Expression.isExternalCall(e2) then
+    Call.updateExternalRecordArgs(Expression.tupleElements(e1));
+  end if;
 end typeEqualityEquation;
 
 function typeCondition
