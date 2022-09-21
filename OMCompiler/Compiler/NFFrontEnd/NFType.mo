@@ -455,6 +455,13 @@ public
     end match;
   end isComplex;
 
+  function complexNode
+    input Type ty;
+    output InstNode node;
+  algorithm
+    COMPLEX(cls = node) := ty;
+  end complexNode;
+
   function isConnector
     input Type ty;
     output Boolean isConnector;

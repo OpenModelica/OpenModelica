@@ -57,6 +57,7 @@ public
 
   record RECORD
     Boolean isOperator;
+    Boolean usedExternally;
   end RECORD;
 
   record RECORD_CONSTRUCTOR end RECORD_CONSTRUCTOR;
@@ -77,7 +78,7 @@ public
       case SCode.Restriction.R_MODEL() then MODEL();
       case SCode.Restriction.R_OPERATOR() then OPERATOR();
       case SCode.Restriction.R_PACKAGE() then PACKAGE();
-      case SCode.Restriction.R_RECORD() then RECORD(sres.isOperator);
+      case SCode.Restriction.R_RECORD() then RECORD(sres.isOperator, false);
       case SCode.Restriction.R_TYPE() then TYPE();
       else MODEL();
     end match;
@@ -174,6 +175,30 @@ public
       else false;
     end match;
   end isRecord;
+
+  function isExternalRecord
+    input Restriction res;
+    output Boolean isExtRecord;
+  algorithm
+    isExtRecord := match res
+      case RECORD() then res.usedExternally;
+      else false;
+    end match;
+  end isExternalRecord;
+
+  function setExternalRecord
+    input output Restriction res;
+  algorithm
+    () := match res
+      case RECORD(usedExternally = false)
+        algorithm
+          res.usedExternally := true;
+        then
+          ();
+
+      else ();
+    end match;
+  end setExternalRecord;
 
   function isOperatorRecord
     input Restriction res;

@@ -1658,6 +1658,7 @@ uniontype InstNode
       local
         Class cls;
         ClassInf.State state;
+        Restriction res;
 
       case CLASS_NODE()
         algorithm
@@ -1668,9 +1669,10 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls), fullPath(clsNode));
+                res := Class.restriction(cls);
+                state := Restriction.toDAE(res, fullPath(clsNode));
               then
-                DAE.Type.T_COMPLEX(state, {}, NONE(), false);
+                DAE.Type.T_COMPLEX(state, {}, NONE(), Restriction.isExternalRecord(res));
 
           end match;
     end match;
@@ -1700,6 +1702,7 @@ uniontype InstNode
         Class cls;
         list<DAE.Var> vars;
         ClassInf.State state;
+        Restriction res;
 
       case CLASS_NODE()
         algorithm
@@ -1710,9 +1713,10 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls), fullPath(clsNode));
+                res := Class.restriction(cls);
+                state := Restriction.toDAE(res, fullPath(clsNode));
                 vars := ConvertDAE.makeTypeVars(clsNode);
-                outType := DAE.Type.T_COMPLEX(state, vars, NONE(), false);
+                outType := DAE.Type.T_COMPLEX(state, vars, NONE(), Restriction.isExternalRecord(res));
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;
