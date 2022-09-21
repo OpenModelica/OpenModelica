@@ -1450,7 +1450,7 @@ QString Element::getTransformationExtent()
 bool Element::isExpandableConnector() const
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    return (mpModel && mpModel->getRestriction().compare(QStringLiteral("expandable connector")) == 0);
+    return (mpModel && mpModel->isExpandableConnector());
   } else {
     return (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::ExpandableConnector);
   }
@@ -1467,6 +1467,38 @@ bool Element::isArray() const
     return mpModelElement->isArray();
   } else {
     return (mpElementInfo && mpElementInfo->isArray());
+  }
+}
+
+/*!
+ * \brief Element::getAbsynArrayIndexes
+ * Returns the absyn array indexes.
+ * \return
+ */
+QStringList Element::getAbsynArrayIndexes() const
+{
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    return mpModelElement->getAbsynDimensions();
+  } else if (mpElementInfo) {
+    return QStringList() << mpElementInfo->getArrayIndex();
+  } else {
+    return QStringList();
+  }
+}
+
+/*!
+ * \brief Element::getTypedArrayIndexes
+ * Returns the typed array indexes.
+ * \return
+ */
+QStringList Element::getTypedArrayIndexes() const
+{
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    return mpModelElement->getTypedDimensions();
+  } else if (mpElementInfo) {
+    return QStringList() << mpElementInfo->getArrayIndex();
+  } else {
+    return QStringList();
   }
 }
 
@@ -1489,15 +1521,13 @@ bool Element::isConnectorSizing()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     if (isArray()) {
-      /*! @todo Support multiple dimensional arrays.
-       * For now we only handle the single dimension array.
-       */
-      QString parameter = mpModelElement->getDimensions().at(0);
+      // connectorSizing is only done on the single dimensional array.
+      QString parameter = mpModelElement->getAbsynDimensions().at(0);
       bool ok;
       parameter.toInt(&ok);
       // if the array index is not a number then look for parameter
       if (!ok) {
-        return Element::isParameterConnectorSizing(getRootParentElement(), parameter);
+        return isParameterConnectorSizing(parameter);
       }
     }
   } else {
@@ -1514,45 +1544,67 @@ bool Element::isConnectorSizing()
   return false;
 }
 
+/*!
+ * \brief Element::isParameterConnectorSizing
+ * Checks if the parameter is connectorSizing.
+ * \param parameter
+ * \return
+ */
+bool Element::isParameterConnectorSizing(const QString &parameter)
+{
+  // First we look in the element's containing class elements i.e the neighbouring elements.
+  if (mpGraphicsView->getModelWidget()->getModelInstance()->isParameterConnectorSizing(parameter)) {
+    return true;
+  }
+  // Look in the elements of the element class
+  return Element::isParameterConnectorSizing(getRootParentElement()->getModel(), parameter);
+}
+
+/*!
+ * \brief Element::isParameterConnectorSizing
+ * Checks if the parameter is connectorSizing.
+ * \param pModel
+ * \param parameter
+ * \return
+ */
+bool Element::isParameterConnectorSizing(ModelInstance::Model *pModel, QString parameter)
+{
+  bool result = false;
+  if (pModel) {
+    if (pModel->isParameterConnectorSizing(parameter)) {
+      return true;
+    }
+    // Look in class inheritance
+    QList<ModelInstance::Extend*> extends = pModel->getExtends();
+    foreach (auto pExtend, extends) {
+      result = Element::isParameterConnectorSizing(pExtend, parameter);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return result;
+}
+
 bool Element::isParameterConnectorSizing(Element *pElement, QString parameter)
 {
   bool result = false;
-  if (MainWindow::instance()->isNewApi()) {
-    // Look in class components
-    foreach (Element *pClassElement, pElement->getElementsList()) {
-      if (pClassElement->getName().compare(parameter) == 0) {
-        return pClassElement->getModelElement()->getDialogAnnotation().isConnectorSizing();
-      }
+  // Look in class elements
+  foreach (Element *pClassElement, pElement->getElementsList()) {
+    if (pClassElement->getElementInfo() && pClassElement->getName().compare(parameter) == 0) {
+      return (pClassElement->getDialogAnnotation().size() > 10) && (pClassElement->getDialogAnnotation().at(10).compare("true") == 0);
     }
-    // Look in class inherited components
-    foreach (Element *pInheritedElement, pElement->getInheritedElementsList()) {
-      /* Since we use the parent mpModelElement for inherited classes so we should not use
-       * pInheritedElement->getModelElement()->getName() to get the name instead we should use
-       * pInheritedElement->getModel()->getName() to get the correct name of inherited class.
-       */
-      if (pInheritedElement->getModel() && pInheritedElement->getModel()->getName().compare(parameter) == 0) {
-        return pInheritedElement->getModelElement()->getDialogAnnotation().isConnectorSizing();
-      }
-      result = Element::isParameterConnectorSizing(pInheritedElement, parameter);
-    }
-  } else {
-    // Look in class components
-    foreach (Element *pClassElement, pElement->getElementsList()) {
-      if (pClassElement->getElementInfo() && pClassElement->getName().compare(parameter) == 0) {
-        return (pClassElement->getDialogAnnotation().size() > 10) && (pClassElement->getDialogAnnotation().at(10).compare("true") == 0);
-      }
-    }
-    // Look in class inherited components
-    foreach (Element *pInheritedElement, pElement->getInheritedElementsList()) {
-      /* Since we use the parent ElementInfo for inherited classes so we should not use
+  }
+  // Look in class inherited elements
+  foreach (Element *pInheritedElement, pElement->getInheritedElementsList()) {
+    /* Since we use the parent ElementInfo for inherited classes so we should not use
      * pInheritedElement->getElementInfo()->getClassName() to get the name instead we should use
      * pInheritedElement->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
      */
-      if (pInheritedElement->getLibraryTreeItem() && pInheritedElement->getLibraryTreeItem()->getName().compare(parameter) == 0) {
-        return (pInheritedElement->getDialogAnnotation().size() > 10) && (pInheritedElement->getDialogAnnotation().at(10).compare("true") == 0);
-      }
-      result = Element::isParameterConnectorSizing(pInheritedElement, parameter);
+    if (pInheritedElement->getLibraryTreeItem() && pInheritedElement->getLibraryTreeItem()->getName().compare(parameter) == 0) {
+      return (pInheritedElement->getDialogAnnotation().size() > 10) && (pInheritedElement->getDialogAnnotation().at(10).compare("true") == 0);
     }
+    result = Element::isParameterConnectorSizing(pInheritedElement, parameter);
   }
   return result;
 }
@@ -2188,7 +2240,7 @@ void Element::setBusComponent(Element *pBusElement)
  * \param elementName
  * \return
  */
-Element *Element::getElementByName(const QString &elementName)
+Element* Element::getElementByName(const QString &elementName)
 {
   Element *pElementFound = 0;
   foreach (Element *pElement, getElementsList()) {
@@ -2197,7 +2249,7 @@ Element *Element::getElementByName(const QString &elementName)
       return pElementFound;
     }
   }
-  /* if is not found in components list then look into the inherited components list. */
+  /* if is not found in elements list then look into the inherited elements list. */
   foreach (Element *pInheritedElement, getInheritedElementsList()) {
     pElementFound = pInheritedElement->getElementByName(elementName);
     if (pElementFound) {
@@ -2205,6 +2257,35 @@ Element *Element::getElementByName(const QString &elementName)
     }
   }
   return pElementFound;
+}
+
+/*!
+ * \brief Element::getModelElementByName
+ * Get the ModelInstance::Element by name.
+ * \param elementName
+ * \return
+ */
+ModelInstance::Element* Element::getModelElementByName(ModelInstance::Model *pModel, const QString &elementName)
+{
+  ModelInstance::Element *pModelElementFound = 0;
+  if (pModel) {
+    QList<ModelInstance::Element*> elements = pModel->getElements();
+    foreach (auto pElement, elements) {
+      if (pElement->getName().compare(elementName) == 0) {
+        pModelElementFound = pElement;
+        return pModelElementFound;
+      }
+    }
+    /* if is not found in elements list then look into the inheritance. */
+    QList<ModelInstance::Extend*> extends = pModel->getExtends();
+    foreach (auto pExtend, extends) {
+      pModelElementFound = Element::getModelElementByName(pExtend, elementName);
+      if (pModelElementFound) {
+        return pModelElementFound;
+      }
+    }
+  }
+  return pModelElementFound;
 }
 
 /*!
@@ -3385,7 +3466,7 @@ void Element::displayTextChangedRecursive()
  */
 void Element::deleteMe()
 {
-  // delete the component from model
+  // delete the element from model
   mpGraphicsView->deleteElement(this);
 }
 
@@ -3646,7 +3727,7 @@ void Element::showParameters()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpModelElement->getModel()->getName()).arg(getName()));
+    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpModel->getName()).arg(getName()));
   } else {
     if (pMainWindow->getOMCProxy()->isBuiltinType(mpElementInfo->getClassName())) {
       return;
@@ -3676,7 +3757,7 @@ void Element::showAttributes()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpModelElement->getModel()->getName()).arg(getName()));
+    pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpModel->getName()).arg(getName()));
   } else {
     pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpLibraryTreeItem->getNameStructure()).arg(mpElementInfo->getName()));
   }

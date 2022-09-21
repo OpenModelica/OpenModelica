@@ -875,8 +875,23 @@ namespace ModelInstance
 
   bool Model::isConnector() const
   {
-    if ((mRestriction.compare(QStringLiteral("expandable connector")) == 0) || (mRestriction.compare(QStringLiteral("connector")) == 0)) {
+    if (isExpandableConnector() || (mRestriction.compare(QStringLiteral("connector")) == 0)) {
       return true;
+    }
+    return false;
+  }
+
+  bool Model::isExpandableConnector() const
+  {
+    return (mRestriction.compare(QStringLiteral("expandable connector")) == 0);
+  }
+
+  bool Model::isParameterConnectorSizing(const QString &parameter)
+  {
+    foreach (auto pModelElement, mElements) {
+      if (pModelElement->getName().compare(parameter) == 0) {
+        return pModelElement->getDialogAnnotation().isConnectorSizing();
+      }
     }
     return false;
   }
@@ -1108,7 +1123,8 @@ namespace ModelInstance
       delete mpModel;
     }
     mpModel = 0;
-    mDims.clear();
+    mAbsynDims.clear();
+    mTypedDims.clear();
     mPublic = true;
     mFinal = false;
     mInner = false;
@@ -1149,9 +1165,16 @@ namespace ModelInstance
       QJsonObject dims = jsonObject.value("dims").toObject();
 
       if (dims.contains("absyn")) {
-        QJsonArray dimsAbsynArray = dims.value("absyn").toArray();
-        foreach (auto dim, dimsAbsynArray) {
-          mDims.append(dim.toString());
+        QJsonArray absynDimsArray = dims.value("absyn").toArray();
+        foreach (auto absynDim, absynDimsArray) {
+          mAbsynDims.append(absynDim.toString());
+        }
+      }
+
+      if (dims.contains("typed")) {
+        QJsonArray typedDimsArray = dims.value("typed").toArray();
+        foreach (auto typedDim, typedDimsArray) {
+          mTypedDims.append(typedDim.toString());
         }
       }
     }
@@ -1223,6 +1246,35 @@ namespace ModelInstance
     }
   }
 
+  Part::Part()
+  {
+    mName = "";
+    mSubScripts.clear();
+  }
+
+  void Part::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("name")) {
+      mName = jsonObject.value("name").toString();
+    }
+
+    if (jsonObject.contains("subscripts")) {
+      QJsonArray subscripts = jsonObject.value("subscripts").toArray();
+      foreach (QJsonValue subscript, subscripts) {
+        mSubScripts.append(QString::number(subscript.toInt()));
+      }
+    }
+  }
+
+  QString Part::getName() const
+  {
+    if (mSubScripts.isEmpty()) {
+      return mName;
+    } else {
+      return QString("%1[%2]").arg(mName, mSubScripts.join(","));
+    }
+  }
+
   Connector::Connector()
   {
     mKind = "";
@@ -1238,21 +1290,25 @@ namespace ModelInstance
     if (jsonObject.contains("parts")) {
       QJsonArray parts = jsonObject.value("parts").toArray();
       foreach (QJsonValue part, parts) {
-        QJsonObject partObject = part.toObject();
-        if (partObject.contains("name")) {
-          mParts.append(partObject.value("name").toString());
-        }
+        Part partObject;
+        partObject.deserialize(part.toObject());
+        mParts.append(partObject);
       }
     }
   }
 
   QString Connector::getName() const
   {
-    if (mParts.isEmpty()) {
-      return "";
-    } else {
-      return mParts.join(".");
+    return getNameParts().join(".");
+  }
+
+  QStringList Connector::getNameParts() const
+  {
+    QStringList parts;
+    foreach (auto part, mParts) {
+      parts.append(part.getName());
     }
+    return parts;
   }
 
   Connection::Connection()

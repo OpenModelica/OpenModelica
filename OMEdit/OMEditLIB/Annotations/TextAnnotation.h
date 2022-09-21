@@ -69,7 +69,7 @@ public:
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   void setText(ModelInstance::Text *pText) {mpText = pText;}
 private:
-  Element *mpComponent;
+  Element *mpElement;
   ModelInstance::Text *mpText;
 
   void initUpdateTextString();

@@ -49,7 +49,7 @@
 TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpComponent = 0;
+  mpElement = 0;
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   // set the default values
@@ -65,7 +65,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpComponent = 0;
+  mpElement = 0;
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mpText = pText;
@@ -80,7 +80,7 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, Graph
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
@@ -89,7 +89,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
 }
 
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
+  : ShapeAnnotation(pParent), mpElement(pParent)
 {
   mpOriginItem = 0;
   mpText = pText;
@@ -106,7 +106,7 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpComponent = 0;
+  mpElement = 0;
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
@@ -116,14 +116,14 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
 }
 
 TextAnnotation::TextAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent), mpComponent(pParent)
+  : ShapeAnnotation(0, pParent), mpElement(pParent)
 {
   mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
-  // give a reasonable size to default component text
+  // give a reasonable size to default element text
   mExtents.replace(0, QPointF(-100, -50));
   mExtents.replace(1, QPointF(100, 50));
   setTextString("%name");
@@ -135,7 +135,7 @@ TextAnnotation::TextAnnotation(Element *pParent)
 TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation)
   : ShapeAnnotation(0, pLineAnnotation)
 {
-  mpComponent = 0;
+  mpElement = 0;
   mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
@@ -165,7 +165,7 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
 TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
-  mpComponent = 0;
+  mpElement = 0;
   mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
@@ -314,15 +314,15 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     if (mTextString.contains("%") || mTextString.length() > maxTextLengthToShowOnLibraryIcon) {
       return;
     }
-  } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+  } else if (mpElement && mpElement->getGraphicsView()->isRenderingLibraryPixmap()) {
     return;
   }
   if (mVisible) {
     // state machine visualization
-    // text annotation on a component
-    if (mpComponent && mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isState()
-        && mpComponent->getGraphicsView()->isVisualizationView()) {
-      if (mpComponent->isActiveState()) {
+    // text annotation on a element
+    if (mpElement && mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()
+        && mpElement->getGraphicsView()->isVisualizationView()) {
+      if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
       } else {
         painter->setOpacity(0.2);
@@ -434,7 +434,7 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
     }
   }
   // draw the font
-  if (mpComponent || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
+  if (mpElement || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
     painter->drawText(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
   }
 }
@@ -543,10 +543,10 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 
 void TextAnnotation::initUpdateTextString()
 {
-  if (mpComponent) {
+  if (mpElement) {
     if (mTextString.contains("%")) {
       updateTextString();
-      connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
+      connect(mpElement, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
   }
 }
@@ -567,23 +567,28 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       if (!variable.isEmpty()) {
         QString textValue;
         /* Ticket:4204
-         * If we have extend component then call Element::getParameterDisplayString from root component.
+         * If we have extend element then call Element::getParameterDisplayString from root element.
          */
-        textValue = mpComponent->getRootParentElement()->getParameterDisplayString(variable);
+        textValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
-          QString unit = mpComponent->getRootParentElement()->getParameterModifierValue(variable, "unit");
-          QString displayUnit = mpComponent->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          Element *pElement = mpComponent->getRootParentElement()->getElementByName(variable);
-          if (pElement) {
-            if (displayUnit.isEmpty()) {
-              displayUnit = pElement->getDerivedClassModifierValue("displayUnit");
-            }
-            if (unit.isEmpty()) {
-              unit = pElement->getDerivedClassModifierValue("unit");
-            }
-            // if display unit is still empty then use unit
-            if (displayUnit.isEmpty()) {
-              displayUnit = unit;
+          QString unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
+          QString displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+          if (MainWindow::instance()->isNewApi()) {
+            ModelInstance::Element* pModelElement = Element::getModelElementByName(mpElement->getRootParentElement()->getModel(), variable);
+            //! @todo Fix this once we actually have SI.Resistance as type of Element instead of Real. See issue #9374.
+          } else {
+            Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
+            if (pElement) {
+              if (displayUnit.isEmpty()) {
+                displayUnit = pElement->getDerivedClassModifierValue("displayUnit");
+              }
+              if (unit.isEmpty()) {
+                unit = pElement->getDerivedClassModifierValue("unit");
+              }
+              // if display unit is still empty then use unit
+              if (displayUnit.isEmpty()) {
+                displayUnit = unit;
+              }
             }
           }
           // do not do any conversion if unit or displayUnit is empty of if both are 1!
@@ -631,7 +636,7 @@ void TextAnnotation::updateTextString()
    * of an enumeration type, replace %par by the item name, not by the full name.
    * [Example: if par="Modelica.Blocks.Types.Enumeration.Periodic", then %par should be displayed as "Periodic"]
    * - %% replaced by %
-   * - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
+   * - %name replaced by the name of the element (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
@@ -644,7 +649,7 @@ void TextAnnotation::updateTextString()
         mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
       }
     }
-  } else if (mpComponent) {
+  } else if (mpElement) {
     mTextString.reset();
 
     if (!mTextString.contains("%")) {
@@ -652,15 +657,15 @@ void TextAnnotation::updateTextString()
     }
     if (MainWindow::instance()->isNewApi()) {
       if (mTextString.toLower().contains("%name")) {
-        mTextString.replace(QRegExp("%name"), mpComponent->getModelElement()->getName());
+        mTextString.replace(QRegExp("%name"), mpElement->getModelElement()->getName());
       }
     } else {
       if (mTextString.toLower().contains("%name")) {
-        mTextString.replace(QRegExp("%name"), mpComponent->getName());
+        mTextString.replace(QRegExp("%name"), mpElement->getName());
       }
     }
-    if (mTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
-      mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
+    if (mTextString.toLower().contains("%class") && mpElement->getLibraryTreeItem()) {
+      mTextString.replace(QRegExp("%class"), mpElement->getLibraryTreeItem()->getNameStructure());
     }
     if (!mTextString.contains("%")) {
       return;

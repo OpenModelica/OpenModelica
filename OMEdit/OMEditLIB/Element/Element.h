@@ -262,8 +262,12 @@ public:
   QString getTransformationExtent();
   bool isExpandableConnector() const;
   bool isArray() const;
+  QStringList getAbsynArrayIndexes() const;
+  QStringList getTypedArrayIndexes() const;
   int getArrayIndexAsNumber(bool *ok = 0) const;
   bool isConnectorSizing();
+  bool isParameterConnectorSizing(const QString &parameter);
+  static bool isParameterConnectorSizing(ModelInstance::Model *pModel, QString parameter);
   static bool isParameterConnectorSizing(Element *pElement, QString parameter);
   void createClassElements();
   void applyRotation(qreal angle);
@@ -300,7 +304,8 @@ public:
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Element *pBusComponent);
   Element* getBusComponent() {return mpBusComponent;}
-  Element* getElementByName(const QString &componentName);
+  Element* getElementByName(const QString &elementName);
+  static ModelInstance::Element* getModelElementByName(ModelInstance::Model *pModel, const QString &elementName);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
