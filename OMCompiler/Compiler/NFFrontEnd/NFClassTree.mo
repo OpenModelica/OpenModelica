@@ -270,7 +270,7 @@ public
         // Make a new component node for the literal and add it to the lookup tree.
         name := l.literal;
         i := i + 1;
-        comp := InstNode.fromComponent(name, Component.newEnum(enumType, name, i), enumClass);
+        comp := InstNode.fromComponent(name, Component.newEnum(enumType, name, l.comment, i), enumClass);
         arrayUpdateNoBoundsChecking(comps, i + attr_count, comp);
         ltree := LookupTree.add(ltree, name, LookupTree.Entry.COMPONENT(i + attr_count),
           function addEnumConflict(literal = comp));
