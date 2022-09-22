@@ -10,6 +10,8 @@ GetModelInstanceComment1.mos \
 GetModelInstanceConditional1.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceDuplicate1.mos \
+GetModelInstanceEnum1.mos \
+GetModelInstanceEnum2.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceInnerOuter1.mos \

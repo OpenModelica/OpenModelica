@@ -1,0 +1,83 @@
+// name: GetModelInstanceEnum1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type AnalogFilter = enumeration(
+    CriticalDamping \"Filter with critical damping\",
+    Bessel \"Bessel filter\",
+    Butterworth \"Butterworth filter\",
+    ChebyshevI \"Chebyshev I filter\")
+  \"Enumeration defining the method of filtering\" annotation (Evaluate=true);
+model M
+  parameter AnalogFilter analogFil = AnalogFilter.Butterworth;
+end M;");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"analogFil\",
+//       \"type\": {
+//         \"name\": \"AnalogFilter\",
+//         \"restriction\": \"enumeration\",
+//         \"comment\": \"Enumeration defining the method of filtering\",
+//         \"annotation\": {
+//           \"Evaluate\": true
+//         },
+//         \"components\": [
+//           {
+//             \"name\": \"CriticalDamping\",
+//             \"comment\": \"Filter with critical damping\"
+//           },
+//           {
+//             \"name\": \"Bessel\",
+//             \"comment\": \"Bessel filter\"
+//           },
+//           {
+//             \"name\": \"Butterworth\",
+//             \"comment\": \"Butterworth filter\"
+//           },
+//           {
+//             \"name\": \"ChebyshevI\",
+//             \"comment\": \"Chebyshev I filter\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 76
+//         }
+//       },
+//       \"modifiers\": \"AnalogFilter.Butterworth\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"enum\",
+//           \"name\": \"AnalogFilter.Butterworth\",
+//           \"index\": 3
+//         }
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 8,
+//     \"columnStart\": 1,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 6
+//   }
+// }"
+// endResult

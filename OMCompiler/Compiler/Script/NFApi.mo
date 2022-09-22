@@ -1044,7 +1044,7 @@ algorithm
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
-        json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
 
         if Type.isArray(comp.ty) then
           json := JSON.addPair("dims",
@@ -1083,14 +1083,57 @@ end dumpJSONComponent;
 
 function dumpJSONComponentType
   input InstanceTree cls;
+  input InstNode node;
   input Type ty;
   output JSON json;
 algorithm
-  json := match cls
-    case InstanceTree.CLASS() then dumpJSONInstanceTree(cls);
+  json := match (cls, ty)
+    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls);
+    case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;
+
+function dumpJSONEnumType
+  input InstNode enumNode;
+  output JSON json;
+protected
+  InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
+  SCode.Element def;
+  array<InstNode> comps;
+algorithm
+  def := InstNode.definition(node);
+
+  json := JSON.emptyObject();
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
+  json := JSON.addPair("restriction", JSON.makeString("enumeration"), json);
+  json := dumpJSONCommentOpt(SCodeUtil.getElementComment(def), node, json);
+
+  comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(node)));
+  json := JSON.addPair("components", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
+
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+end dumpJSONEnumType;
+
+function dumpJSONEnumTypeLiterals
+  input array<InstNode> literals;
+  input InstNode scope;
+  output JSON json = JSON.emptyArray();
+algorithm
+  for i in 6:arrayLength(literals) loop
+    json := JSON.addElement(dumpJSONEnumTypeLiteral(literals[i], scope), json);
+  end for;
+end dumpJSONEnumTypeLiterals;
+
+function dumpJSONEnumTypeLiteral
+  input InstNode node;
+  input InstNode scope;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+  json := dumpJSONCommentOpt(Component.comment(InstNode.component(node)), scope, json);
+end dumpJSONEnumTypeLiteral;
 
 function dumpJSONTypeName
   input Type ty;
