@@ -308,6 +308,7 @@ class LibrariesPage : public QWidget
 public:
   LibrariesPage(OptionsDialog *pOptionsDialog);
   QLineEdit *getModelicaPathTextBox() const {return mpModelicaPathTextBox;}
+  QCheckBox *getLoadLatestModelicaCheckbox() const {return mpLoadLatestModelicaCheckbox;}
   QTreeWidget* getSystemLibrariesTree() {return mpSystemLibrariesTree;}
   QTreeWidget* getUserLibrariesTree() {return mpUserLibrariesTree;}
   OptionsDialog *mpOptionsDialog;
@@ -316,6 +317,7 @@ private:
   Label *mpModelicaPathLabel;
   QLineEdit *mpModelicaPathTextBox;
   Label *mpSystemLibrariesNoteLabel;
+  QCheckBox *mpLoadLatestModelicaCheckbox;
   QTreeWidget *mpSystemLibrariesTree;
   QPushButton *mpAddSystemLibraryButton;
   QPushButton *mpRemoveSystemLibraryButton;

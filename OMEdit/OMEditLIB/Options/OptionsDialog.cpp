@@ -280,6 +280,10 @@ void OptionsDialog::readLibrariesSettings()
       mpLibrariesPage->getModelicaPathTextBox()->setText(modelicaPath);
     }
   }
+  // read load latest Modelica
+  if (mpSettings->contains("loadLatestModelica")) {
+    mpLibrariesPage->getLoadLatestModelicaCheckbox()->setChecked(mpSettings->value("loadLatestModelica").toBool());
+  }
   // read the system libraries
   int i = 0;
   while(i < mpLibrariesPage->getSystemLibrariesTree()->topLevelItemCount()) {
@@ -1123,6 +1127,8 @@ void OptionsDialog::saveLibrariesSettings()
     mpLibrariesPage->getModelicaPathTextBox()->setPlaceholderText(Helper::ModelicaPath);
     mpSettings->setValue("modelicaPath-1", "");
   }
+  // save load latest Modelica
+  mpSettings->setValue("loadLatestModelica", mpLibrariesPage->getLoadLatestModelicaCheckbox()->isChecked());
   // read the settings and add system libraries
   mpSettings->beginGroup("libraries");
   foreach (QString lib, mpSettings->childKeys()) {
@@ -2239,6 +2245,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   // system libraries note
   mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
+  // load latest Modeica checkbox
+  mpLoadLatestModelicaCheckbox = new QCheckBox(tr("Load latest Modelica version on startup"));
+  mpLoadLatestModelicaCheckbox->setChecked(true);
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
   mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(mpSystemLibrariesTree));
@@ -2268,8 +2277,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pSystemLibrariesLayout = new QGridLayout;
   pSystemLibrariesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pSystemLibrariesLayout->addWidget(mpSystemLibrariesNoteLabel, 0, 0, 1, 2);
-  pSystemLibrariesLayout->addWidget(mpSystemLibrariesTree, 1, 0);
-  pSystemLibrariesLayout->addWidget(mpSystemLibrariesButtonBox, 1, 1);
+  pSystemLibrariesLayout->addWidget(mpLoadLatestModelicaCheckbox, 1, 0, 1, 2);
+  pSystemLibrariesLayout->addWidget(mpSystemLibrariesTree, 2, 0);
+  pSystemLibrariesLayout->addWidget(mpSystemLibrariesButtonBox, 2, 1);
   mpSystemLibrariesGroupBox->setLayout(pSystemLibrariesLayout);
   // user libraries groupbox
   mpUserLibrariesGroupBox = new QGroupBox(tr("User libraries loaded automatically on startup *"));

@@ -757,13 +757,23 @@ void OMCProxy::loadSystemLibraries()
     loadModel("Modelica", "default");
     loadModel("ModelicaReference", "default");
   } else {
+    const bool loadLatestModelica = OptionsDialog::instance()->getLibrariesPage()->getLoadLatestModelicaCheckbox()->isChecked();
+    if (loadLatestModelica) {
+      loadModel("Modelica", "default");
+    }
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->beginGroup("libraries");
     QStringList libraries = pSettings->childKeys();
     pSettings->endGroup();
     foreach (QString lib, libraries) {
       QString version = pSettings->value("libraries/" + lib).toString();
-      loadModel(lib, version);
+      if (loadLatestModelica && (lib.compare(QStringLiteral("Modelica")) == 0 || lib.compare(QStringLiteral("ModelicaServices")) == 0 || lib.compare(QStringLiteral("Complex")) == 0)) {
+        QString msg = tr("Skip loading <b>%1</b> version <b>%2</b> since latest version is already loaded because of the setting <b>Load latest Modelica version on startup</b>.").arg(lib, version);
+        MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel);
+        MessagesWidget::instance()->addGUIMessage(messageItem);
+      } else {
+        loadModel(lib, version);
+      }
     }
     OptionsDialog::instance()->readLibrariesSettings();
   }
