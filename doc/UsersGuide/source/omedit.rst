@@ -1159,18 +1159,16 @@ General
 Libraries
 ~~~~~~~~~
 
--  *System Libraries* – The list of system libraries that should be
-   loaded every time OMEdit starts.
+-  General
 
--  *Force loading of Modelica Standard Library* – If true then Modelica
-   and ModelicaReference will always load even if user has removed
-   them from the list of system libraries.
+  -  *MODELICAPATH* – Sets the MODELICAPATH. MODELICAPATH is used to load libraries.
 
--  *Load OpenModelica library on startup* – If true then OpenModelica
-   package will be loaded when OMEdit is started.
+-  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 
--  *User Libraries* – The list of user libraries/files that should be
-   loaded every time OMEdit starts.
+  -  *Load latest Modelica version on startup* - Is true then the latest available version of the
+     Modelica Standard Library is always loaded alongwith its dependencies.
+
+-  User libraries loaded automatically on startup - The list of user libraries/files that are loaded on startup.
 
 .. _omedit-options-text-editor :
 
