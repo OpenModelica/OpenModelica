@@ -607,7 +607,7 @@ bool ElementInfo::isModiferClassRecord(QString modifierName, Element *pElement)
 }
 
 Element::Element(ModelInstance::Element *pModelElement, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position)
-  : QGraphicsItem(0), mpReferenceComponent(0), mpParentElement(0)
+  : QGraphicsItem(0), mpReferenceElement(0), mpParentElement(0)
 {
   setZValue(2000);
   mpModelElement = pModelElement;
@@ -680,7 +680,7 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
 }
 
 Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
-  : QGraphicsItem(pParentElement), mpReferenceComponent(0), mpParentElement(pParentElement)
+  : QGraphicsItem(pParentElement), mpReferenceElement(0), mpParentElement(pParentElement)
 {
   /* Ticket #4013
    * Use same ModelElement as parent
@@ -719,7 +719,7 @@ Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
 }
 
 Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement, Element *pRootParentElement)
-  : QGraphicsItem(pRootParentElement), mpReferenceComponent(0), mpParentElement(pParentElement)
+  : QGraphicsItem(pRootParentElement), mpReferenceElement(0), mpParentElement(pParentElement)
 {
   mpModelElement = pModelElement;
   mpModel = pModelElement->getModel();
@@ -727,7 +727,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   mClassName = mpModelElement->getType();
   mpLibraryTreeItem = 0;
   mpElementInfo = 0;
-  mIsInheritedElement = mpParentElement->isInheritedComponent();
+  mIsInheritedElement = mpParentElement->isInheritedElement();
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
   mTransformationString = "";
@@ -758,7 +758,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
 }
 
 Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo, GraphicsView *pGraphicsView)
-  : QGraphicsItem(0), mpReferenceComponent(0), mpParentElement(0)
+  : QGraphicsItem(0), mpReferenceElement(0), mpParentElement(0)
 {
   setZValue(2000);
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -846,7 +846,7 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
 }
 
 Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
-  : QGraphicsItem(pParentElement), mpReferenceComponent(0), mpParentElement(pParentElement)
+  : QGraphicsItem(pParentElement), mpReferenceElement(0), mpParentElement(pParentElement)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
   mpElementInfo = mpParentElement->getElementInfo();
@@ -890,18 +890,18 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
 }
 
 Element::Element(Element *pElement, Element *pParentElement, Element *pRootParentElement)
-  : QGraphicsItem(pRootParentElement), mpReferenceComponent(pElement), mpParentElement(pParentElement)
+  : QGraphicsItem(pRootParentElement), mpReferenceElement(pElement), mpParentElement(pParentElement)
 {
-  mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
-  mpElementInfo = mpReferenceComponent->getElementInfo();
-  mIsInheritedElement = mpReferenceComponent->isInheritedElement();
+  mpLibraryTreeItem = mpReferenceElement->getLibraryTreeItem();
+  mpElementInfo = mpReferenceElement->getElementInfo();
+  mIsInheritedElement = mpReferenceElement->isInheritedElement();
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
-  mTransformationString = mpReferenceComponent->getTransformationString();
-  mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
-  mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
-  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
-  mChoices = mpReferenceComponent->getChoices();
+  mTransformationString = mpReferenceElement->getTransformationString();
+  mDialogAnnotation = mpReferenceElement->getDialogAnnotation();
+  mChoicesAnnotation = mpReferenceElement->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceElement->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceElement->getChoices();
   createNonExistingElement();
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
@@ -909,9 +909,9 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
-  mpBusComponent = mpReferenceComponent->getBusComponent();
+  mpBusComponent = mpReferenceElement->getBusComponent();
   drawInheritedElementsAndShapes();
-  mTransformation = Transformation(mpReferenceComponent->mTransformation);
+  mTransformation = Transformation(mpReferenceElement->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
@@ -919,47 +919,47 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   updateToolTip();
-  setVisible(!mpReferenceComponent->isInBus());
+  setVisible(!mpReferenceElement->isInBus());
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
     connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
     connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
   }
-  connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceElementAdded()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
-  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
-  connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
+  connect(mpReferenceElement, SIGNAL(added()), SLOT(referenceElementAdded()));
+  connect(mpReferenceElement, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
+  connect(mpReferenceElement, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
+  connect(mpReferenceElement, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 Element::Element(Element *pElement, GraphicsView *pGraphicsView)
-  : QGraphicsItem(0), mpReferenceComponent(pElement), mpParentElement(0)
+  : QGraphicsItem(0), mpReferenceElement(pElement), mpParentElement(0)
 {
   setZValue(2000);
-  mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
-  mpElementInfo = mpReferenceComponent->getElementInfo();
+  mpLibraryTreeItem = mpReferenceElement->getLibraryTreeItem();
+  mpElementInfo = mpReferenceElement->getElementInfo();
   mpGraphicsView = pGraphicsView;
   mIsInheritedElement = true;
   mElementType = Element::Root;
-  mTransformationString = mpReferenceComponent->getTransformationString();
-  mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
-  mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
-  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
-  mChoices = mpReferenceComponent->getChoices();
+  mTransformationString = mpReferenceElement->getTransformationString();
+  mDialogAnnotation = mpReferenceElement->getDialogAnnotation();
+  mChoicesAnnotation = mpReferenceElement->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceElement->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceElement->getChoices();
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
   createNonExistingElement();
   createDefaultElement();
   createStateElement();
-  mHasTransition = mpReferenceComponent->hasTransition();;
-  mIsInitialState = mpReferenceComponent->isInitialState();
+  mHasTransition = mpReferenceElement->hasTransition();;
+  mIsInitialState = mpReferenceElement->isInitialState();
   mActiveState = false;
   mpBusComponent = 0;
   drawElement();
-  mTransformation = Transformation(mpReferenceComponent->mTransformation);
+  mTransformation = Transformation(mpReferenceElement->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -971,13 +971,13 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
   }
-  connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceElementAdded()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
-  connect(mpReferenceComponent, SIGNAL(transformChange(bool)), SIGNAL(transformChange(bool)));
-  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
-  connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceElementChanged()));
-  connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
+  connect(mpReferenceElement, SIGNAL(added()), SLOT(referenceElementAdded()));
+  connect(mpReferenceElement, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
+  connect(mpReferenceElement, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpReferenceElement, SIGNAL(transformChange(bool)), SIGNAL(transformChange(bool)));
+  connect(mpReferenceElement, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
+  connect(mpReferenceElement, SIGNAL(changed()), SLOT(referenceElementChanged()));
+  connect(mpReferenceElement, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
   /* Ticket:4204
    * If the child class use text annotation from base class then we need to call this
    * since when the base class is created the child class doesn't exist.
@@ -986,7 +986,7 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
 }
 
 Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
-  : QGraphicsItem(pParentElement), mpReferenceComponent(0), mpParentElement(pParentElement)
+  : QGraphicsItem(pParentElement), mpReferenceElement(0), mpParentElement(pParentElement)
 {
   mpLibraryTreeItem = 0;
   mpElementInfo = pElementInfo;
@@ -1870,8 +1870,8 @@ QString Element::getParameterDisplayString(QString parameterName)
    * Handle parameters display of inherited components.
    */
   /* case 0 */
-  if (isInheritedElement() && mpReferenceComponent) {
-    QString extendsClass = mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  if (isInheritedElement() && mpReferenceElement) {
+    QString extendsClass = mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     displayString = mpGraphicsView->getModelWidget()->getExtendsModifiersMap(extendsClass).value(QString("%1.%2").arg(getName()).arg(parameterName), "");
   }
   /* case 1 */
@@ -1977,8 +1977,8 @@ QString Element::getDerivedClassModifierValue(QString modifierName)
    */
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className;
-  if (mpReferenceComponent) {
-    className = mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  if (mpReferenceElement) {
+    className = mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   } else {
     className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   }
@@ -2576,8 +2576,8 @@ void Element::drawInheritedElementsAndShapes()
         createClassShapes();
       }
     } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      if (mpReferenceComponent) {
-        foreach (ShapeAnnotation *pShapeAnnotation, mpReferenceComponent->getShapesList()) {
+      if (mpReferenceElement) {
+        foreach (ShapeAnnotation *pShapeAnnotation, mpReferenceElement->getShapesList()) {
           if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
             mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
           } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
@@ -3026,10 +3026,10 @@ void Element::updateToolTip()
       comment.replace("src=\"file://", "src=\"");
     #endif
 
-      if ((mIsInheritedElement || mElementType == Element::Port) && mpReferenceComponent && !mpGraphicsView->isVisualizationView()) {
+      if ((mIsInheritedElement || mElementType == Element::Port) && mpReferenceElement && !mpGraphicsView->isVisualizationView()) {
         setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpElementInfo->getClassName())
                    .arg(mpElementInfo->getName()).arg(comment)
-                   .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+                   .arg(mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
       } else {
         setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpElementInfo->getClassName()).arg(mpElementInfo->getName()).arg(comment));
       }
@@ -3213,8 +3213,8 @@ void Element::referenceElementAdded()
 {
   if (mElementType == Element::Port) {
     setVisible(true);
-    if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      mpBusComponent = mpReferenceComponent->getBusComponent();
+    if (mpReferenceElement && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpBusComponent = mpReferenceElement->getBusComponent();
     }
   } else {
     mpGraphicsView->addItem(this);
@@ -3276,8 +3276,8 @@ void Element::referenceElementDeleted()
 {
   if (mElementType == Element::Port) {
     setVisible(false);
-    if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      mpBusComponent = mpReferenceComponent->getBusComponent();
+    if (mpReferenceElement && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpBusComponent = mpReferenceElement->getBusComponent();
     }
   } else {
     mpGraphicsView->removeItem(this);

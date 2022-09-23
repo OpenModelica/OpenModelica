@@ -232,7 +232,7 @@ ResizerItem::ResizePositions ResizerItem::getResizePosition()
   */
 void ResizerItem::setActive()
 {
-  if (mpComponent->isInheritedComponent()
+  if (mpComponent->isInheritedElement()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpComponent->getLibraryTreeItem()->getOMSConnector()
               || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
@@ -389,7 +389,7 @@ void OriginItem::setActive()
 {
   setZValue(3000);
   if ((mpShapeAnnotation && mpShapeAnnotation->isInheritedShape())
-      || (mpComponent && (mpComponent->isInheritedComponent()
+      || (mpComponent && (mpComponent->isInheritedElement()
                           || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
                               && (mpComponent->getLibraryTreeItem()->getOMSConnector()
                                   || mpComponent->getLibraryTreeItem()->getOMSBusConnector()

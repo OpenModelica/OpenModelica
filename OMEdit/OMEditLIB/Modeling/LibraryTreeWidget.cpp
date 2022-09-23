@@ -5219,15 +5219,15 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
       }
       QFile::copy(modelFileInfo.absoluteFilePath(), newModelFilePath);
       // copy the geomtry file to the created directory
-      if (pComponent && !pComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
-        QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
+      if (pComponent && !pComponent->getElementInfo()->getGeometryFile().isEmpty()) {
+        QFileInfo geometryFileInfo(pComponent->getElementInfo()->getGeometryFile());
         QString newGeometryFilePath = directoryPath + "/" + geometryFileInfo.fileName();
         if (geometryFileInfo.absoluteFilePath().compare(newGeometryFilePath) != 0) {
           // first try to remove the file because QFile::copy will not override the file.
           QFile::remove(newGeometryFilePath);
         }
         QFile::copy(geometryFileInfo.absoluteFilePath(), newGeometryFilePath);
-        pComponent->getComponentInfo()->setGeometryFile(newGeometryFilePath);
+        pComponent->getElementInfo()->setGeometryFile(newGeometryFilePath);
       }
     }
   } else {

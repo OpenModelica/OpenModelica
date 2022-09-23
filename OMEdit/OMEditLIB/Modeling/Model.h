@@ -333,6 +333,7 @@ private:
     QString getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
+    bool isEnumeration() const;
     bool isPublic() const {return mPublic;}
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}

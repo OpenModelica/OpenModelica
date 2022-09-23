@@ -46,7 +46,7 @@ bool DynamicAnnotation::update(double time, Element *parent)
     fromExp(mExp.arg(1).evaluate([&] (std::string name) {
       auto vname = QString::fromStdString(name);
 
-      if (parent && parent->getComponentInfo()) {
+      if (parent && parent->getElementInfo()) {
         vname = QString("%1.%2").arg(parent->getName(), vname);
       }
 
