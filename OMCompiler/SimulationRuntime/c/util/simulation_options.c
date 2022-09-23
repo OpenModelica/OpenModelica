@@ -270,12 +270,12 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
-  /* FLAG_SR_ERR */                       "Error estimation done by Richardson extrapolation of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_ERR */                       "Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_MR */                           "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_CTRL */                      "Step size control of solver gbode (multi-rate, fast states integrator)",
-  /* FLAG_MR_ERR */                       "Error estimation done by Richardson extrapolation of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_ERR */                       "Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_INT */                       "Interpolation method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_NLS */                       "Non-linear solver method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_PAR */                       "Define percentage of states for the fast states selection of solver gbode",
@@ -568,27 +568,30 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */
   "  Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_SR */
-  "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
+  "  Value specifies the chosen solver of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_CTRL */
-  "Step size control of solver gbode (single-rate, slow states integrator)",
+  "  Step size control of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_ERR */
-  "Error estimation done by Richardson extrapolation of solver gbode (single-rate, slow states integrator)",
+  "  Error estimation done by Richardson extrapolation (-gberr=1) of solver gbode\n"
+  "  (single-rate, slow states integrator).",
   /* FLAG_SR_INT */
-  "Interpolation method of solver gbode (single-rate, slow states integrator)",
+  "  Interpolation method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_NLS */
-  "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
+  "  Non-linear solver method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_MR */
-  "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
+  "  Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator).\n"
+  "  Current Restriction: Fully implicit (Gauss, Radau, Lobatto) RK methods are not supported, yet.",
   /* FLAG_MR_CTRL */
-  "Step size control of solver gbode (multi-rate, fast states integrator)",
+  "  Step size control of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_ERR */
-  "Error estimation done by Richardson extrapolation of solver gbode (multi-rate, fast states integrator)",
+  "  Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode\n"
+  "  (multi-rate, fast states integrator).",
   /* FLAG_MR_INT */
-  "Interpolation method of solver gbode (multi-rate, fast states integrator)",
+  "  Interpolation method of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_NLS */
-  "Non-linear solver method of solver gbode (multi-rate, fast states integrator)",
+  "  Non-linear solver method of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_PAR */
-  "Define percentage of states for the fast states selection of solver gbode",
+  "  Define percentage of states for the fast states selection of solver gbode (values from 0 to 1).",
   /* FLAG_RT */
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
@@ -961,6 +964,42 @@ const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "Newton method, dense",
   /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
+};
+
+const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
+  /* GB_CTRL_UNKNOWN */   "unknown",
+  /* GB_CTRL_I */         "i",
+  /* GB_CTRL_PI */        "pi",
+  /* GB_CTRL_CNST */      "const"
+};
+
+const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
+  /* GB_CTRL_UNKNOWN */   "unknown",
+  /* GB_CTRL_I */         "I controller for step size",
+  /* GB_CTRL_PI */        "PI controller for step size",
+  /* GB_CTRL_CNST */      "Constant step size"
+};
+
+const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
+  /* GB_INTERPOL_UNKNOWN */           "unknown",
+  /* GB_INTERPOL_LIN */               "linear",
+  /* GB_INTERPOL_HERMITE */           "hermite",
+  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
+  /* GB_INTERPOL_HERMITE_b */         "hermite_b",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
+  /* GB_DENSE_OUTPUT */               "dense_output",
+  /* GB_DENSE_OUTPUT_ERRCTRL */       "dense_output_errctrl"
+};
+
+const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
+  /* GB_INTERPOL_UNKNOWN */         "unknown",
+  /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
+  /* GB_INTERPOL_HERMITE */         "Hermite interpolation (3rd order)",
+  /* GB_INTERPOL_HERMITE_a */       "Hermite interpolation (only for left hand side)",
+  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for right hand side)",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
+  /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
+  /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
