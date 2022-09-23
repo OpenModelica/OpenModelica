@@ -2777,6 +2777,18 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         flagDesc = GB_METHOD_DESC;
         break;
 
+      case FLAG_SR_INT:
+        numExtraFlags = GB_INTERPOL_MAX;
+        flagName = GB_INTERPOL_METHOD_NAME;
+        flagDesc = GB_INTERPOL_METHOD_DESC;
+        break;
+
+      case FLAG_SR_CTRL:
+        numExtraFlags = GB_CTRL_MAX;
+        flagName = GB_CTRL_METHOD_NAME;
+        flagDesc = GB_CTRL_METHOD_DESC;
+        break;
+
       case FLAG_SR_NLS:
         numExtraFlags = GB_NLS_MAX;
         flagName = GB_NLS_METHOD_NAME;
@@ -2787,6 +2799,18 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         numExtraFlags = RK_MAX;
         flagName = GB_METHOD_NAME;
         flagDesc = GB_METHOD_DESC;
+        break;
+
+      case FLAG_MR_INT:
+        numExtraFlags = GB_INTERPOL_MAX;
+        flagName = GB_INTERPOL_METHOD_NAME;
+        flagDesc = GB_INTERPOL_METHOD_DESC;
+        break;
+
+      case FLAG_MR_CTRL:
+        numExtraFlags = GB_CTRL_MAX;
+        flagName = GB_CTRL_METHOD_NAME;
+        flagDesc = GB_CTRL_METHOD_DESC;
         break;
 
       case FLAG_MR_NLS:

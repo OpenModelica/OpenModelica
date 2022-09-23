@@ -259,6 +259,37 @@ enum GB_NLS_METHOD {
 extern const char *GB_NLS_METHOD_NAME[GB_NLS_MAX];
 extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
 
+/**
+ * @brief Step size controller method
+ */
+enum GB_CTRL_METHOD {
+  GB_CTRL_UNKNOWN = 0,  /* Unknown controller */
+  GB_CTRL_I = 1,        /* I controller */
+  GB_CTRL_PI = 2,       /* PI controller */
+  GB_CTRL_CNST = 3,     /* Constant step size */
+
+  GB_CTRL_MAX
+};
+
+extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
+extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
+
+enum GB_INTERPOL_METHOD {
+  GB_INTERPOL_UNKNOWN = 0,      /* Unknown interpolation method */
+  GB_INTERPOL_LIN,              /* Linear interpolation */
+  GB_INTERPOL_HERMITE,          /* Hermite interpolation */
+  GB_INTERPOL_HERMITE_a,        /* Hermite interpolation (only for left hand side)*/
+  GB_INTERPOL_HERMITE_b,        /* Hermite interpolation (only for right hand side)*/
+  GB_INTERPOL_HERMITE_ERRCTRL,  /* Hermite interpolation with error control */
+  GB_DENSE_OUTPUT,              /* Dense output, if available else hermite */
+  GB_DENSE_OUTPUT_ERRCTRL,      /* Dense output, if available else hermite with error control */
+
+  GB_INTERPOL_MAX
+};
+
+extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
+extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+
 enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,
