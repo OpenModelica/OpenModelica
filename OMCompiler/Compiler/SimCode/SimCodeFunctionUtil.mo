@@ -1626,7 +1626,8 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       Integer varnum;
       SimCodeFunction.RecordDeclaration recDecl;
-      Boolean is_default, needsExternalConversion;
+      Option<SimCodeFunction.RecordDeclaration> optRecDecl;
+      Boolean is_default, needsExternalConversion, bool1;
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, needsExternalConversion = needsExternalConversion), accRecDecls, rt)
       algorithm
@@ -1634,20 +1635,36 @@ algorithm
         rt_1 := rt;
 
         (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
-        // is_default := stringEqual(sname,name);
+
+        optRecDecl := UnorderedMap.get(sname, declMap);
 
         if is_default then
-          vars := List.map(varlst, typesVar);
-          recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
-          UnorderedMap.add(sname, recDecl, declMap);
+          // If it already exists check if we need to update it.
+          if Util.isSome(optRecDecl) then
+            SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
 
-          elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+            if needsExternalConversion and not bool1 then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
+              UnorderedMap.add(sname, recDecl, declMap);
+            end if;
+          // Add it if it does not exist.
+          else
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
+            UnorderedMap.add(sname, recDecl, declMap);
+
+            elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+          end if;
+
+        // It is not a default construtor
         else
-          vars := List.map(varlst, typesVar);
-          recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
-          UnorderedMap.add(sname, recDecl, declMap);
+          // Add it if does not exist. Otherwise do nothing.
+          if Util.isNone(optRecDecl) then
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+            UnorderedMap.add(sname, recDecl, declMap);
+          end if;
         end if;
-
 
         // if not listMember(sname, rt_1) then
         //   rt_1 := sname :: rt_1;
@@ -1675,15 +1692,19 @@ algorithm
     case (DAE.T_METARECORD(fields = varlst, path=path), accRecDecls, rt)
       equation
         sname = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-        if not listMember(sname, rt) then
-          fieldNames = List.map(varlst, generateVarName);
-          accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
-          rt_1 = sname::rt;
-          UnorderedMap.add(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-          elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
-        else
-          rt_1 = rt;
-        end if;
+        fieldNames = List.map(varlst, generateVarName);
+        UnorderedMap.tryAdd(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
+        elaborateNestedRecordDeclarations(varlst, accRecDecls, rt, declMap);
+
+        // if not listMember(sname, rt) then
+        //   fieldNames = List.map(varlst, generateVarName);
+        //   accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
+        //   rt_1 = sname::rt;
+        //   UnorderedMap.add(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
+        //   elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+        // else
+        //   rt_1 = rt;
+        // end if;
       then ();
 
     case (_, accRecDecls, rt) then ();
