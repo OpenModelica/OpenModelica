@@ -713,7 +713,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        elaborateRecordDeclarations(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -732,7 +732,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        elaborateRecordDeclarations(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -751,7 +751,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        elaborateRecordDeclarations(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -773,7 +773,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
-        elaborateRecordDeclarations(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, declMap);
         info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
@@ -1404,7 +1404,7 @@ algorithm
   end for;
 end collectRecDeclsFromTypes;
 
-protected function elaborateRecordDeclarations
+protected function collectRecDeclsFromElems
 "Translate all records used by varlist to structs."
   input list<DAE.Element> inVars;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
@@ -1426,7 +1426,7 @@ algorithm
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, _) = Expression.traverseExpBottomUp(Util.getOption(binding), collectRecDeclsFromMetaRecCallExp, declMap);
         end if;
-        elaborateRecordDeclarations(rest, declMap);
+        collectRecDeclsFromElems(rest, declMap);
       then
         ();
 
@@ -1435,17 +1435,17 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         (_, _) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, declMap));
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
-        elaborateRecordDeclarations(rest, declMap);
+        collectRecDeclsFromElems(rest, declMap);
       then
         ();
 
     case (_ :: rest)
       equation
-        elaborateRecordDeclarations(rest, declMap);
+        collectRecDeclsFromElems(rest, declMap);
       then
         ();
   end matchcontinue;
-end elaborateRecordDeclarations;
+end collectRecDeclsFromElems;
 
 protected function isVarQ
 "Succeeds if inElement is a variable or constant that is not input."
@@ -1758,7 +1758,7 @@ algorithm
 end generateVarName;
 
 protected function collectRecDeclsFromTypesVars
-"Helper function to elaborateRecordDeclarations."
+"Helper function to collectRecDeclsFromElems."
   input list<DAE.Var> inRecordTypeVars;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
