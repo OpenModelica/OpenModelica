@@ -58,6 +58,7 @@ import Patternm;
 import SCode;
 import SCodeUtil;
 import Testsuite;
+import UnorderedMap;
 
 public
 
@@ -483,11 +484,15 @@ protected
   list<String> outRecordTypes;
   HashTableStringToPath.HashTable ht;
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
+  UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+
 algorithm
-  (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {});
-  (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {},{});
+  declMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
+
+  (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {}, declMap);
+  (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {},{}, declMap);
   extraRecordDecls := List.unique(extraRecordDecls);
-  (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
+  (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes, declMap);
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
   ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
   (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
@@ -583,6 +588,7 @@ protected function elaborateFunctions2
   input list<String> inIncludeDirs;
   input list<String> inLibs;
   input list<String> inPaths;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.Function> outFunctions;
   output list<String> outRecordTypes;
   output list<SimCodeFunction.RecordDeclaration> outDecls;
@@ -610,13 +616,13 @@ algorithm
     case (_, (DAE.FUNCTION( type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
         // skip over builtin functions
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths);
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths, declMap);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
     case (_, (DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
         // skip over partial functions
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths);
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths, declMap);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
     case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="builtin"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
@@ -625,9 +631,9 @@ algorithm
         fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = stringEq(fname, name);
         if not b then
-          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
+          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths, declMap);
         end if;
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths);
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths, declMap);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
 
@@ -637,16 +643,16 @@ algorithm
         fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
-          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
+          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths, declMap);
         end if;
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths);
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths, declMap);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
 
     case (_, (fel :: rest), accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
-        (fn, rt_1, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs,libPaths);
+        (fn, rt_1, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths, declMap);
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs,libPaths, declMap);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
   end match;
@@ -662,6 +668,7 @@ protected function elaborateFunction
   input list<String> inIncludeDirs;
   input list<String> inLibs;
   input list<String> inLibPaths;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output SimCodeFunction.Function outFunction;
   output list<String> outRecordTypes;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
@@ -711,7 +718,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -730,7 +737,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -749,7 +756,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -771,7 +778,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
         info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
@@ -792,7 +799,7 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt, declMap);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
@@ -1398,6 +1405,7 @@ protected function elaborateRecordDeclarationsFromTypes
   input list<DAE.Type> inTypes;
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
@@ -1414,9 +1422,9 @@ algorithm
     case (firstType :: restTypes, accRecDecls, _)
       equation
         (accRecDecls, returnTypes) =
-        elaborateRecordDeclarationsForRecord(firstType, accRecDecls, inReturnTypes);
+        elaborateRecordDeclarationsForRecord(firstType, accRecDecls, inReturnTypes, declMap);
         (accRecDecls, returnTypes) =
-        elaborateRecordDeclarationsFromTypes(restTypes, accRecDecls, returnTypes);
+        elaborateRecordDeclarationsFromTypes(restTypes, accRecDecls, returnTypes, declMap);
       then (accRecDecls, returnTypes);
   end match;
 end elaborateRecordDeclarationsFromTypes;
@@ -1426,6 +1434,7 @@ protected function elaborateRecordDeclarations
   input list<DAE.Element> inVars;
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
@@ -1445,12 +1454,12 @@ algorithm
 
     case (((DAE.VAR(ty = ft, binding = binding)) :: rest), accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt);
+        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
-          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt_1);
+          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt_1, declMap);
         end if;
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1);
+        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1, declMap);
       then
         (accRecDecls, rt_2);
 
@@ -1458,15 +1467,15 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         ((_, expl)) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls, {}));
-        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
+        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt, declMap);
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2);
+        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2, declMap);
       then
         (accRecDecls, rt_2);
 
     case ((_ :: rest), accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarations(rest, accRecDecls, rt);
+        (accRecDecls, rt_1) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
       then
         (accRecDecls, rt_1);
   end matchcontinue;
@@ -1600,6 +1609,7 @@ protected function elaborateRecordDeclarationsForRecord
   input DAE.Type inRecordType;
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
@@ -1623,11 +1633,24 @@ algorithm
         (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
         // is_default := stringEqual(sname,name);
 
+        if is_default then
+          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+
+          vars := List.map(varlst, typesVar);
+          recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
+          UnorderedMap.add(sname, recDecl, declMap);
+        else
+          vars := List.map(varlst, typesVar);
+          recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+          UnorderedMap.add(sname, recDecl, declMap);
+        end if;
+
+
         if not listMember(sname, rt_1) then
           rt_1 := sname :: rt_1;
 
           if is_default then
-            (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+            (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
 
             vars := List.map(varlst, typesVar);
             recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
@@ -1638,6 +1661,7 @@ algorithm
 
           accRecDecls := List.appendElt(recDecl, accRecDecls);
         end if;
+
 
       then (accRecDecls, rt_1);
 
@@ -1654,7 +1678,7 @@ algorithm
           fieldNames = List.map(varlst, generateVarName);
           accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
           rt_1 = sname::rt;
-          (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+          (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
         else
           rt_1 = rt;
         end if;
@@ -1806,6 +1830,7 @@ protected function elaborateNestedRecordDeclarations
   input list<DAE.Var> inRecordTypes;
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
@@ -1819,12 +1844,12 @@ algorithm
     then (accRecDecls, rt);
     case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest, accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ty, accRecDecls, rt);
-        (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt_1);
+        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ty, accRecDecls, rt, declMap);
+        (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt_1, declMap);
       then (accRecDecls, rt_2);
     case (_::rest, accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt);
+        (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
       then (accRecDecls, rt_1);
   end matchcontinue;
 end elaborateNestedRecordDeclarations;
@@ -1833,6 +1858,7 @@ protected function elaborateRecordDeclarationsForMetarecords
   input list<DAE.Exp> inExpl;
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
@@ -1852,11 +1878,11 @@ algorithm
         b = listMember(name, rt);
         accRecDecls = List.consOnTrue(not b, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
         rt_1 = List.consOnTrue(not b, name, rt);
-        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1);
+        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1, declMap);
       then (accRecDecls, rt_2);
    case (_::rest, accRecDecls, rt)
      equation
-       (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt);
+       (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt, declMap);
      then (accRecDecls, rt_1);
   end match;
 end elaborateRecordDeclarationsForMetarecords;
