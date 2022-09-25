@@ -481,7 +481,7 @@ public function elaborateFunctions
   output list<String> libpaths;
 protected
   list<SimCodeFunction.Function> fns;
-  list<String> outRecordTypes;
+  list<String> outRecordTypes, recordNames;
   HashTableStringToPath.HashTable ht;
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
   UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
@@ -493,7 +493,20 @@ algorithm
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {},{}, declMap);
   extraRecordDecls := List.unique(extraRecordDecls);
   (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes, declMap);
+
+  extraRecordDecls := UnorderedMap.valueList(declMap);
+
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
+
+
+  recordNames := UnorderedMap.keyList(declMap);
+
+
+  // if not List.isEqual(recordNames, outRecordTypes, true) then
+  //   Error.addInternalError("Records collected do not match: \n", sourceInfo());
+  // end if;
+
+
   ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
   (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
   // Topological sort since we have no guarantees in the order of generated records
