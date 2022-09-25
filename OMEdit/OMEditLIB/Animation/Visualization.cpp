@@ -91,12 +91,27 @@ constexpr char VectorObject::kAutoScaleRenderBinName[];
 
 
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
-  : _shapes(),
-    _vectors(),
-    _modelFile(modelFile),
+  : _modelFile(modelFile),
     _path(path),
-    _xmlFileName(assembleXMLFileName(modelFile, path))
+    _xmlFileName(assembleXMLFileName(modelFile, path)),
+    _shapes(),
+    _vectors()
 {
+}
+
+const std::string OMVisualBase::getModelFile() const
+{
+  return _modelFile;
+}
+
+const std::string OMVisualBase::getPath() const
+{
+  return _path;
+}
+
+const std::string OMVisualBase::getXMLFileName() const
+{
+  return _xmlFileName;
 }
 
 /*!
@@ -373,29 +388,6 @@ void OMVisualBase::initVisObjects()
   }
 }
 
-const std::string OMVisualBase::getModelFile() const
-{
-  return _modelFile;
-}
-
-const std::string OMVisualBase::getPath() const
-{
-  return _path;
-}
-
-const std::string OMVisualBase::getXMLFileName() const
-{
-  return _xmlFileName;
-}
-
-void OMVisualBase::appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const
-{
-  if (strcmp("cref", node->name()) == 0)
-  {
-    visVariables.push_back(std::string(node->value()));
-  }
-}
-
 
 ///--------------------------------------------------///
 ///ABSTRACT VISUALIZATION CLASS----------------------///
@@ -414,24 +406,31 @@ VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const
   : _visType(visType),
     mpOMVisualBase(nullptr),
     mpOMVisScene(new OMVisScene(this)),
-    mpUpdateVisitor(new UpdateVisitor()),
-    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
+    mpUpdateVisitor(new UpdateVisitor())
 {
+  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0);
   mpOMVisualBase = new OMVisualBase(modelFile, path);
   mpOMVisScene->getScene().setPath(path);
 }
 
-void VisualizationAbstract::initData()
+VisType VisualizationAbstract::getVisType() const
 {
-  mpOMVisualBase->initVisObjects();
+  return _visType;
 }
 
-void VisualizationAbstract::initVisualization()
+std::string VisualizationAbstract::getModelFile() const
 {
-  initializeVisAttributes(mpTimeManager->getStartTime());
-  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-  mpTimeManager->setRealTimeFactor(0.0);
-  mpTimeManager->setPause(true);
+  return mpOMVisualBase->getModelFile();
+}
+
+OMVisualBase* VisualizationAbstract::getBaseData() const
+{
+  return mpOMVisualBase;
+}
+
+OMVisScene* VisualizationAbstract::getOMVisScene() const
+{
+  return mpOMVisScene;
 }
 
 TimeManager* VisualizationAbstract::getTimeManager() const
@@ -439,7 +438,7 @@ TimeManager* VisualizationAbstract::getTimeManager() const
   return mpTimeManager;
 }
 
-void VisualizationAbstract::updateVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
+void VisualizationAbstract::updateVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
 {
   int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
   AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
@@ -449,7 +448,7 @@ void VisualizationAbstract::updateVisualizer(const std::string& visualizerName, 
   child->accept(*mpUpdateVisitor);
 }
 
-void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
+void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
 {
   int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
   AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
@@ -461,13 +460,13 @@ void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName, 
   visualizer->setStateSetAction(StateSetAction::update);
 }
 
-void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
+void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
   mpUpdateVisitor->_visualizer = visualizer;
   mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
   visualizer->getTransformNode()->accept(*mpUpdateVisitor);
 }
 
-void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
+void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
   mpUpdateVisitor->_visualizer = visualizer;
   mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
   visualizer->setStateSetAction(StateSetAction::modify);
@@ -475,18 +474,30 @@ void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject* visualize
   visualizer->setStateSetAction(StateSetAction::update);
 }
 
-void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
+void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
   mpUpdateVisitor->_visualizer = &visualizer;
   mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
   visualizer.getTransformNode()->accept(*mpUpdateVisitor);
 }
 
-void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
+void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
   mpUpdateVisitor->_visualizer = &visualizer;
   mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
   visualizer.setStateSetAction(StateSetAction::modify);
   visualizer.getTransformNode()->accept(*mpUpdateVisitor);
   visualizer.setStateSetAction(StateSetAction::update);
+}
+
+void VisualizationAbstract::initData()
+{
+  getBaseData()->initVisObjects();
+}
+
+void VisualizationAbstract::setUpScene()
+{
+  // Build scene graph.
+  getOMVisScene()->getScene().setUpScene(getBaseData()->_shapes);
+  getOMVisScene()->getScene().setUpScene(getBaseData()->_vectors);
 }
 
 void VisualizationAbstract::sceneUpdate()
@@ -515,31 +526,12 @@ void VisualizationAbstract::sceneUpdate()
   }
 }
 
-void VisualizationAbstract::setUpScene()
+void VisualizationAbstract::initVisualization()
 {
-  // Build scene graph.
-  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_shapes);
-  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_vectors);
-}
-
-VisType VisualizationAbstract::getVisType() const
-{
-  return _visType;
-}
-
-OMVisualBase* VisualizationAbstract::getBaseData() const
-{
-  return mpOMVisualBase;
-}
-
-OMVisScene* VisualizationAbstract::getOMVisScene() const
-{
-  return mpOMVisScene;
-}
-
-std::string VisualizationAbstract::getModelFile() const
-{
-  return mpOMVisualBase->getModelFile();
+  initializeVisAttributes(mpTimeManager->getStartTime());
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setPause(true);
 }
 
 void VisualizationAbstract::startVisualization()
@@ -981,16 +973,16 @@ OMVisScene::OMVisScene(VisualizationAbstract* visualization)
 {
 }
 
+OSGScene& OMVisScene::getScene()
+{
+  return _scene;
+}
+
 void OMVisScene::dumpOSGTreeDebug()
 {
   // The node traverser which dumps the tree
   InfoVisitor infoVisitor;
   _scene.getRootNode()->accept(infoVisitor);
-}
-
-OSGScene& OMVisScene::getScene()
-{
-  return _scene;
 }
 
 
@@ -999,6 +991,21 @@ OSGScene::OSGScene(VisualizationAbstract* visualization)
     _rootNode(new osg::Group()),
     _path("")
 {
+}
+
+osg::ref_ptr<osg::Group> OSGScene::getRootNode()
+{
+  return _rootNode;
+}
+
+std::string OSGScene::getPath() const
+{
+  return _path;
+}
+
+void OSGScene::setPath(const std::string path)
+{
+  _path = path;
 }
 
 void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
@@ -1099,21 +1106,6 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 
     vector.setTransformNode(transf);
   }
-}
-
-osg::ref_ptr<osg::Group> OSGScene::getRootNode()
-{
-  return _rootNode;
-}
-
-std::string OSGScene::getPath() const
-{
-  return _path;
-}
-
-void OSGScene::setPath(const std::string path)
-{
-  _path = path;
 }
 
 

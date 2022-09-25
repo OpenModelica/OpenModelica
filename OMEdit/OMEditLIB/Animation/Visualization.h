@@ -154,11 +154,11 @@ public:
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
-  void setUpScene(std::vector<ShapeObject>& shapes);
-  void setUpScene(std::vector<VectorObject>& vectors);
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
+  void setUpScene(std::vector<ShapeObject>& shapes);
+  void setUpScene(std::vector<VectorObject>& vectors);
 private:
   osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
   osg::ref_ptr<osg::Group> _rootNode;
@@ -170,10 +170,10 @@ class OMVisScene
 public:
   OMVisScene(VisualizationAbstract* visualization);
   ~OMVisScene() = default;
-  OMVisScene(const OMVisScene& omvv) = delete;
-  OMVisScene& operator=(const OMVisScene& omvv) = delete;
-  void dumpOSGTreeDebug();
+  OMVisScene(const OMVisScene& omvs) = delete;
+  OMVisScene& operator=(const OMVisScene& omvs) = delete;
   OSGScene& getScene();
+  void dumpOSGTreeDebug();
 private:
   OSGScene _scene;
 };
@@ -186,22 +186,20 @@ public:
   ~OMVisualBase() = default;
   OMVisualBase(const OMVisualBase& omvb) = delete;
   OMVisualBase& operator=(const OMVisualBase& omvb) = delete;
-  void initVisObjects();
   const std::string getModelFile() const;
   const std::string getPath() const;
   const std::string getXMLFileName() const;
   AbstractVisualizerObject* getVisualizerObjectByIdx(const std::size_t visualizerIdx);
   AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
   int getVisualizerObjectIndexByID(const std::string& visualizerID);
-private:
-  void appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const;
-public:
-  std::vector<ShapeObject> _shapes;
-  std::vector<VectorObject> _vectors;
+  void initVisObjects();
 private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
+public:
+  std::vector<ShapeObject> _shapes;
+  std::vector<VectorObject> _vectors;
 };
 
 class VisualizationAbstract
@@ -211,38 +209,39 @@ public:
   VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizationAbstract() = default;
 
+  VisType getVisType() const;
+  std::string getModelFile() const;
+  OMVisualBase* getBaseData() const;
+  OMVisScene* getOMVisScene() const;
+  TimeManager* getTimeManager() const;
+
+  void updateVisualizer(const std::string& visualizerName   , const bool changeMaterialProperties = true);
+  void modifyVisualizer(const std::string& visualizerName   , const bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties = true);
+
   virtual void initData();
-  void initVisualization();
-  void setUpScene();
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
-  void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
-  void sceneUpdate();
-  void updateVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
-  void modifyVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
-  void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
-  void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
-  void updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
-  void modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
-  virtual void simulate(TimeManager& omvm) = 0;
   virtual void updateScene(const double time) = 0;
+  virtual void simulate(TimeManager& omvm) = 0;
 
-  TimeManager* getTimeManager() const;
-  OMVisualBase* getBaseData() const;
-  VisType getVisType() const;
-  OMVisScene* getOMVisScene() const;
-  std::string getModelFile() const;
+  void setUpScene();
+  void sceneUpdate();
 
-  //virtual void setSimulationSettings(const UserSimSettingsFMU& simSetFMU) { };
-  //virtual void simulate(TimeManager& omvm) = 0;
-  virtual void startVisualization();
-  virtual void pauseVisualization();
+  void initVisualization();
+  void startVisualization();
+  void pauseVisualization();
+
+  void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
 protected:
   const VisType _visType;
   OMVisualBase* mpOMVisualBase;
   OMVisScene* mpOMVisScene;
-  UpdateVisitor* mpUpdateVisitor;
   TimeManager* mpTimeManager;
+  UpdateVisitor* mpUpdateVisitor;
 };
 
 osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
