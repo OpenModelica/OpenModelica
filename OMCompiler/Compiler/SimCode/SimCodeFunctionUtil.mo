@@ -489,10 +489,10 @@ protected
 algorithm
   declMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
 
-  elaborateRecordDeclarationsForMetarecords(literals, declMap);
+  collectRecDeclsFromMetaRecordCallExps(literals, declMap);
   (functions, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, declMap);
 
-  elaborateRecordDeclarationsFromTypes(metarecordTypes, declMap);
+  collectRecDeclsFromTypes(metarecordTypes, declMap);
 
   extraRecordDecls := UnorderedMap.valueList(declMap);
 
@@ -793,7 +793,7 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        elaborateRecordDeclarationsForRecord(restype, declMap);
+        collectRecDeclsFromType(restype, declMap);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
@@ -1395,14 +1395,14 @@ algorithm
   end match;
 end isLiteralExp;
 
-protected function elaborateRecordDeclarationsFromTypes
+protected function collectRecDeclsFromTypes
   input list<DAE.Type> inTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
   for ty in inTypes loop
-     elaborateRecordDeclarationsForRecord(ty, declMap);
+     collectRecDeclsFromType(ty, declMap);
   end for;
-end elaborateRecordDeclarationsFromTypes;
+end collectRecDeclsFromTypes;
 
 protected function elaborateRecordDeclarations
 "Translate all records used by varlist to structs."
@@ -1422,10 +1422,10 @@ algorithm
 
     case ((DAE.VAR(ty = ft, binding = binding)) :: rest)
       equation
-        elaborateRecordDeclarationsForRecord(ft, declMap);
+        collectRecDeclsFromType(ft, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
-          elaborateRecordDeclarationsForMetarecords(expl, declMap);
+          collectRecDeclsFromMetaRecordCallExps(expl, declMap);
         end if;
         elaborateRecordDeclarations(rest, declMap);
       then
@@ -1435,7 +1435,7 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         ((_, expl)) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls, {}));
-        elaborateRecordDeclarationsForMetarecords(expl, declMap);
+        collectRecDeclsFromMetaRecordCallExps(expl, declMap);
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
         elaborateRecordDeclarations(rest, declMap);
       then
@@ -1572,7 +1572,7 @@ algorithm
   end match;
 end getCrefFromExp;
 
-protected function elaborateRecordDeclarationsForRecord
+protected function collectRecDeclsFromType
 "Helper function to generateStructsForRecords."
   input DAE.Type inRecordType;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
@@ -1610,7 +1610,7 @@ algorithm
             recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
             UnorderedMap.add(sname, recDecl, declMap);
 
-            elaborateNestedRecordDeclarations(varlst, declMap);
+            collectRecDeclsFromTypesVars(varlst, declMap);
           end if;
 
         // It is not a default construtor
@@ -1633,13 +1633,13 @@ algorithm
         sname = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         fieldNames = List.map(varlst, generateVarName);
         UnorderedMap.tryAdd(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        elaborateNestedRecordDeclarations(varlst, declMap);
+        collectRecDeclsFromTypesVars(varlst, declMap);
       then ();
 
     case (_) then ();
 
   end match;
-end elaborateRecordDeclarationsForRecord;
+end collectRecDeclsFromType;
 
 protected function typesVarNoBinding
   input DAE.Var inTypesVar;
@@ -1776,7 +1776,7 @@ algorithm
   end match;
 end generateVarName;
 
-protected function elaborateNestedRecordDeclarations
+protected function collectRecDeclsFromTypesVars
 "Helper function to elaborateRecordDeclarations."
   input list<DAE.Var> inRecordTypeVars;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
@@ -1784,15 +1784,15 @@ algorithm
   for recTyVar in inRecordTypeVars loop
     () := match recTyVar
       case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        elaborateRecordDeclarationsForRecord(recTyVar.ty, declMap);
+        collectRecDeclsFromType(recTyVar.ty, declMap);
       then ();
 
       else ();
     end match;
   end for;
-end elaborateNestedRecordDeclarations;
+end collectRecDeclsFromTypesVars;
 
-protected function elaborateRecordDeclarationsForMetarecords
+protected function collectRecDeclsFromMetaRecordCallExps
   input list<DAE.Exp> inExpl;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 protected
@@ -1808,7 +1808,7 @@ algorithm
       else ();
     end match;
   end for;
-end elaborateRecordDeclarationsForMetarecords;
+end collectRecDeclsFromMetaRecordCallExps;
 
 
 protected function generateExtFunctionIncludes "by investigating the annotation of an external function."
