@@ -1406,45 +1406,30 @@ end collectRecDeclsFromTypes;
 
 protected function collectRecDeclsFromElems
 "Translate all records used by varlist to structs."
-  input list<DAE.Element> inVars;
+  input list<DAE.Element> inElems;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
-  () := matchcontinue (inVars)
-    local
-      DAE.Element var;
-      list<DAE.Element> rest;
-      DAE.Type ft;
-      DAE.Algorithm algorithm_;
-      list<DAE.Exp> expl;
-      Option<DAE.Exp> binding;
+  for elem in inElems loop
 
-    case {} then ();
+    () := match elem
+      case DAE.VAR() algorithm
+        collectRecDeclsFromType(elem.ty, declMap);
 
-    case ((DAE.VAR(ty = ft, binding = binding)) :: rest)
-      equation
-        collectRecDeclsFromType(ft, declMap);
-        if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
-          (_, _) = Expression.traverseExpBottomUp(Util.getOption(binding), collectRecDeclsFromMetaRecCallExp, declMap);
+        if Util.isSome(elem.binding) and Config.acceptMetaModelicaGrammar() then
+          (_, _) := Expression.traverseExpBottomUp(Util.getOption(elem.binding), collectRecDeclsFromMetaRecCallExp, declMap);
         end if;
-        collectRecDeclsFromElems(rest, declMap);
-      then
-        ();
+      then ();
 
-    case (DAE.ALGORITHM(algorithm_ = algorithm_) :: rest)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        (_, _) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, declMap));
-        // TODO: ? what about rest ? , can be there something else after the ALGORITHM
-        collectRecDeclsFromElems(rest, declMap);
-      then
-        ();
+      case DAE.ALGORITHM() algorithm
+        if Config.acceptMetaModelicaGrammar() then
+          (_, _) := DAEUtil.traverseAlgorithmExps(elem.algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, declMap));
+        end if;
+      then ();
 
-    case (_ :: rest)
-      equation
-        collectRecDeclsFromElems(rest, declMap);
-      then
-        ();
-  end matchcontinue;
+      else ();
+    end match;
+
+  end for;
 end collectRecDeclsFromElems;
 
 protected function isVarQ
