@@ -1613,9 +1613,9 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       Integer varnum;
       SimCodeFunction.RecordDeclaration recDecl;
-      Boolean is_default;
+      Boolean is_default, needsExternalConversion;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst), accRecDecls, rt)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, needsExternalConversion = needsExternalConversion), accRecDecls, rt)
       algorithm
         name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         rt_1 := rt;
@@ -1630,7 +1630,7 @@ algorithm
             (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
 
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, false);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
           else
             vars := List.map(varlst, typesVar);
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
