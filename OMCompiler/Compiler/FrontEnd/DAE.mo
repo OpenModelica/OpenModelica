@@ -964,7 +964,7 @@ public uniontype Type "models the different front-end and back-end types"
     ClassInf.State complexClassType "The type of a class";
     list<Var> varLst "The variables of a complex type";
     EqualityConstraint equalityConstraint;
-    Boolean needsExternalConversion "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
+    Boolean usedExternally "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
   end T_COMPLEX;
 
   record T_SUBTYPE_BASIC

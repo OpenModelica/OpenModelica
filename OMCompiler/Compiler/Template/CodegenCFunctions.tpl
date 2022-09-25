@@ -427,7 +427,7 @@ template recordDeclaration(RecordDeclaration recDecl)
     <%recordModelicaCallConstrctor(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
-    <%if r.needsExternalConversion then recordCopyExternalDefs(r.name, r.variables)%>
+    <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
     <<
@@ -536,7 +536,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       case SOME(str) then
       <<
       typedef <%str%> <%rec_name%>;
-      <% if r.needsExternalConversion then
+      <% if r.usedExternally then
         <<
         typedef <%str%>_external <%rec_name%>_external;
         >>
@@ -547,7 +547,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       typedef struct {
         <%r.variables |> var as VARIABLE(__) => '<%varType(var)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
       } <%rec_name%>;
-      <% if r.needsExternalConversion then
+      <% if r.usedExternally then
         <<
         typedef struct {
           <%r.variables |> var as VARIABLE(__) => '<%extType(var.ty, true, false, false)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
@@ -563,7 +563,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
-      <%if r.needsExternalConversion then
+      <%if r.usedExternally then
         <<
         void <%cpy_to_external_func_name%>(void* v_src, void* v_dst);
         #define <%cpy_to_external_macro_name%>(src,dst) <%cpy_to_external_func_name%>(&src, &dst)

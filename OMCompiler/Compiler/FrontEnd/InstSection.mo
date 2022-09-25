@@ -3108,7 +3108,7 @@ algorithm
       equation
         vars = List.sort(vars, connectorCompGt);
       then
-        DAE.T_COMPLEX(ci_state, vars, ec, inType.needsExternalConversion);
+        DAE.T_COMPLEX(ci_state, vars, ec, inType.usedExternally);
 
     else inType;
 

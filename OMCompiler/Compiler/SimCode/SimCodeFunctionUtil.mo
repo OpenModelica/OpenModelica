@@ -474,36 +474,31 @@ public function elaborateFunctions
   input list<DAE.Exp> literals;
   input list<String> includes;
   output list<SimCodeFunction.Function> functions;
-  output list<SimCodeFunction.RecordDeclaration> extraRecordDecls = {};
+  output list<SimCodeFunction.RecordDeclaration> recordDecls;
   output list<String> outIncludes;
   output list<String> includeDirs;
   output list<String> libs;
   output list<String> libpaths;
 protected
   list<SimCodeFunction.Function> fns;
-  list<String> recordNames;
   HashTableStringToPath.HashTable ht;
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
-  UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-
+  UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
-  declMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
+  recDeclsMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
+  (functions, outIncludes, includeDirs, libs, libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, recDeclsMap);
 
-  collectRecDeclsFromMetaRecCallExps(literals, declMap);
-  (functions, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, declMap);
+  collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
+  collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
 
-  collectRecDeclsFromTypes(metarecordTypes, declMap);
-
-  extraRecordDecls := UnorderedMap.valueList(declMap);
-
-  extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
-  recordNames := UnorderedMap.keyList(declMap);
+  recordDecls := UnorderedMap.valueList(recDeclsMap);
+  recordDecls := List.sort(recordDecls, orderRecordDecls);
 
   ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
-  (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
+  (recordDecls,_) := List.mapFold(recordDecls, aliasRecordDeclarations, ht);
   // Topological sort since we have no guarantees in the order of generated records
-  g := Graph.buildGraph(extraRecordDecls, getRecordDependencies, extraRecordDecls);
-  (extraRecordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
+  g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
+  (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
 
 protected function getRecordDependencies
@@ -518,9 +513,9 @@ algorithm
       list<DAE.Type> tys;
       list<list<DAE.Type>> tyss;
     case (SimCodeFunction.RECORD_DECL_FULL(aliasName=SOME(name)),_)
-      then List.select1(allDecls, isRecordDecl, name);
+      then List.select1(allDecls, recordDeclHasName, name);
     case (SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(name=name),_)
-      then List.select1(allDecls, isRecordDecl, name);
+      then List.select1(allDecls, recordDeclHasName, name);
     case (SimCodeFunction.RECORD_DECL_FULL(variables=vars),_)
       equation
         tys = list(getVarType(v) for v in vars);
@@ -552,21 +547,19 @@ protected
 algorithm
   DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) := ty;
   name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-  decl := List.find1(allDecls, isRecordDecl, name);
+  decl := List.find1(allDecls, recordDeclHasName, name);
 end getRecordDependenciesFromType;
 
-protected function isRecordDecl
+protected function recordDeclHasName
   input SimCodeFunction.RecordDeclaration decl;
   input String name;
   output Boolean b;
 algorithm
-  b := match (decl,name)
-    local
-      String name1;
-    case (SimCodeFunction.RECORD_DECL_FULL(name=name1),_) then stringEq(name,name1);
+  b := match decl
+    case SimCodeFunction.RECORD_DECL_FULL() then stringEq(name, decl.name);
     else false;
   end match;
-end isRecordDecl;
+end recordDeclHasName;
 
 protected function isRecordDeclEqual
   input SimCodeFunction.RecordDeclaration decl1;
@@ -574,11 +567,8 @@ protected function isRecordDeclEqual
   output Boolean b;
 algorithm
   b := match (decl1,decl2)
-    local
-      String name1,name2;
-      Absyn.Path path1,path2;
-    case (SimCodeFunction.RECORD_DECL_FULL(name=name1),SimCodeFunction.RECORD_DECL_FULL(name=name2)) then stringEq(name1,name2);
-    case (SimCodeFunction.RECORD_DECL_DEF(path=path1),SimCodeFunction.RECORD_DECL_DEF(path=path2)) then AbsynUtil.pathEqual(path1,path2);
+    case (SimCodeFunction.RECORD_DECL_FULL(),SimCodeFunction.RECORD_DECL_FULL()) then stringEq(decl1.name, decl2.name);
+    case (SimCodeFunction.RECORD_DECL_DEF(),SimCodeFunction.RECORD_DECL_DEF()) then AbsynUtil.pathEqual(decl1.path, decl2.path);
     else false;
   end match;
 end isRecordDeclEqual;
@@ -591,7 +581,7 @@ protected function elaborateFunctions2
   input list<String> inIncludeDirs;
   input list<String> inLibs;
   input list<String> inPaths;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
   output list<SimCodeFunction.Function> outFunctions;
   output list<String> outIncludes;
   output list<String> outIncludeDirs;
@@ -616,13 +606,13 @@ algorithm
     case (_, (DAE.FUNCTION( type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, includes, includeDirs, libs,libPaths)
       equation
         // skip over builtin functions
-        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, declMap);
+        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
     case (_, (DAE.FUNCTION(partialPrefix = true) :: rest), accfns, includes, includeDirs, libs,libPaths)
       equation
         // skip over partial functions
-        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, declMap);
+        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
     case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="builtin"))::_))::rest, accfns, includes, includeDirs, libs,libPaths)
@@ -631,9 +621,9 @@ algorithm
         fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = stringEq(fname, name);
         if not b then
-          (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, declMap);
+          (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
         end if;
-        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, declMap);
+        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
 
@@ -643,16 +633,16 @@ algorithm
         fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
-          (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, declMap);
+          (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
         end if;
-        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, declMap);
+        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
 
     case (_, (fel :: rest), accfns, includes, includeDirs, libs,libPaths)
       equation
-        (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, declMap);
-        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, (fn :: accfns), includes, includeDirs, libs,libPaths, declMap);
+        (fn, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, (fn :: accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
   end match;
@@ -666,7 +656,7 @@ protected function elaborateFunction
   input list<String> inIncludeDirs;
   input list<String> inLibs;
   input list<String> inLibPaths;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
   output SimCodeFunction.Function outFunction;
   output list<String> outIncludes;
   output list<String> outIncludeDirs;
@@ -713,7 +703,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        collectRecDeclsFromElems(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, recDeclsMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -732,7 +722,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        collectRecDeclsFromElems(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, recDeclsMap);
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -751,7 +741,7 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        collectRecDeclsFromElems(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, recDeclsMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
@@ -773,7 +763,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
-        collectRecDeclsFromElems(daeElts, declMap);
+        collectRecDeclsFromElems(daeElts, recDeclsMap);
         info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
@@ -793,7 +783,7 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        collectRecDeclsFromType(restype, declMap);
+        collectRecDeclsFromType(restype, recDeclsMap);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
@@ -1397,32 +1387,32 @@ end isLiteralExp;
 
 protected function collectRecDeclsFromTypes
   input list<DAE.Type> inTypes;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for ty in inTypes loop
-     collectRecDeclsFromType(ty, declMap);
+     collectRecDeclsFromType(ty, recDeclsMap);
   end for;
 end collectRecDeclsFromTypes;
 
 protected function collectRecDeclsFromElems
 "Translate all records used by varlist to structs."
   input list<DAE.Element> inElems;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for elem in inElems loop
 
     () := match elem
       case DAE.VAR() algorithm
-        collectRecDeclsFromType(elem.ty, declMap);
+        collectRecDeclsFromType(elem.ty, recDeclsMap);
 
         if Util.isSome(elem.binding) and Config.acceptMetaModelicaGrammar() then
-          (_, _) := Expression.traverseExpBottomUp(Util.getOption(elem.binding), collectRecDeclsFromMetaRecCallExp, declMap);
+          (_, _) := Expression.traverseExpBottomUp(Util.getOption(elem.binding), collectRecDeclsFromMetaRecCallExp, recDeclsMap);
         end if;
       then ();
 
       case DAE.ALGORITHM() algorithm
         if Config.acceptMetaModelicaGrammar() then
-          (_, _) := DAEUtil.traverseAlgorithmExps(elem.algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, declMap));
+          (_, _) := DAEUtil.traverseAlgorithmExps(elem.algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, recDeclsMap));
         end if;
       then ();
 
@@ -1541,7 +1531,7 @@ end getCrefFromExp;
 protected function collectRecDeclsFromType
 "Helper function to generateStructsForRecords."
   input DAE.Type inRecordType;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   () := match (inRecordType)
     local
@@ -1552,31 +1542,31 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, needsExternalConversion, bool1;
+      Boolean is_default, usedExternally, bool1;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, needsExternalConversion = needsExternalConversion))
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally))
       algorithm
         name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
 
-        optRecDecl := UnorderedMap.get(sname, declMap);
+        optRecDecl := UnorderedMap.get(sname, recDeclsMap);
 
         if is_default then
           // If it already exists check if we need to update it.
           if Util.isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
 
-            if needsExternalConversion and not bool1 then
+            if usedExternally and not bool1 then
               recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
-              UnorderedMap.add(sname, recDecl, declMap);
+              UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
           else
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
-            UnorderedMap.add(sname, recDecl, declMap);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally);
+            UnorderedMap.add(sname, recDecl, recDeclsMap);
 
-            collectRecDeclsFromTypesVars(varlst, declMap);
+            collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
 
         // It is not a default construtor
@@ -1585,7 +1575,7 @@ algorithm
           if Util.isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
-            UnorderedMap.add(sname, recDecl, declMap);
+            UnorderedMap.add(sname, recDecl, recDeclsMap);
           end if;
         end if;
       then ();
@@ -1598,8 +1588,8 @@ algorithm
       equation
         sname = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         fieldNames = List.map(varlst, generateVarName);
-        UnorderedMap.tryAdd(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        collectRecDeclsFromTypesVars(varlst, declMap);
+        UnorderedMap.tryAdd(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), recDeclsMap);
+        collectRecDeclsFromTypesVars(varlst, recDeclsMap);
       then ();
 
     case (_) then ();
@@ -1745,12 +1735,12 @@ end generateVarName;
 protected function collectRecDeclsFromTypesVars
 "Helper function to collectRecDeclsFromElems."
   input list<DAE.Var> inRecordTypeVars;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for recTyVar in inRecordTypeVars loop
     () := match recTyVar
       case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        collectRecDeclsFromType(recTyVar.ty, declMap);
+        collectRecDeclsFromType(recTyVar.ty, recDeclsMap);
       then ();
 
       else ();
@@ -1760,18 +1750,16 @@ end collectRecDeclsFromTypesVars;
 
 protected function collectRecDeclsFromMetaRecCallExps
   input list<DAE.Exp> inExpl;
-  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-protected
-  String name;
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for exp in inExpl loop
-    collectRecDeclsFromMetaRecCallExp(exp, declMap);
+    collectRecDeclsFromMetaRecCallExp(exp, recDeclsMap);
   end for;
 end collectRecDeclsFromMetaRecCallExps;
 
 protected function collectRecDeclsFromMetaRecCallExp
   input output DAE.Exp inExp;
-  input output UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+  input output UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 protected
   String name;
 algorithm
@@ -1779,7 +1767,7 @@ algorithm
     case DAE.METARECORDCALL() algorithm
       if inExp.index <> -1 then
         name := AbsynUtil.pathStringUnquoteReplaceDot(inExp.path, "_");
-        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(inExp.path, inExp.fieldNames), declMap);
+        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(inExp.path, inExp.fieldNames), recDeclsMap);
       end if;
     then ();
 
