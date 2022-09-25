@@ -497,15 +497,7 @@ algorithm
   extraRecordDecls := UnorderedMap.valueList(declMap);
 
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
-
-
   recordNames := UnorderedMap.keyList(declMap);
-
-
-  // if not List.isEqual(recordNames, outRecordTypes, true) then
-  //   Error.addInternalError("Records collected do not match: \n", sourceInfo());
-  // end if;
-
 
   ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
   (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
@@ -1407,20 +1399,9 @@ protected function elaborateRecordDeclarationsFromTypes
   input list<DAE.Type> inTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
-  () := match (inTypes)
-    local
-      list<SimCodeFunction.RecordDeclaration> accRecDecls;
-      DAE.Type firstType;
-      list<DAE.Type> restTypes;
-      list<String> returnTypes;
-
-    case ({}) then ();
-    case (firstType :: restTypes)
-      equation
-        elaborateRecordDeclarationsForRecord(firstType, declMap);
-        elaborateRecordDeclarationsFromTypes(restTypes, declMap);
-      then ();
-  end match;
+  for ty in inTypes loop
+     elaborateRecordDeclarationsForRecord(ty, declMap);
+  end for;
 end elaborateRecordDeclarationsFromTypes;
 
 protected function elaborateRecordDeclarations
@@ -1797,51 +1778,36 @@ end generateVarName;
 
 protected function elaborateNestedRecordDeclarations
 "Helper function to elaborateRecordDeclarations."
-  input list<DAE.Var> inRecordTypes;
+  input list<DAE.Var> inRecordTypeVars;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
-  () := matchcontinue (inRecordTypes)
-    local
-      DAE.Type ty;
-      list<DAE.Var> rest;
-
-    case ({}) then ();
-
-    case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest)
-      equation
-        elaborateRecordDeclarationsForRecord(ty, declMap);
-        elaborateNestedRecordDeclarations(rest, declMap);
+  for recTyVar in inRecordTypeVars loop
+    () := match recTyVar
+      case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
+        elaborateRecordDeclarationsForRecord(recTyVar.ty, declMap);
       then ();
-    case (_::rest)
-      equation
-        elaborateNestedRecordDeclarations(rest, declMap);
-      then ();
-  end matchcontinue;
+
+      else ();
+    end match;
+  end for;
 end elaborateNestedRecordDeclarations;
 
 protected function elaborateRecordDeclarationsForMetarecords
   input list<DAE.Exp> inExpl;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+protected
+  String name;
 algorithm
-  () := match (inExpl)
-    local
-      list<String> fieldNames;
-      list<DAE.Exp> rest;
-      String name;
-      Absyn.Path path;
-
-    case {} then ();
-    case DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest
-      equation
-        name = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        elaborateRecordDeclarationsForMetarecords(rest, declMap);
+  for exp in inExpl loop
+    () := match exp
+      case DAE.METARECORDCALL() algorithm
+        name := AbsynUtil.pathStringUnquoteReplaceDot(exp.path, "_");
+        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(exp.path, exp.fieldNames), declMap);
       then ();
-   case _::rest
-     equation
-       elaborateRecordDeclarationsForMetarecords(rest, declMap);
-     then ();
-  end match;
+
+      else ();
+    end match;
+  end for;
 end elaborateRecordDeclarationsForMetarecords;
 
 
