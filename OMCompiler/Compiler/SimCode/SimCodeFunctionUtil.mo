@@ -1647,11 +1647,11 @@ algorithm
         // is_default := stringEqual(sname,name);
 
         if is_default then
-          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
-
           vars := List.map(varlst, typesVar);
           recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
           UnorderedMap.add(sname, recDecl, declMap);
+
+          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
         else
           vars := List.map(varlst, typesVar);
           recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
