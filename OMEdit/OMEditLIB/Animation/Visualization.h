@@ -216,7 +216,6 @@ private:
   std::string _xmlFileName;
   UpdateVisitor _updateVisitor;
   VisualizationAbstract* _visualization;
-public:
   std::vector<ShapeObject> _shapes;
   std::vector<VectorObject> _vectors;
 };
