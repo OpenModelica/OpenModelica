@@ -427,7 +427,7 @@ template recordDeclaration(RecordDeclaration recDecl)
     <%recordModelicaCallConstrctor(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
-    <%recordCopyExternalDefs(r.name, r.variables)%>
+    <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
     <<
@@ -498,7 +498,7 @@ end recordDeclarationExtraCtor;
 
 template recordDeclarationFullHeader(RecordDeclaration recDecl)
  "Generates structs for a record declaration. This will generate
-  a default record construtor function (no argumens) and a record copy function.
+  a default record constructor function (no arguments) and a record copy function.
   These generated functions are fully recursive. That means records in records
   will be handled properly.
   It will also generate (#define) array versions of these functions."
@@ -536,28 +536,41 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       case SOME(str) then
       <<
       typedef <%str%> <%rec_name%>;
-      typedef <%str%>_external <%rec_name%>_external;
+      <% if r.usedExternally then
+        <<
+        typedef <%str%>_external <%rec_name%>_external;
+        >>
+      %>
       >>
       else
       <<
       typedef struct {
         <%r.variables |> var as VARIABLE(__) => '<%varType(var)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
       } <%rec_name%>;
-      typedef struct {
-        <%r.variables |> var as VARIABLE(__) => '<%extType(var.ty, true, false, false)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
-      } <%rec_name%>_external;
-      >> %>
+      <% if r.usedExternally then
+        <<
+        typedef struct {
+          <%r.variables |> var as VARIABLE(__) => '<%extType(var.ty, true, false, false)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
+        } <%rec_name%>_external;
+        >>
+      %>
+      >>
+      %>
       extern struct record_description <%underscorePath(r.defPath)%>__desc;
 
       void <%ctor_func_name%>(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>);
       #define <%ctor_macro_name%>(td, ths <%ctor_macro_additional_inputs%>) <%ctor_func_name%>(td, &ths <%ctor_macro_additional_inputs%>)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
-      void <%cpy_to_external_func_name%>(void* v_src, void* v_dst);
-      #define <%cpy_to_external_macro_name%>(src,dst) <%cpy_to_external_func_name%>(&src, &dst)
-      void <%cpy_from_external_func_name%>(void* v_src, void* v_dst);
-      #define <%cpy_from_external_macro_name%>(src,dst) <%cpy_from_external_func_name%>(&src, &dst)
 
+      <%if r.usedExternally then
+        <<
+        void <%cpy_to_external_func_name%>(void* v_src, void* v_dst);
+        #define <%cpy_to_external_macro_name%>(src,dst) <%cpy_to_external_func_name%>(&src, &dst)
+        void <%cpy_from_external_func_name%>(void* v_src, void* v_dst);
+        #define <%cpy_from_external_macro_name%>(src,dst) <%cpy_from_external_func_name%>(&src, &dst)
+        >>
+      %>
       // This function should eventually replace the default 'modelica' record constructor funcition
       // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
       // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);

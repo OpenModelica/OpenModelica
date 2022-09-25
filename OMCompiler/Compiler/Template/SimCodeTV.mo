@@ -1045,6 +1045,7 @@ package SimCodeFunction
       Option<String> aliasName;
       Absyn.Path defPath;
       list<Variable> variables;
+      Boolean usedExternally;
     end RECORD_DECL_FULL;
     record RECORD_DECL_ADD_CONSTRCTOR
       String ctor_name;
