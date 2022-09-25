@@ -492,7 +492,7 @@ algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {}, declMap);
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {},{}, declMap);
   extraRecordDecls := List.unique(extraRecordDecls);
-  (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes, declMap);
+  elaborateRecordDeclarationsFromTypes(metarecordTypes, declMap);
 
   extraRecordDecls := UnorderedMap.valueList(declMap);
 
@@ -812,14 +812,14 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt, declMap);
+        elaborateRecordDeclarationsForRecord(restype, recordDecls, rt, declMap);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt, recordDecls, includes, includeDirs, libs,libPaths);
 
         // failure
     case (_, fn, _, _, _, _, _,_)
@@ -1416,29 +1416,21 @@ end isLiteralExp;
 
 protected function elaborateRecordDeclarationsFromTypes
   input list<DAE.Type> inTypes;
-  input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
-  input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-  output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
-  output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) :=
-  match (inTypes, inAccRecordDecls, inReturnTypes)
+  () := match (inTypes)
     local
       list<SimCodeFunction.RecordDeclaration> accRecDecls;
       DAE.Type firstType;
       list<DAE.Type> restTypes;
       list<String> returnTypes;
 
-    case ({}, accRecDecls, _)
-    then (accRecDecls, inReturnTypes);
-    case (firstType :: restTypes, accRecDecls, _)
+    case ({}) then ();
+    case (firstType :: restTypes)
       equation
-        (accRecDecls, returnTypes) =
-        elaborateRecordDeclarationsForRecord(firstType, accRecDecls, inReturnTypes, declMap);
-        (accRecDecls, returnTypes) =
-        elaborateRecordDeclarationsFromTypes(restTypes, accRecDecls, returnTypes, declMap);
-      then (accRecDecls, returnTypes);
+        elaborateRecordDeclarationsForRecord(firstType, {}, {}, declMap);
+        elaborateRecordDeclarationsFromTypes(restTypes, declMap);
+      then ();
   end match;
 end elaborateRecordDeclarationsFromTypes;
 
@@ -1467,10 +1459,10 @@ algorithm
 
     case (((DAE.VAR(ty = ft, binding = binding)) :: rest), accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt, declMap);
+        elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
-          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt_1, declMap);
+          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt, declMap);
         end if;
         (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1, declMap);
       then
@@ -1623,10 +1615,8 @@ protected function elaborateRecordDeclarationsForRecord
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-  output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
-  output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) := match (inRecordType, inAccRecordDecls, inReturnTypes)
+  () := match (inRecordType, inAccRecordDecls, inReturnTypes)
     local
       Absyn.Path path;
       list<DAE.Var> varlst;
@@ -1651,7 +1641,7 @@ algorithm
           recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
           UnorderedMap.add(sname, recDecl, declMap);
 
-          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+          elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
         else
           vars := List.map(varlst, typesVar);
           recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
@@ -1676,13 +1666,11 @@ algorithm
         // end if;
 
 
-      then (accRecDecls, rt_1);
+      then ();
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt)
-    then (accRecDecls, rt);
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt) then ();
 
-    case (DAE.T_METARECORD(path = Absyn.QUALIFIED(name="SourceInfo")), accRecDecls, rt)
-      then (accRecDecls, rt);
+    case (DAE.T_METARECORD(path = Absyn.QUALIFIED(name="SourceInfo")), accRecDecls, rt) then ();
 
     case (DAE.T_METARECORD(fields = varlst, path=path), accRecDecls, rt)
       equation
@@ -1692,14 +1680,13 @@ algorithm
           accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
           rt_1 = sname::rt;
           UnorderedMap.add(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-          (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+          elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
         else
           rt_1 = rt;
         end if;
-      then (accRecDecls, rt_1);
+      then ();
 
-    case (_, accRecDecls, rt)
-    then (accRecDecls, rt);
+    case (_, accRecDecls, rt) then ();
 
   end match;
 end elaborateRecordDeclarationsForRecord;
@@ -1845,26 +1832,25 @@ protected function elaborateNestedRecordDeclarations
   input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-  output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
-  output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) := matchcontinue (inRecordTypes, inAccRecordDecls, inReturnTypes)
+  () := matchcontinue (inRecordTypes, inAccRecordDecls, inReturnTypes)
     local
       DAE.Type ty;
       list<DAE.Var> rest;
       list<String> rt, rt_1, rt_2;
       list<SimCodeFunction.RecordDeclaration> accRecDecls;
-    case ({}, accRecDecls, rt)
-    then (accRecDecls, rt);
+
+    case ({}, accRecDecls, rt) then ();
+
     case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest, accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ty, accRecDecls, rt, declMap);
-        (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt_1, declMap);
-      then (accRecDecls, rt_2);
+        elaborateRecordDeclarationsForRecord(ty, accRecDecls, rt, declMap);
+        elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
+      then ();
     case (_::rest, accRecDecls, rt)
       equation
-        (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
-      then (accRecDecls, rt_1);
+        elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
+      then ();
   end matchcontinue;
 end elaborateNestedRecordDeclarations;
 
