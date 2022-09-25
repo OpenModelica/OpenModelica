@@ -117,12 +117,11 @@ const std::string OMVisualBase::getXMLFileName() const
 }
 
 /*!
- * \brief OMVisualBase::getVisualizerObjectByIdx
- * get the AbstractVisualizerObject with the same visualizerIdx
- *\param the index of the visualizer
- *\return the selected visualizer
+ * \brief OMVisualBase::getVisualizerObjects
+ * get a container of AbstractVisualizerObject
+ * \return all the visualizers
  */
-AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size_t visualizerIdx)
+std::vector<std::reference_wrapper<AbstractVisualizerObject>> OMVisualBase::getVisualizerObjects()
 {
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
   visualizers.reserve(_shapes.size() + _vectors.size());
@@ -132,6 +131,18 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size
   for (VectorObject& vector : _vectors) {
     visualizers.push_back(vector);
   }
+  return visualizers;
+}
+
+/*!
+ * \brief OMVisualBase::getVisualizerObjectByIdx
+ * get the AbstractVisualizerObject with the same visualizerIdx
+ * \param the index of the visualizer
+ * \return the selected visualizer
+ */
+AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size_t visualizerIdx)
+{
+  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers = getVisualizerObjects();
   if (visualizerIdx < visualizers.size()) {
     return &visualizers.at(visualizerIdx).get();
   }
@@ -141,20 +152,12 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size
 /*!
  * \brief OMVisualBase::getVisualizerObjectByID
  * get the AbstractVisualizerObject with the same visualizerID
- *\param the name of the visualizer
- *\return the selected visualizer
+ * \param the name of the visualizer
+ * \return the selected visualizer
  */
 AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByID(const std::string& visualizerID)
 {
-  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size() + _vectors.size());
-  for (ShapeObject& shape : _shapes) {
-    visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : _vectors) {
-    visualizers.push_back(vector);
-  }
-  for (AbstractVisualizerObject& visualizer : visualizers) {
+  for (AbstractVisualizerObject& visualizer : getVisualizerObjects()) {
     if (visualizer._id == visualizerID) {
       return &visualizer;
     }
@@ -165,21 +168,13 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByID(const std::strin
 /*!
  * \brief OMVisualBase::getVisualizerObjectIndexByID
  * get the index of the AbstractVisualizerObject with the same visualizerID
- *\param the name of the visualizer
- *\return the selected visualizer index
+ * \param the name of the visualizer
+ * \return the selected visualizer index
  */
 int OMVisualBase::getVisualizerObjectIndexByID(const std::string& visualizerID)
 {
   int i = 0;
-  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size() + _vectors.size());
-  for (ShapeObject& shape : _shapes) {
-    visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : _vectors) {
-    visualizers.push_back(vector);
-  }
-  for (AbstractVisualizerObject& visualizer : visualizers) {
+  for (AbstractVisualizerObject& visualizer : getVisualizerObjects()) {
     if (visualizer._id == visualizerID) {
       return i;
     }

@@ -191,6 +191,7 @@ public:
   const std::string getPath() const;
   const std::string getXMLFileName() const;
 
+  std::vector<std::reference_wrapper<AbstractVisualizerObject>> getVisualizerObjects();
   AbstractVisualizerObject* getVisualizerObjectByIdx(const std::size_t visualizerIdx);
   AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
   int getVisualizerObjectIndexByID(const std::string& visualizerID);
