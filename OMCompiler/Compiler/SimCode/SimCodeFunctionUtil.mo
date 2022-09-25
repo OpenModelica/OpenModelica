@@ -731,13 +731,13 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
+        elaborateRecordDeclarations(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), rt, recordDecls, includes, includeDirs, libs,libPaths);
 
 
      case (_, DAE.FUNCTION(path = fpath, source = source,
@@ -750,13 +750,13 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
+        elaborateRecordDeclarations(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt, recordDecls, includes, includeDirs, libs,libPaths);
 
 
     case (_, DAE.FUNCTION(path = fpath, source = source,
@@ -769,13 +769,13 @@ algorithm
 
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
+        elaborateRecordDeclarations(daeElts, declMap);
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.PARALLEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.PARALLEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt, recordDecls, includes, includeDirs, libs,libPaths);
 
     // External functions.
     case (_, DAE.FUNCTION(path = fpath, source = source, visibility = visibility,
@@ -791,7 +791,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt, declMap);
+        elaborateRecordDeclarations(daeElts, declMap);
         info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
@@ -806,7 +806,7 @@ algorithm
       then
         (SimCodeFunction.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
           inVars, outVars, biVars, fn_includes, fn_libs, lang, visibility, info, dynamicLoad),
-          rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+          rt, recordDecls, includes, includeDirs, libs,libPaths);
 
         // Record constructor.
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
@@ -1437,52 +1437,45 @@ end elaborateRecordDeclarationsFromTypes;
 protected function elaborateRecordDeclarations
 "Translate all records used by varlist to structs."
   input list<DAE.Element> inVars;
-  input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
-  input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-  output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
-  output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) :=
-  matchcontinue (inVars, inAccRecordDecls, inReturnTypes)
+  () := matchcontinue (inVars)
     local
       DAE.Element var;
       list<DAE.Element> rest;
       DAE.Type ft;
-      list<String> rt, rt_1, rt_2;
-      list<SimCodeFunction.RecordDeclaration> accRecDecls;
       DAE.Algorithm algorithm_;
       list<DAE.Exp> expl;
       Option<DAE.Exp> binding;
 
-    case ({}, accRecDecls, rt) then (accRecDecls, rt);
+    case {} then ();
 
-    case (((DAE.VAR(ty = ft, binding = binding)) :: rest), accRecDecls, rt)
+    case ((DAE.VAR(ty = ft, binding = binding)) :: rest)
       equation
         elaborateRecordDeclarationsForRecord(ft, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
           elaborateRecordDeclarationsForMetarecords(expl, declMap);
         end if;
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
+        elaborateRecordDeclarations(rest, declMap);
       then
-        (accRecDecls, rt_2);
+        ();
 
-    case ((DAE.ALGORITHM(algorithm_ = algorithm_) :: rest), accRecDecls, rt)
+    case (DAE.ALGORITHM(algorithm_ = algorithm_) :: rest)
       equation
         true = Config.acceptMetaModelicaGrammar();
         ((_, expl)) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls, {}));
         elaborateRecordDeclarationsForMetarecords(expl, declMap);
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
+        elaborateRecordDeclarations(rest, declMap);
       then
-        (accRecDecls, rt_2);
+        ();
 
-    case ((_ :: rest), accRecDecls, rt)
+    case (_ :: rest)
       equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
+        elaborateRecordDeclarations(rest, declMap);
       then
-        (accRecDecls, rt_1);
+        ();
   end matchcontinue;
 end elaborateRecordDeclarations;
 
