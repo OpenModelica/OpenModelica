@@ -660,6 +660,13 @@ void OMVisualBase::setUpScene()
   _visualization->getOMVisScene()->getScene().setUpScene(_vectors);
 }
 
+void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
+{
+  _visualization->updateVisualizerAttribute(vector._coords[0], time);
+  _visualization->updateVisualizerAttribute(vector._coords[1], time);
+  _visualization->updateVisualizerAttribute(vector._coords[2], time);
+}
+
 /*!
  * \brief   Adjust scaling of vector visualizers.
  * \details Choose suitable scales for the radius and the length of vector visualizers.
@@ -696,6 +703,13 @@ void OMVisualBase::setUpScene()
  *          Hence, scaling vectors can be seen like scaling bounding spheres, and this explains why
  *          the radius is scaled before the length as it affects the bounding sphere of the vector.
  *          <hr>
+ *          Time-varying vector lengths can be handled to some extent and are accounted for by
+ *          sampling the simulation interval with a constant number of time samples (default: 100),
+ *          a value of zero meaning that the criterion on the vector lengths is disregarded.
+ *          Similarly, the check for the camera distance can be constantly enabled (default: true),
+ *          and the heuristic no longer attempts to increase the lengths if the check is disabled,
+ *          unless this is required by the first constraint when the latter is enabled.
+ *          <hr>
  *          During the binary search, floating-point numbers are treated as integer bit patterns,
  *          thus considering quantities as if they were given in units in the last place (ULP).
  *          This allows to stop the search when a constant precision is reached (default: 4096ulp)
@@ -711,8 +725,6 @@ void OMVisualBase::setUpScene()
  *          shifting the bounds towards a constant horizon (default: 16777216ulp)
  *          that is either subtracted from or added to the current value.
  *          Whenever it moves, the default horizon has the effect of halving or doubling the value.
- * \note    Implemented heuristics do not consider time-varying inputs (e.g., length of vectors),
- *          they rather try to fit vectors with their initial attributes nicely in the scene.
  * \note    For debugging purposes, MessagesWidget::addPendingMessage() shall be used
  *          instead of MessagesWidget::addGUIMessage() when \p mutex is locked.
  * \param[in] view OSG view of the scene composed of at least one camera.
@@ -730,7 +742,9 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
   constexpr int8_t factorRadius   = -10; // Factor for vector radius greater than median of fixed radii in percent [%]
   constexpr int8_t marginLength   = +10; // Margin for vector length greater than length of its head(s) in percent [%]
   constexpr int8_t marginDistance = +10; // Margin for home distance greater than initial home distance in percent [%]
-  constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place [ulp]
+  constexpr uint32_t timeSamples = 100;  // Number of time samples to be examined for vector lengths {32b}
+  constexpr bool checkDistance = true;   // Whether camera distance to focal center shall be checked {0,1}
+  constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place {0,1}
   constexpr uint32_t hulp = 0x01000000;  // Move this horizon in units in the last place [ulp]
   constexpr uint32_t pulp = 0x00001000;  // Minimum precision in units in the last place [ulp]
 
@@ -855,6 +869,17 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
     // Proceed with scaling adjustable-length vectors
     if (adjustableLengthVectors.size() > 0) {
+      // Compute the time increment used to sample between the beginning and the end of the simulation
+      const double timeStart = _visualization->getTimeManager()->getStartTime();
+      const double timeStop  = _visualization->getTimeManager()->getEndTime();
+      const double timeIncrement = timeSamples > 1 ? (timeStop - timeStart) / (timeSamples - 1) : 0;
+
+      // Initialize a map of numbers of time samples, one for each adjustable-length vector
+      std::unordered_map<const std::reference_wrapper<VectorObject>, uint32_t> numberOfSamples;
+      for (VectorObject& vector : adjustableLengthVectors) {
+        numberOfSamples[vector] = timeSamples > 0 && (timeIncrement <= 0 || vector.areCoordinatesConstant()) ? 1 : timeSamples;
+      }
+
       // Initialize a map of actual transform scales, one for each adjustable-length vector
       std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
       for (VectorObject& vector : adjustableLengthVectors) {
@@ -944,13 +969,27 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
           // Determine if the new length scale has squeezed the vectors too much or unzoomed the scene too much
           squeezedTooMuch = false;
-          for (VectorObject& vector : vectors) {
-            if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
-              squeezedTooMuch = true;
-              break;
+          if (timeSamples > 0) {
+            for (VectorObject& vector : vectors) {
+              float x, y, z;
+              vector.getCoordinates(&x, &y, &z);
+              const uint32_t samples = numberOfSamples[vector];
+              for (uint32_t s = 0; s < samples; s++) {
+                if (samples > 1) {
+                  updateVectorCoords(vector, s + 1 == samples ? timeStop : timeStart + timeIncrement * s);
+                }
+                if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
+                  squeezedTooMuch = true;
+                  break;
+                }
+              }
+              vector.setCoordinates(x, y, z);
+              if (squeezedTooMuch) {
+                break;
+              }
             }
           }
-          unzoomedTooMuch = distance > initialDistance * (1.f + marginDistance / 100.f);
+          unzoomedTooMuch = checkDistance && distance > initialDistance * (1.f + marginDistance / 100.f);
 
           // Perform a floating-point binary search,
           // assuming non-negative as well as non-NaN values,
@@ -975,7 +1014,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
                 fulfilledWishes = false;
               }
             }
-          } else {
+          } else if (checkDistance || squeezedTooMuch) {
             // Move binary search to higher half (ceiled)
             isMinBelowLimit = squeezedTooMuch;
             movedMinAlready = true;

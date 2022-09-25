@@ -209,6 +209,7 @@ public:
 
   void setUpScene();
 
+  void updateVectorCoords(VectorObject& vector, const double time);
   void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
 private:
   std::string _modelFile;

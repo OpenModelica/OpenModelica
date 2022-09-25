@@ -59,11 +59,14 @@ public:
   float getScaleTransf() const {return mScaleTransf;}
   void setAutoScaleCancellationRequired(const bool required) {mAutoScaleCancellationRequired = required;}
   bool getAutoScaleCancellationRequired() const {return mAutoScaleCancellationRequired;}
+  void setCoordinates(const float x, const float y, const float z) {_coords[0].exp = x, _coords[1].exp = y, _coords[2].exp = z;}
+  void getCoordinates(float* x, float* y, float* z) const {*x = _coords[0].exp, *y = _coords[1].exp, *z = _coords[2].exp;}
   float getLength    () const {return mScaleTransf * mScaleLength * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
   float getRadius    () const {return mScaleTransf * mScaleRadius * kRadius    ;}
   float getHeadLength() const {return mScaleTransf * mScaleRadius * kHeadLength;}
   float getHeadRadius() const {return mScaleTransf * mScaleRadius * kHeadRadius;}
   VectorQuantity getQuantity() const {return static_cast<VectorQuantity>(_quantity.exp);}
+  bool areCoordinatesConstant() const {return _coords[0].isConst && _coords[1].isConst && _coords[2].isConst;}
   bool hasHeadAtOrigin() const {return _headAtOrigin.exp;}
   bool isTwoHeadedArrow() const {return _twoHeadedArrow.exp;}
   bool isAdjustableRadius() const {return getQuantity() != VectorQuantity::relativePosition;}
