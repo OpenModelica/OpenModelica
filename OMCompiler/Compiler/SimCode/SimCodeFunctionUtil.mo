@@ -1678,6 +1678,7 @@ algorithm
           fieldNames = List.map(varlst, generateVarName);
           accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
           rt_1 = sname::rt;
+          UnorderedMap.add(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
           (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
         else
           rt_1 = rt;
@@ -1878,6 +1879,7 @@ algorithm
         b = listMember(name, rt);
         accRecDecls = List.consOnTrue(not b, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
         rt_1 = List.consOnTrue(not b, name, rt);
+        UnorderedMap.add(name, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
         (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1, declMap);
       then (accRecDecls, rt_2);
    case (_::rest, accRecDecls, rt)
