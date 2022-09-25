@@ -47,14 +47,14 @@ public:
   VisualizationMAT(const VisualizationMAT& omvm) = delete;
   VisualizationMAT& operator=(const VisualizationMAT& omvm) = delete;
   void initData() override;
-  void initializeVisAttributes(const double time = -1.0) override;
+  void initializeVisAttributes(const double time) override;
   void readMat(const std::string& modelFile, const std::string& path);
   void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
-  void updateVisAttributes(const double time) override;
   void updateScene(const double time) override;
-  void updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time);
-  double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
+  void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) override;
+  void updateVisualizerAttributeMAT(VisualizerAttribute& attr, const double time);
+  double omcGetVarValue(ModelicaMatReader* reader, const char* varName, const double time);
 private:
   ModelicaMatReader _matReader;
 };

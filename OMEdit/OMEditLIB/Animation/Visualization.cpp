@@ -388,6 +388,224 @@ void OMVisualBase::initVisObjects()
   }
 }
 
+void OMVisualBase::setFmuVarRefInVisObjects()
+{
+  try
+  {
+    for (ShapeObject& shape : _shapes)
+    {
+      //std::cout<<"shape "<<shape._id <<std::endl;
+
+      shape._T[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[0]);
+      shape._T[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[1]);
+      shape._T[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[2]);
+      shape._T[3].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[3]);
+      shape._T[4].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[4]);
+      shape._T[5].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[5]);
+      shape._T[6].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[6]);
+      shape._T[7].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[7]);
+      shape._T[8].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._T[8]);
+
+      shape._r[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._r[0]);
+      shape._r[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._r[1]);
+      shape._r[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._r[2]);
+
+      shape._color[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._color[0]);
+      shape._color[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._color[1]);
+      shape._color[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._color[2]);
+
+      shape._specCoeff.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._specCoeff);
+
+      shape._rShape[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._rShape[0]);
+      shape._rShape[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._rShape[1]);
+      shape._rShape[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._rShape[2]);
+
+      shape._lDir[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._lDir[0]);
+      shape._lDir[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._lDir[1]);
+      shape._lDir[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._lDir[2]);
+
+      shape._wDir[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._wDir[0]);
+      shape._wDir[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._wDir[1]);
+      shape._wDir[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._wDir[2]);
+
+      shape._length.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._length);
+      shape._width.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._width);
+      shape._height.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._height);
+
+      shape._extra.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(shape._extra);
+
+      //shape.dumpVisualizerAttributes();
+    }
+
+    for (VectorObject& vector : _vectors)
+    {
+      //std::cout<<"vector "<<vector._id <<std::endl;
+
+      vector._T[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[0]);
+      vector._T[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[1]);
+      vector._T[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[2]);
+      vector._T[3].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[3]);
+      vector._T[4].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[4]);
+      vector._T[5].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[5]);
+      vector._T[6].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[6]);
+      vector._T[7].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[7]);
+      vector._T[8].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._T[8]);
+
+      vector._r[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._r[0]);
+      vector._r[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._r[1]);
+      vector._r[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._r[2]);
+
+      vector._color[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._color[0]);
+      vector._color[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._color[1]);
+      vector._color[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._color[2]);
+
+      vector._specCoeff.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._specCoeff);
+
+      vector._coords[0].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._coords[0]);
+      vector._coords[1].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._coords[1]);
+      vector._coords[2].fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._coords[2]);
+
+      vector._quantity.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._quantity);
+
+      vector._headAtOrigin.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._headAtOrigin);
+
+      vector._twoHeadedArrow.fmuValueRef = getFmuVariableReferenceForVisualizerAttribute(vector._twoHeadedArrow);
+
+      //vector.dumpVisualizerAttributes();
+    }
+  }
+  catch (std::exception& ex)
+  {
+    QString msg = QString(QObject::tr("Something went wrong in OMVisualBase::setFmuVarRefInVisObjects:\n%1."))
+                  .arg(ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
+  }
+}
+
+void OMVisualBase::updateVisObjects(const double time)
+{
+  // Update all visualizers
+  //std::cout<<"updateVisObjects at "<<time <<std::endl;
+
+  try
+  {
+    for (ShapeObject& shape : _shapes)
+    {
+      // Get the values for the scene graph objects
+      //std::cout<<"shape "<<shape._id <<std::endl;
+
+      updateVisualizerAttribute(shape._T[0], time);
+      updateVisualizerAttribute(shape._T[1], time);
+      updateVisualizerAttribute(shape._T[2], time);
+      updateVisualizerAttribute(shape._T[3], time);
+      updateVisualizerAttribute(shape._T[4], time);
+      updateVisualizerAttribute(shape._T[5], time);
+      updateVisualizerAttribute(shape._T[6], time);
+      updateVisualizerAttribute(shape._T[7], time);
+      updateVisualizerAttribute(shape._T[8], time);
+
+      updateVisualizerAttribute(shape._r[0], time);
+      updateVisualizerAttribute(shape._r[1], time);
+      updateVisualizerAttribute(shape._r[2], time);
+
+      updateVisualizerAttribute(shape._color[0], time);
+      updateVisualizerAttribute(shape._color[1], time);
+      updateVisualizerAttribute(shape._color[2], time);
+
+      updateVisualizerAttribute(shape._specCoeff, time);
+
+      updateVisualizerAttribute(shape._rShape[0], time);
+      updateVisualizerAttribute(shape._rShape[1], time);
+      updateVisualizerAttribute(shape._rShape[2], time);
+
+      updateVisualizerAttribute(shape._lDir[0], time);
+      updateVisualizerAttribute(shape._lDir[1], time);
+      updateVisualizerAttribute(shape._lDir[2], time);
+
+      updateVisualizerAttribute(shape._wDir[0], time);
+      updateVisualizerAttribute(shape._wDir[1], time);
+      updateVisualizerAttribute(shape._wDir[2], time);
+
+      updateVisualizerAttribute(shape._length, time);
+      updateVisualizerAttribute(shape._width, time);
+      updateVisualizerAttribute(shape._height, time);
+
+      updateVisualizerAttribute(shape._extra, time);
+
+      rAndT rT = rotateModelica2OSG(
+          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
+          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
+          shape._type);
+      assemblePokeMatrix(shape._mat, rT._T, rT._r);
+
+      // Update the shapes
+      updateVisualizer(shape, true);
+      //shape.dumpVisualizerAttributes();
+    }
+
+    for (VectorObject& vector : _vectors)
+    {
+      // Get the values for the scene graph objects
+      //std::cout<<"vector "<<vector._id <<std::endl;
+
+      updateVisualizerAttribute(vector._T[0], time);
+      updateVisualizerAttribute(vector._T[1], time);
+      updateVisualizerAttribute(vector._T[2], time);
+      updateVisualizerAttribute(vector._T[3], time);
+      updateVisualizerAttribute(vector._T[4], time);
+      updateVisualizerAttribute(vector._T[5], time);
+      updateVisualizerAttribute(vector._T[6], time);
+      updateVisualizerAttribute(vector._T[7], time);
+      updateVisualizerAttribute(vector._T[8], time);
+
+      updateVisualizerAttribute(vector._r[0], time);
+      updateVisualizerAttribute(vector._r[1], time);
+      updateVisualizerAttribute(vector._r[2], time);
+
+      updateVisualizerAttribute(vector._color[0], time);
+      updateVisualizerAttribute(vector._color[1], time);
+      updateVisualizerAttribute(vector._color[2], time);
+
+      updateVisualizerAttribute(vector._specCoeff, time);
+
+      updateVisualizerAttribute(vector._coords[0], time);
+      updateVisualizerAttribute(vector._coords[1], time);
+      updateVisualizerAttribute(vector._coords[2], time);
+
+      updateVisualizerAttribute(vector._quantity, time);
+
+      updateVisualizerAttribute(vector._headAtOrigin, time);
+
+      updateVisualizerAttribute(vector._twoHeadedArrow, time);
+
+      rAndT rT = rotateModelica2OSG(
+          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
+                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
+                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
+          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
+          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
+      assemblePokeMatrix(vector._mat, rT._T, rT._r);
+
+      // Update the vectors
+      updateVisualizer(vector, true);
+      //vector.dumpVisualizerAttributes();
+    }
+  }
+  catch (std::exception& ex)
+  {
+    QString msg = QString(QObject::tr("Error in OMVisualBase::updateVisObjects at time point %1\n%2."))
+                  .arg(QString::number(time), ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
+  }
+}
+
 
 ///--------------------------------------------------///
 ///ABSTRACT VISUALIZATION CLASS----------------------///
@@ -411,6 +629,18 @@ VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const
   mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0);
   mpOMVisualBase = new OMVisualBase(modelFile, path);
   mpOMVisScene->getScene().setPath(path);
+  mpOMVisualBase->getFmuVariableReferenceForVisualizerAttribute =
+      std::bind(static_cast<unsigned int(VisualizationAbstract::*)(        VisualizerAttribute&              )>
+          (&VisualizationAbstract::getFmuVariableReferenceForVisualizerAttribute),
+              this, std::placeholders::_1                       );
+  mpOMVisualBase->                    updateVisualizerAttribute =
+      std::bind(static_cast<void        (VisualizationAbstract::*)(        VisualizerAttribute&, const double)>
+          (&VisualizationAbstract::                    updateVisualizerAttribute),
+              this, std::placeholders::_1, std::placeholders::_2);
+  mpOMVisualBase->                    updateVisualizer          =
+      std::bind(static_cast<void        (VisualizationAbstract::*)(AbstractVisualizerObject   &, const bool  )>
+          (&VisualizationAbstract::                    updateVisualizer         ),
+              this, std::placeholders::_1, std::placeholders::_2);
 }
 
 VisType VisualizationAbstract::getVisType() const
@@ -491,6 +721,21 @@ void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject& visualize
 void VisualizationAbstract::initData()
 {
   getBaseData()->initVisObjects();
+}
+
+void VisualizationAbstract::setFmuVarRefInVisAttributes()
+{
+  getBaseData()->setFmuVarRefInVisObjects();
+}
+
+void VisualizationAbstract::initializeVisAttributes(const double time)
+{
+  getBaseData()->updateVisObjects(time);
+}
+
+void VisualizationAbstract::updateVisAttributes(const double time)
+{
+  getBaseData()->updateVisObjects(time);
 }
 
 void VisualizationAbstract::setUpScene()

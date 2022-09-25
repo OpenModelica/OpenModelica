@@ -193,6 +193,8 @@ public:
   AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
   int getVisualizerObjectIndexByID(const std::string& visualizerID);
   void initVisObjects();
+  void setFmuVarRefInVisObjects();
+  void updateVisObjects(const double time);
 private:
   std::string _modelFile;
   std::string _path;
@@ -200,6 +202,10 @@ private:
 public:
   std::vector<ShapeObject> _shapes;
   std::vector<VectorObject> _vectors;
+public:
+  std::function<unsigned int(VisualizerAttribute&)> getFmuVariableReferenceForVisualizerAttribute;
+  std::function<void(VisualizerAttribute&, const double)> updateVisualizerAttribute;
+  std::function<void(AbstractVisualizerObject&, const bool)> updateVisualizer;
 };
 
 class VisualizationAbstract
@@ -223,8 +229,11 @@ public:
   void modifyVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties = true);
 
   virtual void initData();
-  virtual void initializeVisAttributes(const double time) = 0;
-  virtual void updateVisAttributes(const double time) = 0;
+  virtual void setFmuVarRefInVisAttributes();
+  virtual unsigned int getFmuVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr) {Q_UNUSED(attr); return 0;}
+  virtual void initializeVisAttributes(const double time);
+  virtual void updateVisAttributes(const double time);
+  virtual void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) = 0;
   virtual void updateScene(const double time) = 0;
   virtual void simulate(TimeManager& omvm) = 0;
 
