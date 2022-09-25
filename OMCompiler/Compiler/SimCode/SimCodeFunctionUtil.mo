@@ -1659,21 +1659,21 @@ algorithm
         end if;
 
 
-        if not listMember(sname, rt_1) then
-          rt_1 := sname :: rt_1;
+        // if not listMember(sname, rt_1) then
+        //   rt_1 := sname :: rt_1;
 
-          if is_default then
-            (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+        //   if is_default then
+        //     (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
 
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
-          else
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
-          end if;
+        //     vars := List.map(varlst, typesVar);
+        //     recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
+        //   else
+        //     vars := List.map(varlst, typesVar);
+        //     recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+        //   end if;
 
-          accRecDecls := List.appendElt(recDecl, accRecDecls);
-        end if;
+        //   accRecDecls := List.appendElt(recDecl, accRecDecls);
+        // end if;
 
 
       then (accRecDecls, rt_1);
