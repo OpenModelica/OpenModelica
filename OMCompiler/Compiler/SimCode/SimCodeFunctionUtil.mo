@@ -489,7 +489,7 @@ protected
 algorithm
   declMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
 
-  collectRecDeclsFromMetaRecordCallExps(literals, declMap);
+  collectRecDeclsFromMetaRecCallExps(literals, declMap);
   (functions, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, declMap);
 
   collectRecDeclsFromTypes(metarecordTypes, declMap);
@@ -1424,8 +1424,7 @@ algorithm
       equation
         collectRecDeclsFromType(ft, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
-          (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
-          collectRecDeclsFromMetaRecordCallExps(expl, declMap);
+          (_, _) = Expression.traverseExpBottomUp(Util.getOption(binding), collectRecDeclsFromMetaRecCallExp, declMap);
         end if;
         elaborateRecordDeclarations(rest, declMap);
       then
@@ -1434,8 +1433,7 @@ algorithm
     case (DAE.ALGORITHM(algorithm_ = algorithm_) :: rest)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        ((_, expl)) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls, {}));
-        collectRecDeclsFromMetaRecordCallExps(expl, declMap);
+        (_, _) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (collectRecDeclsFromMetaRecCallExp, declMap));
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
         elaborateRecordDeclarations(rest, declMap);
       then
@@ -1448,23 +1446,6 @@ algorithm
         ();
   end matchcontinue;
 end elaborateRecordDeclarations;
-
-protected function matchMetarecordCalls "Used together with getMatchingExps"
-  input DAE.Exp e;
-  input list<DAE.Exp> acc;
-  output DAE.Exp outExp;
-  output list<DAE.Exp> outExps;
-algorithm
-  (outExp,outExps) := matchcontinue (e,acc)
-    local
-      Integer index;
-    case (DAE.METARECORDCALL(index = index), _)
-      equation
-        outExps = List.consOnTrue(-1 <> index, e, acc);
-      then (e, outExps);
-    else (e,acc);
-  end matchcontinue;
-end matchMetarecordCalls;
 
 protected function isVarQ
 "Succeeds if inElement is a variable or constant that is not input."
@@ -1792,23 +1773,34 @@ algorithm
   end for;
 end collectRecDeclsFromTypesVars;
 
-protected function collectRecDeclsFromMetaRecordCallExps
+protected function collectRecDeclsFromMetaRecCallExps
   input list<DAE.Exp> inExpl;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 protected
   String name;
 algorithm
   for exp in inExpl loop
-    () := match exp
-      case DAE.METARECORDCALL() algorithm
-        name := AbsynUtil.pathStringUnquoteReplaceDot(exp.path, "_");
-        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(exp.path, exp.fieldNames), declMap);
-      then ();
-
-      else ();
-    end match;
+    collectRecDeclsFromMetaRecCallExp(exp, declMap);
   end for;
-end collectRecDeclsFromMetaRecordCallExps;
+end collectRecDeclsFromMetaRecCallExps;
+
+protected function collectRecDeclsFromMetaRecCallExp
+  input output DAE.Exp inExp;
+  input output UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
+protected
+  String name;
+algorithm
+  () := match inExp
+    case DAE.METARECORDCALL() algorithm
+      if inExp.index <> -1 then
+        name := AbsynUtil.pathStringUnquoteReplaceDot(inExp.path, "_");
+        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(inExp.path, inExp.fieldNames), declMap);
+      end if;
+    then ();
+
+    else ();
+  end match;
+end collectRecDeclsFromMetaRecCallExp;
 
 
 protected function generateExtFunctionIncludes "by investigating the annotation of an external function."
