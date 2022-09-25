@@ -474,14 +474,14 @@ public function elaborateFunctions
   input list<DAE.Exp> literals;
   input list<String> includes;
   output list<SimCodeFunction.Function> functions;
-  output list<SimCodeFunction.RecordDeclaration> extraRecordDecls;
+  output list<SimCodeFunction.RecordDeclaration> extraRecordDecls = {};
   output list<String> outIncludes;
   output list<String> includeDirs;
   output list<String> libs;
   output list<String> libpaths;
 protected
   list<SimCodeFunction.Function> fns;
-  list<String> outRecordTypes, recordNames;
+  list<String> outRecordTypes = {}, recordNames;
   HashTableStringToPath.HashTable ht;
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
   UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
@@ -489,7 +489,7 @@ protected
 algorithm
   declMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
 
-  (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {}, declMap);
+  elaborateRecordDeclarationsForMetarecords(literals, declMap);
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs,libpaths) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {},{}, declMap);
   extraRecordDecls := List.unique(extraRecordDecls);
   elaborateRecordDeclarationsFromTypes(metarecordTypes, declMap);
@@ -1462,9 +1462,9 @@ algorithm
         elaborateRecordDeclarationsForRecord(ft, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
-          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt, declMap);
+          elaborateRecordDeclarationsForMetarecords(expl, declMap);
         end if;
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1, declMap);
+        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
       then
         (accRecDecls, rt_2);
 
@@ -1472,9 +1472,9 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         ((_, expl)) = DAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls, {}));
-        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt, declMap);
+        elaborateRecordDeclarationsForMetarecords(expl, declMap);
         // TODO: ? what about rest ? , can be there something else after the ALGORITHM
-        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2, declMap);
+        (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt, declMap);
       then
         (accRecDecls, rt_2);
 
@@ -1839,35 +1839,26 @@ end elaborateNestedRecordDeclarations;
 
 protected function elaborateRecordDeclarationsForMetarecords
   input list<DAE.Exp> inExpl;
-  input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
-  input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
-  output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
-  output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) := match (inExpl, inAccRecordDecls, inReturnTypes)
+  () := match (inExpl)
     local
-      list<String> rt, rt_1, rt_2, fieldNames;
+      list<String> fieldNames;
       list<DAE.Exp> rest;
       String name;
       Absyn.Path path;
-      list<SimCodeFunction.RecordDeclaration> accRecDecls;
-      Boolean b;
 
-    case ({}, accRecDecls, rt) then (accRecDecls, rt);
-    case (DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest, accRecDecls, rt)
+    case {} then ();
+    case DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest
       equation
         name = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-        b = listMember(name, rt);
-        accRecDecls = List.consOnTrue(not b, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
-        rt_1 = List.consOnTrue(not b, name, rt);
-        UnorderedMap.add(name, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1, declMap);
-      then (accRecDecls, rt_2);
-   case (_::rest, accRecDecls, rt)
+        UnorderedMap.tryAdd(name, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
+        elaborateRecordDeclarationsForMetarecords(rest, declMap);
+      then ();
+   case _::rest
      equation
-       (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt, declMap);
-     then (accRecDecls, rt_1);
+       elaborateRecordDeclarationsForMetarecords(rest, declMap);
+     then ();
   end match;
 end elaborateRecordDeclarationsForMetarecords;
 
