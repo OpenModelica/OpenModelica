@@ -136,6 +136,12 @@ int VisualizationFMU::setVarReferencesInVisAttributes()
       shape._r[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._r[1]);
       shape._r[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._r[2]);
 
+      shape._color[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._color[0]);
+      shape._color[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._color[1]);
+      shape._color[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._color[2]);
+
+      shape._specCoeff.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._specCoeff);
+
       shape._rShape[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[0]);
       shape._rShape[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[1]);
       shape._rShape[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[2]);
@@ -151,6 +157,8 @@ int VisualizationFMU::setVarReferencesInVisAttributes()
       shape._length.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._length);
       shape._width.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._width);
       shape._height.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._height);
+
+      shape._extra.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._extra);
 
       //shape.dumpVisualizerAttributes();
     }
@@ -172,6 +180,12 @@ int VisualizationFMU::setVarReferencesInVisAttributes()
       vector._r[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[0]);
       vector._r[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[1]);
       vector._r[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[2]);
+
+      vector._color[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._color[0]);
+      vector._color[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._color[1]);
+      vector._color[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._color[2]);
+
+      vector._specCoeff.fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._specCoeff);
 
       vector._coords[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._coords[0]);
       vector._coords[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._coords[1]);
@@ -316,6 +330,8 @@ void VisualizationFMU::updateVisAttributes(const double time)
       updateVisualizerAttributeFMU(shape._length);
       updateVisualizerAttributeFMU(shape._width);
       updateVisualizerAttributeFMU(shape._height);
+
+      updateVisualizerAttributeFMU(shape._extra);
 
       rAndT rT = rotateModelica2OSG(
           osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
