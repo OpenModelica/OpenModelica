@@ -812,7 +812,7 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        elaborateRecordDeclarationsForRecord(restype, recordDecls, rt, declMap);
+        elaborateRecordDeclarationsForRecord(restype, declMap);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
@@ -1428,7 +1428,7 @@ algorithm
     case ({}) then ();
     case (firstType :: restTypes)
       equation
-        elaborateRecordDeclarationsForRecord(firstType, {}, {}, declMap);
+        elaborateRecordDeclarationsForRecord(firstType, declMap);
         elaborateRecordDeclarationsFromTypes(restTypes, declMap);
       then ();
   end match;
@@ -1459,7 +1459,7 @@ algorithm
 
     case (((DAE.VAR(ty = ft, binding = binding)) :: rest), accRecDecls, rt)
       equation
-        elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt, declMap);
+        elaborateRecordDeclarationsForRecord(ft, declMap);
         if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
           (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
           (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt, declMap);
@@ -1612,28 +1612,22 @@ end getCrefFromExp;
 protected function elaborateRecordDeclarationsForRecord
 "Helper function to generateStructsForRecords."
   input DAE.Type inRecordType;
-  input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
-  input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
-  () := match (inRecordType, inAccRecordDecls, inReturnTypes)
+  () := match (inRecordType)
     local
       Absyn.Path path;
       list<DAE.Var> varlst;
       String name,sname;
-      list<String> rt, rt_1, fieldNames;
-      list<SimCodeFunction.RecordDeclaration> accRecDecls;
+      list<String> fieldNames;
       list<SimCodeFunction.Variable> vars;
-      Integer varnum;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
       Boolean is_default, needsExternalConversion, bool1;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, needsExternalConversion = needsExternalConversion), accRecDecls, rt)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, needsExternalConversion = needsExternalConversion))
       algorithm
         name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-        rt_1 := rt;
-
         (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
 
         optRecDecl := UnorderedMap.get(sname, declMap);
@@ -1653,7 +1647,7 @@ algorithm
             recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
             UnorderedMap.add(sname, recDecl, declMap);
 
-            elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
+            elaborateNestedRecordDeclarations(varlst, declMap);
           end if;
 
         // It is not a default construtor
@@ -1665,49 +1659,21 @@ algorithm
             UnorderedMap.add(sname, recDecl, declMap);
           end if;
         end if;
-
-        // if not listMember(sname, rt_1) then
-        //   rt_1 := sname :: rt_1;
-
-        //   if is_default then
-        //     (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
-
-        //     vars := List.map(varlst, typesVar);
-        //     recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, needsExternalConversion);
-        //   else
-        //     vars := List.map(varlst, typesVar);
-        //     recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
-        //   end if;
-
-        //   accRecDecls := List.appendElt(recDecl, accRecDecls);
-        // end if;
-
-
       then ();
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt) then ();
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) then ();
 
-    case (DAE.T_METARECORD(path = Absyn.QUALIFIED(name="SourceInfo")), accRecDecls, rt) then ();
+    case (DAE.T_METARECORD(path = Absyn.QUALIFIED(name="SourceInfo"))) then ();
 
-    case (DAE.T_METARECORD(fields = varlst, path=path), accRecDecls, rt)
+    case (DAE.T_METARECORD(fields = varlst, path=path))
       equation
         sname = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         fieldNames = List.map(varlst, generateVarName);
         UnorderedMap.tryAdd(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        elaborateNestedRecordDeclarations(varlst, accRecDecls, rt, declMap);
-
-        // if not listMember(sname, rt) then
-        //   fieldNames = List.map(varlst, generateVarName);
-        //   accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
-        //   rt_1 = sname::rt;
-        //   UnorderedMap.add(sname, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), declMap);
-        //   elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1, declMap);
-        // else
-        //   rt_1 = rt;
-        // end if;
+        elaborateNestedRecordDeclarations(varlst, declMap);
       then ();
 
-    case (_, accRecDecls, rt) then ();
+    case (_) then ();
 
   end match;
 end elaborateRecordDeclarationsForRecord;
@@ -1850,27 +1816,23 @@ end generateVarName;
 protected function elaborateNestedRecordDeclarations
 "Helper function to elaborateRecordDeclarations."
   input list<DAE.Var> inRecordTypes;
-  input list<SimCodeFunction.RecordDeclaration> inAccRecordDecls;
-  input list<String> inReturnTypes;
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> declMap;
 algorithm
-  () := matchcontinue (inRecordTypes, inAccRecordDecls, inReturnTypes)
+  () := matchcontinue (inRecordTypes)
     local
       DAE.Type ty;
       list<DAE.Var> rest;
-      list<String> rt, rt_1, rt_2;
-      list<SimCodeFunction.RecordDeclaration> accRecDecls;
 
-    case ({}, accRecDecls, rt) then ();
+    case ({}) then ();
 
-    case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest, accRecDecls, rt)
+    case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest)
       equation
-        elaborateRecordDeclarationsForRecord(ty, accRecDecls, rt, declMap);
-        elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
+        elaborateRecordDeclarationsForRecord(ty, declMap);
+        elaborateNestedRecordDeclarations(rest, declMap);
       then ();
-    case (_::rest, accRecDecls, rt)
+    case (_::rest)
       equation
-        elaborateNestedRecordDeclarations(rest, accRecDecls, rt, declMap);
+        elaborateNestedRecordDeclarations(rest, declMap);
       then ();
   end matchcontinue;
 end elaborateNestedRecordDeclarations;
