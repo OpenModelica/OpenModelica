@@ -418,7 +418,7 @@ bool AbstractAnimationWindow::loadVisualization()
     //add scene for the chosen visualization
     mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode().get());
     //choose suitable scales for the vector visualizers so that they fit well in the scene
-    mpVisualization->chooseVectorScales(mpViewerWidget->getSceneView(), mpViewerWidget->getFrameMutex(), std::bind(&ViewerWidget::frame, mpViewerWidget));
+    mpVisualization->getBaseData()->chooseVectorScales(mpViewerWidget->getSceneView(), mpViewerWidget->getFrameMutex(), std::bind(&ViewerWidget::frame, mpViewerWidget));
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
