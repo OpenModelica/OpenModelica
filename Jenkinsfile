@@ -1,8 +1,7 @@
 def common
-def shouldWeBuildOSX
 def shouldWeBuildMINGW
-def shouldWeBuildCENTOS7
-def shouldWeSkipCMakeBuild_value
+def shouldWeDisableAllCMakeBuilds_value
+def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -15,10 +14,9 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
-    booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
-    booleanParam(name: 'SKIP_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with the CMake build system (CMake 3.17.2)')
+    booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
+    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with CMake on macOS')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -37,14 +35,12 @@ pipeline {
           common = load("${env.workspace}/.CI/common.groovy")
           isPR = common.isPR()
           print "isPR: ${isPR}"
-          shouldWeBuildOSX = common.shouldWeBuildOSX()
-          print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
-          shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
-          print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
-          shouldWeSkipCMakeBuild_value = common.shouldWeSkipCMakeBuild()
-          print "shouldWeSkipCMakeBuild: ${shouldWeSkipCMakeBuild_value}"
+          shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
+          print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
+          shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
+          print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -91,41 +87,6 @@ pipeline {
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
-        stage('MacOS') {
-          agent {
-            node {
-              label 'osx'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildOSX }
-          }
-          environment {
-            RUNTESTDB = '/Users/hudson/jenkins-cache/runtest/'
-            LIBRARIES = '/Users/hudson/jenkins-cache/omlibrary'
-            GMAKE = 'gmake'
-            LC_ALL = 'C'
-          }
-          steps {
-            script {
-              // Qt5 is MacOS 10.12+...
-              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}:/usr/local/bin/", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
-                sh "echo PATH: \$PATH QTDIR: \$QTDIR"
-                sh "${env.GMAKE} --version"
-                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true, false)
-                common.buildGUI('', false)
-                sh label: "All dylibs and their deps in build/", script: 'find build/ -name "*.dylib" -exec otool -L {} ";"'
-                sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                sh label: "All executables and therir deps in build/bin", script: 'find build/bin -type f -exec otool -L {} ";"'
-                sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                // TODO: OMCppOSUSimulation throws error for help display
-                //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
-                sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
-              }
-            }
-          }
-        }
         stage('Win/MinGW') {
           agent {
             node {
@@ -153,36 +114,7 @@ pipeline {
             }
           }
         }
-        stage('CentOS7') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache-centos7'
-              label 'linux'
-              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildCENTOS7 }
-          }
-          environment {
-            QTDIR = "/usr/lib64/qt5/"
-          }
-          steps {
-            sh "source /opt/rh/devtoolset-8/enable"
-            script {
-              common.buildOMC(
-                '/opt/rh/devtoolset-8/root/usr/bin/gcc',
-                '/opt/rh/devtoolset-8/root/usr/bin/g++',
-                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran CMAKE=cmake3',
-                false, // Building C++ runtime doesn't work at the moment
-                false)
-            }
-            //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
-          }
-        }
-        stage('cmake-gcc') {
+        stage('cmake-bionic-gcc') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -194,14 +126,42 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeSkipCMakeBuild_value }
+            expression { !shouldWeDisableAllCMakeBuilds_value }
           }
           steps {
             script {
+              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+          }
+        }
+        stage('cmake-macos-arm64-gcc') {
+          agent {
+            node {
+              label 'M1'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+                sh "echo PATH: $PATH"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release" +
+                                          " -DOM_USE_CCACHE=OFF" +
+                                          " -DCMAKE_INSTALL_PREFIX=build" +
+                                          " -DOM_OMC_ENABLE_FORTRAN=OFF" +
+                                          " -DOM_OMC_ENABLE_IPOPT=OFF" +
+                                          " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                                      )
+                sh "build/bin/omc --version"
+              }
+            }
           }
         }
         stage('checks') {

@@ -489,15 +489,6 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildOSX() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build OSX")) {
-      return true
-    }
-  }
-  return params.BUILD_OSX
-}
-
 def shouldWeBuildMINGW() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MINGW")) {
@@ -507,22 +498,22 @@ def shouldWeBuildMINGW() {
   return params.BUILD_MINGW
 }
 
-def shouldWeBuildCENTOS7() {
+def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build CentOS")) {
+    if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
       return true
     }
   }
-  return params.BUILD_CENTOS7
+  return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
-def shouldWeSkipCMakeBuild() {
+def shouldWeEnableMacOSCMakeBuild() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Skip CMake Build")) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/macOS")) {
       return true
     }
   }
-  return params.SKIP_CMAKE_BUILD
+  return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
 def shouldWeRunTests() {
