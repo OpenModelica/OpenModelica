@@ -320,19 +320,19 @@ void CompositeModelEditor::setCompositeModelName(QString name)
  */
 bool CompositeModelEditor::addSubModel(Element *pComponent)
 {
-  pComponent->getComponentInfo()->setName(pComponent->getName().remove("."));
+  pComponent->getElementInfo()->setName(pComponent->getName().remove("."));
   QDomElement subModels = getSubModelsElement();
   if (!subModels.isNull()) {
     QDomElement subModel = mXmlDocument.createElement("SubModel");
     subModel.setAttribute("Name", pComponent->getName());
-    subModel.setAttribute("ModelFile", pComponent->getComponentInfo()->getModelFile());
-    subModel.setAttribute("StartCommand", pComponent->getComponentInfo()->getStartCommand());
-    subModel.setAttribute("Position", pComponent->getComponentInfo()->getPosition());
-    subModel.setAttribute("Angle321", pComponent->getComponentInfo()->getAngle321());
-    if (pComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+    subModel.setAttribute("ModelFile", pComponent->getElementInfo()->getModelFile());
+    subModel.setAttribute("StartCommand", pComponent->getElementInfo()->getStartCommand());
+    subModel.setAttribute("Position", pComponent->getElementInfo()->getPosition());
+    subModel.setAttribute("Angle321", pComponent->getElementInfo()->getAngle321());
+    if (pComponent->getElementInfo()->getGeometryFile().isEmpty()) {
       subModel.removeAttribute("GeometryFile");
     } else {
-      QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
+      QFileInfo geometryFileInfo(pComponent->getElementInfo()->getGeometryFile());
       subModel.setAttribute("GeometryFile", geometryFileInfo.fileName());
     }
     // create Annotation Element
@@ -445,8 +445,8 @@ void CompositeModelEditor::updateSubModelOrientation(QString name, QGenericMatri
 
   Element *pComp = mpModelWidget->getDiagramGraphicsView()->getElementObject(name);
   if(pComp) {
-    pComp->getComponentInfo()->setPosition(pos_str);
-    pComp->getComponentInfo()->setAngle321(rot_str);
+    pComp->getElementInfo()->setPosition(pos_str);
+    pComp->getElementInfo()->setAngle321(rot_str);
   }
 }
 
@@ -821,11 +821,11 @@ void CompositeModelEditor::addInterface(Element *pInterfaceComponent, QString su
   QDomElement subModelElement = getSubModelElement(subModel);
   QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
   interfacePoint.setAttribute("Name", pInterfaceComponent->getName());
-  interfacePoint.setAttribute("Position", pInterfaceComponent->getComponentInfo()->getPosition());
-  interfacePoint.setAttribute("Angle321", pInterfaceComponent->getComponentInfo()->getAngle321());
-  interfacePoint.setAttribute("Dimensions", pInterfaceComponent->getComponentInfo()->getDimensions());
-  interfacePoint.setAttribute("Causality", pInterfaceComponent->getComponentInfo()->getTLMCausality());
-  interfacePoint.setAttribute("Domain", pInterfaceComponent->getComponentInfo()->getDomain());
+  interfacePoint.setAttribute("Position", pInterfaceComponent->getElementInfo()->getPosition());
+  interfacePoint.setAttribute("Angle321", pInterfaceComponent->getElementInfo()->getAngle321());
+  interfacePoint.setAttribute("Dimensions", pInterfaceComponent->getElementInfo()->getDimensions());
+  interfacePoint.setAttribute("Causality", pInterfaceComponent->getElementInfo()->getTLMCausality());
+  interfacePoint.setAttribute("Domain", pInterfaceComponent->getElementInfo()->getDomain());
   subModelElement.appendChild(interfacePoint);
   setPlainText(mXmlDocument.toString());
 }
@@ -1035,8 +1035,8 @@ void CompositeModelEditor::updateAllOrientations()
     if(subModelElement.hasAttribute("Position") && subModelElement.hasAttribute("Angle321")) {
       Element *pComp = pView->getElementObject(modelName);
       if(pComp) {
-        pComp->getComponentInfo()->setPosition(subModelElement.attribute("Position"));
-        pComp->getComponentInfo()->setAngle321(subModelElement.attribute("Angle321"));
+        pComp->getElementInfo()->setPosition(subModelElement.attribute("Position"));
+        pComp->getElementInfo()->setAngle321(subModelElement.attribute("Angle321"));
       }
     }
   }

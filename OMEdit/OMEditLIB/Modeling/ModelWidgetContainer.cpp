@@ -3199,9 +3199,9 @@ void GraphicsView::copyItems(bool cut)
     for (int i = 0 ; i < selectedItems.size() ; i++) {
       if (Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i))) {
         // we need to get the modifiers here instead of inside pasteItems() because in case of cut the component is removed and then we can't fetch the modifiers.
-        pComponent->getComponentInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pComponent);
+        pComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pComponent);
         pMimeData->addComponent(pComponent);
-        components << QString("%1 %2%3 %4;").arg(pComponent->getComponentInfo()->getClassName(), pComponent->getName(), "", pComponent->getPlacementAnnotation(true));
+        components << QString("%1 %2%3 %4;").arg(pComponent->getElementInfo()->getClassName(), pComponent->getName(), "", pComponent->getPlacementAnnotation(true));
       } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
         LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
         if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
@@ -3538,7 +3538,7 @@ void GraphicsView::pasteItems()
           name = getUniqueElementName(StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
           renamedComponents.insert(pComponent, name);
         }
-        ElementInfo *pComponentInfo = new ElementInfo(pComponent->getComponentInfo());
+        ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
         pComponentInfo->setName(name);
         addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true, true);
         Element *pNewElement = mElementsList.last();
@@ -6541,9 +6541,9 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         double values[] = {0.0, 0.0, 0.0};
         QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+        QStringList subModelPositionList = pSubModelComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        QStringList subModelPositionList = pSubModelComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (subModelPositionList.size() > 2) {
           cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
@@ -6553,9 +6553,9 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the submodel angle
         double subModelPhi[3] = {0.0, 0.0, 0.0};
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+        QStringList subModelAngleList = pSubModelComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        QStringList subModelAngleList = pSubModelComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (subModelAngleList.size() > 2) {
           subModelPhi[0] = subModelAngleList.at(0).toDouble();
@@ -6566,9 +6566,9 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the interface position
         QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+        QStringList interfacePositionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        QStringList interfacePositionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (interfacePositionList.size() > 2) {
           ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
@@ -6578,9 +6578,9 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the interface angle
         double interfacePhi[3] = {0.0, 0.0, 0.0};
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+        QStringList interfaceAngleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        QStringList interfaceAngleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (interfaceAngleList.size() > 2) {
           interfacePhi[0] = interfaceAngleList.at(0).toDouble();
@@ -6637,7 +6637,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   // can we write visual xml file.
   if (!canWriteVisualXMLFile) {
     foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
-      if (!pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+      if (!pSubModelComponent->getElementInfo()->getGeometryFile().isEmpty()) {
         canWriteVisualXMLFile = true;
       }
     }
@@ -6812,7 +6812,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
 
     foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
       // if no geometry file then continue.
-      if (pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+      if (pSubModelComponent->getElementInfo()->getGeometryFile().isEmpty()) {
         continue;
       }
       bool visited = false;
@@ -7006,9 +7006,9 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+        QStringList angleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        QStringList angleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (angleList.size() > 2) {
           phi[0] = -angleList.at(0).toDouble();
@@ -7019,9 +7019,9 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         // get the position
         double position[3] = {0.0, 0.0, 0.0};
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+        QStringList positionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        QStringList positionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
         if (positionList.size() > 2) {
           position[0] = positionList.at(0).toDouble();
@@ -7042,7 +7042,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
 
         visualFile << "  <shape>\n";
         visualFile << "    <ident>" << name << "</ident>\n";
-        visualFile << "    <type>file://" << pSubModelComponent->getComponentInfo()->getGeometryFile() << "</type>\n";
+        visualFile << "    <type>file://" << pSubModelComponent->getElementInfo()->getGeometryFile() << "</type>\n";
         visualFile << "    <T>\n";
         visualFile << "      <cref>" << name << ".A(1,1) [-]</cref>\n";
         visualFile << "      <cref>" << name << ".A(1,2) [-]</cref>\n";
@@ -7265,7 +7265,7 @@ QList<QVariant> ModelWidget::toOMSensData()
     pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
     pInheritedAndComposedComponents.append(pComponent);
     for (auto component : pInheritedAndComposedComponents) {
-      ElementInfo *pComponentInfo = component->getComponentInfo();
+      ElementInfo *pComponentInfo = component->getElementInfo();
       auto causality = pComponentInfo->getCausality();
       auto variability = pComponentInfo->getVariablity();
       const bool classNameIsReal = pComponentInfo->getClassName().compare(QStringLiteral("Real")) == 0;

@@ -228,7 +228,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   mpGraphicsView->addItem(this);
   setOldAnnotation("");
 
-  ElementInfo *pInfo = getStartElement()->getComponentInfo();
+  ElementInfo *pInfo = getStartElement()->getElementInfo();
   if (pInfo) {
     bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
     int dimensions = pInfo->getDimensions();

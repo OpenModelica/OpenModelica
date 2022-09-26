@@ -51,10 +51,10 @@ public:
     ReplaceableComponent,
     ReplaceableClass
   };
-  Parameter(Element *pComponent, bool showStartAttribute, QString tab, QString groupBox);
+  Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
   Parameter(ModelInstance::Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
-  Element* getComponent() {return mpComponent;}
-  ModelInstance::Element* getElement() {return mpElement;}
+  Element* getElement() {return mpElement;}
+  ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   void setTab(QString tab) {mTab = tab;}
   QString getTab() {return mTab;}
   void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
@@ -91,8 +91,8 @@ public:
   QString getFixedState();
   void setEnabled(bool enable);
 private:
-  Element *mpComponent;
-  ModelInstance::Element *mpElement;
+  Element *mpElement;
+  ModelInstance::Element *mpModelInstanceElement;
   QString mTab;
   QString mGroupBox;
   bool mGroupBoxDefined;
@@ -256,11 +256,11 @@ class CompositeModelSubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  CompositeModelSubModelAttributes(Element *pComponent, QWidget *pParent = 0);
+  CompositeModelSubModelAttributes(Element *pElement, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
-  Element *mpComponent;
+  Element *mpElement;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpSimulationToolLabel;

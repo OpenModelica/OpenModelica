@@ -207,7 +207,6 @@ public:
   // used for interface point
   Element(ElementInfo *pElementInfo, Element *pParentElement);
   bool isInheritedElement() {return mIsInheritedElement;}
-  bool isInheritedComponent() {return isInheritedElement();}
   bool hasShapeAnnotation(Element *pElement);
   bool hasNonExistingClass();
   QRectF boundingRect() const override;
@@ -221,7 +220,7 @@ public:
   QString getClassName() const;
   QString getComment() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  Element *getReferenceComponent() {return mpReferenceComponent;}
+  Element *getReferenceElement() {return mpReferenceElement;}
   Element* getParentElement() {return mpParentElement;}
   Element* getRootParentElement();
   ElementType getElementType() {return mElementType;}
@@ -245,7 +244,6 @@ public:
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
   ElementInfo* getElementInfo() {return mpElementInfo;}
-  ElementInfo* getComponentInfo() {return mpElementInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<Element*> getElementsList() {return mElementsList;}
@@ -314,7 +312,7 @@ private:
   ModelInstance::Model *mpModel;
   QString mName;
   QString mClassName;
-  Element *mpReferenceComponent;
+  Element *mpReferenceElement;
   Element *mpParentElement;
   LibraryTreeItem *mpLibraryTreeItem;
   ElementInfo *mpElementInfo;

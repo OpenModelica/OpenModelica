@@ -886,6 +886,11 @@ namespace ModelInstance
     return (mRestriction.compare(QStringLiteral("expandable connector")) == 0);
   }
 
+  bool Model::isEnumeration() const
+  {
+    return (mRestriction.compare(QStringLiteral("enumeration")) == 0);
+  }
+
   bool Model::isParameterConnectorSizing(const QString &parameter)
   {
     foreach (auto pModelElement, mElements) {
