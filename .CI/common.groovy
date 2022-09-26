@@ -489,15 +489,6 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildOSX() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build OSX")) {
-      return true
-    }
-  }
-  return params.BUILD_OSX
-}
-
 def shouldWeBuildMINGW() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MINGW")) {

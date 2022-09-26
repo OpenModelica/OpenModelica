@@ -1,5 +1,4 @@
 def common
-def shouldWeBuildOSX
 def shouldWeBuildMINGW
 def shouldWeBuildCENTOS7
 def shouldWeDisableAllCMakeBuilds_value
@@ -16,7 +15,6 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
     booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
@@ -39,8 +37,6 @@ pipeline {
           common = load("${env.workspace}/.CI/common.groovy")
           isPR = common.isPR()
           print "isPR: ${isPR}"
-          shouldWeBuildOSX = common.shouldWeBuildOSX()
-          print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
           shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
@@ -93,41 +89,6 @@ pipeline {
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
-          }
-        }
-        stage('MacOS') {
-          agent {
-            node {
-              label 'osx'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildOSX }
-          }
-          environment {
-            RUNTESTDB = '/Users/hudson/jenkins-cache/runtest/'
-            LIBRARIES = '/Users/hudson/jenkins-cache/omlibrary'
-            GMAKE = 'gmake'
-            LC_ALL = 'C'
-          }
-          steps {
-            script {
-              // Qt5 is MacOS 10.12+...
-              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}:/usr/local/bin/", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
-                sh "echo PATH: \$PATH QTDIR: \$QTDIR"
-                sh "${env.GMAKE} --version"
-                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true, false)
-                common.buildGUI('', false)
-                sh label: "All dylibs and their deps in build/", script: 'find build/ -name "*.dylib" -exec otool -L {} ";"'
-                sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                sh label: "All executables and therir deps in build/bin", script: 'find build/bin -type f -exec otool -L {} ";"'
-                sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                // TODO: OMCppOSUSimulation throws error for help display
-                //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
-                sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
-              }
-            }
           }
         }
         stage('Win/MinGW') {
