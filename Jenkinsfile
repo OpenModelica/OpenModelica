@@ -1,6 +1,5 @@
 def common
 def shouldWeBuildMINGW
-def shouldWeBuildCENTOS7
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeRunTests
@@ -16,7 +15,6 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
-    booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with CMake on macOS')
   }
@@ -39,8 +37,6 @@ pipeline {
           print "isPR: ${isPR}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
-          shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
-          print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
@@ -116,35 +112,6 @@ pipeline {
                 common.buildAndRunOMEditTestsuite('')
               }
             }
-          }
-        }
-        stage('CentOS7') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache-centos7'
-              label 'linux'
-              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildCENTOS7 }
-          }
-          environment {
-            QTDIR = "/usr/lib64/qt5/"
-          }
-          steps {
-            sh "source /opt/rh/devtoolset-8/enable"
-            script {
-              common.buildOMC(
-                '/opt/rh/devtoolset-8/root/usr/bin/gcc',
-                '/opt/rh/devtoolset-8/root/usr/bin/g++',
-                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran CMAKE=cmake3',
-                false, // Building C++ runtime doesn't work at the moment
-                false)
-            }
-            //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
         }
         stage('cmake-bionic-gcc') {
