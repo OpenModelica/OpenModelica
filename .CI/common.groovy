@@ -516,13 +516,22 @@ def shouldWeBuildCENTOS7() {
   return params.BUILD_CENTOS7
 }
 
-def shouldWeSkipCMakeBuild() {
+def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Skip CMake Build")) {
+    if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
       return true
     }
   }
-  return params.SKIP_CMAKE_BUILD
+  return params.DISABLE_ALL_CMAKE_BUILDS
+}
+
+def shouldWeEnableMacOSCMakeBuild() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/macOS")) {
+      return true
+    }
+  }
+  return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
 def shouldWeRunTests() {

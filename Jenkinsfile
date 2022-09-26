@@ -2,7 +2,8 @@ def common
 def shouldWeBuildOSX
 def shouldWeBuildMINGW
 def shouldWeBuildCENTOS7
-def shouldWeSkipCMakeBuild_value
+def shouldWeDisableAllCMakeBuilds_value
+def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -18,7 +19,8 @@ pipeline {
     booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
     booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
-    booleanParam(name: 'SKIP_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with the CMake build system (CMake 3.17.2)')
+    booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
+    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with CMake on macOS')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -43,8 +45,10 @@ pipeline {
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
           shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
           print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
-          shouldWeSkipCMakeBuild_value = common.shouldWeSkipCMakeBuild()
-          print "shouldWeSkipCMakeBuild: ${shouldWeSkipCMakeBuild_value}"
+          shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
+          print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
+          shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
+          print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -182,7 +186,7 @@ pipeline {
             //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
         }
-        stage('cmake-gcc') {
+        stage('cmake-bionic-gcc') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -194,14 +198,42 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeSkipCMakeBuild_value }
+            expression { !shouldWeDisableAllCMakeBuilds_value }
           }
           steps {
             script {
+              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+          }
+        }
+        stage('cmake-macos-arm64-gcc') {
+          agent {
+            node {
+              label 'M1'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+                sh "echo PATH: $PATH"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release" +
+                                          " -DOM_USE_CCACHE=OFF" +
+                                          " -DCMAKE_INSTALL_PREFIX=build" +
+                                          " -DOM_OMC_ENABLE_FORTRAN=OFF" +
+                                          " -DOM_OMC_ENABLE_IPOPT=OFF" +
+                                          " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                                      )
+                sh "build/bin/omc --version"
+              }
+            }
           }
         }
         stage('checks') {
