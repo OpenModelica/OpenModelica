@@ -297,6 +297,11 @@ target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
 target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
 
+# Silence OpenGL deprecation warnings on macOS
+if(APPLE)
+  target_compile_definitions(OMEditLib PRIVATE GL_SILENCE_DEPRECATION)
+endif()
+
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
   target_link_libraries(OMEditLib PUBLIC zlib)
