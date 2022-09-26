@@ -398,9 +398,15 @@ algorithm
       true := InstNode.isInner(innerNode);
       return;
     else
-      // Continue looking in the instance parent's scope.
-      prev_scope := cur_scope;
-      cur_scope := InstNode.instanceParent(cur_scope);
+      if InstNode.isRootClass(cur_scope) then
+        // Stop looking if we reach the root class.
+        prev_scope := InstNode.topScope(cur_scope);
+        cur_scope := InstNode.EMPTY_NODE();
+      else
+        // Otherwise continue looking in the instance parent's scope.
+        prev_scope := cur_scope;
+        cur_scope := InstNode.instanceParent(cur_scope);
+      end if;
     end try;
   end while;
 
