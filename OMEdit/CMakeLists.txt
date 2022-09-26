@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network Svg REQUIRED)
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
+find_package(OpenGL REQUIRED)
 
 # Configure omedit_config.h. This will be generated in the build directory
 configure_file(omedit_config.h.in omedit_config.h)

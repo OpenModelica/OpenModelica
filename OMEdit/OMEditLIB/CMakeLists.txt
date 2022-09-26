@@ -276,7 +276,7 @@ target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
 if(WIN32)
-  target_compile_definitions(OMEditLib PRIVATE -DUNICODE)
+  target_compile_definitions(OMEditLib PRIVATE UNICODE)
 endif()
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
@@ -295,12 +295,16 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
-target_link_libraries(OMEditLib PUBLIC GL)
+target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
+
+# Silence OpenGL deprecation warnings on macOS
+if(APPLE)
+  target_compile_definitions(OMEditLib PRIVATE GL_SILENCE_DEPRECATION)
+endif()
 
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
   target_link_libraries(OMEditLib PUBLIC zlib)
 endif()
 
-target_include_directories(OMEditLib PRIVATE
-  ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+target_include_directories(OMEditLib PRIVATE ${OMCompiler_SOURCE_DIR}/Compiler/Script)
