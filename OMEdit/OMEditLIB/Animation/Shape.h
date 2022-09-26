@@ -44,6 +44,7 @@ public:
   ~ShapeObject() = default;
   ShapeObject(const ShapeObject&) = default;
   ShapeObject& operator=(const ShapeObject&) = default;
+  ShapeObject* asShape() override final {return this;}
   void dumpVisualizerAttributes() const override;
 public:
   std::string _type;

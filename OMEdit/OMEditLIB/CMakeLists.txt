@@ -295,6 +295,7 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+target_link_libraries(OMEditLib PUBLIC GL)
 
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)

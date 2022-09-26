@@ -91,10 +91,6 @@ void VisualizationCSV::updateVisAttributes(const double time)
   // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
 
-  rAndT rT;
-  osg::ref_ptr<osg::Node> child = nullptr;
-  unsigned int visualizerIdx = 0;
-
   try
   {
     for (ShapeObject& shape : mpOMVisualBase->_shapes)
@@ -140,7 +136,7 @@ void VisualizationCSV::updateVisAttributes(const double time)
 
       updateVisualizerAttributeCSV(shape._extra, time);
 
-      rT = rotateModelica2OSG(
+      rAndT rT = rotateModelica2OSG(
           osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
                        shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
                        shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
@@ -148,16 +144,13 @@ void VisualizationCSV::updateVisAttributes(const double time)
           osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
           osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
           osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-          shape._length.exp/*, shape._width.exp, shape._height.exp*/, shape._type);
+          shape._type);
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
 
       // Update the shapes
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
+      updateVisualizer(shape);
       //shape.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
-      child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
     }
 
     for (VectorObject& vector : mpOMVisualBase->_vectors)
@@ -195,22 +188,18 @@ void VisualizationCSV::updateVisAttributes(const double time)
 
       updateVisualizerAttributeCSV(vector._twoHeadedArrow, time);
 
-      rT = rotateModelica2OSG(
+      rAndT rT = rotateModelica2OSG(
           osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
                        vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
                        vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
           osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
-          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp),
-          vector.hasHeadAtOrigin() ? -vector.getLength() : vector.getLength());
+          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
       assemblePokeMatrix(vector._mat, rT._T, rT._r);
 
       // Update the vectors
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&vector);
+      updateVisualizer(vector);
       //vector.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
-      child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
     }
   }
   catch (std::exception& ex)

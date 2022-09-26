@@ -38,18 +38,28 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <iostream>
+#include <functional>
 
+#include <QColor>
 #include <QImage>
 #include <QOpenGLContext> // must be included before OSG headers
 
-#include <osg/NodeVisitor>
-#include <osg/Geode>
+#include <osg/Transform>
+#include <osg/AutoTransform>
 #include <osg/MatrixTransform>
-#include <osg/ShapeDrawable>
-#include <osg/Material>
-#include <osgDB/ReadFile>
-#include <osg/Texture2D>
-#include <osg/TexMat>
+#include <osg/StateSet>
+#include <osg/Image>
+#include <osg/Geode>
+#include <osg/Group>
+#include <osg/Node>
+#include <osg/NodeVisitor>
+#include <osg/NodeCallback>
+#include <osg/RenderInfo>
+#include <osgUtil/RenderBin>
+#include <osgUtil/RenderLeaf>
+#include <osgViewer/View>
+
+#include <OpenThreads/Mutex>
 
 #include "ExtraShapes.h"
 
@@ -60,6 +70,8 @@
 #include "AbstractVisualizer.h"
 #include "Shape.h"
 #include "Vector.h"
+
+class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
 
 struct UserSimSettingsMAT
 {
@@ -74,13 +86,16 @@ public:
   UpdateVisitor(const UpdateVisitor& uv) = delete;
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node) override;
+  virtual void apply(osg::Transform& node) override;
+  virtual void apply(osg::AutoTransform& node); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
-  void changeColor(osg::StateSet* ss, float r, float g, float b);
-  void changeTransparency(osg::StateSet* ss, float transpCoeff);
+  void changeColor(osg::StateSet* ss, const QColor color);
+  void changeTransparency(osg::StateSet* ss, const float transparency);
 public:
   AbstractVisualizerObject* _visualizer;
+  bool _changeMaterialProperties;
 };
 
 class InfoVisitor : public osg::NodeVisitor
@@ -97,19 +112,55 @@ private:
   unsigned int _level;
 };
 
+class AutoTransformDrawCallback : public osgUtil::RenderBin::DrawCallback
+{
+public:
+  AutoTransformDrawCallback();
+  ~AutoTransformDrawCallback() = default;
+  AutoTransformDrawCallback(const AutoTransformDrawCallback& callback) = delete;
+  AutoTransformDrawCallback& operator=(const AutoTransformDrawCallback& callback) = delete;
+  virtual void drawImplementation(osgUtil::RenderBin* bin, osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous) override;
+};
+
+class AutoTransformCullCallback : public osg::NodeCallback
+{
+public:
+  AutoTransformCullCallback(VisualizationAbstract* visualization);
+  ~AutoTransformCullCallback() = default;
+  AutoTransformCullCallback(const AutoTransformCullCallback& callback) = delete;
+  AutoTransformCullCallback& operator=(const AutoTransformCullCallback& callback) = delete;
+  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) override; // Work-around for osg::Callback::run(osg::Object*, osg::Object*) (see OSG commit 977ec20)
+protected:
+  osg::ref_ptr<AutoTransformDrawCallback> _atDrawCallback;
+  VisualizationAbstract* mpVisualization;
+};
+
+class AutoTransformVisualizer : public osg::AutoTransform
+{
+public:
+  AutoTransformVisualizer(AbstractVisualizerObject* visualizer);
+  ~AutoTransformVisualizer() = default;
+  AutoTransformVisualizer(const AutoTransformVisualizer& transform) = delete;
+  AutoTransformVisualizer& operator=(const AutoTransformVisualizer& transform) = delete;
+  AbstractVisualizerObject* getVisualizerObject() const {return mpVisualizer;}
+protected:
+  AbstractVisualizerObject* mpVisualizer;
+};
+
 class OSGScene
 {
 public:
-  OSGScene();
+  OSGScene(VisualizationAbstract* visualization);
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
-  void setUpScene(const std::vector<ShapeObject>& shapes);
-  void setUpScene(const std::vector<VectorObject>& vectors);
+  void setUpScene(std::vector<ShapeObject>& shapes);
+  void setUpScene(std::vector<VectorObject>& vectors);
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
 private:
+  osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
 };
@@ -117,7 +168,7 @@ private:
 class OMVisScene
 {
 public:
-  OMVisScene();
+  OMVisScene(VisualizationAbstract* visualization);
   ~OMVisScene() = default;
   OMVisScene(const OMVisScene& omvv) = delete;
   OMVisScene& operator=(const OMVisScene& omvv) = delete;
@@ -139,6 +190,7 @@ public:
   const std::string getModelFile() const;
   const std::string getPath() const;
   const std::string getXMLFileName() const;
+  AbstractVisualizerObject* getVisualizerObjectByIdx(const std::size_t visualizerIdx);
   AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
   int getVisualizerObjectIndexByID(const std::string& visualizerID);
 private:
@@ -164,8 +216,14 @@ public:
   void setUpScene();
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
+  void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
   void sceneUpdate();
-  void modifyVisualizer(const std::string& visualizerName);
+  void updateVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
+  void modifyVisualizer(const std::string& visualizerName   , bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties = true);
+  void updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
+  void modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties = true);
   virtual void simulate(TimeManager& omvm) = 0;
   virtual void updateScene(const double time) = 0;
 
@@ -194,7 +252,7 @@ osg::Vec3f normalize(osg::Vec3f vec);
 osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
 Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
 void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, float length/*, float width, float height*/, std::string type);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir, float length);
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type);
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir);
 
 #endif

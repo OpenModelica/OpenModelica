@@ -499,7 +499,7 @@ getErrorString();
 //       <specCoeff><cref>forceAndTorque.forceArrow.arrowLine.specularCoefficient</cref></specCoeff>
 //       <quantity><cref>forceAndTorque.forceArrow.arrowLine.quantity</cref></quantity>
 //       <headAtOrigin><cref>forceAndTorque.forceArrow.arrowLine.headAtOrigin</cref></headAtOrigin>
-//       <twoHeadedArrow><bexp>false</bexp></twoHeadedArrow>
+//       <twoHeadedArrow><bconst>false</bconst></twoHeadedArrow>
 //   </vector>
 //   <vector>
 //       <ident>forceAndTorque.torqueArrow.arrowLine</ident>
@@ -532,7 +532,7 @@ getErrorString();
 //       <specCoeff><cref>forceAndTorque.torqueArrow.arrowLine.specularCoefficient</cref></specCoeff>
 //       <quantity><cref>forceAndTorque.torqueArrow.arrowLine.quantity</cref></quantity>
 //       <headAtOrigin><cref>forceAndTorque.torqueArrow.arrowLine.headAtOrigin</cref></headAtOrigin>
-//       <twoHeadedArrow><bexp>true</bexp></twoHeadedArrow>
+//       <twoHeadedArrow><bconst>true</bconst></twoHeadedArrow>
 //   </vector>
 //   <shape>
 //       <ident>body.frameTranslation.shape</ident>

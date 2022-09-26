@@ -101,6 +101,7 @@ std::string VisualizerAttribute::getValueString() const
 AbstractVisualizerObject::AbstractVisualizerObject(const VisualizerType type)
     : mVisualizerType(type),
       mStateSetAction(StateSetAction::update),
+      mTransformNode(nullptr),
       mTextureImagePath(""),
       mTransparency(0.0),
       _id(""),
@@ -154,11 +155,14 @@ VisualizerAttribute getVisualizerAttributeForNode(const rapidxml::xml_node<>* no
   if (strcmp("cref", node->name()) == 0) {
     oa.cref = std::string(node->value());
     oa.isConst = false;
+  } else if (strcmp("bconst", node->name()) == 0) {
+    oa.exp = (strcmp("true", node->value()) == 0);
+    oa.isConst = true;
+  } else if (strcmp("enum", node->name()) == 0) {
+    oa.exp = std::strtol(node->value(), nullptr, 0);
+    oa.isConst = true;
   } else if (strcmp("exp", node->name()) == 0) {
     oa.exp = std::strtof(node->value(), nullptr);
-    oa.isConst = true;
-  } else if (strcmp("bexp", node->name()) == 0) {
-    oa.exp = (strcmp("true", node->value()) == 0);
     oa.isConst = true;
   }
   return oa;
