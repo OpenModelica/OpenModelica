@@ -978,6 +978,8 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   connect(mpReferenceElement, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
   connect(mpReferenceElement, SIGNAL(changed()), SLOT(referenceElementChanged()));
   connect(mpReferenceElement, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
   /* Ticket:4204
    * If the child class use text annotation from base class then we need to call this
    * since when the base class is created the child class doesn't exist.
