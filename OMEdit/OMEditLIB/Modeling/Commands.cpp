@@ -908,31 +908,7 @@ AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnota
  */
 void AddTransitionCommand::redoInternal()
 {
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
-  // Add the start component transition details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setHasTransition(true);
-  } else if (pStartComponent) {
-    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setHasTransition(true);
-  }
-  // Add the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
-  if (pEndComponent && pEndComponent->getRootParentElement()) {
-    pEndComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentElement()->setHasTransition(true);
-  } else if (pEndComponent) {
-    pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->setHasTransition(true);
-  }
-  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
-  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
-  mpTransitionLineAnnotation->updateTransitionTextPosition();
-  mpTransitionLineAnnotation->getGraphicsView()->addItem(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->emitAdded();
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToView(mpTransitionLineAnnotation, false);
   if (mAddTransition) {
     mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
   }
@@ -944,31 +920,7 @@ void AddTransitionCommand::redoInternal()
  */
 void AddTransitionCommand::undo()
 {
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
-  // Remove the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setHasTransition(false);
-  } else if (pStartComponent) {
-    pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setHasTransition(false);
-  }
-  // Remove the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
-  if (pEndComponent && pEndComponent->getRootParentElement()) {
-    pEndComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentElement()->setHasTransition(false);
-  } else if (pEndComponent) {
-    pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->setHasTransition(false);
-  }
-  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
-  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
-  mpTransitionLineAnnotation->updateTransitionTextPosition();
-  mpTransitionLineAnnotation->getGraphicsView()->removeItem(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->emitDeleted();
+  mpTransitionLineAnnotation->getGraphicsView()->removeTransitionFromView(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
 }
 

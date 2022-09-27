@@ -99,7 +99,6 @@ private:
     void reset();
     bool isComplete() const;
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
 
     CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) noexcept = default;
   private:
@@ -304,7 +303,6 @@ private:
     IconDiagramAnnotation();
     ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     CoordinateSystem getCoordinateSystem() {return mCoordinateSystem;}
     QList<Shape*> getGraphics() const {return mGraphics;}
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
@@ -317,6 +315,7 @@ private:
   class Extend;
   class Element;
   class Connection;
+  class Transition;
   class Model
   {
   public:
@@ -324,7 +323,6 @@ private:
     Model(const QJsonObject &jsonObject);
     virtual ~Model();
     void deserialize();
-    void serialize(QJsonObject &jsonObject) const;
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
@@ -363,6 +361,7 @@ private:
     int getColumnEnd() const {return mColumnEnd;}
     bool isReadonly() const {return mReadonly;}
     QList<Connection *> getConnections() const {return mConnections;}
+    QList<Transition *> getTransitions() const {return mTransitions;}
 
     bool isParameterConnectorSizing(const QString &parameter);
   private:
@@ -400,6 +399,7 @@ private:
     int mColumnEnd;
     bool mReadonly;
     QList<Connection*> mConnections;
+    QList<Transition*> mTransitions;
   };
 
   class Transformation
@@ -407,7 +407,6 @@ private:
   public:
     Transformation();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     Point getOrigin() const {return mOrigin;}
     Extent getExtent() const {return mExtent;}
     double getRotation() const {return mRotation;}
@@ -422,7 +421,6 @@ private:
   public:
     PlacementAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     bool getVisible() const {return mVisible;}
     Transformation getTransformation() const {return mTransformation;}
     bool getIconVisible() const {return mIconVisible;}
@@ -439,7 +437,6 @@ private:
   public:
     Selector();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     QString getFilter() const {return mFilter;}
     QString getCaption() const {return mCaption;}
   private:
@@ -452,7 +449,6 @@ private:
   public:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     QString getTab() const {return mTab;}
     QString getGroup() const {return mGroup;}
     bool isEnabled() const {return mEnable;}
@@ -481,7 +477,6 @@ private:
   public:
     Modifier();
     void deserialize(const QJsonValue &jsonValue);
-    void serialize(QJsonObject &jsonObject) const;
 
     QString getName() const {return mName;}
     void setName(const QString &name) {mName = name;}
@@ -502,7 +497,6 @@ private:
   public:
     Choices();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
   private:
@@ -517,7 +511,6 @@ private:
     ~Element();
     void initialize();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
 
     Model *getParentModel() const {return mpParentModel;}
     void setName(const QString &name) {mName = name;}
@@ -604,7 +597,6 @@ private:
     Connection();
     ~Connection();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
 
     Connector *getStartConnector() const {return mpStartConnector;}
     Connector *getEndConnector() const {return mpEndConnector;}
@@ -617,13 +609,40 @@ private:
     Text *mpText;
   };
 
+  class Transition
+  {
+  public:
+    Transition();
+    void deserialize(const QJsonObject &jsonObject);
+
+    Connector *getStartConnector() const {return mpStartConnector;}
+    Connector *getEndConnector() const {return mpEndConnector;}
+    bool getCondition() const {return mCondition;}
+    bool getImmediate() const {return mImmediate;}
+    bool getReset() const {return mReset;}
+    bool getSynchronize() const {return mSynchronize;}
+    int getPriority() const {return mPriority;}
+    Line *getLine() const {return mpLine;}
+    Text *getText() const {return mpText;}
+    QString toString() const;
+  private:
+    Connector *mpStartConnector;
+    Connector *mpEndConnector;
+    bool mCondition;
+    bool mImmediate;
+    bool mReset;
+    bool mSynchronize;
+    int mPriority;
+    Line *mpLine;
+    Text *mpText;
+  };
+
   class Extend : public Model
   {
   public:
     Extend();
     ~Extend();
     void deserialize(const QJsonObject &jsonObject);
-    void serialize(QJsonObject &jsonObject) const;
 
     Modifier getModifier() const {return mModifier;}
   private:

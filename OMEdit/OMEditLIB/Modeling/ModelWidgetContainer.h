@@ -141,6 +141,8 @@ private:
   QList<ShapeAnnotation*> mOutOfSceneShapesList;
   QList<Element*> mInheritedElementsList;
   QList<LineAnnotation*> mInheritedConnectionsList;
+  QList<LineAnnotation*> mInheritedTransitionsList;
+  QList<LineAnnotation*> mInheritedInitialStatesList;
   QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
   LineAnnotation *mpTransitionLineAnnotation;
@@ -187,6 +189,7 @@ public:
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
+  void drawTransitions(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -259,7 +262,6 @@ public:
   QList<Element*> getElementsList() {return mElementsList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
-  QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   bool connectionExists(const QString &startElementName, const QString &endElementName, bool inherited);
   void addConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited);
@@ -277,25 +279,28 @@ public:
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
+  void addTransitionToView(LineAnnotation *pTransitionLineAnnotation, bool inherited);
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
-  void removeTransitionDetails(LineAnnotation *pTransitionLineAnnotation);
   void removeTransitionFromView(LineAnnotation *pTransitionLineAnnotation);
   void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
   void addTransitionToList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.append(pTransitionLineAnnotation);}
   void addTransitionToOutOfSceneList(LineAnnotation *pTransitionLineAnnotation) {mOutOfSceneTransitionsList.append(pTransitionLineAnnotation);}
+  void addInheritedTransitionToList(LineAnnotation *pTransitionLineAnnotation) {mInheritedTransitionsList.append(pTransitionLineAnnotation);}
   void deleteTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.removeOne(pTransitionLineAnnotation);}
   void deleteTransitionFromOutOfSceneList(LineAnnotation *pTransitionLineAnnotation) {mOutOfSceneTransitionsList.removeOne(pTransitionLineAnnotation);}
   void removeTransitionsFromView();
+  void deleteInheritedTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mInheritedTransitionsList.removeOne(pTransitionLineAnnotation);}
   QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
   void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
-  void removeInitialStateDetails(LineAnnotation *pInitialStateLineAnnotation);
   void removeInitialStateFromView(LineAnnotation *pInitialStateLineAnnotation);
   void deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation);
   void addInitialStateToList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.append(pInitialStateLineAnnotation);}
   void addInitialStateToOutOfSceneList(LineAnnotation *pInitialStateLineAnnotation) {mOutOfSceneInitialStatesList.append(pInitialStateLineAnnotation);}
+  void addInheritedInitialStateToList(LineAnnotation *pInitialStateLineAnnotation) {mInheritedInitialStatesList.append(pInitialStateLineAnnotation);}
   void deleteInitialStateFromList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.removeOne(pInitialStateLineAnnotation);}
   void deleteInitialStateFromOutOfSceneList(LineAnnotation *pInitialStateLineAnnotation) {mOutOfSceneInitialStatesList.removeOne(pInitialStateLineAnnotation);}
   void removeInitialStatesFromView();
+  void deleteInheritedInitialStateFromList(LineAnnotation *pInitialStateLineAnnotation) {mInheritedInitialStatesList.removeOne(pInitialStateLineAnnotation);}
   void addShapeToList(ShapeAnnotation *pShape, int index = -1);
   void addShapeToOutOfSceneList(ShapeAnnotation *pShape) {mOutOfSceneShapesList.append(pShape);}
   void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
@@ -315,6 +320,8 @@ public:
   void removeInheritedClassShapes();
   void removeInheritedClassElements();
   void removeInheritedClassConnections();
+  void removeInheritedClassTransitions();
+  void removeInheritedClassInitialStates();
   void removeAllShapes() {mShapesList.clear();}
   void removeOutOfSceneShapes();
   void removeAllConnections() {mConnectionsList.clear();}

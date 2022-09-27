@@ -156,6 +156,31 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
   }
 }
 
+TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLineAnnotation)
+  : ShapeAnnotation(pLineAnnotation)
+{
+  mpElement = 0;
+  mpOriginItem = 0;
+  mpText = pText;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  parseShapeAnnotation();
+  updateTextString();
+  /* From Modelica Spec 33revision1,
+   * The extent of the Text is interpreted relative to either the first point of the Line, in the case of immediate=false,
+   * or the last point (immediate=true).
+   */
+  if (pLineAnnotation->getPoints().size() > 0) {
+    if (pLineAnnotation->getImmediate()) {
+      setPos(pLineAnnotation->getPoints().last());
+    } else {
+      setPos(pLineAnnotation->getPoints().first());
+    }
+  }
+}
+
 /*!
  * \brief TextAnnotation::TextAnnotation
  * Used by OMSimulator FMU ModelWidget\n

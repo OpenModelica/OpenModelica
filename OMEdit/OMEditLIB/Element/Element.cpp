@@ -627,7 +627,6 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
   mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
-  mpStateElementRectangle = 0;
   createNonExistingElement();
   createDefaultElement();
   createStateElement();
@@ -651,17 +650,10 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
   }
   setTransform(mTransformation.getTransformationMatrix());
-//  setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
-//  setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
-//  setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
-  // add choices if there are any
-  if (getChoicesAnnotation().size() > 2) {
-    QString array = getChoicesAnnotation()[2];
-    QStringList choices = StringHandler::unparseStrings(array);
-    setChoices(choices);
-  } else {
-    setChoices(QStringList());
-  }
+  setDialogAnnotation(QStringList());
+  setChoicesAnnotation(QStringList());
+  setChoicesAllMatchingAnnotation(QStringList());
+  setChoices(QStringList());
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -810,15 +802,12 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
   setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
   // add choices if there are any
-  if (getChoicesAnnotation().size() > 2)
-  {
-      QString array = getChoicesAnnotation()[2];
-      QStringList choices = StringHandler::unparseStrings(array);
-      setChoices(choices);
-  }
-  else
-  {
-      setChoices(QStringList());
+  if (getChoicesAnnotation().size() > 2) {
+    QString array = getChoicesAnnotation()[2];
+    QStringList choices = StringHandler::unparseStrings(array);
+    setChoices(choices);
+  } else {
+    setChoices(QStringList());
   }
   // create actions
   createActions();
@@ -1151,8 +1140,7 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   if (mTransformation.isValid()) {
     setVisible(mTransformation.getVisible());
     if (mpStateElementRectangle) {
-      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica &&
-          !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState()) {
+      if (isVisible()) {
         if (mHasTransition && mIsInitialState) {
           mpStateElementRectangle->setLinePattern(StringHandler::LineSolid);
           mpStateElementRectangle->setLineThickness(0.5);
@@ -1787,6 +1775,11 @@ void Element::reDrawElementNew()
   mpModel = mpModelElement->getModel();
   mName = mpModelElement->getName();
   mClassName = mpModelElement->getType();
+  // delete if state element and then check if we need to create a state element
+  if (mpStateElementRectangle) {
+    delete mpStateElementRectangle;
+  }
+  createStateElement();
   drawElement();
   updateConnections();
 }
@@ -2290,7 +2283,7 @@ ModelInstance::Element* Element::getModelElementByName(ModelInstance::Model *pMo
 
 /*!
  * \brief Element::createNonExistingElement
- * Creates a non-existing component.
+ * Creates a non-existing element.
  */
 void Element::createNonExistingElement()
 {
@@ -2300,7 +2293,7 @@ void Element::createNonExistingElement()
 
 /*!
  * \brief Element::createDefaultElement
- * Creates a default component.
+ * Creates a default element.
  */
 void Element::createDefaultElement()
 {
@@ -2312,20 +2305,25 @@ void Element::createDefaultElement()
 
 /*!
  * \brief Element::createStateElement
- * Creates a state component.
+ * Creates a state element.
  */
 void Element::createStateElement()
 {
-  mpStateElementRectangle = new RectangleAnnotation(this);
-  mpStateElementRectangle->setVisible(false);
-  // create a state rectangle
-  mpStateElementRectangle->setLineColor(QColor(95, 95, 95));
-  mpStateElementRectangle->setLinePattern(StringHandler::LineDash);
-  mpStateElementRectangle->setRadius(40);
-  mpStateElementRectangle->setFillColor(QColor(255, 255, 255));
-  QList<QPointF> extents;
-  extents << QPointF(-100, -100) << QPointF(100, 100);
-  mpStateElementRectangle->setExtents(extents);
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState())
+      || (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState())) {
+    mpStateElementRectangle = new RectangleAnnotation(this);
+    mpStateElementRectangle->setVisible(false);
+    // create a state rectangle
+    mpStateElementRectangle->setLineColor(QColor(95, 95, 95));
+    mpStateElementRectangle->setLinePattern(StringHandler::LineDash);
+    mpStateElementRectangle->setRadius(40);
+    mpStateElementRectangle->setFillColor(QColor(255, 255, 255));
+    QList<QPointF> extents;
+    extents << QPointF(-100, -100) << QPointF(100, 100);
+    mpStateElementRectangle->setExtents(extents);
+  } else {
+    mpStateElementRectangle = 0;
+  }
 }
 
 /*!

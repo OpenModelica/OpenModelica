@@ -383,6 +383,54 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
   mpGraphicsView->addItem(this);
 }
 
+LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = 0;
+  setFlag(QGraphicsItem::ItemIsSelectable);
+  mLineType = LineAnnotation::TransitionType;
+  setZValue(1000);
+  mpLine = pTransition->getLine();
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set the start component
+  setStartElement(pStartComponent);
+  setStartElementName(pTransition->getStartConnector()->getName());
+  // set the end component
+  setEndElement(pEndComponent);
+  setEndElementName(pTransition->getEndConnector()->getName());
+  mStartAndEndElementsSelected = false;
+  setCondition(pTransition->getCondition() ? "true" : "false");
+  setImmediate(pTransition->getImmediate());
+  setReset(pTransition->getReset());
+  setSynchronize(pTransition->getSynchronize());
+  setPriority(pTransition->getPriority());
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  setOMSConnectionType(oms_connection_single);
+  setActiveState(false);
+  parseShapeAnnotation();
+  /* make the points relative to origin */
+  QList<QPointF> points;
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    QPointF point = mOrigin + mPoints[i];
+    points.append(point);
+  }
+  mPoints = points;
+  mOrigin = QPointF(0, 0);
+  if (pTransition->getText()) {
+    mpTextAnnotation = new TextAnnotation(pTransition->getText(), this);
+  } else {
+    mpTextAnnotation = 0;
+  }
+  // set the graphics view
+  mpGraphicsView->addItem(this);
+}
+
 LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {

@@ -35,6 +35,7 @@
 
 #include <QRectF>
 #include <QtMath>
+#include <QStringBuilder>
 
 namespace ModelInstance
 {
@@ -693,6 +694,10 @@ namespace ModelInstance
     foreach (auto pConnection, mConnections) {
       delete pConnection;
     }
+
+    foreach (auto pTransition, mTransitions) {
+      delete pTransition;
+    }
   }
 
   void Model::deserialize()
@@ -866,11 +871,18 @@ namespace ModelInstance
         }
       }
     }
-  }
 
-  void Model::serialize(QJsonObject &jsonObject) const
-  {
-    jsonObject["name"] = mName;
+    if (mModelJson.contains("transitions")) {
+      QJsonArray transitions = mModelJson.value("transitions").toArray();
+      foreach (QJsonValue transition, transitions) {
+        QJsonObject transitionObject = transition.toObject();
+        if (!transitionObject.isEmpty()) {
+          Transition *pTransition = new Transition;
+          pTransition->deserialize(transition.toObject());
+          mTransitions.append(pTransition);
+        }
+      }
+    }
   }
 
   bool Model::isConnector() const
@@ -934,6 +946,7 @@ namespace ModelInstance
     mColumnEnd = 0;
     mReadonly = false;
     mConnections.clear();
+    mTransitions.clear();
   }
 
   Transformation::Transformation()
@@ -1364,6 +1377,70 @@ namespace ModelInstance
         mpText->deserialize(annotation.value("Text").toObject());
       }
     }
+  }
+
+  Transition::Transition()
+  {
+    mpStartConnector = 0;
+    mpEndConnector = 0;
+    mCondition = false;
+    mImmediate = true;
+    mReset = true;
+    mSynchronize = false;
+    mPriority = 1;
+    mpLine = 0;
+    mpText = 0;
+  }
+
+  void Transition::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("arguments")) {
+      QJsonArray arguments = jsonObject.value("arguments").toArray();
+      if (arguments.size() > 6) {
+        if (arguments.at(0).isObject()) {
+          mpStartConnector = new Connector;
+          mpStartConnector->deserialize(arguments.at(0).toObject());
+        }
+
+        if (arguments.at(1).isObject()) {
+          mpEndConnector = new Connector;
+          mpEndConnector->deserialize(arguments.at(0).toObject());
+        }
+
+        mCondition = arguments.at(2).toBool();
+        mImmediate = arguments.at(3).toBool();
+        mReset = arguments.at(4).toBool();
+        mSynchronize = arguments.at(5).toBool();
+        mPriority = arguments.at(6).toInt();
+      }
+    }
+
+    if (jsonObject.contains("annotation")) {
+      QJsonObject annotation = jsonObject.value("annotation").toObject();
+      if (annotation.contains("Line")) {
+        mpLine = new Line;
+        mpLine->deserialize(annotation.value("Line").toObject());
+      }
+
+      if (annotation.contains("Text")) {
+        mpText = new Text;
+        mpText->deserialize(annotation.value("Text").toObject());
+      }
+    }
+  }
+
+  QString Transition::toString() const
+  {
+    QStringList transitionArgs;
+    transitionArgs << mpStartConnector->getName()
+                   << mpEndConnector->getName()
+                   << QVariant(mCondition).toString()
+                   << QVariant(mCondition).toString()
+                   << QVariant(mImmediate).toString()
+                   << QVariant(mReset).toString()
+                   << QVariant(mSynchronize).toString()
+                   << QString::number(mPriority);
+    return "transition(" % transitionArgs.join(", ") % ")";
   }
 
   Extend::Extend()
