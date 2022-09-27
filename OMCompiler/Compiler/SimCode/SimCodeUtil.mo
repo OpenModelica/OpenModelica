@@ -15570,7 +15570,10 @@ algorithm
                  "             NAMES " + lib + "\n" +
                  "             PATHS " + stringDelimitList(locations, "\n                   ") + ")\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n";
+                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
+                 "message(STATUS \"Copying ${" + lib + "} into binaries/\")" + "\n" +
+                 "file(COPY ${" + lib + "}" + "\n" +
+                 "           DESTINATION ${CMAKE_INSTALL_LIBDIR})" + "\n";
   end for;
 end getCmakeLinkLibrariesCode;
 

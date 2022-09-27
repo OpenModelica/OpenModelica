@@ -48,7 +48,6 @@ add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
-
 target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
 
