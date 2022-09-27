@@ -3678,7 +3678,9 @@ algorithm
         then();
     else
       algorithm
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build"});
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR,
+                         {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build. " +
+                          "Use platforms={\"dynamic\"} for the default case."});
       then fail();
   end match;
 end configureFMU_cmake;
