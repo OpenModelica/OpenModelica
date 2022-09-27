@@ -586,6 +586,17 @@ EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
   return equationInfo;
 }
 
+/**
+ * @brief Get equation info for equation with index `ix`.
+ *
+ * Return dummy equation info if xml->fileName == NULL, e.g. for
+ * --fmiFilter=blackBox and protected.
+ * Return dummy equation info if `ix` is out of range.
+ *
+ * @param xml             Model info XML.
+ * @param ix              Equation index.
+ * @return EQUATION_INFO  Equation info for equation `ix`.
+ */
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
   /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
@@ -599,6 +610,10 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
     modelInfoInit(xml);
   }
   assert(xml->equationInfo);
+  if (ix<0 || ix > xml->nEquations) {
+    errorStreamPrint(LOG_STDOUT, 0, "modelInfoGetEquation failed to get info for equation %zu, out of range.\n", ix);
+    return modelInfoGetDummyEquation(xml);
+  }
   return xml->equationInfo[ix];
 }
 
