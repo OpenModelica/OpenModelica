@@ -1,0 +1,38 @@
+// name: UnitCheck21
+// keywords: initialization
+// status: correct
+// cflags: -d=newInst --unitChecking -d=dumpUnits
+
+loadString("
+  model UnitCheck21
+    type Length = Real(unit = \"m\");
+    type Area = Real(unit = \"m2\");
+
+    Area A;
+    Length L;
+  equation
+    A = L^3;
+  end UnitCheck21;
+"); getErrorString();
+
+instantiateModel(UnitCheck21); getErrorString();
+
+// Result:
+// true
+// ""
+// (A, 1.0 * m^(2))
+// (L, 1.0 * m^(1))
+// ######## UnitCheck COMPLETED ########
+// "class UnitCheck21
+//   Real A(unit = \"m2\");
+//   Real L(unit = \"m\");
+// equation
+//   A = L ^ 3.0;
+// end UnitCheck21;
+// "
+// "[<interactive>:9:5-9:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: A = L ^ 3.0
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"L ^ 3.0\" has unit \"m3\"
+// - sub-expression \"A\" has unit \"m2\"
+// "
+// endResult

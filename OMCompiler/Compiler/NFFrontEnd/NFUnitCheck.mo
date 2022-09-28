@@ -563,7 +563,7 @@ algorithm
         (unit1 as Unit.UNIT(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
         i := realInt(exp2.value);
         true := realEq(exp2.value, i);
-        op_unit := Unit.unitPow(unit, i);
+        op_unit := Unit.unitPow(unit1, i);
         insertUnitString(op_unit, htS2U, htU2S);
       then
         (op_unit, icu1);
