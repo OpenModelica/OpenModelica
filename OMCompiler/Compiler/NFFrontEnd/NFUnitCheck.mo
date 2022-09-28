@@ -15,6 +15,7 @@ import FunctionTree = NFFlatten.FunctionTree;
 
 protected
 import ComponentRef = NFComponentRef;
+import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
@@ -63,7 +64,7 @@ algorithm
     fn_cache := UnorderedMap.new<Functionargs>(stringHashDjb2Mod, stringEq);
 
     for v in flatModel.variables loop
-      convertUnitString2unit(v, htCr2U1, htS2U, htU2S);
+      convertUnitStringToUnit(v, htCr2U1, htS2U, htU2S);
     end for;
 
     htCr2U2 := UnorderedMap.copy(htCr2U1);
@@ -983,7 +984,7 @@ algorithm
   UnorderedMap.tryAdd(unit, name, htU2S);
 end addUnit2HtU2S;
 
-function convertUnitString2unit
+function convertUnitStringToUnit
   "converts String to unit"
   input Variable var;
   input Unit.CrefToUnitTable htCr2U;
@@ -997,25 +998,45 @@ protected
 algorithm
   unit_binding := Variable.lookupTypeAttribute("unit", var);
   unit_exp := Binding.typedExp(unit_binding);
+  unit_string := if isSome(unit_exp) then getUnitStringFromExp(Util.getOption(unit_exp)) else "";
 
-  () := match unit_exp
-    case SOME(Expression.STRING(value = unit_string))
-      guard not stringEmpty(unit_string)
-      algorithm
-        unit := parse(unit_string, var.name, htS2U, htU2S, var.info);
-        UnorderedMap.add(var.name, unit, htCr2U);
-      then
-        ();
+  if stringEmpty(unit_string) then
+    UnorderedMap.add(var.name, Unit.MASTER({var.name}), htCr2U);
+    addUnit2HtS2U("-", Unit.MASTER({var.name}), htS2U);
+    addUnit2HtU2S("-", Unit.MASTER({var.name}), htU2S);
+  else
+    unit := parse(unit_string, var.name, htS2U, htU2S, var.info);
+    UnorderedMap.add(var.name, unit, htCr2U);
+  end if;
+end convertUnitStringToUnit;
 
-    else
+function getUnitStringFromExp
+  input Expression unitExp;
+  output String unitString;
+protected
+  Expression exp;
+algorithm
+  unitString := match unitExp
+    // A literal string expression, return the string.
+    case Expression.STRING() then unitExp.value;
+
+    // A literal array. This happens for array variables, assume each variable
+    // has the same unit for now.
+    case Expression.ARRAY(literal = true)
+      guard Expression.isLiteral(unitExp) and not Expression.isEmptyArray(unitExp)
+      then getUnitStringFromExp(Expression.arrayFirstScalar(unitExp));
+
+    // A non-literal expression, evaluate it and try again if it could be evaluated.
+    case _
+      guard not Expression.isLiteral(unitExp)
       algorithm
-        UnorderedMap.add(var.name, Unit.MASTER({var.name}), htCr2U);
-        addUnit2HtS2U("-", Unit.MASTER({var.name}), htS2U);
-        addUnit2HtU2S("-", Unit.MASTER({var.name}), htU2S);
+        exp := Ceval.tryEvalExp(unitExp);
       then
-        ();
+        if Expression.isLiteral(exp) then getUnitStringFromExp(exp) else "";
+
+    else "";
   end match;
-end convertUnitString2unit;
+end getUnitStringFromExp;
 
 protected function parse "author: lochel"
   input String unitString;

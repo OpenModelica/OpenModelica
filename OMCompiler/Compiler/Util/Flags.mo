@@ -833,8 +833,8 @@ constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(32,
   Gettext.notrans(""));
 
 constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(33,
-  "unitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.notrans(""));
+  "unitChecking", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.notrans("Enable unit checking."));
 
 constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(34,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),

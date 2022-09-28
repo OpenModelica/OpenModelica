@@ -342,7 +342,7 @@ void ViewerWidget::changeVisualizerTransparency()
                                                   currentTransparency, min, max, step, &ok);
     if (ok) { // Picked transparency is not OK if the user cancels the dialog
       mpSelectedVisualizer->setTransparency((float) (transparency - min) / (max - min));
-      mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
   }
@@ -365,7 +365,7 @@ void ViewerWidget::makeVisualizerInvisible()
       }
     }
     mpSelectedVisualizer->setTransparency(1.0);
-    mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
 }
@@ -390,7 +390,7 @@ void ViewerWidget::changeVisualizerColor()
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
       mpSelectedVisualizer->setColor(color);
-      mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
   }
@@ -413,7 +413,7 @@ void ViewerWidget::applyCheckerTexture()
       }
     }
     mpSelectedVisualizer->setTextureImagePath(":/Resources/bitmaps/check.png");
-    mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
 }
@@ -439,7 +439,7 @@ void ViewerWidget::applyCustomTexture()
                                                             (QString*) currentFileName, Helper::bitmapFileTypes, nullptr);
     if (!fileName.isEmpty()) { // Picked file name is empty if the user cancels the dialog
       mpSelectedVisualizer->setTextureImagePath(fileName.toStdString());
-      mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
   }
@@ -462,7 +462,7 @@ void ViewerWidget::removeTexture()
       }
     }
     mpSelectedVisualizer->setTextureImagePath("");
-    mpAnimationWidget->getVisualization()->modifyVisualizer(mpSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
 }
@@ -473,20 +473,10 @@ void ViewerWidget::removeTexture()
  */
 void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
 {
-  std::vector<ShapeObject>& shapes = mpAnimationWidget->getVisualization()->getBaseData()->_shapes;
-  std::vector<VectorObject>& vectors = mpAnimationWidget->getVisualization()->getBaseData()->_vectors;
-  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(shapes.size() + vectors.size());
-  for (ShapeObject& shape : shapes) {
-    visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : vectors) {
-    visualizers.push_back(vector);
-  }
-  for (AbstractVisualizerObject& visualizer : visualizers) {
+  for (AbstractVisualizerObject& visualizer : mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjects()) {
     visualizer.setTransparency(0.0);
     visualizer.setTextureImagePath("");
-    mpAnimationWidget->getVisualization()->modifyVisualizer(visualizer);
+    mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(visualizer);
   }
 }
 

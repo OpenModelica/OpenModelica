@@ -15558,8 +15558,13 @@ public function getCmakeLinkLibrariesCode
 protected
   list<String> locations;
   list<String> libraries;
+  function addQuotationMarks
+    input String istring;
+    output String ostring = "\""+istring+"\"";
+  end addQuotationMarks;
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
+  locations := List.map(locations, addQuotationMarks);
   for lib in libraries loop
     cmakecode := cmakecode + "find_library(" + lib + "\n" +
                  "             NAMES " + lib + "\n" +

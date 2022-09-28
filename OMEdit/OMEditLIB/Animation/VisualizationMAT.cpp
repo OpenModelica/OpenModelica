@@ -38,7 +38,6 @@ VisualizationMAT::VisualizationMAT(const std::string& modelFile, const std::stri
   : VisualizationAbstract(modelFile, path, VisType::MAT),
     _matReader()
 {
-
 }
 
 /*!
@@ -107,131 +106,6 @@ void VisualizationMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT
   mpTimeManager->setHVisual(newVal);
 }
 
-void VisualizationMAT::updateVisAttributes(const double time)
-{
-  // Update all visualizers
-  //std::cout<<"updateVisAttributes at "<<time <<std::endl;
-
-  try
-  {
-    for (ShapeObject& shape : mpOMVisualBase->_shapes)
-    {
-      // Get the values for the scene graph objects
-      //std::cout<<"shape "<<shape._id <<std::endl;
-
-      updateVisualizerAttributeMAT(shape._T[0], time);
-      updateVisualizerAttributeMAT(shape._T[1], time);
-      updateVisualizerAttributeMAT(shape._T[2], time);
-      updateVisualizerAttributeMAT(shape._T[3], time);
-      updateVisualizerAttributeMAT(shape._T[4], time);
-      updateVisualizerAttributeMAT(shape._T[5], time);
-      updateVisualizerAttributeMAT(shape._T[6], time);
-      updateVisualizerAttributeMAT(shape._T[7], time);
-      updateVisualizerAttributeMAT(shape._T[8], time);
-
-      updateVisualizerAttributeMAT(shape._r[0], time);
-      updateVisualizerAttributeMAT(shape._r[1], time);
-      updateVisualizerAttributeMAT(shape._r[2], time);
-
-      updateVisualizerAttributeMAT(shape._color[0], time);
-      updateVisualizerAttributeMAT(shape._color[1], time);
-      updateVisualizerAttributeMAT(shape._color[2], time);
-
-      updateVisualizerAttributeMAT(shape._specCoeff, time);
-
-      updateVisualizerAttributeMAT(shape._rShape[0], time);
-      updateVisualizerAttributeMAT(shape._rShape[1], time);
-      updateVisualizerAttributeMAT(shape._rShape[2], time);
-
-      updateVisualizerAttributeMAT(shape._lDir[0], time);
-      updateVisualizerAttributeMAT(shape._lDir[1], time);
-      updateVisualizerAttributeMAT(shape._lDir[2], time);
-
-      updateVisualizerAttributeMAT(shape._wDir[0], time);
-      updateVisualizerAttributeMAT(shape._wDir[1], time);
-      updateVisualizerAttributeMAT(shape._wDir[2], time);
-
-      updateVisualizerAttributeMAT(shape._length, time);
-      updateVisualizerAttributeMAT(shape._width, time);
-      updateVisualizerAttributeMAT(shape._height, time);
-
-      updateVisualizerAttributeMAT(shape._extra, time);
-
-      rAndT rT = rotateModelica2OSG(
-          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
-          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
-          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
-          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
-          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-          shape._type);
-      assemblePokeMatrix(shape._mat, rT._T, rT._r);
-
-      // Update the shapes
-      updateVisualizer(shape);
-      //shape.dumpVisualizerAttributes();
-      //mpOMVisScene->dumpOSGTreeDebug();
-    }
-
-    for (VectorObject& vector : mpOMVisualBase->_vectors)
-    {
-      // Get the values for the scene graph objects
-      //std::cout<<"vector "<<vector._id <<std::endl;
-
-      updateVisualizerAttributeMAT(vector._T[0], time);
-      updateVisualizerAttributeMAT(vector._T[1], time);
-      updateVisualizerAttributeMAT(vector._T[2], time);
-      updateVisualizerAttributeMAT(vector._T[3], time);
-      updateVisualizerAttributeMAT(vector._T[4], time);
-      updateVisualizerAttributeMAT(vector._T[5], time);
-      updateVisualizerAttributeMAT(vector._T[6], time);
-      updateVisualizerAttributeMAT(vector._T[7], time);
-      updateVisualizerAttributeMAT(vector._T[8], time);
-
-      updateVisualizerAttributeMAT(vector._r[0], time);
-      updateVisualizerAttributeMAT(vector._r[1], time);
-      updateVisualizerAttributeMAT(vector._r[2], time);
-
-      updateVisualizerAttributeMAT(vector._color[0], time);
-      updateVisualizerAttributeMAT(vector._color[1], time);
-      updateVisualizerAttributeMAT(vector._color[2], time);
-
-      updateVisualizerAttributeMAT(vector._specCoeff, time);
-
-      updateVisualizerAttributeMAT(vector._coords[0], time);
-      updateVisualizerAttributeMAT(vector._coords[1], time);
-      updateVisualizerAttributeMAT(vector._coords[2], time);
-
-      updateVisualizerAttributeMAT(vector._quantity, time);
-
-      updateVisualizerAttributeMAT(vector._headAtOrigin, time);
-
-      updateVisualizerAttributeMAT(vector._twoHeadedArrow, time);
-
-      rAndT rT = rotateModelica2OSG(
-          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
-                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
-                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
-          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
-          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
-      assemblePokeMatrix(vector._mat, rT._T, rT._r);
-
-      // Update the vectors
-      updateVisualizer(vector);
-      //vector.dumpVisualizerAttributes();
-      //mpOMVisScene->dumpOSGTreeDebug();
-    }
-  }
-  catch (std::exception& ex)
-  {
-    QString msg = QString(QObject::tr("Error in VisualizationMAT::updateVisAttributes at time point %1\n%2."))
-                  .arg(QString::number(time), ex.what());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
-    throw(msg.toStdString());
-  }
-}
-
 void VisualizationMAT::updateScene(const double time)
 {
   mpTimeManager->updateTick();  //for real-time measurement
@@ -242,14 +116,19 @@ void VisualizationMAT::updateScene(const double time)
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
-void VisualizationMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time)
+void VisualizationMAT::updateVisualizerAttribute(VisualizerAttribute& attr, const double time)
+{
+  updateVisualizerAttributeMAT(attr, time);
+}
+
+void VisualizationMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, const double time)
 {
   if (!attr.isConst) {
     attr.exp = omcGetVarValue(&_matReader, attr.cref.c_str(), time);
   }
 }
 
-double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
+double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, const double time)
 {
   double val = 0.0;
   ModelicaMatVariable_t* var = nullptr;

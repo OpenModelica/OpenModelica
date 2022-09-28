@@ -1,0 +1,49 @@
+// name: GetModelInstanceInnerOuter2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    inner Real x;
+
+    model M
+      outer Real x;
+    end M;
+  end P;
+");
+
+getModelInstance(P.M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P.M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"outer\": true
+//       }
+//     },
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"outer\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 5,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 10
+//   }
+// }"
+// endResult
