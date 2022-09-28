@@ -90,22 +90,38 @@ struct std::equal_to<const std::reference_wrapper<T>> {
 constexpr char VectorObject::kAutoScaleRenderBinName[];
 
 
-OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
-  : _shapes(),
-    _vectors(),
-    _modelFile(modelFile),
+OMVisualBase::OMVisualBase(VisualizationAbstract* visualization, const std::string& modelFile, const std::string& path)
+  : _modelFile(modelFile),
     _path(path),
-    _xmlFileName(assembleXMLFileName(modelFile, path))
+    _xmlFileName(assembleXMLFileName(modelFile, path)),
+    _updateVisitor(),
+    _visualization(visualization),
+    _shapes(),
+    _vectors()
 {
 }
 
+const std::string OMVisualBase::getModelFile() const
+{
+  return _modelFile;
+}
+
+const std::string OMVisualBase::getPath() const
+{
+  return _path;
+}
+
+const std::string OMVisualBase::getXMLFileName() const
+{
+  return _xmlFileName;
+}
+
 /*!
- * \brief OMVisualBase::getVisualizerObjectByIdx
- * get the AbstractVisualizerObject with the same visualizerIdx
- *\param the index of the visualizer
- *\return the selected visualizer
+ * \brief OMVisualBase::getVisualizerObjects
+ * get a container of AbstractVisualizerObject
+ * \return all the visualizers
  */
-AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size_t visualizerIdx)
+std::vector<std::reference_wrapper<AbstractVisualizerObject>> OMVisualBase::getVisualizerObjects()
 {
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
   visualizers.reserve(_shapes.size() + _vectors.size());
@@ -115,6 +131,18 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size
   for (VectorObject& vector : _vectors) {
     visualizers.push_back(vector);
   }
+  return visualizers;
+}
+
+/*!
+ * \brief OMVisualBase::getVisualizerObjectByIdx
+ * get the AbstractVisualizerObject with the same visualizerIdx
+ * \param the index of the visualizer
+ * \return the selected visualizer
+ */
+AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size_t visualizerIdx)
+{
+  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers = getVisualizerObjects();
   if (visualizerIdx < visualizers.size()) {
     return &visualizers.at(visualizerIdx).get();
   }
@@ -124,20 +152,12 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByIdx(const std::size
 /*!
  * \brief OMVisualBase::getVisualizerObjectByID
  * get the AbstractVisualizerObject with the same visualizerID
- *\param the name of the visualizer
- *\return the selected visualizer
+ * \param the name of the visualizer
+ * \return the selected visualizer
  */
 AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByID(const std::string& visualizerID)
 {
-  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size() + _vectors.size());
-  for (ShapeObject& shape : _shapes) {
-    visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : _vectors) {
-    visualizers.push_back(vector);
-  }
-  for (AbstractVisualizerObject& visualizer : visualizers) {
+  for (AbstractVisualizerObject& visualizer : getVisualizerObjects()) {
     if (visualizer._id == visualizerID) {
       return &visualizer;
     }
@@ -148,27 +168,69 @@ AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByID(const std::strin
 /*!
  * \brief OMVisualBase::getVisualizerObjectIndexByID
  * get the index of the AbstractVisualizerObject with the same visualizerID
- *\param the name of the visualizer
- *\return the selected visualizer index
+ * \param the name of the visualizer
+ * \return the selected visualizer index
  */
 int OMVisualBase::getVisualizerObjectIndexByID(const std::string& visualizerID)
 {
   int i = 0;
-  std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size() + _vectors.size());
-  for (ShapeObject& shape : _shapes) {
-    visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : _vectors) {
-    visualizers.push_back(vector);
-  }
-  for (AbstractVisualizerObject& visualizer : visualizers) {
+  for (AbstractVisualizerObject& visualizer : getVisualizerObjects()) {
     if (visualizer._id == visualizerID) {
       return i;
     }
     i++;
   }
   return -1;
+}
+
+void OMVisualBase::updateVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
+{
+  int visualizerIdx = getVisualizerObjectIndexByID(visualizerName);
+  AbstractVisualizerObject* visualizer = getVisualizerObjectByID(visualizerName);
+  osg::ref_ptr<osg::Node> child = _visualization->getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
+  _updateVisitor._visualizer = visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  child->accept(_updateVisitor);
+}
+
+void OMVisualBase::modifyVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
+{
+  int visualizerIdx = getVisualizerObjectIndexByID(visualizerName);
+  AbstractVisualizerObject* visualizer = getVisualizerObjectByID(visualizerName);
+  osg::ref_ptr<osg::Node> child = _visualization->getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
+  _updateVisitor._visualizer = visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  visualizer->setStateSetAction(StateSetAction::modify);
+  child->accept(_updateVisitor);
+  visualizer->setStateSetAction(StateSetAction::update);
+}
+
+void OMVisualBase::updateVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
+  _updateVisitor._visualizer = visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  visualizer->getTransformNode()->accept(_updateVisitor);
+}
+
+void OMVisualBase::modifyVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
+  _updateVisitor._visualizer = visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  visualizer->setStateSetAction(StateSetAction::modify);
+  visualizer->getTransformNode()->accept(_updateVisitor);
+  visualizer->setStateSetAction(StateSetAction::update);
+}
+
+void OMVisualBase::updateVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
+  _updateVisitor._visualizer = &visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  visualizer.getTransformNode()->accept(_updateVisitor);
+}
+
+void OMVisualBase::modifyVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
+  _updateVisitor._visualizer = &visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  visualizer.setStateSetAction(StateSetAction::modify);
+  visualizer.getTransformNode()->accept(_updateVisitor);
+  visualizer.setStateSetAction(StateSetAction::update);
 }
 
 void OMVisualBase::initVisObjects()
@@ -373,189 +435,236 @@ void OMVisualBase::initVisObjects()
   }
 }
 
-const std::string OMVisualBase::getModelFile() const
+void OMVisualBase::setFmuVarRefInVisObjects()
 {
-  return _modelFile;
-}
-
-const std::string OMVisualBase::getPath() const
-{
-  return _path;
-}
-
-const std::string OMVisualBase::getXMLFileName() const
-{
-  return _xmlFileName;
-}
-
-void OMVisualBase::appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const
-{
-  if (strcmp("cref", node->name()) == 0)
+  try
   {
-    visVariables.push_back(std::string(node->value()));
-  }
-}
+    for (ShapeObject& shape : _shapes)
+    {
+      //std::cout<<"shape "<<shape._id <<std::endl;
 
+      shape._T[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[0]);
+      shape._T[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[1]);
+      shape._T[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[2]);
+      shape._T[3].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[3]);
+      shape._T[4].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[4]);
+      shape._T[5].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[5]);
+      shape._T[6].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[6]);
+      shape._T[7].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[7]);
+      shape._T[8].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._T[8]);
 
-///--------------------------------------------------///
-///ABSTRACT VISUALIZATION CLASS----------------------///
-///--------------------------------------------------///
+      shape._r[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._r[0]);
+      shape._r[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._r[1]);
+      shape._r[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._r[2]);
 
-VisualizationAbstract::VisualizationAbstract()
-  : _visType(VisType::NONE),
-    mpOMVisualBase(nullptr),
-    mpOMVisScene(nullptr),
-    mpUpdateVisitor(nullptr)
-{
-  mpTimeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
-}
+      shape._color[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._color[0]);
+      shape._color[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._color[1]);
+      shape._color[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._color[2]);
 
-VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
-  : _visType(visType),
-    mpOMVisualBase(nullptr),
-    mpOMVisScene(new OMVisScene(this)),
-    mpUpdateVisitor(new UpdateVisitor()),
-    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
-{
-  mpOMVisualBase = new OMVisualBase(modelFile, path);
-  mpOMVisScene->getScene().setPath(path);
-}
+      shape._specCoeff.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._specCoeff);
 
-void VisualizationAbstract::initData()
-{
-  mpOMVisualBase->initVisObjects();
-}
+      shape._rShape[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._rShape[0]);
+      shape._rShape[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._rShape[1]);
+      shape._rShape[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._rShape[2]);
 
-void VisualizationAbstract::initVisualization()
-{
-  initializeVisAttributes(mpTimeManager->getStartTime());
-  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-  mpTimeManager->setRealTimeFactor(0.0);
-  mpTimeManager->setPause(true);
-}
+      shape._lDir[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._lDir[0]);
+      shape._lDir[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._lDir[1]);
+      shape._lDir[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._lDir[2]);
 
-TimeManager* VisualizationAbstract::getTimeManager() const
-{
-  return mpTimeManager;
-}
+      shape._wDir[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._wDir[0]);
+      shape._wDir[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._wDir[1]);
+      shape._wDir[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._wDir[2]);
 
-void VisualizationAbstract::updateVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
-{
-  int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
-  AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
-  osg::ref_ptr<osg::Node> child = getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
-  mpUpdateVisitor->_visualizer = visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  child->accept(*mpUpdateVisitor);
-}
+      shape._length.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._length);
+      shape._width.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._width);
+      shape._height.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._height);
 
-void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName, bool changeMaterialProperties)
-{
-  int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
-  AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
-  osg::ref_ptr<osg::Node> child = getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
-  mpUpdateVisitor->_visualizer = visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  visualizer->setStateSetAction(StateSetAction::modify);
-  child->accept(*mpUpdateVisitor);
-  visualizer->setStateSetAction(StateSetAction::update);
-}
+      shape._extra.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(shape._extra);
 
-void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
-  mpUpdateVisitor->_visualizer = visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  visualizer->getTransformNode()->accept(*mpUpdateVisitor);
-}
+      //shape.dumpVisualizerAttributes();
+    }
 
-void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) {
-  mpUpdateVisitor->_visualizer = visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  visualizer->setStateSetAction(StateSetAction::modify);
-  visualizer->getTransformNode()->accept(*mpUpdateVisitor);
-  visualizer->setStateSetAction(StateSetAction::update);
-}
+    for (VectorObject& vector : _vectors)
+    {
+      //std::cout<<"vector "<<vector._id <<std::endl;
 
-void VisualizationAbstract::updateVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
-  mpUpdateVisitor->_visualizer = &visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  visualizer.getTransformNode()->accept(*mpUpdateVisitor);
-}
+      vector._T[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[0]);
+      vector._T[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[1]);
+      vector._T[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[2]);
+      vector._T[3].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[3]);
+      vector._T[4].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[4]);
+      vector._T[5].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[5]);
+      vector._T[6].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[6]);
+      vector._T[7].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[7]);
+      vector._T[8].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._T[8]);
 
-void VisualizationAbstract::modifyVisualizer(AbstractVisualizerObject& visualizer, bool changeMaterialProperties) {
-  mpUpdateVisitor->_visualizer = &visualizer;
-  mpUpdateVisitor->_changeMaterialProperties = changeMaterialProperties;
-  visualizer.setStateSetAction(StateSetAction::modify);
-  visualizer.getTransformNode()->accept(*mpUpdateVisitor);
-  visualizer.setStateSetAction(StateSetAction::update);
-}
+      vector._r[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._r[0]);
+      vector._r[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._r[1]);
+      vector._r[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._r[2]);
 
-void VisualizationAbstract::sceneUpdate()
-{
-  //measure realtime
-  mpTimeManager->updateTick();
-  //update scene and set next time step
-  if (!mpTimeManager->isPaused()) {
-    updateScene(mpTimeManager->getVisTime());
-    //finish animation with pause when endtime is reached
-    if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
-      if (mpTimeManager->canRepeat()) {
-        initVisualization();
-        mpTimeManager->setPause(false);
-      } else {
-        mpTimeManager->setPause(true);
-      }
-    } else { // get the new visualization time
-      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
-      if (newTime <= mpTimeManager->getEndTime()) {
-        mpTimeManager->setVisTime(newTime);
-      } else {
-        mpTimeManager->setVisTime(mpTimeManager->getEndTime());
-      }
+      vector._color[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._color[0]);
+      vector._color[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._color[1]);
+      vector._color[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._color[2]);
+
+      vector._specCoeff.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._specCoeff);
+
+      vector._coords[0].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._coords[0]);
+      vector._coords[1].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._coords[1]);
+      vector._coords[2].fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._coords[2]);
+
+      vector._quantity.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._quantity);
+
+      vector._headAtOrigin.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._headAtOrigin);
+
+      vector._twoHeadedArrow.fmuValueRef = _visualization->getFmuVariableReferenceForVisualizerAttribute(vector._twoHeadedArrow);
+
+      //vector.dumpVisualizerAttributes();
     }
   }
-}
-
-void VisualizationAbstract::setUpScene()
-{
-  // Build scene graph.
-  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_shapes);
-  getOMVisScene()->getScene().setUpScene(mpOMVisualBase->_vectors);
-}
-
-VisType VisualizationAbstract::getVisType() const
-{
-  return _visType;
-}
-
-OMVisualBase* VisualizationAbstract::getBaseData() const
-{
-  return mpOMVisualBase;
-}
-
-OMVisScene* VisualizationAbstract::getOMVisScene() const
-{
-  return mpOMVisScene;
-}
-
-std::string VisualizationAbstract::getModelFile() const
-{
-  return mpOMVisualBase->getModelFile();
-}
-
-void VisualizationAbstract::startVisualization()
-{
-  if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6) {
-    mpTimeManager->setPause(false);
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          QObject::tr("There is nothing left to visualize. Initialize the model first."),
-                                                          Helper::scriptingKind, Helper::errorLevel));
+  catch (std::exception& ex)
+  {
+    QString msg = QString(QObject::tr("Something went wrong in OMVisualBase::setFmuVarRefInVisObjects:\n%1."))
+                  .arg(ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
   }
 }
 
-void VisualizationAbstract::pauseVisualization()
+void OMVisualBase::updateVisObjects(const double time)
 {
-  mpTimeManager->setPause(true);
+  // Update all visualizers
+  //std::cout<<"updateVisObjects at "<<time <<std::endl;
+
+  try
+  {
+    for (ShapeObject& shape : _shapes)
+    {
+      // Get the values for the scene graph objects
+      //std::cout<<"shape "<<shape._id <<std::endl;
+
+      _visualization->updateVisualizerAttribute(shape._T[0], time);
+      _visualization->updateVisualizerAttribute(shape._T[1], time);
+      _visualization->updateVisualizerAttribute(shape._T[2], time);
+      _visualization->updateVisualizerAttribute(shape._T[3], time);
+      _visualization->updateVisualizerAttribute(shape._T[4], time);
+      _visualization->updateVisualizerAttribute(shape._T[5], time);
+      _visualization->updateVisualizerAttribute(shape._T[6], time);
+      _visualization->updateVisualizerAttribute(shape._T[7], time);
+      _visualization->updateVisualizerAttribute(shape._T[8], time);
+
+      _visualization->updateVisualizerAttribute(shape._r[0], time);
+      _visualization->updateVisualizerAttribute(shape._r[1], time);
+      _visualization->updateVisualizerAttribute(shape._r[2], time);
+
+      _visualization->updateVisualizerAttribute(shape._color[0], time);
+      _visualization->updateVisualizerAttribute(shape._color[1], time);
+      _visualization->updateVisualizerAttribute(shape._color[2], time);
+
+      _visualization->updateVisualizerAttribute(shape._specCoeff, time);
+
+      _visualization->updateVisualizerAttribute(shape._rShape[0], time);
+      _visualization->updateVisualizerAttribute(shape._rShape[1], time);
+      _visualization->updateVisualizerAttribute(shape._rShape[2], time);
+
+      _visualization->updateVisualizerAttribute(shape._lDir[0], time);
+      _visualization->updateVisualizerAttribute(shape._lDir[1], time);
+      _visualization->updateVisualizerAttribute(shape._lDir[2], time);
+
+      _visualization->updateVisualizerAttribute(shape._wDir[0], time);
+      _visualization->updateVisualizerAttribute(shape._wDir[1], time);
+      _visualization->updateVisualizerAttribute(shape._wDir[2], time);
+
+      _visualization->updateVisualizerAttribute(shape._length, time);
+      _visualization->updateVisualizerAttribute(shape._width, time);
+      _visualization->updateVisualizerAttribute(shape._height, time);
+
+      _visualization->updateVisualizerAttribute(shape._extra, time);
+
+      rAndT rT = rotateModelica2OSG(
+          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
+          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
+          shape._type);
+      assemblePokeMatrix(shape._mat, rT._T, rT._r);
+
+      // Update the shapes
+      updateVisualizer(shape, true);
+      //shape.dumpVisualizerAttributes();
+    }
+
+    for (VectorObject& vector : _vectors)
+    {
+      // Get the values for the scene graph objects
+      //std::cout<<"vector "<<vector._id <<std::endl;
+
+      _visualization->updateVisualizerAttribute(vector._T[0], time);
+      _visualization->updateVisualizerAttribute(vector._T[1], time);
+      _visualization->updateVisualizerAttribute(vector._T[2], time);
+      _visualization->updateVisualizerAttribute(vector._T[3], time);
+      _visualization->updateVisualizerAttribute(vector._T[4], time);
+      _visualization->updateVisualizerAttribute(vector._T[5], time);
+      _visualization->updateVisualizerAttribute(vector._T[6], time);
+      _visualization->updateVisualizerAttribute(vector._T[7], time);
+      _visualization->updateVisualizerAttribute(vector._T[8], time);
+
+      _visualization->updateVisualizerAttribute(vector._r[0], time);
+      _visualization->updateVisualizerAttribute(vector._r[1], time);
+      _visualization->updateVisualizerAttribute(vector._r[2], time);
+
+      _visualization->updateVisualizerAttribute(vector._color[0], time);
+      _visualization->updateVisualizerAttribute(vector._color[1], time);
+      _visualization->updateVisualizerAttribute(vector._color[2], time);
+
+      _visualization->updateVisualizerAttribute(vector._specCoeff, time);
+
+      _visualization->updateVisualizerAttribute(vector._coords[0], time);
+      _visualization->updateVisualizerAttribute(vector._coords[1], time);
+      _visualization->updateVisualizerAttribute(vector._coords[2], time);
+
+      _visualization->updateVisualizerAttribute(vector._quantity, time);
+
+      _visualization->updateVisualizerAttribute(vector._headAtOrigin, time);
+
+      _visualization->updateVisualizerAttribute(vector._twoHeadedArrow, time);
+
+      rAndT rT = rotateModelica2OSG(
+          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
+                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
+                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
+          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
+          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
+      assemblePokeMatrix(vector._mat, rT._T, rT._r);
+
+      // Update the vectors
+      updateVisualizer(vector, true);
+      //vector.dumpVisualizerAttributes();
+    }
+  }
+  catch (std::exception& ex)
+  {
+    QString msg = QString(QObject::tr("Error in OMVisualBase::updateVisObjects at time point %1\n%2."))
+                  .arg(QString::number(time), ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
+  }
+}
+
+void OMVisualBase::setUpScene()
+{
+  // Build scene graph
+  _visualization->getOMVisScene()->getScene().setUpScene(_shapes);
+  _visualization->getOMVisScene()->getScene().setUpScene(_vectors);
+}
+
+void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
+{
+  _visualization->updateVisualizerAttribute(vector._coords[0], time);
+  _visualization->updateVisualizerAttribute(vector._coords[1], time);
+  _visualization->updateVisualizerAttribute(vector._coords[2], time);
 }
 
 /*!
@@ -594,6 +703,13 @@ void VisualizationAbstract::pauseVisualization()
  *          Hence, scaling vectors can be seen like scaling bounding spheres, and this explains why
  *          the radius is scaled before the length as it affects the bounding sphere of the vector.
  *          <hr>
+ *          Time-varying vector lengths can be handled to some extent and are accounted for by
+ *          sampling the simulation interval with a constant number of time samples (default: 100),
+ *          a value of zero meaning that the criterion on the vector lengths is disregarded.
+ *          Similarly, the check for the camera distance can be constantly enabled (default: true),
+ *          and the heuristic no longer attempts to increase the lengths if the check is disabled,
+ *          unless this is required by the first constraint when the latter is enabled.
+ *          <hr>
  *          During the binary search, floating-point numbers are treated as integer bit patterns,
  *          thus considering quantities as if they were given in units in the last place (ULP).
  *          This allows to stop the search when a constant precision is reached (default: 4096ulp)
@@ -609,18 +725,16 @@ void VisualizationAbstract::pauseVisualization()
  *          shifting the bounds towards a constant horizon (default: 16777216ulp)
  *          that is either subtracted from or added to the current value.
  *          Whenever it moves, the default horizon has the effect of halving or doubling the value.
- * \note    Implemented heuristics do not consider time-varying inputs (e.g., length of vectors),
- *          they rather try to fit vectors with their initial attributes nicely in the scene.
  * \note    For debugging purposes, MessagesWidget::addPendingMessage() shall be used
  *          instead of MessagesWidget::addGUIMessage() when \p mutex is locked.
  * \param[in] view OSG view of the scene composed of at least one camera.
  * \param[in] mutex OT mutex for synchronization of frame rendering.
  * \param[in] frame VW frame function to trigger frame rendering.
  */
-void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex, std::function<void()> frame)
+void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex, std::function<void()> frame)
 {
   /* Return early if there is nothing to do */
-  if (view == nullptr || getBaseData()->_vectors.size() == 0) {
+  if (view == nullptr || _vectors.size() == 0) {
     return;
   }
 
@@ -628,13 +742,15 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
   constexpr int8_t factorRadius   = -10; // Factor for vector radius greater than median of fixed radii in percent [%]
   constexpr int8_t marginLength   = +10; // Margin for vector length greater than length of its head(s) in percent [%]
   constexpr int8_t marginDistance = +10; // Margin for home distance greater than initial home distance in percent [%]
-  constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place [ulp]
+  constexpr uint32_t timeSamples = 100;  // Number of time samples to be examined for vector lengths {32b}
+  constexpr bool checkDistance = true;   // Whether camera distance to focal center shall be checked {0,1}
+  constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place {0,1}
   constexpr uint32_t hulp = 0x01000000;  // Move this horizon in units in the last place [ulp]
   constexpr uint32_t pulp = 0x00001000;  // Minimum precision in units in the last place [ulp]
 
   /* Cancel out transform scales before adjustments begin */
   OpenThreads::ScopedPointerLock<OpenThreads::Mutex> lock(mutex); // Wait for any previous frame to complete rendering, and lock until adjustments are finished
-  for (VectorObject& vector : getBaseData()->_vectors) {
+  for (VectorObject& vector : _vectors) {
     vector.setAutoScaleCancellationRequired(true);
   }
   if (!frame) frame = std::bind(&osgViewer::ViewerBase::frame, view->getViewerBase(), USE_REFERENCE_TIME);
@@ -643,10 +759,10 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
   /* Adjustable-radius vectors */
   {
     // Initialize containers of relevant shapes as well as fixed- and adjustable-radius vectors
-    std::vector<ShapeObject>& relevantShapes = getBaseData()->_shapes;
+    std::vector<ShapeObject>& relevantShapes = _shapes;
     std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
     std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
-    for (VectorObject& vector : getBaseData()->_vectors) {
+    for (VectorObject& vector : _vectors) {
       if (vector.isAdjustableRadius() && vector.getRadius() > 0) {
         adjustableRadiusVectors.push_back(vector);
       } else {
@@ -733,7 +849,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
       // Apply the radius scale to all adjustable-radius vectors
       for (VectorObject& vector : adjustableRadiusVectors) {
         vector.setScaleRadius(scale);
-        updateVisualizer(vector, false);
+        updateVisualizer(vector);
       }
 
       // Recompute the home position
@@ -745,7 +861,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
   {
     // Initialize a container of adjustable-length vectors
     std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
-    for (VectorObject& vector : getBaseData()->_vectors) {
+    for (VectorObject& vector : _vectors) {
       if (vector.isAdjustableLength() && vector.getLength() > 0) {
         adjustableLengthVectors.push_back(vector);
       }
@@ -753,6 +869,17 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
 
     // Proceed with scaling adjustable-length vectors
     if (adjustableLengthVectors.size() > 0) {
+      // Compute the time increment used to sample between the beginning and the end of the simulation
+      const double timeStart = _visualization->getTimeManager()->getStartTime();
+      const double timeStop  = _visualization->getTimeManager()->getEndTime();
+      const double timeIncrement = timeSamples > 1 ? (timeStop - timeStart) / (timeSamples - 1) : 0;
+
+      // Initialize a map of numbers of time samples, one for each adjustable-length vector
+      std::unordered_map<const std::reference_wrapper<VectorObject>, uint32_t> numberOfSamples;
+      for (VectorObject& vector : adjustableLengthVectors) {
+        numberOfSamples[vector] = timeSamples > 0 && (timeIncrement <= 0 || vector.areCoordinatesConstant()) ? 1 : timeSamples;
+      }
+
       // Initialize a map of actual transform scales, one for each adjustable-length vector
       std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
       for (VectorObject& vector : adjustableLengthVectors) {
@@ -762,7 +889,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
       // Update the bounds of the whole scene without any adjustable-length vectors
       for (VectorObject& vector : adjustableLengthVectors) {
         vector.setScaleTransf(0);
-        updateVisualizer(vector, false);
+        updateVisualizer(vector);
       }
 
       // Get the initial camera distance to the focal center
@@ -833,7 +960,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
           // Apply the new length scale to the vectors of the current quantity
           for (VectorObject& vector : vectors) {
             vector.setScaleLength(scale);
-            updateVisualizer(vector, false);
+            updateVisualizer(vector);
           }
 
           // Get the new camera distance to the focal center
@@ -842,13 +969,27 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
 
           // Determine if the new length scale has squeezed the vectors too much or unzoomed the scene too much
           squeezedTooMuch = false;
-          for (VectorObject& vector : vectors) {
-            if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
-              squeezedTooMuch = true;
-              break;
+          if (timeSamples > 0) {
+            for (VectorObject& vector : vectors) {
+              float x, y, z;
+              vector.getCoordinates(&x, &y, &z);
+              const uint32_t samples = numberOfSamples[vector];
+              for (uint32_t s = 0; s < samples; s++) {
+                if (samples > 1) {
+                  updateVectorCoords(vector, s + 1 == samples ? timeStop : timeStart + timeIncrement * s);
+                }
+                if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
+                  squeezedTooMuch = true;
+                  break;
+                }
+              }
+              vector.setCoordinates(x, y, z);
+              if (squeezedTooMuch) {
+                break;
+              }
             }
           }
-          unzoomedTooMuch = distance > initialDistance * (1.f + marginDistance / 100.f);
+          unzoomedTooMuch = checkDistance && distance > initialDistance * (1.f + marginDistance / 100.f);
 
           // Perform a floating-point binary search,
           // assuming non-negative as well as non-NaN values,
@@ -873,7 +1014,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
                 fulfilledWishes = false;
               }
             }
-          } else {
+          } else if (checkDistance || squeezedTooMuch) {
             // Move binary search to higher half (ceiled)
             isMinBelowLimit = squeezedTooMuch;
             movedMinAlready = true;
@@ -894,14 +1035,14 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
         // (until all length scales have been carefully adjusted)
         for (VectorObject& vector : vectors) {
           vector.setScaleTransf(0);
-          updateVisualizer(vector, false);
+          updateVisualizer(vector);
         }
       }
 
       // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scale
       for (VectorObject& vector : adjustableLengthVectors) {
         vector.setScaleTransf(transformScales[vector]);
-        updateVisualizer(vector, false);
+        updateVisualizer(vector);
       }
 
       // Recompute the home position
@@ -913,7 +1054,7 @@ void VisualizationAbstract::chooseVectorScales(osgViewer::View* view, OpenThread
   if (mutex) mutex->unlock();
   MessagesWidget::instance()->showPendingMessages(); // Give a preemption chance to update widgets that may lead to a frame rendering
   if (mutex) mutex->  lock();
-  for (VectorObject& vector : getBaseData()->_vectors) {
+  for (VectorObject& vector : _vectors) {
     vector.setAutoScaleCancellationRequired(true);
   }
 }
@@ -931,7 +1072,7 @@ void AutoTransformDrawCallback::drawImplementation(osgUtil::RenderBin* bin, osg:
 
 AutoTransformCullCallback::AutoTransformCullCallback(VisualizationAbstract* visualization)
   : _atDrawCallback(new AutoTransformDrawCallback()),
-    mpVisualization(visualization)
+    _visualization(visualization)
 {
 }
 
@@ -947,21 +1088,21 @@ void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv
           rb->setDrawCallback(rb->getBinNum() == VectorObject::kAutoScaleRenderBinNum ? _atDrawCallback.get() : nullptr);
         }
       }
-      if (mpVisualization) {
+      if (_visualization) {
         AbstractVisualizerObject* visualizer = nullptr;
         osg::ref_ptr<AutoTransformVisualizer> atv = dynamic_cast<AutoTransformVisualizer*>(at.get()); // Work-around for avoiding search in containers
         if (atv.valid()) {
           visualizer = atv->getVisualizerObject();
         } else {
-          std::size_t visualizerIdx = mpVisualization->getOMVisScene()->getScene().getRootNode()->getChildIndex(node);
-          visualizer = mpVisualization->getBaseData()->getVisualizerObjectByIdx(visualizerIdx);
+          std::size_t visualizerIdx = _visualization->getOMVisScene()->getScene().getRootNode()->getChildIndex(node);
+          visualizer = _visualization->getBaseData()->getVisualizerObjectByIdx(visualizerIdx);
         }
         if (visualizer && visualizer->isVector()) {
           VectorObject* vector = visualizer->asVector();
           if (vector->getAutoScaleCancellationRequired()) {
             vector->setAutoScaleCancellationRequired(false);
             vector->setScaleTransf(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
-            mpVisualization->updateVisualizer(vector, false);
+            _visualization->getBaseData()->updateVisualizer(vector);
           }
         }
       }
@@ -971,14 +1112,136 @@ void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv
 }
 
 AutoTransformVisualizer::AutoTransformVisualizer(AbstractVisualizerObject* visualizer)
-  : mpVisualizer(visualizer)
+  : _visualizer(visualizer)
 {
+}
+
+
+///--------------------------------------------------///
+///ABSTRACT VISUALIZATION CLASS----------------------///
+///--------------------------------------------------///
+
+VisualizationAbstract::VisualizationAbstract()
+  : _visType(VisType::NONE),
+    mpOMVisScene(nullptr),
+    mpOMVisualBase(nullptr),
+    mpTimeManager(new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0))
+{
+}
+
+VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
+  : _visType(visType),
+    mpOMVisScene(new OMVisScene(this)),
+    mpOMVisualBase(new OMVisualBase(this, modelFile, path)),
+    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
+{
+  mpOMVisScene->getScene().setPath(path);
+}
+
+VisType VisualizationAbstract::getVisType() const
+{
+  return _visType;
+}
+
+OMVisScene* VisualizationAbstract::getOMVisScene() const
+{
+  return mpOMVisScene;
+}
+
+OMVisualBase* VisualizationAbstract::getBaseData() const
+{
+  return mpOMVisualBase;
+}
+
+TimeManager* VisualizationAbstract::getTimeManager() const
+{
+  return mpTimeManager;
+}
+
+void VisualizationAbstract::initData()
+{
+  getBaseData()->initVisObjects();
+}
+
+void VisualizationAbstract::setFmuVarRefInVisAttributes()
+{
+  getBaseData()->setFmuVarRefInVisObjects();
+}
+
+void VisualizationAbstract::initializeVisAttributes(const double time)
+{
+  getBaseData()->updateVisObjects(time);
+}
+
+void VisualizationAbstract::updateVisAttributes(const double time)
+{
+  getBaseData()->updateVisObjects(time);
+}
+
+void VisualizationAbstract::setUpScene()
+{
+  getBaseData()->setUpScene();
+}
+
+void VisualizationAbstract::sceneUpdate()
+{
+  //measure realtime
+  mpTimeManager->updateTick();
+  //update scene and set next time step
+  if (!mpTimeManager->isPaused()) {
+    updateScene(mpTimeManager->getVisTime());
+    //finish animation with pause when endtime is reached
+    if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
+      if (mpTimeManager->canRepeat()) {
+        initVisualization();
+        mpTimeManager->setPause(false);
+      } else {
+        mpTimeManager->setPause(true);
+      }
+    } else { // get the new visualization time
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+      if (newTime <= mpTimeManager->getEndTime()) {
+        mpTimeManager->setVisTime(newTime);
+      } else {
+        mpTimeManager->setVisTime(mpTimeManager->getEndTime());
+      }
+    }
+  }
+}
+
+void VisualizationAbstract::initVisualization()
+{
+  initializeVisAttributes(mpTimeManager->getStartTime());
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setPause(true);
+}
+
+void VisualizationAbstract::startVisualization()
+{
+  if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6) {
+    mpTimeManager->setPause(false);
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QObject::tr("There is nothing left to visualize. Initialize the model first."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+void VisualizationAbstract::pauseVisualization()
+{
+  mpTimeManager->setPause(true);
 }
 
 
 OMVisScene::OMVisScene(VisualizationAbstract* visualization)
   : _scene(visualization)
 {
+}
+
+OSGScene& OMVisScene::getScene()
+{
+  return _scene;
 }
 
 void OMVisScene::dumpOSGTreeDebug()
@@ -988,17 +1251,27 @@ void OMVisScene::dumpOSGTreeDebug()
   _scene.getRootNode()->accept(infoVisitor);
 }
 
-OSGScene& OMVisScene::getScene()
-{
-  return _scene;
-}
-
 
 OSGScene::OSGScene(VisualizationAbstract* visualization)
   : _atCullCallback(new AutoTransformCullCallback(visualization)),
     _rootNode(new osg::Group()),
     _path("")
 {
+}
+
+osg::ref_ptr<osg::Group> OSGScene::getRootNode()
+{
+  return _rootNode;
+}
+
+std::string OSGScene::getPath() const
+{
+  return _path;
+}
+
+void OSGScene::setPath(const std::string path)
+{
+  _path = path;
 }
 
 void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
@@ -1099,21 +1372,6 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 
     vector.setTransformNode(transf);
   }
-}
-
-osg::ref_ptr<osg::Group> OSGScene::getRootNode()
-{
-  return _rootNode;
-}
-
-std::string OSGScene::getPath() const
-{
-  return _path;
-}
-
-void OSGScene::setPath(const std::string path)
-{
-  _path = path;
 }
 
 
