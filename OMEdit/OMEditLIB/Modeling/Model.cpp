@@ -35,6 +35,7 @@
 
 #include <QRectF>
 #include <QtMath>
+#include <QVariant>
 #include <QStringBuilder>
 
 namespace ModelInstance

@@ -361,8 +361,10 @@ void ShapeAnnotation::setDefaults()
   mArrowSize = 3;
   mSmooth = StringHandler::SmoothNone;
   mExtents.clear();
-  mExtents.append(QPointF(0, 0));
-  mExtents.append(QPointF(0, 0));
+  QList<QPointF> extents;
+  extents.append(QPointF(0, 0));
+  extents.append(QPointF(0, 0));
+  mExtents = extents;
   mBorderPattern = StringHandler::BorderNone;
   mRadius = 0;
   mStartAngle = 0;
