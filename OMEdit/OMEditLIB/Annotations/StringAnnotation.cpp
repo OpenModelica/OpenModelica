@@ -31,32 +31,44 @@ int StringAnnotation::length() const
 
 QString& StringAnnotation::prepend(const QString &str)
 {
-  return mValue.prepend(str);
+  mValue.prepend(str);
+  setExp();
+  return mValue;
 }
 
 QString& StringAnnotation::prepend(QChar ch)
 {
-  return mValue.prepend(ch);
+  mValue.prepend(ch);
+  setExp();
+  return mValue;
 }
 
 QString& StringAnnotation::replace(int position, int n, const QString &after)
 {
-  return mValue.replace(position, n, after);
+  mValue.replace(position, n, after);
+  setExp();
+  return mValue;
 }
 
 QString& StringAnnotation::replace(int position, int n, QChar after)
 {
-  return mValue.replace(position, n, after);
+  mValue.replace(position, n, after);
+  setExp();
+  return mValue;
 }
 
 QString& StringAnnotation::replace(const QRegExp &rx, const QString &after)
 {
-  return mValue.replace(rx, after);
+  mValue.replace(rx, after);
+  setExp();
+  return mValue;
 }
 
 QString& StringAnnotation::replace(const QRegularExpression &re, const QString &after)
 {
-  return mValue.replace(re, after);
+  mValue.replace(re, after);
+  setExp();
+  return mValue;
 }
 
 QString StringAnnotation::toLower() const

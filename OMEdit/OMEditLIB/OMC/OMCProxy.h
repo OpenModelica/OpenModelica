@@ -197,13 +197,10 @@ public:
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
-  bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
-                     int priority, QString annotation);
-  bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
-                        int priority);
-  bool updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset,
-                        bool oldSynchronize, int oldPriority, QString condition, bool immediate, bool reset, bool synchronize, int priority,
-                        QString annotation);
+  bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
+  bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority);
+  bool updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority,
+                        QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
   bool addInitialState(QString className, QString state, QString annotation);
   bool deleteInitialState(QString className, QString state);
   bool updateInitialState(QString className, QString state, QString annotation);

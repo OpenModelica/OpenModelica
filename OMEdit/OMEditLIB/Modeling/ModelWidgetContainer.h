@@ -190,6 +190,7 @@ public:
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawTransitions(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
+  void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -291,6 +292,7 @@ public:
   void removeTransitionsFromView();
   void deleteInheritedTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mInheritedTransitionsList.removeOne(pTransitionLineAnnotation);}
   QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
+  void addInitialStateToView(LineAnnotation *pInitialStateLineAnnotation, bool inherited);
   void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
   void removeInitialStateFromView(LineAnnotation *pInitialStateLineAnnotation);
   void deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation);
@@ -328,8 +330,10 @@ public:
   void removeConnectionsFromScene();
   void removeOutOfSceneConnections();
   void removeAllTransitions() {mTransitionsList.clear();}
+  void removeTransitionsFromScene();
   void removeOutOfSceneTransitions();
   void removeAllInitialStates() {mInitialStatesList.clear();}
+  void removeInitialStatesFromScene();
   void removeOutOfSceneInitialStates();
   void createLineShape(QPointF point);
   void createPolygonShape(QPointF point);

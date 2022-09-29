@@ -199,8 +199,9 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
   Q_UNUSED(widget);
   if (mVisible) {
     // state machine visualization
-    if (mpParentComponent && mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()
-        && mpParentComponent->getGraphicsView()->isVisualizationView()) {
+    if (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()
+        && ((mpParentComponent->getGraphicsView()->getModelWidget()->isNewApi() && mpParentComponent->getModel() && mpParentComponent->getModel()->isState())
+            || (mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()))) {
       if (mpParentComponent->isActiveState()) {
         painter->setOpacity(1.0);
       } else {

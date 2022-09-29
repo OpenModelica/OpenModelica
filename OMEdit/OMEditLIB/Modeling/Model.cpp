@@ -698,6 +698,10 @@ namespace ModelInstance
     foreach (auto pTransition, mTransitions) {
       delete pTransition;
     }
+
+    foreach (auto pInitialState, mInitialStates) {
+      delete pInitialState;
+    }
   }
 
   void Model::deserialize()
@@ -883,6 +887,18 @@ namespace ModelInstance
         }
       }
     }
+
+    if (mModelJson.contains("initialStates")) {
+      QJsonArray initialStates = mModelJson.value("initialStates").toArray();
+      foreach (QJsonValue initialState, initialStates) {
+        QJsonObject initialStateObject = initialState.toObject();
+        if (!initialStateObject.isEmpty()) {
+          InitialState *pInitialState = new InitialState;
+          pInitialState->deserialize(initialState.toObject());
+          mInitialStates.append(pInitialState);
+        }
+      }
+    }
   }
 
   bool Model::isConnector() const
@@ -947,6 +963,7 @@ namespace ModelInstance
     mReadonly = false;
     mConnections.clear();
     mTransitions.clear();
+    mInitialStates.clear();
   }
 
   Transformation::Transformation()
@@ -1379,6 +1396,11 @@ namespace ModelInstance
     }
   }
 
+  QString Connection::toString() const
+  {
+    return "connect(" % mpStartConnector->getName() % ", " % mpEndConnector->getName() % ")";
+  }
+
   Transition::Transition()
   {
     mpStartConnector = 0;
@@ -1404,7 +1426,7 @@ namespace ModelInstance
 
         if (arguments.at(1).isObject()) {
           mpEndConnector = new Connector;
-          mpEndConnector->deserialize(arguments.at(0).toObject());
+          mpEndConnector->deserialize(arguments.at(1).toObject());
         }
 
         mCondition = arguments.at(2).toBool();
@@ -1441,6 +1463,38 @@ namespace ModelInstance
                    << QVariant(mSynchronize).toString()
                    << QString::number(mPriority);
     return "transition(" % transitionArgs.join(", ") % ")";
+  }
+
+  InitialState::InitialState()
+  {
+    mpStartConnector = 0;
+    mpLine = 0;
+  }
+
+  void InitialState::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("arguments")) {
+      QJsonArray arguments = jsonObject.value("arguments").toArray();
+      if (!arguments.isEmpty()) {
+        if (arguments.at(0).isObject()) {
+          mpStartConnector = new Connector;
+          mpStartConnector->deserialize(arguments.at(0).toObject());
+        }
+      }
+    }
+
+    if (jsonObject.contains("annotation")) {
+      QJsonObject annotation = jsonObject.value("annotation").toObject();
+      if (annotation.contains("Line")) {
+        mpLine = new Line;
+        mpLine->deserialize(annotation.value("Line").toObject());
+      }
+    }
+  }
+
+  QString InitialState::toString() const
+  {
+    return "initialState(" % mpStartConnector->getName() % ")";
   }
 
   Extend::Extend()

@@ -1068,19 +1068,7 @@ AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLine
  */
 void AddInitialStateCommand::redoInternal()
 {
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
-  // Add the start component transition details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->addConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->getRootParentElement()->setIsInitialState(true);
-  } else if (pStartComponent) {
-    pStartComponent->addConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->setIsInitialState(true);
-  }
-  mpInitialStateLineAnnotation->getGraphicsView()->addItem(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->emitAdded();
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToView(mpInitialStateLineAnnotation, false);
   if (mAddInitialState) {
     mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
   }
@@ -1092,24 +1080,11 @@ void AddInitialStateCommand::redoInternal()
  */
 void AddInitialStateCommand::undo()
 {
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
-  // Remove the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->removeConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->getRootParentElement()->setIsInitialState(false);
-  } else if (pStartComponent) {
-    pStartComponent->removeConnectionDetails(mpInitialStateLineAnnotation);
-    pStartComponent->setIsInitialState(false);
-  }
-  mpInitialStateLineAnnotation->getGraphicsView()->removeItem(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->emitDeleted();
+  mpInitialStateLineAnnotation->getGraphicsView()->removeInitialStateFromView(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
 }
 
-UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation,
-                                                     UndoCommand *pParent)
+UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
@@ -1676,7 +1651,7 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
   mpLibraryTreeItem = pLibraryTreeItem;
   mOldModelText = mpLibraryTreeItem->getModelWidget()->getModelTextForOMCUndoCommand();
   mOldModelInfo = oldModelInfo;
-  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure(), false);
+  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
   mUndoDoneOnce = false;
   setText(commandText);

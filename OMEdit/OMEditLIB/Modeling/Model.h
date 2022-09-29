@@ -316,6 +316,7 @@ private:
   class Element;
   class Connection;
   class Transition;
+  class InitialState;
   class Model
   {
   public:
@@ -362,6 +363,7 @@ private:
     bool isReadonly() const {return mReadonly;}
     QList<Connection *> getConnections() const {return mConnections;}
     QList<Transition *> getTransitions() const {return mTransitions;}
+    QList<InitialState *> getInitialStates() const {return mInitialStates;}
 
     bool isParameterConnectorSizing(const QString &parameter);
   private:
@@ -400,6 +402,7 @@ private:
     bool mReadonly;
     QList<Connection*> mConnections;
     QList<Transition*> mTransitions;
+    QList<InitialState*> mInitialStates;
   };
 
   class Transformation
@@ -602,6 +605,7 @@ private:
     Connector *getEndConnector() const {return mpEndConnector;}
     Line *getLine() const {return mpLine;}
     Text *getText() const {return mpText;}
+    QString toString() const;
   private:
     Connector *mpStartConnector;
     Connector *mpEndConnector;
@@ -635,6 +639,20 @@ private:
     int mPriority;
     Line *mpLine;
     Text *mpText;
+  };
+
+  class InitialState
+  {
+  public:
+    InitialState();
+    void deserialize(const QJsonObject &jsonObject);
+
+    Connector *getStartConnector() const {return mpStartConnector;}
+    Line *getLine() const {return mpLine;}
+    QString toString() const;
+  private:
+    Connector *mpStartConnector;
+    Line *mpLine;
   };
 
   class Extend : public Model

@@ -1080,32 +1080,37 @@ bool Element::hasShapeAnnotation(Element *pElement)
  */
 bool Element::hasNonExistingClass()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
-    return true;
-  }
-  bool nonExistingClassFound = false;
-  foreach (Element *pInheritedElement, mInheritedElementsList) {
-    nonExistingClassFound = pInheritedElement->hasNonExistingClass();
-    if (nonExistingClassFound) {
-      return nonExistingClassFound;
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    //! @todo Fix this once we support non-existing components in the instance api.
+    return false;
+  } else {
+    if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
+      return true;
     }
+    bool nonExistingClassFound = false;
+    foreach (Element *pInheritedElement, mInheritedElementsList) {
+      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
+      if (nonExistingClassFound) {
+        return nonExistingClassFound;
+      }
+    }
+    /* Ticket #3706
+     * Don't check components because we should not display class as missing one of components class is missing.
+     */
+  //  foreach (Element *pChildElement, mElementsList) {
+  //    nonExistingClassFound = pChildElement->hasNonExistingClass();
+  //    if (nonExistingClassFound) {
+  //      return nonExistingClassFound;
+  //    }
+  //    foreach (Element *pInheritedElement, pChildElement->getInheritedElementsList()) {
+  //      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
+  //      if (nonExistingClassFound) {
+  //        return nonExistingClassFound;
+  //      }
+  //    }
+  //  }
+    return nonExistingClassFound;
   }
-  /* Ticket #3706
-   * Don't check components because we should not display class as missing one of components class is missing.
-   */
-//  foreach (Element *pChildElement, mElementsList) {
-//    nonExistingClassFound = pChildElement->hasNonExistingClass();
-//    if (nonExistingClassFound) {
-//      return nonExistingClassFound;
-//    }
-//    foreach (Element *pInheritedElement, pChildElement->getInheritedElementsList()) {
-//      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
-//      if (nonExistingClassFound) {
-//        return nonExistingClassFound;
-//      }
-//    }
-//  }
-  return nonExistingClassFound;
 }
 
 QRectF Element::boundingRect() const
@@ -2410,6 +2415,7 @@ void Element::drawModelicaElement()
     createClassInheritedElements();
     createClassShapes();
     createClassElements();
+    showNonExistingOrDefaultElementIfNeeded();
   } else {
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       if (mElementType == Element::Root) {
@@ -3814,7 +3820,7 @@ void Element::showElementPropertiesDialog()
 void Element::updateDynamicSelect(double time)
 {
   // state machine debugging
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
@@ -3831,7 +3837,7 @@ void Element::updateDynamicSelect(double time)
 
 void Element::resetDynamicSelect()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     // no need to do anything for state machines case.
   } else { // DynamicSelect
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
