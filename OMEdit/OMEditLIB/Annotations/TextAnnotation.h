@@ -55,6 +55,7 @@ public:
   TextAnnotation(Element *pParent);
   // Used for transition text
   TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation);
+  TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLineAnnotation);
   // Used for OMSimulator FMU
   TextAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;

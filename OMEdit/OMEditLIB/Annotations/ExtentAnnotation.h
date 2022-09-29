@@ -18,8 +18,7 @@ class ExtentAnnotation : public DynamicAnnotation
 
     const QPointF& at(int i) const { return mValue.at(i); }
     int size() const { return mValue.size(); }
-    void append(const QPointF &value) { mValue.append(value); }
-    void replace(int i, const QPointF &value) { mValue.replace(i, value); }
+    void replace(int i, const QPointF &value) { mValue.replace(i, value); setExp(); }
 
     auto begin()       { return mValue.begin(); }
     auto begin() const { return mValue.begin(); }

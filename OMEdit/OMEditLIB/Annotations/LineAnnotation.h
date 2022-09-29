@@ -75,8 +75,10 @@ public:
   // Used for reading a transition
   LineAnnotation(QString annotation, QString text, Element *pStartComponent, Element *pEndComponent, QString condition, QString immediate,
                  QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::Transition *pTransition, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView);
   // Used for reading an initial state
   LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::InitialState *pInitialState, Element *pComponent, bool inherited, GraphicsView *pGraphicsView);
   // Used for non-exisiting component
   LineAnnotation(Element *pParent);
   // Used for non-existing class

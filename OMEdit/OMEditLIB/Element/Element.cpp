@@ -627,7 +627,6 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
   mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
-  mpStateElementRectangle = 0;
   createNonExistingElement();
   createDefaultElement();
   createStateElement();
@@ -651,17 +650,10 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
   }
   setTransform(mTransformation.getTransformationMatrix());
-//  setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
-//  setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
-//  setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
-  // add choices if there are any
-  if (getChoicesAnnotation().size() > 2) {
-    QString array = getChoicesAnnotation()[2];
-    QStringList choices = StringHandler::unparseStrings(array);
-    setChoices(choices);
-  } else {
-    setChoices(QStringList());
-  }
+  setDialogAnnotation(QStringList());
+  setChoicesAnnotation(QStringList());
+  setChoicesAllMatchingAnnotation(QStringList());
+  setChoices(QStringList());
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -810,15 +802,12 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
   setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
   // add choices if there are any
-  if (getChoicesAnnotation().size() > 2)
-  {
-      QString array = getChoicesAnnotation()[2];
-      QStringList choices = StringHandler::unparseStrings(array);
-      setChoices(choices);
-  }
-  else
-  {
-      setChoices(QStringList());
+  if (getChoicesAnnotation().size() > 2) {
+    QString array = getChoicesAnnotation()[2];
+    QStringList choices = StringHandler::unparseStrings(array);
+    setChoices(choices);
+  } else {
+    setChoices(QStringList());
   }
   // create actions
   createActions();
@@ -1091,32 +1080,37 @@ bool Element::hasShapeAnnotation(Element *pElement)
  */
 bool Element::hasNonExistingClass()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
-    return true;
-  }
-  bool nonExistingClassFound = false;
-  foreach (Element *pInheritedElement, mInheritedElementsList) {
-    nonExistingClassFound = pInheritedElement->hasNonExistingClass();
-    if (nonExistingClassFound) {
-      return nonExistingClassFound;
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    //! @todo Fix this once we support non-existing components in the instance api.
+    return false;
+  } else {
+    if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
+      return true;
     }
+    bool nonExistingClassFound = false;
+    foreach (Element *pInheritedElement, mInheritedElementsList) {
+      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
+      if (nonExistingClassFound) {
+        return nonExistingClassFound;
+      }
+    }
+    /* Ticket #3706
+     * Don't check components because we should not display class as missing one of components class is missing.
+     */
+  //  foreach (Element *pChildElement, mElementsList) {
+  //    nonExistingClassFound = pChildElement->hasNonExistingClass();
+  //    if (nonExistingClassFound) {
+  //      return nonExistingClassFound;
+  //    }
+  //    foreach (Element *pInheritedElement, pChildElement->getInheritedElementsList()) {
+  //      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
+  //      if (nonExistingClassFound) {
+  //        return nonExistingClassFound;
+  //      }
+  //    }
+  //  }
+    return nonExistingClassFound;
   }
-  /* Ticket #3706
-   * Don't check components because we should not display class as missing one of components class is missing.
-   */
-//  foreach (Element *pChildElement, mElementsList) {
-//    nonExistingClassFound = pChildElement->hasNonExistingClass();
-//    if (nonExistingClassFound) {
-//      return nonExistingClassFound;
-//    }
-//    foreach (Element *pInheritedElement, pChildElement->getInheritedElementsList()) {
-//      nonExistingClassFound = pInheritedElement->hasNonExistingClass();
-//      if (nonExistingClassFound) {
-//        return nonExistingClassFound;
-//      }
-//    }
-//  }
-  return nonExistingClassFound;
 }
 
 QRectF Element::boundingRect() const
@@ -1153,8 +1147,7 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   if (mTransformation.isValid()) {
     setVisible(mTransformation.getVisible());
     if (mpStateElementRectangle) {
-      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica &&
-          !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState()) {
+      if (isVisible()) {
         if (mHasTransition && mIsInitialState) {
           mpStateElementRectangle->setLinePattern(StringHandler::LineSolid);
           mpStateElementRectangle->setLineThickness(0.5);
@@ -1789,6 +1782,11 @@ void Element::reDrawElementNew()
   mpModel = mpModelElement->getModel();
   mName = mpModelElement->getName();
   mClassName = mpModelElement->getType();
+  // delete if state element and then check if we need to create a state element
+  if (mpStateElementRectangle) {
+    delete mpStateElementRectangle;
+  }
+  createStateElement();
   drawElement();
   updateConnections();
 }
@@ -2292,7 +2290,7 @@ ModelInstance::Element* Element::getModelElementByName(ModelInstance::Model *pMo
 
 /*!
  * \brief Element::createNonExistingElement
- * Creates a non-existing component.
+ * Creates a non-existing element.
  */
 void Element::createNonExistingElement()
 {
@@ -2302,7 +2300,7 @@ void Element::createNonExistingElement()
 
 /*!
  * \brief Element::createDefaultElement
- * Creates a default component.
+ * Creates a default element.
  */
 void Element::createDefaultElement()
 {
@@ -2314,20 +2312,25 @@ void Element::createDefaultElement()
 
 /*!
  * \brief Element::createStateElement
- * Creates a state component.
+ * Creates a state element.
  */
 void Element::createStateElement()
 {
-  mpStateElementRectangle = new RectangleAnnotation(this);
-  mpStateElementRectangle->setVisible(false);
-  // create a state rectangle
-  mpStateElementRectangle->setLineColor(QColor(95, 95, 95));
-  mpStateElementRectangle->setLinePattern(StringHandler::LineDash);
-  mpStateElementRectangle->setRadius(40);
-  mpStateElementRectangle->setFillColor(QColor(255, 255, 255));
-  QList<QPointF> extents;
-  extents << QPointF(-100, -100) << QPointF(100, 100);
-  mpStateElementRectangle->setExtents(extents);
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState())
+      || (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState())) {
+    mpStateElementRectangle = new RectangleAnnotation(this);
+    mpStateElementRectangle->setVisible(false);
+    // create a state rectangle
+    mpStateElementRectangle->setLineColor(QColor(95, 95, 95));
+    mpStateElementRectangle->setLinePattern(StringHandler::LineDash);
+    mpStateElementRectangle->setRadius(40);
+    mpStateElementRectangle->setFillColor(QColor(255, 255, 255));
+    QList<QPointF> extents;
+    extents << QPointF(-100, -100) << QPointF(100, 100);
+    mpStateElementRectangle->setExtents(extents);
+  } else {
+    mpStateElementRectangle = 0;
+  }
 }
 
 /*!
@@ -2412,6 +2415,7 @@ void Element::drawModelicaElement()
     createClassInheritedElements();
     createClassShapes();
     createClassElements();
+    showNonExistingOrDefaultElementIfNeeded();
   } else {
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       if (mElementType == Element::Root) {
@@ -3816,7 +3820,7 @@ void Element::showElementPropertiesDialog()
 void Element::updateDynamicSelect(double time)
 {
   // state machine debugging
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
@@ -3833,7 +3837,7 @@ void Element::updateDynamicSelect(double time)
 
 void Element::resetDynamicSelect()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     // no need to do anything for state machines case.
   } else { // DynamicSelect
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {

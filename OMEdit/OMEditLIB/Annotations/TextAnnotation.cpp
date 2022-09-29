@@ -156,6 +156,31 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
   }
 }
 
+TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLineAnnotation)
+  : ShapeAnnotation(pLineAnnotation)
+{
+  mpElement = 0;
+  mpOriginItem = 0;
+  mpText = pText;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  parseShapeAnnotation();
+  updateTextString();
+  /* From Modelica Spec 33revision1,
+   * The extent of the Text is interpreted relative to either the first point of the Line, in the case of immediate=false,
+   * or the last point (immediate=true).
+   */
+  if (pLineAnnotation->getPoints().size() > 0) {
+    if (pLineAnnotation->getImmediate()) {
+      setPos(pLineAnnotation->getPoints().last());
+    } else {
+      setPos(pLineAnnotation->getPoints().first());
+    }
+  }
+}
+
 /*!
  * \brief TextAnnotation::TextAnnotation
  * Used by OMSimulator FMU ModelWidget\n
@@ -320,8 +345,9 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   if (mVisible) {
     // state machine visualization
     // text annotation on a element
-    if (mpElement && mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()
-        && mpElement->getGraphicsView()->isVisualizationView()) {
+    if (mpElement && mpElement->getGraphicsView()->isVisualizationView()
+        && ((mpElement->getGraphicsView()->getModelWidget()->isNewApi() && mpElement->getModel() && mpElement->getModel()->isState())
+            || (mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()))) {
       if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
       } else {
