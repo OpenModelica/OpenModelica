@@ -1,5 +1,5 @@
 // name: cmakeFMU.mos
-// status: correct
+// status: erroneous
 // keywords: fmu export cmake dynamic
 // teardown_command: rm -rf DualMassOscillator.System1.fmu DualMassOscillator.System1_FMU* DualMassOscillator_System1_systemCall.log
 
