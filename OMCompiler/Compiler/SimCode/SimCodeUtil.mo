@@ -15554,7 +15554,7 @@ end getDirectoriesForDLLsFromLinkLibs;
 public function getCmakeLinkLibrariesCode
   "Generate CMake code to find and link all input libraries."
   input list<String> libs;
-  output String cmakecode = "";
+  output String cmakecode;
 protected
   list<String> locations;
   list<String> libraries;
@@ -15565,15 +15565,12 @@ protected
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
   locations := List.map(locations, addQuotationMarks);
+  cmakecode := "target_link_directories(${FMU_NAME} PRIVATE\n" +
+               "                        " + stringDelimitList(locations, "\n                        ") + ")\n";
   for lib in libraries loop
-    cmakecode := cmakecode + "find_library(" + lib + "\n" +
-                 "             NAMES " + lib + "\n" +
-                 "             PATHS " + stringDelimitList(locations, "\n                   ") + ")\n" +
-                 "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
-                 "message(STATUS \"Copying ${" + lib + "} into binaries/\")" + "\n" +
-                 "file(COPY ${" + lib + "}" + "\n" +
-                 "           DESTINATION ${CMAKE_INSTALL_LIBDIR})" + "\n";
+    cmakecode := cmakecode +
+                 "message(STATUS \"Linking " + lib + "\")" + "\n" +
+                 "target_link_libraries(${FMU_NAME} PRIVATE " + lib + ")\n";
   end for;
 end getCmakeLinkLibrariesCode;
 

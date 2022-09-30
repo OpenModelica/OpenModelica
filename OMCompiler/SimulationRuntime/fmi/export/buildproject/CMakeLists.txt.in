@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.21)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
@@ -46,15 +46,18 @@ set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 # Set RPATH
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-SET(CMAKE_INSTALL_RPATH "\${ORIGIN}")
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@loader_path")
+else()
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
 
 add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
-target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
+target_link_options(${FMU_NAME} PRIVATE -Wl,--no-undefined)
+target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
 
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -64,6 +67,7 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
 install(TARGETS ${FMU_NAME}
+  RUNTIME_DEPENDENCIES POST_EXCLUDE_REGEXES "^\/lib.*" "^\/usr\/lib.*" "^\/usr\/local\/lib.*"
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})

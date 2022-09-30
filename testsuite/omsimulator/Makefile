@@ -1,6 +1,7 @@
 TEST = ../rtest -v
 
 TESTFILES = \
+cmakeFMU.mos \
 DualMassOscillator_cs.mos \
 DualMassOscillator_me.mos \
 DualMassOscillator.mos \
