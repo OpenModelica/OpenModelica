@@ -473,7 +473,9 @@ void Parameter::createValueWidget()
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
         mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
       }
-      Utilities::setToolTip(mpValueComboBox, mpModelInstanceElement->getModel()->getName(), enumerationLiteralsComments);
+      if (MainWindow::instance()->isNewApi()) {
+        Utilities::setToolTip(mpValueComboBox, mpModelInstanceElement->getModel()->getName(), enumerationLiteralsComments);
+      }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
 
