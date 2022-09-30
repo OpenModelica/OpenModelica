@@ -1107,6 +1107,10 @@ public constant ErrorTypes.Message DEPRECATED_FLAG = ErrorTypes.MESSAGE(614, Err
   Gettext.gettext("The flag '%s' is deprecated. Please use '%s' instead."));
 public constant ErrorTypes.Message UNKNOWN_ERROR_INST_FUNCTION = ErrorTypes.MESSAGE(615, ErrorTypes.TRANSLATION(), ErrorTypes.INTERNAL(),
   Gettext.gettext("Unknown error trying to instantiate function: %s."));
+public constant ErrorTypes.Message NOTIFY_INITIALIZING_USER_LIBRARIES = ErrorTypes.MESSAGE(616, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Cached libraries were found and will be installed into %s."));
+public constant ErrorTypes.Message NOTIFY_PKG_ALREADY_INSTALLED = ErrorTypes.MESSAGE(617, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("%s %s is already installed, skipping."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

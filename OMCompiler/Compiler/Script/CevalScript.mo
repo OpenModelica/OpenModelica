@@ -99,6 +99,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import PackageManagement;
 import Parser;
 import Print;
 import SCode;
@@ -369,6 +370,8 @@ public function loadModel
 protected
   Boolean b;
 algorithm
+  PackageManagement.installCachedPackages();
+
   for m in imodelsToLoad loop
     (pnew, b) := loadModel1(m, modelicaPath, forceLoad, notifyLoad,
       checkUses, requireExactVersion, encrypted, pathToFile, pnew);
