@@ -1500,7 +1500,14 @@ QStringList Element::getTypedArrayIndexes() const
 int Element::getArrayIndexAsNumber(bool *ok) const
 {
   if (isArray()) {
-    return mpElementInfo->getArrayIndexAsNumber(ok);
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      QStringList arrayIndexes = getTypedArrayIndexes();
+      if (!arrayIndexes.isEmpty()) {
+        return arrayIndexes.at(0).toInt(ok);
+      }
+    } else {
+      return mpElementInfo->getArrayIndexAsNumber(ok);
+    }
   } else {
     if (ok) *ok = false;
     return 0;

@@ -2328,24 +2328,24 @@ QString CreateConnectionDialog::getElementConnectionName(GraphicsView *pGraphics
         elementName += QString("[%1]").arg(elementIndexes.join(","));
       }
     } else if (pElement1->isConnectorSizing()) {  // If the element1 is a connectorSizing then use the element2 to find the connectorSizing value.
-//      int numberOfElementConnections = pGraphicsView->numberOfElementConnections(pElement1);
-//      if (pElement2->isExpandableConnector()) {
-//        elementName += QString("[%1]").arg(++numberOfElementConnections);
-//      } else if (pElement2->getParentElement() && pRootElement2->isArray() && !pRootElement2->isConnectorSizing()) {
-//        if (pRootElementSpinBox2->value() > 0 || pRootElement2->getArrayIndexAsNumber() == 0) {
-//          elementName += QString("[%1]").arg(++numberOfElementConnections);
-//        } else {
-//          int endConnectionIndex = numberOfElementConnections + pRootElement2->getArrayIndexAsNumber();
-//          elementName += QString("[%1:%2]").arg(++numberOfElementConnections).arg(endConnectionIndex);
-//        }
-//      } else if (pElement2->isArray() && !pElement2->isConnectorSizing()) {
-//        if (pElementSpinBox2->value() > 0 || pElement2->getArrayIndexAsNumber() == 0) {
-//          elementName += QString("[%1]").arg(++numberOfElementConnections);
-//        } else {
-//          int endConnectionIndex = numberOfElementConnections + pElement2->getArrayIndexAsNumber();
-//          elementName += QString("[%1:%2]").arg(++numberOfElementConnections).arg(endConnectionIndex);
-//        }
-//      }
+      int numberOfElementConnections = pGraphicsView->numberOfElementConnections(pElement1);
+      if (pElement2->isExpandableConnector()) {
+        elementName += QString("[%1]").arg(++numberOfElementConnections);
+      } else if (pElement2->getParentElement() && pRootElement2->isArray() && !pRootElement2->isConnectorSizing()) {
+        if ((!rootElementSpinBoxList2.isEmpty() && rootElementSpinBoxList2.at(0)->value() > 0) || pRootElement2->getArrayIndexAsNumber() == 0) {
+          elementName += QString("[%1]").arg(++numberOfElementConnections);
+        } else {
+          int endConnectionIndex = numberOfElementConnections + pRootElement2->getArrayIndexAsNumber();
+          elementName += QString("[%1:%2]").arg(++numberOfElementConnections).arg(endConnectionIndex);
+        }
+      } else if (pElement2->isArray() && !pElement2->isConnectorSizing()) {
+        if ((!elementSpinBoxList2.isEmpty() && elementSpinBoxList2.at(0)->value() > 0) || pElement2->getArrayIndexAsNumber() == 0) {
+          elementName += QString("[%1]").arg(++numberOfElementConnections);
+        } else {
+          int endConnectionIndex = numberOfElementConnections + pElement2->getArrayIndexAsNumber();
+          elementName += QString("[%1:%2]").arg(++numberOfElementConnections).arg(endConnectionIndex);
+        }
+      }
     }
   }
   return elementName;
