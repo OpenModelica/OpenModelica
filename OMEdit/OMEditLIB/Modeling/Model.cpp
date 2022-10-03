@@ -629,6 +629,7 @@ namespace ModelInstance
   {
     if (jsonObject.contains("coordinateSystem")) {
       mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
+      mMergedCoOrdinateSystem = mCoordinateSystem;
     }
 
     if (jsonObject.contains("graphics")) {
@@ -778,12 +779,27 @@ namespace ModelInstance
     if (mModelJson.contains("annotation")) {
       QJsonObject annotation = mModelJson.value("annotation").toObject();
 
+      /* From Modelica Specification Version 3.5-dev
+       * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+       * 1. The coordinate system annotation given in the class (if specified).
+       * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+       *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+       * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+       *
+       * Following is the first case.
+       */
       if (annotation.contains("Icon")) {
         mpIconAnnotation->deserialize(annotation.value("Icon").toObject());
+      }
+      if (!mpIconAnnotation->getCoordinateSystem().isComplete()) {
+        readCoordinateSystemFromExtendsClass(true);
       }
 
       if (annotation.contains("Diagram")) {
         mpDiagramAnnotation->deserialize(annotation.value("Diagram").toObject());
+      }
+      if (!mpDiagramAnnotation->getCoordinateSystem().isComplete()) {
+        readCoordinateSystemFromExtendsClass(false);
       }
 
       if (annotation.contains("DocumentationClass")) {
@@ -918,6 +934,44 @@ namespace ModelInstance
   bool Model::isEnumeration() const
   {
     return (mRestriction.compare(QStringLiteral("enumeration")) == 0);
+  }
+
+  void Model::readCoordinateSystemFromExtendsClass(bool isIcon)
+  {
+    /* From Modelica Specification Version 3.5-dev
+     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+     * 1. The coordinate system annotation given in the class (if specified).
+     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+     *
+     * Following is the second case.
+     */
+    foreach (auto pExtend, mExtends) {
+      ModelInstance::CoordinateSystem coordinateSystem;
+      IconDiagramAnnotation *pIconDiagramAnnotation = 0;
+      if (isIcon) {
+        coordinateSystem = pExtend->getIconAnnotation()->getCoordinateSystem();
+        pIconDiagramAnnotation = mpIconAnnotation;
+      } else {
+        coordinateSystem = pExtend->getDiagramAnnotation()->getCoordinateSystem();
+        pIconDiagramAnnotation = mpDiagramAnnotation;
+      }
+
+      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasExtent() && coordinateSystem.hasExtent()) {
+        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setExtent(coordinateSystem.getExtent());
+      }
+      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
+        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+      }
+      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasInitialScale() && coordinateSystem.hasInitialScale()) {
+        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
+      }
+      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasGrid() && coordinateSystem.hasGrid()) {
+        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setGrid(coordinateSystem.getGrid());
+      }
+      break; // we only check coordinate system of first inherited class. See the comment in start of function i.e., "The coordinate systems of the first base-class ..."
+    }
   }
 
   bool Model::isParameterConnectorSizing(const QString &parameter)
