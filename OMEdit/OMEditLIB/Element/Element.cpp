@@ -1252,12 +1252,12 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel->isConnector()) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coordinateSystem = mpModel->getIconAnnotation()->getCoordinateSystem();
+      coordinateSystem = mpModel->getIconAnnotation()->getMergedCoordinateSystem();
     } else {
-      coordinateSystem = mpModel->getDiagramAnnotation()->getCoordinateSystem();
+      coordinateSystem = mpModel->getDiagramAnnotation()->getMergedCoordinateSystem();
     }
   } else {
-    coordinateSystem = mpModel->getIconAnnotation()->getCoordinateSystem();
+    coordinateSystem = mpModel->getIconAnnotation()->getMergedCoordinateSystem();
   }
   return coordinateSystem;
 }
@@ -3786,7 +3786,7 @@ void Element::fetchInterfaceData()
  */
 void Element::openClass()
 {
-  MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
+  MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(getClassName());
 }
 
 /*!

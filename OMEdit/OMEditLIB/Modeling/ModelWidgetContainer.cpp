@@ -247,39 +247,64 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
  */
 void GraphicsView::drawCoordinateSystem()
 {
-  /* From Modelica Specification Version 3.5-dev
-   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-   * 1. The coordinate system annotation given in the class (if specified).
-   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-   *
-   * Following is the first case.
-   */
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     coordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->getCoordinateSystem();
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     coordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->getCoordinateSystem();
   }
-  ModelInstance::Extent extent = coordinateSystem.getExtent();
-  ModelInstance::Point leftBottom = extent.getExtent1();
-  mCoOrdinateSystem.setLeft(leftBottom.x());
-  mCoOrdinateSystem.setBottom(leftBottom.y());
-  ModelInstance::Point rightTop = extent.getExtent2();
-  mCoOrdinateSystem.setRight(rightTop.x());
-  mCoOrdinateSystem.setTop(rightTop.y());
-  mCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
-  mCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
-  ModelInstance::Point grid = coordinateSystem.getGrid();
-  mCoOrdinateSystem.setHorizontal(grid.x());
-  mCoOrdinateSystem.setVertical(grid.y());
-  // start with the local CoOrdinateSystem
+
+  if (coordinateSystem.hasExtent()) {
+    ModelInstance::Extent extent = coordinateSystem.getExtent();
+    ModelInstance::Point leftBottom = extent.getExtent1();
+    mCoOrdinateSystem.setLeft(leftBottom.x());
+    mCoOrdinateSystem.setBottom(leftBottom.y());
+    ModelInstance::Point rightTop = extent.getExtent2();
+    mCoOrdinateSystem.setRight(rightTop.x());
+    mCoOrdinateSystem.setTop(rightTop.y());
+  }
+  if (coordinateSystem.hasPreserveAspectRatio()) {
+    mCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+  }
+  if (coordinateSystem.hasInitialScale()) {
+    mCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
+  }
+  if (coordinateSystem.hasGrid()) {
+    ModelInstance::Point grid = coordinateSystem.getGrid();
+    mCoOrdinateSystem.setHorizontal(grid.x());
+    mCoOrdinateSystem.setVertical(grid.y());
+  }
   mMergedCoOrdinateSystem = mCoOrdinateSystem;
   // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
-//  if (!mCoOrdinateSystem.isComplete()) {
-//    readCoOrdinateSystemFromInheritedClass(this, pGraphicsView);
-//  }
+  if (!mCoOrdinateSystem.isComplete()) {
+    ModelInstance::CoordinateSystem mergedCoordinateSystem;
+    if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->getMergedCoordinateSystem();
+    } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->getMergedCoordinateSystem();
+    }
+
+    if (mergedCoordinateSystem.hasExtent()) {
+      ModelInstance::Extent extent = mergedCoordinateSystem.getExtent();
+      ModelInstance::Point leftBottom = extent.getExtent1();
+      mMergedCoOrdinateSystem.setLeft(leftBottom.x());
+      mMergedCoOrdinateSystem.setBottom(leftBottom.y());
+      ModelInstance::Point rightTop = extent.getExtent2();
+      mMergedCoOrdinateSystem.setRight(rightTop.x());
+      mMergedCoOrdinateSystem.setTop(rightTop.y());
+    }
+    if (mergedCoordinateSystem.hasPreserveAspectRatio()) {
+      mMergedCoOrdinateSystem.setPreserveAspectRatio(mergedCoordinateSystem.getPreserveAspectRatio());
+    }
+    if (mergedCoordinateSystem.hasInitialScale()) {
+      mMergedCoOrdinateSystem.setInitialScale(mergedCoordinateSystem.getInitialScale());
+    }
+    if (mergedCoordinateSystem.hasGrid()) {
+      ModelInstance::Point grid = mergedCoordinateSystem.getGrid();
+      mMergedCoOrdinateSystem.setHorizontal(grid.x());
+      mMergedCoOrdinateSystem.setVertical(grid.y());
+    }
+  }
 
   setExtentRectangle(mMergedCoOrdinateSystem.getExtentRectangle());
   resize(size());
@@ -910,9 +935,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           ModelInstance::Element *pElement = new ModelInstance::Element(pModelInstance);
           pElement->setName(name);
           pElement->setType(pLibraryTreeItem->getNameStructure());
-          ModelInstance::Model *pModel = new ModelInstance::Model;
-          pModel->setRestriction(StringHandler::getModelicaClassType(type).toLower());
-          pElement->setModel(pModel);
+          pElement->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(pLibraryTreeItem->getNameStructure(), true)));
           pModelInstance->addElement(pElement);
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
           addElementToView(pElement, false, true, true, position);

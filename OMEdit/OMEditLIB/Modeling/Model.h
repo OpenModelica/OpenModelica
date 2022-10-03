@@ -304,10 +304,12 @@ private:
     ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
     CoordinateSystem getCoordinateSystem() {return mCoordinateSystem;}
+    CoordinateSystem getMergedCoordinateSystem() {return mMergedCoOrdinateSystem;}
     QList<Shape*> getGraphics() const {return mGraphics;}
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
+    CoordinateSystem mMergedCoOrdinateSystem;
     QList<Shape*> mGraphics;
 
   };
@@ -328,7 +330,6 @@ private:
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
     QStringList getDims() const {return mDims;}
-    void setRestriction(const QString &restriction) {mRestriction = restriction;}
     QString getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
@@ -345,6 +346,7 @@ private:
     QString getComment() const {return mComment;}
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation;}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation;}
+    void readCoordinateSystemFromExtendsClass(bool isIcon);
     bool isDocumentationClass() const {return mDocumentationClass;}
     QString getVersion() const {return mVersion;}
     QString getVersionDate() const {return mVersionDate;}
