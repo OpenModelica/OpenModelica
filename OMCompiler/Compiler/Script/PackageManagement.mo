@@ -299,6 +299,7 @@ algorithm
     end if;
     return;
   end if;
+
   if not System.regularFileExists(packageIndex) then
     if not updateIndex() then
       return;
@@ -436,29 +437,36 @@ function installPackage
   input String pkg;
   input String version;
   input Boolean exactMatch;
+  input String cachePath = getCachePath();
+  input Boolean skipDownload = false;
   output Boolean success;
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
+  String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
     if p.pkg == pkg and not p.needsInstall then
-      Error.addSourceMessage(Error.NOTIFY_PKG_NO_INSTALL, {pkg, version, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      if version == SemanticVersion.toString(p.version) then
+        Error.addSourceMessage(Error.NOTIFY_PKG_ALREADY_INSTALLED, {pkg, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      else
+        Error.addSourceMessage(Error.NOTIFY_PKG_NO_INSTALL, {pkg, version, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      end if;
     end if;
   end for;
   packagesToInstall := list(p for p guard p.needsInstall in packageList);
-  cachePath := getCachePath();
 
   for pack in packagesToInstall loop
     Util.createDirectoryTree(cachePath);
   end for;
 
-  urlPathList := List.sort(list((p.urlToZipFile, cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
-  urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
-  if not Curl.multiDownload(urlPathListToDownload) then
-    fail();
+  if not skipDownload then
+    urlPathList := List.sort(list((p.urlToZipFile, cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
+    if not Curl.multiDownload(urlPathListToDownload) then
+      fail();
+    end if;
   end if;
 
   for pack in packagesToInstall loop
@@ -509,6 +517,66 @@ algorithm
     System.writeFile(destPathPkgInfo, JSON.toString(pack.json)+"\n");
   end for;
 end installPackage;
+
+function installCachedPackages
+  "Installs cached libraries from the installation directory if the user's
+   library directory is empty or doesn't exist, to allow bundling libraries with
+   the installation."
+protected
+  String packageIndex;
+  JSON obj, libs_obj, lib_obj, versions_obj;
+  list<String> libs;
+algorithm
+  if not listEmpty(System.subDirectories(getUserLibraryPath())) then
+    // Return if the user's library directory isn't empty.
+    return;
+  end if;
+
+  // Try to fetch the package index from the installation directory.
+  packageIndex := getInstallationIndexPath();
+
+  if not System.regularFileExists(packageIndex) then
+    return;
+  end if;
+
+  obj := JSON.makeNull();
+
+  try
+    obj := JSON.parseFile(packageIndex);
+  else
+    Error.addSourceMessage(Error.ERROR_PKG_INDEX_NOT_PARSED, {packageIndex}, makeSourceInfo(packageIndex));
+  end try;
+
+  // Fetch the names of all the libraries in the package index.
+  try
+    libs_obj := JSON.get(obj, "libs");
+    libs := JSON.getKeys(libs_obj);
+  else
+    return;
+  end try;
+
+  if not listEmpty(libs) then
+    Error.addSourceMessage(Error.NOTIFY_INITIALIZING_USER_LIBRARIES, {getUserLibraryPath()}, makeSourceInfo(packageIndex));
+  end if;
+
+  // Install each version of each library in the package index.
+  for lib in libs loop
+    lib_obj := JSON.get(libs_obj, lib);
+    versions_obj := JSON.getOrDefault(lib_obj, "versions", JSON.emptyObject());
+
+    for version in JSON.getKeys(versions_obj) loop
+      installPackage(lib, version, true, getInstallationCachePath(), skipDownload = true);
+    end for;
+  end for;
+
+  // The package index in the user library directory is usually downloaded when
+  // getPackageIndex is called, but if it couldn't be downloaded for some reason
+  // then copy the index from the installation directory so we at least have the
+  // information for the libraries we just installed.
+  if not System.regularFileExists(getIndexPath()) then
+    System.copyFile(packageIndex, getIndexPath());
+  end if;
+end installCachedPackages;
 
 protected
 
@@ -673,6 +741,7 @@ algorithm
   path := Settings.getHomeDir(Testsuite.isRunning()) + "/.openmodelica/libraries/index.json";
 end getIndexPath;
 
+public
 function getCachePath
   output String path;
 algorithm
@@ -680,6 +749,18 @@ algorithm
 end getCachePath;
 
 protected
+
+function getInstallationIndexPath
+  output String path;
+algorithm
+  path := Settings.getInstallationDirectoryPath() + "/lib/omlibrary/libraries/index.json";
+end getInstallationIndexPath;
+
+function getInstallationCachePath
+  output String path;
+algorithm
+  path := Settings.getInstallationDirectoryPath() + "/lib/omlibrary/cache/";
+end getInstallationCachePath;
 
 function makeSourceInfo
   input String fileName;

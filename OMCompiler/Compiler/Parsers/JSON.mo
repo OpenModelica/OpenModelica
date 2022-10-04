@@ -367,11 +367,11 @@ function getOrDefault
   input String str;
   input JSON default;
   output JSON out;
-protected
-  UnorderedMap<String, JSON> values;
 algorithm
-  OBJECT(values = values) := obj;
-  out := UnorderedMap.getOrDefault(str, values, default);
+  out := match obj
+    case OBJECT() then UnorderedMap.getOrDefault(str, obj.values, default);
+    else default;
+  end match;
 end getOrDefault;
 
 function at
