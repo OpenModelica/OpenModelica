@@ -355,7 +355,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     messageClose(LOG_SIMULATION);
   }
 
-  // Compare user flag to availabe Jacobian methods
+  // Compare user flag to available Jacobian methods
   const char* flagValue;
   if(omc_flag[FLAG_JACOBIAN]){
     flagValue = omc_flagValue[FLAG_JACOBIAN];
@@ -440,7 +440,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
 /*
  * \brief Deallocates `DASSL_DATA`
  */
-int dassl_deinitial(DASSL_DATA *dasslData)
+int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
 {
   TRACE_PUSH
   unsigned int i;
@@ -460,6 +460,9 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   free(dasslData->stateDer);
   free(dasslData->states);
 
+  /* Free Jacobians */
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  freeAnalyticJacobian(jacobian);
 
 #ifdef USE_PARJAC
   if (dasslData->allocatedParMem) {
