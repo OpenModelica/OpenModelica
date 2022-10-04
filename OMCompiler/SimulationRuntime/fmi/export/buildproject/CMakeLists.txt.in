@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 2.8)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
@@ -66,11 +66,19 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
-install(TARGETS ${FMU_NAME}
-  RUNTIME_DEPENDENCIES POST_EXCLUDE_REGEXES "^\/lib.*" "^\/usr\/lib.*" "^\/usr\/local\/lib.*"
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if(${CMAKE_VERSION} VERSION_LESS "3.21")
+  message(WARNING "This FMU needs CMake 3.21 or newer to include runtime dependencies. Continouing without runtime dependencies.")
+  install(TARGETS ${FMU_NAME}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+else()
+  install(TARGETS ${FMU_NAME}
+    RUNTIME_DEPENDENCIES POST_EXCLUDE_REGEXES "^\\/lib.*" "^\\/usr\\/lib.*" "^\\/usr\\/local\\/lib.*"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 add_custom_target(create_zip COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../${CMAKE_PROJECT_NAME}.fmu" --format=zip
