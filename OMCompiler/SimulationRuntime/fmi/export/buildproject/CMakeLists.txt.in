@@ -1,9 +1,18 @@
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.7)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
 project(${FMU_NAME})
+
+# Test if RUNTIME_DEPENDENCIES is needed and available
+set(RUNTIME_DEPENDENCIES_LEVEL @RUNTIME_DEPENDENCIES_LEVEL@)
+if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
+  message(FATAL_ERROR
+          "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requiers CMake version 3.21 or higher.\n"
+          "You are running version ${CMAKE_VERSION}.\n"
+          "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
+endif()
 
 if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
   message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
@@ -56,7 +65,9 @@ add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
-target_link_options(${FMU_NAME} PRIVATE -Wl,--no-undefined)
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+  target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
+endif()
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
 
@@ -66,15 +77,20 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
-if(${CMAKE_VERSION} VERSION_LESS "3.21")
-  message(WARNING "This FMU needs CMake 3.21 or newer to include runtime dependencies. Continouing without runtime dependencies.")
+if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
   install(TARGETS ${FMU_NAME}
+    RUNTIME_DEPENDENCIES
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+elseif(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "modelica")
+  install(TARGETS ${FMU_NAME}
+    RUNTIME_DEPENDENCIES POST_EXCLUDE_REGEXES "^\\/lib.*" "^\\/usr\\/lib.*" "^\\/usr\\/local\\/lib.*"
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 else()
   install(TARGETS ${FMU_NAME}
-    RUNTIME_DEPENDENCIES POST_EXCLUDE_REGEXES "^\\/lib.*" "^\\/usr\\/lib.*" "^\\/usr\\/local\\/lib.*"
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
