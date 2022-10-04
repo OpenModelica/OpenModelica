@@ -218,7 +218,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
     printf("\n========================================================\n");
   }
 
-  dassl_deinitial(solverInfo->solverData);
+  dassl_deinitial(data, solverInfo->solverData);
   solverInfo->solverData = (void*)optData;
   sInfo->solverMethod = "optimization";
   data->simulationInfo->tolerance = tol;

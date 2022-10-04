@@ -87,14 +87,14 @@ typedef struct DASSL_DATA{
 } DASSL_DATA;
 
 /* main dassl function to make a step */
-int dassl_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 /* initial main dassl Data */
-int dassl_initial(DATA* simData, threadData_t *threadData,
+int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
-int dassl_deinitial(DASSL_DATA *dasslData);
+int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);
 
 int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time);
 int printVector(int logLevel, const char* name,  double* vec, int n, double time);

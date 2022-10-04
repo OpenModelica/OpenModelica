@@ -421,7 +421,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
     /* De-Initial DASSL solver */
-    dassl_deinitial(solverInfo->solverData);
+    dassl_deinitial(data, solverInfo->solverData);
     break;
 #endif
 #ifdef OMC_HAVE_IPOPT
