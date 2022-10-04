@@ -910,22 +910,17 @@ algorithm
                         destination = fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
-        print("AHeu1\n");
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
           case("none") algorithm
-            print("none\n");
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "none");
             then();
           case("modelica") algorithm
-            print("modelica\n");
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "modelica");
             then();
           case("all") algorithm
-            print("all\n");
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "all");
             then();
           else algorithm
-            print("error\n");
             Error.addCompilerError("Unsupported value " + Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS) + "for compiler flag 'fmuRuntimeDepends'.");
             then();
         end match;
