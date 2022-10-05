@@ -278,22 +278,6 @@ public
     end for;
   end toArray;
 
-  function map
-    "Maps all keys in the set."
-    input UnorderedSet<T> set;
-    input MapFn fn;
-    partial function MapFn
-      input output T key;
-    end MapFn;
-  protected
-    array<list<T>> new_buckets = Mutable.access(set.buckets);
-  algorithm
-    for b in 1:arrayLength(new_buckets) loop
-      new_buckets[b] := list(fn(k) for k in new_buckets[b]);
-    end for;
-    Mutable.update(set.buckets, new_buckets);
-  end map;
-
   function fold<FT>
     "Folds over the keys in the set."
     input UnorderedSet<T> set;
@@ -312,6 +296,91 @@ public
       end for;
     end for;
   end fold;
+
+/*
+  function map<OT>
+    "Applies a function to all keys in the given set and returns a new set
+     with the new keys."
+    input UnorderedSet<T> set;
+    input MapFn fn;
+    input OutHash hash;
+    input OutKeyEq keyEq;
+    output UnorderedSet<OT> outSet;
+
+    partial function MapFn
+      input T key;
+      output OT outKey;
+    end MapFn;
+    partial function OutHash
+      input OT key;
+      input Integer mod;
+      output Integer hash;
+    end OutHash;
+    partial function OutKeyEq
+      input OT key1;
+      input OT key2;
+      output Boolean equal;
+    end OutKeyEq;
+  algorithm
+    outSet := new<OT>(hash, keyEq, Util.nextPrime(Mutable.access(set.size)));
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        add(fn(k), outSet);
+      end for;
+    end for;
+  end map;
+*/
+
+  function apply
+    "Replaces all keys in the given set with the results of the given function
+     when applied to all keys. Equivalent to a rehash."
+    input UnorderedSet<T> set;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input output T key;
+    end ApplyFn;
+  protected
+    Hash hashfn = set.hashFn;
+    KeyEq eqfn = set.eqFn;
+    Integer bucket_count, hash, size = 0;
+    array<list<T>> new_buckets;
+    T newKey;
+    list<T> bucket;
+    Boolean duplicate;
+  algorithm
+    // Make a new bucket array.
+    bucket_count := Util.nextPrime(Mutable.access(set.size));
+    new_buckets := arrayCreate(bucket_count, {});
+
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        // Apply the function to the key
+        newKey := fn(k);
+        hash := hashfn(newKey, bucket_count);
+        bucket := arrayGet(new_buckets, hash + 1);
+
+        // check if we have a duplicate
+        duplicate := false;
+        for nk in bucket loop
+          if eqfn(nk, newKey) then
+            duplicate := true;
+            break;
+          end if;
+        end for;
+
+        // Add the result to the new bucket if it is not already there.
+        if not duplicate then
+          arrayUpdate(new_buckets, hash + 1, newKey :: bucket);
+          size := size + 1;
+        end if;
+      end for;
+    end for;
+
+    // Replace the old bucket array with the new one and update the size of the set.
+    Mutable.update(set.buckets, new_buckets);
+    Mutable.update(set.size, size);
+  end apply;
 
   function all
     "Returns true if the given function returns true for all elements in the set,

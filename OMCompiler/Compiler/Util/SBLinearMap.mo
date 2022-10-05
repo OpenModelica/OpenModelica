@@ -180,7 +180,7 @@ public
     input SBLinearMap map;
     output SBSet target = SBSet.copy(domain);
   algorithm
-    UnorderedSet.map(target.asets, function applyAtomicSet(map = map));
+    UnorderedSet.apply(target.asets, function applyAtomicSet(map = map));
   end apply;
 
   function applyAtomicSet
