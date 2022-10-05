@@ -2235,12 +2235,14 @@ algorithm
 
     case ("getAvailableLibraries",{})
       algorithm
+        PackageManagement.installCachedPackages();
         files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
       then
         ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
 
     case ("getAvailableLibraryVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1)))})
       algorithm
+        PackageManagement.installCachedPackages();
         files := PackageManagement.getInstalledLibraryVersions(str1);
       then
         ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
