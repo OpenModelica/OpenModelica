@@ -406,7 +406,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_ALWAYS_DERIVATIVES,
   Flags.DUMP_FLAT_MODEL,
   Flags.SIMULATION,
-  Flags.OBFUSCATE
+  Flags.OBFUSCATE,
+  Flags.FMU_RUNTIME_DEPENDS
 };
 
 public function new

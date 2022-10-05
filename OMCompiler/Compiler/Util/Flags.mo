@@ -1362,8 +1362,8 @@ constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("default", Gettext.notrans("Let omc decide if CMake should be used.")),
-    ("true", Gettext.notrans("Use CMake to compile FMU binaries.")),
-    ("false", Gettext.notrans("Use default GNU Autoconf toolchain to compile FMU binaries."))
+    ("true",    Gettext.notrans("Use CMake to compile FMU binaries.")),
+    ("false",   Gettext.notrans("Use default GNU Autoconf toolchain to compile FMU binaries."))
     })),
   Gettext.gettext("Defines if FMUs will be configured and build with CMake."));
 
@@ -1429,6 +1429,20 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
     ("full", Gettext.gettext("Obfuscates everything."))
   })),
   Gettext.gettext("Obfuscates identifiers in the simulation model"));
+
+constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(153, "fmuRuntimeDepends",
+  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  SOME(STRING_DESC_OPTION({
+    ("none",     Gettext.notrans("No runtime library dependencies are copied into the FMU.")),
+    ("modelica", Gettext.notrans("All modelica runtime library dependencies are copied into the FMU." +
+                                 "System librarys located in '/lib*', '/usr/lib*' and '/usr/local/lib*' are excluded." +
+                                 "Needs --fmuCMakeBuild=true and CMake version >= 3.21.")),
+    ("all",      Gettext.notrans("All runtime library dependencies are copied into the FMU." +
+                                 "System librarys are copied as well." +
+                                 "Needs --fmuCMakeBuild=true and CMake version >= 3.21."))
+    })),
+  Gettext.gettext("Defines if runtime library dependencies are included in the FMU. Only used when compiler flag fmuCMakeBuild=true."));
+
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

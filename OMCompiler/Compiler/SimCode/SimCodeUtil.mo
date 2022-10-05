@@ -15565,6 +15565,7 @@ protected
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
   locations := List.map(locations, addQuotationMarks);
+  // Use target_link_directories when CMake 3.13 is available and skip the find_library part
   for lib in libraries loop
     cmakecode := cmakecode + "find_library(" + lib + "\n" +
                  "             NAMES " + lib + "\n" +

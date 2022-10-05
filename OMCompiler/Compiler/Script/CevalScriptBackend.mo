@@ -4134,7 +4134,9 @@ algorithm
   end if;
 
   if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
-    System.removeDirectory(fmutmp);
+    if not System.removeDirectory(fmutmp) then
+      Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
+    end if;
   end if;
 end callBuildModelFMU;
 
