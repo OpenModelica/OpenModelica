@@ -47,29 +47,40 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mpShapeAnnotation(pParent)
+  : QGraphicsItem(pParent)
+{
+  mpShapeAnnotation = pParent;
+  initialize(x, y, connectedPointIndex);
+  mIsSystemLibrary = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+  mIsInherited = mpShapeAnnotation->isInheritedShape();
+  mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+                   (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
+                    || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
+                    || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()));
+  mIsVisualizationView = mpShapeAnnotation->getGraphicsView()->isVisualizationView();
+  /* Shapes manipulation via CornerItem's if the class is not a system library class
+   * AND not inherited shape
+   * AND not a OMS connector i.e., input/output signals of fmu
+   */
+  if (!mIsSystemLibrary && !mIsInherited && !mIsOMSConnector) {
+    connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
+    connect(this, SIGNAL(cornerItemPress(int)), mpShapeAnnotation, SLOT(cornerItemPressed(int)));
+    connect(this, SIGNAL(cornerItemRelease(bool)), mpShapeAnnotation, SLOT(cornerItemReleased(bool)));
+  }
+}
+
+void CornerItem::initialize(qreal x, qreal y, int connectedPointIndex)
 {
   mOldScenePosition = QPointF();
-  setConnectedPointIndex(connectedPointIndex);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize + QString::number(mConnectedPointIndex));
   setPos(x, y);
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   mRectangle = QRectF (-3, -3, 6, 6);
-  /* Only shapes manipulation via CornerItem's if the class is not a system library class
-   * AND not an inherited shape
-   * AND not a OMS connector i.e., input/output signals of fmu
-   */
-  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() &&
-      !mpShapeAnnotation->isInheritedShape() &&
-      !(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
-        (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-         || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-         || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
-    connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
-    connect(this, SIGNAL(cornerItemPress(int)), mpShapeAnnotation, SLOT(cornerItemPressed(int)));
-    connect(this, SIGNAL(cornerItemRelease(bool)), mpShapeAnnotation, SLOT(cornerItemReleased(bool)));
-  }
+  mIsSystemLibrary = false;
+  mIsInherited = false;
+  mIsOMSConnector = false;
+  mIsVisualizationView = false;
 }
 
 /*!
@@ -93,15 +104,11 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
   Q_UNUSED(option);
   Q_UNUSED(widget);
 
-  if (mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap()) {
+  if ((mpShapeAnnotation && mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap())) {
     return;
   }
   QPen pen;
-  if (mpShapeAnnotation->isInheritedShape()
-      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+  if (mIsSystemLibrary || mIsInherited || mIsOMSConnector) {
     pen.setColor(Qt::darkRed);
   } else {
     pen.setColor(Qt::red);
@@ -119,7 +126,7 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
  */
 void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton && !mpShapeAnnotation->getGraphicsView()->isVisualizationView()) {
+  if (event->button() == Qt::LeftButton && !mIsVisualizationView) {
     if (!signalsBlocked()) {
       emit cornerItemPress(mConnectedPointIndex);
     }
@@ -136,25 +143,23 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
  */
 void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (mpShapeAnnotation->isInheritedShape() || mpShapeAnnotation->getGraphicsView()->isVisualizationView()
-      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+  if (mIsInherited || mIsVisualizationView || mIsOMSConnector) {
     QGraphicsItem::mouseMoveEvent(event);
     return;
   }
   /* if line is a connection or transition then make the first and last point non movable.
    * if line is initial state then make the first point non movable.
    */
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-  if (pLineAnnotation) {
-    QList<QPointF> points = pLineAnnotation->getPoints();
-    LineAnnotation::LineType lineType = pLineAnnotation->getLineType();
-    if ((((lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
-         || (lineType == LineAnnotation::InitialStateType && mConnectedPointIndex == 0))) {
-      QGraphicsItem::mouseMoveEvent(event);
-      return;
+  if (mpShapeAnnotation) {
+    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+    if (pLineAnnotation) {
+      QList<QPointF> points = pLineAnnotation->getPoints();
+      LineAnnotation::LineType lineType = pLineAnnotation->getLineType();
+      if ((((lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
+           || (lineType == LineAnnotation::InitialStateType && mConnectedPointIndex == 0))) {
+        QGraphicsItem::mouseMoveEvent(event);
+        return;
+      }
     }
   }
   // indicates that user is dragging the resizer item
@@ -179,7 +184,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
-  if (event->button() == Qt::LeftButton && !mpShapeAnnotation->getGraphicsView()->isVisualizationView()) {
+  if (event->button() == Qt::LeftButton && !mIsVisualizationView) {
     if (!signalsBlocked()) {
       emit cornerItemRelease(mOldScenePosition != scenePos());
     }
