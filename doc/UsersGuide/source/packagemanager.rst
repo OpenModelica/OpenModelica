@@ -27,8 +27,8 @@ can find them.
 
 The default place where OpenModelica looks for packages is the so-called
 `MODELICAPATH <https://specification.modelica.org/maint/3.5/packages.html#the-modelica-library-path-modelicapath>`_.
-You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment. Installed
-read-only libraries are placed by default in the MODELICAPATH.
+You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit).
+Installed read-only libraries are placed by default in the MODELICAPATH.
 
 When a new version of certain package comes out, `conversion annotations
 <https://specification.modelica.org/maint/3.5/annotations.html#version-handling>`_ in it declare whether your models using
@@ -85,6 +85,15 @@ number and priority is installed.
 
 In any case, semver version semantics is only used to order the releases, while backwards-compatibility
 is determined exclusively on the basis of ``noneFromVersion`` annotations.
+
+When installing OpenModelica, a cached version of the latest versions of the Modelica Standard Library is included in the
+installation files. As soon as a user starts any OpenModelica tool (e.g., OMEdit, OMNotebook, OMShell, or direct command-line
+invocation of omc), if the user's ``.openmodelica`` directory is empty the Modelica Standard Library will be installed
+automatically using this cached version. This happens when using OpenModelica for the first time, or if the contents of the
+``.openmodelica`` directory have been deleted to get rid of all installed libraries. This automatic installation needs no
+Internet connection, so it also works behind firewalls or in set-ups with limited available bandwidth. Therefore, the Modelica
+Standard Library is immediately available without the need of using the package manager explicitly. It is then possible
+to install and manage other libraries using the package manager, as explained previously.
 
 Package Management in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
