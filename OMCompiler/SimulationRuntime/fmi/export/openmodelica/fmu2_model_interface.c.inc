@@ -1946,6 +1946,18 @@ fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReferenc
   return fmi2OK;
 }
 
+/**
+ * @brief FMI 2 doStep function.
+ *
+ * Compute time step to next communication point with explicit Euler or CVODE.
+ *
+ * @param c                                   FMU component.
+ * @param currentCommunicationPoint           Current communication point of master algorithm.
+ * @param communicationStepSize               Communication step size.
+ * @param noSetFMUStatePriorToCurrentPoint    Unused.
+ * @return fmi2Status                         Returns fmi2OK if communication point was reached successfully.
+ *                                            Returns fmi2Error if something went wrong.
+ */
 fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint)
 {
   ModelInstance *comp = (ModelInstance *)c;
@@ -1962,7 +1974,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   fmi2Real t = comp->fmuData->localData[0]->timeValue;
   fmi2Real tNext, tEnd;
   fmi2Boolean enterEventMode = fmi2False, terminateSimulation = fmi2False;
-  fmi2Real tCommunication;
 
   fmi2EventInfo eventInfo;
 
@@ -1976,11 +1987,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   eventInfo.nextEventTimeDefined              = fmi2False;
   eventInfo.nextEventTime                     = 0.0;
 
+  comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
   tEnd = currentCommunicationPoint + communicationStepSize;
   if (comp->stopTimeDefined && (tEnd > comp->stopTime))
     status=fmi2Error;
-
-  tCommunication = currentCommunicationPoint;
 
   // copy the input values
   fmi2Real realInputDerivatives[NUMBER_OF_REAL_INPUTS];
@@ -1996,13 +2006,9 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   internalEventIteration(c, &eventInfo);
 
+  /* Integration loop */
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
   {
-    while (tCommunication <= comp->fmuData->localData[0]->timeValue)
-    {
-      tCommunication += communicationStepSize;
-    }
-
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
 
     // set the real Inputs with output_derivative values
@@ -2037,17 +2043,15 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       if (status != fmi2OK) return fmi2Error;
     }
 
-    /* adjust tNext step to get tEnd exactly */
-    if (tCommunication > tEnd - communicationStepSize/1e16)
-      tNext = tEnd;
-    else
-      tNext = tCommunication;
-
     /* adjust for time events */
-    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tNext))
+    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tEnd))
     {
       tNext = eventInfo.nextEventTime;
       time_event = 1;
+    }
+    else
+    {
+      tNext = tEnd;
     }
 
     /* integrate */
