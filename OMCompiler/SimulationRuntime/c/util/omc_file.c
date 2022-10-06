@@ -137,7 +137,6 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
 }
 
 
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
 /**
  * @brief File attributes
@@ -170,6 +169,32 @@ int omc_stat(const char *filename, omc_stat_t* statbuf)
   return res;
 }
 #endif
+
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief File attributes
+ *
+ * Using (long) unicode absolute path and `_wstat` on Windows.
+ * Using `stat` on Unix.
+ *
+ * @param filename  File name.
+ * @param statbuf   Pointer to stat structure.
+ * @return int      0 on success, -1 on error.
+ */
+int omc_lstat(const char *filename, omc_stat_t* statbuf)
+{
+  return omc_stat(filename, statbuf);
+}
+#else /* unix */
+int omc_lstat(const char *filename, omc_stat_t* statbuf)
+{
+  int res;
+  res = lstat(filename, statbuf);
+  return res;
+}
+#endif
+
 
 /**
  * @brief Unlink file.

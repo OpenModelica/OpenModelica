@@ -78,6 +78,7 @@ typedef struct _stat omc_stat_t;
 typedef struct stat omc_stat_t;
 #endif
 int omc_stat(const char *filename, omc_stat_t *statbuf);
+int omc_lstat(const char *filename, omc_stat_t *statbuf);
 
 int omc_unlink(const char *filename);
 
