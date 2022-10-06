@@ -170,10 +170,10 @@ namespace ModelInstance
     Point leftBottom = mExtent.getExtent1();
     Point topRight = mExtent.getExtent2();
 
-    qreal left = qMin(leftBottom.x(), topRight.y());
-    qreal bottom = qMin(leftBottom.y(), topRight.x());
-    qreal right = qMax(leftBottom.x(), topRight.y());
-    qreal top = qMax(leftBottom.y(), topRight.x());
+    qreal left = qMin(leftBottom.x(), topRight.x());
+    qreal bottom = qMin(leftBottom.y(), topRight.y());
+    qreal right = qMax(leftBottom.x(), topRight.x());
+    qreal top = qMax(leftBottom.y(), topRight.y());
     return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
   }
 
@@ -779,27 +779,12 @@ namespace ModelInstance
     if (mModelJson.contains("annotation")) {
       QJsonObject annotation = mModelJson.value("annotation").toObject();
 
-      /* From Modelica Specification Version 3.5-dev
-       * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-       * 1. The coordinate system annotation given in the class (if specified).
-       * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-       *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-       * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-       *
-       * Following is the first case.
-       */
       if (annotation.contains("Icon")) {
         mpIconAnnotation->deserialize(annotation.value("Icon").toObject());
-      }
-      if (!mpIconAnnotation->getCoordinateSystem().isComplete()) {
-        readCoordinateSystemFromExtendsClass(true);
       }
 
       if (annotation.contains("Diagram")) {
         mpDiagramAnnotation->deserialize(annotation.value("Diagram").toObject());
-      }
-      if (!mpDiagramAnnotation->getCoordinateSystem().isComplete()) {
-        readCoordinateSystemFromExtendsClass(false);
       }
 
       if (annotation.contains("DocumentationClass")) {
@@ -839,6 +824,23 @@ namespace ModelInstance
           }
         }
       }
+    }
+
+    /* From Modelica Specification Version 3.5-dev
+     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+     * 1. The coordinate system annotation given in the class (if specified).
+     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+     *
+     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
+     */
+    if (!mpIconAnnotation->getCoordinateSystem().isComplete()) {
+      readCoordinateSystemFromExtendsClass(true);
+    }
+
+    if (!mpDiagramAnnotation->getCoordinateSystem().isComplete()) {
+      readCoordinateSystemFromExtendsClass(false);
     }
 
     if (mModelJson.contains("components")) {
@@ -1334,6 +1336,62 @@ namespace ModelInstance
         mChoices.deserialize(annotation.value("choices").toObject());
       }
     }
+  }
+
+  QString Element::getModifierValue(QStringList &qualifiedModifierName)
+  {
+    if (qualifiedModifierName.isEmpty()) {
+      return "";
+    }
+
+    return Element::getModifierValue(mModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+  }
+
+  QString Element::getModifierValueFromType(const QString &modifierName)
+  {
+    /* 1. First check if unit is defined with in the component modifier.
+     * 2. If no unit is found then check it in the derived class modifier value.
+     * 3. A derived class can be inherited, so look recursively.
+     */
+    QString modifierValue = getModifierValue(QStringList() << modifierName);
+    if (modifierValue.isEmpty() && mpModel) {
+      //! @todo modifiers of derived classes are missing.
+      //! We should here read the modifier value from mpModel. If its still empty look in extends.
+      if (modifierValue.isEmpty()) {
+        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierName);
+      }
+    }
+    return modifierValue;
+  }
+
+  QString Element::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList &qualifiedModifierName)
+  {
+    foreach (auto subModifier, modifier.getModifiers()) {
+      if (subModifier.getName().compare(modifierName) == 0) {
+        if (qualifiedModifierName.isEmpty()) {
+          return subModifier.getValue();
+        } else {
+          return Element::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+        }
+      }
+    }
+
+    return "";
+  }
+
+  QString Element::getModifierValueFromInheritedType(Model *pModel, const QString &modifierName)
+  {
+    QString modifierValue = "";
+    foreach (auto pExtend, pModel->getExtends()) {
+      //! @todo modifiers of derived classes are missing.
+      //! We should here read the modifier value from pExtend. If its still empty continue.
+      if (modifierValue.isEmpty()) {
+        modifierValue = Element::getModifierValueFromInheritedType(pExtend, modifierName);
+      } else {
+        return modifierValue;
+      }
+    }
+    return modifierValue;
   }
 
   Part::Part()

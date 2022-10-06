@@ -526,6 +526,8 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
+    QString getModifierValue(QStringList &qualifiedModifierName);
+    QString getModifierValueFromType(const QString &modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
     QStringList getTypedDimensions() const {return mTypedDims;}
@@ -569,6 +571,9 @@ private:
     DialogAnnotation mDialogAnnotation;
     bool mEvaluate;
     Choices mChoices;
+
+    static QString getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList &qualifiedModifierName);
+    static QString getModifierValueFromInheritedType(Model *pModel, const QString &modifierName);
   };
 
   class Part

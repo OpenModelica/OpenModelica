@@ -1504,6 +1504,8 @@ int Element::getArrayIndexAsNumber(bool *ok) const
       QStringList arrayIndexes = getTypedArrayIndexes();
       if (!arrayIndexes.isEmpty()) {
         return arrayIndexes.at(0).toInt(ok);
+      } else {
+        return 0;
       }
     } else {
       return mpElementInfo->getArrayIndexAsNumber(ok);
@@ -1884,12 +1886,7 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* case 1 */
   if (displayString.isEmpty()) {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      foreach (auto modifier, mpModelElement->getModifier().getModifiers()) {
-        if (modifier.getName().compare(parameterName) == 0) {
-          displayString = modifier.getValue();
-          break;
-        }
-      }
+      displayString = mpModelElement->getModifierValue(QStringList() << parameterName);
     } else {
       displayString = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
     }
@@ -1940,23 +1937,14 @@ QString Element::getParameterModifierValue(const QString &parameterName, const Q
   /* How to get the parameter modifier value,
    * 1. Check if the value is available in component modifier.
    */
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QString parameterAndModiferName = QString("%1.%2").arg(parameterName).arg(modifier);
   QString modifierValue = "";
   /* case 1 */
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    foreach (auto elementModifier, mpModelElement->getModifier().getModifiers()) {
-      if (elementModifier.getName().compare(parameterName) == 0) {
-        foreach (auto subModifier, elementModifier.getModifiers()) {
-          if (subModifier.getName().compare(modifier) == 0) {
-            modifierValue = subModifier.getValue();
-            break;
-          }
-        }
-      }
-    }
+    modifierValue = mpModelElement->getModifierValue(QStringList() << parameterName << modifier);
   } else {
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    QString parameterAndModiferName = QString("%1.%2").arg(parameterName).arg(modifier);
     QMap<QString, QString> modifiers = mpElementInfo->getModifiersMap(pOMCProxy, className, this);
     QMap<QString, QString>::iterator modifiersIterator;
     for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
