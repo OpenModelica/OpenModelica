@@ -91,8 +91,9 @@ installation files. As soon as a user starts any OpenModelica tool (e.g., OMEdit
 invocation of omc), if the user's ``.openmodelica`` directory is empty the Modelica Standard Library will be installed
 automatically using this cached version. This happens when using OpenModelica for the first time, or if the contents of the
 ``.openmodelica`` directory have been deleted to get rid of all installed libraries. This automatic installation needs no
-Internet connection, so it also works behind firewalls or in set-ups with limited available bandwidth. It is then possible
-to install other libraries with the package manager, as explained previously.
+Internet connection, so it also works behind firewalls or in set-ups with limited available bandwidth. Therefore, the Modelica
+Standard Library is immediately available without the need of using the package manager explicitly. It is then possible
+to install and manage other libraries using the package manager, as explained previously.
 
 Package Management in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
