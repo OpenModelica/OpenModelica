@@ -559,6 +559,13 @@ algorithm
     Error.addSourceMessage(Error.NOTIFY_INITIALIZING_USER_LIBRARIES, {getUserLibraryPath()}, makeSourceInfo(packageIndex));
   end if;
 
+  // Copy the index to the user library folder to avoid getting errors when
+  // installing the libraries.
+  if not System.regularFileExists(getIndexPath()) then
+    Util.createDirectoryTree(getUserLibraryPath());
+    System.copyFile(packageIndex, getIndexPath());
+  end if;
+
   // Install each version of each library in the package index.
   for lib in libs loop
     lib_obj := JSON.get(libs_obj, lib);
@@ -569,13 +576,8 @@ algorithm
     end for;
   end for;
 
-  // The package index in the user library directory is usually downloaded when
-  // getPackageIndex is called, but if it couldn't be downloaded for some reason
-  // then copy the index from the installation directory so we at least have the
-  // information for the libraries we just installed.
-  if not System.regularFileExists(getIndexPath()) then
-    System.copyFile(packageIndex, getIndexPath());
-  end if;
+  // Try to download a new package index so the user gets an up to date one.
+  updateIndex();
 end installCachedPackages;
 
 protected
