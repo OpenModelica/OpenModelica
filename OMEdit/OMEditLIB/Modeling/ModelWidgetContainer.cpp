@@ -4260,10 +4260,10 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(rect.right(), yAxisStep));
       yAxisStep -= verticalGridStep;
     }
-    /* set the middle horizontal and vertical line gray */
+    /* Draw horizontal and vertical gray line from 0,0 */
     painter->setPen(grayPen);
-    painter->drawLine(QPointF(rect.left(), extentRectangle.center().y()), QPointF(rect.right(), extentRectangle.center().y()));
-    painter->drawLine(QPointF(extentRectangle.center().x(), rect.top()), QPointF(extentRectangle.center().x(), rect.bottom()));
+    painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
+    painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
   // draw scene rectangle
   painter->setPen(grayPen);
