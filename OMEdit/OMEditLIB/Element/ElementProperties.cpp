@@ -186,42 +186,42 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, 
   setSaveSelectorCaption("-");
   createValueWidget();
   // Get unit value
-//  mUnit = mpComponent->getDerivedClassModifierValue("unit");
-//  // Get displayUnit value
-//  QString displayUnit = mpComponent->getDerivedClassModifierValue("displayUnit");
-//  if (displayUnit.isEmpty()) {
-//    displayUnit = mUnit;
-//  }
-//  mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
-//  mPreviousUnit = mDisplayUnit;
-//  QStringList units;
-//  if (!mUnit.isEmpty()) {
-//    units << mUnit;
-//    if (mDisplayUnit.compare(mUnit) != 0) {
-//      units << mDisplayUnit;
-//    }
-//    Utilities::addDefaultDisplayUnit(mUnit, units);
-//    // add unit prefixes
-//    if (OMPlot::Plot::prefixableUnit(mUnit)) {
-//      units << QString("k%1").arg(mUnit)
-//            << QString("M%1").arg(mUnit)
-//            << QString("G%1").arg(mUnit)
-//            << QString("T%1").arg(mUnit)
-//            << QString("m%1").arg(mUnit)
-//            << QString("u%1").arg(mUnit)
-//            << QString("n%1").arg(mUnit)
-//            << QString("p%1").arg(mUnit);
-//    }
-//  }
+  mUnit = mpModelInstanceElement->getModifierValueFromType("unit");
+  // Get displayUnit value
+  QString displayUnit = mpModelInstanceElement->getModifierValueFromType("displayUnit");
+  if (displayUnit.isEmpty()) {
+    displayUnit = mUnit;
+  }
+  mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
+  mPreviousUnit = mDisplayUnit;
+  QStringList units;
+  if (!mUnit.isEmpty()) {
+    units << mUnit;
+    if (mDisplayUnit.compare(mUnit) != 0) {
+      units << mDisplayUnit;
+    }
+    Utilities::addDefaultDisplayUnit(mUnit, units);
+    // add unit prefixes
+    if (OMPlot::Plot::prefixableUnit(mUnit)) {
+      units << QString("k%1").arg(mUnit)
+            << QString("M%1").arg(mUnit)
+            << QString("G%1").arg(mUnit)
+            << QString("T%1").arg(mUnit)
+            << QString("m%1").arg(mUnit)
+            << QString("u%1").arg(mUnit)
+            << QString("n%1").arg(mUnit)
+            << QString("p%1").arg(mUnit);
+    }
+  }
   mpUnitComboBox = new QComboBox;
-//  units.removeDuplicates();
-//  foreach (QString unit, units) {
-//    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
-//  }
-//  if (mDisplayUnit.compare(mUnit) != 0) {
-//    mpUnitComboBox->setCurrentIndex(1);
-//  }
-//  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
+  units.removeDuplicates();
+  foreach (QString unit, units) {
+    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
+  }
+  if (mDisplayUnit.compare(mUnit) != 0) {
+    mpUnitComboBox->setCurrentIndex(1);
+  }
+  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
   mpCommentLabel = new Label(mpModelInstanceElement->getComment());
 }
 
@@ -1318,14 +1318,8 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
     bool isParameter = (pElement->getVariability().compare(QStringLiteral("parameter")) == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter && !showStartAttribute) {
-      foreach (auto modifier, pElement->getModifier().getModifiers()) {
-        if (modifier.getName().compare(QStringLiteral("start")) == 0) {
-          start = modifier.getValue();
-        }
-        if (modifier.getName().compare(QStringLiteral("fixed")) == 0) {
-          fixed = modifier.getValue();
-        }
-      }
+      start = pElement->getModifierValue(QStringList() << "start");
+      fixed = pElement->getModifierValue(QStringList() << "fixed");
       showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
     }
 
