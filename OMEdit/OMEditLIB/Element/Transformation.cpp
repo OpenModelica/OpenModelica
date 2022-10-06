@@ -377,10 +377,6 @@ QTransform Transformation::getTransformationMatrixDiagram() const
 {
   // calculate position
   QPointF position = getPositionDiagram();
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
-  }
   // get scale
   qreal tempwidth = qFabs(mExtent1Diagram.x() - mExtent2Diagram.x());
   qreal sx = tempwidth / (mWidth > 0 ? mWidth : 1);
@@ -392,6 +388,11 @@ QTransform Transformation::getTransformationMatrixDiagram() const
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
   }
+  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
+  if (mpComponent) {
+    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
+  }
+
   // get the horizontal flip
   if (mExtent2Diagram.x() < mExtent1Diagram.x()) {
     sx = -sx;
@@ -443,10 +444,6 @@ QTransform Transformation::getTransformationMatrixIcon()
 {
   // calculate position
   QPointF position = getPositionIcon();
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
-  }
   // get scale
   qreal tempwidth = qFabs(mExtent1Icon.x() - mExtent2Icon.x());
   qreal sx = tempwidth / (mWidth > 0 ? mWidth : 1);
@@ -457,6 +454,10 @@ QTransform Transformation::getTransformationMatrixIcon()
   qreal sy = tempHeight / (mHeight > 0 ? mHeight : 1);
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
+  }
+  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
+  if (mpComponent) {
+    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
   }
   // get the horizontal flip
   if (mExtent2Icon.x() < mExtent1Icon.x()) {
