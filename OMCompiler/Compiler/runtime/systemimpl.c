@@ -1069,6 +1069,20 @@ static int SystemImpl__removeDirectoryItem(const char *path)
             r2 = omc_unlink(buf);
           }
         }
+        else if(omc_lstat(buf, &statbuf) == 0)
+        {
+          // Dead link, that isn't pointing to a file/directory any more
+          r2 = omc_unlink(buf);
+        }
+        else {
+          const char *c_tokens[1]={buf};
+          c_add_message(NULL,85,
+            ErrorType_scripting,
+            ErrorLevel_error,
+            gettext("Failed to remove %s"),
+            c_tokens,
+            1);
+        }
       }
       retval = r2;
     }
