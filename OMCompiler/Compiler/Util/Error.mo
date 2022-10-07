@@ -519,7 +519,7 @@ public constant ErrorTypes.Message CONNECT_IN_INITIAL_EQUATION = ErrorTypes.MESS
 public constant ErrorTypes.Message FINAL_COMPONENT_OVERRIDE = ErrorTypes.MESSAGE(222, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Trying to override final element %s with modifier '%s'."));
 public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_DUE_TO_USES = ErrorTypes.MESSAGE(223, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Automatically loaded package %s %s due to uses annotation."));
+  Gettext.gettext("Automatically loaded package %s %s due to uses annotation from %s."));
 public constant ErrorTypes.Message REINIT_MUST_BE_REAL = ErrorTypes.MESSAGE(224, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument to reinit must be a subtype of Real, but %s has type %s."));
 public constant ErrorTypes.Message REINIT_MUST_BE_VAR = ErrorTypes.MESSAGE(225, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
