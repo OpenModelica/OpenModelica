@@ -341,7 +341,7 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
-int ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = 2;
+int ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = 3;
 
 /*!
  * \brief ShapeAnnotation::setDefaults
