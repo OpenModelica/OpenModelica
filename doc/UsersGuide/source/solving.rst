@@ -327,6 +327,41 @@ system.
 
   body2.frame_a.r_0[1]
 
+Importing initial values from previous simulations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In many use cases it is useful to import initial values from previous simulations, possibly obtained with
+another Modelica tool, and saved in a .mat file. There are two different options to do that.
+
+The first option is to solve the initial equations specified by the Modelica model, using the previous simulation results to
+obtain good initial guesses for the iterative solvers. This can be very helpful in case the initialization problem involves the
+solution of large nonlinear systems of equations by means of iterative algorithms, whose convergence is sensitive to the selected
+initial guess. Importing a previously found solution allows the OpenModelica solver to pick very good initial guesses for the
+unknowns of the iterative solvers, thus achieving convergence with a few iterations at most. Since the initial equations
+are solved anyway, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
+are re-computed and fully consistent with the selected initial conditions, even in case the previously saved simulation results
+refer to a slightly different model configuration. Note that parameters with `fixed = true` will also get their values from the
+imported .mat file, so if you want to change them you need to edit the .mat file accordingly. 
+
+This option is activated by selecting the simulation result file name in the OMEdit
+*Simulation Setup | Simulation Flag | Equation System Initialization File* input field, or by setting the additional simulation flag
+:ref:`-iif=<resultfile.mat> <simflag-iif>`. By activating the checkbox Save simulation flags inside the model, a custom annotation *__OpenModelica_simulationFlags(iif="filename.mat")* is added to the model, so this setting is saved with the model and is reused
+when loading the model again later on. It is also possible to specify at which point in time of the saved simulation results the initial values
+should be picked, by means of the *Simulation Setup | Simulation Flags | Equation System Initialization Time* input field, or by setting
+the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`.
+
+The second option is to skip the solution of the initial equations entirely, and to directly start the simulation
+using the imported start values. In this case, the initial equations of the model are ignored, and the initial values of
+all parameters and state variables are set to the values loaded from the .mat file. This option is useful in particular
+to restart a simulation from the final state of a previous one, without bothering about changing the initial conditions
+manually in the Modelica model. Note that the algebraic variables will be recomputed starting from the imported initial
+state and parameter values; the values of algebraic variables in the imported file will be used to initialize iteration
+variables in nonlinear implicit equations of the simulation model, or otherwise ignored. 
+
+To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
+or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox Save simulation
+flags inside the model saves this option in an *__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for
+future simulations of the same model.
+
 Homotopy Method
 ~~~~~~~~~~~~~~~
 
