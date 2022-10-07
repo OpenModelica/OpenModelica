@@ -56,7 +56,7 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
+// "Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
 // Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 1.0. There are no conversion annotations for this version but 3.2.3 is newer than 1.0. There is a possibility that 1.0 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // "
 // "{{{xT2[\\[FormalT]],xT1[\\[FormalT]],xB2[\\[FormalT]],xB1[\\[FormalT]],xF2[\\[FormalT]],xF1[\\[FormalT]],T[\\[FormalT]],B[\\[FormalT]],F[\\[FormalT]]},{xT1[\\[FormalT]] + xT2[\\[FormalT]]==100,xB1[\\[FormalT]] + xB2[\\[FormalT]]==100,F[\\[FormalT]] * xF1[\\[FormalT]] + ((-B[\\[FormalT]]) * xB1[\\[FormalT]] - T[\\[FormalT]] * xT1[\\[FormalT]])==0,F[\\[FormalT]] * xF2[\\[FormalT]] + ((-B[\\[FormalT]]) * xB2[\\[FormalT]] - T[\\[FormalT]] * xT2[\\[FormalT]])==0,xF1[\\[FormalT]] + xF2[\\[FormalT]]==100}},{{},{}},{\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\"}}"

@@ -10,7 +10,7 @@ simulate(A); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
 // "
 // "function Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp \"Temperature dependency of energy gap\"
 //   input Real temp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature\";

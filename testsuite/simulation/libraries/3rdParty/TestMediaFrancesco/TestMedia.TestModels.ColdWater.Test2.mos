@@ -21,9 +21,9 @@ res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.Col
 // Result:
 // true
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from TestMedia.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.ColdWater.Test2_res.mat",
