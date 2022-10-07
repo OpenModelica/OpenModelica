@@ -43,6 +43,18 @@
         },
         "encapsulated": {
           "type": "boolean"
+        },
+        "connector": {
+          "type": "string",
+          "enum": ["flow", "stream"]
+        },
+        "variability": {
+          "type": "string",
+          "enum": ["constant", "parameter", "discrete"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["input", "output"]
         }
       }
     },
@@ -55,10 +67,19 @@
     },
     "extends": {
       "description": "The extends clauses in the class instance",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/extends"
-      }
+      "oneOf": [
+        {
+          "description": "The extends clauses in a long class definition",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/extends"
+          }
+        },
+        {
+          "description": "The extended class in a short class definition",
+          "$ref": "#/definitions/extends"
+        }
+      ]
     },
     "components": {
       "description": "The components in the class instance",
@@ -216,7 +237,16 @@
         },
         "baseClass": {
           "description": "The class instance of the extended class",
-          "$ref": "#"
+          "oneOf": [
+            {
+              "description": "Class type",
+              "$ref": "#"
+            },
+            {
+              "description": "Builtin type",
+              "type": "string"
+            }
+          ]
         }
       }
     },

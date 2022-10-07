@@ -34,7 +34,26 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     {
 //       \"name\": \"deg\",
-//       \"type\": \"Real\",
+//       \"type\": {
+//         \"name\": \"Angle\",
+//         \"restriction\": \"type\",
+//         \"modifiers\": {
+//           \"quantity\": {
+//             \"final\": true,
+//             \"$value\": \"\\\"Angle\\\"\"
+//           }
+//         },
+//         \"extends\": {
+//           \"baseClass\": \"Real\"
+//         },
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 3,
+//           \"columnEnd\": 48
+//         }
+//       },
 //       \"modifiers\": {
 //         \"start\": \"pi\",
 //         \"$value\": \"2\"

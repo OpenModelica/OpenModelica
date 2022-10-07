@@ -859,6 +859,7 @@ protected
   InstSettings inst_settings;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
   inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false);
 
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
@@ -876,6 +877,7 @@ end getModelInstance;
 
 function buildInstanceTree
   input InstNode node;
+  input Boolean isDerived = false;
   output InstanceTree tree;
 protected
   Class cls;
@@ -885,21 +887,30 @@ protected
 algorithm
   cls := InstNode.getClass(InstNode.resolveInner(node));
 
-  if Class.isBuiltin(cls) then
+  if not isDerived and Class.isOnlyBuiltin(cls) then
     tree := InstanceTree.EMPTY();
     return;
   end if;
 
   cls_tree := Class.classTree(cls);
 
-  tree := match cls_tree
-    case ClassTree.INSTANTIATED_TREE(exts = ext_nodes)
+  tree := match (cls, cls_tree)
+    case (Class.EXPANDED_DERIVED(), _)
+      algorithm
+        exts := {buildInstanceTree(cls.baseClass, isDerived = true)};
+      then
+        InstanceTree.CLASS(node, exts, {});
+
+    case (_, ClassTree.INSTANTIATED_TREE(exts = ext_nodes))
       algorithm
         exts := list(buildInstanceTree(e) for e in ext_nodes);
         components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
                            for i in cls_tree.localComponents);
       then
         InstanceTree.CLASS(node, exts, components);
+
+    case (_, ClassTree.FLAT_TREE())
+      then InstanceTree.CLASS(node, {}, {});
 
     else
       algorithm
@@ -948,7 +959,11 @@ algorithm
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def), json);
 
   if not listEmpty(exts) then
-    json := JSON.addPair("extends", dumpJSONExtends(exts), json);
+    if InstNode.isDerivedClass(node) then
+      json := JSON.addPair("extends", dumpJSONExtends(listHead(exts)), json);
+    else
+      json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
+    end if;
   end if;
 
   json := dumpJSONCommentOpt(cmt, node, json);
@@ -978,25 +993,34 @@ function dumpJSONPath
   output JSON json = JSON.makeString(AbsynUtil.pathString(path));
 end dumpJSONPath;
 
-function dumpJSONExtends
+function dumpJSONExtendsList
   input list<InstanceTree> exts;
   output JSON json = JSON.emptyArray();
-protected
-  JSON ext_json, j;
-  InstNode node;
-  SCode.Element ext_def;
 algorithm
   for ext in exts loop
-    InstanceTree.CLASS(node = node) := ext;
-    ext_def := InstNode.extendsDefinition(node);
-
-    ext_json := JSON.emptyObject();
-    ext_json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), ext_json);
-    ext_json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, ext_json);
-    ext_json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), ext_json);
-
-    json := JSON.addElement(ext_json, json);
+    json := JSON.addElement(dumpJSONExtends(ext), json);
   end for;
+end dumpJSONExtendsList;
+
+function dumpJSONExtends
+  input InstanceTree ext;
+  output JSON json = JSON.emptyObject();
+protected
+  InstNode node;
+  SCode.Element cls_def, ext_def;
+algorithm
+  InstanceTree.CLASS(node = node) := ext;
+  cls_def := InstNode.definition(node);
+  ext_def := InstNode.extendsDefinition(node);
+
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), json);
+  json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
+
+  if Class.isOnlyBuiltin(InstNode.getClass(node)) then
+    json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
+  else
+    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), json);
+  end if;
 end dumpJSONExtends;
 
 function dumpJSONComponents
@@ -1088,8 +1112,8 @@ function dumpJSONComponentType
   output JSON json;
 algorithm
   json := match (cls, ty)
-    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls);
     case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
+    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;
@@ -1302,11 +1326,15 @@ function dumpJSONClassPrefixes
   output JSON json;
 protected
   SCode.Prefixes prefs;
+  SCode.ClassDef cdef;
 algorithm
   json := match element
-    case SCode.CLASS(prefixes = prefs)
+    case SCode.CLASS(classDef = cdef, prefixes = prefs)
       algorithm
-        json := dumpJSONSCodePrefixes(element.prefixes);
+        json := match cdef
+          case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes);
+          else dumpJSONSCodePrefixes(element.prefixes);
+        end match;
 
         if SCodeUtil.partialBool(element.partialPrefix) then
           json := JSON.addPair("partial", JSON.makeBoolean(true), json);

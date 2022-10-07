@@ -890,6 +890,16 @@ uniontype InstNode
     end match;
   end nodeType;
 
+  function derivedNodeType
+    input InstNode node;
+    output InstNodeType ty;
+  algorithm
+    ty := match node
+      case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS(ty = ty)) then ty;
+      else nodeType(node);
+    end match;
+  end derivedNodeType;
+
   function setNodeType
     input InstNodeType nodeType;
     input output InstNode node;
@@ -925,7 +935,7 @@ uniontype InstNode
     input InstNode node;
     output SCode.Element definition;
   algorithm
-    CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition = definition)) := node;
+    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
   end extendsDefinition;
 
   function setDefinition

@@ -167,9 +167,14 @@ algorithm
     case Class.TYPED_DERIVED()
       algorithm
         typeComponents(c.baseClass, context);
-        c2 := InstNode.getClass(c.baseClass);
-        c2 := Class.setRestriction(c.restriction, c2);
-        InstNode.updateClass(c2, cls);
+
+        // Only collapse for the normal instantiation, for the instance API we
+        // need the derived class chains.
+        if not InstContext.inInstanceAPI(context) then
+          c2 := InstNode.getClass(c.baseClass);
+          c2 := Class.setRestriction(c.restriction, c2);
+          InstNode.updateClass(c2, cls);
+        end if;
       then
         ();
 
