@@ -9,7 +9,7 @@ translateModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation.
+// "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
 // "
 // {"TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2","TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2_init.xml"}
 // "[simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:28578:17-28582:23:writable] Warning: In relation EM.i_dens_a == 0.0, == on Real numbers is only allowed inside functions.

@@ -16,9 +16,9 @@ checkModel(HumModTest); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from HumModTest.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // "Check of HumModTest completed successfully.
 // Class HumModTest has 29145 equation(s) and 29145 variable(s).

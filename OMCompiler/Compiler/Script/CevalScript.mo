@@ -395,12 +395,12 @@ protected
   Boolean onlyCheckFirstModelicaPath;
   Absyn.Path path;
   list<String> versionsLst;
-  String pathStr, versions, version, thisModelicaPath, dir;
+  String pathStr, versions, version, thisModelicaPath, dir, requestedBy;
   Absyn.Program pnew;
   ErrorTypes.MessageTokens msgTokens;
   Option<Absyn.Class> cl;
 algorithm
-  (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
+  (path, requestedBy, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
     thisModelicaPath::_ := System.strtok(modelicaPath, Autoconf.groupDelimiter);
@@ -426,7 +426,7 @@ algorithm
 
       if notifyLoad and not forceLoad then
         version := getPackageVersion(path, pnew);
-        msgTokens := {AbsynUtil.pathString(path), version};
+        msgTokens := {AbsynUtil.pathString(path), version, requestedBy};
         Error.addMessage(Error.NOTIFY_LOAD_MODEL_DUE_TO_USES, msgTokens);
         System.loadModelCallBack(AbsynUtil.pathFirstIdent(path));
       end if;

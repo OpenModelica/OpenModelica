@@ -47,7 +47,7 @@ val(state.s, 1);
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
 // "
 // "function ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants \"Automatically generated record constructor for ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants\"
 //   input String iupacName;
