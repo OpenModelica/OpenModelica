@@ -261,7 +261,7 @@ extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
       case '\b':
       case '\f':
       case '\v': i++; *hasEscape=1; break;
-      case '\r': if(nl) {i++; *hasEscape=1; if(str[1] == '\n') str++;} break;
+      case '\r':
       case '\n': if(nl) {i++; *hasEscape=1;} break;
       default: break;
     }
