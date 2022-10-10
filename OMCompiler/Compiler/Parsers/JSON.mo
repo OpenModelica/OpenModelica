@@ -33,7 +33,6 @@ encapsulated uniontype JSON
 
 import LexerJSON;
 import LexerJSON.{Token,TokenId,tokenContent,printToken,tokenSourceInfo};
-import IOStream;
 import Vector;
 import UnorderedMap;
 
@@ -65,6 +64,16 @@ record FALSE
 end FALSE;
 record NULL
 end NULL;
+// Used by the toString methods.
+record TOKEN
+  String str;
+end TOKEN;
+record INDENT
+end INDENT;
+record PUSH_INDENT
+end PUSH_INDENT;
+record POP_INDENT
+end POP_INDENT;
 
 function emptyObject
   output JSON obj;
@@ -174,154 +183,208 @@ algorithm
   outObj := if isNull(value) then obj else addPair(key, value, obj);
 end addPairNotNull;
 
-function toStream
-  input JSON value;
-  input Boolean prettyPrint = false;
-  output IOStream.IOStream s;
-algorithm
-  s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-
-  if prettyPrint then
-    s := appendStreamPP(value, "", s);
-  else
-    s := appendStream(value, s);
-  end if;
-end toStream;
-
-function appendStream
-  input JSON value;
-  input output IOStream.IOStream s;
-algorithm
-  s := match value
-    case STRING() then appendStreamString(value.str, s);
-    case TRUE() then IOStream.append(s, "true");
-    case FALSE() then IOStream.append(s, "false");
-    case NULL() then IOStream.append(s, "null");
-    case INTEGER() then IOStream.append(s, String(value.i));
-    case NUMBER() then IOStream.append(s, String(value.r));
-    case ARRAY() then appendStreamArray(value.values, s);
-    case OBJECT() then appendStreamObject(value.values, s);
-  end match;
-end appendStream;
-
-function appendStreamString
-  input String str;
-  input output IOStream.IOStream s;
-algorithm
-  s := IOStream.append(s, "\"");
-  s := IOStream.append(s, System.escapedString(str, true));
-  s := IOStream.append(s, "\"");
-end appendStreamString;
-
-function appendStreamArray
-  input Vector<JSON> values;
-  input output IOStream.IOStream s;
-algorithm
-  s := IOStream.append(s, "[");
-
-  for i in 1:Vector.size(values) loop
-    if i <> 1 then
-      s := IOStream.append(s, ", ");
-    end if;
-
-    s := appendStream(Vector.getNoBounds(values, i), s);
-  end for;
-
-  s := IOStream.append(s, "]");
-end appendStreamArray;
-
-function appendStreamObject
-  input UnorderedMap<String, JSON> map;
-  input output IOStream.IOStream s;
-algorithm
-  s := IOStream.append(s, "{");
-
-  if not UnorderedMap.isEmpty(map) then
-    s := appendStreamString(UnorderedMap.keyAt(map, 1), s);
-    s := IOStream.append(s, ":");
-    s := appendStream(UnorderedMap.valueAt(map, 1), s);
-
-    for i in 2:UnorderedMap.size(map) loop
-      s := IOStream.append(s, ", ");
-      s := appendStreamString(UnorderedMap.keyAt(map, i), s);
-      s := IOStream.append(s, ":");
-      s := appendStream(UnorderedMap.valueAt(map, i), s);
-    end for;
-  end if;
-
-  s := IOStream.append(s, "}");
-end appendStreamObject;
-
-function appendStreamPP
-  input JSON value;
-  input String indent;
-  input output IOStream.IOStream s;
-algorithm
-  s := match value
-    case STRING() then appendStreamString(value.str, s);
-    case TRUE() then IOStream.append(s, "true");
-    case FALSE() then IOStream.append(s, "false");
-    case NULL() then IOStream.append(s, "null");
-    case INTEGER() then IOStream.append(s, String(value.i));
-    case NUMBER() then IOStream.append(s, String(value.r));
-    case ARRAY() then appendStreamArrayPP(value.values, indent, s);
-    case OBJECT() then appendStreamObjectPP(value.values, indent, s);
-  end match;
-end appendStreamPP;
-
-function appendStreamArrayPP
-  input Vector<JSON> values;
-  input String indent;
-  input output IOStream.IOStream s;
-algorithm
-  s := IOStream.append(s, "[\n");
-
-  for i in 1:Vector.size(values) loop
-    if i <> 1 then
-      s := IOStream.append(s, ",\n");
-    end if;
-
-    s := IOStream.append(s, indent + "  ");
-    s := appendStreamPP(Vector.getNoBounds(values, i), indent + "  ", s);
-  end for;
-
-  s := IOStream.append(s, "\n");
-  s := IOStream.append(s, indent);
-  s := IOStream.append(s, "]");
-end appendStreamArrayPP;
-
-function appendStreamObjectPP
-  input UnorderedMap<String, JSON> map;
-  input String indent;
-  input output IOStream.IOStream s;
-algorithm
-  s := IOStream.append(s, "{\n");
-
-  if not UnorderedMap.isEmpty(map) then
-    s := IOStream.append(s, indent + "  ");
-    s := appendStreamString(UnorderedMap.keyAt(map, 1), s);
-    s := IOStream.append(s, ": ");
-    s := appendStreamPP(UnorderedMap.valueAt(map, 1), indent + "  ", s);
-
-    for i in 2:UnorderedMap.size(map) loop
-      s := IOStream.append(s, ",\n  ");
-      s := IOStream.append(s, indent);
-      s := appendStreamString(UnorderedMap.keyAt(map, i), s);
-      s := IOStream.append(s, ": ");
-      s := appendStreamPP(UnorderedMap.valueAt(map, i), indent + "  ", s);
-    end for;
-  end if;
-
-  s := IOStream.append(s, "\n");
-  s := IOStream.append(s, indent);
-  s := IOStream.append(s, "}");
-end appendStreamObjectPP;
-
 function toString
   input JSON value;
   input Boolean prettyPrint = false;
-  output String str = IOStream.string(toStream(value, prettyPrint));
+  output String str;
+algorithm
+  if prettyPrint then
+    str := toStringPP_work(value);
+  else
+    str := toString_work(value);
+  end if;
 end toString;
+
+function toString_work
+  input JSON value;
+  output String str;
+protected
+  list<JSON> stack = {value};
+  JSON v;
+  list<String> strl = {};
+  Integer len = 0;
+algorithm
+  while not listEmpty(stack) loop
+    v :: stack := stack;
+
+    strl := match v
+      case STRING() then appendStackString(v.str, strl);
+      case TRUE() then "true" :: strl;
+      case FALSE() then "false" :: strl;
+      case NULL() then "null" :: strl;
+      case INTEGER() then String(v.i) :: strl;
+      case NUMBER() then String(v.r) :: strl;
+
+      case ARRAY()
+        algorithm
+          stack := appendStackArray(v.values, stack);
+        then
+          strl;
+
+      case OBJECT()
+        algorithm
+          stack := appendStackObject(v.values, stack);
+        then
+          strl;
+
+      case TOKEN() then v.str :: strl;
+    end match;
+  end while;
+
+  str := stringAppendList(strl);
+end toString_work;
+
+function appendStackString
+  input String str;
+  input output list<String> strl;
+algorithm
+  strl := "\"" :: strl;
+  strl := System.escapedString(str, true) :: strl;
+  strl := "\"" :: strl;
+end appendStackString;
+
+function appendStackArray
+  input Vector<JSON> values;
+  input output list<JSON> stack;
+algorithm
+  stack := TOKEN("[") :: stack;
+
+  for i in 1:Vector.size(values) loop
+    if i <> 1 then
+      stack := TOKEN(", ") :: stack;
+    end if;
+
+    stack := Vector.getNoBounds(values, i) :: stack;
+  end for;
+
+  stack := TOKEN("]") :: stack;
+end appendStackArray;
+
+function appendStackObject
+  input UnorderedMap<String, JSON> map;
+  input output list<JSON> stack;
+algorithm
+  stack := TOKEN("{") :: stack;
+
+  for i in 1:UnorderedMap.size(map) loop
+    if i <> 1 then
+      stack := TOKEN(", ") :: stack;
+    end if;
+
+    stack := TOKEN("\"") :: stack;
+    stack := TOKEN(UnorderedMap.keyAt(map, i)) :: stack;
+    stack := TOKEN("\":") :: stack;
+    stack := UnorderedMap.valueAt(map, i) :: stack;
+  end for;
+
+  stack := TOKEN("}") :: stack;
+end appendStackObject;
+
+function toStringPP_work
+  input JSON value;
+  output String str;
+protected
+  list<JSON> stack = {value};
+  JSON v;
+  list<String> strl = {};
+  String indent = "";
+  Integer indent_len;
+algorithm
+  while not listEmpty(stack) loop
+    v :: stack := stack;
+
+    strl := match v
+      case STRING() then appendStackString(v.str, strl);
+      case TRUE() then "true" :: strl;
+      case FALSE() then "false" :: strl;
+      case NULL() then "null" :: strl;
+      case INTEGER() then String(v.i) :: strl;
+      case NUMBER() then String(v.r) :: strl;
+
+      case ARRAY()
+        algorithm
+          stack := appendStackArrayPP(v.values, stack);
+        then
+          strl;
+
+      case OBJECT()
+        algorithm
+          stack := appendStackObjectPP(v.values, stack);
+        then
+          strl;
+
+      case TOKEN() then v.str :: strl;
+      case INDENT() then indent :: strl;
+
+      case PUSH_INDENT()
+        algorithm
+          indent := indent + "  ";
+        then
+          strl;
+
+      case POP_INDENT()
+        algorithm
+          indent_len := stringLength(indent) - 2;
+
+          if indent_len == 0 then
+            indent := "";
+          else
+            indent := substring(indent, 1,  indent_len);
+          end if;
+        then
+          strl;
+    end match;
+  end while;
+
+  str := stringAppendList(strl);
+end toStringPP_work;
+
+function appendStackArrayPP
+  input Vector<JSON> values;
+  input output list<JSON> stack;
+algorithm
+  stack := POP_INDENT() :: stack;
+  stack := TOKEN("[\n") :: stack;
+
+  for i in 1:Vector.size(values) loop
+    if i <> 1 then
+      stack := TOKEN(",\n") :: stack;
+    end if;
+
+    stack := INDENT() :: stack;
+    stack := Vector.getNoBounds(values, i) :: stack;
+  end for;
+
+  stack := TOKEN("\n") :: stack;
+  stack := PUSH_INDENT() :: stack;
+  stack := INDENT() :: stack;
+  stack := TOKEN("]") :: stack;
+end appendStackArrayPP;
+
+function appendStackObjectPP
+  input UnorderedMap<String, JSON> map;
+  input output list<JSON> stack;
+algorithm
+  stack := POP_INDENT() :: stack;
+  stack := TOKEN("{\n") :: stack;
+
+  for i in 1:UnorderedMap.size(map) loop
+    if i <> 1 then
+      stack := TOKEN(",\n") :: stack;
+    end if;
+
+    stack := INDENT() :: stack;
+    stack := TOKEN("\"") :: stack;
+    stack := TOKEN(UnorderedMap.keyAt(map, i)) :: stack;
+    stack := TOKEN("\": ") :: stack;
+    stack := UnorderedMap.valueAt(map, i) :: stack;
+  end for;
+
+  stack := TOKEN("\n") :: stack;
+  stack := PUSH_INDENT() :: stack;
+  stack := INDENT() :: stack;
+  stack := TOKEN("}") :: stack;
+end appendStackObjectPP;
 
 partial function partialParser
   input list<Token> inTokens;
