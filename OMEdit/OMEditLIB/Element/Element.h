@@ -412,7 +412,6 @@ public slots:
   void duplicate();
   void rotateClockwise();
   void rotateAntiClockwise();
-  void replaceSubModel();
   void flipHorizontal();
   void flipVertical();
   void moveUp();
@@ -433,6 +432,7 @@ public slots:
   void openClass();
   void showSubModelAttributes();
   void showElementPropertiesDialog();
+  void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 protected:

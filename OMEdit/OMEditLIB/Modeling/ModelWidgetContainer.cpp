@@ -4095,19 +4095,6 @@ void GraphicsView::replaceSubModelItem()
 }
 
 /*!
- * \brief GraphicsView::replaceSubModel
- * replaces the submodel emitting GraphicsView::replaceSubModelItem() SIGNAL.
- */
-void GraphicsView::replaceSubModel(Element *pElement)
-{
-  if (pElement)
-  {
-    ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(this, pElement);
-    pReplaceFMUDialog->exec();
-  }
-}
-
-/*!
  * \brief GraphicsView::createConnector
  * Creates a connector while making a connection.\n
  * Ends the connection on the newly created connector.
