@@ -143,6 +143,9 @@ algorithm
         b = serializeVarsHelp(file, vars.stringAliasVars, withOperations, b);
         b = serializeVarsHelp(file, vars.extObjVars, withOperations, b);
         b = serializeVarsHelp(file, vars.constVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.intConstVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.boolConstVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.stringConstVars, withOperations, b);
         b = serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
         b = serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
       then ();
