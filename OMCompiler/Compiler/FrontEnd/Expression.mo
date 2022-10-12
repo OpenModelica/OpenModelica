@@ -6075,12 +6075,16 @@ algorithm
 end traverseExpTypeDims2;
 
 public function extractUniqueCrefsFromExp
-  "Extracts all unique ComponentRef from an Expression."
+  "Extracts all unique ComponentRef from an Expression.
+  If `expand` is true crefs will be expanded."
   input DAE.Exp inExp;
+  input Boolean expand = true;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  // ocrefs := List.unique(List.flatten(List.map1(extractCrefsFromExp(inExp), ComponentReference.expandCref, true)));
   ocrefs := List.unique(extractCrefsFromExp(inExp));
+  if expand then
+    ocrefs := List.flatten(List.map1(ocrefs, ComponentReference.expandCref, true));
+  end if;
 end extractUniqueCrefsFromExp;
 
 public function extractCrefsFromExp "
@@ -6115,7 +6119,7 @@ public function extractUniqueCrefsFromExpDerPreStart
   "author mahge: Same as extractUniqueCrefsFromExp except:
   This function will not treat der(), pre() and start() as calls
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
-  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start.."
+  be extreacted as a unique id. Instead you get $DER.x. Same goes for pre and start."
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
@@ -6127,7 +6131,7 @@ public function extractCrefsFromExpDerPreStart
 " author mahge: Same as extractCrefsFromExp except:
   This function will not treat der(), pre() and start() as calls
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
-  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start."
+  be extreacted as a unique id. Instead you get $DER.x. Same goes for pre and start."
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm

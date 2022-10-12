@@ -3827,21 +3827,6 @@ package Expression
     output Boolean outBoolean;
   end isPositiveOrZero;
 
-  function extractUniqueCrefsFromExp
-    input DAE.Exp inExp;
-    output list<DAE.ComponentRef> ocrefs;
-  end extractUniqueCrefsFromExp;
-
-  function extractUniqueCrefsFromExpDerPreStart
-    input DAE.Exp inExp;
-    output list<DAE.ComponentRef> ocrefs;
-  end extractUniqueCrefsFromExpDerPreStart;
-
-  function extractUniqueCrefsFromStatmentS
-    input list<DAE.Statement> inStmts;
-    output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
-  end extractUniqueCrefsFromStatmentS;
-
   function isCrefListWithEqualIdents
     input list<DAE.Exp> iExpressions;
     output Boolean oCrefWithEqualIdents;

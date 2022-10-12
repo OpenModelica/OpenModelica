@@ -1891,7 +1891,7 @@ algorithm
         // 1. differentiate delayed expression
         (e, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         // 2. filter all seeds from e
-        seeds := list(cref for cref guard(isSeedCref(cref)) in Expression.extractUniqueCrefsFromExp(e));
+        seeds := list(cref for cref guard(isSeedCref(cref)) in Expression.extractUniqueCrefsFromExp(e, false));
         // 3. create empty replacement rules
         repl := BackendVarTransform.emptyReplacements();
         repl := BackendVarTransform.addReplacements(repl, seeds, List.fill(DAE.ICONST(0), listLength(seeds)), NONE());
