@@ -6121,21 +6121,26 @@ public function extractUniqueCrefsFromExpDerPreStart
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
   be extreacted as a unique id. Instead you get $DER.x. Same goes for pre and start."
   input DAE.Exp inExp;
+  input Boolean expand = true;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  // ocrefs := List.unique(List.flatten(List.map1(extractCrefsFromExp(inExp), ComponentReference.expandCref, true)));
-  ocrefs := List.unique(extractCrefsFromExpDerPreStart(inExp));
+  ocrefs := List.unique(extractCrefsFromExpDerPreStart(inExp, expand));
 end extractUniqueCrefsFromExpDerPreStart;
 
 public function extractCrefsFromExpDerPreStart
 " author mahge: Same as extractCrefsFromExp except:
   This function will not treat der(), pre() and start() as calls
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
-  be extreacted as a unique id. Instead you get $DER.x. Same goes for pre and start."
+  be extreacted as a unique id. Instead you get $DER.x. Same goes for pre and start.
+  If `expand` is true crefs will be expanded."
   input DAE.Exp inExp;
+  input Boolean expand;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
   (_,ocrefs) := traverseExpTopDown(inExp, traversingComponentRefFinderDerPreStart, {});
+  if expand then
+    ocrefs := List.flatten(List.map1(ocrefs, ComponentReference.expandCref, true));
+  end if;
 end extractCrefsFromExpDerPreStart;
 
 public function traversingComponentRefFinderDerPreStart "
@@ -6210,22 +6215,22 @@ algorithm
 
     case DAE.STMT_ASSIGN(exp1 = exp1, exp = exp2)
       equation
-        olcrefs = extractCrefsFromExpDerPreStart(exp1);
-        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+        olcrefs = extractCrefsFromExpDerPreStart(exp1, false);
+        orcrefs = extractCrefsFromExpDerPreStart(exp2, false);
       then
         (olcrefs,orcrefs);
 
     case DAE.STMT_TUPLE_ASSIGN(expExpLst = expLst, exp = exp2)
       equation
-        olcrefs = List.flatten(List.map(expLst, extractCrefsFromExpDerPreStart));
-        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+        olcrefs = List.flatten(List.map1(expLst, extractCrefsFromExpDerPreStart, false));
+        orcrefs = extractCrefsFromExpDerPreStart(exp2, false);
       then
         (olcrefs,orcrefs);
 
     case DAE.STMT_ASSIGN_ARR(lhs = exp1, exp = exp2)
       equation
-        olcrefs = extractCrefsFromExpDerPreStart(exp1);
-        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+        olcrefs = extractCrefsFromExpDerPreStart(exp1, false);
+        orcrefs = extractCrefsFromExpDerPreStart(exp2, false);
       then
         (olcrefs,orcrefs);
 
@@ -6255,7 +6260,7 @@ algorithm
 
     case DAE.STMT_ASSERT(cond = exp1)
       equation
-        orcrefs = extractCrefsFromExpDerPreStart(exp1);
+        orcrefs = extractCrefsFromExpDerPreStart(exp1, false);
       then
         ({},orcrefs);
 
@@ -6288,17 +6293,17 @@ algorithm
 
     case DAE.STMT_ASSIGN(exp1 = exp1)
       equation
-        lhsCrefs = extractCrefsFromExpDerPreStart(exp1);
+        lhsCrefs = extractCrefsFromExpDerPreStart(exp1, false);
       then lhsCrefs;
 
     case DAE.STMT_TUPLE_ASSIGN(expExpLst = expLst)
       equation
-        lhsCrefs = List.flatten(List.map(expLst, extractCrefsFromExpDerPreStart));
+        lhsCrefs = List.flatten(List.map1(expLst, extractCrefsFromExpDerPreStart, false));
       then lhsCrefs;
 
     case DAE.STMT_ASSIGN_ARR(lhs = exp1)
       equation
-        lhsCrefs = extractCrefsFromExpDerPreStart(exp1);
+        lhsCrefs = extractCrefsFromExpDerPreStart(exp1, false);
       then lhsCrefs;
 
     case DAE.STMT_IF(statementLst = stmtLst)
