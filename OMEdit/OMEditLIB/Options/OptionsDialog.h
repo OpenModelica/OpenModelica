@@ -263,7 +263,7 @@ public:
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
-  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
+  QString getWorkingDirectory();
   QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
   bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}

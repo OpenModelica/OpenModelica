@@ -3667,6 +3667,20 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
 }
 
 /*!
+ * \brief GeneralSettingsPage::getWorkingDirectory
+ * Returns the working directory.
+ * \return
+ */
+QString GeneralSettingsPage::getWorkingDirectory()
+{
+  if (mpWorkingDirectoryTextBox->text().isEmpty()) {
+    return mpWorkingDirectoryTextBox->placeholderText();
+  } else {
+    return mpWorkingDirectoryTextBox->text();
+  }
+}
+
+/*!
  * \brief GeneralSettingsPage::getWelcomePageView
  * Returns the WelcomePageWidget orientation.
  * \return
