@@ -387,34 +387,6 @@ private:
   QColor mColor;
 };
 
-class CodeColorsWidget : public QWidget
-{
-  Q_OBJECT
-public:
-  CodeColorsWidget(QWidget *pParent = 0);
-  QListWidget* getItemsListWidget() {return mpItemsListWidget;}
-  PreviewPlainTextEdit* getPreviewPlainTextEdit() {return mpPreviewPlainTextEdit;}
-private:
-  QGroupBox *mpColorsGroupBox;
-  Label *mpItemsLabel;
-  QListWidget *mpItemsListWidget;
-  Label *mpItemColorLabel;
-  QPushButton *mpItemColorPickButton;
-  Label *mpPreviewLabel;
-  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
-  ListWidgetItem *mpTextItem;
-  ListWidgetItem *mpNumberItem;
-  ListWidgetItem *mpKeywordItem;
-  ListWidgetItem *mpTypeItem;
-  ListWidgetItem *mpFunctionItem;
-  ListWidgetItem *mpQuotesItem;
-  ListWidgetItem *mpCommentItem;
-signals:
-  void colorUpdated();
-private slots:
-  void pickColor();
-};
-
 /*!
  * \brief The VerticalScrollArea class
  * A scroll area with vertical bar and adjustment of width

@@ -241,7 +241,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
+  settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toUtf8().constData()), args);

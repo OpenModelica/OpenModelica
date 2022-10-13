@@ -458,7 +458,7 @@ void DebuggerConfigurationsDialog::newConfiguration()
   // create a new DebuggerConfigurationPage
   DebuggerConfiguration debuggerConfiguration;
   debuggerConfiguration.name = getUniqueName();
-  debuggerConfiguration.GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPathForSettings();
+  debuggerConfiguration.GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
   // create a new list item
   QListWidgetItem *pListWidgetItem = new QListWidgetItem(mpConfigurationsListWidget);
   pListWidgetItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));

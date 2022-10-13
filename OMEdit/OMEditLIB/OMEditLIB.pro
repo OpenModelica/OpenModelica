@@ -221,6 +221,7 @@ HEADERS  += Util/Helper.h \
   Modeling/FunctionArgumentDialog.h \
   Modeling/InstallLibraryDialog.h \
   Search/SearchWidget.h \
+  Options/OptionsDefaults.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
   Editors/ModelicaEditor.h \
