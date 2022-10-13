@@ -3517,11 +3517,14 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpToolbarIconSizeLabel = new Label(tr("Toolbar Icon Size: *"));
   mpToolbarIconSizeSpinBox = new QSpinBox;
   mpToolbarIconSizeSpinBox->setMinimum(16); // icons smaller than 16.......naaaaahhhh!!!!!
+  mpToolbarIconSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::toolBarIconSize);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
+  mpPreserveUserCustomizations->setChecked(OptionsDefaults::GeneralSettings::toolBarIconSize);
   // terminal command
   mpTerminalCommandLabel = new Label(tr("Terminal Command:"));
   mpTerminalCommandTextBox = new QLineEdit;
+  mpTerminalCommandTextBox->setText(OptionsDefaults::GeneralSettings::terminalCommand);
   mpTerminalCommandBrowseButton = new QPushButton(Helper::browse);
   mpTerminalCommandBrowseButton->setAutoDefault(false);
   connect(mpTerminalCommandBrowseButton, SIGNAL(clicked()), SLOT(selectTerminalCommand()));
@@ -3531,6 +3534,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // hide variables browser checkbox
   mpHideVariablesBrowserCheckBox = new QCheckBox(tr("Hide Variables Browser"));
   mpHideVariablesBrowserCheckBox->setToolTip(tr("Hides the variable browser when switching away from plotting perspective."));
+  mpHideVariablesBrowserCheckBox->setChecked(OptionsDefaults::GeneralSettings::hideVariablesBrowser);
   // activate access annotation
   mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
   mpActivateAccessAnnotationsComboBox = new QComboBox;
@@ -3541,9 +3545,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpActivateAccessAnnotationsComboBox->addItem(tr("Always"), GeneralSettingsPage::Always);
   mpActivateAccessAnnotationsComboBox->addItem(tr("When loading .mol file(s)"), GeneralSettingsPage::Loading);
   mpActivateAccessAnnotationsComboBox->addItem(tr("Never"), GeneralSettingsPage::Never);
+  mpActivateAccessAnnotationsComboBox->setCurrentIndex(OptionsDefaults::GeneralSettings::activateAccessAnnotationsIndex);
   Utilities::setToolTip(mpActivateAccessAnnotationsComboBox, tr("Options for handling of access annotations"), activateAccessAnnotationsDescriptions);
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
+  mpCreateBackupFileCheckbox->setChecked(OptionsDefaults::GeneralSettings::createBackupFile);
   /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
   mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   // set the layout of general settings group
@@ -3574,16 +3580,19 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpLibraryIconSizeLabel = new Label(tr("Library Icon Size: *"));
   mpLibraryIconSizeSpinBox = new QSpinBox;
   mpLibraryIconSizeSpinBox->setMinimum(16);
+  mpLibraryIconSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::libraryIconSize);
   // library icon max. text length, value is set later
   mpLibraryIconTextLengthLabel = new Label(tr("Max. Library Icon Text Length to Show: *"));
   mpLibraryIconTextLengthSpinBox = new QSpinBox;
   mpLibraryIconTextLengthSpinBox->setMinimum(0);
+  mpLibraryIconTextLengthSpinBox->setValue(OptionsDefaults::GeneralSettings::libraryIconMaximumTextLength);
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
   mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide)))"));
   // synchronize Libraries Browser with ModelWidget
   mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
+  mpSynchronizeWithModelWidgetCheckBox->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
   // Libraries Browser group box layout
   QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
   pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3600,11 +3609,13 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
   mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
   mpEnableAutoSaveGroupBox->setCheckable(true);
+  mpEnableAutoSaveGroupBox->setChecked(OptionsDefaults::GeneralSettings::enableAutoSave);
   mpAutoSaveIntervalLabel = new Label(tr("Auto Save Interval:"));
   mpAutoSaveIntervalSpinBox = new QSpinBox;
   mpAutoSaveIntervalSpinBox->setSuffix(tr(" seconds"));
   mpAutoSaveIntervalSpinBox->setRange(60, std::numeric_limits<int>::max());
   mpAutoSaveIntervalSpinBox->setSingleStep(30);
+  mpAutoSaveIntervalSpinBox->setValue(OptionsDefaults::GeneralSettings::autoSaveInterval);
   mpAutoSaveSecondsLabel = new Label;
   connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
   // calculate the auto save interval seconds.
@@ -3619,6 +3630,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Welcome Page
   mpWelcomePageGroupBox = new QGroupBox(tr("Welcome Page"));
   mpHorizontalViewRadioButton = new QRadioButton(tr("Horizontal View"));
+  mpHorizontalViewRadioButton->setChecked(true);
   mpVerticalViewRadioButton = new QRadioButton(tr("Vertical View"));
   QButtonGroup *pWelcomePageViewButtons = new QButtonGroup;
   pWelcomePageViewButtons->addButton(mpHorizontalViewRadioButton);
@@ -3629,9 +3641,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pWelcomePageViewButtonsLayout->addWidget(mpVerticalViewRadioButton);
   // Show/hide latest news checkbox
   mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News"));
+  mpShowLatestNewsCheckBox->setChecked(OptionsDefaults::GeneralSettings::showLatestNews);
   // Recent files and latest news size
   Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News Size:"));
   mpRecentFilesAndLatestNewsSizeSpinBox = new QSpinBox;
+  mpRecentFilesAndLatestNewsSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
   // Welcome Page layout
   QGridLayout *pWelcomePageGridLayout = new QGridLayout;
   pWelcomePageGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3648,6 +3662,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   //! @todo Remove this once we enable this bydefault in OMC.
   /* Enable new instantiation use in OMC API */
   mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
+  mpEnableNewInstantiationAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableNewInstantiationAPI);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3777,6 +3792,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // load latest Modeica checkbox
   mpLoadLatestModelicaCheckbox = new QCheckBox(tr("Load latest Modelica version on startup"));
+  mpLoadLatestModelicaCheckbox->setChecked(OptionsDefaults::Libraries::loadLatestModelica);
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
   mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(mpSystemLibrariesTree));
@@ -4219,6 +4235,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpLineEndingComboBox = new QComboBox;
   mpLineEndingComboBox->addItem(tr("Windows (CRLF)"), Utilities::CRLFLineEnding);
   mpLineEndingComboBox->addItem(tr("Unix (LF)"), Utilities::LFLineEnding);
+  mpLineEndingComboBox->setCurrentIndex(OptionsDefaults::TextEditor::lineEnding);
   // Byte Order Mark BOM
   mpBOMLabel = new Label(tr("Byte Order Mark (BOM):"));
   mpBOMComboBox = new QComboBox;
@@ -4229,6 +4246,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpBOMComboBox->addItem(tr("Always Add"), Utilities::AlwaysAddBom);
   mpBOMComboBox->addItem(tr("Keep If Already Present"), Utilities::KeepBom);
   mpBOMComboBox->addItem(tr("Always Delete"), Utilities::AlwaysDeleteBom);
+  mpBOMComboBox->setCurrentIndex(OptionsDefaults::TextEditor::bom);
   Utilities::setToolTip(mpBOMComboBox, tr("Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any"), bomDescriptions);
   // set format groupbox layout
   QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
@@ -4249,10 +4267,12 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpTabSizeLabel = new Label(tr("Tab Size:"));
   mpTabSizeSpinBox = new QSpinBox;
   mpTabSizeSpinBox->setRange(1, 20);
+  mpTabSizeSpinBox->setValue(OptionsDefaults::TextEditor::tabSize);
   // indent size
   mpIndentSizeLabel = new Label(tr("Indent Size:"));
   mpIndentSpinBox = new QSpinBox;
   mpIndentSpinBox->setRange(1, 20);
+  mpIndentSpinBox->setValue(OptionsDefaults::TextEditor::indentSize);
   // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
@@ -4268,8 +4288,10 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // syntax highlighting groupbox
   mpSyntaxHighlightingGroupBox = new QGroupBox(tr("Enable Syntax Highlighting"));
   mpSyntaxHighlightingGroupBox->setCheckable(true);
+  mpSyntaxHighlightingGroupBox->setChecked(OptionsDefaults::TextEditor::syntaxHighlighting);
   // code folding checkbox
   mpCodeFoldingCheckBox = new QCheckBox(tr("Enable Code Folding"));
+  mpCodeFoldingCheckBox->setChecked(OptionsDefaults::TextEditor::codeFolding);
   // match parenthesis within comments and quotes
   mpMatchParenthesesCommentsQuotesCheckBox = new QCheckBox(tr("Match Parentheses within Comments and Quotes"));
   // set Syntax Highlighting groupbox layout
@@ -4279,6 +4301,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpSyntaxHighlightingGroupBox->setLayout(pSyntaxHighlightingGroupBoxLayout);
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
+  mpLineWrappingCheckbox->setChecked(OptionsDefaults::TextEditor::lineWrapping);
   // set Syntax Highlight & Text Wrapping groupbox layout
   QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingGroupBox, 0, 0);
@@ -4288,6 +4311,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpAutoCompleteGroupBox = new QGroupBox(tr("Autocomplete"));
   // autocompleter checkbox
   mpAutoCompleteCheckBox = new QCheckBox(tr("Enable Autocomplete"));
+  mpAutoCompleteCheckBox->setChecked(OptionsDefaults::TextEditor::autocomplete);
   QGridLayout *pAutoCompleteGroupBoxLayout = new QGridLayout;
   pAutoCompleteGroupBoxLayout->addWidget(mpAutoCompleteCheckBox,0,0);
   mpAutoCompleteGroupBox->setLayout(pAutoCompleteGroupBoxLayout);
@@ -4296,11 +4320,15 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // font family combobox
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
+  int currentIndex;
+  currentIndex = mpFontFamilyComboBox->findText(Helper::monospacedFontInfo.family(), Qt::MatchExactly);
+  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setSingleStep(1);
+  mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
   // set font groupbox layout
   QGridLayout *pFontGroupBoxLayout = new QGridLayout;
   pFontGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
@@ -4334,6 +4362,7 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   // preserve text indentation
   mpPreserveTextIndentationCheckBox = new QCheckBox(tr("Preserve Text Indentation"));
+  mpPreserveTextIndentationCheckBox->setChecked(OptionsDefaults::ModelicaEditor::preserveTextIndentation);
   // code colors widget
   mpCodeColorsWidget = new CodeColorsWidget(this);
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
@@ -4943,6 +4972,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   // Modeling View Mode
   QGroupBox *pModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
   mpModelingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
+  mpModelingTabbedViewRadioButton->setChecked(true);
   mpModelingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
   QButtonGroup *pModelingViewModeButtonGroup = new QButtonGroup;
   pModelingViewModeButtonGroup->addButton(mpModelingTabbedViewRadioButton);
@@ -4961,6 +4991,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
   mpIconViewRadioButton = new QRadioButton(Helper::iconView);
   mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
+  mpDiagramViewRadioButton->setChecked(true);
   mpTextViewRadioButton = new QRadioButton(Helper::textView);
   mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
   QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
@@ -4998,18 +5029,22 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pIconViewLeftLabel = new Label(QString(Helper::left).append(":"));
   mpIconViewLeftSpinBox = new DoubleSpinBox;
   mpIconViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewLeftSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconExtentLeft);
   mpIconViewLeftSpinBox->setSingleStep(10);
   Label *pIconViewBottomLabel = new Label(Helper::bottom);
   mpIconViewBottomSpinBox = new DoubleSpinBox;
   mpIconViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewBottomSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconExtentBottom);
   mpIconViewBottomSpinBox->setSingleStep(10);
   Label *pIconViewRightLabel = new Label(QString(Helper::right).append(":"));
   mpIconViewRightSpinBox = new DoubleSpinBox;
   mpIconViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewRightSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconExtentRight);
   mpIconViewRightSpinBox->setSingleStep(10);
   Label *pIconViewTopLabel = new Label(Helper::top);
   mpIconViewTopSpinBox = new DoubleSpinBox;
   mpIconViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewTopSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconExtentTop);
   mpIconViewTopSpinBox->setSingleStep(10);
   // set the Icon View extent group box layout
   QGridLayout *pIconViewExtentLayout = new QGridLayout;
@@ -5030,10 +5065,12 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pIconViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpIconViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpIconViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewGridHorizontalSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconGridHorizontal);
   mpIconViewGridHorizontalSpinBox->setSingleStep(1);
   Label *pIconViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpIconViewGridVerticalSpinBox = new DoubleSpinBox;
   mpIconViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewGridVerticalSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconGridVertical);
   mpIconViewGridVerticalSpinBox->setSingleStep(1);
   // set the Icon View grid group box layout
   QGridLayout *pIconViewGridLayout = new QGridLayout;
@@ -5049,8 +5086,10 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pIconViewScaleFactorLabel = new Label(Helper::scaleFactor);
   mpIconViewScaleFactorSpinBox = new DoubleSpinBox;
   mpIconViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewScaleFactorSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::iconInitialScale);
   mpIconViewScaleFactorSpinBox->setSingleStep(0.1);
   mpIconViewPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
+  mpIconViewPreserveAspectRatioCheckBox->setChecked(OptionsDefaults::GraphicalViewsPage::iconPreserveAspectRatio);
   // set the Icon View component group box layout
   QGridLayout *pIconViewComponentLayout = new QGridLayout;
   pIconViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5075,18 +5114,22 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pDiagramViewLeftLabel = new Label(QString(Helper::left).append(":"));
   mpDiagramViewLeftSpinBox = new DoubleSpinBox;
   mpDiagramViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewLeftSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramExtentLeft);
   mpDiagramViewLeftSpinBox->setSingleStep(10);
   Label *pDiagramViewBottomLabel = new Label(Helper::bottom);
   mpDiagramViewBottomSpinBox = new DoubleSpinBox;
   mpDiagramViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewBottomSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramExtentBottom);
   mpDiagramViewBottomSpinBox->setSingleStep(10);
   Label *pDiagramViewRightLabel = new Label(QString(Helper::right).append(":"));
   mpDiagramViewRightSpinBox = new DoubleSpinBox;
   mpDiagramViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewRightSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramExtentRight);
   mpDiagramViewRightSpinBox->setSingleStep(10);
   Label *pDiagramViewTopLabel = new Label(Helper::top);
   mpDiagramViewTopSpinBox = new DoubleSpinBox;
   mpDiagramViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewTopSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramExtentTop);
   mpDiagramViewTopSpinBox->setSingleStep(10);
   // set the Diagram View extent group box layout
   QGridLayout *pDiagramViewExtentLayout = new QGridLayout;
@@ -5107,10 +5150,12 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pDiagramViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpDiagramViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewGridHorizontalSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramGridHorizontal);
   mpDiagramViewGridHorizontalSpinBox->setSingleStep(1);
   Label *pDiagramViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpDiagramViewGridVerticalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewGridVerticalSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramGridVertical);
   mpDiagramViewGridVerticalSpinBox->setSingleStep(1);
   // set the Diagram View grid group box layout
   QGridLayout *pDiagramViewGridLayout = new QGridLayout;
@@ -5126,8 +5171,10 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   Label *pDiagramViewScaleFactorLabel = new Label(Helper::scaleFactor);
   mpDiagramViewScaleFactorSpinBox = new DoubleSpinBox;
   mpDiagramViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewScaleFactorSpinBox->setValue(OptionsDefaults::GraphicalViewsPage::diagramInitialScale);
   mpDiagramViewScaleFactorSpinBox->setSingleStep(0.1);
   mpDiagramViewPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
+  mpDiagramViewPreserveAspectRatioCheckBox->setChecked(OptionsDefaults::GraphicalViewsPage::diagramPreserveAspectRatio);
   // set the Diagram View component group box layout
   QGridLayout *pDiagramViewComponentLayout = new QGridLayout;
   pDiagramViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5411,6 +5458,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new QComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
@@ -5462,18 +5510,23 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
+  mpSaveClassBeforeSimulationCheckBox->setChecked(OptionsDefaults::Simulation::saveClassBeforeSimulation);
   /* switch to plotting perspective after simulation checkbox */
   mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
+  mpSwitchToPlottingPerspectiveCheckBox->setChecked(OptionsDefaults::Simulation::switchToPlottingPerspective);
   /* Close completed SimulationOutputWidgets before simulation checkbox */
   mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox = new QCheckBox(tr("Close completed simulation output windows before simulation"));
+  mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox->setChecked(OptionsDefaults::Simulation::closeSimulationOutputWidgetsBeforeSimulation);
   /* Delete intermediate compilation files checkbox */
   mpDeleteIntermediateCompilationFilesCheckBox = new QCheckBox(tr("Delete intermediate compilation files"));
+  mpDeleteIntermediateCompilationFilesCheckBox->setChecked(OptionsDefaults::Simulation::deleteIntermediateCompilationFiles);
   /* Delete entire simulation directory checkbox */
   mpDeleteEntireSimulationDirectoryCheckBox = new QCheckBox(tr("Delete entire simulation directory of the model when OMEdit is closed"));
   // simulation output format
   mpOutputGroupBox = new QGroupBox(Helper::output);
   mpStructuredRadioButton = new QRadioButton(tr("Structured"));
   mpStructuredRadioButton->setToolTip(tr("Shows the simulation output in the form of tree structure."));
+  mpStructuredRadioButton->setChecked(true);
   mpFormattedTextRadioButton = new QRadioButton(tr("Formatted Text"));
   mpFormattedTextRadioButton->setToolTip(tr("Shows the simulation output in the form of formatted text."));
   QButtonGroup *pOutputButtonGroup = new QButtonGroup;
@@ -5489,8 +5542,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpDisplayLimitSpinBox->setSuffix(" KB");
   mpDisplayLimitSpinBox->setRange(1, std::numeric_limits<int>::max());
   mpDisplayLimitSpinBox->setSingleStep(100);
+  mpDisplayLimitSpinBox->setValue(OptionsDefaults::Simulation::displayLimit);
   mpDisplayLimitMBLabel = new Label;
   connect(mpDisplayLimitSpinBox, SIGNAL(valueChanged(int)), SLOT(displayLimitValueChanged(int)));
+  // calculate the display limit in MBs.
+  displayLimitValueChanged(mpDisplayLimitSpinBox->value());
   // set the layout of output view mode group
   QGridLayout *pOutputGroupGridLayout = new QGridLayout;
   pOutputGroupGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5600,6 +5656,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeSpinBox->setSpecialValueText(Helper::unlimited);
   // reset messages number before simulation
   mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation && simulation"));
+  mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(OptionsDefaults::Messages::resetMessagesNumberBeforeSimulation);
   // clear messages browser before simulation
   mpClearMessagesBrowserBeforeSimulationCheckBox = new QCheckBox(tr("Clear messages browser before checking, instantiation && simulation"));
   // set general groupbox layout
@@ -5615,26 +5672,37 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   // font family combobox
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
+  QTextBrowser textBrowser;
+  int currentIndex;
+  currentIndex = mpFontFamilyComboBox->findText(textBrowser.font().family(), Qt::MatchExactly);
+  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFontSizeSpinBox->setValue(textBrowser.font().pointSize());
   mpFontSizeSpinBox->setSingleStep(1);
   // Notification Color
   mpNotificationColorLabel = new Label(tr("Notification Color:"));
   mpNotificationColorButton = new QPushButton(Helper::pickColor);
   mpNotificationColorButton->setAutoDefault(false);
   connect(mpNotificationColorButton, SIGNAL(clicked()), SLOT(pickNotificationColor()));
+  setNotificationColor(OptionsDefaults::Messages::notificationColor);
+  setNotificationPickColorButtonIcon();
   // Warning Color
   mpWarningColorLabel = new Label(tr("Warning Color:"));
   mpWarningColorButton = new QPushButton(Helper::pickColor);
   mpWarningColorButton->setAutoDefault(false);
   connect(mpWarningColorButton, SIGNAL(clicked()), SLOT(pickWarningColor()));
+  setWarningColor(OptionsDefaults::Messages::warningColor);
+  setWarningPickColorButtonIcon();
   // Error Color
   mpErrorColorLabel = new Label(tr("Error Color:"));
   mpErrorColorButton = new QPushButton(Helper::pickColor);
   mpErrorColorButton->setAutoDefault(false);
   connect(mpErrorColorButton, SIGNAL(clicked()), SLOT(pickErrorColor()));
+  setErrorColor(OptionsDefaults::Messages::errorColor);
+  setErrorPickColorButtonIcon();
   // set the layout of FontColors group
   QGridLayout *pFontColorsLayout = new QGridLayout;
   pFontColorsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5731,16 +5799,22 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   mpQuitApplicationCheckBox = new QCheckBox(tr("Always quit without prompt"));
   // create the item drop on itself checkbox
   mpItemDroppedOnItselfCheckBox = new QCheckBox(tr("Show item dropped on itself message"));
+  mpItemDroppedOnItselfCheckBox->setChecked(OptionsDefaults::Notification::itemDroppedOnItself);
   // create the replaceable if partial checkbox
   mpReplaceableIfPartialCheckBox = new QCheckBox(tr("Show model is partial and component is added as replaceable message"));
+  mpReplaceableIfPartialCheckBox->setChecked(OptionsDefaults::Notification::replaceableIfPartial);
   // create the inner model name changed checkbox
   mpInnerModelNameChangedCheckBox = new QCheckBox(tr("Show component is declared as inner message"));
+  mpInnerModelNameChangedCheckBox->setChecked(OptionsDefaults::Notification::innerModelNameChanged);
   // create the save model for bitmap insertion checkbox
   mpSaveModelForBitmapInsertionCheckBox = new QCheckBox(tr("Show save model for bitmap insertion message"));
+  mpSaveModelForBitmapInsertionCheckBox->setChecked(OptionsDefaults::Notification::saveModelForBitmapInsertion);
   // create the save model for bitmap insertion checkbox
   mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged/duplicated component name"));
+  mpAlwaysAskForDraggedComponentName->setChecked(OptionsDefaults::Notification::alwaysAskForDraggedComponentName);
   // create the always ask for text editor error
   mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
+  mpAlwaysAskForTextEditorErrorCheckBox->setChecked(OptionsDefaults::Notification::alwaysAskForTextEditorError);
   // set the layout of notifications group
   QGridLayout *pNotificationsLayout = new QGridLayout;
   pNotificationsLayout->setAlignment(Qt::AlignTop);
@@ -5776,13 +5850,17 @@ LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
   mpLinePickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpLinePickColorButton->setAutoDefault(false);
   connect(mpLinePickColorButton, SIGNAL(clicked()), SLOT(linePickColor()));
+  setLineColor(OptionsDefaults::LineStyle::color);
+  setLinePickColorButtonIcon();
   // Line Pattern
   mpLinePatternLabel = new Label(Helper::pattern);
   mpLinePatternComboBox = StringHandler::getLinePatternComboBox();
+  setLinePattern(OptionsDefaults::LineStyle::pattern);
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
   mpLineThicknessSpinBox = new DoubleSpinBox;
   mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineThicknessSpinBox->setValue(OptionsDefaults::LineStyle::thickness);
   mpLineThicknessSpinBox->setSingleStep(0.25);
   // Line Arrow
   mpLineStartArrowLabel = new Label(Helper::startArrow);
@@ -5792,6 +5870,7 @@ LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
   mpLineArrowSizeSpinBox = new DoubleSpinBox;
   mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineArrowSizeSpinBox->setValue(OptionsDefaults::LineStyle::arrowSize);
   mpLineArrowSizeSpinBox->setSingleStep(1);
   // Line smooth
   mpLineSmoothLabel = new Label(Helper::smooth);
@@ -5945,9 +6024,12 @@ FillStylePage::FillStylePage(OptionsDialog *pOptionsDialog)
   mpFillPickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpFillPickColorButton->setAutoDefault(false);
   connect(mpFillPickColorButton, SIGNAL(clicked()), SLOT(fillPickColor()));
+  setFillColor(OptionsDefaults::FillStyle::color);
+  setFillPickColorButtonIcon();
   // Fill Pattern
   mpFillPatternLabel = new Label(Helper::pattern);
   mpFillPatternComboBox = StringHandler::getFillPatternComboBox();
+  setFillPattern(OptionsDefaults::FillStyle::pattern);
   // set the layout
   QGridLayout *pFillStyleLayout = new QGridLayout;
   pFillStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6015,9 +6097,11 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // auto scale
   mpAutoScaleCheckBox = new QCheckBox(tr("Auto Scale"));
+  mpAutoScaleCheckBox->setChecked(OptionsDefaults::Plotting::autoScale);
   mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
   // prefix units
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
+  mpPrefixUnitsCheckbox->setChecked(OptionsDefaults::Plotting::prefixUnits);
   mpPrefixUnitsCheckbox->setToolTip(tr("Automatically pick the right prefix for units."));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
@@ -6027,6 +6111,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   // Plotting View Mode
   mpPlottingViewModeGroupBox = new QGroupBox(tr("Default Plotting View Mode"));
   mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
+  mpPlottingTabbedViewRadioButton->setChecked(true);
   mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
   QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup;
   pPlottingViewModeButtonGroup->addButton(mpPlottingTabbedViewRadioButton);
@@ -6056,6 +6141,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpCurveThicknessLabel = new Label(Helper::thickness);
   mpCurveThicknessSpinBox = new DoubleSpinBox;
   mpCurveThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpCurveThicknessSpinBox->setValue(OptionsDefaults::Plotting::curveThickness);
   mpCurveThicknessSpinBox->setSingleStep(1);
   // set the layout
   QGridLayout *pCurveStyleLayout = new QGridLayout;
@@ -6074,6 +6160,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpFilterIntervalSpinBox = new QSpinBox;
   mpFilterIntervalSpinBox->setSuffix(tr(" seconds"));
   mpFilterIntervalSpinBox->setRange(0, std::numeric_limits<int>::max());
+  mpFilterIntervalSpinBox->setValue(OptionsDefaults::Plotting::variableFilterInterval);
   mpFilterIntervalSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   // variable filter layout
   QGridLayout *pVariableFilterGridLayout = new QGridLayout;
@@ -6087,31 +6174,38 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpTitleFontSizeLabel = new Label("Title:");
   mpTitleFontSizeSpinBox = new DoubleSpinBox;
   mpTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::titleFontSize);
   mpTitleFontSizeSpinBox->setSingleStep(1);
   mpTitleFontSizeSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpVerticalAxisTitleFontSizeLabel = new Label("Vertical Axis Title:");
   mpVerticalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
   mpVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpVerticalAxisTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::verticalAxisTitleFontSize);
   mpVerticalAxisTitleFontSizeSpinBox->setSingleStep(1);
   mpVerticalAxisNumbersFontSizeLabel = new Label("Vertical Axis Numbers:");
   mpVerticalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
   mpVerticalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpVerticalAxisNumbersFontSizeSpinBox->setValue(OptionsDefaults::Plotting::verticalAxisNumbersFontSize);
   mpVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
   mpHorizontalAxisTitleFontSizeLabel = new Label("Horizontal Axis Title:");
   mpHorizontalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
   mpHorizontalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpHorizontalAxisTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::horizontalAxisTitleFontSize);
   mpHorizontalAxisTitleFontSizeSpinBox->setSingleStep(1);
   mpHorizontalAxisNumbersFontSizeLabel = new Label("Horizontal Axis Numbers:");
   mpHorizontalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
   mpHorizontalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpHorizontalAxisNumbersFontSizeSpinBox->setValue(OptionsDefaults::Plotting::horizontalAxisNumbersFontSize);
   mpHorizontalAxisNumbersFontSizeSpinBox->setSingleStep(1);
   mpFooterFontSizeLabel = new Label("Footer:");
   mpFooterFontSizeSpinBox = new DoubleSpinBox;
   mpFooterFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFooterFontSizeSpinBox->setValue(QApplication::font().pointSize());
   mpFooterFontSizeSpinBox->setSingleStep(1);
   mpLegendFontSizeLabel = new Label("Legend:");
   mpLegendFontSizeSpinBox = new DoubleSpinBox;
   mpLegendFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpLegendFontSizeSpinBox->setValue(QApplication::font().pointSize());
   mpLegendFontSizeSpinBox->setSingleStep(1);
   // font size layout
   QGridLayout *pFontSizeGridLayout = new QGridLayout;
@@ -6230,7 +6324,7 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Processor:"));
   OptionsDefaults::Figaro::process = QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe");
-  mpFigaroProcessTextBox = new QLineEdit;
+  mpFigaroProcessTextBox = new QLineEdit(OptionsDefaults::Figaro::process);
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
   connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
@@ -6311,6 +6405,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpGDBCommandTimeoutSpinBox->setSuffix(tr(" seconds"));
   mpGDBCommandTimeoutSpinBox->setRange(30, std::numeric_limits<int>::max());
   mpGDBCommandTimeoutSpinBox->setSingleStep(10);
+  mpGDBCommandTimeoutSpinBox->setValue(OptionsDefaults::Debugger::GDBCommandTimeout);
   /* GDB Output limit */
   mpGDBOutputLimitLabel = new Label(tr("GDB Output Limit:"));
   mpGDBOutputLimitSpinBox = new QSpinBox;
@@ -6320,12 +6415,16 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpGDBOutputLimitSpinBox->setSingleStep(10);
   // Display C Frames
   mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
+  mpDisplayCFramesCheckBox->setChecked(OptionsDefaults::Debugger::displayCFrames);
   // Display Unknown Frames
   mpDisplayUnknownFramesCheckBox = new QCheckBox(tr("Display unknown frames"));
+  mpDisplayUnknownFramesCheckBox->setChecked(OptionsDefaults::Debugger::displayUnknownFrames);
   // clear output on new run
   mpClearOutputOnNewRunCheckBox = new QCheckBox(tr("Clear old output on a new run"));
+  mpClearOutputOnNewRunCheckBox->setChecked(OptionsDefaults::Debugger::clearOutputOnNewRun);
   // clear log on new run
   mpClearLogOnNewRunCheckBox = new QCheckBox(tr("Clear old log on a new run"));
+  mpClearLogOnNewRunCheckBox->setChecked(OptionsDefaults::Debugger::clearLogOnNewRun);
   /* set the debugger group box layout */
   QGridLayout *pDebuggerLayout = new QGridLayout;
   pDebuggerLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6416,6 +6515,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpVersionGroupBox = new QGroupBox(Helper::version);
   mpVersion1RadioButton = new QRadioButton("1.0");
   mpVersion2RadioButton = new QRadioButton("2.0");
+  mpVersion2RadioButton->setChecked(true);
   // set the version groupbox layout
   QVBoxLayout *pVersionLayout = new QVBoxLayout;
   pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6427,6 +6527,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpModelExchangeRadioButton = new QRadioButton(tr("Model Exchange"));
   mpCoSimulationRadioButton = new QRadioButton(tr("Co-Simulation"));
   mpModelExchangeCoSimulationRadioButton = new QRadioButton(tr("Model Exchange and Co-Simulation"));
+  mpModelExchangeCoSimulationRadioButton->setChecked(true);
   // set the type groupbox layout
   QVBoxLayout *pTypeLayout = new QVBoxLayout;
   pTypeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6509,12 +6610,15 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
+  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText(OptionsDefaults::FMI::modelDescriptionFilter));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
   // include resources checkbox
   mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
+  mpIncludeSourceCodeCheckBox->setChecked(OptionsDefaults::FMI::includeSourceCode);
+  enableIncludeSourcesCheckBox(mpModelDescriptionFiltersComboBox->currentText());
   // generate debug symbols
   mpGenerateDebugSymbolsCheckBox = new QCheckBox(tr("Generate Debug Symbols"));
   // set the export group box layout
@@ -6812,7 +6916,7 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // command line options
   mpCommandLineOptionsLabel = new Label(tr("Command Line Options:"));
-  mpCommandLineOptionsTextBox = new QLineEdit;
+  mpCommandLineOptionsTextBox = new QLineEdit(OptionsDefaults::OMSimulator::commandLineOptions);
   mpCommandLineOptionsTextBox->setToolTip(tr("Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true"));
   // logging level
   mpLoggingLevelLabel = new Label(tr("Logging Level:"));
