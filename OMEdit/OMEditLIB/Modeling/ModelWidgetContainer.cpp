@@ -9006,9 +9006,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     loadPreviousViewType(pModelWidget);
   } else {
     QString defaultView = OptionsDialog::instance()->getGraphicalViewsPage()->getDefaultView();
-    if (defaultView.compare(Helper::iconView) == 0) {
+    if (defaultView.compare(Helper::iconViewForSettings) == 0) {
       pModelWidget->getIconViewToolButton()->setChecked(true);
-    } else if (defaultView.compare(Helper::textView) == 0) {
+    } else if (defaultView.compare(Helper::textViewForSettings) == 0) {
       pModelWidget->getTextViewToolButton()->setChecked(true);
     } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);

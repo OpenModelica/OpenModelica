@@ -193,6 +193,14 @@ private:
   HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
+  QString mMatchingAlgorithm;
+  QString mIndexReductionMethod;
+  bool mInitialization;
+  bool mEvaluateAllParameters;
+  bool mNLSanalyticJacobian;
+  bool mParmodauto;
+  bool mOldInstantiation;
+  QString mAdditionalTranslationFlags;
   MessagesPage *mpMessagesPage;
   NotificationsPage *mpNotificationsPage;
   LineStylePage *mpLineStylePage;
@@ -215,6 +223,34 @@ private:
   QDialogButtonBox *mpButtonBox;
 };
 
+class CodeColorsWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  CodeColorsWidget(QWidget *pParent = 0);
+  QListWidget* getItemsListWidget() {return mpItemsListWidget;}
+  PreviewPlainTextEdit* getPreviewPlainTextEdit() {return mpPreviewPlainTextEdit;}
+private:
+  QGroupBox *mpColorsGroupBox;
+  Label *mpItemsLabel;
+  QListWidget *mpItemsListWidget;
+  Label *mpItemColorLabel;
+  QPushButton *mpItemColorPickButton;
+  Label *mpPreviewLabel;
+  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
+  ListWidgetItem *mpTextItem;
+  ListWidgetItem *mpNumberItem;
+  ListWidgetItem *mpKeywordItem;
+  ListWidgetItem *mpTypeItem;
+  ListWidgetItem *mpFunctionItem;
+  ListWidgetItem *mpQuotesItem;
+  ListWidgetItem *mpCommentItem;
+signals:
+  void colorUpdated();
+private slots:
+  void pickColor();
+};
+
 class GeneralSettingsPage : public QWidget
 {
   Q_OBJECT
@@ -227,7 +263,7 @@ public:
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
-  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
+  QString getWorkingDirectory();
   QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
   bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}
@@ -316,6 +352,7 @@ private:
   QGroupBox *mpSystemLibrariesGroupBox;
   Label *mpModelicaPathLabel;
   QLineEdit *mpModelicaPathTextBox;
+  QPushButton *mpModelicaPathBrowseButton;
   Label *mpSystemLibrariesNoteLabel;
   QCheckBox *mpLoadLatestModelicaCheckbox;
   QTreeWidget *mpSystemLibrariesTree;
@@ -330,6 +367,7 @@ private:
   QPushButton *mpEditUserLibraryButton;
   QDialogButtonBox *mpUserLibrariesButtonBox;
 private slots:
+  void selectModelicaPath();
   void openAddSystemLibrary();
   void removeSystemLibrary();
   void openEditSystemLibrary();
@@ -881,7 +919,6 @@ private:
   QLineEdit *mpFigaroOptionsFileTextBox;
   QPushButton *mpBrowseFigaroOptionsFileButton;
   Label *mpFigaroProcessLabel;
-  QString mFigaroProcessPath;
   QLineEdit *mpFigaroProcessTextBox;
   QPushButton *mpBrowseFigaroProcessButton;
   QPushButton *mpResetFigaroProcessButton;
@@ -899,7 +936,7 @@ public:
   DebuggerPage(OptionsDialog *pOptionsDialog);
   void setGDBPath(QString path);
   QString getGDBPath();
-  QString getGDBPathForSettings() {return mpGDBPathTextBox->text();}
+  QLineEdit* getGDBPathTextBox() {return mpGDBPathTextBox;}
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
   QSpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
   QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}

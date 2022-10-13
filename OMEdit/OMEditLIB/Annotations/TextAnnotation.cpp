@@ -35,6 +35,7 @@
 #include <iostream>
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
+#include "Options/OptionsDialog.h"
 
 /*!
  * \class TextAnnotation
@@ -336,7 +337,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(widget);
   //! @note We don't show text annotation that contains % for Library Icons or if it is too long.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    if (mTextString.contains("%") || mTextString.length() > maxTextLengthToShowOnLibraryIcon) {
+    if (mTextString.contains("%") || mTextString.length() > OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconTextLengthSpinBox()->value()) {
       return;
     }
   } else if (mpElement && mpElement->getGraphicsView()->isRenderingLibraryPixmap()) {

@@ -104,6 +104,10 @@ public:
   static QString scriptingKind;
   static QString tabbed;
   static QString subWindow;
+  static QString iconViewForSettings;
+  static QString diagramViewForSettings;
+  static QString textViewForSettings;
+  static QString documentationViewForSettings;
   static QString structuredOutput;
   static QString textOutput;
   static QString utf8;

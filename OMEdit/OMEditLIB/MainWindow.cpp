@@ -3032,7 +3032,9 @@ void MainWindow::updateDebuggerToolBarMenu()
     }
     // Once all the debug configurations moved to new list format then clear the old ones.
     pSettings->remove(""); // calling remove with empty string will remove all keys in the current group.
-    pSettings->setValue("configurations", debugConfigurations);
+    if (!debugConfigurations.isEmpty()) {
+      pSettings->setValue("configurations", debugConfigurations);
+    }
     pSettings->endGroup();
   }
   QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
