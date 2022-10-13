@@ -131,7 +131,7 @@ void externalInputallocate2(DATA* data, char *filename){
   indx = (int*)malloc(nu*sizeof(int));
   for(i = 0; i < nu; ++i){
     indx[i] = -1;
-    for(j = 0; j < (res->numvars - 1); ++j){
+    for(j = 0; j < res->numvars; ++j){
       if(strcmp(names[i], res->variables[j]) == 0){
         indx[i] = j;
         break;
