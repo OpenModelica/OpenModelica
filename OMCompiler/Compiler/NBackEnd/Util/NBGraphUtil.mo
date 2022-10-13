@@ -69,7 +69,7 @@ public
     function hash
       input SetVertex v;
       input Integer mod;
-      output Integer i = Variable.hash(Pointer.access(v.name), i);
+      output Integer i = Variable.hash(Pointer.access(v.name), mod);
     end hash;
 
     function isEqual
