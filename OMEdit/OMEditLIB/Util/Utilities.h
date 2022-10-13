@@ -486,9 +486,7 @@ namespace Utilities {
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
-#if defined(_WIN32)
   QString getGDBPath();
-#endif
 
   namespace FileIconProvider {
     class FileIconProviderImplementation : public QFileIconProvider

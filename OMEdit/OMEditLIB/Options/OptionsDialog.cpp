@@ -6301,11 +6301,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit;
-#if defined(_WIN32)
   mpGDBPathTextBox->setPlaceholderText(Utilities::getGDBPath());
-#else
-  mpGDBPathTextBox->setPlaceholderText("gdb");
-#endif
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
   mpGDBPathBrowseButton->setAutoDefault(false);
   connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));

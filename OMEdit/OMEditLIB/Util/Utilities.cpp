@@ -945,9 +945,9 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
   return R;
 }
 
-#if defined(_WIN32)
 QString Utilities::getGDBPath()
 {
+#if defined(_WIN32)
 #if defined(__MINGW32__) && !defined(__MINGW64__)
   const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
 #endif
@@ -961,8 +961,10 @@ QString Utilities::getGDBPath()
     QString qOMDEV = QString(OMDEV).replace("\\", "/");
     return QString(qOMDEV).append(sgdb);
   }
-}
+#else
+  return "gdb";
 #endif
+}
 
 Utilities::FileIconProvider::FileIconProviderImplementation *instance()
 {
