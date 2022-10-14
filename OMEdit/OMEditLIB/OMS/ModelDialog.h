@@ -41,7 +41,6 @@
 #include <QGroupBox>
 #include <QDialogButtonBox>
 #include <QScrollArea>
-#include "Element/Element.h"
 
 class LibraryTreeItem;
 class Label;
@@ -127,10 +126,10 @@ class ReplaceSubModelDialog: public QDialog
 {
   Q_OBJECT
 public:
-  ReplaceSubModelDialog(GraphicsView *pGraphicsView, Element *pElement);
+  ReplaceSubModelDialog(GraphicsView *pGraphicsView, QString pName);
 private:
   GraphicsView *mpGraphicsView;
-  Element *mpElement;
+  QString mpElementName;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpPathLabel;

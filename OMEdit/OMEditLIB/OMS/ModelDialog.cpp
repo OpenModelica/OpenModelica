@@ -448,14 +448,14 @@ void AddSubModelDialog::addSubModel()
  * \param path
  * \param name
  */
-ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, Element *pElement)
+ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QString pName)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg("replaceSubModel"));
   setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
-  mpElement = pElement;
+  mpElementName = pName;
   // set heading
   mpHeading = Utilities::getHeadingLabel("replaceSubModel");
   // set separator line
@@ -470,6 +470,7 @@ ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, Elemen
 
   // dryRun
   mpDryRunLabel = new Label("dryRun:");
+  mpDryRunLabel->setToolTip( tr("dryRun = true will not replace the subModel, you can see the list of warnings and dryRun = false will replace the SubModel"));
   mpDryRunComboBox = new QComboBox;
   mpDryRunComboBox->addItem("true");
   mpDryRunComboBox->addItem("false");
@@ -537,7 +538,7 @@ void ReplaceSubModelDialog::replaceSubModel()
   pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
 
   // add the submodel
-  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpElement->getName());
+  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpElementName);
   //qDebug() << "\nnamestructure : " << nameStructure << "==>" <<   mpDryRunComboBox->currentIndex();
 
   bool dryRun;

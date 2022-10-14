@@ -243,6 +243,7 @@ public:
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
+  QAction* getReplaceSubModelAction() {return mpReplaceSubModelAction;}
   ElementInfo* getElementInfo() {return mpElementInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
@@ -335,6 +336,7 @@ private:
   QAction *mpOpenClassAction;
   QAction *mpSubModelAttributesAction;
   QAction *mpElementPropertiesAction;
+  QAction *mpReplaceSubModelAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;

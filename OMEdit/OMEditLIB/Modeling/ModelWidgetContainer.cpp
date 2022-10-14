@@ -2739,12 +2739,6 @@ void GraphicsView::createActions()
   mpFlipVerticalAction->setShortcut(QKeySequence("v"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
   connect(mpFlipVerticalAction, SIGNAL(triggered()), SLOT(flipVertical()));
-  // Replace SubModel Action
-  mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), tr("Replace SubModel"), this);
-  mpReplaceSubModelAction->setStatusTip(tr("Replaces the SubModel, but retains the connections and parameters if valid"));
-  //mpReplaceSubModelAction->setShortcut(QKeySequence("v"));
-  mpReplaceSubModelAction->setDisabled(isSystemLibrary);
-  connect(mpReplaceSubModelAction, SIGNAL(triggered()), SLOT(replaceSubModelItem()));
   // create connector Action
   mpCreateConnectorAction = new QAction(tr("Create Connector"), this);
   mpCreateConnectorAction->setStatusTip(tr("Creates a connector"));
@@ -3571,7 +3565,6 @@ void GraphicsView::modelicaOneComponentContextMenu(Element *pComponent, QMenu *p
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addAction(mpReplaceSubModelAction);
 }
 
 /*!
@@ -3652,7 +3645,6 @@ void GraphicsView::compositeModelOneComponentContextMenu(Element *pComponent, QM
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addAction(mpReplaceSubModelAction);
 }
 
 /*!
@@ -3668,7 +3660,6 @@ void GraphicsView::compositeModelMultipleItemsContextMenu(QMenu *pMenu)
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addAction(mpReplaceSubModelAction);
 }
 
 /*!
@@ -3743,7 +3734,8 @@ void GraphicsView::omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu)
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addAction(mpReplaceSubModelAction);
+  pMenu->addSeparator();
+  pMenu->addAction(pComponent->getReplaceSubModelAction());
 }
 
 /*!
@@ -3759,7 +3751,6 @@ void GraphicsView::omsMultipleItemsContextMenu(QMenu *pMenu)
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addAction(mpReplaceSubModelAction);
 }
 
 /*!
@@ -4076,19 +4067,6 @@ void GraphicsView::flipVertical()
 {
   mpModelWidget->beginMacro("Flip vertical by mouse");
   emit mouseFlipVertical();
-  mpModelWidget->updateClassAnnotationIfNeeded();
-  mpModelWidget->updateModelText();
-  mpModelWidget->endMacro();
-}
-
-/*!
- * \brief GraphicsView::replaceSubModelItem
- * replace the selected fmu emitting GraphicsView::replaceSubModelSignal() SIGNAL.
- */
-void GraphicsView::replaceSubModelItem()
-{
-  mpModelWidget->beginMacro("Replace SubModel, but retains connections and parameters if valid");
-  emit replaceSubModelSignal();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();

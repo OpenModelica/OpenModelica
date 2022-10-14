@@ -2747,6 +2747,20 @@ void Element::createActions()
   mpElementPropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
   connect(mpElementPropertiesAction, SIGNAL(triggered()), SLOT(showElementPropertiesDialog()));
+  // ReplaceSubModel Action
+  mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), tr("Replace SubModel"), this);
+  mpReplaceSubModelAction->setStatusTip(tr("Replaces the SubModel, but retains the connections and parameters if valid"));
+  connect(mpReplaceSubModelAction, SIGNAL(triggered()), SLOT(showReplaceSubModelDialog()));
+}
+
+/*!
+ * \brief Element::showReplaceSubModelDialog
+ * Slot that opens up the ReplaceSubModelDialog Dialog.
+ */
+void Element::showReplaceSubModelDialog()
+{
+  ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(mpGraphicsView, this->getName());
+  pReplaceFMUDialog->exec();
 }
 
 void Element::createResizerItems()
@@ -3808,17 +3822,6 @@ void Element::showElementPropertiesDialog()
   }
 }
 
-/*!
- * \brief Element::showReplaceSubModelDialog
- * Slot that opens up the ReplaceSubModelDialog Dialog.
- */
-void Element::showReplaceSubModelDialog()
-{
-  if (this){
-    ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(mpGraphicsView, this);
-    pReplaceFMUDialog->exec();
-  }
-}
 
 /*!
  * \brief Element::updateDynamicSelect
@@ -3869,7 +3872,6 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(replaceSubModelSignal()), this, SLOT(showReplaceSubModelDialog()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
@@ -3906,7 +3908,6 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()));
-        disconnect(mpGraphicsView, SIGNAL(replaceSubModelSignal()), this, SLOT(showReplaceSubModelDialog()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
