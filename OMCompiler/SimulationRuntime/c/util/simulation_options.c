@@ -83,7 +83,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IMPRK_LS */                     "impRKLS",
   /* FLAG_INITIAL_STEP_SIZE */            "initialStepSize",
   /* FLAG_INPUT_CSV */                    "csvInput",
-  /* FLAG_INPUT_FILE */                   "exInputFile",
   /* FLAG_INPUT_FILE_STATES */            "stateFile",
   /* FLAG_INPUT_PATH */                   "inputPath",
   /* FLAG_IPOPT_HESSE*/                   "ipopt_hesse",
@@ -214,7 +213,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IMPRK_LS */                     "selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */            "value specifies an initial step size for supported solver",
   /* FLAG_INPUT_CSV */                    "value specifies an csv-file with inputs for the simulation/optimization of the model",
-  /* FLAG_INPUT_FILE */                   "value specifies an external file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */            "value specifies an file with states start values for the optimization of the model",
   /* FLAG_INPUT_PATH */                   "value specifies a path for reading the input files i.e., model_init.xml and model_info.json",
   /* FLAG_IPOPT_HESSE */                  "value specifies the hessian for Ipopt",
@@ -420,8 +418,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies an initial step size, used by the methods: dassl, ida",
   /* FLAG_INPUT_CSV */
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
-  /* FLAG_INPUT_FILE */
-  "  Value specifies an external file with inputs for the simulation/optimization of the model.",
   /* FLAG_INPUT_FILE_STATES */
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_INPUT_PATH */
@@ -668,7 +664,6 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_IMPRK_LS */                     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INITIAL_STEP_SIZE */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INPUT_CSV */                    FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_INPUT_FILE */                   FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INPUT_FILE_STATES */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INPUT_PATH */                   FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_IPOPT_HESSE*/                   FLAG_REPEAT_POLICY_FORBID,
@@ -798,7 +793,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IMPRK_ORDER */                  FLAG_TYPE_OPTION,
   /* FLAG_INITIAL_STEP_SIZE */            FLAG_TYPE_OPTION,
   /* FLAG_INPUT_CSV */                    FLAG_TYPE_OPTION,
-  /* FLAG_INPUT_FILE */                   FLAG_TYPE_OPTION,
   /* FLAG_INPUT_FILE_STATES */            FLAG_TYPE_OPTION,
   /* FLAG_INPUT_PATH */                   FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_HESSE */                  FLAG_TYPE_OPTION,
