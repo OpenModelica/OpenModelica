@@ -8,30 +8,10 @@ getErrorString();
 loadFile("BatchReactor.mo");
 getErrorString();
 
-optimize(nmpcBatchReactor, numberOfIntervals=20, tolerance = 1e-8,  simflags="-ipopt_max_iter=12 -exInputFile ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR");
+optimize(nmpcBatchReactor, numberOfIntervals=20, tolerance = 1e-8,  simflags="-ipopt_max_iter=12 -csvInput ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR");
 getErrorString();
 
 
-// true
-// ""
-// true
-// ""
-// record SimulationResult
-//     resultFile = "nmpcBatchReactor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 0.00000001, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_jac=NUM'",
-//     messages = "
-// ******************************************************************************
-// This program contains Ipopt, a library for large-scale nonlinear optimization.
-//  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit https://github.com/coin-or/Ipopt
-// ******************************************************************************
-//
-// "
-// end SimulationResult;
-// ""
-// {"Files Equal!"}
-// ""
-// endResult
 // Result:
 // true
 // ""
@@ -39,7 +19,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "nmpcBatchReactor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_max_iter=12 -exInputFile ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_max_iter=12 -csvInput ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
