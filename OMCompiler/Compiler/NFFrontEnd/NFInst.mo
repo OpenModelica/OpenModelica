@@ -3092,9 +3092,15 @@ algorithm
 
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
-        Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
+        if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "reinitInAlgorithms") then
+          Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
+          fail();
+        end if;
+
+        exp1 := instExp(scodeStmt.cref, scope, context, info);
+        exp2 := instExp(scodeStmt.newValue, scope, context, info);
       then
-        fail();
+        Statement.REINIT(exp1, exp2, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_NORETCALL(info = info)
       algorithm

@@ -837,6 +837,13 @@ algorithm
     case Statement.TERMINATE()
       then DAE.Statement.STMT_TERMINATE(Expression.toDAE(stmt.message), stmt.source);
 
+    case Statement.REINIT()
+      algorithm
+        e1 := Expression.toDAE(stmt.cref);
+        e2 := Expression.toDAE(stmt.reinitExp);
+      then
+        DAE.Statement.STMT_REINIT(e1, e2, stmt.source);
+
     case Statement.NORETCALL()
       then DAE.Statement.STMT_NORETCALL(Expression.toDAE(stmt.exp), stmt.source);
 

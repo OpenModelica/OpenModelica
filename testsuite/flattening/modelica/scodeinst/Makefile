@@ -991,6 +991,7 @@ ReductionInvalidTypeMin.mo \
 ReductionInvalidTypeMax.mo \
 Reinit1.mo \
 Reinit2.mo \
+Reinit3.mo \
 ReinitInvalid1.mo \
 ReinitInvalid2.mo \
 ReinitInvalid3.mo \

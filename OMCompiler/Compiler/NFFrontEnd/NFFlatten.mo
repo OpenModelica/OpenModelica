@@ -1645,6 +1645,13 @@ algorithm
       then
         Statement.TERMINATE(e1, stmt.source);
 
+    case Statement.REINIT()
+      algorithm
+        e1 := flattenExp(stmt.cref, prefix);
+        e2 := flattenExp(stmt.reinitExp, prefix);
+      then
+        Statement.REINIT(e1, e2, stmt.source);
+
     case Statement.NORETCALL()
       algorithm
         e1 := flattenExp(stmt.exp, prefix);
@@ -2117,6 +2124,13 @@ algorithm
     case Statement.TERMINATE()
       algorithm
         funcs := collectExpFuncs(stmt.message, funcs);
+      then
+        ();
+
+    case Statement.REINIT()
+      algorithm
+        funcs := collectExpFuncs(stmt.cref, funcs);
+        funcs := collectExpFuncs(stmt.reinitExp, funcs);
       then
         ();
 
