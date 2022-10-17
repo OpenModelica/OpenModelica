@@ -375,6 +375,9 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_DT_CONS       | info    | The following local constraint is violated:
 // |                 | |       | abs(x) > 1e-12
+// LOG_NLS           | error   | residualFunc10: Iteration variable xloc[0] is nan.
+// assert            | debug   | residualFunc10 failed at time=0.004.
+// |                 | |       | For more information please use -lv LOG_NLS.
 // LOG_DT_CONS       | info    | The following local constraint is violated:
 // |                 | |       | abs(x) > 1e-12
 // LOG_DT_CONS       | info    | The following local constraint is violated:
