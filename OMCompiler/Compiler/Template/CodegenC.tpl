@@ -3113,7 +3113,7 @@ match system
       DATA *data = userData->data;
       threadData_t *threadData = userData->threadData;
       const int equationIndexes[2] = {1,<%nls.index%>};
-      int i;<% if clockIndex then <<
+      int i,j;<% if clockIndex then <<
       const int clockIndex = <%clockIndex%>;
       >> %>
       <%varDecls%>
@@ -3122,9 +3122,11 @@ match system
       /* iteration variables */
       for (i=0; i<<%listLength(nls.crefs)%>; i++) {
         if (isinf(xloc[i]) || isnan(xloc[i])) {
-          for (i=0; i<<%listLength(nls.crefs)%>; i++) {
-            res[i] = NAN;
+          errorStreamPrint(LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable xloc[%i] is nan.", i);
+          for (j=0; j<<%listLength(nls.crefs)%>; j++) {
+            res[j] = NAN;
           }
+          throwStreamPrintWithEquationIndexes(threadData, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
           <%if intEq(whichSet, 0) then "return;" else "return 1;"%>
         }
       }
