@@ -330,7 +330,7 @@ system.
 Importing initial values from previous simulations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In many use cases it is useful to import initial values from previous simulations, possibly obtained with
-another Modelica tool, and saved in a .mat file. There are two different options to do that.
+another Modelica tool, which are saved in a .mat file. There are two different options to do that.
 
 The first option is to solve the initial equations specified by the Modelica model, using the previous simulation results to
 obtain good initial guesses for the iterative solvers. This can be very helpful in case the initialization problem involves the
@@ -344,7 +344,8 @@ imported .mat file, so if you want to change them you need to edit the .mat file
 
 This option is activated by selecting the simulation result file name in the OMEdit
 *Simulation Setup | Simulation Flag | Equation System Initialization File* input field, or by setting the additional simulation flag
-:ref:`-iif=<resultfile.mat> <simflag-iif>`. By activating the checkbox Save simulation flags inside the model, a custom annotation *__OpenModelica_simulationFlags(iif="filename.mat")* is added to the model, so this setting is saved with the model and is reused
+:ref:`-iif=resultfile.mat <simflag-iif>`. By activating the checkbox *Save simulation flags inside the model i.e., __OpenModelica_simulationFlags annotation*,
+a custom annotation *__OpenModelica_simulationFlags(iif="filename.mat")* is added to the model, so this setting is saved with the model and is reused
 when loading the model again later on. It is also possible to specify at which point in time of the saved simulation results the initial values
 should be picked, by means of the *Simulation Setup | Simulation Flags | Equation System Initialization Time* input field, or by setting
 the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`.
@@ -358,9 +359,9 @@ state and parameter values; the values of algebraic variables in the imported fi
 variables in nonlinear implicit equations of the simulation model, or otherwise ignored. 
 
 To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
-or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox Save simulation
-flags inside the model saves this option in an *__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for
-future simulations of the same model.
+or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox *Save simulation
+flags inside model, i.e. __OpenModelica_simulationFlags annotation* saves this option in an
+*__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for future simulations of the same model.
 
 Homotopy Method
 ~~~~~~~~~~~~~~~
