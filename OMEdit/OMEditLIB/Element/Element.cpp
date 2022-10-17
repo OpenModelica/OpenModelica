@@ -36,7 +36,6 @@
 #include "Element.h"
 #include "ElementProperties.h"
 #include "OMS/ElementPropertiesDialog.h"
-#include "OMS/ModelDialog.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
