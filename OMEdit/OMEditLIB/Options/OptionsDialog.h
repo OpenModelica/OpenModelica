@@ -200,6 +200,7 @@ private:
   bool mNLSanalyticJacobian;
   bool mParmodauto;
   bool mOldInstantiation;
+  bool mEnableFMUImport;
   QString mAdditionalTranslationFlags;
   MessagesPage *mpMessagesPage;
   NotificationsPage *mpNotificationsPage;
