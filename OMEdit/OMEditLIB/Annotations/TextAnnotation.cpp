@@ -602,7 +602,14 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
           if (MainWindow::instance()->isNewApi()) {
             ModelInstance::Element* pModelElement = Element::getModelElementByName(mpElement->getRootParentElement()->getModel(), variable);
-            //! @todo Fix this once we actually have SI.Resistance as type of Element instead of Real. See issue #9374.
+            if (pModelElement) {
+              if (displayUnit.isEmpty()) {
+                displayUnit = pModelElement->getModifierValueFromType(QStringList() << "displayUnit");
+              }
+              if (unit.isEmpty()) {
+                unit = pModelElement->getModifierValueFromType(QStringList() << "unit");
+              }
+            }
           } else {
             Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
             if (pElement) {
@@ -612,11 +619,11 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
               if (unit.isEmpty()) {
                 unit = pElement->getDerivedClassModifierValue("unit");
               }
-              // if display unit is still empty then use unit
-              if (displayUnit.isEmpty()) {
-                displayUnit = unit;
-              }
             }
+          }
+          // if display unit is still empty then use unit
+          if (displayUnit.isEmpty()) {
+            displayUnit = unit;
           }
           // do not do any conversion if unit or displayUnit is empty of if both are 1!
           if (displayUnit.isEmpty() || unit.isEmpty() || (displayUnit.compare("1") == 0 && unit.compare("1") == 0)) {

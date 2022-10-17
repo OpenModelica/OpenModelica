@@ -32,6 +32,7 @@
  */
 
 #include "Model.h"
+#include "Util/StringHandler.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -727,6 +728,11 @@ namespace ModelInstance
       mRestriction = mModelJson.value("restriction").toString();
     }
 
+    // short type definitions have modifiers
+    if (mModelJson.contains("modifiers")) {
+      mModifier.deserialize(mModelJson.value("modifiers"));
+    }
+
     if (mModelJson.contains("prefixes")) {
       QJsonObject prefixes = mModelJson.value("prefixes").toObject();
 
@@ -1175,6 +1181,30 @@ namespace ModelInstance
     }
   }
 
+  QString Modifier::getModifierValue(QStringList qualifiedModifierName)
+  {
+    if (qualifiedModifierName.isEmpty()) {
+      return "";
+    }
+
+    return Modifier::getModifierValue(*this, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+  }
+
+  QString Modifier::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName)
+  {
+    foreach (auto subModifier, modifier.getModifiers()) {
+      if (subModifier.getName().compare(modifierName) == 0) {
+        if (qualifiedModifierName.isEmpty()) {
+          return StringHandler::removeFirstLastQuotes(subModifier.getValue());
+        } else {
+          return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+        }
+      }
+    }
+
+    return "";
+  }
+
   Choices::Choices()
   {
     mCheckBox = false;
@@ -1338,55 +1368,32 @@ namespace ModelInstance
     }
   }
 
-  QString Element::getModifierValue(QStringList &qualifiedModifierName)
-  {
-    if (qualifiedModifierName.isEmpty()) {
-      return "";
-    }
-
-    return Element::getModifierValue(mModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
-  }
-
-  QString Element::getModifierValueFromType(const QString &modifierName)
+  QString Element::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.
      * 2. If no unit is found then check it in the derived class modifier value.
      * 3. A derived class can be inherited, so look recursively.
      */
-    QString modifierValue = getModifierValue(QStringList() << modifierName);
+    // Case 1
+    QString modifierValue = mModifier.getModifierValue(modifierNames);
     if (modifierValue.isEmpty() && mpModel) {
-      //! @todo modifiers of derived classes are missing.
-      //! We should here read the modifier value from mpModel. If its still empty look in extends.
+      // Case 2
+      modifierValue = mpModel->getModifier().getModifierValue(modifierNames);
+      // Case 3
       if (modifierValue.isEmpty()) {
-        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierName);
+        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
       }
     }
     return modifierValue;
   }
 
-  QString Element::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList &qualifiedModifierName)
-  {
-    foreach (auto subModifier, modifier.getModifiers()) {
-      if (subModifier.getName().compare(modifierName) == 0) {
-        if (qualifiedModifierName.isEmpty()) {
-          return subModifier.getValue();
-        } else {
-          return Element::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
-        }
-      }
-    }
-
-    return "";
-  }
-
-  QString Element::getModifierValueFromInheritedType(Model *pModel, const QString &modifierName)
+  QString Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
   {
     QString modifierValue = "";
     foreach (auto pExtend, pModel->getExtends()) {
-      //! @todo modifiers of derived classes are missing.
-      //! We should here read the modifier value from pExtend. If its still empty continue.
+      modifierValue = pExtend->getModifier().getModifierValue(modifierNames);
       if (modifierValue.isEmpty()) {
-        modifierValue = Element::getModifierValueFromInheritedType(pExtend, modifierName);
+        modifierValue = Element::getModifierValueFromInheritedType(pExtend, modifierNames);
       } else {
         return modifierValue;
       }
@@ -1624,7 +1631,7 @@ namespace ModelInstance
   void Extend::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("modifiers")) {
-      mModifier.deserialize(jsonObject.value("modifiers"));
+      mExtendsModifier.deserialize(jsonObject.value("modifiers"));
     }
 
     if (jsonObject.contains("baseClass")) {
