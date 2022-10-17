@@ -1111,6 +1111,8 @@ public constant ErrorTypes.Message NOTIFY_INITIALIZING_USER_LIBRARIES = ErrorTyp
   Gettext.gettext("Cached libraries were found and will be installed into %s."));
 public constant ErrorTypes.Message NOTIFY_PKG_ALREADY_INSTALLED = ErrorTypes.MESSAGE(617, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("%s %s is already installed, skipping."));
+public constant ErrorTypes.Message REINIT_IN_ALGORITHM = ErrorTypes.MESSAGE(618, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Operator reinit may not be used in an algorithm section (use flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));
