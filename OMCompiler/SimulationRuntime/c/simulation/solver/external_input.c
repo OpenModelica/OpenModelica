@@ -55,13 +55,21 @@ int externalInputallocate(DATA* data)
   FILE * pFile = NULL;
   int i,j;
   short useLibCsvH = 1;
+  char * csv_input_file_opt = NULL;
   char * csv_input_file = NULL;
 
-
-  csv_input_file = (char*)omc_flagValue[FLAG_INPUT_CSV];
-  if(!csv_input_file) {
+  csv_input_file_opt = (char*)omc_flagValue[FLAG_INPUT_CSV];
+  if(!csv_input_file_opt) {
     data->simulationInfo->external_input.active = 0;
     return 0;
+  }
+
+  // If '-inputPath' is specified, prefix the csv input file name with that path.
+  if (omc_flag[FLAG_INPUT_PATH]) {
+    GC_asprintf(&csv_input_file, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], csv_input_file_opt);
+  }
+  else {
+    csv_input_file = csv_input_file_opt;
   }
 
   externalInputallocate2(data, csv_input_file);
