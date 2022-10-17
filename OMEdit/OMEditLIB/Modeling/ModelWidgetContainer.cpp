@@ -4073,6 +4073,16 @@ void GraphicsView::flipVertical()
 }
 
 /*!
+ * \brief GraphicsView::showReplaceSubModelDialog
+ * function that opens up the ReplaceSubModelDialog Dialog.
+ */
+void GraphicsView::showReplaceSubModelDialog(QString name)
+{
+  ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(this, name);
+  pReplaceFMUDialog->exec();
+}
+
+/*!
  * \brief GraphicsView::createConnector
  * Creates a connector while making a connection.\n
  * Ends the connection on the newly created connector.

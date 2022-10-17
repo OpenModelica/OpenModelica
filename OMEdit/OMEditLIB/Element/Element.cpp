@@ -2755,12 +2755,11 @@ void Element::createActions()
 
 /*!
  * \brief Element::showReplaceSubModelDialog
- * Slot that opens up the ReplaceSubModelDialog Dialog.
+ * Slot that opens up the ReplaceSubModelDialog Dialog from GraphicsView.
  */
 void Element::showReplaceSubModelDialog()
 {
-  ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(mpGraphicsView, this->getName());
-  pReplaceFMUDialog->exec();
+  mpGraphicsView->showReplaceSubModelDialog(this->getName());
 }
 
 void Element::createResizerItems()
@@ -3821,7 +3820,6 @@ void Element::showElementPropertiesDialog()
     pElementPropertiesDialog->exec();
   }
 }
-
 
 /*!
  * \brief Element::updateDynamicSelect
