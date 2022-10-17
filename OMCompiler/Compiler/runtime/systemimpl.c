@@ -586,32 +586,67 @@ const char* SystemImpl__basename(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int runProcess(const char* cmd)
+/**
+ * @brief Create new process and run command.
+ *
+ * Create handle for log file if outFile is not NULL and
+ * redirect stdout and stderr.
+ * Using wide chars for all commands and paths.
+ *
+ * @param cmd       Command to execute.
+ * @param outFile   Path to output file, can be NULL.
+ * @return int      Return 0 on success, 1 on failure.
+ */
+int runProcess(const char* cmd, const char* outFile)
 {
-  STARTUPINFOW si;
-  PROCESS_INFORMATION pi;
-  char *c = "cmd /c";
-  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 4);
+  STARTUPINFOW startupInfo;
+  PROCESS_INFORMATION processInfo;
+  SECURITY_ATTRIBUTES securityAttributes;
+  HANDLE logFileHandle = NULL;
+  wchar_t* unicodeOutFile = NULL;
+  char *terminal = "cmd /c";
+  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(terminal) + 4);
   DWORD exitCode = 1;
 
-  ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
-  ZeroMemory(&pi, sizeof(pi));
+  ZeroMemory(&startupInfo, sizeof(startupInfo));
+  ZeroMemory(&processInfo, sizeof(processInfo));
 
-  sprintf(command, "%s \"%s\"", c, cmd);
-  /* fprintf(stderr, "%s\n", command); fflush(NULL); */
-
-  wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
-
-  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
-  {
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    // Get the exit code.
-    GetExitCodeProcess(pi.hProcess, &exitCode);
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+  startupInfo.cb = sizeof(startupInfo);   // Size of struct in bytes
+  if (*outFile) {
+    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
+    securityAttributes.nLength = sizeof(securityAttributes);
+    securityAttributes.lpSecurityDescriptor = NULL;
+    securityAttributes.bInheritHandle = TRUE;
+    logFileHandle = CreateFileW(unicodeOutFile,
+                    FILE_APPEND_DATA,
+                    FILE_SHARE_WRITE | FILE_SHARE_READ,
+                    &securityAttributes,
+                    OPEN_ALWAYS,
+                    FILE_ATTRIBUTE_NORMAL,
+                    NULL);
+    startupInfo.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startupInfo.hStdError = logFileHandle;
+    startupInfo.hStdOutput = logFileHandle;
   }
 
+  sprintf(command, "%s \"%s\"", terminal, cmd);
+  wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
+  //printf("unicodeCommand: %ls\n", unicodeCommand);
+
+  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
+  {
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
+    // Get the exit code.
+    GetExitCodeProcess(processInfo.hProcess, &exitCode);
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
+  }
+  if (logFileHandle) {
+    CloseHandle(logFileHandle);
+  }
+
+  free(unicodeOutFile);
   free(unicodeCommand);
   GC_free(command);
   return (int)exitCode;
@@ -628,14 +663,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  if (*outFile) {
-    char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(str) + strlen(outFile) + 12);
-    sprintf(command, "%s >> \"%s\" 2>&1", str, outFile);
-    status = runProcess(command);
-    GC_free((void*)command);
-  } else {
-    status = runProcess(str);
-  }
+  status = runProcess(str, outFile);
 #else
   pid_t pID = vfork();
   if (pID == 0) { // child
