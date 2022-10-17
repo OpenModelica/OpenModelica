@@ -186,13 +186,13 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, 
   setSaveSelectorCaption("-");
   createValueWidget();
   // Get unit value
-  mUnit = mpModelInstanceElement->getModifierValueFromType("unit");
+  mUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
   // Get displayUnit value
-  QString displayUnit = mpModelInstanceElement->getModifierValueFromType("displayUnit");
+  QString displayUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "displayUnit");
   if (displayUnit.isEmpty()) {
     displayUnit = mUnit;
   }
-  mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
+  mDisplayUnit = displayUnit;
   mPreviousUnit = mDisplayUnit;
   QStringList units;
   if (!mUnit.isEmpty()) {
@@ -1318,8 +1318,8 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
     bool isParameter = (pElement->getVariability().compare(QStringLiteral("parameter")) == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter && !showStartAttribute) {
-      start = pElement->getModifierValue(QStringList() << "start");
-      fixed = pElement->getModifierValue(QStringList() << "fixed");
+      start = pElement->getModifier().getModifierValue(QStringList() << "start");
+      fixed = pElement->getModifier().getModifierValue(QStringList() << "fixed");
       showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
     }
 
@@ -1390,7 +1390,7 @@ void ElementParameters::fetchElementExtendsModifiers()
 {
   if (MainWindow::instance()->isNewApi()) {
     foreach (auto pExtend, mpElement->getModel()->getExtends()) {
-      foreach (auto modifier, pExtend->getModifier().getModifiers()) {
+      foreach (auto modifier, pExtend->getExtendsModifier().getModifiers()) {
         Parameter *pParameter = findParameter(modifier.getName());
         /* Ticket #2531
          * Check if parameter is marked final in the extends modifier.
@@ -1615,7 +1615,7 @@ void ElementParameters::fetchClassExtendsModifiers()
   QList<ModelInstance::Extend*> extends = pClassModelInstance->getExtends();
   foreach (auto pExtend, extends) {
     if (pExtend->getName().compare(mpElement->getModelElement()->getParentModel()->getName()) == 0) {
-      foreach (auto modifier, pExtend->getModifier().getModifiers()) {
+      foreach (auto modifier, pExtend->getExtendsModifier().getModifiers()) {
         if (modifier.getName().compare(mpElement->getName()) == 0) {
           foreach (auto subModifier, modifier.getModifiers()) {
             Parameter *pParameter = findParameter(subModifier.getName());

@@ -314,6 +314,29 @@ private:
 
   };
 
+  class Modifier
+  {
+  public:
+    Modifier();
+    void deserialize(const QJsonValue &jsonValue);
+
+    QString getName() const {return mName;}
+    void setName(const QString &name) {mName = name;}
+    QString getValue() const {return mValue;}
+    QList<Modifier> getModifiers() const {return mModifiers;}
+    bool isFinal() const {return mFinal;}
+    bool isEach() const {return mEach;}
+    QString getModifierValue(QStringList qualifiedModifierName);
+  private:
+    QString mName;
+    QString mValue;
+    bool mFinal;
+    bool mEach;
+    QList<Modifier> mModifiers;
+
+    static QString getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName);
+  };
+
   class Extend;
   class Element;
   class Connection;
@@ -331,6 +354,7 @@ private:
     QString getName() const {return mName;}
     QStringList getDims() const {return mDims;}
     QString getRestriction() const {return mRestriction;}
+    Modifier getModifier() const {return mModifier;}
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
@@ -375,6 +399,7 @@ private:
     QString mName;
     QStringList mDims;
     QString mRestriction;
+    Modifier mModifier;
     bool mPublic;
     bool mFinal;
     bool mInner;
@@ -477,26 +502,6 @@ private:
     bool mConnectorSizing;
   };
 
-  class Modifier
-  {
-  public:
-    Modifier();
-    void deserialize(const QJsonValue &jsonValue);
-
-    QString getName() const {return mName;}
-    void setName(const QString &name) {mName = name;}
-    QString getValue() const {return mValue;}
-    QList<Modifier> getModifiers() const {return mModifiers;}
-    bool isFinal() const {return mFinal;}
-    bool isEach() const {return mEach;}
-  private:
-    QString mName;
-    QString mValue;
-    bool mFinal;
-    bool mEach;
-    QList<Modifier> mModifiers;
-  };
-
   class Choices
   {
   public:
@@ -526,8 +531,7 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
-    QString getModifierValue(QStringList &qualifiedModifierName);
-    QString getModifierValueFromType(const QString &modifierName);
+    QString getModifierValueFromType(QStringList modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
     QStringList getTypedDimensions() const {return mTypedDims;}
@@ -572,8 +576,7 @@ private:
     bool mEvaluate;
     Choices mChoices;
 
-    static QString getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList &qualifiedModifierName);
-    static QString getModifierValueFromInheritedType(Model *pModel, const QString &modifierName);
+    static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);
   };
 
   class Part
@@ -669,9 +672,9 @@ private:
     ~Extend();
     void deserialize(const QJsonObject &jsonObject);
 
-    Modifier getModifier() const {return mModifier;}
+    Modifier getExtendsModifier() const {return mExtendsModifier;}
   private:
-    Modifier mModifier;
+    Modifier mExtendsModifier;
   };
 
 }

@@ -1886,7 +1886,7 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* case 1 */
   if (displayString.isEmpty()) {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      displayString = mpModelElement->getModifierValue(QStringList() << parameterName);
+      displayString = mpModelElement->getModifier().getModifierValue(QStringList() << parameterName);
     } else {
       displayString = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
     }
@@ -1940,7 +1940,7 @@ QString Element::getParameterModifierValue(const QString &parameterName, const Q
   QString modifierValue = "";
   /* case 1 */
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    modifierValue = mpModelElement->getModifierValue(QStringList() << parameterName << modifier);
+    modifierValue = mpModelElement->getModifierValueFromType(QStringList() << parameterName << modifier);
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
