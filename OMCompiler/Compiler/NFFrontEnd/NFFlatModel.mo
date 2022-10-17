@@ -498,6 +498,13 @@ public
         then
           ();
 
+      case Statement.REINIT()
+        algorithm
+          collectExpFlatTypes(stmt.cref, types);
+          collectExpFlatTypes(stmt.reinitExp, types);
+        then
+          ();
+
       case Statement.NORETCALL()
         algorithm
           collectExpFlatTypes(stmt.exp, types);

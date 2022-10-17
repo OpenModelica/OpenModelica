@@ -3222,6 +3222,18 @@ algorithm
       then
         Statement.TERMINATE(e1, st.source);
 
+    case Statement.REINIT()
+      algorithm
+        if InstContext.inFunction(context) then
+          Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"reinit"},
+            ElementSource.getInfo(st.source));
+          fail();
+        end if;
+
+        (e1, e2) := typeReinit(st.cref, st.reinitExp, context, st.source);
+      then
+        Statement.REINIT(e1, e2, st.source);
+
     case Statement.NORETCALL()
       algorithm
         e1 := typeExp(st.exp, context, ElementSource.getInfo(st.source));

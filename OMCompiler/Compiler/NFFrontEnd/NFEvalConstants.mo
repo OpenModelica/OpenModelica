@@ -533,6 +533,12 @@ algorithm
       then
         stmt;
 
+    case Statement.REINIT()
+      algorithm
+        stmt.reinitExp := evaluateExp(stmt.reinitExp, info);
+      then
+        stmt;
+
     case Statement.NORETCALL()
       algorithm
         stmt.exp := evaluateExp(stmt.exp, info);
