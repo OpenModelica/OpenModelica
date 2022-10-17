@@ -3734,6 +3734,8 @@ void GraphicsView::omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu)
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
+  pMenu->addSeparator();
+  pMenu->addAction(pComponent->getReplaceSubModelAction());
 }
 
 /*!
@@ -4068,6 +4070,16 @@ void GraphicsView::flipVertical()
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::showReplaceSubModelDialog
+ * function that opens up the ReplaceSubModelDialog Dialog.
+ */
+void GraphicsView::showReplaceSubModelDialog(QString name)
+{
+  ReplaceSubModelDialog *pReplaceFMUDialog = new ReplaceSubModelDialog(this, name);
+  pReplaceFMUDialog->exec();
 }
 
 /*!

@@ -2746,6 +2746,19 @@ void Element::createActions()
   mpElementPropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
   connect(mpElementPropertiesAction, SIGNAL(triggered()), SLOT(showElementPropertiesDialog()));
+  // ReplaceSubModel Action
+  mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), tr("Replace SubModel"), this);
+  mpReplaceSubModelAction->setStatusTip(tr("Replaces the SubModel, but retains the connections and parameters if valid"));
+  connect(mpReplaceSubModelAction, SIGNAL(triggered()), SLOT(showReplaceSubModelDialog()));
+}
+
+/*!
+ * \brief Element::showReplaceSubModelDialog
+ * Slot that opens up the ReplaceSubModelDialog Dialog from GraphicsView.
+ */
+void Element::showReplaceSubModelDialog()
+{
+  mpGraphicsView->showReplaceSubModelDialog(this->getName());
 }
 
 void Element::createResizerItems()

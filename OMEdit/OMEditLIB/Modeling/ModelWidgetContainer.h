@@ -350,6 +350,7 @@ public:
   void removeItem(QGraphicsItem *pGraphicsItem);
   void fitInViewInternal();
   void emitResetDynamicSelect();
+  void showReplaceSubModelDialog(QString name);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
