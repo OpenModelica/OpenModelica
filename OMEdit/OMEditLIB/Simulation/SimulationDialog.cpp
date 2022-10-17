@@ -676,6 +676,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
       mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
+      mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEnableFMUImportCheckBox()->isChecked());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -702,6 +703,20 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             int currentIndex = mpTranslationFlagsWidget->getIndexReductionMethodComboBox()->findText(commandLineOptionValues);
             if (currentIndex > -1) {
               mpTranslationFlagsWidget->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
+            }
+          } else if (commandLineOptionKeyFiltered.compare("allowNonStandardModelica") == 0) { // check allowNonStandardModelica flags i.e., -d=protectedAccess,reinitInAlgorithms etc.
+            QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
+            QStringList additionalNonStandardModelicaFlagsList;
+            foreach (QString commandLineOptionValue, commandLineOptionValuesList) {
+              commandLineOptionValue = commandLineOptionValue.trimmed();
+              if (commandLineOptionValue.compare("reinitInAlgorithms") == 0) {
+                mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(true);
+              } else {
+                additionalNonStandardModelicaFlagsList.append(commandLineOptionValue);
+              }
+            }
+            if (!additionalNonStandardModelicaFlagsList.isEmpty()) {
+              additionalTranslationFlagsList.append(QString("--allowNonStandardModelica=%1").arg(additionalNonStandardModelicaFlagsList.join(",")));
             }
           } else if (commandLineOptionKeyFiltered.compare("d") == 0) { // check debug flags i.e., -d=evaluateAllParameters,initialization etc.
             QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");

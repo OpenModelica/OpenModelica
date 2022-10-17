@@ -883,6 +883,13 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(simulationOptions.getOldInstantiation());
   }
   mOldInstantiation = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
+  // read enable FMU import
+  if (mpSettings->contains("simulation/enableFMUImport")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->setChecked(mpSettings->value("simulation/enableFMUImport").toBool());
+  } else {
+    mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->setChecked(simulationOptions.getEnableFMUImport());
+  }
+  mEnableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
   // read additional translation flags
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
@@ -1690,7 +1697,6 @@ void OptionsDialog::saveGeneralSettings()
   } else {
     mpSettings->setValue("replaceableSupport", replaceableSupport);
   }
-  saveNFAPISettings();
 }
 
 /*!
@@ -2357,6 +2363,16 @@ void OptionsDialog::saveSimulationSettings()
   } else {
     mpSettings->setValue("simulation/newInst", newInst);
   }
+  // save new instantiation
+  bool enableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
+  if (mEnableFMUImport != enableFMUImport) {
+    changed = true;
+  }
+  if (enableFMUImport == !simulationOptions.getEnableFMUImport()) {
+    mpSettings->remove("simulation/enableFMUImport");
+  } else {
+    mpSettings->setValue("simulation/enableFMUImport", enableFMUImport);
+  }
   // save command line options
   QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
@@ -2373,6 +2389,7 @@ void OptionsDialog::saveSimulationSettings()
   }
   // save global simulation settings.
   saveGlobalSimulationSettings();
+  saveNFAPISettings();
   // save class before simulation.
   bool saveClassBeforeSimulation = mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked();
   if (saveClassBeforeSimulation == OptionsDefaults::Simulation::saveClassBeforeSimulation) {
