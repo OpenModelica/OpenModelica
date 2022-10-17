@@ -998,6 +998,7 @@ ReinitInvalid3.mo \
 ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
+ReinitInvalid7.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \

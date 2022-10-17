@@ -3093,6 +3093,11 @@ algorithm
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
         if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "reinitInAlgorithms") then
+          Error.addSourceMessage(Error.REINIT_IN_ALGORITHM, {}, info);
+          fail();
+        end if;
+
+        if not InstContext.inWhen(context) then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
           fail();
         end if;

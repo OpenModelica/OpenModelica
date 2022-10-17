@@ -78,3 +78,5 @@ differentiable
 evaluable
 convertPackageToLibrary
 noneFromVersion
+allowNonStandardModelica
+reinitInAlgorithms
