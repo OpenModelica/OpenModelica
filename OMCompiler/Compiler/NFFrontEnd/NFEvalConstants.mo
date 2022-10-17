@@ -385,14 +385,14 @@ algorithm
         e1 := evaluateExp(eq.lhs, info);
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.source);
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source);
 
     case Equation.ARRAY_EQUALITY()
       algorithm
         ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.source);
+        Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.scope, eq.source);
 
     case Equation.FOR()
       algorithm
@@ -420,7 +420,7 @@ algorithm
         e2 := evaluateExp(eq.message, info);
         e3 := evaluateExp(eq.level, info);
       then
-        Equation.ASSERT(e1, e2, e3, eq.source);
+        Equation.ASSERT(e1, e2, e3, eq.scope, eq.source);
 
     case Equation.TERMINATE()
       algorithm

@@ -57,6 +57,7 @@ import DAE;
 import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
+import NFInstNode.InstNode;
 
 public
 function scalarize
@@ -330,7 +331,7 @@ algorithm
     case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) guard Type.isArray(ty)
       algorithm
         if Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs) then
-          equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, src) :: equations;
+          equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
         else
           lhs_iter := ExpressionIterator.fromExp(lhs);
           rhs_iter := ExpressionIterator.fromExp(rhs);
@@ -344,22 +345,19 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
+            equations := Equation.EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
           end while;
         end if;
       then
         equations;
 
-    case Equation.ARRAY_EQUALITY()
-      then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.source) :: equations;
-
     case Equation.CONNECT() then equations;
 
     case Equation.IF()
-      then scalarizeIfEquation(eq.branches, eq.source, equations);
+      then scalarizeIfEquation(eq.branches, eq.scope, eq.source, equations);
 
     case Equation.WHEN()
-      then scalarizeWhenEquation(eq.branches, eq.source, equations);
+      then scalarizeWhenEquation(eq.branches, eq.scope, eq.source, equations);
 
     else eq :: equations;
   end match;
@@ -367,6 +365,7 @@ end scalarizeEquation;
 
 function scalarizeIfEquation
   input list<Equation.Branch> branches;
+  input InstNode scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -388,12 +387,13 @@ algorithm
   // Add the scalarized if equation to the list of equations unless we don't
   // have any branches left.
   if not listEmpty(bl) then
-    equations := Equation.IF(listReverseInPlace(bl), source) :: equations;
+    equations := Equation.IF(listReverseInPlace(bl), scope, source) :: equations;
   end if;
 end scalarizeIfEquation;
 
 function scalarizeWhenEquation
   input list<Equation.Branch> branches;
+  input InstNode scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -413,7 +413,7 @@ algorithm
     bl := Equation.makeBranch(cond, body, var) :: bl;
   end for;
 
-  equations := Equation.WHEN(listReverseInPlace(bl), source) :: equations;
+  equations := Equation.WHEN(listReverseInPlace(bl), scope, source) :: equations;
 end scalarizeWhenEquation;
 
 function scalarizeAlgorithm

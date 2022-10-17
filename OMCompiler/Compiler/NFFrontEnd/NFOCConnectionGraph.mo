@@ -312,7 +312,7 @@ algorithm
 
         (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
 
-        replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
+        replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, InstNode.EMPTY_NODE(), source);
 
         eqsEqualityConstraint := {replaceEq};
 

@@ -261,7 +261,7 @@ protected
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
-  equalityEq := Equation.makeCrefEquality(lhsCref, rhsCref, source);
+  equalityEq := Equation.makeCrefEquality(lhsCref, rhsCref, InstNode.EMPTY_NODE(), source);
 end makeEqualityEquation;
 
 function makeEqualityAssert
@@ -293,7 +293,7 @@ algorithm
     exp := Expression.RELATION(lhs_exp, Operator.makeEqual(ty), rhs_exp);
   end if;
 
-  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, source);
+  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
 end makeEqualityAssert;
 
 //protected function shouldFlipPotentialEquation
@@ -340,7 +340,7 @@ algorithm
     end for;
   end if;
 
-  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), c.ty, src)};
+  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), c.ty, InstNode.EMPTY_NODE(), src)};
 end generateFlowEquations;
 
 function makeFlowExp
@@ -394,8 +394,8 @@ algorithm
         e2 := makeInStreamCall(cref1);
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.EQUALITY(cref1, e1, Type.REAL(), src),
-         Equation.EQUALITY(cref2, e2, Type.REAL(), src)};
+        {Equation.EQUALITY(cref1, e1, Type.REAL(), InstNode.EMPTY_NODE(), src),
+         Equation.EQUALITY(cref2, e2, Type.REAL(), InstNode.EMPTY_NODE(), src)};
 
     // One inside, one outside:
     // cr1 = cr2;
@@ -404,7 +404,7 @@ algorithm
       algorithm
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.makeCrefEquality(cr1, cr2, src)};
+        {Equation.makeCrefEquality(cr1, cr2, InstNode.EMPTY_NODE(), src)};
 
     // The general case with N inside connectors and M outside:
     else
@@ -433,7 +433,7 @@ algorithm
     outside := removeStreamSetElement(e.name, outsideElements);
     res := streamSumEquationExp(outside, insideElements, flowThreshold, variables);
     src := ElementSource.addAdditionalComment(e.source, " equation generated from stream connection");
-    equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), src) :: equations;
+    equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), InstNode.EMPTY_NODE(), src) :: equations;
   end for;
 end streamEquationGeneral;
 

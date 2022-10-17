@@ -217,6 +217,11 @@ algorithm
 
   flatModel := InstUtil.combineSubscripts(flatModel);
 
+  if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+     Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+    flatModel := FlatModel.obfuscate(flatModel);
+  end if;
+
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
@@ -2821,7 +2826,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
+        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
@@ -2835,7 +2840,7 @@ algorithm
         exp1 := instConnectorCref(scodeEq.crefLeft, scope, context, info);
         exp2 := instConnectorCref(scodeEq.crefRight, scope, context, info);
       then
-        Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
+        Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_FOR(info = info)
       algorithm
@@ -2845,7 +2850,7 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.FOR);
         eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
-        Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
+        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_IF(info = info)
       algorithm
@@ -2868,7 +2873,7 @@ algorithm
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
+        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_WHEN(info = info)
       algorithm
@@ -2889,7 +2894,7 @@ algorithm
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(listReverse(branches), makeSource(scodeEq.comment, info));
+        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
@@ -2897,13 +2902,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, context, info);
         exp3 := instExp(scodeEq.level, scope, context, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
+        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
-        Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
+        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_REINIT(info = info)
       algorithm
@@ -2915,13 +2920,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, context, info);
         exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
-        Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
+        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
-        Equation.NORETCALL(exp1, makeSource(scodeEq.comment, info));
+        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info));
 
     else
       algorithm
@@ -2982,7 +2987,7 @@ protected
 algorithm
   statements := instStatements(algorithmSection.statements, scope, context);
   (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
-  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, scope, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

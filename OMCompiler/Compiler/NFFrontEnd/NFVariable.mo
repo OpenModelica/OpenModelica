@@ -249,6 +249,16 @@ public
     output Boolean isPublic = variable.visibility == Visibility.PUBLIC;
   end isPublic;
 
+  function isProtected
+    input Variable variable;
+    output Boolean isProtected = variable.visibility == Visibility.PROTECTED;
+  end isProtected;
+
+  function isEncrypted
+    input Variable variable;
+    output Boolean isEncrypted = Util.endsWith(variable.info.fileName, ".moc");
+  end isEncrypted;
+
   function lookupTypeAttribute
     input String name;
     input Variable var;

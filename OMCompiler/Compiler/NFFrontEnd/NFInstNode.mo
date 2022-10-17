@@ -1580,6 +1580,11 @@ uniontype InstNode
     end match;
   end isProtected;
 
+  function isPublic
+    input InstNode node;
+    output Boolean isPublic = not isProtected(node);
+  end isPublic;
+
   function protectClass
     input output InstNode cls;
   algorithm

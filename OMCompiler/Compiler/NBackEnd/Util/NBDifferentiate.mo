@@ -1226,7 +1226,7 @@ public
     (statements, diffArguments) := List.mapFold(alg.statements, differentiateStatement, diffArguments);
     statements_flat := List.flatten(statements);
     (inputs, outputs) := Algorithm.getInputsOutputs(statements_flat);
-    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.source);
+    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.scope, alg.source);
   end differentiateAlgorithm;
 
   function differentiateStatement
