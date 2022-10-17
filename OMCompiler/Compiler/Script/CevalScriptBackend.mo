@@ -3581,14 +3581,14 @@ algorithm
     case {"dynamic"}
       algorithm
         if isWindows then
-          CMAKE_GENERATOR := "-G MSYS Makefiles ";
+          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := "cmake " + CMAKE_GENERATOR +
                               "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=" + defaultFmiIncludeDirectoy + " " +
                               CMAKE_BUILD_TYPE +
                               " ..";
-        cmd := "cd \"" + fmuSourceDir + "\" && " +
+        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                "cmake --build . --target install && " +

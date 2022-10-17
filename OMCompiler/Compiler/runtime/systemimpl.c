@@ -586,7 +586,7 @@ const char* SystemImpl__basename(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int runProcess(const char* cmd)
+int runProcess(const char* cmd, const char* outFile)
 {
   STARTUPINFOW si;
   PROCESS_INFORMATION pi;
@@ -598,7 +598,12 @@ int runProcess(const char* cmd)
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
-  sprintf(command, "%s \"%s\"", c, cmd);
+  if (*outFile) {
+    sprintf(command, "%s \"%s\" >> \"%s\" 2>&1", c, cmd, outFile);
+  }
+  else {
+    sprintf(command, "%s \"%s\"", c, cmd);
+  }
   /* fprintf(stderr, "%s\n", command); fflush(NULL); */
 
   wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
@@ -628,14 +633,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  if (*outFile) {
-    char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(str) + strlen(outFile) + 12);
-    sprintf(command, "%s >> \"%s\" 2>&1", str, outFile);
-    status = runProcess(command);
-    GC_free((void*)command);
-  } else {
-    status = runProcess(str);
-  }
+  status = runProcess(str, outFile);
 #else
   pid_t pID = vfork();
   if (pID == 0) { // child
