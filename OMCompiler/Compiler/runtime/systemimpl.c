@@ -599,51 +599,51 @@ const char* SystemImpl__basename(const char *str)
  */
 int runProcess(const char* cmd, const char* outFile)
 {
-  STARTUPINFOW si;
-  PROCESS_INFORMATION pi;
-  SECURITY_ATTRIBUTES sa;
-  HANDLE h = NULL;
+  STARTUPINFOW startupInfo;
+  PROCESS_INFORMATION processInfo;
+  SECURITY_ATTRIBUTES securityAttributes;
+  HANDLE logFileHandle = NULL;
   wchar_t* unicodeOutFile = NULL;
-  char *c = "cmd /c";
-  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 4);
+  char *terminal = "cmd /c";
+  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(terminal) + 4);
   DWORD exitCode = 1;
 
-  ZeroMemory(&si, sizeof(si));
-  ZeroMemory(&pi, sizeof(pi));
+  ZeroMemory(&startupInfo, sizeof(startupInfo));
+  ZeroMemory(&processInfo, sizeof(processInfo));
 
-  si.cb = sizeof(si);   // Size of struct in bytes
+  startupInfo.cb = sizeof(startupInfo);   // Size of struct in bytes
   if (*outFile) {
     unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = NULL;
-    sa.bInheritHandle = TRUE;
-    h = CreateFileW(unicodeOutFile,
+    securityAttributes.nLength = sizeof(securityAttributes);
+    securityAttributes.lpSecurityDescriptor = NULL;
+    securityAttributes.bInheritHandle = TRUE;
+    logFileHandle = CreateFileW(unicodeOutFile,
                     FILE_APPEND_DATA,
                     FILE_SHARE_WRITE | FILE_SHARE_READ,
-                    &sa,
+                    &securityAttributes,
                     OPEN_ALWAYS,
                     FILE_ATTRIBUTE_NORMAL,
                     NULL);
-    si.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
-    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-    si.hStdError = h;
-    si.hStdOutput = h;
+    startupInfo.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startupInfo.hStdError = logFileHandle;
+    startupInfo.hStdOutput = logFileHandle;
   }
 
-  sprintf(command, "%s \"%s\"", c, cmd);
+  sprintf(command, "%s \"%s\"", terminal, cmd);
   wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
   //printf("unicodeCommand: %ls\n", unicodeCommand);
 
-  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
   {
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
     // Get the exit code.
-    GetExitCodeProcess(pi.hProcess, &exitCode);
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+    GetExitCodeProcess(processInfo.hProcess, &exitCode);
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
   }
-  if (h) {
-    CloseHandle(h);
+  if (logFileHandle) {
+    CloseHandle(logFileHandle);
   }
 
   free(unicodeOutFile);
