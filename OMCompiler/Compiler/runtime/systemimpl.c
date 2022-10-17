@@ -586,29 +586,55 @@ const char* SystemImpl__basename(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief Create new process and run command.
+ *
+ * Create handle for log file if outFile is not NULL and
+ * redirect stdout and stderr.
+ * Using wide chars for all commands and paths.
+ *
+ * @param cmd       Command to execute.
+ * @param outFile   Path to output file, can be NULL.
+ * @return int      Return 0 on success, 1 on failure.
+ */
 int runProcess(const char* cmd, const char* outFile)
 {
   STARTUPINFOW si;
   PROCESS_INFORMATION pi;
+  SECURITY_ATTRIBUTES sa;
+  HANDLE h = NULL;
+  wchar_t* unicodeOutFile = NULL;
   char *c = "cmd /c";
   char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 4);
   DWORD exitCode = 1;
 
   ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
+  si.cb = sizeof(si);   // Size of struct in bytes
   if (*outFile) {
-    sprintf(command, "%s \"%s\" >> \"%s\" 2>&1", c, cmd, outFile);
+    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+    h = CreateFileW(unicodeOutFile,
+                    FILE_APPEND_DATA,
+                    FILE_SHARE_WRITE | FILE_SHARE_READ,
+                    &sa,
+                    OPEN_ALWAYS,
+                    FILE_ATTRIBUTE_NORMAL,
+                    NULL);
+    si.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
+    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    si.hStdError = h;
+    si.hStdOutput = h;
   }
-  else {
-    sprintf(command, "%s \"%s\"", c, cmd);
-  }
-  /* fprintf(stderr, "%s\n", command); fflush(NULL); */
 
+  sprintf(command, "%s \"%s\"", c, cmd);
   wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
+  //printf("unicodeCommand: %ls\n", unicodeCommand);
 
-  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
   {
     WaitForSingleObject(pi.hProcess, INFINITE);
     // Get the exit code.
@@ -616,7 +642,11 @@ int runProcess(const char* cmd, const char* outFile)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
+  if (h) {
+    CloseHandle(h);
+  }
 
+  free(unicodeOutFile);
   free(unicodeCommand);
   GC_free(command);
   return (int)exitCode;

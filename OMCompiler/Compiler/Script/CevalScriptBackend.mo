@@ -3595,7 +3595,6 @@ algorithm
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-          System.removeFile(logfile);
           fail();
         end if;
         then();
