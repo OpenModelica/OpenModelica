@@ -47,14 +47,11 @@
 #include "simulation/solver/model_help.h"
 #include "simulation/options.h"
 
-static inline void externalInputallocate1(DATA* data, FILE * pFile);
 static inline void externalInputallocate2(DATA* data, char *filename);
 
 int externalInputallocate(DATA* data)
 {
-  FILE * pFile = NULL;
-  int i,j;
-  short useLibCsvH = 1;
+  int i, j;
   char * csv_input_file_opt = NULL;
   char * csv_input_file = NULL;
 
