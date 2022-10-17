@@ -47,13 +47,13 @@
 #include "simulation/solver/model_help.h"
 #include "simulation/options.h"
 
-static inline void externalInputallocate2(DATA* data, char *filename);
+static inline void externalInputallocate2(DATA* data, const char *filename);
 
 int externalInputallocate(DATA* data)
 {
   int i, j;
-  char * csv_input_file_opt = NULL;
-  char * csv_input_file = NULL;
+  const char * csv_input_file_opt = NULL;
+  const char * csv_input_file = NULL;
 
   csv_input_file_opt = (char*)omc_flagValue[FLAG_INPUT_CSV];
   if(!csv_input_file_opt) {
@@ -90,7 +90,7 @@ int externalInputallocate(DATA* data)
 
 
 
-void externalInputallocate2(DATA* data, char *filename){
+void externalInputallocate2(DATA* data, const char *filename){
   int i, j, k;
   struct csv_data *res = read_csv(filename);
   char ** names;
