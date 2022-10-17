@@ -674,6 +674,25 @@ Here are some simple examples:
 Please note that all the model variables will still be shown in the Variables Browser tree; however, only those for which results were actually saved
 will have a checkbox to plot them.
 
+CSV-File Data Input
+~~~~~~~~~~~~~~~~~~~
+When simulating Modelica models with top-level inputs (input variables or input connectors), these inputs are assumed to be zero by default. However,
+it is possible to feed them with input signals obtained from CSV (Comma-Separated Value) input data files, by means of the
+:ref:`-csvInput <simflag-csvInput>` simulation flag, that can be set in the *Additional Simulation Flags (Optional)* field of
+the Simulation Flags tab. For example, setting ``-csvInput=myinput.csv`` causes the runtime executable to read such input data from the ``myinput.csv``
+file.
+
+CSV files should contain the names of the input variables in the first row, beginning with ``time`` on the first column, and the values of such variables
+for each point in time in subsequent rows, with non-decreasing time values. The variable names should be enclosed by quotation marks in case they contain spaces, to avoid ambiguities. The most commonly used separator for data within each row is the comma, but it is also possible to use other separators, e.g., space, tab,
+or semi-colon; the used type of separator will be determined automatically.
+
+The CSV-file provides the values of the top level inputs at the specified points in time; linear interpolation is used to provide intermediate values between
+any two subsequent data points. Discontinuous inputs can be obtained by providing two consecutive rows with the same time value, containing the left
+limit values and the right limit values. 
+
+Unless an absolute pathname is provided for the CSV-files, OMEdit will load it from the sub-directory of the working directory which has the same name of the model,
+where all the other input and output data files are located.
+
 Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~
 
