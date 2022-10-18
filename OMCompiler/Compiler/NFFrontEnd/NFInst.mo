@@ -197,7 +197,7 @@ algorithm
   else
     // Remove empty arrays from variables
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
-    flatModel.variables := list(Flatten.vectorizeVariableBinding(v) for v in flatModel.variables);
+    flatModel.variables := list(Flatten.fillVectorizedVariableBinding(v) for v in flatModel.variables);
   end if;
 
   flatModel := InstUtil.replaceEmptyArrays(flatModel);

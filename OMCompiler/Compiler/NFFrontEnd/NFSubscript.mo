@@ -240,6 +240,25 @@ public
     end match;
   end isIterator;
 
+  function toIterator
+    input Subscript sub;
+    output InstNode iterator;
+  protected
+    ComponentRef cref;
+  algorithm
+    iterator := match sub
+      case UNTYPED(exp = Expression.CREF(cref = cref))
+        guard ComponentRef.isIterator(cref)
+        then ComponentRef.node(cref);
+
+      case INDEX(index = Expression.CREF(cref = cref))
+        guard ComponentRef.isIterator(cref)
+        then ComponentRef.node(cref);
+
+      else InstNode.EMPTY_NODE();
+    end match;
+  end toIterator;
+
   function isEqual
     input Subscript subscript1;
     input Subscript subscript2;

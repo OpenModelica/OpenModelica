@@ -134,6 +134,7 @@ uniontype FlattenSettings
     Boolean arrayConnect;
     Boolean nfAPI;
     Boolean newBackend;
+    Boolean vectorizeBindings;
   end SETTINGS;
 end FlattenSettings;
 
@@ -157,7 +158,8 @@ algorithm
     Flags.isSet(Flags.NF_SCALARIZE),
     Flags.isSet(Flags.ARRAY_CONNECT),
     Flags.isSet(Flags.NF_API),
-    Flags.getConfigBool(Flags.NEW_BACKEND)
+    Flags.getConfigBool(Flags.NEW_BACKEND),
+    Flags.isSet(Flags.VECTORIZE_BINDINGS)
   );
 
   sections := Sections.EMPTY();
@@ -208,24 +210,24 @@ algorithm
   execStat(getInstanceName());
 end collectFunctions;
 
-function vectorizeVariableBinding
+function fillVectorizedVariableBinding
   input output Variable var;
 protected
   list<tuple<String, Binding>> ty_attrs = {};
   String attr_name;
   Binding attr_binding;
 algorithm
-  var.binding := vectorizeBinding(var.binding, var.ty);
+  var.binding := fillVectorizedBinding(var.binding, var.ty);
 
   for ty_attr in var.typeAttributes loop
     (attr_name, attr_binding) := ty_attr;
-    attr_binding := vectorizeBinding(attr_binding,
+    attr_binding := fillVectorizedBinding(attr_binding,
       Type.copyDims(var.ty, Binding.getType(attr_binding)));
     ty_attrs := (attr_name, attr_binding) :: ty_attrs;
   end for;
 
   var.typeAttributes := listReverseInPlace(ty_attrs);
-end vectorizeVariableBinding;
+end fillVectorizedVariableBinding;
 
 protected
 function flattenClass
@@ -457,7 +459,7 @@ algorithm
   if isSome(outerBinding) then
     SOME(binding) := outerBinding;
     unfix := Binding.isUnbound(binding) and var == Variability.PARAMETER;
-  else
+  elseif not settings.vectorizeBindings then
     binding := flattenBinding(binding, prefix);
     unfix := false;
   end if;
@@ -749,15 +751,33 @@ protected
   Sections sects;
   list<Equation> eq, ieq;
   list<Algorithm> alg, ialg;
+  ComponentRef indexed_prefix;
 algorithm
+  // Skip the array if any dimension is zero.
+  if List.any(dimensions, Dimension.isZero) then
+    return;
+  end if;
+
   // if we don't scalarize flatten the class and vectorize it
   (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
-  // add dimensions to the types
-  for v in vrs loop
-    v.ty := Type.liftArrayLeftList(v.ty, dimensions);
-    vars := v :: vars;
-  end for;
+  if settings.vectorizeBindings then
+    indexed_prefix := ComponentRef.setSubscripts(makeBindingIterators(prefix, dimensions), prefix);
+
+    // add dimensions to the types
+    for v in vrs loop
+      v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+      v.binding := flattenBinding(v.binding, indexed_prefix);
+      v.binding := vectorizeBinding(v.binding, indexed_prefix);
+      vars := v :: vars;
+    end for;
+  else
+    // add dimensions to the types
+    for v in vrs loop
+      v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+      vars := v :: vars;
+    end for;
+  end if;
 
   // vectorize equations
   () := match sects
@@ -772,7 +792,68 @@ algorithm
   end match;
 end vectorizeArray;
 
+function makeBindingIterators
+  input ComponentRef prefix;
+  input list<Dimension> dimensions;
+  output list<Subscript> subs = {};
+protected
+  Integer index = 0;
+  ComponentRef iter;
+  String name;
+algorithm
+  name := "$" + InstNode.name(ComponentRef.node(prefix));
+
+  for d in dimensions loop
+    index := index + 1;
+    iter := ComponentRef.makeIterator(InstNode.newIterator(name + String(index),
+      Type.INTEGER(), AbsynUtil.dummyInfo));
+    subs := Subscript.makeIndex(Expression.fromCref(iter)) :: subs;
+  end for;
+
+  subs := listReverseInPlace(subs);
+end makeBindingIterators;
+
 function vectorizeBinding
+  input output Binding binding;
+  input ComponentRef prefix;
+protected
+  list<Subscript> subs;
+  list<InstNode> nodes;
+  list<Dimension> dims;
+  Expression exp;
+  Call array_call;
+  Type binding_ty;
+  list<tuple<InstNode, Expression>> iters;
+algorithm
+  if not Binding.isBound(binding) then
+    return;
+  end if;
+
+  exp := Binding.getExp(binding);
+
+  binding_ty := Binding.getType(binding);
+
+  subs := ComponentRef.subscriptsAllFlat(prefix);
+  nodes := ComponentRef.nodes(prefix);
+  dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
+  binding_ty := Type.liftArrayLeftList(binding_ty, dims);
+
+  if Expression.isLiteral(exp) then
+    array_call := Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+      exp :: list(Dimension.sizeExp(d) for d in dims),
+      Binding.variability(binding), Purity.PURE, binding_ty);
+  else
+    iters := list((Subscript.toIterator(s), Dimension.toRange(d)) threaded for s in subs, d in dims);
+
+    array_call := Call.TYPED_ARRAY_CONSTRUCTOR(binding_ty,
+      Expression.variability(exp), Expression.purity(exp), exp, iters);
+  end if;
+
+  exp := Expression.CALL(array_call);
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding));
+end vectorizeBinding;
+
+function fillVectorizedBinding
   input output Binding binding;
   input Type varType;
 protected
@@ -805,7 +886,7 @@ algorithm
 
     else ();
   end match;
-end vectorizeBinding;
+end fillVectorizedBinding;
 
 function vectorizeEquations
   input list<Equation> eql;
