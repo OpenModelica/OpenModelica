@@ -72,6 +72,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
 void CornerItem::initialize(qreal x, qreal y, int connectedPointIndex)
 {
   mOldScenePosition = QPointF();
+  setConnectedPointIndex(connectedPointIndex);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize + QString::number(mConnectedPointIndex));
   setPos(x, y);
