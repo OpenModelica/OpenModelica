@@ -2114,7 +2114,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Real triggerDSSEvent;
     Real nextEventTime(fixed = true);
   initial equation
-    flowStartTime = fmi2Functions.fmi2SetTime(fmi2me, time, 1);
+    flowStartTime = fmi2Functions.fmi2SetupExperiment(fmi2me, false, 0.0, 0.0, false, 0.0, 1);
     flowEnterInitialization = fmi2Functions.fmi2EnterInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime);
     flowInitialized = fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
     <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
@@ -2221,6 +2221,18 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi2Functions
+      function fmi2SetupExperiment
+        input FMI2ModelExchange fmi2me;
+        input Boolean inToleranceDefined;
+        input Real inTolerance;
+        input Real inStartTime;
+        input Boolean inStopTimeDefined;
+        input Real inStopTime;
+        input Real inFlow;
+        output Real outFlow = inFlow;
+        external "C" fmi2SetupExperiment_OMC(fmi2me, inToleranceDefined, inTolerance, inStartTime, inStopTimeDefined, inStopTime) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi2SetupExperiment;
+
       function fmi2SetTime
         input FMI2ModelExchange fmi2me;
         input Real inTime;
