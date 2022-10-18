@@ -18,6 +18,7 @@ FMI Export
 
 To export the FMU use the OpenModelica command
 `translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_
+or `buildModelFMU(ModelName)` <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
 from command line interface, OMShell, OMNotebook or MDT.
 The export FMU command is also integrated with OMEdit.
 Select `File > Export > FMU` the FMU package is generated in the
@@ -83,10 +84,25 @@ The BouncingBall_flags.json for this example is displayed in
   :name: BouncingBall FMI flags
   :caption: BouncingBall FMI flags
 
-For this to work OpenModelica will export all needed dependecies into the FMU
+For this to work OpenModelica will export all needed dependencies into the FMU
 if and only if the flag fmiFlags was set.
 To have CVODE in a SourceCode FMU the user needs to add all sources for
 SUNDIALS manualy and create a build script as well.
+
+CMake FMU Export
+~~~~~~~~~~~~~~~~
+
+A prototype implementation of FMUs compiled with CMake instead of Makefiels is available
+when using compiler flag :ref:`--fmuCMakeBuild<omcflag-fmuCMakeBuild>`.
+This is useful for creating Source-Code FMUs and for cross-platform compilation.
+On Windows this is currently the only way to use Docker images for cross-platform compilation.
+
+It is possible to add runtime dependencies into the FMU using
+:ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>`.
+The default value *modelica* will include every external libraries mentioned by an annotation
+as well as its dependencies (recursive). The system default locations are excluded.
+
+The minimum CMake version required is v3.21.
 
 FMI Import
 ~~~~~~~~~~
