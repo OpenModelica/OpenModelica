@@ -117,8 +117,8 @@ for further information.
 FMI Import allows to use an FMU, generated according to the FMI for Model
 Exchange 2.0 standard, as a component in a Modelica model. This can be
 useful if the FMU describes the behaviour of a component or sub-system in a
-structured Modelica model, which is not easily turned into a pure FMI-based model
-that can be handled by OMSimulator.
+structured Modelica model, which is not easily turned into a pure FMI-based
+model that can be handled by OMSimulator.
 
 FMI is a computational description of a dynamic model, while a Modelica model is
 a declarative description; this means that not all conceivable FMUs can be successfully
