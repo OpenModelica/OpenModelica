@@ -2363,12 +2363,12 @@ void OptionsDialog::saveSimulationSettings()
   } else {
     mpSettings->setValue("simulation/newInst", newInst);
   }
-  // save new instantiation
+  // save enable FMU Import
   bool enableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
-  if (mEnableFMUImport != enableFMUImport) {
+  if (mEnableFMUImport = enableFMUImport) {
     changed = true;
   }
-  if (enableFMUImport == !simulationOptions.getEnableFMUImport()) {
+  if (enableFMUImport == simulationOptions.getEnableFMUImport()) {
     mpSettings->remove("simulation/enableFMUImport");
   } else {
     mpSettings->setValue("simulation/enableFMUImport", enableFMUImport);

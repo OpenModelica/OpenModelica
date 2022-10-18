@@ -1394,11 +1394,11 @@ Simulation
        analytical jacobian for non-linear strong components without user-defined
        function calls.
 
-    -  *Enable pedantic debug-mode, to get much more feedback*
-
     -  *Enable parallelization of independent systems of equations (Experimental)*
 
     -  *Enable old frontend for code generation*
+
+    -  *Enable FMU Import* - See :ref:`fmi-import`.
 
     -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
