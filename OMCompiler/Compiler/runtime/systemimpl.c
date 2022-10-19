@@ -1070,7 +1070,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
     while ((retval == 0) && (p = readdir(d)))
     {
       int r2 = -1;
-      char * buf;
+      char * dir_name;
       size_t len;
 
       /* Do not recurse on "." and ".." */
@@ -1080,30 +1080,30 @@ static int SystemImpl__removeDirectoryItem(const char *path)
       }
 
       len = path_len + strlen(p->d_name) + 2;
-      buf = (char *)omc_alloc_interface.malloc_atomic(len);
-      if (buf != NULL)
+      dir_name = (char *)omc_alloc_interface.malloc_atomic(len);
+      if (dir_name != NULL)
       {
         omc_stat_t statbuf;
 
-        snprintf(buf, len, "%s/%s", path, p->d_name);
-        if (omc_stat(buf, &statbuf) == 0)
+        snprintf(dir_name, len, "%s/%s", path, p->d_name);
+        if (omc_stat(dir_name, &statbuf) == 0)
         {
           if (S_ISDIR(statbuf.st_mode))
           {
-            r2 = 0==SystemImpl__removeDirectory(buf);
+            r2 = 0==SystemImpl__removeDirectory(dir_name);
           }
           else
           {
-            r2 = omc_unlink(buf);
+            r2 = omc_unlink(dir_name);
           }
         }
-        else if(omc_lstat(buf, &statbuf) == 0)
+        else if(omc_lstat(dir_name, &statbuf) == 0)
         {
           // Dead link, that isn't pointing to a file/directory any more
-          r2 = omc_unlink(buf);
+          r2 = omc_unlink(dir_name);
         }
         else {
-          const char *c_tokens[1]={buf};
+          const char *c_tokens[1]={dir_name};
           c_add_message(NULL,85,
             ErrorType_scripting,
             ErrorLevel_error,
