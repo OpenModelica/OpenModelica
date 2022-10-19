@@ -104,6 +104,8 @@ as well as its dependencies (recursive). The system default locations are exclud
 
 The minimum CMake version required is v3.21.
 
+.. _fmi-import :
+
 FMI Import
 ~~~~~~~~~~
 
