@@ -684,12 +684,12 @@ file.
 
 CSV files should contain the names of the input variables in the first row, beginning with ``time`` on the first column, and the values of such variables
 for each point in time in subsequent rows, with non-decreasing time values. The variable names should be enclosed by quotation marks in case they contain spaces, to avoid ambiguities. The default separator for data items within each row is the comma, but it is also possible to use other separators, e.g., space, tab,
-or semi-colon; in this case, the file should start with the separator specification ``"sep=x`` (including the quotation marks), where ``x`` is the separator
+or semi-colon; in this case, the file should start with the separator specification ``"sep=x"`` (including the quotation marks), where ``x`` is the separator
 character.
 
 For example, assume your model has three top-level inputs named ``u1``, ``u2``, and ``u3``. These are valid CSV input files:
 
-::
+.. code-block:: none
   time, u3, u2, u1
   0.0, 0.0, 0.0, 0.0
   1.0, 0.0, 0.0, 0.0
