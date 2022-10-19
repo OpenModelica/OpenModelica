@@ -208,7 +208,7 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
 
 static void omc_assert_fmi_common(threadData_t *threadData, fmi2Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
 {
-  char *str;
+  const char *str;
   ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
   GC_vasprintf(&str, msg, args);
   if (info.lineStart) {
