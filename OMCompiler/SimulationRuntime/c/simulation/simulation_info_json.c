@@ -486,21 +486,20 @@ static void readInfoJson(const char *str, MODEL_DATA_XML *xml)
  */
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
-  omc_stat_t buf = {0};
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
-  int fileStatus;
+  int fileExists;
   if (omc_flag[FLAG_INPUT_PATH])
   {
     const char *jsonFile;
     GC_asprintf(&jsonFile, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName);
-    fileStatus = omc_stat(jsonFile, &buf);
+    fileExists = omc_file_exists(jsonFile);
   }
   else
   {
-    fileStatus = omc_stat(xml->fileName, &buf);
+    fileExists = omc_file_exists(xml->fileName);
   }
 
-  if (fileStatus != 0)
+  if (!fileExists)
   {
     xml->fileName = NULL;
     return;

@@ -195,6 +195,18 @@ int omc_lstat(const char *filename, omc_stat_t* statbuf)
 }
 #endif
 
+/**
+ * @brief checks if a file/folder exists on the system.
+ * NOTE: Will return success even for directories, i.e., will not confirm that it is indeed a file.
+ *
+ * @param filename  the filename to check for existence.
+ * @return int  returns 1 if the file/folder exists, 0 otherwise.
+ */
+int omc_file_exists(const char* filename) {
+  omc_stat_t statbuf;
+  return omc_stat(filename, &statbuf) == 0;
+}
+
 
 /**
  * @brief Unlink file.
