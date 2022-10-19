@@ -235,7 +235,14 @@ else()
   set(BSTATIC "false")
 endif()
 
-set(MAKE ${CMAKE_MAKE_PROGRAM})
+# For now assume mingw32-make is available here. It should be because it is what we use
+# to compile generated simulation code on Windows when omc is issuing the compilation.
+# This variable will substitute @ Autoconf.make.
+# Autoconf.make inturn (at least so far) is used to issue compilation of FMU sources.
+# For anything that is issued through SystemCall use this mingw32-make (instead of just 'make'
+# which is the MSYS make.) since the latter is not supposed to be used on Windows shells.
+# (systemCall uses 'cmd \c' to issue commands.)
+set(OMC_MAKE_EXE "mingw32-make")
 
 string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
 
