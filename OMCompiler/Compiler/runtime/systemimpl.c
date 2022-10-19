@@ -659,6 +659,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   const int debug = 0;
   if (debug) {
     fprintf(stderr, "System.systemCall: %s\n", str); fflush(NULL);
+    fprintf(stderr, "System.systemCall log file: %s\n", outFile); fflush(NULL);
   }
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
