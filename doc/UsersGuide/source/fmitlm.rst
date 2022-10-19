@@ -116,7 +116,7 @@ section. This is not allowed by the Modelica Language Specification, so it is
 necessary to set the compiler to accept this non-standard construct by setting
 the `--allowNonStandardModelica=reinitInAlgorithms` compiler flag. In OMEdit,
 you can set this option by activating the *Enable FMU Import* checkbox in the
-*Tools ! Options | Simulation | Translation Flags* tab. This will generate a warning during
+*Tools | Options | Simulation | Translation Flags* tab. This will generate a warning during
 compilation, as there is no guarantee that the imported model using this feature
 can be ported to other Modelica tools; if you want to use a model that contains
 imported FMUs in another Modelica tool, you should rely on the other tool's import
