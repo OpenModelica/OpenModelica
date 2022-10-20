@@ -41,7 +41,6 @@ protected
   import Array;
   import MetaModelica.Dangerous.*;
   import System;
-  import Util;
   import Vector;
 
 public
