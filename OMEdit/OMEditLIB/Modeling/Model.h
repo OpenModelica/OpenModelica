@@ -358,6 +358,7 @@ private:
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
+    bool isType() const;
     bool isPublic() const {return mPublic;}
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
@@ -570,6 +571,7 @@ private:
     QString mVariability;
     QString mDirection;
     QString mComment;
+    bool mChoicesAllMatching;
     PlacementAnnotation mPlacementAnnotation;
     bool mHasDialogAnnotation;
     DialogAnnotation mDialogAnnotation;

@@ -944,6 +944,11 @@ namespace ModelInstance
     return (mRestriction.compare(QStringLiteral("enumeration")) == 0);
   }
 
+  bool Model::isType() const
+  {
+    return (mRestriction.compare(QStringLiteral("type")) == 0);
+  }
+
   void Model::readCoordinateSystemFromExtendsClass(bool isIcon)
   {
     /* From Modelica Specification Version 3.5-dev
@@ -1257,6 +1262,7 @@ namespace ModelInstance
     mVariability = "";
     mDirection = "";
     mComment = "";
+    mChoicesAllMatching = false;
     mHasDialogAnnotation = false;
   }
 
@@ -1348,6 +1354,10 @@ namespace ModelInstance
 
     if (jsonObject.contains("annotation")) {
       QJsonObject annotation = jsonObject.value("annotation").toObject();
+
+      if (annotation.contains("choicesAllMatching")) {
+        mChoicesAllMatching = annotation.value("choicesAllMatching").toBool();
+      }
 
       if (annotation.contains("Placement")) {
         mPlacementAnnotation.deserialize(annotation.value("Placement").toObject());

@@ -167,10 +167,13 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, 
     mValueType = Parameter::Normal;
   } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
-  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->isReplaceable()) { // replaceable component or short element definition
-    mValueType = mpModelInstanceElement->isReplaceable() ? Parameter::ReplaceableClass : Parameter::ReplaceableComponent;
-//  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpComponent->getElementInfo()->getIsElement()) { // non replaceable short element definition
-//    mValueType = Parameter::ReplaceableClass;
+  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->isReplaceable()) {
+    // replaceable component or short element definition
+    if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isType()) {
+      mValueType = Parameter::ReplaceableClass;
+    } else {
+      mValueType = Parameter::ReplaceableComponent;
+    }
   } else {
     mValueType = Parameter::Normal;
   }
@@ -443,8 +446,8 @@ void Parameter::createValueWidget()
     className = mpElement->getElementInfo()->getClassName();
   }
   QString constrainedByClassName = QStringLiteral("$Any");
-  QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "";
-  QStringList enumerationLiterals, enumerationLiteralsComments, replaceableChoices;
+  QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "", restriction = "", elementName = "";
+  QStringList enumerationLiterals, enumerationLiteralsComments, replaceableChoices, choices;
 
   switch (mValueType) {
     case Parameter::Boolean:
@@ -487,55 +490,68 @@ void Parameter::createValueWidget()
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
       if (MainWindow::instance()->isNewApi()) {
-
+        //! @todo constrainedBy is missing in the instance api. See #9559
+//        constrainedByClassName = mpElement->getElementInfo()->getConstrainedByClassName();
+        //! @todo choices are missing in the instance api. See #9380
+//        if (mpElement->hasChoices()) {
+//          choices = mpElement->getChoices();
+//        }
+        parentClassName = mpModelInstanceElement->getParentModel()->getName();
+        if (mpModelInstanceElement->getModel()) {
+          restriction = mpModelInstanceElement->getModel()->getRestriction();
+        } else {
+          restriction = mpModelInstanceElement->getType();
+        }
+        elementName = mpModelInstanceElement->getName();
       } else {
         constrainedByClassName = mpElement->getElementInfo()->getConstrainedByClassName();
-        mpValueComboBox = new QComboBox;
-        mpValueComboBox->setEditable(true);
-        mpValueComboBox->addItem("", "");
-
-        if (constrainedByClassName.contains(QStringLiteral("$Any"))) {
-          constrainedByClassName = className;
+        if (mpElement->hasChoices()) {
+          choices = mpElement->getChoices();
         }
-
-        // add choices if there are any
-        if (mpElement->hasChoices())
-        {
-            QStringList choices = mpElement->getChoices();
-            for (i = 0; i < choices.size(); i++) {
-              QString choice = choices[i];
-              QString comment = StringHandler::getModelicaComment(choice);
-              mpValueComboBox->addItem(comment, choice);
-            }
-        }
-
-        // do replaceable only if not choicesAllMatching=false
-        // if choicesAllMatching is not defined, consider choicesAllMatching=true
         parentClassName = mpElement->getElementInfo()->getParentClassName();
-        replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
-        for (i = 0; i < replaceableChoices.size(); i++) {
-          replaceableChoice = replaceableChoices[i];
-          // if replaceableChoices points to a class in this scope, remove scope
-          if (replaceableChoice.startsWith(parentClassName + "."))
-          {
-             replaceableChoice.remove(0, parentClassName.size() + 1);
-          }
-          if (mValueType == Parameter::ReplaceableClass) {
-            replaceable = QString("redeclare %1 %2 = %3").arg(mpElement->getElementInfo()->getRestriction(), mpElement->getName(), replaceableChoice);
-            QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
-            if (!str.isEmpty()) {
-              str = " - " + str;
-            }
-            replaceableText = replaceableChoices[i] + str;
-            mpValueComboBox->addItem(replaceableText, replaceable);
-          } else {
-            replaceable = QString("redeclare %1 %2").arg(replaceableChoice, mpElement->getName());
-            mpValueComboBox->addItem(replaceable, replaceable);
-          }
-        }
-
-        connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+        restriction = mpElement->getElementInfo()->getRestriction();
+        elementName = mpElement->getName();
       }
+
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
+
+      if (constrainedByClassName.contains(QStringLiteral("$Any"))) {
+        constrainedByClassName = className;
+      }
+
+      // add choices if there are any
+      for (i = 0; i < choices.size(); i++) {
+        QString choice = choices[i];
+        QString comment = StringHandler::getModelicaComment(choice);
+        mpValueComboBox->addItem(comment, choice);
+      }
+
+      // do replaceable only if not choicesAllMatching=false
+      // if choicesAllMatching is not defined, consider choicesAllMatching=true
+      replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
+      for (i = 0; i < replaceableChoices.size(); i++) {
+        replaceableChoice = replaceableChoices[i];
+        // if replaceableChoices points to a class in this scope, remove scope
+        if (replaceableChoice.startsWith(parentClassName + ".")) {
+          replaceableChoice.remove(0, parentClassName.size() + 1);
+        }
+        if (mValueType == Parameter::ReplaceableClass) {
+          replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice);
+          QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
+          if (!str.isEmpty()) {
+            str = " - " + str;
+          }
+          replaceableText = replaceableChoices[i] + str;
+          mpValueComboBox->addItem(replaceableText, replaceable);
+        } else {
+          replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
+          mpValueComboBox->addItem(replaceable, replaceable);
+        }
+      }
+
+      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
 
     case Parameter::Normal:
