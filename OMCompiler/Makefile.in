@@ -17,7 +17,7 @@ host = @host@
 host_short = @host_short@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
-CMAKE=@CMAKE@
+CMAKE=@OMC_CMAKE_EXE@
 # Use the system's default cmake if nothing is passed to configure script, i.e., no CMAKE=<some_path> is specified
 ifeq ($(CMAKE),)
 	CMAKE=cmake

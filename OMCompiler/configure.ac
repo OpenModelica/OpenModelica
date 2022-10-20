@@ -96,7 +96,7 @@ AC_SUBST(OMENCRYPTION)
 AC_SUBST(MINGW_EXTRA_LIBS)
 AC_SUBST(BSTATIC)
 AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
-AC_SUBST(CMAKE)
+AC_SUBST(OMC_CMAKE_EXE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -137,6 +137,12 @@ fi
 
 if test -z "$MAKE"; then
   OMC_MAKE_EXE=make
+fi
+
+if test -z "$CMAKE"; then
+  OMC_CMAKE_EXE=cmake
+else
+  OMC_CMAKE_EXE="$CMAKE"
 fi
 
 dnl Disables the default CXXFLAGS="-g -O2"
