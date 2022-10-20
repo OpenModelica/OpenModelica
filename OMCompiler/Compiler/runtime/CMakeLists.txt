@@ -243,6 +243,7 @@ endif()
 # which is the MSYS make.) since the latter is not supposed to be used on Windows shells.
 # (systemCall uses 'cmd \c' to issue commands.)
 set(OMC_MAKE_EXE "mingw32-make")
+set(OMC_CMAKE_EXE "${CMAKE_COMMAND}")
 
 string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
 

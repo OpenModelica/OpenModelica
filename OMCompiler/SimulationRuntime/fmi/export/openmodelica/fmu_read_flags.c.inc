@@ -34,6 +34,7 @@
 #include "../util/simulation_options.h"
 #include "../simulation/solver/cvode_solver.h"
 #include "../util/omc_mmap.h"
+#include "../util/omc_file.h"
 
 /**
  * @ Skips to a given character or end of file
