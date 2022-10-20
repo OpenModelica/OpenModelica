@@ -344,80 +344,41 @@ public
 
   function mapInf
     input SBPWLinearMap pw;
-    output SBPWLinearMap outMap;
+    input Integer max_it;
+    output SBPWLinearMap res = pw;
   protected
-    Integer max_it;
-    array<SBSet> dom;
-    array<SBLinearMap> lmap;
-    SBSet d;
-    SBLinearMap lm;
-    array<Real> gain, off;
-    Real a, b, its;
-
-    function max_inter
-      input SBAtomicSet aset;
-      input Real offset;
-      input Integer dim;
-      input output Real its;
-    protected
-      array<SBInterval> is;
-      SBInterval i;
-      Real hi, lo;
-    algorithm
-      is := SBMultiInterval.intervals(SBAtomicSet.aset(aset));
-      i := is[dim];
-      hi := SBInterval.upperBound(i);
-      lo := SBInterval.lowerBound(i);
-      its := max(its, ceil((hi - lo) / abs(offset)));
-    end max_inter;
+    Integer i;
+    SBPWLinearMap original = pw, old = SBPWLinearMap.newEmpty();
   algorithm
-    if SBPWLinearMap.isEmpty(pw) then
-      outMap := SBPWLinearMap.newEmpty();
-      return;
-    end if;
+    if not SBPWLinearMap.isEmpty(pw) then
+      i := 1;
+      while (not SBPWLinearMap.isEqual(old, res) and i < max_it) loop
+        old := res;
+        res := SBPWLinearMap.compPW(res, pw);
+        i := i + 1;
+      end while;
 
-    outMap := reduceMapN(pw, 1);
-    for i in 2:SBPWLinearMap.ndim(outMap) loop
-      outMap := reduceMapN(pw, i);
-    end for;
-
-    max_it := 0;
-    dom := SBPWLinearMap.dom(outMap);
-    lmap := SBPWLinearMap.lmap(outMap);
-
-    for i in 1:arrayLength(dom) loop
-      d := dom[i];
-      lm := lmap[i];
-      gain := SBLinearMap.gain(lm);
-      off := SBLinearMap.offset(lm);
-
-      a := 0;
-      b := gain[1];
-
-      for j in 1:arrayLength(gain) loop
-        a := realMax(a, gain[j] * abs(off[j]));
-        b := realMin(b, gain[j]);
-      end for;
-
-      if a > 0 then
-        its := 0;
-
-        for dim in 1:SBPWLinearMap.ndim(outMap) loop
-          if gain[dim] == 1 and off[dim] < 0 then
-            its := UnorderedSet.fold(SBSet.asets(d),
-              function max_inter(offset = off[dim], dim = dim), its);
-          end if;
+      if SBPWLinearMap.isEqual(old, res) then
+        return;
+      else
+        old := res;
+        res := SBPWLinearMap.compPW(res, pw);
+        for j in 1:SBPWLinearMap.ndim(old) loop
+          old := reduceMapN(old, j);
+        end for;
+        for j in 1:SBPWLinearMap.ndim(res) loop
+          res := reduceMapN(res, j);
         end for;
 
-        max_it := max_it + realInt(its);
-      elseif b == 0 then
-        max_it := max_it + 1;
+        while not SBPWLinearMap.isEqual(old, res) loop
+          old := res;
+          res := SBPWLinearMap.compPW(res, pw);
+          for j in 1:SBPWLinearMap.ndim(res) loop
+            res := reduceMapN(res, j);
+          end for;
+        end while;
       end if;
-    end for;
-
-    for i in 1:Util.msb(max_it) loop
-      outMap := SBPWLinearMap.compPW(outMap, outMap);
-    end for;
+    end if;
   end mapInf;
 
   function minAdjCompMap
@@ -555,20 +516,20 @@ public
     SBPWLinearMap ermap1, ermap2, rmap1, rmap2, new_res;
     SBSet last_im, new_im, diff_im;
   algorithm
-    outMap := SBPWLinearMap.newIdentity(vss);
-
+    outMap := SBPWLinearMap.newIdentity(vss); // connected vertices map
     new_im := vss;
     diff_im := vss;
-
     while not SBSet.isEmpty(diff_im) loop
+      // map left and right map to minimal connected indices
       ermap1 := SBPWLinearMap.compPW(outMap, emap1);
       ermap2 := SBPWLinearMap.compPW(outMap, emap2);
-
+      // combine maps to get minimal connection from left to right and vice versa
       rmap1 := minAdjMap(ermap1, ermap2);
       rmap2 := minAdjMap(ermap2, ermap1);
+      // inverse apply connected minimal indices to connect from cluster to cluster
       rmap1 := SBPWLinearMap.combine(rmap1, outMap);
       rmap2 := SBPWLinearMap.combine(rmap2, outMap);
-
+      // find minimal connections
       new_res := minMap(rmap1, rmap2);
 
       last_im := new_im;
@@ -576,19 +537,15 @@ public
       diff_im := SBSet.complement(last_im, new_im);
 
       if not SBSet.isEmpty(diff_im) then
-        outMap := mapInf(new_res);
+        // if there is a difference apply infinity map
+        outMap := mapInf(new_res, 1);
         new_im := SBPWLinearMap.image(outMap, vss);
+      else
+        outMap := new_res;
       end if;
+
     end while;
   end connectedComponents;
-
-
-  function test
-  algorithm
-    test1();
-    test2();
-    test3();
-  end test;
 
   function make_set
     input list<SBInterval> i;
@@ -615,163 +572,5 @@ public
     pw := SBPWLinearMap.newScalar(dom, lmap);
   end make_pw;
 
-  function test1
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-    SBPWLinearMap res;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1   , 1, 1)}),
-      make_set({SBInterval.new(2   , 1, 1001)}),
-      make_set({SBInterval.new(1002, 1, 1002)}),
-      make_set({SBInterval.new(1003, 1, 1003)}),
-      make_set({SBInterval.new(1004, 1, 2003)}),
-      make_set({SBInterval.new(2004, 1, 3003)}),
-      make_set({SBInterval.new(3004, 1, 4003)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {1.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1002.0}),
-      make_pw({SBInterval.new(3, 1, 1001)}   , {1.0}, {1001.0}),
-      make_pw({SBInterval.new(1002, 1, 2001)}, {1.0}, {1002.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {1002.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {2.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(3, 1, 1001)}   , {1.0}, {0.0}),
-      make_pw({SBInterval.new(1002, 1, 2001)}, {1.0}, {2.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {0.0}, {1003.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test1;
-
-  function test2
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-    SBPWLinearMap res;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1, 1, 1)}),
-      make_set({SBInterval.new(2, 1, 1001)}),
-      make_set({SBInterval.new(1002, 1, 1002)}),
-      make_set({SBInterval.new(1003, 1, 1003)}),
-      make_set({SBInterval.new(1004, 1, 2003)}),
-      make_set({SBInterval.new(2004, 1, 3003)}),
-      make_set({SBInterval.new(3004, 1, 4003)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {1.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1002.0}),
-      make_pw({SBInterval.new(3, 1, 3)}      , {0.0}, {1004.0}),
-      make_pw({SBInterval.new(4, 1, 1002)}   , {1.0}, {2000.0}),
-      make_pw({SBInterval.new(1003, 1, 2001)}, {1.0}, {2.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {1002.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {2.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(3, 1, 3)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(4, 1, 1002)}   , {1.0}, {-1.0}),
-      make_pw({SBInterval.new(1003, 1, 2001)}, {1.0}, {1.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {2.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test2;
-
-  function test3
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2, res;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1, 1, 1000),    SBInterval.new(1, 1, 100)}),
-      make_set({SBInterval.new(1001, 1, 2000), SBInterval.new(101, 1, 200)}),
-      make_set({SBInterval.new(2001, 1, 3000), SBInterval.new(201, 1, 300)}),
-      make_set({SBInterval.new(3001, 1, 4000), SBInterval.new(301, 1, 400)}),
-      make_set({SBInterval.new(4001, 1, 4001)}),
-      make_set({SBInterval.new(4002, 1, 4002)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 999)    , SBInterval.new(1, 1, 99)}   , {1.0, 1.0}, {0.0, 0.0}),
-      make_pw({SBInterval.new(1000, 1, 1998), SBInterval.new(100, 1, 198)}, {1.0, 1.0}, {1001.0, 101.0}),
-      make_pw({SBInterval.new(1999, 1, 2998), SBInterval.new(199, 1, 199)}, {1.0, 0.0}, {-1998.0, 100.0}),
-      make_pw({SBInterval.new(2999, 1, 2999), SBInterval.new(200, 1, 299)}, {0.0, 1.0}, {3001.0, 101.0}),
-      make_pw({SBInterval.new(3000, 1, 3000), SBInterval.new(300, 1, 399)}, {0.0, 1.0}, {3000.0, -99.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 999)    , SBInterval.new(1, 1, 99)}   , {1.0, 1.0}, {1000.0, 101.0}),
-      make_pw({SBInterval.new(1000, 1, 1998), SBInterval.new(100, 1, 198)}, {1.0, 1.0}, {2002.0, 201.0}),
-      make_pw({SBInterval.new(1999, 1, 2998), SBInterval.new(199, 1, 199)}, {1.0, 0.0}, {-998.0, 101.0}),
-      make_pw({SBInterval.new(2999, 1, 2999), SBInterval.new(200, 1, 299)}, {0.0, 0.0}, {4001.0, 4001.0}),
-      make_pw({SBInterval.new(3000, 1, 3000), SBInterval.new(300, 1, 399)}, {0.0, 0.0}, {4002.0, 4002.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test3;
 annotation(__OpenModelica_Interface="util");
 end SBFunctions;
