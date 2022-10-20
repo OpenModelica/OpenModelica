@@ -1055,13 +1055,18 @@ namespace ModelInstance
 
   PlacementAnnotation::PlacementAnnotation()
   {
-    mVisible = true;
+    // set the visible to false. Otherwise we get elements in the center of the view.
+    mVisible = false;
+    mIconVisible = false;
   }
 
   void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
       mVisible = jsonObject.value("visible").toBool();
+    } else {
+      // if there is no visible then assume it to be true.
+      mVisible = true;
     }
 
     if (jsonObject.contains("transformation")) {
