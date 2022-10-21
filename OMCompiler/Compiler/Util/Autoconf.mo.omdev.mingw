@@ -13,6 +13,7 @@ encapsulated package Autoconf
   // which is the MSYS make.) since the latter is not supposed to be used on Windows shells.
   // (systemCall uses 'cmd \c' to issue commands.)
   constant String make = "mingw32-make";
+  constant String cmake = "cmake";
   constant String exeExt = ".exe";
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
