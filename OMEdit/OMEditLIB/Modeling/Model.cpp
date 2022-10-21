@@ -348,7 +348,10 @@ namespace ModelInstance
         mPoints.append(point);
       }
       mColor.deserialize(jsonArray.at(4).toArray());
-      mPattern = jsonArray.at(5).toString();
+      QJsonObject pattern = jsonArray.at(5).toObject();
+      if (pattern.contains("name")) {
+        mPattern = pattern.value("name").toString();
+      }
       mThickness = jsonArray.at(6).toDouble();
       QJsonArray arrows = jsonArray.at(7).toArray();
       if (arrows.size() == 2) {
@@ -387,7 +390,10 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("pattern")) {
-      mPattern = jsonObject.value("pattern").toString();
+      QJsonObject pattern = jsonObject.value("pattern").toObject();
+      if (pattern.contains("name")) {
+        mPattern = pattern.value("name").toString();
+      }
     }
 
     if (jsonObject.contains("thickness")) {
