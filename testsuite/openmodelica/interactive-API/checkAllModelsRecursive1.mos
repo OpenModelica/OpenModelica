@@ -1,0 +1,63 @@
+// name: checkAllModelsRecursive1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+loadString("
+  package TestCheckAll
+    model A
+      parameter Modelica.SIunits.Voltage V = 10;
+    end A;
+    encapsulated model B
+     parameter Modelica.SIunits.Current A = 5;
+    end B;
+    model C
+      parameter Modelica.SIunits.Voltage V = 10;
+    end C;
+    annotation(uses(Modelica(version = \"3.2.3\")));
+  end TestCheckAll;
+");
+
+checkAllModelsRecursive(TestCheckAll);
+getErrorString();
+
+// Result:
+// true
+// Number of classes to check: 4
+// Checking skipped: package TestCheckAll...
+// Checking: model TestCheckAll.A... OK
+// 	Check of TestCheckAll.A completed successfully.
+// 	Class TestCheckAll.A has 0 equation(s) and 0 variable(s).
+// 	0 of these are trivial equation(s).
+// Error String:
+//
+// Error Buffer:
+// Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from TestCheckAll.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+//
+// #[+], TestCheckAll.A
+// -------------------------------------------------------------------------
+// Checking: encapsulated model TestCheckAll.B... FAILED!
+//
+// Error String:
+//
+// Error Buffer:
+// [<interactive>:7:6-7:46:writable] Error: Class Modelica.SIunits.Current not found in scope B.
+//
+// #[-], TestCheckAll.B
+// -------------------------------------------------------------------------
+// Checking: model TestCheckAll.C... OK
+// 	Check of TestCheckAll.C completed successfully.
+// 	Class TestCheckAll.C has 0 equation(s) and 0 variable(s).
+// 	0 of these are trivial equation(s).
+// Error String:
+//
+// Error Buffer:
+//
+// #[+], TestCheckAll.C
+// -------------------------------------------------------------------------
+// "Number of classes checked / failed: 4/1"
+// ""
+// endResult
