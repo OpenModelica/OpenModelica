@@ -638,8 +638,12 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
   // transformation
   mTransformation = Transformation(mpGraphicsView->getViewType(), this);
   if (createTransformation) {
-    mTransformation.setWidth(boundingRect().width());
-    mTransformation.setHeight(boundingRect().height());
+    if (boundingRect().width() > 0) {
+      mTransformation.setWidth(boundingRect().width());
+    }
+    if (boundingRect().height() > 0) {
+      mTransformation.setHeight(boundingRect().height());
+    }
     // snap to grid while creating component
     position = mpGraphicsView->snapPointToGrid(position);
     mTransformation.setOrigin(position);
