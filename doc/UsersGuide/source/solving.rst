@@ -367,8 +367,8 @@ The following minimal working example demonstrates the use of the initial value 
 `ImportInitialValues` in OMEdit, copy and paste its code from here, and then run the different models in it.
 
 .. code-block:: modelica
-package ImportInitialValues "Test cases for importing initial values in OpenModelica"
-  
+
+  package ImportInitialValues "Test cases for importing initial values in OpenModelica"
     partial model Base "The mother of all models"
       Real v1, v2, x;
       parameter Real p1;
