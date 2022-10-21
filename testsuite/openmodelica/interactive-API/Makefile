@@ -17,10 +17,11 @@ Bug3974.mos \
 Bug3979.mos \
 Bug4209.mos \
 Bug4248.mos \
+checkAllModelsRecursive1.mos \
+choicesAllMatching.mos \
 ConvertUnits.mos \
 ConversionVersions.mos \
 CopyClass.mos \
-choicesAllMatching.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 DialogAnnotation.mos \

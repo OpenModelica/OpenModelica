@@ -6317,7 +6317,7 @@ algorithm
         allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed = checkAll(cache, env, allClassPaths, msg, 0);
+        failed = checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
         ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
@@ -6360,6 +6360,7 @@ function checkAll
   input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
   input Absyn.Msg inMsg;
+  input Boolean reportTimes;
   input output Integer failed;
 protected
   Absyn.Program p;
@@ -6401,23 +6402,29 @@ algorithm
         s = realString(elapsedTime);
         (smsg, f) = failOrSuccess(str);
         failed = if f then failed + 1 else failed;
-        print (s + " seconds -> " + smsg + "\n\t");
+
+        if reportTimes then
+          print (s + " seconds -> " + smsg + "\n\t");
+        else
+          print(smsg + "\n\t");
+        end if;
+
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
         print ("Error String:\n" + Print.getErrorString() + "\n");
         print ("Error Buffer:\n" + ErrorExt.printMessagesStr(false) + "\n");
         print ("#" + (if f then "[-]" else "[+]") + ", " +
-          realString(elapsedTime) + ", " +
+          (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed = checkAll(cache, env, rest, msg, failed);
+        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
       then ();
 
     case (cache,env,className::rest,msg)
       equation
         c = InteractiveUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... \n");
-        failed = checkAll(cache, env, rest, msg, failed);
+        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
       then
         ();
   end matchcontinue;
