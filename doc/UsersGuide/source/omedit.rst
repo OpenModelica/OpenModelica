@@ -690,6 +690,7 @@ character.
 For example, assume your model has three top-level inputs named ``u1``, ``u2``, and ``u3``. These are valid CSV input files:
 
 .. code-block:: none
+
   time, u3, u2, u1
   0.0, 0.0, 0.0, 0.0
   1.0, 0.0, 0.0, 0.0
