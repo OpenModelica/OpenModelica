@@ -826,9 +826,10 @@ algorithm
               // If we're in an annotation, check in the special scope where
               // annotation classes are defined.
               foundScope := InstNode.annotationScope(foundScope);
-            elseif not loaded then
-              // If we haven't already tried, try to load a library with that
-              // name and then try to look it up in the top scope again.
+            elseif not loaded and not require_builtin then
+              // If we haven't already tried and we're not trying to find a
+              // builtin name, try to load a library with that name and then try
+              // to look it up in the top scope again.
               loaded := true;
               loadLibrary(name, foundScope);
             else
