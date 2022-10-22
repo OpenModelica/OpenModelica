@@ -64,7 +64,12 @@ There is nothing special to be done for linux. You can follow the examples above
 On macOS you need to install:
 - XCode: ```xcode-select –-install```
 - macports: https://guide.macports.org/#installing.macports
-  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph gfortran openjdk11```
+  
+  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11```
+  
+  Note that M1 Mac ports do not have gfortran so use this only on X86_64: ```sudo port install gfortran```
+  
+  You only need gfortran if you remove ```-DOM_OMC_ENABLE_FORTRAN=OFF``` from cmake line below.
 - Compile OpenModelica via:
   ```
   git clone https://github.com/OpenModelica/OpenModelica.git --recursive
