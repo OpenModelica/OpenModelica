@@ -68,6 +68,7 @@ uniontype InstNodeType
     "A base class extended by another class."
     InstNode parent;
     SCode.Element definition "The extends clause definition.";
+    InstNodeType ty "The original node type before the class was extended.";
   end BASE_CLASS;
 
   record DERIVED_CLASS
@@ -304,7 +305,7 @@ uniontype InstNode
     name := AbsynUtil.pathLastIdent(base_path);
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
       Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
-      InstNodeType.BASE_CLASS(parent, definition));
+      InstNodeType.BASE_CLASS(parent, definition, nodeType(parent)));
   end newExtends;
 
   function newIterator
@@ -647,7 +648,19 @@ uniontype InstNode
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS())
-        then parentScope(Class.lastBaseClass(node));
+        algorithm
+          scope := Class.lastBaseClass(node);
+        then
+          if isBuiltin(scope) then
+            // Builtin types like Real do not have a parent set, go to the top scope instead.
+            topScope(node.parentScope)
+          elseif referenceEq(node, scope) then
+            // lastBaseClass above might return the same node if the class has
+            // been flattened, go directly to the parent to avoid an infinite loop.
+            node.parentScope
+          else
+            parentScope(scope);
+
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
@@ -1739,10 +1752,21 @@ uniontype InstNode
     output Boolean isBuiltin;
   algorithm
     isBuiltin := match node
-      case CLASS_NODE(nodeType = InstNodeType.BUILTIN_CLASS()) then true;
+      case CLASS_NODE() then isBuiltinNodeType(node.nodeType);
       else false;
     end match;
   end isBuiltin;
+
+  function isBuiltinNodeType
+    input InstNodeType nodeType;
+    output Boolean isBuiltin;
+  algorithm
+    isBuiltin := match nodeType
+      case InstNodeType.BUILTIN_CLASS() then true;
+      case InstNodeType.BASE_CLASS() then isBuiltinNodeType(nodeType.ty);
+      else false;
+    end match;
+  end isBuiltinNodeType;
 
   function isPartial
     input InstNode node;
