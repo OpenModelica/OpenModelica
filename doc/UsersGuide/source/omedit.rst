@@ -676,8 +676,8 @@ will have a checkbox to plot them.
 
 CSV-File Data Input
 ~~~~~~~~~~~~~~~~~~~
-When simulating Modelica models with top-level inputs (input variables or input connectors), these inputs are assumed to be zero by default. However,
-it is possible to feed them with input signals obtained from CSV (Comma-Separated Value) input data files, by means of the
+When simulating Modelica models with top-level inputs (input variables or input connectors), these inputs are assumed to be equal to their start
+value by default. However, it is possible to feed them with input signals obtained from CSV (Comma-Separated Value) input data files, by means of the
 :ref:`-csvInput <simflag-csvInput>` simulation flag, that can be set in the *Additional Simulation Flags (Optional)* field of
 the Simulation Flags tab. For example, setting ``-csvInput=myinput.csv`` causes the runtime executable to read such input data from the ``myinput.csv``
 file.
