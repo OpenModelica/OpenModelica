@@ -264,7 +264,7 @@ algorithm
 
  for elem in constraintLst loop
    try
-     conCrefName := prefConCrefName + ComponentReference.crefModelicaStr(Expression.expCref(elem));
+     conCrefName := prefConCrefName + ComponentReference.printComponentRefStr(Expression.expCref(elem));
    else
      conCrefName := prefConCrefName + intString(i);
      i := i + 1;
