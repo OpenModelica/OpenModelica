@@ -2114,7 +2114,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Real triggerDSSEvent;
     Real nextEventTime(fixed = true);
   initial equation
-    flowStartTime = fmi2Functions.fmi2SetupExperiment(fmi2me, false, 0.0, 0.0, false, 0.0, 1);
+    flowStartTime = fmi2Functions.fmi2SetupExperiment(fmi2me, false, 0.0, time, false, 0.0, flowParamsStart+flowInitInputs);
     flowEnterInitialization = fmi2Functions.fmi2EnterInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime);
     flowInitialized = fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
     <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
