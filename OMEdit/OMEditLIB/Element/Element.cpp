@@ -2653,11 +2653,8 @@ void Element::createClassInheritedElements()
 void Element::createClassShapes()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    /* ticket:4505
-     * Only use the diagram annotation when connector is inside the component instance.
-     */
     QList<ModelInstance::Shape*> shapes;
-    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation() && !mpModel->getDiagramAnnotation()->isGraphicsEmpty()) {
+    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram) {
       shapes = mpModel->getDiagramAnnotation()->getGraphics();
     } else {
       shapes = mpModel->getIconAnnotation()->getGraphics();
@@ -2687,8 +2684,8 @@ void Element::createClassShapes()
         }
         GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
         /* ticket:4505
-           * Only use the diagram annotation when connector is inside the component instance.
-           */
+         * Only use the diagram annotation when connector is inside the component instance.
+         */
         if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
           mpLibraryTreeItem->getModelWidget()->loadDiagramView();
           if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
