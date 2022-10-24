@@ -1414,6 +1414,11 @@ Simulation
   -  *Use static linking* – if true then static linking is used for simulation executable.
      The default is dynamic linking. This option is only available on Windows.
 
+  -  *Post compilation command* - if not empty allows to run a command after the compilation step.
+     A possible use-case is to be able to sign the binaries before execution to comply with the security policy.
+     The command is run in the same folder where the simulation executable is created.
+     The interpreter executable must be passed to run shell scripts, eg on Windows: `powershell.exe -File C:\script.ps1`
+
   -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
 

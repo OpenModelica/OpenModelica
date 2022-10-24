@@ -663,6 +663,8 @@ public:
 #ifdef Q_OS_WIN
   QCheckBox* getUseStaticLinkingCheckBox() {return mpUseStaticLinkingCheckBox;}
 #endif
+  void setPostCompilationCommand(const QString & cmd) {mpPostCompilationCommandLineEdit->setText(cmd);}
+  QString getPostCompilationCommand() {return mpPostCompilationCommandLineEdit->text().trimmed();}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -689,6 +691,7 @@ private:
 #ifdef Q_OS_WIN
   QCheckBox *mpUseStaticLinkingCheckBox;
 #endif
+  QLineEdit *mpPostCompilationCommandLineEdit;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
