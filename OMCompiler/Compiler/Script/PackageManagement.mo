@@ -463,6 +463,7 @@ algorithm
 
   if not skipDownload then
     urlPathList := List.sort(list((p.urlToZipFile, cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    urlPathList := List.unique(urlPathList);
     urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
     if not Curl.multiDownload(urlPathListToDownload) then
       fail();
