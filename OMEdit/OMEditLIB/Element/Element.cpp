@@ -2654,7 +2654,13 @@ void Element::createClassShapes()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     QList<ModelInstance::Shape*> shapes;
-    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram) {
+    /* issue #9557
+     * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.
+     * The diagram layer of the connector is used to represent it when shown in the diagram layer of the enclosing model.
+     *
+     * Always use the icon annotation when element type is port.
+     */
+    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mElementType != Element::Port) {
       shapes = mpModel->getDiagramAnnotation()->getGraphics();
     } else {
       shapes = mpModel->getIconAnnotation()->getGraphics();
@@ -2683,14 +2689,15 @@ void Element::createClassShapes()
           pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
         }
         GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-        /* ticket:4505
-         * Only use the diagram annotation when connector is inside the component instance.
+        /* issue #9557
+         * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.
+         * The diagram layer of the connector is used to represent it when shown in the diagram layer of the enclosing model.
+         *
+         * Always use the icon annotation when element type is port.
          */
-        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mElementType != Element::Port) {
           mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-          if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
-            pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-          }
+          pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         }
         foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
           if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
@@ -3052,24 +3059,6 @@ void Element::updateToolTip()
       }
     }
   }
-}
-
-/*!
- * \brief Element::canUseDiagramAnnotation
- * If the component is a port component or has a port component as parent in the hirerchy
- * then we should not use the diagram annotation.
- * \return
- */
-bool Element::canUseDiagramAnnotation()
-{
-  Element *pElement = this;
-  while (pElement->getParentElement()) {
-    if (pElement->getElementType() == Element::Port) {
-      return false;
-    }
-    pElement = pElement->getParentElement();
-  }
-  return true;
 }
 
 void Element::updatePlacementAnnotation()
