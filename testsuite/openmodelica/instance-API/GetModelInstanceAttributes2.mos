@@ -70,13 +70,6 @@ getModelInstance(M, prettyPrint = true);
 //   ],
 //   \"components\": [
 //     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"outer\": true
-//       }
-//     },
-//     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {

@@ -1028,16 +1028,21 @@ function dumpJSONComponents
   output JSON json = JSON.emptyArray();
 protected
   InstNode node;
+  JSON j;
 algorithm
   for comp in components loop
     InstanceTree.COMPONENT(node = node) := comp;
-    json := JSON.addElement(dumpJSONComponent(comp), json);
+    j := dumpJSONComponent(comp);
+
+    if not JSON.isNull(j) then
+      json := JSON.addElement(j, json);
+    end if;
   end for;
 end dumpJSONComponents;
 
 function dumpJSONComponent
   input InstanceTree component;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   InstNode node;
   Component comp;
@@ -1050,6 +1055,12 @@ protected
 algorithm
   InstanceTree.COMPONENT(node = node, cls = cls) := component;
   node := InstNode.resolveInner(node);
+
+  // Skip dumping inner elements that were added by the compiler itself.
+  if InstNode.isGeneratedInner(node) then
+    return;
+  end if;
+
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
 
