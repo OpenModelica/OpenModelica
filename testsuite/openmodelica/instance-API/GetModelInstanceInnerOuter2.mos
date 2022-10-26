@@ -23,20 +23,7 @@ getModelInstance(P.M, prettyPrint=true);
 //   \"name\": \"P.M\",
 //   \"restriction\": \"model\",
 //   \"components\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"outer\": true
-//       }
-//     },
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"outer\": true
-//       }
-//     }
+//
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
