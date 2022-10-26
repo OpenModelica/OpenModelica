@@ -705,7 +705,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               mpTranslationFlagsWidget->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
             }
           } else if (commandLineOptionKeyFiltered.compare("parmodauto") == 0) {
-            if (commandLineOptionValues.compare(QStringLiteral("false") == 0)) {
+            if (commandLineOptionValues.compare(QStringLiteral("false")) == 0) {
               mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(false);
             } else {
               mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
