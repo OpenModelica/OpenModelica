@@ -2296,6 +2296,7 @@ void OptionsDialog::saveSimulationSettings()
   // save matching algorithm
   QString matchingAlgorithm = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText();
   if (mMatchingAlgorithm.compare(matchingAlgorithm) != 0) {
+    mMatchingAlgorithm = matchingAlgorithm;
     changed = true;
   }
   if (matchingAlgorithm.compare(simulationOptions.getMatchingAlgorithm()) == 0) {
@@ -2306,6 +2307,7 @@ void OptionsDialog::saveSimulationSettings()
   // save index reduction
   QString indexReduction = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText();
   if (mIndexReductionMethod.compare(indexReduction) != 0) {
+    mIndexReductionMethod = indexReduction;
     changed = true;
   }
   if (indexReduction.compare(simulationOptions.getIndexReductionMethod()) == 0) {
@@ -2316,6 +2318,7 @@ void OptionsDialog::saveSimulationSettings()
   // save initialization
   bool initialization = mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked();
   if (mInitialization != initialization) {
+    mInitialization = initialization;
     changed = true;
   }
   if (initialization == simulationOptions.getInitialization()) {
@@ -2326,6 +2329,7 @@ void OptionsDialog::saveSimulationSettings()
   // save evaluate all parameters
   bool evaluateAllParameters = mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked();
   if (mEvaluateAllParameters != evaluateAllParameters) {
+    mEvaluateAllParameters = evaluateAllParameters;
     changed = true;
   }
   if (evaluateAllParameters == simulationOptions.getEvaluateAllParameters()) {
@@ -2336,6 +2340,7 @@ void OptionsDialog::saveSimulationSettings()
   // save NLS analytic jacobian
   bool NLSanalyticJacobian = mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked();
   if (mNLSanalyticJacobian != NLSanalyticJacobian) {
+    mNLSanalyticJacobian = NLSanalyticJacobian;
     changed = true;
   }
   if (NLSanalyticJacobian == simulationOptions.getNLSanalyticJacobian()) {
@@ -2346,6 +2351,7 @@ void OptionsDialog::saveSimulationSettings()
   // save parmodauto
   bool parmodauto = mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked();
   if (mParmodauto != parmodauto) {
+    mParmodauto = parmodauto;
     changed = true;
   }
   if (parmodauto == simulationOptions.getParmodauto()) {
@@ -2356,6 +2362,7 @@ void OptionsDialog::saveSimulationSettings()
   // save old instantiation
   bool newInst = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
   if (mOldInstantiation != newInst) {
+    mOldInstantiation = newInst;
     changed = true;
   }
   if (newInst == !simulationOptions.getOldInstantiation()) {
@@ -2365,7 +2372,8 @@ void OptionsDialog::saveSimulationSettings()
   }
   // save enable FMU Import
   bool enableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
-  if (mEnableFMUImport = enableFMUImport) {
+  if (mEnableFMUImport != enableFMUImport) {
+    mEnableFMUImport = enableFMUImport;
     changed = true;
   }
   if (enableFMUImport == simulationOptions.getEnableFMUImport()) {
@@ -2377,6 +2385,7 @@ void OptionsDialog::saveSimulationSettings()
   QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
     if (mAdditionalTranslationFlags.compare(additionalFlags) != 0) {
+      mAdditionalTranslationFlags = additionalFlags;
       changed = true;
     }
     if (additionalFlags.compare(simulationOptions.getAdditionalTranslationFlags()) == 0) {
