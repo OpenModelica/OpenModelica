@@ -180,7 +180,7 @@ QString TranslationFlagsWidget::commandLineOptions()
   }
   // parmodauto
   if (mpParmodautoCheckBox->isChecked()) {
-    debugFlags.append("parmodauto");
+    configFlags.append("--parmodauto");
   }
   // enable new instantiation
   if (mpOldInstantiationCheckBox->isChecked()) {
