@@ -704,7 +704,13 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             if (currentIndex > -1) {
               mpTranslationFlagsWidget->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
             }
-          } else if (commandLineOptionKeyFiltered.compare("allowNonStandardModelica") == 0) { // check allowNonStandardModelica flags i.e., -d=protectedAccess,reinitInAlgorithms etc.
+          } else if (commandLineOptionKeyFiltered.compare("parmodauto") == 0) {
+            if (commandLineOptionValues.compare(QStringLiteral("false")) == 0) {
+              mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(false);
+            } else {
+              mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
+            }
+          } else if (commandLineOptionKeyFiltered.compare("allowNonStandardModelica") == 0) { // check allowNonStandardModelica flags i.e., -allowNonStandardModelica=protectedAccess,reinitInAlgorithms etc.
             QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
             QStringList additionalNonStandardModelicaFlagsList;
             foreach (QString commandLineOptionValue, commandLineOptionValuesList) {
@@ -729,8 +735,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
                 mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("NLSanalyticJacobian") == 0) {
                 mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(true);
-              } else if (commandLineOptionValue.compare("parmodauto") == 0) {
-                mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("newInst") == 0) {
                 mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(false);
               } else {
