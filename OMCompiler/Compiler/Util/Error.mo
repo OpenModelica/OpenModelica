@@ -1112,7 +1112,7 @@ public constant ErrorTypes.Message NOTIFY_INITIALIZING_USER_LIBRARIES = ErrorTyp
 public constant ErrorTypes.Message NOTIFY_PKG_ALREADY_INSTALLED = ErrorTypes.MESSAGE(617, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("%s %s is already installed, skipping."));
 public constant ErrorTypes.Message REINIT_IN_ALGORITHM = ErrorTypes.MESSAGE(618, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Operator reinit may not be used in an algorithm section (use flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
+  Gettext.gettext("Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));
