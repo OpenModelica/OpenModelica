@@ -1375,7 +1375,7 @@ constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(143, "newBackend",
 
 constant ConfigFlag PARMODAUTO = CONFIG_FLAG(144, "parmodauto",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
+  Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems."));
 
 constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(145, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
