@@ -156,6 +156,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_Sx */            "sx",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
   /* FLAG_W */                            "w",
+  /* FLAG_PARMODNUMTHREADS */             "parmodNumThreads",
 
   "FLAG_MAX"
 };
@@ -286,6 +287,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
+  /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
 
   "FLAG_MAX"
 };
@@ -607,6 +609,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the number of steps, which keep Hessian matrix constant.",
   /* FLAG_W */
   "  Shows all warnings even if a related log-stream is inactive.",
+  /* FLAG_PARMODNUMTHREADS */
+  "  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
 
   "FLAG_MAX"
 };
@@ -737,6 +741,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_W */                            FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMODNUMTHREADS */             FLAG_REPEAT_POLICY_FORBID,
 };
 
 
@@ -865,7 +870,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_STEADY_STATE_TOL */             FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
-  /* FLAG_W */                            FLAG_TYPE_FLAG
+  /* FLAG_W */                            FLAG_TYPE_FLAG,
+  /* FLAG_PARMODNUMTHREADS */             FLAG_TYPE_OPTION,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {

@@ -1183,8 +1183,11 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
                      >>
     let pminit = if Flags.getConfigBool(Flags.PARMODAUTO) then
                     <<
-
-                    pm_model = PM_Model_create("<%fileNamePrefix%>", &data, threadData, 0 /*num threads*/);
+                    int num_threads = 0;
+                    if(omc_flag[FLAG_PARMODNUMTHREADS]) {
+                      num_threads = atoi(omc_flagValue[FLAG_PARMODNUMTHREADS]);
+                    }
+                    pm_model = PM_Model_create("<%fileNamePrefix%>", &data, threadData, num_threads);
                     PM_Model_load_ODE_system(pm_model, functionODE_systems);
 
                     >>
