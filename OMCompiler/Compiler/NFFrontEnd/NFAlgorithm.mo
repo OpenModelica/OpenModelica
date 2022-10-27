@@ -53,6 +53,7 @@ public
     list<Statement> statements;
     list<ComponentRef> inputs;
     list<ComponentRef> outputs;
+    InstNode scope;
     DAE.ElementSource source;
   end ALGORITHM;
 

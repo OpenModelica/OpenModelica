@@ -1428,7 +1428,8 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("No obfuscation.")),
-    ("protected", Gettext.gettext("Obfuscates everything except for public variables.")),
+    ("encrypted", Gettext.gettext("Obfuscates protected variables in encrypted models")),
+    ("protected", Gettext.gettext("Obfuscates protected variables in all models.")),
     ("full", Gettext.gettext("Obfuscates everything."))
   })),
   Gettext.gettext("Obfuscates identifiers in the simulation model"));

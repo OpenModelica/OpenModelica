@@ -3353,14 +3353,23 @@ public function runFrontEndWorkNF
   output String flatString;
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
-  Boolean b;
+  Boolean nf_api, inst_failed;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
+  String obfuscate_mode;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := SymbolTable.getSCode();
 
-  if not Flags.getConfigString(Flags.OBFUSCATE) == "none" then
+  obfuscate_mode := Flags.getConfigString(Flags.OBFUSCATE);
+
+  // Enable obfuscation of encrypted variables if a higher obfuscation hasn't
+  // been chosen and the AST contains encrypted classes.
+  if obfuscate_mode == "none" and Interactive.astContainsEncryptedClass(SymbolTable.getAbsyn()) then
+    FlagsUtil.setConfigString(Flags.OBFUSCATE, "encrypted");
+  end if;
+
+  if obfuscate_mode == "full" then
     (scode_p, cls_name, _, _, obfuscate_map) := Obfuscate.obfuscateProgram(scode_p, cls_name);
   end if;
 
@@ -3372,18 +3381,21 @@ algorithm
 
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
-  b := FlagsUtil.set(Flags.NF_API, false);
+  nf_api := FlagsUtil.set(Flags.NF_API, false);
+  inst_failed := false;
+
   try
     (flatModel, functions, flatString) :=
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, dumpFlat);
-    FlagsUtil.set(Flags.NF_API, b);
   else
-    FlagsUtil.set(Flags.NF_API, b);
-    fail();
+    inst_failed := true;
   end try;
 
-  if Flags.getConfigString(Flags.OBFUSCATE) == "protected" then
-    flatModel := FlatModel.deobfuscatePublicVars(flatModel, obfuscate_map);
+  FlagsUtil.set(Flags.NF_API, nf_api);
+  FlagsUtil.setConfigString(Flags.OBFUSCATE, obfuscate_mode);
+
+  if inst_failed then
+    fail();
   end if;
 end runFrontEndWorkNF;
 

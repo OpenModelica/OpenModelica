@@ -470,7 +470,7 @@ algorithm
     if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
       name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-        ElementSource.createElementSource(info));
+        InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
 
@@ -634,7 +634,7 @@ algorithm
     if not Expression.isRecordOrRecordArray(binding_exp) then
       name := ComponentRef.prefixCref(node, ty, {}, prefix);
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-        ElementSource.createElementSource(InstNode.info(node)));
+        InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
       sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
@@ -917,7 +917,7 @@ algorithm
   for eq in eql loop
     equations := match eq
       local
-        InstNode iter;
+        InstNode iter, scope;
         list<InstNode> iters;
         Expression range;
         list<Expression> ranges;
@@ -926,7 +926,7 @@ algorithm
 
       // convert simple equality of crefs to array equality
       case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
-        then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, Type.liftArrayLeftList(eq.ty, dimensions), eq.source) :: equations;
+        then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, Type.liftArrayLeftList(eq.ty, dimensions), eq.scope, eq.source) :: equations;
 
       // wrap general equation into for loop
       else
@@ -934,16 +934,17 @@ algorithm
           (iters, ranges, subs) := makeIterators(prefix, dimensions);
           subs := listReverseInPlace(subs);
           eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
+          scope := Equation.scope(eqn);
           src := Equation.source(eqn);
 
           iter :: iters := iters;
           range :: ranges := ranges;
-          eq := Equation.FOR(iter, SOME(range), {eq}, src);
+          eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
 
           while not listEmpty(iters) loop
             iter :: iters := iters;
             range :: ranges := ranges;
-            eq := Equation.FOR(iter, SOME(range), {eq}, src);
+            eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
           end while;
         then
           eq :: equations;
@@ -999,7 +1000,7 @@ algorithm
           body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
         end while;
       then
-        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
+        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, alg.scope, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 
@@ -1364,7 +1365,7 @@ algorithm
         e2 := flattenExp(eq.rhs, prefix);
         ty := flattenType(eq.ty, prefix);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.source) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -1383,7 +1384,7 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
       then
-        Equation.CONNECT(e1, e2, eq.source) :: equations;
+        Equation.CONNECT(e1, e2, eq.scope, eq.source) :: equations;
 
     case Equation.IF()
       then flattenIfEquation(eq, prefix, equations, settings);
@@ -1400,26 +1401,26 @@ algorithm
         e2 := flattenExp(eq.message, prefix);
         e3 := flattenExp(eq.level, prefix);
       then
-        Equation.ASSERT(e1, e2, e3, eq.source) :: equations;
+        Equation.ASSERT(e1, e2, e3, eq.scope, eq.source) :: equations;
 
     case Equation.TERMINATE()
       algorithm
         e1 := flattenExp(eq.message, prefix);
       then
-        Equation.TERMINATE(e1, eq.source) :: equations;
+        Equation.TERMINATE(e1, eq.scope, eq.source) :: equations;
 
     case Equation.REINIT()
       algorithm
         e1 := flattenExp(eq.cref, prefix);
         e2 := flattenExp(eq.reinitExp, prefix);
       then
-        Equation.REINIT(e1, e2, eq.source) :: equations;
+        Equation.REINIT(e1, e2, eq.scope, eq.source) :: equations;
 
     case Equation.NORETCALL()
       algorithm
         e1 := flattenExp(eq.exp, prefix);
       then
-        Equation.NORETCALL(e1, eq.source) :: equations;
+        Equation.NORETCALL(e1, eq.scope, eq.source) :: equations;
 
     else eq :: equations;
   end match;
@@ -1440,8 +1441,9 @@ protected
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
+  InstNode scope;
 algorithm
-  Equation.IF(branches = branches, source = src) := eq;
+  Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, isConnectEq);
 
   // Print errors for unbound constants/parameters if the if-equation contains
@@ -1518,7 +1520,7 @@ algorithm
   // Add the flattened if-equation to the list of equations if there are any
   // branches still remaining.
   if not listEmpty(bl) then
-    equations := Equation.IF(listReverseInPlace(bl), src) :: equations;
+    equations := Equation.IF(listReverseInPlace(bl), scope, src) :: equations;
   end if;
 end flattenIfEquation;
 
@@ -1590,13 +1592,14 @@ protected
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
+  InstNode scope;
 algorithm
-  Equation.FOR(iter, range, body, src) := forLoop;
+  Equation.FOR(iter, range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    eq := Equation.FOR(iter, range, connects, src);
+    eq := Equation.FOR(iter, range, connects, scope, src);
 
     if settings.arrayConnect then
       equations := eq :: equations;
@@ -1606,7 +1609,7 @@ algorithm
   end if;
 
   if not listEmpty(non_connects) then
-    equations := Equation.FOR(iter, range, non_connects, src) :: equations;
+    equations := Equation.FOR(iter, range, non_connects, scope, src) :: equations;
   end if;
 end splitForLoop;
 
@@ -1630,11 +1633,11 @@ algorithm
           (conns, nconns) := splitForLoop2(eq.body);
 
           if not listEmpty(conns) then
-            connects := Equation.FOR(eq.iterator, eq.range, conns, eq.source) :: connects;
+            connects := Equation.FOR(eq.iterator, eq.range, conns, eq.scope, eq.source) :: connects;
           end if;
 
           if not listEmpty(nconns) then
-            nonConnects := Equation.FOR(eq.iterator, eq.range, nconns, eq.source) :: nonConnects;
+            nonConnects := Equation.FOR(eq.iterator, eq.range, nconns, eq.scope, eq.source) :: nonConnects;
           end if;
         then
           ();

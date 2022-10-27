@@ -505,9 +505,9 @@ protected
           ty := Expression.typeOf(l);
 
           if Type.isArray(ty) then
-            eq := Equation.ARRAY_EQUALITY(l, r, ty, DAE.emptyElementSource);
+            eq := Equation.ARRAY_EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
           else
-            eq := Equation.EQUALITY(l, r, ty, DAE.emptyElementSource);
+            eq := Equation.EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
           end if;
 
           equations := eq :: equations;
@@ -574,7 +574,7 @@ protected
       end while;
 
       ty := Expression.typeOf(sum_exp);
-      eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, DAE.emptyElementSource);
+      eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
       equations := generateForLoop({eq}, iterators, ranges, equations);
     end if;
   end generateFlowEquation;
@@ -610,7 +610,7 @@ protected
         // instead of creating an unnecessary for loop here.
         body := Equation.replaceIteratorList(body, iterators[i], ranges[i]);
       else
-        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, DAE.emptyElementSource)};
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, InstNode.EMPTY_NODE(), DAE.emptyElementSource)};
       end if;
     end for;
 

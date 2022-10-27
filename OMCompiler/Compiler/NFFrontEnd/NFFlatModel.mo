@@ -57,6 +57,9 @@ protected
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import UnorderedMap;
   import Typing = NFTyping;
+  import ErrorExt;
+  import Lookup = NFLookup;
+  import InstContext = NFInstContext;
 
   import FlatModel = NFFlatModel;
 
@@ -687,63 +690,320 @@ public
     end match;
   end typeFlatType;
 
-  function deobfuscatePublicVars
+protected
+  type ObfuscationMap = UnorderedMap<InstNode, String>;
+
+public
+  function obfuscate
     input output FlatModel flatModel;
-    input UnorderedMap<String, String> mapping;
   protected
-    UnorderedMap<String, String> inv_mapping;
+    ObfuscationMap obfuscation_map;
+    Boolean only_encrypted;
   algorithm
-    inv_mapping := UnorderedMap.fromLists(UnorderedMap.valueList(mapping),
-      UnorderedMap.keyList(mapping), stringHashDjb2Mod, stringEq);
+    only_encrypted := Flags.getConfigString(Flags.OBFUSCATE) == "encrypted";
+    obfuscation_map := UnorderedMap.new<String>(InstNode.hash, InstNode.refEqual);
 
-    flatModel.variables := list(deobfuscatePublicVar(v, inv_mapping) for v in flatModel.variables);
-    flatModel := mapExp(flatModel,
-      function Expression.map(func = function deobfuscatePublicVarsInExp(mapping = inv_mapping)));
-  end deobfuscatePublicVars;
+    for v in flatModel.variables loop
+      addObfuscatedVariable(v, only_encrypted, obfuscation_map);
+    end for;
 
-  function deobfuscatePublicVar
-    input output Variable variable;
-    input UnorderedMap<String, String> mapping;
+    if UnorderedMap.isEmpty(obfuscation_map) then
+      return;
+    end if;
+
+    flatModel.variables := list(obfuscateVariable(v, obfuscation_map) for v in flatModel.variables);
+    flatModel := mapEquations(flatModel, function obfuscateEquation(obfuscationMap = obfuscation_map));
+    flatModel := mapAlgorithms(flatModel, function obfuscateAlgorithm(obfuscationMap = obfuscation_map));
+  end obfuscate;
+
+  function addObfuscatedVariable
+    input Variable var;
+    input Boolean onlyEncrypted;
+    input ObfuscationMap obfuscationMap;
+  protected
+    SourceInfo info;
+    String filename;
+    list<InstNode> nodes;
   algorithm
-    variable.name := deobfuscatePublicVarCref(variable.name, mapping);
-  end deobfuscatePublicVar;
+    if Variable.isProtected(var) and (not onlyEncrypted or Variable.isEncrypted(var)) then
+      nodes := ComponentRef.nodes(var.name);
+      nodes := List.trim(nodes, InstNode.isPublic);
 
-  function deobfuscatePublicVarCref
+      for node in nodes loop
+        UnorderedMap.tryAdd(node, "$n" + String(UnorderedMap.size(obfuscationMap) + 1), obfuscationMap);
+      end for;
+    end if;
+  end addObfuscatedVariable;
+
+  function obfuscateVariable
+    input output Variable var;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    var.name := obfuscateCref(var.name, obfuscationMap);
+    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name), obfuscationMap);
+    var := Variable.mapExp(var, function obfuscateExp(obfuscationMap = obfuscationMap));
+  end obfuscateVariable;
+
+  function obfuscateCref
     input output ComponentRef cref;
-    input UnorderedMap<String, String> mapping;
-  algorithm
-    if ComponentRef.visibility(cref) == Visibility.PUBLIC then
-      cref := ComponentRef.mapNodes(cref, function deobfuscateNode(mapping = mapping));
-    end if;
-  end deobfuscatePublicVarCref;
-
-  function deobfuscateNode
-    input output InstNode node;
-    input UnorderedMap<String, String> mapping;
+    input ObfuscationMap obfuscationMap;
   protected
-    Option<String> res;
+    Option<String> name;
   algorithm
-    res := UnorderedMap.get(InstNode.name(node), mapping);
-
-    if isSome(res) then
-      node := InstNode.rename(Util.getOption(res), node);
-    end if;
-  end deobfuscateNode;
-
-  function deobfuscatePublicVarsInExp
-    input output Expression exp;
-    input UnorderedMap<String, String> mapping;
-  algorithm
-    () := match exp
-      case Expression.CREF()
+    () := match cref
+      case ComponentRef.CREF()
         algorithm
-          exp.cref := deobfuscatePublicVarCref(exp.cref, mapping);
+          name := UnorderedMap.get(cref.node, obfuscationMap);
+
+          if isSome(name) then
+            cref.node := InstNode.rename(Util.getOption(name), cref.node);
+          end if;
+
+          cref.subscripts := list(Subscript.mapShallowExp(s,
+            function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);
         then
           ();
 
       else ();
     end match;
-  end deobfuscatePublicVarsInExp;
+  end obfuscateCref;
+
+  function obfuscateExp
+    input output Expression exp;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    exp := Expression.map(exp, function obfuscateExp_impl(obfuscationMap = obfuscationMap));
+  end obfuscateExp;
+
+  function obfuscateExpOpt
+    input output Option<Expression> exp;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    if isSome(exp) then
+      exp := SOME(obfuscateExp(Util.getOption(exp), obfuscationMap));
+    end if;
+  end obfuscateExpOpt;
+
+  function obfuscateExp_impl
+    input output Expression exp;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := obfuscateCref(exp.cref, obfuscationMap);
+        then
+          ();
+
+      else ();
+    end match;
+  end obfuscateExp_impl;
+
+  function obfuscateEquation
+    input output Equation eq;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    eq := Equation.setSource(obfuscateSource(Equation.source(eq), Equation.scope(eq), obfuscationMap), eq);
+    eq := Equation.mapExpShallow(eq, function obfuscateExp(obfuscationMap = obfuscationMap));
+  end obfuscateEquation;
+
+  function obfuscateAlgorithm
+    input output Algorithm alg;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    alg.source := obfuscateSource(alg.source, alg.scope, obfuscationMap);
+    alg.inputs := list(obfuscateCref(e, obfuscationMap) for e in alg.inputs);
+    alg.outputs := list(obfuscateCref(e, obfuscationMap) for e in alg.outputs);
+    alg.statements := list(Statement.map(s,
+      function obfuscateStatement(scope = alg.scope, obfuscationMap = obfuscationMap)) for s in alg.statements);
+  end obfuscateAlgorithm;
+
+  function obfuscateStatement
+    input output Statement stmt;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    stmt := Statement.setSource(obfuscateSource(Statement.source(stmt), scope, obfuscationMap), stmt);
+    stmt := Statement.mapExpShallow(stmt, function obfuscateExp(obfuscationMap = obfuscationMap));
+  end obfuscateStatement;
+
+  function obfuscateSource
+    input output DAE.ElementSource source;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    source.comment := list(obfuscateComment(c, scope, obfuscationMap) for c in source.comment);
+  end obfuscateSource;
+
+  function obfuscateCommentOpt
+    input output Option<SCode.Comment> comment;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    comment := Util.applyOption(comment,
+      function obfuscateComment(scope = scope, obfuscationMap = obfuscationMap));
+  end obfuscateCommentOpt;
+
+  function obfuscateComment
+    input output SCode.Comment comment;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    comment.annotation_ := obfuscateAnnotationOpt(comment.annotation_, scope, obfuscationMap);
+    comment.comment := NONE();
+  end obfuscateComment;
+
+  function obfuscateAnnotationOpt
+    input output Option<SCode.Annotation> ann;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    ann := Util.applyOption(ann,
+      function obfuscateAnnotation(scope = scope, obfuscationMap = obfuscationMap));
+  end obfuscateAnnotationOpt;
+
+  function obfuscateAnnotation
+    input output SCode.Annotation ann;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    ann.modification := obfuscateAnnotationMod(ann.modification, scope, obfuscationMap);
+  end obfuscateAnnotation;
+
+  function obfuscateAnnotationMod
+    input output SCode.Mod mod;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    () := match mod
+      case SCode.Mod.MOD()
+        algorithm
+          mod.subModLst := list(obfuscateAnnotationSubMod(s, scope, obfuscationMap)
+            for s guard isAllowedAnnotation(s) in mod.subModLst);
+          mod.binding := obfuscateAbsynExpOpt(mod.binding, scope, obfuscationMap);
+        then
+          ();
+
+      else ();
+    end match;
+  end obfuscateAnnotationMod;
+
+  function isAllowedAnnotation
+    input SCode.SubMod mod;
+    output Boolean allowed;
+  algorithm
+    allowed := match mod.ident
+      case "Icon" then false;
+      case "Diagram" then false;
+      case "Dialog" then false;
+      case "IconMap" then false;
+      case "DiagramMap" then false;
+      case "Placement" then false;
+      case "Text" then false;
+      case "Line" then false;
+      case "defaultComponentName" then false;
+      case "defaultComponentPrefixes" then false;
+      case "missingInnerMessage" then false;
+      case "obsolete" then false;
+      case "unassignedMessage" then false;
+      case "Protection" then false;
+      case "Authorization" then false;
+      else not Util.stringStartsWith("__", mod.ident);
+    end match;
+  end isAllowedAnnotation;
+
+  function obfuscateAnnotationSubMod
+    input output SCode.SubMod mod;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    mod.mod := obfuscateAnnotationMod(mod.mod, scope, obfuscationMap);
+  end obfuscateAnnotationSubMod;
+
+  function obfuscateAbsynExpOpt
+    input output Option<Absyn.Exp> exp;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    exp := Util.applyOption(exp,
+      function obfuscateAbsynExp(scope = scope, obfuscationMap = obfuscationMap));
+  end obfuscateAbsynExpOpt;
+
+  function obfuscateAbsynExp
+    input output Absyn.Exp exp;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  algorithm
+    exp := AbsynUtil.traverseExp(exp, function obfuscateAbsynExpTraverse(scope = scope), obfuscationMap);
+  end obfuscateAbsynExp;
+
+  function obfuscateAbsynExpTraverse
+    input output Absyn.Exp exp;
+    input InstNode scope;
+    input output ObfuscationMap obfuscationMap;
+  algorithm
+    () := match exp
+      case Absyn.Exp.CREF()
+        algorithm
+          exp.componentRef := obfuscateAbsynCref(exp.componentRef, scope, obfuscationMap);
+        then
+          ();
+
+      else ();
+    end match;
+  end obfuscateAbsynExpTraverse;
+
+  function obfuscateAbsynCref
+    input output Absyn.ComponentRef cref;
+    input InstNode scope;
+    input ObfuscationMap obfuscationMap;
+  protected
+    ComponentRef inst_cref;
+    list<InstNode> nodes;
+  algorithm
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      inst_cref := Lookup.lookupCref(cref, scope, NFInstContext.RELAXED);
+      nodes := list(ComponentRef.node(c) for c in ComponentRef.toListReverse(inst_cref, includeScope = false));
+      cref := obfuscateAbsynCref2(cref, nodes, obfuscationMap);
+    else
+    end try;
+    ErrorExt.rollBack(getInstanceName());
+  end obfuscateAbsynCref;
+
+  function obfuscateAbsynCref2
+    input output Absyn.ComponentRef cref;
+    input list<InstNode> nodes;
+    input ObfuscationMap obfuscationMap;
+  protected
+    InstNode node;
+    list<InstNode> rest_nodes;
+  algorithm
+    () := match (cref, nodes)
+      case (Absyn.ComponentRef.CREF_FULLYQUALIFIED(), _)
+        algorithm
+          cref.componentRef := obfuscateAbsynCref2(cref.componentRef, nodes, obfuscationMap);
+        then
+          ();
+
+      case (Absyn.ComponentRef.CREF_QUAL(), node :: rest_nodes)
+        guard InstNode.name(node) == cref.name
+        algorithm
+          cref.name := UnorderedMap.getOrDefault(node, obfuscationMap, cref.name);
+          cref.componentRef := obfuscateAbsynCref2(cref.componentRef, rest_nodes, obfuscationMap);
+        then
+          ();
+
+      case (Absyn.ComponentRef.CREF_IDENT(), node :: _)
+        guard InstNode.name(node) == cref.name
+        algorithm
+          cref.name := UnorderedMap.getOrDefault(node, obfuscationMap, cref.name);
+        then
+          ();
+
+      else ();
+    end match;
+  end obfuscateAbsynCref2;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

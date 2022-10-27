@@ -489,7 +489,7 @@ encapsulated package Obfuscate
     if isSome(oldId) then
       SOME(id) := oldId;
     else
-      id := "n" + String(index);
+      id := "$n" + String(index);
     end if;
   end makeId;
 
