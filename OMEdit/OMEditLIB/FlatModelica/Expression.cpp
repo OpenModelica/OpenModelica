@@ -384,23 +384,15 @@ namespace FlatModelica
   class ExpressionBase
   {
     public:
-      enum class value_t
-      {
-        integer,
-        real,
-        boolean,
-        string,
-        cref,
-        array,
-        call,
-        binary,
-        unary,
-        if_exp
-      };
-
-    public:
       virtual ~ExpressionBase() = default;
-      virtual value_t type() const = 0;
+
+      virtual bool isInteger()    const { return false; }
+      virtual bool isReal()       const { return false; }
+      virtual bool isBoolean()    const { return false; }
+      virtual bool isBooleanish() const { return false; }
+      virtual bool isString()     const { return false; }
+      virtual bool isArray()      const { return false; }
+      virtual bool isCall()       const { return false; }
       virtual bool isLiteral() const = 0;
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
@@ -418,7 +410,8 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Integer>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); };
 
-      value_t type() const override { return value_t::integer; }
+      bool isInteger() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       int64_t value() const { return _value; }
 
@@ -439,7 +432,8 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Real>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::real; }
+      bool isReal() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       double value() const { return _value; }
 
@@ -460,7 +454,8 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Boolean>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::boolean; }
+      bool isBoolean() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       bool value() const { return _value; }
 
@@ -479,7 +474,7 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<String>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::string; }
+      bool isString() const override { return true; }
       bool isLiteral() const override { return true; }
       const std::string& value() const { return _value; }
 
@@ -500,7 +495,6 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Cref>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::cref; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
 
@@ -519,7 +513,7 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Array>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::array; }
+      bool isArray() const override { return true; }
       bool isLiteral() const override;
       const std::vector<Expression>& elements() const { return _elements; }
 
@@ -540,7 +534,7 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Call>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::call; }
+      bool isCall() const override { return true; }
       bool isLiteral() const override { return false; }
       const std::string& name() const { return _name; }
       bool isNamed(const std::string &name) const { return _name == name; }
@@ -588,7 +582,6 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Binary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::binary; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
 
@@ -616,7 +609,6 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Unary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::unary; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
 
@@ -637,7 +629,6 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IfExp>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::if_exp; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
 
@@ -1553,7 +1544,7 @@ namespace FlatModelica
    */
   bool Expression::isInteger() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::integer;
+    return _value && _value->isInteger();
   }
 
   /*!
@@ -1563,7 +1554,7 @@ namespace FlatModelica
    */
   bool Expression::isReal() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::real;
+    return _value && _value->isReal();
   }
 
   /*!
@@ -1583,7 +1574,7 @@ namespace FlatModelica
    */
   bool Expression::isBoolean() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::boolean;
+    return _value && _value->isBoolean();
   }
 
   /*!
@@ -1594,17 +1585,7 @@ namespace FlatModelica
    */
   bool Expression::isBooleanish() const
   {
-    if (!_value) return false;
-
-    switch (_value->type()) {
-      case ExpressionBase::value_t::boolean:
-      case ExpressionBase::value_t::integer:
-      case ExpressionBase::value_t::real:
-        return true;
-
-      default:
-        return false;
-    }
+    return _value && _value->isBooleanish();
   }
 
   /*!
@@ -1614,7 +1595,7 @@ namespace FlatModelica
    */
   bool Expression::isString() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::string;
+    return _value && _value->isString();
   }
 
   /*!
@@ -1624,7 +1605,7 @@ namespace FlatModelica
    */
   bool Expression::isArray() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::array;
+    return _value && _value->isArray();
   }
 
   /*!
@@ -1634,7 +1615,7 @@ namespace FlatModelica
    */
   bool Expression::isCall() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::call;
+    return _value && _value->isCall();
   }
 
   /*!
@@ -1644,9 +1625,7 @@ namespace FlatModelica
    */
   bool Expression::isCall(const std::string &name) const
   {
-    return _value &&
-           _value->type() == ExpressionBase::value_t::call &&
-           dynamic_cast<const Call&>(*_value).isNamed(name);
+    return isCall() && dynamic_cast<const Call&>(*_value).isNamed(name);
   }
 
   /*!
@@ -1736,13 +1715,12 @@ namespace FlatModelica
    */
   bool Expression::boolValue() const
   {
-    switch (_value->type()) {
-      case ExpressionBase::value_t::integer:
-        return dynamic_cast<const Integer&>(*_value).value();
-      case ExpressionBase::value_t::real:
-        return dynamic_cast<const Real&>(*_value).value() != 0.0;
-      default:
-        return dynamic_cast<const Boolean&>(*_value).value();
+    if (isInteger()) {
+      return dynamic_cast<const Integer&>(*_value).value();
+    } else if (isReal()) {
+      return dynamic_cast<const Real&>(*_value).value() != 0.0;
+    } else {
+      return dynamic_cast<const Boolean&>(*_value).value();
     }
   }
 
@@ -1776,7 +1754,7 @@ namespace FlatModelica
    */
   QString Expression::functionName() const
   {
-    if (_value && _value->type() == ExpressionBase::value_t::call) {
+    if (isCall()) {
       return QString::fromStdString(dynamic_cast<const Call&>(*_value).name());
     }
     return QString("");
