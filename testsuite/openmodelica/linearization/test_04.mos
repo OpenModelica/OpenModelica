@@ -79,8 +79,8 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   Real 'u_u' = u[1];
 //   Real 'y_y' = y[1];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -131,9 +131,9 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   Real 'z_u' = z[1];
 //   Real 'z_y' = z[2];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
-//   z = Cz * x + Dz * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
+//   z = Cz*x + Dz*u;
 // end linearized_model;"
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

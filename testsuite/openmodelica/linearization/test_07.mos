@@ -82,8 +82,8 @@ list(linearized_model);
 //   Real 'x_z1' = x[1];
 //   Real 'x_z2' = x[2];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "simple_test_res.mat",
@@ -132,8 +132,8 @@ list(linearized_model);
 //   Real 'z_fac' = z[1];
 //   Real 'z_y' = z[2];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
-//   z = Cz * x + Dz * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
+//   z = Cz*x + Dz*u;
 // end linearized_model;"
 // endResult
