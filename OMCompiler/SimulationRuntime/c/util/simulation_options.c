@@ -897,14 +897,20 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_GAUSS5 */        "gauss5",
   /* RK_GAUSS6 */        "gauss6",
   /* RK_MERSON */        "merson",
+  /* RK_MERSONSSC1 */    "mersonSsc1",
+  /* RK_MERSONSSC2 */    "mersonSsc2",
   /* RK_HEUN */          "heun",
   /* RK_FEHLBERG12 */    "fehlberg12",
   /* RK_FEHLBERG45 */    "fehlberg45",
   /* RK_FEHLBERG78 */    "fehlberg78",
+  /* RK_FEHLBERGSSC1 */  "fehlbergSsc1",
+  /* RK_FEHLBERGSSC2 */  "fehlbergSsc2",
   /* RK_RK810 */         "rk810",
   /* RK_RK1012 */        "rk1012",
   /* RK_RK1214 */        "rk1214",
   /* RK_DOPRI45 */       "dopri45",
+  /* RK_DOPRISSC1 */     "dopriSsc1",
+  /* RK_DOPRISSC2 */     "dopriSsc2",
   /* RK_RKSSC */         "rungekuttaSsc"
 };
 
@@ -937,14 +943,20 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_GAUSS5 */        "Implicit Runge-Kutta method of Gauss (order 10)",
   /* RK_GAUSS6 */        "Implicit Runge-Kutta method of Gauss (order 12)",
   /* RK_MERSON */        "Explicit Runge-Kutta Merson method (order 4)",
+  /* RK_MERSONSSC1 */    "Explicit Runge-Kutta Merson method with large stability region (order 1)",
+  /* RK_MERSONSSC2 */    "Explicit Runge-Kutta Merson method with large stability region (order 2)",
   /* RK_HEUN */          "Explicit Runge-Kutta Heun method (order 2)",
   /* RK_FEHLBERG12 */    "Explicit Runge-Kutta Fehlberg method (order 2)",
   /* RK_FEHLBERG45 */    "Explicit Runge-Kutta Fehlberg method (order 5)",
   /* RK_FEHLBERG78 */    "Explicit Runge-Kutta Fehlberg method (order 8)",
+  /* RK_FEHLBERGSSC1 */  "Explicit Runge-Kutta Fehlberg method with large stability region (order 1)",
+  /* RK_FEHLBERGSSC2 */  "Explicit Runge-Kutta Fehlberg method with large stability region (order 2)",
   /* RK_RK810 */         "Explicit 8-10 Runge-Kutta method (order 10)",
   /* RK_RK1012 */        "Explicit 10-12 Runge-Kutta method (order 12)",
   /* RK_RK1214 */        "Explicit 12-14 Runge-Kutta method (order 14)",
   /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)",
+  /* RK_DOPRISSC1 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 1)",
+  /* RK_DOPRISSC2 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 2)",
   /* RK_RKSSC */         "Explicit Runge-Kutta method with large stabiliy region (order 1)"
 };
 

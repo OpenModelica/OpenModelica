@@ -229,14 +229,20 @@ enum GB_METHOD {
   RK_GAUSS5,          /* gauss5*/
   RK_GAUSS6,          /* gauss6*/
   RK_MERSON,          /* merson*/
+  RK_MERSONSSC1,      /* mersonSsc1*/
+  RK_MERSONSSC2,      /* mersonSsc2*/
   RK_HEUN,            /* heun */
   RK_FEHLBERG12,      /* fehlberg12*/
   RK_FEHLBERG45,      /* fehlberg45*/
   RK_FEHLBERG78,      /* fehlberg78*/
+  RK_FEHLBERGSSC1,    /* fehlbergSsc1*/
+  RK_FEHLBERGSSC2,    /* fehlbergSsc2*/
   RK_RK810,           /* rk810*/
   RK_RK1012,          /* rk1012*/
   RK_RK1214,          /* rk1214*/
-  RK_DOPRI45,         /* dopri4*/
+  RK_DOPRI45,         /* dopri45*/
+  RK_DOPRISSC1,       /* dopriSsc1*/
+  RK_DOPRISSC2,       /* dopriSsc2*/
   RK_RKSSC,           /* rungekuttaSsc */
 
 
