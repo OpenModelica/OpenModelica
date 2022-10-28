@@ -379,7 +379,8 @@ private:
   void updateConnections();
   QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
   QString getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString);
-  bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
+  static QString getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString);
+  static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
 signals:
   void added();

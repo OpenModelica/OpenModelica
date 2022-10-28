@@ -322,7 +322,7 @@ private:
 
     QString getName() const {return mName;}
     void setName(const QString &name) {mName = name;}
-    QString getValue() const {return mValue;}
+    QString getValue() const;
     QList<Modifier> getModifiers() const {return mModifiers;}
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
@@ -393,6 +393,8 @@ private:
     QList<InitialState *> getInitialStates() const {return mInitialStates;}
 
     bool isParameterConnectorSizing(const QString &parameter);
+    QString getParameterValue(const QString &parameter, QString &typeName);
+    QString getParameterValueFromExtendsModifiers(const QString &parameter);
   private:
     void initialize();
 
