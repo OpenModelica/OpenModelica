@@ -38,7 +38,7 @@
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
@@ -53,7 +53,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   mpEllipse = pEllipse;
   // set the default values
@@ -69,7 +69,6 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inhe
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
-  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   applyTransformation();
 }
@@ -77,7 +76,6 @@ EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
   : ShapeAnnotation(pParent)
 {
-  mpOriginItem = 0;
   mpEllipse = pEllipse;
   // set the default values
   GraphicItem::setDefaults();
@@ -92,12 +90,12 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  mpGraphicsView->addItem(getOriginItem());
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)

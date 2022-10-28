@@ -38,7 +38,7 @@
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
@@ -53,7 +53,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   mpPolygon = pPolygon;
   // set the default values
@@ -69,7 +69,6 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inhe
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
-  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   applyTransformation();
 }
@@ -77,7 +76,6 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent)
   : ShapeAnnotation(pParent)
 {
-  mpOriginItem = 0;
   mpPolygon = pPolygon;
   // set the default values
   GraphicItem::setDefaults();
@@ -92,18 +90,17 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  mpGraphicsView->addItem(getOriginItem());
 }
 
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
-  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
