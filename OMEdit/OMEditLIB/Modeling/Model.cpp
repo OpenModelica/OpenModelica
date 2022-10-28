@@ -1003,6 +1003,45 @@ namespace ModelInstance
     return false;
   }
 
+  QString Model::getParameterValue(const QString &parameter, QString &typeName)
+  {
+    QString value = "";
+    foreach (auto pElement, mElements) {
+      if (pElement->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
+        value = pElement->getModifier().getValue();
+        // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
+        if (value.isEmpty() && pElement->getModel()) {
+          value = pElement->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
+        }
+        typeName = pElement->getType();
+        break;
+      }
+    }
+    return StringHandler::removeFirstLastQuotes(value);
+  }
+
+  QString Model::getParameterValueFromExtendsModifiers(const QString &parameter)
+  {
+    QString value = "";
+    foreach (auto pExtend, mExtends) {
+      value = pExtend->getExtendsModifier().getModifierValue(QStringList() << parameter);
+      if (!value.isEmpty()) {
+        return value;
+      }
+    }
+
+    if (value.isEmpty()) {
+      foreach (auto pExtend, mExtends) {
+        value = pExtend->getParameterValueFromExtendsModifiers(parameter);
+        if (!value.isEmpty()) {
+          return value;
+        }
+      }
+    }
+
+    return value;
+  }
+
   void Model::initialize()
   {
     mModelJson = QJsonObject();
@@ -1195,6 +1234,11 @@ namespace ModelInstance
     } else {
       mValue = jsonValue.toString();
     }
+  }
+
+  QString Modifier::getValue() const
+  {
+    return StringHandler::removeFirstLastQuotes(mValue);
   }
 
   QString Modifier::getModifierValue(QStringList qualifiedModifierName)

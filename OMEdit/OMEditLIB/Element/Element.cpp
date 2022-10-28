@@ -1872,8 +1872,7 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* How to get the display value,
    * 0. If the component is inherited component then check if the value is available in the class extends modifiers.
    * 1. Check if the value is available in component modifier.
-   * 2. Check if the value is available in the component's containing class as a parameter or variable.
-   * 2.1 Check if the value is available in the component's class as a parameter or variable.
+   * 2 Check if the value is available in the component's class as a parameter or variable.
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
    * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
@@ -1885,9 +1884,13 @@ QString Element::getParameterDisplayString(QString parameterName)
    * Handle parameters display of inherited components.
    */
   /* case 0 */
-  if (isInheritedElement() && mpReferenceElement) {
-    QString extendsClass = mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    displayString = mpGraphicsView->getModelWidget()->getExtendsModifiersMap(extendsClass).value(QString("%1.%2").arg(getName()).arg(parameterName), "");
+  if (isInheritedElement()) {
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      displayString = mpModel->getParameterValueFromExtendsModifiers(parameterName);
+    } else if (mpReferenceElement) {
+      QString extendsClass = mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      displayString = mpGraphicsView->getModelWidget()->getExtendsModifiersMap(extendsClass).value(QString("%1.%2").arg(getName()).arg(parameterName), "");
+    }
   }
   /* case 1 */
   if (displayString.isEmpty()) {
@@ -1899,22 +1902,26 @@ QString Element::getParameterDisplayString(QString parameterName)
   }
   /* case 2 or check for enumeration type if case 1 */
   if (displayString.isEmpty() || typeName.isEmpty()) {
-    if (mpLibraryTreeItem) {
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      QString value = mpModel->getParameterValue(parameterName, typeName);
+      if (displayString.isEmpty()) {
+        displayString = value;
+      }
+      Element::checkEnumerationDisplayString(displayString, typeName);
+    } else if (mpLibraryTreeItem) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
         if (pElement->getElementInfo()->getName().compare(StringHandler::getFirstWordBeforeDot(parameterName)) == 0) {
           if (displayString.isEmpty()) {
             displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
           }
-          /* case 2.1
-           * Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-           */
+          // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
           if (displayString.isEmpty()) {
             displayString = pOMCProxy->getParameterValue(pElement->getElementInfo()->getClassName(), StringHandler::getLastWordAfterDot(parameterName));
           }
 
           typeName = pElement->getElementInfo()->getClassName();
-          checkEnumerationDisplayString(displayString, typeName);
+          Element::checkEnumerationDisplayString(displayString, typeName);
           break;
         }
       }
@@ -2935,7 +2942,9 @@ QString Element::getParameterDisplayStringFromExtendsModifiers(QString parameter
   /* Ticket:4204
    * Get the extends modifiers of the class not the inherited class.
    */
-  if (mpLibraryTreeItem) {
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    displayString = mpModel->getParameterValueFromExtendsModifiers(parameterName);
+  } else if (mpLibraryTreeItem) {
     foreach (Element *pElement, mInheritedElementsList) {
       if (pElement->getLibraryTreeItem()) {
         QMap<QString, QString> extendsModifiersMap = mpLibraryTreeItem->getModelWidget()->getExtendsModifiersMap(pElement->getLibraryTreeItem()->getNameStructure());
@@ -2964,32 +2973,67 @@ QString Element::getParameterDisplayStringFromExtendsParameters(QString paramete
 {
   QString displayString = modifierString;
   QString typeName = "";
-  foreach (Element *pInheritedElement, mInheritedElementsList) {
-    if (pInheritedElement->getLibraryTreeItem()) {
-      if (!pInheritedElement->getLibraryTreeItem()->getModelWidget()) {
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedElement->getLibraryTreeItem(), false);
-      }
-      pInheritedElement->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
-      foreach (Element *pElement, pInheritedElement->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
-        if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
-          OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-          /* Ticket:4204
-           * Look for the parameter value in the parameter containing class not in the parameter class.
-           */
-          if (pInheritedElement->getLibraryTreeItem()) {
-            if (displayString.isEmpty()) {
-              displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, pInheritedElement->getLibraryTreeItem()->getNameStructure());
-            }
-            typeName = pElement->getElementInfo()->getClassName();
-            checkEnumerationDisplayString(displayString, typeName);
-            if (!(displayString.isEmpty() || typeName.isEmpty())) {
-              return displayString;
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    displayString = Element::getParameterDisplayStringFromExtendsParameters(mpModel, parameterName, modifierString);
+  } else {
+    foreach (Element *pInheritedElement, mInheritedElementsList) {
+      if (pInheritedElement->getLibraryTreeItem()) {
+        if (!pInheritedElement->getLibraryTreeItem()->getModelWidget()) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedElement->getLibraryTreeItem(), false);
+        }
+        pInheritedElement->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
+        foreach (Element *pElement, pInheritedElement->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
+          if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
+            OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+            /* Ticket:4204
+             * Look for the parameter value in the parameter containing class not in the parameter class.
+             */
+            if (pInheritedElement->getLibraryTreeItem()) {
+              if (displayString.isEmpty()) {
+                displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, pInheritedElement->getLibraryTreeItem()->getNameStructure());
+              }
+              typeName = pElement->getElementInfo()->getClassName();
+              Element::checkEnumerationDisplayString(displayString, typeName);
+              if (!(displayString.isEmpty() || typeName.isEmpty())) {
+                return displayString;
+              }
             }
           }
         }
       }
+      displayString = pInheritedElement->getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
+      if (!(displayString.isEmpty() || typeName.isEmpty())) {
+        return displayString;
+      }
     }
-    displayString = pInheritedElement->getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
+  }
+  return displayString;
+}
+
+/*!
+ * \brief Element::getParameterDisplayStringFromExtendsParameters
+ * Gets the display string for components from extends parameters.
+ * \param pModel
+ * \param parameterName
+ * \param modifierString
+ * \return
+ */
+QString Element::getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString)
+{
+  QString displayString = modifierString;
+  QString typeName = "";
+
+  QList<ModelInstance::Extend*> extends = pModel->getExtends();
+  foreach (auto pExtend, extends) {
+    QString value = pExtend->getParameterValue(parameterName, typeName);
+    if (displayString.isEmpty()) {
+      displayString = value;
+    }
+    Element::checkEnumerationDisplayString(displayString, typeName);
+    if (!(displayString.isEmpty() || typeName.isEmpty())) {
+      return displayString;
+    }
+    displayString = Element::getParameterDisplayStringFromExtendsParameters(pExtend, parameterName, displayString);
     if (!(displayString.isEmpty() || typeName.isEmpty())) {
       return displayString;
     }
