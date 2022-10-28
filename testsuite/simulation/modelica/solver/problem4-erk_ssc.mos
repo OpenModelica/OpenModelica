@@ -42,7 +42,13 @@ val(x7,{0,0.1,0.5, 1});
 // record SimulationResult
 //     resultFile = "testSolver.problem4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-12, method = 'rungekuttaSsc', fileNamePrefix = 'testSolver.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-initialStepSize=1e-4 -maxStepSize=1e-2'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'rungekuttaSsc' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'rungekuttaSsc' instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=rungekuttaSsc' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=rungekuttaSsc'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

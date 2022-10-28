@@ -55,6 +55,7 @@
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
 #include "gbode_main.h"
+#include "gbode_util.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -237,9 +238,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     solverInfo->integratorSteps = 0;
   }
 
-  /* set tolerance for ZeroCrossings */
-  /*  TODO: Check this! */
-  /*  setZCtol(fmin(simInfo->stepSize, simInfo->tolerance)); */
+  /* Deprecation warnings */
+  deprecationWarningGBODE(solverInfo->solverMethod);
 
   switch (solverInfo->solverMethod)
   {

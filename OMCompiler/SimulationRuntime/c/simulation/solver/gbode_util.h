@@ -77,6 +77,8 @@ void logSolverStats(enum LOG_STREAM stream, const char* name, double timeValue, 
 void setSolverStats(unsigned int* solverStats, SOLVERSTATS* stats);
 void resetSolverStats(SOLVERSTATS* stats);
 
+void deprecationWarningGBODE(enum SOLVER_METHOD method);
+
 #ifdef __cplusplus
 };
 #endif

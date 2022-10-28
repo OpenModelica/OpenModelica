@@ -167,7 +167,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -179,7 +185,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=3'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -191,7 +203,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=4'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -203,7 +221,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
