@@ -240,7 +240,7 @@ algorithm
         e = simplifyUnary(inExp, op, e1);
       then (e,options);
 
-    case (DAE.BINARY(exp1 = e1,operator = op, exp2 = e2), _)
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), _)
       equation
         e = simplifyBinary(inExp, op, e1, e2);
       then (e,options);
@@ -639,7 +639,7 @@ public function simplify1
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := simplify1WithOptions(inExp,optionSimplifyOnly);
+  (outExp, hasChanged) := simplify1WithOptions(inExp, optionSimplifyOnly);
 end simplify1;
 
 public function simplify1o
@@ -649,13 +649,12 @@ public function simplify1o
   output Option<DAE.Exp> outExp;
 algorithm
   outExp := match inExp
-            local DAE.Exp e;
-            case SOME(e)
-            equation
-              (e,_) = simplify1WithOptions(e,optionSimplifyOnly);
-            then SOME(e);
-            else inExp;
-            end match;
+    local DAE.Exp e;
+    case SOME(e) algorithm
+      (e, _) := simplify1WithOptions(e, optionSimplifyOnly);
+    then SOME(e);
+    else inExp;
+  end match;
 end simplify1o;
 
 
@@ -667,8 +666,8 @@ public function simplify1WithOptions
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := simplify1FixP(inExp,options,100,true,false);
-  checkSimplify(Flags.isSet(Flags.CHECK_SIMPLIFY),inExp,outExp);
+  (outExp, hasChanged) := simplify1FixP(inExp, options, 100, true, false);
+  checkSimplify(Flags.isSet(Flags.CHECK_SIMPLIFY), inExp, outExp);
 end simplify1WithOptions;
 
 protected function checkSimplify
@@ -677,7 +676,7 @@ protected function checkSimplify
   input DAE.Exp before;
   input DAE.Exp after;
 algorithm
-  _ := match (check,before,after)
+  () := match (check,before,after)
     local
       Integer c1,c2;
       Boolean b;
@@ -4316,7 +4315,7 @@ algorithm
         res = DAE.BINARY(e1,op1,e);
       then res;
 
-    // (c op1 a*b)/b =>  c/b  op1 a
+    // (c op1 a*b)/b => c/b op1 a
     case (_,DAE.DIV(_),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4,_,_)
       equation
         true = Expression.isAddOrSub(op1);
@@ -4589,6 +4588,7 @@ algorithm
     // sqrt(e) ^ 2.0 => e
     case (_,DAE.POW(),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}),DAE.RCONST(2.0),_,_)
       then e;
+      // phi: assert(e >= 0)?
 
     // sqrt(e) ^ r => e ^ 0.5*r
     case (_,oper as DAE.POW(),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e,_,_)
@@ -4751,9 +4751,16 @@ algorithm
       then Expression.makeProductLst(exp_lst_1);
 
     // ticket #6068 (second issue)
-    // (e1^e2)^e3 => abs(e1)^(e2*e3) if e2 is even
+    // (e1^e2)^e3 => abs(e1)^(e2*e3) if e2 is even but e2*e3 is not
     case (_,DAE.POW(),DAE.BINARY(e1,DAE.POW(),e2),e3,_,_) guard Expression.isEven(e2)
-      then DAE.BINARY(Expression.makePureBuiltinCall("abs", {e1}, Expression.typeof(e1)),DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),e3));
+      equation
+        if Expression.isEvaluatedConst(e3) then
+          e = simplifyBinaryConst(DAE.MUL(DAE.T_REAL_DEFAULT), e2, e3);
+          false = Expression.isEven(e);
+        else
+          e = DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),e3);
+        end if;
+      then DAE.BINARY(Expression.makePureBuiltinCall("abs", {e1}, Expression.typeof(e1)),DAE.POW(DAE.T_REAL_DEFAULT), e);
 
     // (e1^e2)^e3 => e1^(e2*e3)
     case (_,DAE.POW(),DAE.BINARY(e1,DAE.POW(),e2),e3,_,_)
