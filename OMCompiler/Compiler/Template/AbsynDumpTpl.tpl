@@ -777,7 +777,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case e as UNARY(__) then
     let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
@@ -786,7 +786,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case e as LUNARY(__) then
     let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
@@ -795,7 +795,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case IFEXP(__) then dumpIfExp(exp)
   case CALL(function_=Absyn.CREF_IDENT(name="$array")) then
     let args_str = dumpFunctionArgs(functionArgs)
@@ -1004,29 +1004,29 @@ end dumpMatchCase;
 template dumpOperator(Absyn.Operator op)
 ::=
 match op
-  case ADD(__) then '+'
-  case SUB(__) then '-'
+  case ADD(__) then ' + '
+  case SUB(__) then ' - '
   case MUL(__) then '*'
   case DIV(__) then '/'
   case POW(__) then '^'
   case UPLUS(__) then '+'
   case UMINUS(__) then '-'
-  case ADD_EW(__) then '.+'
-  case SUB_EW(__) then '.-'
+  case ADD_EW(__) then ' .+ '
+  case SUB_EW(__) then ' .- '
   case MUL_EW(__) then '.*'
   case DIV_EW(__) then './'
   case POW_EW(__) then '.^'
-  case UPLUS_EW(__) then '.+'
-  case UMINUS_EW(__) then '.-'
-  case AND(__) then 'and'
-  case OR(__) then 'or'
+  case UPLUS_EW(__) then ' .+ '
+  case UMINUS_EW(__) then ' .- '
+  case AND(__) then ' and '
+  case OR(__) then ' or '
   case NOT(__) then 'not'
-  case LESS(__) then '<'
-  case LESSEQ(__) then '<='
-  case GREATER(__) then '>'
-  case GREATEREQ(__) then '>='
-  case EQUAL(__) then '=='
-  case NEQUAL(__) then '<>'
+  case LESS(__) then ' < '
+  case LESSEQ(__) then ' <= '
+  case GREATER(__) then ' > '
+  case GREATEREQ(__) then ' >= '
+  case EQUAL(__) then ' == '
+  case NEQUAL(__) then ' <> '
 end dumpOperator;
 
 template dumpCref(Absyn.ComponentRef cref)

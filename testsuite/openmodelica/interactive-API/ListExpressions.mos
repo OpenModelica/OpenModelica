@@ -36,11 +36,11 @@ list(M); getErrorString();
 //   0 = a - b - c - d;
 //   0 = a + b + c + d;
 //   0 = (a - b) + (c - d);
-//   0 = a / (b / c);
-//   0 = a / b / c;
-//   0 = a * (b * c);
-//   0 = a * b * c;
-//   0 = a * ((a * b) / (c * d));
+//   0 = a/(b/c);
+//   0 = a/b/c;
+//   0 = a*(b*c);
+//   0 = a*b*c;
+//   0 = a*((a*b)/(c*d));
 // end M;"
 // ""
 // endResult

@@ -53,7 +53,7 @@ readFile("BranchingDynamicPipes.mo");
 //         parameter Modelica.SIunits.Time startTime = 0 \"Output = offset for time < startTime\";
 //         extends .Modelica.Blocks.Interfaces.SO;
 //       equation
-//         y = offset + (if time < startTime then 0 else if time < (startTime + duration) then (time - startTime) * height / duration else height);
+//         y = offset + (if time < startTime then 0 else if time < (startTime + duration) then (time - startTime)*height/duration else height);
 //       end Ramp;
 //     end Sources;
 //
@@ -81,7 +81,7 @@ readFile("BranchingDynamicPipes.mo");
 //         Pipes.DynamicPipe pipe4(redeclare package Medium = Medium, use_T_start = true, nNodes = 5, diameter = 2.54e-2, m_flow_start = 0.02, height_ab = 50, length = 50, p_a_start = 120000, p_b_start = 100000, modelStructure = Modelica.Fluid.Types.ModelStructure.a_v_b);
 //         Modelica.Fluid.Sources.Boundary_pT boundary4(nPorts = 1, redeclare package Medium = Medium, use_p_in = true, use_T_in = false, p = 100000);
 //         Modelica.Blocks.Sources.Ramp ramp1(offset = 1e5, startTime = 2, height = 1e5, duration = 0);
-//         Modelica.Thermal.HeatTransfer.Sources.FixedHeatFlow[pipe2.nNodes] heat2(Q_flow = 200 * pipe2.dxs, alpha = -1e-2 * ones(pipe2.n));
+//         Modelica.Thermal.HeatTransfer.Sources.FixedHeatFlow[pipe2.nNodes] heat2(Q_flow = 200*pipe2.dxs, alpha = -1e-2*ones(pipe2.n));
 //       equation
 //         connect(ramp1.y, boundary4.p_in);
 //         connect(boundary1.ports[1], pipe1.port_a);
@@ -109,7 +109,7 @@ readFile("BranchingDynamicPipes.mo");
 //       parameter Modelica.SIunits.AbsolutePressure p_start = p_ambient \"Default start value for pressures\";
 //       parameter Modelica.SIunits.Temperature T_start = T_ambient \"Default start value for temperatures\";
 //       parameter Boolean use_eps_Re = false \"= true to determine turbulent region automatically using Reynolds number\" annotation(Evaluate = true);
-//       parameter Modelica.SIunits.MassFlowRate m_flow_nominal = if use_eps_Re then 1 else 1e2 * m_flow_small \"Default nominal mass flow rate\";
+//       parameter Modelica.SIunits.MassFlowRate m_flow_nominal = if use_eps_Re then 1 else 1e2*m_flow_small \"Default nominal mass flow rate\";
 //       parameter Real eps_m_flow(min = 0) = 1e-4 \"Regularization of zero flow for |m_flow| < eps_m_flow*m_flow_nominal\";
 //       parameter Modelica.SIunits.AbsolutePressure dp_small(min = 0) = 1 \"Default small pressure drop for regularization of laminar and zero flow\";
 //       parameter Modelica.SIunits.MassFlowRate m_flow_small(min = 0) = 1e-2 \"Default small mass flow rate for regularization of laminar and zero flow\";
@@ -125,34 +125,34 @@ readFile("BranchingDynamicPipes.mo");
 //
 //       model DynamicPipe \"Dynamic pipe model with storage of mass and energy\"
 //         extends Modelica.Fluid.Pipes.BaseClasses.PartialStraightPipe(final port_a_exposesState = (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b) or (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb), final port_b_exposesState = (modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb) or (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb));
-//         extends BaseClasses.PartialTwoPortFlow(final lengths = fill(length / n, n), final crossAreas = fill(crossArea, n), final dimensions = fill(4 * crossArea / perimeter, n), final roughnesses = fill(roughness, n), final dheights = height_ab * dxs);
+//         extends BaseClasses.PartialTwoPortFlow(final lengths = fill(length/n, n), final crossAreas = fill(crossArea, n), final dimensions = fill(4*crossArea/perimeter, n), final roughnesses = fill(roughness, n), final dheights = height_ab*dxs);
 //         parameter Boolean use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //         replaceable model HeatTransfer = Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.IdealFlowHeatTransfer constrainedby Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.PartialFlowHeatTransfer;
 //         Interfaces.HeatPorts_a[nNodes] heatPorts if use_HeatTransfer;
-//         HeatTransfer heatTransfer(redeclare final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter * lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
-//         final parameter Real[n] dxs = lengths / sum(lengths);
+//         HeatTransfer heatTransfer(redeclare final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter*lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
+//         final parameter Real[n] dxs = lengths/sum(lengths);
 //       equation
 //         Qb_flows = heatTransfer.Q_flows;
 //         if n == 1 or useLumpedPressure then
-//           Wb_flows = dxs * ((vs * dxs) * (crossAreas * dxs) * ((port_b.p - port_a.p) + sum(flowModel.dps_fg) - system.g * (dheights * mediums.d))) * nParallel;
+//           Wb_flows = dxs*((vs*dxs)*(crossAreas*dxs)*((port_b.p - port_a.p) + sum(flowModel.dps_fg) - system.g*(dheights*mediums.d)))*nParallel;
 //         else
 //           if modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb or modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b then
-//             Wb_flows[2:n - 1] = {vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i - 1] + flowModel.dps_fg[i]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1} * nParallel;
+//             Wb_flows[2:n - 1] = {vs[i]*crossAreas[i]*((mediums[i + 1].p - mediums[i - 1].p)/2 + (flowModel.dps_fg[i - 1] + flowModel.dps_fg[i])/2 - system.g*dheights[i]*mediums[i].d) for i in 2:n - 1}*nParallel;
 //           else
-//             Wb_flows[2:n - 1] = {vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i] + flowModel.dps_fg[i + 1]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1} * nParallel;
+//             Wb_flows[2:n - 1] = {vs[i]*crossAreas[i]*((mediums[i + 1].p - mediums[i - 1].p)/2 + (flowModel.dps_fg[i] + flowModel.dps_fg[i + 1])/2 - system.g*dheights[i]*mediums[i].d) for i in 2:n - 1}*nParallel;
 //           end if;
 //           if modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb then
-//             Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - mediums[1].p) / 2 + flowModel.dps_fg[1] / 2 - system.g * dheights[1] * mediums[1].d) * nParallel;
-//             Wb_flows[n] = vs[n] * crossAreas[n] * ((mediums[n].p - mediums[n - 1].p) / 2 + flowModel.dps_fg[n - 1] / 2 - system.g * dheights[n] * mediums[n].d) * nParallel;
+//             Wb_flows[1] = vs[1]*crossAreas[1]*((mediums[2].p - mediums[1].p)/2 + flowModel.dps_fg[1]/2 - system.g*dheights[1]*mediums[1].d)*nParallel;
+//             Wb_flows[n] = vs[n]*crossAreas[n]*((mediums[n].p - mediums[n - 1].p)/2 + flowModel.dps_fg[n - 1]/2 - system.g*dheights[n]*mediums[n].d)*nParallel;
 //           elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b then
-//             Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - mediums[1].p) / 2 + flowModel.dps_fg[1] / 2 - system.g * dheights[1] * mediums[1].d) * nParallel;
-//             Wb_flows[n] = vs[n] * crossAreas[n] * ((port_b.p - mediums[n - 1].p) / 1.5 + flowModel.dps_fg[n - 1] / 2 + flowModel.dps_fg[n] - system.g * dheights[n] * mediums[n].d) * nParallel;
+//             Wb_flows[1] = vs[1]*crossAreas[1]*((mediums[2].p - mediums[1].p)/2 + flowModel.dps_fg[1]/2 - system.g*dheights[1]*mediums[1].d)*nParallel;
+//             Wb_flows[n] = vs[n]*crossAreas[n]*((port_b.p - mediums[n - 1].p)/1.5 + flowModel.dps_fg[n - 1]/2 + flowModel.dps_fg[n] - system.g*dheights[n]*mediums[n].d)*nParallel;
 //           elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb then
-//             Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - port_a.p) / 1.5 + flowModel.dps_fg[1] + flowModel.dps_fg[2] / 2 - system.g * dheights[1] * mediums[1].d) * nParallel;
-//             Wb_flows[n] = vs[n] * crossAreas[n] * ((mediums[n].p - mediums[n - 1].p) / 2 + flowModel.dps_fg[n] / 2 - system.g * dheights[n] * mediums[n].d) * nParallel;
+//             Wb_flows[1] = vs[1]*crossAreas[1]*((mediums[2].p - port_a.p)/1.5 + flowModel.dps_fg[1] + flowModel.dps_fg[2]/2 - system.g*dheights[1]*mediums[1].d)*nParallel;
+//             Wb_flows[n] = vs[n]*crossAreas[n]*((mediums[n].p - mediums[n - 1].p)/2 + flowModel.dps_fg[n]/2 - system.g*dheights[n]*mediums[n].d)*nParallel;
 //           elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_v_b then
-//             Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - port_a.p) / 1.5 + flowModel.dps_fg[1] + flowModel.dps_fg[2] / 2 - system.g * dheights[1] * mediums[1].d) * nParallel;
-//             Wb_flows[n] = vs[n] * crossAreas[n] * ((port_b.p - mediums[n - 1].p) / 1.5 + flowModel.dps_fg[n] / 2 + flowModel.dps_fg[n + 1] - system.g * dheights[n] * mediums[n].d) * nParallel;
+//             Wb_flows[1] = vs[1]*crossAreas[1]*((mediums[2].p - port_a.p)/1.5 + flowModel.dps_fg[1] + flowModel.dps_fg[2]/2 - system.g*dheights[1]*mediums[1].d)*nParallel;
+//             Wb_flows[n] = vs[n]*crossAreas[n]*((port_b.p - mediums[n - 1].p)/1.5 + flowModel.dps_fg[n]/2 + flowModel.dps_fg[n + 1] - system.g*dheights[n]*mediums[n].d)*nParallel;
 //           else
 //             assert(false, \"Unknown model structure\");
 //           end if;
@@ -169,10 +169,10 @@ readFile("BranchingDynamicPipes.mo");
 //           parameter .Modelica.SIunits.Length length \"Length\";
 //           parameter Boolean isCircular = true \"= true if cross sectional area is circular\";
 //           parameter .Modelica.SIunits.Diameter diameter \"Diameter of circular pipe\";
-//           parameter .Modelica.SIunits.Area crossArea = Modelica.Constants.pi * diameter * diameter / 4 \"Inner cross section area\";
-//           parameter .Modelica.SIunits.Length perimeter = Modelica.Constants.pi * diameter \"Inner perimeter\";
+//           parameter .Modelica.SIunits.Area crossArea = Modelica.Constants.pi*diameter*diameter/4 \"Inner cross section area\";
+//           parameter .Modelica.SIunits.Length perimeter = Modelica.Constants.pi*diameter \"Inner perimeter\";
 //           parameter .Modelica.SIunits.Height roughness = 2.5e-5 \"Average height of surface asperities (default: smooth steel pipe)\";
-//           final parameter .Modelica.SIunits.Volume V = crossArea * length * nParallel \"volume size\";
+//           final parameter .Modelica.SIunits.Volume V = crossArea*length*nParallel \"volume size\";
 //           parameter .Modelica.SIunits.Length height_ab = 0 \"Height(port_b) - Height(port_a)\";
 //         equation
 //           assert(length >= height_ab, \"Parameter length must be greater or equal height_ab.\");
@@ -180,7 +180,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         partial model PartialTwoPortFlow \"Base class for distributed flow models\"
 //           extends Modelica.Fluid.Interfaces.PartialTwoPort(final port_a_exposesState = (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b) or (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb), final port_b_exposesState = (modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb) or (modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb));
-//           extends Modelica.Fluid.Interfaces.PartialDistributedVolume(final n = nNodes, final fluidVolumes = {crossAreas[i] * lengths[i] for i in 1:n} * nParallel);
+//           extends Modelica.Fluid.Interfaces.PartialDistributedVolume(final n = nNodes, final fluidVolumes = {crossAreas[i]*lengths[i] for i in 1:n}*nParallel);
 //           parameter Real nParallel(min = 1) = 1 \"Number of identical parallel flow devices\";
 //           parameter .Modelica.SIunits.Length[n] lengths \"lengths of flow segments\";
 //           parameter .Modelica.SIunits.Area[n] crossAreas \"cross flow areas of flow segments\";
@@ -195,7 +195,7 @@ readFile("BranchingDynamicPipes.mo");
 //           final parameter Integer nFM = if useLumpedPressure then nFMLumped else nFMDistributed \"number of flow models in flowModel\";
 //           final parameter Integer nFMDistributed = if modelStructure == Types.ModelStructure.a_v_b then n + 1 else if (modelStructure == Types.ModelStructure.a_vb or modelStructure == Types.ModelStructure.av_b) then n else n - 1;
 //           final parameter Integer nFMLumped = if modelStructure == Types.ModelStructure.a_v_b then 2 else 1;
-//           final parameter Integer iLumped = integer(n / 2) + 1 \"Index of control volume with representative state if useLumpedPressure\" annotation(Evaluate = true);
+//           final parameter Integer iLumped = integer(n/2) + 1 \"Index of control volume with representative state if useLumpedPressure\" annotation(Evaluate = true);
 //           parameter Boolean useInnerPortProperties = false \"=true to take port properties for flow models from internal control volumes\" annotation(Evaluate = true);
 //           Medium.ThermodynamicState state_a \"state defined by volume outside port_a\";
 //           Medium.ThermodynamicState state_b \"state defined by volume outside port_b\";
@@ -206,7 +206,7 @@ readFile("BranchingDynamicPipes.mo");
 //           Medium.MassFlowRate[n + 1, Medium.nXi] mXi_flows \"Independent mass flow rates across segment boundaries\";
 //           Medium.MassFlowRate[n + 1, Medium.nC] mC_flows \"Trace substance mass flow rates across segment boundaries\";
 //           Medium.EnthalpyFlowRate[n + 1] H_flows \"Enthalpy flow rates of fluid across segment boundaries\";
-//           .Modelica.SIunits.Velocity[n] vs = {0.5 * (m_flows[i] + m_flows[i + 1]) / mediums[i].d / crossAreas[i] for i in 1:n} / nParallel \"mean velocities in flow segments\";
+//           .Modelica.SIunits.Velocity[n] vs = {0.5*(m_flows[i] + m_flows[i + 1])/mediums[i].d/crossAreas[i] for i in 1:n}/nParallel \"mean velocities in flow segments\";
 //         protected
 //           .Modelica.SIunits.Length[nFM] pathLengths \"Lengths along flow path\";
 //           .Modelica.SIunits.Length[nFM] dheightsFM \"Differences in heights between flow segments\";
@@ -225,23 +225,23 @@ readFile("BranchingDynamicPipes.mo");
 //                 dimensionsFM[1:2] = {dimensions[1], dimensions[1]};
 //                 roughnessesFM[1:2] = {roughnesses[1], roughnesses[1]};
 //               else
-//                 crossAreasFM[1:2] = {sum(crossAreas[1:iLumped - 1]) / (iLumped - 1), sum(crossAreas[iLumped:n]) / (n - iLumped + 1)};
-//                 dimensionsFM[1:2] = {sum(dimensions[1:iLumped - 1]) / (iLumped - 1), sum(dimensions[iLumped:n]) / (n - iLumped + 1)};
-//                 roughnessesFM[1:2] = {sum(roughnesses[1:iLumped - 1]) / (iLumped - 1), sum(roughnesses[iLumped:n]) / (n - iLumped + 1)};
+//                 crossAreasFM[1:2] = {sum(crossAreas[1:iLumped - 1])/(iLumped - 1), sum(crossAreas[iLumped:n])/(n - iLumped + 1)};
+//                 dimensionsFM[1:2] = {sum(dimensions[1:iLumped - 1])/(iLumped - 1), sum(dimensions[iLumped:n])/(n - iLumped + 1)};
+//                 roughnessesFM[1:2] = {sum(roughnesses[1:iLumped - 1])/(iLumped - 1), sum(roughnesses[iLumped:n])/(n - iLumped + 1)};
 //               end if;
 //             else
 //               if n == 1 then
-//                 pathLengths[1:2] = {lengths[1] / 2, lengths[1] / 2};
-//                 dheightsFM[1:2] = {dheights[1] / 2, dheights[1] / 2};
+//                 pathLengths[1:2] = {lengths[1]/2, lengths[1]/2};
+//                 dheightsFM[1:2] = {dheights[1]/2, dheights[1]/2};
 //                 crossAreasFM[1:3] = {crossAreas[1], crossAreas[1], crossAreas[1]};
 //                 dimensionsFM[1:3] = {dimensions[1], dimensions[1], dimensions[1]};
 //                 roughnessesFM[1:3] = {roughnesses[1], roughnesses[1], roughnesses[1]};
 //               else
 //                 pathLengths[1:2] = {sum(lengths[1:iLumped - 1]), sum(lengths[iLumped:n])};
 //                 dheightsFM[1:2] = {sum(dheights[1:iLumped - 1]), sum(dheights[iLumped:n])};
-//                 crossAreasFM[1:3] = {sum(crossAreas[1:iLumped - 1]) / (iLumped - 1), sum(crossAreas) / n, sum(crossAreas[iLumped:n]) / (n - iLumped + 1)};
-//                 dimensionsFM[1:3] = {sum(dimensions[1:iLumped - 1]) / (iLumped - 1), sum(dimensions) / n, sum(dimensions[iLumped:n]) / (n - iLumped + 1)};
-//                 roughnessesFM[1:3] = {sum(roughnesses[1:iLumped - 1]) / (iLumped - 1), sum(roughnesses) / n, sum(roughnesses[iLumped:n]) / (n - iLumped + 1)};
+//                 crossAreasFM[1:3] = {sum(crossAreas[1:iLumped - 1])/(iLumped - 1), sum(crossAreas)/n, sum(crossAreas[iLumped:n])/(n - iLumped + 1)};
+//                 dimensionsFM[1:3] = {sum(dimensions[1:iLumped - 1])/(iLumped - 1), sum(dimensions)/n, sum(dimensions[iLumped:n])/(n - iLumped + 1)};
+//                 roughnessesFM[1:3] = {sum(roughnesses[1:iLumped - 1])/(iLumped - 1), sum(roughnesses)/n, sum(roughnesses[iLumped:n])/(n - iLumped + 1)};
 //               end if;
 //             end if;
 //           else
@@ -250,8 +250,8 @@ readFile("BranchingDynamicPipes.mo");
 //                 pathLengths[1] = lengths[1] + lengths[2];
 //                 dheightsFM[1] = dheights[1] + dheights[2];
 //               else
-//                 pathLengths[1:n - 1] = cat(1, {lengths[1] + 0.5 * lengths[2]}, 0.5 * (lengths[2:n - 2] + lengths[3:n - 1]), {0.5 * lengths[n - 1] + lengths[n]});
-//                 dheightsFM[1:n - 1] = cat(1, {dheights[1] + 0.5 * dheights[2]}, 0.5 * (dheights[2:n - 2] + dheights[3:n - 1]), {0.5 * dheights[n - 1] + dheights[n]});
+//                 pathLengths[1:n - 1] = cat(1, {lengths[1] + 0.5*lengths[2]}, 0.5*(lengths[2:n - 2] + lengths[3:n - 1]), {0.5*lengths[n - 1] + lengths[n]});
+//                 dheightsFM[1:n - 1] = cat(1, {dheights[1] + 0.5*dheights[2]}, 0.5*(dheights[2:n - 2] + dheights[3:n - 1]), {0.5*dheights[n - 1] + dheights[n]});
 //               end if;
 //               crossAreasFM[1:n] = crossAreas;
 //               dimensionsFM[1:n] = dimensions;
@@ -269,8 +269,8 @@ readFile("BranchingDynamicPipes.mo");
 //               dimensionsFM[1:n + 1] = cat(1, {dimensions[1]}, dimensions[1:n]);
 //               roughnessesFM[1:n + 1] = cat(1, {roughnesses[1]}, roughnesses[1:n]);
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_v_b then
-//               pathLengths[1:n + 1] = cat(1, {0.5 * lengths[1]}, 0.5 * (lengths[1:n - 1] + lengths[2:n]), {0.5 * lengths[n]});
-//               dheightsFM[1:n + 1] = cat(1, {0.5 * dheights[1]}, 0.5 * (dheights[1:n - 1] + dheights[2:n]), {0.5 * dheights[n]});
+//               pathLengths[1:n + 1] = cat(1, {0.5*lengths[1]}, 0.5*(lengths[1:n - 1] + lengths[2:n]), {0.5*lengths[n]});
+//               dheightsFM[1:n + 1] = cat(1, {0.5*dheights[1]}, 0.5*(dheights[1:n - 1] + dheights[2:n]), {0.5*dheights[n]});
 //               crossAreasFM[1:n + 2] = cat(1, {crossAreas[1]}, crossAreas[1:n], {crossAreas[n]});
 //               dimensionsFM[1:n + 2] = cat(1, {dimensions[1]}, dimensions[1:n], {dimensions[n]});
 //               roughnessesFM[1:n + 2] = cat(1, {roughnesses[1]}, roughnesses[1:n], {roughnesses[n]});
@@ -323,31 +323,31 @@ readFile("BranchingDynamicPipes.mo");
 //               m_flows[iLumped] = flowModel.m_flows[1];
 //               statesFM[2] = mediums[n].state;
 //               port_b.p = mediums[n].p;
-//               vsFM[1] = vs[1:iLumped - 1] * lengths[1:iLumped - 1] / sum(lengths[1:iLumped - 1]);
-//               vsFM[2] = vs[iLumped:n] * lengths[iLumped:n] / sum(lengths[iLumped:n]);
+//               vsFM[1] = vs[1:iLumped - 1]*lengths[1:iLumped - 1]/sum(lengths[1:iLumped - 1]);
+//               vsFM[2] = vs[iLumped:n]*lengths[iLumped:n]/sum(lengths[iLumped:n]);
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b then
 //               port_a.p = mediums[1].p;
 //               statesFM[1] = mediums[iLumped].state;
 //               statesFM[2] = state_b;
 //               m_flows[n + 1] = flowModel.m_flows[1];
-//               vsFM[1] = vs * lengths / sum(lengths);
-//               vsFM[2] = m_flows[n + 1] / Medium.density(state_b) / crossAreas[n] / nParallel;
+//               vsFM[1] = vs*lengths/sum(lengths);
+//               vsFM[2] = m_flows[n + 1]/Medium.density(state_b)/crossAreas[n]/nParallel;
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb then
 //               m_flows[1] = flowModel.m_flows[1];
 //               statesFM[1] = state_a;
 //               statesFM[2] = mediums[iLumped].state;
 //               port_b.p = mediums[n].p;
-//               vsFM[1] = m_flows[1] / Medium.density(state_a) / crossAreas[1] / nParallel;
-//               vsFM[2] = vs * lengths / sum(lengths);
+//               vsFM[1] = m_flows[1]/Medium.density(state_a)/crossAreas[1]/nParallel;
+//               vsFM[2] = vs*lengths/sum(lengths);
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_v_b then
 //               m_flows[1] = flowModel.m_flows[1];
 //               statesFM[1] = state_a;
 //               statesFM[2] = mediums[iLumped].state;
 //               statesFM[3] = state_b;
 //               m_flows[n + 1] = flowModel.m_flows[2];
-//               vsFM[1] = m_flows[1] / Medium.density(state_a) / crossAreas[1] / nParallel;
-//               vsFM[2] = vs * lengths / sum(lengths);
-//               vsFM[3] = m_flows[n + 1] / Medium.density(state_b) / crossAreas[n] / nParallel;
+//               vsFM[1] = m_flows[1]/Medium.density(state_a)/crossAreas[1]/nParallel;
+//               vsFM[2] = vs*lengths/sum(lengths);
+//               vsFM[3] = m_flows[n + 1]/Medium.density(state_b)/crossAreas[n]/nParallel;
 //             else
 //               assert(false, \"Unknown model structure\");
 //             end if;
@@ -363,13 +363,13 @@ readFile("BranchingDynamicPipes.mo");
 //               statesFM[n + 1] = state_b;
 //               m_flows[2:n + 1] = flowModel.m_flows[1:n];
 //               vsFM[1:n] = vs;
-//               vsFM[n + 1] = m_flows[n + 1] / Medium.density(state_b) / crossAreas[n] / nParallel;
+//               vsFM[n + 1] = m_flows[n + 1]/Medium.density(state_b)/crossAreas[n]/nParallel;
 //               port_a.p = mediums[1].p;
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb then
 //               statesFM[1] = state_a;
 //               statesFM[2:n + 1] = mediums[1:n].state;
 //               m_flows[1:n] = flowModel.m_flows[1:n];
-//               vsFM[1] = m_flows[1] / Medium.density(state_a) / crossAreas[1] / nParallel;
+//               vsFM[1] = m_flows[1]/Medium.density(state_a)/crossAreas[1]/nParallel;
 //               vsFM[2:n + 1] = vs;
 //               port_b.p = mediums[n].p;
 //             elseif modelStructure == .Modelica.Fluid.Types.ModelStructure.a_v_b then
@@ -377,9 +377,9 @@ readFile("BranchingDynamicPipes.mo");
 //               statesFM[2:n + 1] = mediums[1:n].state;
 //               statesFM[n + 2] = state_b;
 //               m_flows[1:n + 1] = flowModel.m_flows[1:n + 1];
-//               vsFM[1] = m_flows[1] / Medium.density(state_a) / crossAreas[1] / nParallel;
+//               vsFM[1] = m_flows[1]/Medium.density(state_a)/crossAreas[1]/nParallel;
 //               vsFM[2:n + 1] = vs;
-//               vsFM[n + 2] = m_flows[n + 1] / Medium.density(state_b) / crossAreas[n] / nParallel;
+//               vsFM[n + 2] = m_flows[n + 1]/Medium.density(state_b)/crossAreas[n]/nParallel;
 //             else
 //               assert(false, \"Unknown model structure\");
 //             end if;
@@ -412,11 +412,11 @@ readFile("BranchingDynamicPipes.mo");
 //             Medium.Density[n - 1] rhos_act \"Actual density per segment\";
 //             Medium.DynamicViscosity[n] mus = if use_mu_nominal then fill(mu_nominal, n) else Medium.dynamicViscosity(states);
 //             Medium.DynamicViscosity[n - 1] mus_act \"Actual viscosity per segment\";
-//             Modelica.SIunits.Pressure[n - 1] dps_fg(each start = (p_a_start - p_b_start) / (n - 1)) \"pressure drop between states\";
+//             Modelica.SIunits.Pressure[n - 1] dps_fg(each start = (p_a_start - p_b_start)/(n - 1)) \"pressure drop between states\";
 //             parameter .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Start of turbulent regime, depending on type of flow device\";
 //             parameter Boolean show_Res = false \"= true, if Reynolds numbers are included for plotting\" annotation(Evaluate = true);
 //             .Modelica.SIunits.ReynoldsNumber[n] Res = Modelica.Fluid.Pipes.BaseClasses.CharacteristicNumbers.ReynoldsNumber(vs, rhos, mus, dimensions) if show_Res \"Reynolds numbers\";
-//             Medium.MassFlowRate[n - 1] m_flows_turbulent = {nParallel * (crossAreas[i] + crossAreas[i + 1]) / (dimensions[i] + dimensions[i + 1]) * mus_act[i] * Re_turbulent for i in 1:n - 1} if show_Res \"Start of turbulent flow\";
+//             Medium.MassFlowRate[n - 1] m_flows_turbulent = {nParallel*(crossAreas[i] + crossAreas[i + 1])/(dimensions[i] + dimensions[i + 1])*mus_act[i]*Re_turbulent for i in 1:n - 1} if show_Res \"Start of turbulent flow\";
 //           protected
 //             parameter Boolean use_rho_nominal = false \"= true, if rho_nominal is used, otherwise computed from medium\" annotation(Evaluate = true);
 //             parameter .Modelica.SIunits.Density rho_nominal = Medium.density_pTX(Medium.p_default, Medium.T_default, Medium.X_default) \"Nominal density (e.g., rho_liquidWater = 995, rho_air = 1.2)\";
@@ -427,8 +427,8 @@ readFile("BranchingDynamicPipes.mo");
 //               rhos_act = rhos[1:n - 1];
 //               mus_act = mus[1:n - 1];
 //             elseif not useUpstreamScheme then
-//               rhos_act = 0.5 * (rhos[1:n - 1] + rhos[2:n]);
-//               mus_act = 0.5 * (mus[1:n - 1] + mus[2:n]);
+//               rhos_act = 0.5*(rhos[1:n - 1] + rhos[2:n]);
+//               mus_act = 0.5*(mus[1:n - 1] + mus[2:n]);
 //             else
 //               for i in 1:n - 1 loop
 //                 rhos_act[i] = noEvent(if m_flows[i] > 0 then rhos[i] else rhos[i + 1]);
@@ -436,12 +436,12 @@ readFile("BranchingDynamicPipes.mo");
 //               end for;
 //             end if;
 //             if use_Ib_flows then
-//               Ib_flows = nParallel * {rhos[i] * vs[i] * vs[i] * crossAreas[i] - rhos[i + 1] * vs[i + 1] * vs[i + 1] * crossAreas[i + 1] for i in 1:n - 1};
+//               Ib_flows = nParallel*{rhos[i]*vs[i]*vs[i]*crossAreas[i] - rhos[i + 1]*vs[i + 1]*vs[i + 1]*crossAreas[i + 1] for i in 1:n - 1};
 //             else
 //               Ib_flows = zeros(n - 1);
 //             end if;
-//             Fs_p = nParallel * {0.5 * (crossAreas[i] + crossAreas[i + 1]) * (Medium.pressure(states[i + 1]) - Medium.pressure(states[i])) for i in 1:n - 1};
-//             dps_fg = {Fs_fg[i] / nParallel * 2 / (crossAreas[i] + crossAreas[i + 1]) for i in 1:n - 1};
+//             Fs_p = nParallel*{0.5*(crossAreas[i] + crossAreas[i + 1])*(Medium.pressure(states[i + 1]) - Medium.pressure(states[i])) for i in 1:n - 1};
+//             dps_fg = {Fs_fg[i]/nParallel*2/(crossAreas[i] + crossAreas[i + 1]) for i in 1:n - 1};
 //           end PartialStaggeredFlowModel;
 //
 //           partial model PartialGenericPipeFlow \"GenericPipeFlow: Pipe flow pressure loss and gravity with replaceable WallFriction package\"
@@ -449,19 +449,19 @@ readFile("BranchingDynamicPipes.mo");
 //             extends Modelica.Fluid.Pipes.BaseClasses.FlowModels.PartialStaggeredFlowModel(final Re_turbulent = 4000);
 //             replaceable package WallFriction = Modelica.Fluid.Pipes.BaseClasses.WallFriction.Detailed constrainedby Modelica.Fluid.Pipes.BaseClasses.WallFriction.PartialWallFriction;
 //             input .Modelica.SIunits.Length[n - 1] pathLengths_internal \"pathLengths used internally; to be defined by extending class\";
-//             input .Modelica.SIunits.ReynoldsNumber[n - 1] Res_turbulent_internal = Re_turbulent * ones(n - 1) \"Re_turbulent used internally; to be defined by extending class\";
+//             input .Modelica.SIunits.ReynoldsNumber[n - 1] Res_turbulent_internal = Re_turbulent*ones(n - 1) \"Re_turbulent used internally; to be defined by extending class\";
 //             parameter .Modelica.SIunits.AbsolutePressure dp_nominal \"Nominal pressure loss (only for nominal models)\";
 //             parameter .Modelica.SIunits.MassFlowRate m_flow_nominal \"Nominal mass flow rate\";
-//             parameter .Modelica.SIunits.MassFlowRate m_flow_small = if system.use_eps_Re then system.eps_m_flow * m_flow_nominal else system.m_flow_small \"Within regularization if |m_flows| < m_flow_small (may be wider for large discontinuities in static head)\";
+//             parameter .Modelica.SIunits.MassFlowRate m_flow_small = if system.use_eps_Re then system.eps_m_flow*m_flow_nominal else system.m_flow_small \"Within regularization if |m_flows| < m_flow_small (may be wider for large discontinuities in static head)\";
 //           protected
 //             parameter .Modelica.SIunits.AbsolutePressure dp_small(start = 1, fixed = false) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
 //             final parameter Boolean constantPressureLossCoefficient = use_rho_nominal and (use_mu_nominal or not WallFriction.use_mu) \"= true if the pressure loss does not depend on fluid states\" annotation(Evaluate = true);
 //             final parameter Boolean continuousFlowReversal = (not useUpstreamScheme) or constantPressureLossCoefficient or not allowFlowReversal \"= true if the pressure loss is continuous around zero flow\" annotation(Evaluate = true);
-//             .Modelica.SIunits.Length[n - 1] diameters = 0.5 * (dimensions[1:n - 1] + dimensions[2:n]) \"mean diameters between segments\";
-//             .Modelica.SIunits.AbsolutePressure dp_fric_nominal = sum(WallFriction.pressureLoss_m_flow(m_flow_nominal / nParallel, rho_nominal, rho_nominal, mu_nominal, mu_nominal, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, m_flow_small / nParallel, Res_turbulent_internal)) \"pressure loss for nominal conditions\";
+//             .Modelica.SIunits.Length[n - 1] diameters = 0.5*(dimensions[1:n - 1] + dimensions[2:n]) \"mean diameters between segments\";
+//             .Modelica.SIunits.AbsolutePressure dp_fric_nominal = sum(WallFriction.pressureLoss_m_flow(m_flow_nominal/nParallel, rho_nominal, rho_nominal, mu_nominal, mu_nominal, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n])/2, (roughnesses[1:n - 1] + roughnesses[2:n])/2, m_flow_small/nParallel, Res_turbulent_internal)) \"pressure loss for nominal conditions\";
 //           initial equation
 //             if system.use_eps_Re then
-//               dp_small = dp_fric_nominal / m_flow_nominal * m_flow_small;
+//               dp_small = dp_fric_nominal/m_flow_nominal*m_flow_small;
 //             else
 //               dp_small = system.dp_small;
 //             end if;
@@ -471,26 +471,26 @@ readFile("BranchingDynamicPipes.mo");
 //             end for;
 //             if continuousFlowReversal then
 //               if from_dp and not WallFriction.dp_is_zero then
-//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp(dps_fg - {g * dheights[i] * rhos_act[i] for i in 1:n - 1}, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, dp_small / (n - 1), Res_turbulent_internal) * nParallel, simplified = m_flow_nominal / dp_nominal * (dps_fg - g * dheights * rho_nominal));
+//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp(dps_fg - {g*dheights[i]*rhos_act[i] for i in 1:n - 1}, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n])/2, (roughnesses[1:n - 1] + roughnesses[2:n])/2, dp_small/(n - 1), Res_turbulent_internal)*nParallel, simplified = m_flow_nominal/dp_nominal*(dps_fg - g*dheights*rho_nominal));
 //               else
-//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow(m_flows / nParallel, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, m_flow_small / nParallel, Res_turbulent_internal) + {g * dheights[i] * rhos_act[i] for i in 1:n - 1}, simplified = dp_nominal / m_flow_nominal * m_flows + g * dheights * rho_nominal);
+//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow(m_flows/nParallel, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n])/2, (roughnesses[1:n - 1] + roughnesses[2:n])/2, m_flow_small/nParallel, Res_turbulent_internal) + {g*dheights[i]*rhos_act[i] for i in 1:n - 1}, simplified = dp_nominal/m_flow_nominal*m_flows + g*dheights*rho_nominal);
 //               end if;
 //             else
 //               if from_dp and not WallFriction.dp_is_zero then
-//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp_staticHead(dps_fg, rhos[1:n - 1], rhos[2:n], mus[1:n - 1], mus[2:n], pathLengths_internal, diameters, g * dheights, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, dp_small / (n - 1), Res_turbulent_internal) * nParallel, simplified = m_flow_nominal / dp_nominal * (dps_fg - g * dheights * rho_nominal));
+//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp_staticHead(dps_fg, rhos[1:n - 1], rhos[2:n], mus[1:n - 1], mus[2:n], pathLengths_internal, diameters, g*dheights, (crossAreas[1:n - 1] + crossAreas[2:n])/2, (roughnesses[1:n - 1] + roughnesses[2:n])/2, dp_small/(n - 1), Res_turbulent_internal)*nParallel, simplified = m_flow_nominal/dp_nominal*(dps_fg - g*dheights*rho_nominal));
 //               else
-//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow_staticHead(m_flows / nParallel, rhos[1:n - 1], rhos[2:n], mus[1:n - 1], mus[2:n], pathLengths_internal, diameters, g * dheights, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, m_flow_small / nParallel, Res_turbulent_internal), simplified = dp_nominal / m_flow_nominal * m_flows + g * dheights * rho_nominal);
+//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow_staticHead(m_flows/nParallel, rhos[1:n - 1], rhos[2:n], mus[1:n - 1], mus[2:n], pathLengths_internal, diameters, g*dheights, (crossAreas[1:n - 1] + crossAreas[2:n])/2, (roughnesses[1:n - 1] + roughnesses[2:n])/2, m_flow_small/nParallel, Res_turbulent_internal), simplified = dp_nominal/m_flow_nominal*m_flows + g*dheights*rho_nominal);
 //               end if;
 //             end if;
 //           end PartialGenericPipeFlow;
 //
 //           model DetailedPipeFlow \"DetailedPipeFlow: Detailed characteristic for laminar and turbulent flow\"
-//             extends Modelica.Fluid.Pipes.BaseClasses.FlowModels.PartialGenericPipeFlow(redeclare package WallFriction = Modelica.Fluid.Pipes.BaseClasses.WallFriction.Detailed, pathLengths_internal = pathLengths, dp_nominal(start = 1, fixed = false), m_flow_nominal = if system.use_eps_Re then system.m_flow_nominal else 1e2 * m_flow_small, Res_turbulent_internal = Re_turbulent * ones(n - 1));
+//             extends Modelica.Fluid.Pipes.BaseClasses.FlowModels.PartialGenericPipeFlow(redeclare package WallFriction = Modelica.Fluid.Pipes.BaseClasses.WallFriction.Detailed, pathLengths_internal = pathLengths, dp_nominal(start = 1, fixed = false), m_flow_nominal = if system.use_eps_Re then system.m_flow_nominal else 1e2*m_flow_small, Res_turbulent_internal = Re_turbulent*ones(n - 1));
 //           initial equation
 //             if system.use_eps_Re then
-//               dp_nominal = dp_fric_nominal + g * sum(dheights) * rho_nominal;
+//               dp_nominal = dp_fric_nominal + g*sum(dheights)*rho_nominal;
 //             else
-//               dp_nominal = 1e3 * dp_small;
+//               dp_nominal = 1e3*dp_small;
 //             end if;
 //           end DetailedPipeFlow;
 //         end FlowModels;
@@ -531,7 +531,7 @@ readFile("BranchingDynamicPipes.mo");
 //             Prs = Medium.prandtlNumber(states);
 //             Res = CharacteristicNumbers.ReynoldsNumber(vs, ds, mus, diameters);
 //             Nus = CharacteristicNumbers.NusseltNumber(alphas, diameters, lambdas);
-//             Q_flows = {alphas[i] * surfaceAreas[i] * (heatPorts[i].T - Ts[i]) * nParallel for i in 1:n};
+//             Q_flows = {alphas[i]*surfaceAreas[i]*(heatPorts[i].T - Ts[i])*nParallel for i in 1:n};
 //           end PartialPipeFlowHeatTransfer;
 //
 //           model LocalPipeFlowHeatTransfer \"LocalPipeFlowHeatTransfer: Laminar and turbulent forced convection in pipes, local coefficients\"
@@ -545,10 +545,10 @@ readFile("BranchingDynamicPipes.mo");
 //           equation
 //             Nu_1 = 3.66;
 //             for i in 1:n loop
-//               Nus_turb[i] = smooth(0, (Xis[i] / 8) * abs(Res[i]) * Prs[i] / (1 + 12.7 * (Xis[i] / 8) ^ 0.5 * (Prs[i] ^ (2 / 3) - 1)) * (1 + 1 / 3 * (diameters[i] / lengths[i] / (if vs[i] >= 0 then (i - 0.5) else (n - i + 0.5))) ^ (2 / 3)));
-//               Xis[i] = (1.8 * Modelica.Math.log10(max(1e-10, Res[i])) - 1.5) ^ (-2);
-//               Nus_lam[i] = (Nu_1 ^ 3 + 0.7 ^ 3 + (Nus_2[i] - 0.7) ^ 3) ^ (1 / 3);
-//               Nus_2[i] = smooth(0, 1.077 * (abs(Res[i]) * Prs[i] * diameters[i] / lengths[i] / (if vs[i] >= 0 then (i - 0.5) else (n - i + 0.5))) ^ (1 / 3));
+//               Nus_turb[i] = smooth(0, (Xis[i]/8)*abs(Res[i])*Prs[i]/(1 + 12.7*(Xis[i]/8)^0.5*(Prs[i]^(2/3) - 1))*(1 + 1/3*(diameters[i]/lengths[i]/(if vs[i] >= 0 then (i - 0.5) else (n - i + 0.5)))^(2/3)));
+//               Xis[i] = (1.8*Modelica.Math.log10(max(1e-10, Res[i])) - 1.5)^(-2);
+//               Nus_lam[i] = (Nu_1^3 + 0.7^3 + (Nus_2[i] - 0.7)^3)^(1/3);
+//               Nus_2[i] = smooth(0, 1.077*(abs(Res[i])*Prs[i]*diameters[i]/lengths[i]/(if vs[i] >= 0 then (i - 0.5) else (n - i + 0.5)))^(1/3));
 //               Nus[i] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(Nus_turb[i], Nus_lam[i], Res[i] - 6150, 3850);
 //             end for;
 //           end LocalPipeFlowHeatTransfer;
@@ -565,7 +565,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input .Modelica.SIunits.Length D \"Characteristic dimension (hydraulic diameter of pipes)\";
 //             output .Modelica.SIunits.ReynoldsNumber Re \"Reynolds number\";
 //           algorithm
-//             Re := abs(v) * rho * D / mu;
+//             Re := abs(v)*rho*D/mu;
 //           end ReynoldsNumber;
 //
 //           function NusseltNumber \"Return Nusselt number\"
@@ -575,7 +575,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input .Modelica.SIunits.ThermalConductivity lambda \"Thermal conductivity\";
 //             output .Modelica.SIunits.NusseltNumber Nu \"Nusselt number\";
 //           algorithm
-//             Nu := alpha * D / lambda;
+//             Nu := alpha*D/lambda;
 //           end NusseltNumber;
 //         end CharacteristicNumbers;
 //
@@ -600,7 +600,7 @@ readFile("BranchingDynamicPipes.mo");
 //               input .Modelica.SIunits.DynamicViscosity mu_b \"Dynamic viscosity at port_b (dummy if use_mu = false)\";
 //               input .Modelica.SIunits.Length length \"Length of pipe\";
 //               input .Modelica.SIunits.Diameter diameter \"Inner (hydraulic) diameter of pipe\";
-//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi * diameter ^ 2 / 4 \"Inner cross section area\";
+//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi*diameter^2/4 \"Inner cross section area\";
 //               input .Modelica.SIunits.Length roughness(min = 0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //               input .Modelica.SIunits.AbsolutePressure dp_small = 1 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //               input .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -617,7 +617,7 @@ readFile("BranchingDynamicPipes.mo");
 //               input .Modelica.SIunits.Length length \"Length of pipe\";
 //               input .Modelica.SIunits.Diameter diameter \"Inner (hydraulic) diameter of pipe\";
 //               input Real g_times_height_ab \"Gravity times (Height(port_b) - Height(port_a))\";
-//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi * diameter ^ 2 / 4 \"Inner cross section area\";
+//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi*diameter^2/4 \"Inner cross section area\";
 //               input .Modelica.SIunits.Length roughness(min = 0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //               input .Modelica.SIunits.AbsolutePressure dp_small = 1 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //               input .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -633,7 +633,7 @@ readFile("BranchingDynamicPipes.mo");
 //               input .Modelica.SIunits.DynamicViscosity mu_b \"Dynamic viscosity at port_b (dummy if use_mu = false)\";
 //               input .Modelica.SIunits.Length length \"Length of pipe\";
 //               input .Modelica.SIunits.Diameter diameter \"Inner (hydraulic) diameter of pipe\";
-//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi * diameter ^ 2 / 4 \"Inner cross section area\";
+//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi*diameter^2/4 \"Inner cross section area\";
 //               input .Modelica.SIunits.Length roughness(min = 0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //               input .Modelica.SIunits.MassFlowRate m_flow_small = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //               input .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -650,7 +650,7 @@ readFile("BranchingDynamicPipes.mo");
 //               input .Modelica.SIunits.Length length \"Length of pipe\";
 //               input .Modelica.SIunits.Diameter diameter \"Inner (hydraulic) diameter of pipe\";
 //               input Real g_times_height_ab \"Gravity times (Height(port_b) - Height(port_a))\";
-//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi * diameter ^ 2 / 4 \"Inner cross section area\";
+//               input .Modelica.SIunits.Area crossArea = .Modelica.Constants.pi*diameter^2/4 \"Inner cross section area\";
 //               input .Modelica.SIunits.Length roughness(min = 0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //               input .Modelica.SIunits.MassFlowRate m_flow_small = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //               input .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -663,8 +663,8 @@ readFile("BranchingDynamicPipes.mo");
 //
 //             redeclare function extends massFlowRate_dp \"Return mass flow rate m_flow as function of pressure loss dp, i.e., m_flow = f(dp), due to wall friction\"
 //             protected
-//               Real Delta = roughness / diameter \"Relative roughness\";
-//               .Modelica.SIunits.ReynoldsNumber Re1 = min((745 * .Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065 / Delta)) ^ 0.97, Re_turbulent) \"Re leaving laminar curve\";
+//               Real Delta = roughness/diameter \"Relative roughness\";
+//               .Modelica.SIunits.ReynoldsNumber Re1 = min((745*.Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065/Delta))^0.97, Re_turbulent) \"Re leaving laminar curve\";
 //               .Modelica.SIunits.ReynoldsNumber Re2 = Re_turbulent \"Re entering turbulent curve\";
 //               .Modelica.SIunits.DynamicViscosity mu \"Upstream viscosity\";
 //               .Modelica.SIunits.Density rho \"Upstream density\";
@@ -679,50 +679,50 @@ readFile("BranchingDynamicPipes.mo");
 //                 input Real lambda2;
 //                 output .Modelica.SIunits.ReynoldsNumber Re;
 //               protected
-//                 Real x1 = .Modelica.Math.log10(64 * Re1);
+//                 Real x1 = .Modelica.Math.log10(64*Re1);
 //                 Real y1 = .Modelica.Math.log10(Re1);
 //                 Real yd1 = 1;
-//                 Real aux1 = (0.5 / .Modelica.Math.log(10)) * 5.74 * 0.9;
-//                 Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
+//                 Real aux1 = (0.5/.Modelica.Math.log(10))*5.74*0.9;
+//                 Real aux2 = Delta/3.7 + 5.74/Re2^0.9;
 //                 Real aux3 = .Modelica.Math.log10(aux2);
-//                 Real L2 = 0.25 * (Re2 / aux3) ^ 2;
-//                 Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
-//                 Real aux5 = -2 * sqrt(L2) * .Modelica.Math.log10(aux4);
+//                 Real L2 = 0.25*(Re2/aux3)^2;
+//                 Real aux4 = 2.51/sqrt(L2) + 0.27*Delta;
+//                 Real aux5 = -2*sqrt(L2)*.Modelica.Math.log10(aux4);
 //                 Real x2 = .Modelica.Math.log10(L2);
 //                 Real y2 = .Modelica.Math.log10(aux5);
-//                 Real yd2 = 0.5 + (2.51 / .Modelica.Math.log(10)) / (aux5 * aux4);
+//                 Real yd2 = 0.5 + (2.51/.Modelica.Math.log(10))/(aux5*aux4);
 //                 Real diff_x = x2 - x1;
-//                 Real m = (y2 - y1) / diff_x;
-//                 Real c2 = (3 * m - 2 * yd1 - yd2) / diff_x;
-//                 Real c3 = (yd1 + yd2 - 2 * m) / (diff_x * diff_x);
-//                 Real lambda2_1 = 64 * Re1;
+//                 Real m = (y2 - y1)/diff_x;
+//                 Real c2 = (3*m - 2*yd1 - yd2)/diff_x;
+//                 Real c3 = (yd1 + yd2 - 2*m)/(diff_x*diff_x);
+//                 Real lambda2_1 = 64*Re1;
 //                 Real dx;
 //               algorithm
-//                 dx := .Modelica.Math.log10(lambda2 / lambda2_1);
-//                 Re := Re1 * (lambda2 / lambda2_1) ^ (1 + dx * (c2 + dx * c3));
+//                 dx := .Modelica.Math.log10(lambda2/lambda2_1);
+//                 Re := Re1*(lambda2/lambda2_1)^(1 + dx*(c2 + dx*c3));
 //                 annotation(smoothOrder = 1);
 //               end interpolateInRegion2;
 //             algorithm
 //               rho := if dp >= 0 then rho_a else rho_b;
 //               mu := if dp >= 0 then mu_a else mu_b;
-//               lambda2 := abs(dp) * 2 * diameter ^ 3 * rho / (length * mu * mu);
-//               Re := lambda2 / 64;
+//               lambda2 := abs(dp)*2*diameter^3*rho/(length*mu*mu);
+//               Re := lambda2/64;
 //               if Re > Re1 then
-//                 Re := -2 * sqrt(lambda2) * .Modelica.Math.log10(2.51 / sqrt(lambda2) + 0.27 * Delta);
+//                 Re := -2*sqrt(lambda2)*.Modelica.Math.log10(2.51/sqrt(lambda2) + 0.27*Delta);
 //                 if Re < Re2 then
 //                   Re := interpolateInRegion2(Re, Re1, Re2, Delta, lambda2);
 //                 else
 //                 end if;
 //               else
 //               end if;
-//               m_flow := crossArea / diameter * mu * (if dp >= 0 then Re else -Re);
+//               m_flow := crossArea/diameter*mu*(if dp >= 0 then Re else -Re);
 //               annotation(smoothOrder = 1);
 //             end massFlowRate_dp;
 //
 //             redeclare function extends pressureLoss_m_flow \"Return pressure loss dp as function of mass flow rate m_flow, i.e., dp = f(m_flow), due to wall friction\"
 //             protected
-//               Real Delta = roughness / diameter \"Relative roughness\";
-//               .Modelica.SIunits.ReynoldsNumber Re1 = min(745 * .Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065 / Delta), Re_turbulent) \"Re leaving laminar curve\";
+//               Real Delta = roughness/diameter \"Relative roughness\";
+//               .Modelica.SIunits.ReynoldsNumber Re1 = min(745*.Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065/Delta), Re_turbulent) \"Re leaving laminar curve\";
 //               .Modelica.SIunits.ReynoldsNumber Re2 = Re_turbulent \"Re entering turbulent curve\";
 //               .Modelica.SIunits.DynamicViscosity mu \"Upstream viscosity\";
 //               .Modelica.SIunits.Density rho \"Upstream density\";
@@ -737,41 +737,41 @@ readFile("BranchingDynamicPipes.mo");
 //                 output Real lambda2;
 //               protected
 //                 Real x1 = .Modelica.Math.log10(Re1);
-//                 Real y1 = .Modelica.Math.log10(64 * Re1);
+//                 Real y1 = .Modelica.Math.log10(64*Re1);
 //                 Real yd1 = 1;
-//                 Real aux1 = (0.5 / .Modelica.Math.log(10)) * 5.74 * 0.9;
-//                 Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
+//                 Real aux1 = (0.5/.Modelica.Math.log(10))*5.74*0.9;
+//                 Real aux2 = Delta/3.7 + 5.74/Re2^0.9;
 //                 Real aux3 = .Modelica.Math.log10(aux2);
-//                 Real L2 = 0.25 * (Re2 / aux3) ^ 2;
-//                 Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
-//                 Real aux5 = -2 * sqrt(L2) * .Modelica.Math.log10(aux4);
+//                 Real L2 = 0.25*(Re2/aux3)^2;
+//                 Real aux4 = 2.51/sqrt(L2) + 0.27*Delta;
+//                 Real aux5 = -2*sqrt(L2)*.Modelica.Math.log10(aux4);
 //                 Real x2 = .Modelica.Math.log10(Re2);
 //                 Real y2 = .Modelica.Math.log10(L2);
-//                 Real yd2 = 2 + 4 * aux1 / (aux2 * aux3 * (Re2) ^ 0.9);
+//                 Real yd2 = 2 + 4*aux1/(aux2*aux3*(Re2)^0.9);
 //                 Real diff_x = x2 - x1;
-//                 Real m = (y2 - y1) / diff_x;
-//                 Real c2 = (3 * m - 2 * yd1 - yd2) / diff_x;
-//                 Real c3 = (yd1 + yd2 - 2 * m) / (diff_x * diff_x);
+//                 Real m = (y2 - y1)/diff_x;
+//                 Real c2 = (3*m - 2*yd1 - yd2)/diff_x;
+//                 Real c3 = (yd1 + yd2 - 2*m)/(diff_x*diff_x);
 //                 Real dx;
 //               algorithm
-//                 dx := .Modelica.Math.log10(Re / Re1);
-//                 lambda2 := 64 * Re1 * (Re / Re1) ^ (1 + dx * (c2 + dx * c3));
+//                 dx := .Modelica.Math.log10(Re/Re1);
+//                 lambda2 := 64*Re1*(Re/Re1)^(1 + dx*(c2 + dx*c3));
 //                 annotation(smoothOrder = 1);
 //               end interpolateInRegion2;
 //             algorithm
 //               rho := if m_flow >= 0 then rho_a else rho_b;
 //               mu := if m_flow >= 0 then mu_a else mu_b;
-//               Re := diameter * abs(m_flow) / (crossArea * mu);
-//               lambda2 := if Re <= Re1 then 64 * Re else (if Re >= Re2 then 0.25 * (Re / .Modelica.Math.log10(Delta / 3.7 + 5.74 / Re ^ 0.9)) ^ 2 else interpolateInRegion2(Re, Re1, Re2, Delta));
-//               dp := length * mu * mu / (2 * rho * diameter * diameter * diameter) * (if m_flow >= 0 then lambda2 else -lambda2);
+//               Re := diameter*abs(m_flow)/(crossArea*mu);
+//               lambda2 := if Re <= Re1 then 64*Re else (if Re >= Re2 then 0.25*(Re/.Modelica.Math.log10(Delta/3.7 + 5.74/Re^0.9))^2 else interpolateInRegion2(Re, Re1, Re2, Delta));
+//               dp := length*mu*mu/(2*rho*diameter*diameter*diameter)*(if m_flow >= 0 then lambda2 else -lambda2);
 //               annotation(smoothOrder = 1);
 //             end pressureLoss_m_flow;
 //
 //             redeclare function extends massFlowRate_dp_staticHead \"Return mass flow rate m_flow as function of pressure loss dp, i.e., m_flow = f(dp), due to wall friction and static head\"
 //             protected
-//               Real Delta = roughness / diameter \"Relative roughness\";
+//               Real Delta = roughness/diameter \"Relative roughness\";
 //               .Modelica.SIunits.ReynoldsNumber Re \"Reynolds number\";
-//               .Modelica.SIunits.ReynoldsNumber Re1 = min((745 * .Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065 / Delta)) ^ 0.97, Re_turbulent) \"Boundary between laminar regime and transition\";
+//               .Modelica.SIunits.ReynoldsNumber Re1 = min((745*.Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065/Delta))^0.97, Re_turbulent) \"Boundary between laminar regime and transition\";
 //               .Modelica.SIunits.ReynoldsNumber Re2 = Re_turbulent \"Boundary between transition and turbulent regime\";
 //               .Modelica.SIunits.Pressure dp_a \"Upper end of regularization domain of the m_flow(dp) relation\";
 //               .Modelica.SIunits.Pressure dp_b \"Lower end of regularization domain of the m_flow(dp) relation\";
@@ -779,10 +779,10 @@ readFile("BranchingDynamicPipes.mo");
 //               .Modelica.SIunits.MassFlowRate m_flow_b \"Value at lower end of regularization domain\";
 //               .Modelica.SIunits.MassFlowRate dm_flow_ddp_fric_a \"Derivative at upper end of regularization domain\";
 //               .Modelica.SIunits.MassFlowRate dm_flow_ddp_fric_b \"Derivative at lower end of regularization domain\";
-//               .Modelica.SIunits.Pressure dp_grav_a = g_times_height_ab * rho_a \"Static head if mass flows in design direction (a to b)\";
-//               .Modelica.SIunits.Pressure dp_grav_b = g_times_height_ab * rho_b \"Static head if mass flows against design direction (b to a)\";
+//               .Modelica.SIunits.Pressure dp_grav_a = g_times_height_ab*rho_a \"Static head if mass flows in design direction (a to b)\";
+//               .Modelica.SIunits.Pressure dp_grav_b = g_times_height_ab*rho_b \"Static head if mass flows against design direction (b to a)\";
 //               .Modelica.SIunits.MassFlowRate m_flow_zero = 0;
-//               .Modelica.SIunits.Pressure dp_zero = (dp_grav_a + dp_grav_b) / 2;
+//               .Modelica.SIunits.Pressure dp_zero = (dp_grav_a + dp_grav_b)/2;
 //               Real dm_flow_ddp_fric_zero;
 //             algorithm
 //               dp_a := max(dp_grav_a, dp_grav_b) + dp_small;
@@ -806,19 +806,19 @@ readFile("BranchingDynamicPipes.mo");
 //
 //             redeclare function extends pressureLoss_m_flow_staticHead \"Return pressure loss dp as function of mass flow rate m_flow, i.e., dp = f(m_flow), due to wall friction and static head\"
 //             protected
-//               Real Delta = roughness / diameter \"Relative roughness\";
-//               .Modelica.SIunits.ReynoldsNumber Re1 = min(745 * .Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065 / Delta), Re_turbulent) \"Boundary between laminar regime and transition\";
+//               Real Delta = roughness/diameter \"Relative roughness\";
+//               .Modelica.SIunits.ReynoldsNumber Re1 = min(745*.Modelica.Math.exp(if Delta <= 0.0065 then 1 else 0.0065/Delta), Re_turbulent) \"Boundary between laminar regime and transition\";
 //               .Modelica.SIunits.ReynoldsNumber Re2 = Re_turbulent \"Boundary between transition and turbulent regime\";
 //               .Modelica.SIunits.MassFlowRate m_flow_a \"Upper end of regularization domain of the dp(m_flow) relation\";
 //               .Modelica.SIunits.MassFlowRate m_flow_b \"Lower end of regularization domain of the dp(m_flow) relation\";
 //               .Modelica.SIunits.Pressure dp_a \"Value at upper end of regularization domain\";
 //               .Modelica.SIunits.Pressure dp_b \"Value at lower end of regularization domain\";
-//               .Modelica.SIunits.Pressure dp_grav_a = g_times_height_ab * rho_a \"Static head if mass flows in design direction (a to b)\";
-//               .Modelica.SIunits.Pressure dp_grav_b = g_times_height_ab * rho_b \"Static head if mass flows against design direction (b to a)\";
+//               .Modelica.SIunits.Pressure dp_grav_a = g_times_height_ab*rho_a \"Static head if mass flows in design direction (a to b)\";
+//               .Modelica.SIunits.Pressure dp_grav_b = g_times_height_ab*rho_b \"Static head if mass flows against design direction (b to a)\";
 //               Real ddp_dm_flow_a \"Derivative of pressure drop with mass flow rate at m_flow_a\";
 //               Real ddp_dm_flow_b \"Derivative of pressure drop with mass flow rate at m_flow_b\";
 //               .Modelica.SIunits.MassFlowRate m_flow_zero = 0;
-//               .Modelica.SIunits.Pressure dp_zero = (dp_grav_a + dp_grav_b) / 2;
+//               .Modelica.SIunits.Pressure dp_zero = (dp_grav_a + dp_grav_b)/2;
 //               Real ddp_dm_flow_zero;
 //             algorithm
 //               m_flow_a := if dp_grav_a < dp_grav_b then Internal.m_flow_of_dp_fric(dp_grav_b - dp_grav_a, rho_a, rho_b, mu_a, mu_b, length, diameter, crossArea, Re1, Re2, Delta) + m_flow_small else m_flow_small;
@@ -871,24 +871,24 @@ readFile("BranchingDynamicPipes.mo");
 //                   output .Modelica.SIunits.ReynoldsNumber Re \"Unknown return variable\";
 //                   output Real dRe_ddp \"Derivative of return value\";
 //                 protected
-//                   Real x1 = .Modelica.Math.log10(64 * Re1);
+//                   Real x1 = .Modelica.Math.log10(64*Re1);
 //                   Real y1 = .Modelica.Math.log10(Re1);
 //                   Real y1d = 1;
-//                   Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
+//                   Real aux2 = Delta/3.7 + 5.74/Re2^0.9;
 //                   Real aux3 = .Modelica.Math.log10(aux2);
-//                   Real L2 = 0.25 * (Re2 / aux3) ^ 2;
-//                   Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
-//                   Real aux5 = -2 * sqrt(L2) * .Modelica.Math.log10(aux4);
+//                   Real L2 = 0.25*(Re2/aux3)^2;
+//                   Real aux4 = 2.51/sqrt(L2) + 0.27*Delta;
+//                   Real aux5 = -2*sqrt(L2)*.Modelica.Math.log10(aux4);
 //                   Real x2 = .Modelica.Math.log10(L2);
 //                   Real y2 = .Modelica.Math.log10(aux5);
-//                   Real y2d = 0.5 + (2.51 / log(10)) / (aux5 * aux4);
+//                   Real y2d = 0.5 + (2.51/log(10))/(aux5*aux4);
 //                   Real x = .Modelica.Math.log10(lambda2);
 //                   Real y;
 //                   Real dy_dx \"Derivative in transformed space\";
 //                 algorithm
 //                   (y, dy_dx) := Utilities.cubicHermite_withDerivative(x, x1, x2, y1, y2, y1d, y2d);
-//                   Re := 10 ^ y;
-//                   dRe_ddp := Re / abs(dp_fric) * dy_dx;
+//                   Re := 10^y;
+//                   dRe_ddp := Re/abs(dp_fric)*dy_dx;
 //                   annotation(smoothOrder = 1);
 //                 end interpolateInRegion2_withDerivative;
 //
@@ -907,22 +907,22 @@ readFile("BranchingDynamicPipes.mo");
 //                   rho := rho_b;
 //                   mu := mu_b;
 //                 end if;
-//                 lambda2 := abs(dp_fric) * 2 * diameter ^ 3 * rho / (length * mu * mu) \"Known as lambda2=f(dp)\";
-//                 aux1 := (2 * diameter ^ 3 * rho) / (length * mu ^ 2);
-//                 Re := lambda2 / 64 \"Hagen-Poiseuille\";
-//                 dRe_ddp := aux1 / 64 \"Hagen-Poiseuille\";
+//                 lambda2 := abs(dp_fric)*2*diameter^3*rho/(length*mu*mu) \"Known as lambda2=f(dp)\";
+//                 aux1 := (2*diameter^3*rho)/(length*mu^2);
+//                 Re := lambda2/64 \"Hagen-Poiseuille\";
+//                 dRe_ddp := aux1/64 \"Hagen-Poiseuille\";
 //                 if Re > Re1 then
-//                   Re := -2 * sqrt(lambda2) * .Modelica.Math.log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
-//                   aux2 := sqrt(aux1 * abs(dp_fric));
-//                   dRe_ddp := 1 / log(10) * (-2 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2 * aux2) + 2 * 2.51 / (2 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//                   Re := -2*sqrt(lambda2)*.Modelica.Math.log10(2.51/sqrt(lambda2) + 0.27*Delta) \"Colebrook-White\";
+//                   aux2 := sqrt(aux1*abs(dp_fric));
+//                   dRe_ddp := 1/log(10)*(-2*log(2.51/aux2 + 0.27*Delta)*aux1/(2*aux2) + 2*2.51/(2*abs(dp_fric)*(2.51/aux2 + 0.27*Delta)));
 //                   if Re < Re2 then
 //                     (Re, dRe_ddp) := interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //                   else
 //                   end if;
 //                 else
 //                 end if;
-//                 m_flow := crossArea / diameter * mu * (if dp_fric >= 0 then Re else -Re);
-//                 dm_flow_ddp_fric := crossArea / diameter * mu * dRe_ddp;
+//                 m_flow := crossArea/diameter*mu*(if dp_fric >= 0 then Re else -Re);
+//                 dm_flow_ddp_fric := crossArea/diameter*mu*dRe_ddp;
 //                 annotation(smoothOrder = 1);
 //               end m_flow_of_dp_fric;
 //
@@ -953,21 +953,21 @@ readFile("BranchingDynamicPipes.mo");
 //                   output Real dlambda2_dm_flow \"Derivative of return value\";
 //                 protected
 //                   Real x1 = .Modelica.Math.log10(Re1);
-//                   Real y1 = .Modelica.Math.log10(64 * Re1);
+//                   Real y1 = .Modelica.Math.log10(64*Re1);
 //                   Real y1d = 1;
-//                   Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
+//                   Real aux2 = Delta/3.7 + 5.74/Re2^0.9;
 //                   Real aux3 = .Modelica.Math.log10(aux2);
-//                   Real L2 = 0.25 * (Re2 / aux3) ^ 2;
+//                   Real L2 = 0.25*(Re2/aux3)^2;
 //                   Real x2 = .Modelica.Math.log10(Re2);
 //                   Real y2 = .Modelica.Math.log10(L2);
-//                   Real y2d = 2 + (2 * 5.74 * 0.9) / (log(aux2) * Re2 ^ 0.9 * aux2);
+//                   Real y2d = 2 + (2*5.74*0.9)/(log(aux2)*Re2^0.9*aux2);
 //                   Real x = .Modelica.Math.log10(Re);
 //                   Real y;
 //                   Real dy_dx \"Derivative in transformed space\";
 //                 algorithm
 //                   (y, dy_dx) := Utilities.cubicHermite_withDerivative(x, x1, x2, y1, y2, y1d, y2d);
-//                   lambda2 := 10 ^ y;
-//                   dlambda2_dm_flow := lambda2 / abs(m_flow) * dy_dx;
+//                   lambda2 := 10^y;
+//                   dlambda2_dm_flow := lambda2/abs(m_flow)*dy_dx;
 //                   annotation(smoothOrder = 1);
 //                 end interpolateInRegion2;
 //
@@ -986,20 +986,20 @@ readFile("BranchingDynamicPipes.mo");
 //                   rho := rho_b;
 //                   mu := mu_b;
 //                 end if;
-//                 Re := abs(m_flow) * diameter / (crossArea * mu);
-//                 aux1 := diameter / (crossArea * mu);
+//                 Re := abs(m_flow)*diameter/(crossArea*mu);
+//                 aux1 := diameter/(crossArea*mu);
 //                 if Re <= Re1 then
-//                   lambda2 := 64 * Re \"Hagen-Poiseuille\";
-//                   dlambda2_dm_flow := 64 * aux1 \"Hagen-Poiseuille\";
+//                   lambda2 := 64*Re \"Hagen-Poiseuille\";
+//                   dlambda2_dm_flow := 64*aux1 \"Hagen-Poiseuille\";
 //                 elseif Re >= Re2 then
-//                   lambda2 := 0.25 * (Re / .Modelica.Math.log10(Delta / 3.7 + 5.74 / Re ^ 0.9)) ^ 2 \"Swamee-Jain\";
-//                   aux2 := Delta / 3.7 + 5.74 / ((aux1 * abs(m_flow)) ^ 0.9);
-//                   dlambda2_dm_flow := 0.5 * aux1 * Re * log(10) ^ 2 * (1 / (log(aux2) ^ 2) + (5.74 * 0.9) / (log(aux2) ^ 3 * Re ^ 0.9 * aux2)) \"Swamee-Jain\";
+//                   lambda2 := 0.25*(Re/.Modelica.Math.log10(Delta/3.7 + 5.74/Re^0.9))^2 \"Swamee-Jain\";
+//                   aux2 := Delta/3.7 + 5.74/((aux1*abs(m_flow))^0.9);
+//                   dlambda2_dm_flow := 0.5*aux1*Re*log(10)^2*(1/(log(aux2)^2) + (5.74*0.9)/(log(aux2)^3*Re^0.9*aux2)) \"Swamee-Jain\";
 //                 else
 //                   (lambda2, dlambda2_dm_flow) := interpolateInRegion2(Re, Re1, Re2, Delta, m_flow);
 //                 end if;
-//                 dp_fric := length * mu * mu / (2 * rho * diameter * diameter * diameter) * (if m_flow >= 0 then lambda2 else -lambda2);
-//                 ddp_fric_dm_flow := (length * mu ^ 2) / (2 * diameter ^ 3 * rho) * dlambda2_dm_flow;
+//                 dp_fric := length*mu*mu/(2*rho*diameter*diameter*diameter)*(if m_flow >= 0 then lambda2 else -lambda2);
+//                 ddp_fric_dm_flow := (length*mu^2)/(2*diameter^3*rho)*dlambda2_dm_flow;
 //                 annotation(smoothOrder = 1);
 //               end dp_fric_of_m_flow;
 //             end Internal;
@@ -1138,7 +1138,7 @@ readFile("BranchingDynamicPipes.mo");
 //         .Modelica.SIunits.Temperature[n] Ts = Medium.temperature(states) \"Temperatures defined by fluid states\";
 //       equation
 //         if use_k then
-//           Q_flows = heatPorts.Q_flow + {k * surfaceAreas[i] * (T_ambient - heatPorts[i].T) for i in 1:n};
+//           Q_flows = heatPorts.Q_flow + {k*surfaceAreas[i]*(T_ambient - heatPorts[i].T) for i in 1:n};
 //         else
 //           Q_flows = heatPorts.Q_flow;
 //         end if;
@@ -1155,10 +1155,10 @@ readFile("BranchingDynamicPipes.mo");
 //         final parameter .Modelica.Fluid.Types.Dynamics traceDynamics = massDynamics \"Formulation of trace substance balances\" annotation(Evaluate = true);
 //         parameter Medium.AbsolutePressure p_a_start = system.p_start \"Start value of pressure at port a\";
 //         parameter Medium.AbsolutePressure p_b_start = p_a_start \"Start value of pressure at port b\";
-//         final parameter Medium.AbsolutePressure[n] ps_start = if n > 1 then linspace(p_a_start, p_b_start, n) else {(p_a_start + p_b_start) / 2} \"Start value of pressure\";
+//         final parameter Medium.AbsolutePressure[n] ps_start = if n > 1 then linspace(p_a_start, p_b_start, n) else {(p_a_start + p_b_start)/2} \"Start value of pressure\";
 //         parameter Boolean use_T_start = true \"Use T_start if true, otherwise h_start\" annotation(Evaluate = true);
-//         parameter Medium.Temperature T_start = if use_T_start then system.T_start else Medium.temperature_phX((p_a_start + p_b_start) / 2, h_start, X_start) \"Start value of temperature\" annotation(Evaluate = true);
-//         parameter Medium.SpecificEnthalpy h_start = if use_T_start then Medium.specificEnthalpy_pTX((p_a_start + p_b_start) / 2, T_start, X_start) else Medium.h_default \"Start value of specific enthalpy\" annotation(Evaluate = true);
+//         parameter Medium.Temperature T_start = if use_T_start then system.T_start else Medium.temperature_phX((p_a_start + p_b_start)/2, h_start, X_start) \"Start value of temperature\" annotation(Evaluate = true);
+//         parameter Medium.SpecificEnthalpy h_start = if use_T_start then Medium.specificEnthalpy_pTX((p_a_start + p_b_start)/2, T_start, X_start) else Medium.h_default \"Start value of specific enthalpy\" annotation(Evaluate = true);
 //         parameter Medium.MassFraction[Medium.nX] X_start = Medium.X_default \"Start value of mass fractions m_i/m\";
 //         parameter Medium.ExtraProperty[Medium.nC] C_start(quantity = Medium.extraPropertiesNames) = fill(0, Medium.nC) \"Start value of trace substances\";
 //         .Modelica.SIunits.Energy[n] Us \"Internal energy of fluid\";
@@ -1216,10 +1216,10 @@ readFile("BranchingDynamicPipes.mo");
 //       equation
 //         assert(not (energyDynamics <> .Modelica.Fluid.Types.Dynamics.SteadyState and massDynamics == .Modelica.Fluid.Types.Dynamics.SteadyState) or Medium.singleState, \"Bad combination of dynamics options and Medium not conserving mass if fluidVolumes are fixed.\");
 //         for i in 1:n loop
-//           ms[i] = fluidVolumes[i] * mediums[i].d;
-//           mXis[i, :] = ms[i] * mediums[i].Xi;
-//           mCs[i, :] = ms[i] * Cs[i, :];
-//           Us[i] = ms[i] * mediums[i].u;
+//           ms[i] = fluidVolumes[i]*mediums[i].d;
+//           mXis[i, :] = ms[i]*mediums[i].Xi;
+//           mCs[i, :] = ms[i]*Cs[i, :];
+//           Us[i] = ms[i]*mediums[i].u;
 //         end for;
 //         if energyDynamics == .Modelica.Fluid.Types.Dynamics.SteadyState then
 //           for i in 1:n loop
@@ -1254,8 +1254,8 @@ readFile("BranchingDynamicPipes.mo");
 //           end for;
 //         else
 //           for i in 1:n loop
-//             der(mCs_scaled[i, :]) = mbC_flows[i, :] ./ Medium.C_nominal;
-//             mCs[i, :] = mCs_scaled[i, :] .* Medium.C_nominal;
+//             der(mCs_scaled[i, :]) = mbC_flows[i, :]./Medium.C_nominal;
+//             mCs[i, :] = mCs_scaled[i, :].*Medium.C_nominal;
 //           end for;
 //         end if;
 //       end PartialDistributedVolume;
@@ -1280,7 +1280,7 @@ readFile("BranchingDynamicPipes.mo");
 //           der(m_flows) = zeros(m);
 //         end if;
 //       equation
-//         Is = {m_flows[i] * pathLengths[i] for i in 1:m};
+//         Is = {m_flows[i]*pathLengths[i] for i in 1:m};
 //         if momentumDynamics == Types.Dynamics.SteadyState then
 //           zeros(m) = Ib_flows - Fs_p - Fs_fg;
 //         else
@@ -1367,71 +1367,71 @@ readFile("BranchingDynamicPipes.mo");
 //         Boolean useSingleCubicPolynomial = false \"Indicate to override further logic and use single cubic\";
 //       algorithm
 //         assert(x0 < x1, \"regFun3(): Data points not sorted appropriately (x0 = \" + String(x0) + \" > x1 = \" + String(x1) + \"). Please flip arguments.\");
-//         if y0d * y1d >= 0 then
+//         if y0d*y1d >= 0 then
 //         else
 //           assert(abs(y0d) < Modelica.Constants.eps or abs(y1d) < Modelica.Constants.eps, \"regFun3(): Derivatives at data points do not allow co-monotone interpolation, as both are non-zero, of opposite sign and have an absolute value larger than machine eps (y0d = \" + String(y0d) + \", y1d = \" + String(y1d) + \"). Please correct arguments.\");
 //         end if;
 //         h0 := x1 - x0;
-//         Delta0 := (y1 - y0) / h0;
+//         Delta0 := (y1 - y0)/h0;
 //         if abs(Delta0) <= 0 then
-//           y := y0 + Delta0 * (x - x0);
+//           y := y0 + Delta0*(x - x0);
 //           c := 0;
-//         elseif abs(y1d + y0d - 2 * Delta0) < 100 * Modelica.Constants.eps then
-//           y := y0 + (x - x0) * (y0d + (x - x0) / h0 * ((-2 * y0d - y1d + 3 * Delta0) + (x - x0) * (y0d + y1d - 2 * Delta0) / h0));
-//           aux01 := (x0 + x1) / 2;
-//           c := 3 * (y0d + y1d - 2 * Delta0) * (aux01 - x0) ^ 2 / h0 ^ 2 + 2 * (-2 * y0d - y1d + 3 * Delta0) * (aux01 - x0) / h0 + y0d;
+//         elseif abs(y1d + y0d - 2*Delta0) < 100*Modelica.Constants.eps then
+//           y := y0 + (x - x0)*(y0d + (x - x0)/h0*((-2*y0d - y1d + 3*Delta0) + (x - x0)*(y0d + y1d - 2*Delta0)/h0));
+//           aux01 := (x0 + x1)/2;
+//           c := 3*(y0d + y1d - 2*Delta0)*(aux01 - x0)^2/h0^2 + 2*(-2*y0d - y1d + 3*Delta0)*(aux01 - x0)/h0 + y0d;
 //         else
-//           xstar := 1 / 3 * (-3 * x0 * y0d - 3 * x0 * y1d + 6 * x0 * Delta0 - 2 * h0 * y0d - h0 * y1d + 3 * h0 * Delta0) / (-y0d - y1d + 2 * Delta0);
+//           xstar := 1/3*(-3*x0*y0d - 3*x0*y1d + 6*x0*Delta0 - 2*h0*y0d - h0*y1d + 3*h0*Delta0)/(-y0d - y1d + 2*Delta0);
 //           mu := xstar - x0;
 //           eta := x1 - xstar;
-//           omega := 3 * (y0d + y1d - 2 * Delta0) * (xstar - x0) ^ 2 / h0 ^ 2 + 2 * (-2 * y0d - y1d + 3 * Delta0) * (xstar - x0) / h0 + y0d;
-//           aux01 := 0.25 * sign(Delta0) * min(abs(omega), abs(Delta0)) \"Slope c if not using plain cubic S0\";
-//           if abs(y0d - y1d) <= 100 * Modelica.Constants.eps then
+//           omega := 3*(y0d + y1d - 2*Delta0)*(xstar - x0)^2/h0^2 + 2*(-2*y0d - y1d + 3*Delta0)*(xstar - x0)/h0 + y0d;
+//           aux01 := 0.25*sign(Delta0)*min(abs(omega), abs(Delta0)) \"Slope c if not using plain cubic S0\";
+//           if abs(y0d - y1d) <= 100*Modelica.Constants.eps then
 //             aux02 := y0d;
-//             if y1 > y0 + y0d * (x1 - x0) then
+//             if y1 > y0 + y0d*(x1 - x0) then
 //               useSingleCubicPolynomial := true;
 //             else
 //             end if;
-//           elseif abs(y1d + y0d - 2 * Delta0) < 100 * Modelica.Constants.eps then
-//             aux02 := (6 * Delta0 * (y1d + y0d - 3 / 2 * Delta0) - y1d * y0d - y1d ^ 2 - y0d ^ 2) * (if (y1d + y0d - 2 * Delta0) >= 0 then 1 else -1) * Modelica.Constants.inf;
+//           elseif abs(y1d + y0d - 2*Delta0) < 100*Modelica.Constants.eps then
+//             aux02 := (6*Delta0*(y1d + y0d - 3/2*Delta0) - y1d*y0d - y1d^2 - y0d^2)*(if (y1d + y0d - 2*Delta0) >= 0 then 1 else -1)*Modelica.Constants.inf;
 //           else
-//             aux02 := (6 * Delta0 * (y1d + y0d - 3 / 2 * Delta0) - y1d * y0d - y1d ^ 2 - y0d ^ 2) / (3 * (y1d + y0d - 2 * Delta0));
+//             aux02 := (6*Delta0*(y1d + y0d - 3/2*Delta0) - y1d*y0d - y1d^2 - y0d^2)/(3*(y1d + y0d - 2*Delta0));
 //           end if;
-//           if (((mu > 0) and (eta < h0) and (Delta0 * omega <= 0)) or (abs(aux01) < abs(aux02) and aux02 * Delta0 >= 0) or (abs(aux01) < abs(0.1 * Delta0))) and not useSingleCubicPolynomial then
+//           if (((mu > 0) and (eta < h0) and (Delta0*omega <= 0)) or (abs(aux01) < abs(aux02) and aux02*Delta0 >= 0) or (abs(aux01) < abs(0.1*Delta0))) and not useSingleCubicPolynomial then
 //             c := aux01;
-//             if abs(c) < abs(aux02) and aux02 * Delta0 >= 0 then
+//             if abs(c) < abs(aux02) and aux02*Delta0 >= 0 then
 //               c := aux02;
 //             else
 //             end if;
-//             if abs(c) < abs(0.1 * Delta0) then
-//               c := 0.1 * Delta0;
+//             if abs(c) < abs(0.1*Delta0) then
+//               c := 0.1*Delta0;
 //             else
 //             end if;
-//             theta0 := (y0d * mu + y1d * eta) / h0;
+//             theta0 := (y0d*mu + y1d*eta)/h0;
 //             if abs(theta0 - c) < 1e-6 then
-//               c := (1 - 1e-6) * theta0;
+//               c := (1 - 1e-6)*theta0;
 //             else
 //             end if;
-//             rho := 3 * (Delta0 - c) / (theta0 - c);
-//             mu_tilde := rho * mu;
-//             eta_tilde := rho * eta;
+//             rho := 3*(Delta0 - c)/(theta0 - c);
+//             mu_tilde := rho*mu;
+//             eta_tilde := rho*eta;
 //             xi1 := x0 + mu_tilde;
 //             xi2 := x1 - eta_tilde;
-//             a1 := (y0d - c) / max(mu_tilde ^ 2, 100 * Modelica.Constants.eps);
-//             a2 := (y1d - c) / max(eta_tilde ^ 2, 100 * Modelica.Constants.eps);
-//             const12 := y0 - a1 / 3 * (x0 - xi1) ^ 3 - c * x0;
-//             const3 := y1 - a2 / 3 * (x1 - xi2) ^ 3 - c * x1;
+//             a1 := (y0d - c)/max(mu_tilde^2, 100*Modelica.Constants.eps);
+//             a2 := (y1d - c)/max(eta_tilde^2, 100*Modelica.Constants.eps);
+//             const12 := y0 - a1/3*(x0 - xi1)^3 - c*x0;
+//             const3 := y1 - a2/3*(x1 - xi2)^3 - c*x1;
 //             if (x < xi1) then
-//               y := a1 / 3 * (x - xi1) ^ 3 + c * x + const12;
+//               y := a1/3*(x - xi1)^3 + c*x + const12;
 //             elseif (x < xi2) then
-//               y := c * x + const12;
+//               y := c*x + const12;
 //             else
-//               y := a2 / 3 * (x - xi2) ^ 3 + c * x + const3;
+//               y := a2/3*(x - xi2)^3 + c*x + const3;
 //             end if;
 //           else
-//             y := y0 + (x - x0) * (y0d + (x - x0) / h0 * ((-2 * y0d - y1d + 3 * Delta0) + (x - x0) * (y0d + y1d - 2 * Delta0) / h0));
-//             aux01 := (x0 + x1) / 2;
-//             c := 3 * (y0d + y1d - 2 * Delta0) * (aux01 - x0) ^ 2 / h0 ^ 2 + 2 * (-2 * y0d - y1d + 3 * Delta0) * (aux01 - x0) / h0 + y0d;
+//             y := y0 + (x - x0)*(y0d + (x - x0)/h0*((-2*y0d - y1d + 3*Delta0) + (x - x0)*(y0d + y1d - 2*Delta0)/h0));
+//             aux01 := (x0 + x1)/2;
+//             c := 3*(y0d + y1d - 2*Delta0)*(aux01 - x0)^2/h0^2 + 2*(-2*y0d - y1d + 3*Delta0)*(aux01 - x0)/h0 + y0d;
 //           end if;
 //         end if;
 //         annotation(smoothOrder = 1);
@@ -1464,22 +1464,22 @@ readFile("BranchingDynamicPipes.mo");
 //       algorithm
 //         h := x2 - x1;
 //         if abs(h) > 0 then
-//           t := (x - x1) / h;
-//           aux3 := t ^ 3;
-//           aux2 := t ^ 2;
-//           h00 := 2 * aux3 - 3 * aux2 + 1;
-//           h10 := aux3 - 2 * aux2 + t;
-//           h01 := -2 * aux3 + 3 * aux2;
+//           t := (x - x1)/h;
+//           aux3 := t^3;
+//           aux2 := t^2;
+//           h00 := 2*aux3 - 3*aux2 + 1;
+//           h10 := aux3 - 2*aux2 + t;
+//           h01 := -2*aux3 + 3*aux2;
 //           h11 := aux3 - aux2;
-//           h00d := 6 * (aux2 - t);
-//           h10d := 3 * aux2 - 4 * t + 1;
-//           h01d := 6 * (t - aux2);
-//           h11d := 3 * aux2 - 2 * t;
-//           y := y1 * h00 + h * y1d * h10 + y2 * h01 + h * y2d * h11;
-//           dy_dx := y1 * h00d / h + y1d * h10d + y2 * h01d / h + y2d * h11d;
+//           h00d := 6*(aux2 - t);
+//           h10d := 3*aux2 - 4*t + 1;
+//           h01d := 6*(t - aux2);
+//           h11d := 3*aux2 - 2*t;
+//           y := y1*h00 + h*y1d*h10 + y2*h01 + h*y2d*h11;
+//           dy_dx := y1*h00d/h + y1d*h10d + y2*h01d/h + y2d*h11d;
 //         else
-//           y := (y1 + y2) / 2;
-//           dy_dx := sign(y2 - y1) * Modelica.Constants.inf;
+//           y := (y1 + y2)/2;
+//           dy_dx := sign(y2 - y1)*Modelica.Constants.inf;
 //         end if;
 //         annotation(smoothOrder = 3);
 //       end cubicHermite_withDerivative;
@@ -1503,7 +1503,7 @@ readFile("BranchingDynamicPipes.mo");
 //         constant Boolean reducedX = true \"= true if medium contains the equation sum(X) = 1.0; set reducedX=true if only one substance (see docu for details)\";
 //         constant Boolean fixedX = false \"= true if medium contains the equation X = reference_X\";
 //         constant AbsolutePressure reference_p = 101325 \"Reference pressure of Medium: default 1 atmosphere\";
-//         constant MassFraction[nX] reference_X = fill(1 / nX, nX) \"Default mass fractions of medium\";
+//         constant MassFraction[nX] reference_X = fill(1/nX, nX) \"Default mass fractions of medium\";
 //         constant AbsolutePressure p_default = 101325 \"Default value for pressure of medium (for initialization)\";
 //         constant Temperature T_default = Modelica.SIunits.Conversions.from_degC(20) \"Default value for temperature of medium (for initialization)\";
 //         constant SpecificEnthalpy h_default = specificEnthalpy_pTX(p_default, T_default, X_default) \"Default value for specific enthalpy of medium (for initialization)\";
@@ -1512,7 +1512,7 @@ readFile("BranchingDynamicPipes.mo");
 //         constant Integer nX = nS \"Number of mass fractions\" annotation(Evaluate = true);
 //         constant Integer nXi = if fixedX then 0 else if reducedX then nS - 1 else nS \"Number of structurally independent mass fractions (see docu for details)\" annotation(Evaluate = true);
 //         final constant Integer nC = size(extraPropertiesNames, 1) \"Number of extra (outside of standard mass-balance) transported properties\" annotation(Evaluate = true);
-//         constant Real[nC] C_nominal(min = fill(Modelica.Constants.eps, nC)) = 1.0e-6 * ones(nC) \"Default for the nominal values for the extra properties\";
+//         constant Real[nC] C_nominal(min = fill(Modelica.Constants.eps, nC)) = 1.0e-6*ones(nC) \"Default for the nominal values for the extra properties\";
 //         replaceable record FluidConstants = Modelica.Media.Interfaces.Types.Basic.FluidConstants \"Critical, triple, molecular and other standard data of fluid\";
 //
 //         replaceable record ThermodynamicState \"Minimal variable set that is available as input argument to every medium function\"
@@ -1611,7 +1611,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input ThermodynamicState state \"Thermodynamic state record\";
 //           output PrandtlNumber Pr \"Prandtl number\";
 //         algorithm
-//           Pr := dynamicViscosity(state) * specificHeatCapacityCp(state) / thermalConductivity(state);
+//           Pr := dynamicViscosity(state)*specificHeatCapacityCp(state)/thermalConductivity(state);
 //         end prandtlNumber;
 //
 //         replaceable partial function pressure \"Return pressure\"
@@ -1802,11 +1802,11 @@ readFile("BranchingDynamicPipes.mo");
 //           .Modelica.SIunits.MolarMass Mmix \"Molar mass of mixture\";
 //         algorithm
 //           for i in 1:size(X, 1) loop
-//             invMMX[i] := 1 / MMX[i];
+//             invMMX[i] := 1/MMX[i];
 //           end for;
-//           Mmix := 1 / (X * invMMX);
+//           Mmix := 1/(X*invMMX);
 //           for i in 1:size(X, 1) loop
-//             moleFractions[i] := Mmix * X[i] / MMX[i];
+//             moleFractions[i] := Mmix*X[i]/MMX[i];
 //           end for;
 //           annotation(smoothOrder = 5);
 //         end massToMoleFractions;
@@ -1943,7 +1943,7 @@ readFile("BranchingDynamicPipes.mo");
 //         input Real x_small(min = 0) = 1e-5 \"Approximation of step for -x_small <= x <= x_small; x_small > 0 required\";
 //         output Real y \"Ordinate value to approximate y = if x > 0 then y1 else y2\";
 //       algorithm
-//         y := smooth(1, if x > x_small then y1 else if x < -x_small then y2 else if abs(x_small) > 0 then (x / x_small) * ((x / x_small) ^ 2 - 3) * (y2 - y1) / 4 + (y1 + y2) / 2 else (y1 + y2) / 2);
+//         y := smooth(1, if x > x_small then y1 else if x < -x_small then y2 else if abs(x_small) > 0 then (x/x_small)*((x/x_small)^2 - 3)*(y2 - y1)/4 + (y1 + y2)/2 else (y1 + y2)/2);
 //         annotation(Inline = true, smoothOrder = 1);
 //       end smoothStep;
 //
@@ -1971,7 +1971,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Real pressure = 0.0 \"Disregarded variables (here always used for pressure)\";
 //           input Real[:] X = fill(0, 0) \"Disregarded variables (here always used for composition)\";
 //           input f_nonlinear_Data f_nonlinear_data \"Additional data for function f_nonlinear\";
-//           input Real x_tol = 100 * Modelica.Constants.eps \"Relative tolerance of the result\";
+//           input Real x_tol = 100*Modelica.Constants.eps \"Relative tolerance of the result\";
 //           output Real x_zero \"f_nonlinear(x_zero) = y_zero\";
 //         protected
 //           constant Real eps = Modelica.Constants.eps \"Machine epsilon\";
@@ -2015,8 +2015,8 @@ readFile("BranchingDynamicPipes.mo");
 //               fc := fa;
 //             else
 //             end if;
-//             tol := 2 * eps * abs(b) + x_tol;
-//             m := (c - b) / 2;
+//             tol := 2*eps*abs(b) + x_tol;
+//             m := (c - b)/2;
 //             if abs(m) <= tol or fb == 0.0 then
 //               found := true;
 //               x_zero := b;
@@ -2025,15 +2025,15 @@ readFile("BranchingDynamicPipes.mo");
 //                 e := m;
 //                 d := e;
 //               else
-//                 s := fb / fa;
+//                 s := fb/fa;
 //                 if a == c then
-//                   p := 2 * m * s;
+//                   p := 2*m*s;
 //                   q := 1 - s;
 //                 else
-//                   q := fa / fc;
-//                   r := fb / fc;
-//                   p := s * (2 * m * q * (q - r) - (b - a) * (r - 1));
-//                   q := (q - 1) * (r - 1) * (s - 1);
+//                   q := fa/fc;
+//                   r := fb/fc;
+//                   p := s*(2*m*q*(q - r) - (b - a)*(r - 1));
+//                   q := (q - 1)*(r - 1)*(s - 1);
 //                 end if;
 //                 if p > 0 then
 //                   q := -q;
@@ -2042,8 +2042,8 @@ readFile("BranchingDynamicPipes.mo");
 //                 end if;
 //                 s := e;
 //                 e := d;
-//                 if 2 * p < 3 * m * q - abs(tol * q) and p < abs(0.5 * s * q) then
-//                   d := p / q;
+//                 if 2*p < 3*m*q - abs(tol*q) and p < abs(0.5*s*q) then
+//                   d := p/q;
 //                 else
 //                   e := m;
 //                   d := e;
@@ -2073,7 +2073,7 @@ readFile("BranchingDynamicPipes.mo");
 //         extends .Modelica.Media.Interfaces.PartialCondensingGases(mediumName = \"Moist air\", substanceNames = {\"water\", \"air\"}, final reducedX = true, final singleState = false, reference_X = {0.01, 0.99}, fluidConstants = {IdealGases.Common.FluidData.H2O, IdealGases.Common.FluidData.N2}, Temperature(min = 190, max = 647));
 //         constant Integer Water = 1 \"Index of water (in substanceNames, massFractions X, etc.)\";
 //         constant Integer Air = 2 \"Index of air (in substanceNames, massFractions X, etc.)\";
-//         constant Real k_mair = steam.MM / dryair.MM \"Ratio of molar weights\";
+//         constant Real k_mair = steam.MM/dryair.MM \"Ratio of molar weights\";
 //         constant IdealGases.Common.DataRecord dryair = IdealGases.Common.SingleGasesData.Air;
 //         constant IdealGases.Common.DataRecord steam = IdealGases.Common.SingleGasesData.H2O;
 //         constant .Modelica.SIunits.MolarMass[2] MMX = {steam.MM, dryair.MM} \"Molar masses of components\";
@@ -2095,22 +2095,22 @@ readFile("BranchingDynamicPipes.mo");
 //         Temperature T is not in the allowed range
 //         190.0 K <= (T =\" + String(T) + \" K) <= 647.0 K
 //         required from medium model \\\"\" + mediumName + \"\\\".\");
-//           MM = 1 / (Xi[Water] / MMX[Water] + (1.0 - Xi[Water]) / MMX[Air]);
-//           p_steam_sat = min(saturationPressure(T), 0.999 * p);
-//           X_sat = min(p_steam_sat * k_mair / max(100 * .Modelica.Constants.eps, p - p_steam_sat) * (1 - Xi[Water]), 1.0) \"Water content at saturation with respect to actual water content\";
+//           MM = 1/(Xi[Water]/MMX[Water] + (1.0 - Xi[Water])/MMX[Air]);
+//           p_steam_sat = min(saturationPressure(T), 0.999*p);
+//           X_sat = min(p_steam_sat*k_mair/max(100*.Modelica.Constants.eps, p - p_steam_sat)*(1 - Xi[Water]), 1.0) \"Water content at saturation with respect to actual water content\";
 //           X_liquid = max(Xi[Water] - X_sat, 0.0);
 //           X_steam = Xi[Water] - X_liquid;
 //           X_air = 1 - Xi[Water];
 //           h = specificEnthalpy_pTX(p, T, Xi);
-//           R = dryair.R * (X_air / (1 - X_liquid)) + steam.R * X_steam / (1 - X_liquid);
-//           u = h - R * T;
-//           d = p / (R * T);
+//           R = dryair.R*(X_air/(1 - X_liquid)) + steam.R*X_steam/(1 - X_liquid);
+//           u = h - R*T;
+//           d = p/(R*T);
 //           state.p = p;
 //           state.T = T;
 //           state.X = X;
-//           x_sat = k_mair * p_steam_sat / max(100 * .Modelica.Constants.eps, p - p_steam_sat);
-//           x_water = Xi[Water] / max(X_air, 100 * .Modelica.Constants.eps);
-//           phi = p / p_steam_sat * Xi[Water] / (Xi[Water] + k_mair * X_air);
+//           x_sat = k_mair*p_steam_sat/max(100*.Modelica.Constants.eps, p - p_steam_sat);
+//           x_water = Xi[Water]/max(X_air, 100*.Modelica.Constants.eps);
+//           phi = p/p_steam_sat*Xi[Water]/(Xi[Water] + k_mair*X_air);
 //         end BaseProperties;
 //
 //         redeclare function setState_pTX \"Return thermodynamic state as function of pressure p, temperature T and composition X\"
@@ -2142,7 +2142,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input MassFraction[:] X = reference_X \"Mass fractions\";
 //           output ThermodynamicState state \"Thermodynamic state\";
 //         algorithm
-//           state := if size(X, 1) == nX then ThermodynamicState(p = d * ({steam.R, dryair.R} * X) * T, T = T, X = X) else ThermodynamicState(p = d * ({steam.R, dryair.R} * cat(1, X, {1 - sum(X)})) * T, T = T, X = cat(1, X, {1 - sum(X)}));
+//           state := if size(X, 1) == nX then ThermodynamicState(p = d*({steam.R, dryair.R}*X)*T, T = T, X = X) else ThermodynamicState(p = d*({steam.R, dryair.R}*cat(1, X, {1 - sum(X)}))*T, T = T, X = cat(1, X, {1 - sum(X)}));
 //           annotation(smoothOrder = 2);
 //         end setState_dTX;
 //
@@ -2153,7 +2153,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         redeclare function extends gasConstant \"Return ideal gas constant as a function from thermodynamic state, only valid for phi<1\"
 //         algorithm
-//           R := dryair.R * (1 - state.X[Water]) + steam.R * state.X[Water];
+//           R := dryair.R*(1 - state.X[Water]) + steam.R*state.X[Water];
 //           annotation(smoothOrder = 2);
 //         end gasConstant;
 //
@@ -2164,11 +2164,11 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           .Modelica.SIunits.Temperature Tcritical = 647.096 \"Critical temperature\";
 //           .Modelica.SIunits.AbsolutePressure pcritical = 22.064e6 \"Critical pressure\";
-//           Real r1 = (1 - Tsat / Tcritical) \"Common subexpression\";
+//           Real r1 = (1 - Tsat/Tcritical) \"Common subexpression\";
 //           Real[:] a = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502} \"Coefficients a[:]\";
 //           Real[:] n = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5} \"Coefficients n[:]\";
 //         algorithm
-//           psat := exp(((a[1] * r1 ^ n[1] + a[2] * r1 ^ n[2] + a[3] * r1 ^ n[3] + a[4] * r1 ^ n[4] + a[5] * r1 ^ n[5] + a[6] * r1 ^ n[6]) * Tcritical) / Tsat) * pcritical;
+//           psat := exp(((a[1]*r1^n[1] + a[2]*r1^n[2] + a[3]*r1^n[3] + a[4]*r1^n[4] + a[5]*r1^n[5] + a[6]*r1^n[6])*Tcritical)/Tsat)*pcritical;
 //           annotation(derivative = saturationPressureLiquid_der, Inline = false, smoothOrder = 5);
 //         end saturationPressureLiquid;
 //
@@ -2180,13 +2180,13 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           .Modelica.SIunits.Temperature Tcritical = 647.096 \"Critical temperature\";
 //           .Modelica.SIunits.AbsolutePressure pcritical = 22.064e6 \"Critical pressure\";
-//           Real r1 = (1 - Tsat / Tcritical) \"Common subexpression 1\";
-//           Real r1_der = -1 / Tcritical * dTsat \"Derivative of common subexpression 1\";
+//           Real r1 = (1 - Tsat/Tcritical) \"Common subexpression 1\";
+//           Real r1_der = -1/Tcritical*dTsat \"Derivative of common subexpression 1\";
 //           Real[:] a = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502} \"Coefficients a[:]\";
 //           Real[:] n = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5} \"Coefficients n[:]\";
-//           Real r2 = (a[1] * r1 ^ n[1] + a[2] * r1 ^ n[2] + a[3] * r1 ^ n[3] + a[4] * r1 ^ n[4] + a[5] * r1 ^ n[5] + a[6] * r1 ^ n[6]) \"Common subexpression 2\";
+//           Real r2 = (a[1]*r1^n[1] + a[2]*r1^n[2] + a[3]*r1^n[3] + a[4]*r1^n[4] + a[5]*r1^n[5] + a[6]*r1^n[6]) \"Common subexpression 2\";
 //         algorithm
-//           psat_der := exp((r2 * Tcritical) / Tsat) * pcritical * ((a[1] * (r1 ^ (n[1] - 1) * n[1] * r1_der) + a[2] * (r1 ^ (n[2] - 1) * n[2] * r1_der) + a[3] * (r1 ^ (n[3] - 1) * n[3] * r1_der) + a[4] * (r1 ^ (n[4] - 1) * n[4] * r1_der) + a[5] * (r1 ^ (n[5] - 1) * n[5] * r1_der) + a[6] * (r1 ^ (n[6] - 1) * n[6] * r1_der)) * Tcritical / Tsat - r2 * Tcritical * dTsat / Tsat ^ 2);
+//           psat_der := exp((r2*Tcritical)/Tsat)*pcritical*((a[1]*(r1^(n[1] - 1)*n[1]*r1_der) + a[2]*(r1^(n[2] - 1)*n[2]*r1_der) + a[3]*(r1^(n[3] - 1)*n[3]*r1_der) + a[4]*(r1^(n[4] - 1)*n[4]*r1_der) + a[5]*(r1^(n[5] - 1)*n[5]*r1_der) + a[6]*(r1^(n[6] - 1)*n[6]*r1_der))*Tcritical/Tsat - r2*Tcritical*dTsat/Tsat^2);
 //           annotation(Inline = false, smoothOrder = 5);
 //         end saturationPressureLiquid_der;
 //
@@ -2197,11 +2197,11 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           .Modelica.SIunits.Temperature Ttriple = 273.16 \"Triple point temperature\";
 //           .Modelica.SIunits.AbsolutePressure ptriple = 611.657 \"Triple point pressure\";
-//           Real r1 = Tsat / Ttriple \"Common subexpression\";
+//           Real r1 = Tsat/Ttriple \"Common subexpression\";
 //           Real[:] a = {-13.9281690, 34.7078238} \"Coefficients a[:]\";
 //           Real[:] n = {-1.5, -1.25} \"Coefficients n[:]\";
 //         algorithm
-//           psat := exp(a[1] - a[1] * r1 ^ n[1] + a[2] - a[2] * r1 ^ n[2]) * ptriple;
+//           psat := exp(a[1] - a[1]*r1^n[1] + a[2] - a[2]*r1^n[2])*ptriple;
 //           annotation(Inline = false, smoothOrder = 5, derivative = sublimationPressureIce_der);
 //         end sublimationPressureIce;
 //
@@ -2213,12 +2213,12 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           .Modelica.SIunits.Temperature Ttriple = 273.16 \"Triple point temperature\";
 //           .Modelica.SIunits.AbsolutePressure ptriple = 611.657 \"Triple point pressure\";
-//           Real r1 = Tsat / Ttriple \"Common subexpression 1\";
-//           Real r1_der = dTsat / Ttriple \"Derivative of common subexpression 1\";
+//           Real r1 = Tsat/Ttriple \"Common subexpression 1\";
+//           Real r1_der = dTsat/Ttriple \"Derivative of common subexpression 1\";
 //           Real[:] a = {-13.9281690, 34.7078238} \"Coefficients a[:]\";
 //           Real[:] n = {-1.5, -1.25} \"Coefficients n[:]\";
 //         algorithm
-//           psat_der := exp(a[1] - a[1] * r1 ^ n[1] + a[2] - a[2] * r1 ^ n[2]) * ptriple * (-(a[1] * (r1 ^ (n[1] - 1) * n[1] * r1_der)) - (a[2] * (r1 ^ (n[2] - 1) * n[2] * r1_der)));
+//           psat_der := exp(a[1] - a[1]*r1^n[1] + a[2] - a[2]*r1^n[2])*ptriple*(-(a[1]*(r1^(n[1] - 1)*n[1]*r1_der)) - (a[2]*(r1^(n[2] - 1)*n[2]*r1_der)));
 //           annotation(Inline = false, smoothOrder = 5);
 //         end sublimationPressureIce_der;
 //
@@ -2245,29 +2245,29 @@ readFile("BranchingDynamicPipes.mo");
 //           Real pcritical = 22.064e6 \"Critical pressure\";
 //           Real[:] n = {1, 1.5, 3, 3.5, 4, 7.5} \"Powers in equation (1)\";
 //           Real[:] a = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502} \"Coefficients in equation (1) of [1]\";
-//           Real[:] m = {1 / 3, 2 / 3, 5 / 3, 16 / 3, 43 / 3, 110 / 3} \"Powers in equation (2)\";
+//           Real[:] m = {1/3, 2/3, 5/3, 16/3, 43/3, 110/3} \"Powers in equation (2)\";
 //           Real[:] b = {1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.74694450e5} \"Coefficients in equation (2) of [1]\";
-//           Real[:] o = {2 / 6, 4 / 6, 8 / 6, 18 / 6, 37 / 6, 71 / 6} \"Powers in equation (3)\";
+//           Real[:] o = {2/6, 4/6, 8/6, 18/6, 37/6, 71/6} \"Powers in equation (3)\";
 //           Real[:] c = {-2.03150240, -2.68302940, -5.38626492, -17.2991605, -44.7586581, -63.9201063} \"Coefficients in equation (3) of [1]\";
-//           Real tau = 1 - T / Tcritical \"Temperature expression\";
-//           Real r1 = (a[1] * Tcritical * tau ^ n[1]) / T + (a[2] * Tcritical * tau ^ n[2]) / T + (a[3] * Tcritical * tau ^ n[3]) / T + (a[4] * Tcritical * tau ^ n[4]) / T + (a[5] * Tcritical * tau ^ n[5]) / T + (a[6] * Tcritical * tau ^ n[6]) / T \"Expression 1\";
-//           Real r2 = a[1] * n[1] * tau ^ n[1] + a[2] * n[2] * tau ^ n[2] + a[3] * n[3] * tau ^ n[3] + a[4] * n[4] * tau ^ n[4] + a[5] * n[5] * tau ^ n[5] + a[6] * n[6] * tau ^ n[6] \"Expression 2\";
-//           Real dp = dcritical * (1 + b[1] * tau ^ m[1] + b[2] * tau ^ m[2] + b[3] * tau ^ m[3] + b[4] * tau ^ m[4] + b[5] * tau ^ m[5] + b[6] * tau ^ m[6]) \"Density of saturated liquid\";
-//           Real dpp = dcritical * exp(c[1] * tau ^ o[1] + c[2] * tau ^ o[2] + c[3] * tau ^ o[3] + c[4] * tau ^ o[4] + c[5] * tau ^ o[5] + c[6] * tau ^ o[6]) \"Density of saturated vapor\";
+//           Real tau = 1 - T/Tcritical \"Temperature expression\";
+//           Real r1 = (a[1]*Tcritical*tau^n[1])/T + (a[2]*Tcritical*tau^n[2])/T + (a[3]*Tcritical*tau^n[3])/T + (a[4]*Tcritical*tau^n[4])/T + (a[5]*Tcritical*tau^n[5])/T + (a[6]*Tcritical*tau^n[6])/T \"Expression 1\";
+//           Real r2 = a[1]*n[1]*tau^n[1] + a[2]*n[2]*tau^n[2] + a[3]*n[3]*tau^n[3] + a[4]*n[4]*tau^n[4] + a[5]*n[5]*tau^n[5] + a[6]*n[6]*tau^n[6] \"Expression 2\";
+//           Real dp = dcritical*(1 + b[1]*tau^m[1] + b[2]*tau^m[2] + b[3]*tau^m[3] + b[4]*tau^m[4] + b[5]*tau^m[5] + b[6]*tau^m[6]) \"Density of saturated liquid\";
+//           Real dpp = dcritical*exp(c[1]*tau^o[1] + c[2]*tau^o[2] + c[3]*tau^o[3] + c[4]*tau^o[4] + c[5]*tau^o[5] + c[6]*tau^o[6]) \"Density of saturated vapor\";
 //         algorithm
-//           r0 := -(((dp - dpp) * exp(r1) * pcritical * (r2 + r1 * tau)) / (dp * dpp * tau)) \"Difference of equations (7) and (6)\";
+//           r0 := -(((dp - dpp)*exp(r1)*pcritical*(r2 + r1*tau))/(dp*dpp*tau)) \"Difference of equations (7) and (6)\";
 //           annotation(smoothOrder = 2);
 //         end enthalpyOfVaporization;
 //
 //         redeclare function extends enthalpyOfLiquid \"Return enthalpy of liquid water as a function of temperature T(use enthalpyOfWater instead)\"
 //         algorithm
-//           h := (T - 273.15) * 1e3 * (4.2166 - 0.5 * (T - 273.15) * (0.0033166 + 0.333333 * (T - 273.15) * (0.00010295 - 0.25 * (T - 273.15) * (1.3819e-6 + 0.2 * (T - 273.15) * 7.3221e-9))));
+//           h := (T - 273.15)*1e3*(4.2166 - 0.5*(T - 273.15)*(0.0033166 + 0.333333*(T - 273.15)*(0.00010295 - 0.25*(T - 273.15)*(1.3819e-6 + 0.2*(T - 273.15)*7.3221e-9))));
 //           annotation(Inline = false, smoothOrder = 5);
 //         end enthalpyOfLiquid;
 //
 //         redeclare function extends enthalpyOfGas \"Return specific enthalpy of gas (air and steam) as a function of temperature T and composition X\"
 //         algorithm
-//           h := Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) * X[Water] + Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) * (1.0 - X[Water]);
+//           h := Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5)*X[Water] + Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684)*(1.0 - X[Water]);
 //           annotation(Inline = false, smoothOrder = 5);
 //         end enthalpyOfGas;
 //
@@ -2288,7 +2288,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input SIunits.Temperature T \"Temperature\";
 //           output SIunits.SpecificEnthalpy h \"Specific enthalpy of water\";
 //         algorithm
-//           h := Utilities.spliceFunction(4200 * (T - 273.15), 2050 * (T - 273.15) - 333000, T - 273.16, 0.1);
+//           h := Utilities.spliceFunction(4200*(T - 273.15), 2050*(T - 273.15) - 333000, T - 273.16, 0.1);
 //           annotation(derivative = enthalpyOfWater_der);
 //         end enthalpyOfWater;
 //
@@ -2298,7 +2298,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Real dT(unit = \"K/s\") \"Time derivative of temperature\";
 //           output Real dh(unit = \"J/(kg.s)\") \"Time derivative of specific enthalpy\";
 //         algorithm
-//           dh := Utilities.spliceFunction_der(4200 * (T - 273.15), 2050 * (T - 273.15) - 333000, T - 273.16, 0.1, 4200 * dT, 2050 * dT, dT, 0);
+//           dh := Utilities.spliceFunction_der(4200*(T - 273.15), 2050*(T - 273.15) - 333000, T - 273.16, 0.1, 4200*dT, 2050*dT, dT, 0);
 //         end enthalpyOfWater_der;
 //
 //         redeclare function extends pressure \"Returns pressure of ideal gas as a function of the thermodynamic state record\"
@@ -2341,7 +2341,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         redeclare function extends density \"Returns density of ideal gas as a function of the thermodynamic state record\"
 //         algorithm
-//           d := state.p / (gasConstant(state) * state.T);
+//           d := state.p/(gasConstant(state)*state.T);
 //           annotation(smoothOrder = 2);
 //         end density;
 //
@@ -2365,11 +2365,11 @@ readFile("BranchingDynamicPipes.mo");
 //           .Modelica.SIunits.MassFraction X_air \"Mass fraction of air\";
 //         algorithm
 //           p_steam_sat := saturationPressure(T);
-//           X_sat := min(p_steam_sat * k_mair / max(100 * .Modelica.Constants.eps, p - p_steam_sat) * (1 - X[Water]), 1.0);
+//           X_sat := min(p_steam_sat*k_mair/max(100*.Modelica.Constants.eps, p - p_steam_sat)*(1 - X[Water]), 1.0);
 //           X_liquid := max(X[Water] - X_sat, 0.0);
 //           X_steam := X[Water] - X_liquid;
 //           X_air := 1 - X[Water];
-//           h := {Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5), Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684)} * {X_steam, X_air} + enthalpyOfWater(T) * X_liquid;
+//           h := {Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5), Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684)}*{X_steam, X_air} + enthalpyOfWater(T)*X_liquid;
 //           annotation(derivative = h_pTX_der, Inline = false);
 //         end h_pTX;
 //
@@ -2396,23 +2396,23 @@ readFile("BranchingDynamicPipes.mo");
 //           Real dx_sat(unit = \"1/s\") \"Time derivative of absolute humidity per unit mass of dry air\";
 //         algorithm
 //           p_steam_sat := saturationPressure(T);
-//           x_sat := p_steam_sat * k_mair / max(100 * Modelica.Constants.eps, p - p_steam_sat);
-//           X_sat := min(x_sat * (1 - X[Water]), 1.0);
+//           x_sat := p_steam_sat*k_mair/max(100*Modelica.Constants.eps, p - p_steam_sat);
+//           X_sat := min(x_sat*(1 - X[Water]), 1.0);
 //           X_liquid := Utilities.smoothMax(X[Water] - X_sat, 0.0, 1e-5);
 //           X_steam := X[Water] - X_liquid;
 //           X_air := 1 - X[Water];
 //           dX_air := -dX[Water];
 //           dps := saturationPressure_der(Tsat = T, dTsat = dT);
-//           dx_sat := k_mair * (dps * (p - p_steam_sat) - p_steam_sat * (dp - dps)) / (p - p_steam_sat) / (p - p_steam_sat);
-//           dX_liq := Utilities.smoothMax_der(X[Water] - X_sat, 0.0, 1e-5, (1 + x_sat) * dX[Water] - (1 - X[Water]) * dx_sat, 0, 0);
+//           dx_sat := k_mair*(dps*(p - p_steam_sat) - p_steam_sat*(dp - dps))/(p - p_steam_sat)/(p - p_steam_sat);
+//           dX_liq := Utilities.smoothMax_der(X[Water] - X_sat, 0.0, 1e-5, (1 + x_sat)*dX[Water] - (1 - X[Water])*dx_sat, 0, 0);
 //           dX_steam := dX[Water] - dX_liq;
-//           h_der := X_steam * Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5, dT = dT) + dX_steam * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air * Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684, dT = dT) + dX_air * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + X_liquid * enthalpyOfWater_der(T = T, dT = dT) + dX_liq * enthalpyOfWater(T);
+//           h_der := X_steam*Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5, dT = dT) + dX_steam*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air*Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684, dT = dT) + dX_air*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + X_liquid*enthalpyOfWater_der(T = T, dT = dT) + dX_liq*enthalpyOfWater(T);
 //           annotation(Inline = false, smoothOrder = 1);
 //         end h_pTX_der;
 //
 //         redeclare function extends isentropicExponent \"Return isentropic exponent (only for gas fraction!)\"
 //         algorithm
-//           gamma := specificHeatCapacityCp(state) / specificHeatCapacityCv(state);
+//           gamma := specificHeatCapacityCp(state)/specificHeatCapacityCv(state);
 //         end isentropicExponent;
 //
 //         redeclare function extends specificInternalEnergy \"Return specific internal energy of moist air as a function of the thermodynamic state record\"
@@ -2438,12 +2438,12 @@ readFile("BranchingDynamicPipes.mo");
 //           Real R_gas \"Ideal gas constant\";
 //         algorithm
 //           p_steam_sat := saturationPressure(T);
-//           X_sat := min(p_steam_sat * k_mair / max(100 * .Modelica.Constants.eps, p - p_steam_sat) * (1 - X[Water]), 1.0);
+//           X_sat := min(p_steam_sat*k_mair/max(100*.Modelica.Constants.eps, p - p_steam_sat)*(1 - X[Water]), 1.0);
 //           X_liquid := max(X[Water] - X_sat, 0.0);
 //           X_steam := X[Water] - X_liquid;
 //           X_air := 1 - X[Water];
-//           R_gas := dryair.R * X_air / (1 - X_liquid) + steam.R * X_steam / (1 - X_liquid);
-//           u := X_steam * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + enthalpyOfWater(T) * X_liquid - R_gas * T;
+//           R_gas := dryair.R*X_air/(1 - X_liquid) + steam.R*X_steam/(1 - X_liquid);
+//           u := X_steam*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + enthalpyOfWater(T)*X_liquid - R_gas*T;
 //           annotation(derivative = specificInternalEnergy_pTX_der);
 //         end specificInternalEnergy_pTX;
 //
@@ -2472,19 +2472,19 @@ readFile("BranchingDynamicPipes.mo");
 //           Real dR_gas(unit = \"J/(kg.K.s)\") \"Time derivative of ideal gas constant\";
 //         algorithm
 //           p_steam_sat := saturationPressure(T);
-//           x_sat := p_steam_sat * k_mair / max(100 * Modelica.Constants.eps, p - p_steam_sat);
-//           X_sat := min(x_sat * (1 - X[Water]), 1.0);
+//           x_sat := p_steam_sat*k_mair/max(100*Modelica.Constants.eps, p - p_steam_sat);
+//           X_sat := min(x_sat*(1 - X[Water]), 1.0);
 //           X_liquid := Utilities.spliceFunction(X[Water] - X_sat, 0.0, X[Water] - X_sat, 1e-6);
 //           X_steam := X[Water] - X_liquid;
 //           X_air := 1 - X[Water];
-//           R_gas := steam.R * X_steam / (1 - X_liquid) + dryair.R * X_air / (1 - X_liquid);
+//           R_gas := steam.R*X_steam/(1 - X_liquid) + dryair.R*X_air/(1 - X_liquid);
 //           dX_air := -dX[Water];
 //           dps := saturationPressure_der(Tsat = T, dTsat = dT);
-//           dx_sat := k_mair * (dps * (p - p_steam_sat) - p_steam_sat * (dp - dps)) / (p - p_steam_sat) / (p - p_steam_sat);
-//           dX_liq := Utilities.spliceFunction_der(X[Water] - X_sat, 0.0, X[Water] - X_sat, 1e-6, (1 + x_sat) * dX[Water] - (1 - X[Water]) * dx_sat, 0.0, (1 + x_sat) * dX[Water] - (1 - X[Water]) * dx_sat, 0.0);
+//           dx_sat := k_mair*(dps*(p - p_steam_sat) - p_steam_sat*(dp - dps))/(p - p_steam_sat)/(p - p_steam_sat);
+//           dX_liq := Utilities.spliceFunction_der(X[Water] - X_sat, 0.0, X[Water] - X_sat, 1e-6, (1 + x_sat)*dX[Water] - (1 - X[Water])*dx_sat, 0.0, (1 + x_sat)*dX[Water] - (1 - X[Water])*dx_sat, 0.0);
 //           dX_steam := dX[Water] - dX_liq;
-//           dR_gas := (steam.R * (dX_steam * (1 - X_liquid) + dX_liq * X_steam) + dryair.R * (dX_air * (1 - X_liquid) + dX_liq * X_air)) / (1 - X_liquid) / (1 - X_liquid);
-//           u_der := X_steam * Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5, dT = dT) + dX_steam * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air * Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684, dT = dT) + dX_air * Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + X_liquid * enthalpyOfWater_der(T = T, dT = dT) + dX_liq * enthalpyOfWater(T) - dR_gas * T - R_gas * dT;
+//           dR_gas := (steam.R*(dX_steam*(1 - X_liquid) + dX_liq*X_steam) + dryair.R*(dX_air*(1 - X_liquid) + dX_liq*X_air))/(1 - X_liquid)/(1 - X_liquid);
+//           u_der := X_steam*Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5, dT = dT) + dX_steam*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = steam, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 46479.819 + 2501014.5) + X_air*Modelica.Media.IdealGases.Common.Functions.h_Tlow_der(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684, dT = dT) + dX_air*Modelica.Media.IdealGases.Common.Functions.h_Tlow(data = dryair, T = T, refChoice = .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined, h_off = 25104.684) + X_liquid*enthalpyOfWater_der(T = T, dT = dT) + dX_liq*enthalpyOfWater(T) - dR_gas*T - R_gas*dT;
 //         end specificInternalEnergy_pTX_der;
 //
 //         redeclare function extends specificEntropy \"Return specific entropy from thermodynamic state record, only valid for phi<1\"
@@ -2496,14 +2496,14 @@ readFile("BranchingDynamicPipes.mo");
 //         redeclare function extends specificGibbsEnergy \"Return specific Gibbs energy as a function of the thermodynamic state record, only valid for phi<1\"
 //           extends Modelica.Icons.Function;
 //         algorithm
-//           g := h_pTX(state.p, state.T, state.X) - state.T * specificEntropy(state);
+//           g := h_pTX(state.p, state.T, state.X) - state.T*specificEntropy(state);
 //           annotation(smoothOrder = 2);
 //         end specificGibbsEnergy;
 //
 //         redeclare function extends specificHelmholtzEnergy \"Return specific Helmholtz energy as a function of the thermodynamic state record, only valid for phi<1\"
 //           extends Modelica.Icons.Function;
 //         algorithm
-//           f := h_pTX(state.p, state.T, state.X) - gasConstant(state) * state.T - state.T * specificEntropy(state);
+//           f := h_pTX(state.p, state.T, state.X) - gasConstant(state)*state.T - state.T*specificEntropy(state);
 //           annotation(smoothOrder = 2);
 //         end specificHelmholtzEnergy;
 //
@@ -2511,72 +2511,72 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           Real dT(unit = \"s/K\") = 1.0;
 //         algorithm
-//           cp := h_pTX_der(state.p, state.T, state.X, 0.0, 1.0, zeros(size(state.X, 1))) * dT \"Definition of cp: dh/dT @ constant p\";
+//           cp := h_pTX_der(state.p, state.T, state.X, 0.0, 1.0, zeros(size(state.X, 1)))*dT \"Definition of cp: dh/dT @ constant p\";
 //           annotation(Inline = false, smoothOrder = 2);
 //         end specificHeatCapacityCp;
 //
 //         redeclare function extends specificHeatCapacityCv \"Return specific heat capacity at constant volume as a function of the thermodynamic state record\"
 //         algorithm
-//           cv := Modelica.Media.IdealGases.Common.Functions.cp_Tlow(dryair, state.T) * (1 - state.X[Water]) + Modelica.Media.IdealGases.Common.Functions.cp_Tlow(steam, state.T) * state.X[Water] - gasConstant(state);
+//           cv := Modelica.Media.IdealGases.Common.Functions.cp_Tlow(dryair, state.T)*(1 - state.X[Water]) + Modelica.Media.IdealGases.Common.Functions.cp_Tlow(steam, state.T)*state.X[Water] - gasConstant(state);
 //           annotation(Inline = false, smoothOrder = 2);
 //         end specificHeatCapacityCv;
 //
 //         redeclare function extends dynamicViscosity \"Return dynamic viscosity as a function of the thermodynamic state record, valid from 123.15 K to 1273.15 K\"
 //         algorithm
-//           eta := 1e-6 * .Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluateWithRange({9.7391102886305869E-15, -3.1353724870333906E-11, 4.3004876595642225E-08, -3.8228016291758240E-05, 5.0427874367180762E-02, 1.7239260139242528E+01}, .Modelica.SIunits.Conversions.to_degC(123.15), .Modelica.SIunits.Conversions.to_degC(1273.15), .Modelica.SIunits.Conversions.to_degC(state.T));
+//           eta := 1e-6*.Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluateWithRange({9.7391102886305869E-15, -3.1353724870333906E-11, 4.3004876595642225E-08, -3.8228016291758240E-05, 5.0427874367180762E-02, 1.7239260139242528E+01}, .Modelica.SIunits.Conversions.to_degC(123.15), .Modelica.SIunits.Conversions.to_degC(1273.15), .Modelica.SIunits.Conversions.to_degC(state.T));
 //           annotation(smoothOrder = 2);
 //         end dynamicViscosity;
 //
 //         redeclare function extends thermalConductivity \"Return thermal conductivity as a function of the thermodynamic state record, valid from 123.15 K to 1273.15 K\"
 //         algorithm
-//           lambda := 1e-3 * .Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluateWithRange({6.5691470817717812E-15, -3.4025961923050509E-11, 5.3279284846303157E-08, -4.5340839289219472E-05, 7.6129675309037664E-02, 2.4169481088097051E+01}, .Modelica.SIunits.Conversions.to_degC(123.15), .Modelica.SIunits.Conversions.to_degC(1273.15), .Modelica.SIunits.Conversions.to_degC(state.T));
+//           lambda := 1e-3*.Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluateWithRange({6.5691470817717812E-15, -3.4025961923050509E-11, 5.3279284846303157E-08, -4.5340839289219472E-05, 7.6129675309037664E-02, 2.4169481088097051E+01}, .Modelica.SIunits.Conversions.to_degC(123.15), .Modelica.SIunits.Conversions.to_degC(1273.15), .Modelica.SIunits.Conversions.to_degC(state.T));
 //           annotation(smoothOrder = 2);
 //         end thermalConductivity;
 //
 //         redeclare function extends velocityOfSound
 //         algorithm
-//           a := sqrt(isentropicExponent(state) * gasConstant(state) * temperature(state));
+//           a := sqrt(isentropicExponent(state)*gasConstant(state)*temperature(state));
 //         end velocityOfSound;
 //
 //         redeclare function extends isobaricExpansionCoefficient
 //         algorithm
-//           beta := 1 / temperature(state);
+//           beta := 1/temperature(state);
 //         end isobaricExpansionCoefficient;
 //
 //         redeclare function extends isothermalCompressibility
 //         algorithm
-//           kappa := 1 / pressure(state);
+//           kappa := 1/pressure(state);
 //         end isothermalCompressibility;
 //
 //         redeclare function extends density_derp_h
 //         algorithm
-//           ddph := 1 / (gasConstant(state) * temperature(state));
+//           ddph := 1/(gasConstant(state)*temperature(state));
 //         end density_derp_h;
 //
 //         redeclare function extends density_derh_p
 //         algorithm
-//           ddhp := -density(state) / (specificHeatCapacityCp(state) * temperature(state));
+//           ddhp := -density(state)/(specificHeatCapacityCp(state)*temperature(state));
 //         end density_derh_p;
 //
 //         redeclare function extends density_derp_T
 //         algorithm
-//           ddpT := 1 / (gasConstant(state) * temperature(state));
+//           ddpT := 1/(gasConstant(state)*temperature(state));
 //         end density_derp_T;
 //
 //         redeclare function extends density_derT_p
 //         algorithm
-//           ddTp := -density(state) / temperature(state);
+//           ddTp := -density(state)/temperature(state);
 //         end density_derT_p;
 //
 //         redeclare function extends density_derX
 //         algorithm
-//           dddX[Water] := pressure(state) * (steam.R - dryair.R) / ((steam.R - dryair.R) * state.X[Water] * temperature(state) + dryair.R * temperature(state)) ^ 2;
-//           dddX[Air] := pressure(state) * (dryair.R - steam.R) / ((dryair.R - steam.R) * state.X[Air] * temperature(state) + steam.R * temperature(state)) ^ 2;
+//           dddX[Water] := pressure(state)*(steam.R - dryair.R)/((steam.R - dryair.R)*state.X[Water]*temperature(state) + dryair.R*temperature(state))^2;
+//           dddX[Air] := pressure(state)*(dryair.R - steam.R)/((dryair.R - steam.R)*state.X[Air]*temperature(state) + steam.R*temperature(state))^2;
 //         end density_derX;
 //
 //         redeclare function extends molarMass
 //         algorithm
-//           MM := Modelica.Media.Air.MoistAir.gasConstant(state) / Modelica.Constants.R;
+//           MM := Modelica.Media.Air.MoistAir.gasConstant(state)/Modelica.Constants.R;
 //         end molarMass;
 //
 //         function T_psX \"Return temperature as a function of pressure p, specific entropy s and composition X\"
@@ -2620,7 +2620,7 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           MoleFraction[2] Y = massToMoleFractions(X, {steam.MM, dryair.MM}) \"Molar fraction\";
 //         algorithm
-//           s := Modelica.Media.IdealGases.Common.Functions.s0_Tlow(dryair, T) * (1 - X[Water]) + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(steam, T) * X[Water] - Modelica.Constants.R * (Utilities.smoothMax(X[Water] / MMX[Water] * Modelica.Math.log(max(Y[Water], Modelica.Constants.eps) * p / reference_p), 0.0, 1e-9) - Utilities.smoothMax((1 - X[Water]) / MMX[Air] * Modelica.Math.log(max(Y[Air], Modelica.Constants.eps) * p / reference_p), 0.0, 1e-9));
+//           s := Modelica.Media.IdealGases.Common.Functions.s0_Tlow(dryair, T)*(1 - X[Water]) + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(steam, T)*X[Water] - Modelica.Constants.R*(Utilities.smoothMax(X[Water]/MMX[Water]*Modelica.Math.log(max(Y[Water], Modelica.Constants.eps)*p/reference_p), 0.0, 1e-9) - Utilities.smoothMax((1 - X[Water])/MMX[Air]*Modelica.Math.log(max(Y[Air], Modelica.Constants.eps)*p/reference_p), 0.0, 1e-9));
 //           annotation(derivative = s_pTX_der, Inline = false);
 //         end s_pTX;
 //
@@ -2636,7 +2636,7 @@ readFile("BranchingDynamicPipes.mo");
 //         protected
 //           MoleFraction[2] Y = massToMoleFractions(X, {steam.MM, dryair.MM}) \"Molar fraction\";
 //         algorithm
-//           ds := Modelica.Media.IdealGases.Common.Functions.s0_Tlow_der(dryair, T, dT) * (1 - X[Water]) + Modelica.Media.IdealGases.Common.Functions.s0_Tlow_der(steam, T, dT) * X[Water] + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(dryair, T) * dX[Air] + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(steam, T) * dX[Water] - Modelica.Constants.R * (1 / MMX[Water] * Utilities.smoothMax_der(X[Water] * Modelica.Math.log(max(Y[Water], Modelica.Constants.eps) * p / reference_p), 0.0, 1e-9, (Modelica.Math.log(max(Y[Water], Modelica.Constants.eps) * p / reference_p) + (X[Water] / Y[Water] * (X[Air] * MMX[Water] / (X[Air] * MMX[Water] + X[Water] * MMX[Air]) ^ 2))) * dX[Water] + X[Water] * reference_p / p * dp, 0, 0) - 1 / MMX[Air] * Utilities.smoothMax_der((1 - X[Water]) * Modelica.Math.log(max(Y[Air], Modelica.Constants.eps) * p / reference_p), 0.0, 1e-9, (Modelica.Math.log(max(Y[Air], Modelica.Constants.eps) * p / reference_p) + (X[Air] / Y[Air] * (X[Water] * MMX[Air] / (X[Air] * MMX[Water] + X[Water] * MMX[Air]) ^ 2))) * dX[Air] + X[Air] * reference_p / p * dp, 0, 0));
+//           ds := Modelica.Media.IdealGases.Common.Functions.s0_Tlow_der(dryair, T, dT)*(1 - X[Water]) + Modelica.Media.IdealGases.Common.Functions.s0_Tlow_der(steam, T, dT)*X[Water] + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(dryair, T)*dX[Air] + Modelica.Media.IdealGases.Common.Functions.s0_Tlow(steam, T)*dX[Water] - Modelica.Constants.R*(1/MMX[Water]*Utilities.smoothMax_der(X[Water]*Modelica.Math.log(max(Y[Water], Modelica.Constants.eps)*p/reference_p), 0.0, 1e-9, (Modelica.Math.log(max(Y[Water], Modelica.Constants.eps)*p/reference_p) + (X[Water]/Y[Water]*(X[Air]*MMX[Water]/(X[Air]*MMX[Water] + X[Water]*MMX[Air])^2)))*dX[Water] + X[Water]*reference_p/p*dp, 0, 0) - 1/MMX[Air]*Utilities.smoothMax_der((1 - X[Water])*Modelica.Math.log(max(Y[Air], Modelica.Constants.eps)*p/reference_p), 0.0, 1e-9, (Modelica.Math.log(max(Y[Air], Modelica.Constants.eps)*p/reference_p) + (X[Air]/Y[Air]*(X[Water]*MMX[Air]/(X[Air]*MMX[Water] + X[Water]*MMX[Air])^2)))*dX[Air] + X[Air]*reference_p/p*dp, 0, 0));
 //           annotation(Inline = false, smoothOrder = 1);
 //         end s_pTX_der;
 //
@@ -2661,16 +2661,16 @@ readFile("BranchingDynamicPipes.mo");
 //             Real scaledX1;
 //             Real y;
 //           algorithm
-//             scaledX1 := x / deltax;
-//             scaledX := scaledX1 * Modelica.Math.asin(1);
+//             scaledX1 := x/deltax;
+//             scaledX := scaledX1*Modelica.Math.asin(1);
 //             if scaledX1 <= -0.999999999 then
 //               y := 0;
 //             elseif scaledX1 >= 0.999999999 then
 //               y := 1;
 //             else
-//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
+//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1)/2;
 //             end if;
-//             out := pos * y + (1 - y) * neg;
+//             out := pos*y + (1 - y)*neg;
 //             annotation(derivative = spliceFunction_der);
 //           end spliceFunction;
 //
@@ -2691,19 +2691,19 @@ readFile("BranchingDynamicPipes.mo");
 //             Real dscaledX1;
 //             Real y;
 //           algorithm
-//             scaledX1 := x / deltax;
-//             scaledX := scaledX1 * Modelica.Math.asin(1);
-//             dscaledX1 := (dx - scaledX1 * ddeltax) / deltax;
+//             scaledX1 := x/deltax;
+//             scaledX := scaledX1*Modelica.Math.asin(1);
+//             dscaledX1 := (dx - scaledX1*ddeltax)/deltax;
 //             if scaledX1 <= -0.99999999999 then
 //               y := 0;
 //             elseif scaledX1 >= 0.9999999999 then
 //               y := 1;
 //             else
-//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
+//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1)/2;
 //             end if;
-//             out := dpos * y + (1 - y) * dneg;
+//             out := dpos*y + (1 - y)*dneg;
 //             if (abs(scaledX1) < 1) then
-//               out := out + (pos - neg) * dscaledX1 * Modelica.Math.asin(1) / 2 / (Modelica.Math.cosh(Modelica.Math.tan(scaledX)) * Modelica.Math.cos(scaledX)) ^ 2;
+//               out := out + (pos - neg)*dscaledX1*Modelica.Math.asin(1)/2/(Modelica.Math.cosh(Modelica.Math.tan(scaledX))*Modelica.Math.cos(scaledX))^2;
 //             else
 //             end if;
 //           end spliceFunction_der;
@@ -2715,7 +2715,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real dx \"Approximate difference between x1 and x2, below which regularization starts\";
 //             output Real y \"Result of smooth max operator\";
 //           algorithm
-//             y := max(x1, x2) + .Modelica.Math.log((exp((4 / dx) * (x1 - max(x1, x2)))) + (exp((4 / dx) * (x2 - max(x1, x2))))) / (4 / dx);
+//             y := max(x1, x2) + .Modelica.Math.log((exp((4/dx)*(x1 - max(x1, x2)))) + (exp((4/dx)*(x2 - max(x1, x2)))))/(4/dx);
 //             annotation(smoothOrder = 2);
 //           end smoothMax;
 //
@@ -2729,7 +2729,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real ddx;
 //             output Real dy \"Derivative of smooth max operator\";
 //           algorithm
-//             dy := (if x1 > x2 then dx1 else dx2) + 0.25 * (((4 * (dx1 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x1 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + (4 * (dx2 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x2 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * dx / (.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) + .Modelica.Math.log(.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * ddx);
+//             dy := (if x1 > x2 then dx1 else dx2) + 0.25*(((4*(dx1 - (if x1 > x2 then dx1 else dx2))/dx - 4*(x1 - max(x1, x2))*ddx/dx^2)*.Modelica.Math.exp(4*(x1 - max(x1, x2))/dx) + (4*(dx2 - (if x1 > x2 then dx1 else dx2))/dx - 4*(x2 - max(x1, x2))*ddx/dx^2)*.Modelica.Math.exp(4*(x2 - max(x1, x2))/dx))*dx/(.Modelica.Math.exp(4*(x1 - max(x1, x2))/dx) + .Modelica.Math.exp(4*(x2 - max(x1, x2))/dx)) + .Modelica.Math.log(.Modelica.Math.exp(4*(x1 - max(x1, x2))/dx) + .Modelica.Math.exp(4*(x2 - max(x1, x2))/dx))*ddx);
 //           end smoothMax_der;
 //         end Utilities;
 //       end MoistAir;
@@ -2767,7 +2767,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input .Modelica.SIunits.Temperature T \"Temperature\";
 //             output .Modelica.SIunits.SpecificHeatCapacity cp \"Specific heat capacity at temperature T\";
 //           algorithm
-//             cp := data.R * (1 / (T * T) * (data.alow[1] + T * (data.alow[2] + T * (1. * data.alow[3] + T * (data.alow[4] + T * (data.alow[5] + T * (data.alow[6] + data.alow[7] * T)))))));
+//             cp := data.R*(1/(T*T)*(data.alow[1] + T*(data.alow[2] + T*(1.*data.alow[3] + T*(data.alow[4] + T*(data.alow[5] + T*(data.alow[6] + data.alow[7]*T)))))));
 //             annotation(Inline = false, derivative(zeroDerivative = data) = cp_Tlow_der);
 //           end cp_Tlow;
 //
@@ -2778,7 +2778,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real dT \"Temperature derivative\";
 //             output Real cp_der \"Derivative of specific heat capacity\";
 //           algorithm
-//             cp_der := dT * data.R / (T * T * T) * (-2 * data.alow[1] + T * (-data.alow[2] + T * T * (data.alow[4] + T * (2. * data.alow[5] + T * (3. * data.alow[6] + 4. * data.alow[7] * T)))));
+//             cp_der := dT*data.R/(T*T*T)*(-2*data.alow[1] + T*(-data.alow[2] + T*T*(data.alow[4] + T*(2.*data.alow[5] + T*(3.*data.alow[6] + 4.*data.alow[7]*T)))));
 //             annotation(smoothOrder = 2);
 //           end cp_Tlow_der;
 //
@@ -2792,7 +2792,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input .Modelica.SIunits.SpecificEnthalpy h_off = h_offset \"User defined offset for reference enthalpy, if referenceChoice = UserDefined\";
 //             output .Modelica.SIunits.SpecificEnthalpy h \"Specific enthalpy at temperature T\";
 //           algorithm
-//             h := data.R * ((-data.alow[1] + T * (data.blow[1] + data.alow[2] * Math.log(T) + T * (1. * data.alow[3] + T * (0.5 * data.alow[4] + T * (1 / 3 * data.alow[5] + T * (0.25 * data.alow[6] + 0.2 * data.alow[7] * T)))))) / T) + (if exclEnthForm then -data.Hf else 0.0) + (if (refChoice == .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K) then data.H0 else 0.0) + (if refChoice == .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined then h_off else 0.0);
+//             h := data.R*((-data.alow[1] + T*(data.blow[1] + data.alow[2]*Math.log(T) + T*(1.*data.alow[3] + T*(0.5*data.alow[4] + T*(1/3*data.alow[5] + T*(0.25*data.alow[6] + 0.2*data.alow[7]*T))))))/T) + (if exclEnthForm then -data.Hf else 0.0) + (if (refChoice == .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K) then data.H0 else 0.0) + (if refChoice == .Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined then h_off else 0.0);
 //             annotation(Inline = false, smoothOrder = 2);
 //           end h_Tlow;
 //
@@ -2807,7 +2807,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real dT(unit = \"K/s\") \"Temperature derivative\";
 //             output Real h_der(unit = \"J/(kg.s)\") \"Derivative of specific enthalpy at temperature T\";
 //           algorithm
-//             h_der := dT * Modelica.Media.IdealGases.Common.Functions.cp_Tlow(data, T);
+//             h_der := dT*Modelica.Media.IdealGases.Common.Functions.cp_Tlow(data, T);
 //             annotation(Inline = true, smoothOrder = 2);
 //           end h_Tlow_der;
 //
@@ -2817,7 +2817,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input .Modelica.SIunits.Temperature T \"Temperature\";
 //             output .Modelica.SIunits.SpecificEntropy s \"Specific entropy at temperature T\";
 //           algorithm
-//             s := data.R * (data.blow[2] - 0.5 * data.alow[1] / (T * T) - data.alow[2] / T + data.alow[3] * Math.log(T) + T * (data.alow[4] + T * (0.5 * data.alow[5] + T * (1 / 3 * data.alow[6] + 0.25 * data.alow[7] * T))));
+//             s := data.R*(data.blow[2] - 0.5*data.alow[1]/(T*T) - data.alow[2]/T + data.alow[3]*Math.log(T) + T*(data.alow[4] + T*(0.5*data.alow[5] + T*(1/3*data.alow[6] + 0.25*data.alow[7]*T))));
 //             annotation(Inline = true);
 //           end s0_Tlow;
 //
@@ -2828,7 +2828,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real T_der \"Temperature derivative\";
 //             output .Modelica.SIunits.SpecificEntropy s \"Specific entropy at temperature T\";
 //           algorithm
-//             s := data.R * (data.blow[2] - 0.5 * data.alow[1] / (T * T) - data.alow[2] / T + data.alow[3] * Math.log(T) + T * (data.alow[4] + T * (0.5 * data.alow[5] + T * (1 / 3 * data.alow[6] + 0.25 * data.alow[7] * T))));
+//             s := data.R*(data.blow[2] - 0.5*data.alow[1]/(T*T) - data.alow[2]/T + data.alow[3]*Math.log(T) + T*(data.alow[4] + T*(0.5*data.alow[5] + T*(1/3*data.alow[6] + 0.25*data.alow[7]*T))));
 //             annotation(Inline = true);
 //           end s0_Tlow_der;
 //         end Functions;
@@ -2922,7 +2922,7 @@ readFile("BranchingDynamicPipes.mo");
 //         constant Boolean hasHeatCapacity = not (size(tableHeatCapacity, 1) == 0) \"True if table tableHeatCapacity is present\";
 //         constant Boolean hasViscosity = not (size(tableViscosity, 1) == 0) \"True if table tableViscosity is present\";
 //         constant Boolean hasVaporPressure = not (size(tableVaporPressure, 1) == 0) \"True if table tableVaporPressure is present\";
-//         final constant Real[neta] invTK = if size(tableViscosity, 1) > 0 then (if TinK then 1 ./ tableViscosity[:, 1] else 1 ./ .Modelica.SIunits.Conversions.from_degC(tableViscosity[:, 1])) else fill(0, neta);
+//         final constant Real[neta] invTK = if size(tableViscosity, 1) > 0 then (if TinK then 1./tableViscosity[:, 1] else 1./.Modelica.SIunits.Conversions.from_degC(tableViscosity[:, 1])) else fill(0, neta);
 //         final constant Real[:] poly_rho = if hasDensity then Polynomials_Temp.fitting(tableDensity[:, 1], tableDensity[:, 2], npolDensity) else zeros(npolDensity + 1);
 //         final constant Real[:] poly_Cp = if hasHeatCapacity then Polynomials_Temp.fitting(tableHeatCapacity[:, 1], tableHeatCapacity[:, 2], npolHeatCapacity) else zeros(npolHeatCapacity + 1);
 //         final constant Real[:] poly_eta = if hasViscosity then Polynomials_Temp.fitting(invTK, .Modelica.Math.log(tableViscosity[:, 2]), npolViscosity) else zeros(npolViscosity + 1);
@@ -2937,7 +2937,7 @@ readFile("BranchingDynamicPipes.mo");
 //           R = Modelica.Constants.R;
 //           cp = Polynomials_Temp.evaluate(poly_Cp, if TinK then T else T_degC);
 //           h = if enthalpyOfT then h_T(T) else h_pT(p, T, densityOfT);
-//           u = h - (if singleState then reference_p / d else state.p / d);
+//           u = h - (if singleState then reference_p/d else state.p/d);
 //           d = Polynomials_Temp.evaluate(poly_rho, if TinK then T else T_degC);
 //           state.T = T;
 //           state.p = p;
@@ -2990,7 +2990,7 @@ readFile("BranchingDynamicPipes.mo");
 //         redeclare function extends dynamicViscosity \"Return dynamic viscosity as a function of the thermodynamic state record\"
 //         algorithm
 //           assert(size(tableViscosity, 1) > 0, \"DynamicViscosity, eta, is not defined for medium \" + mediumName + \".\");
-//           eta := .Modelica.Math.exp(Polynomials_Temp.evaluate(poly_eta, 1 / state.T));
+//           eta := .Modelica.Math.exp(Polynomials_Temp.evaluate(poly_eta, 1/state.T));
 //           annotation(smoothOrder = 2);
 //         end dynamicViscosity;
 //
@@ -3006,7 +3006,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Temperature T \"Temperature\";
 //           output SpecificEntropy s \"Specific entropy\";
 //         algorithm
-//           s := s0 + (if TinK then Polynomials_Temp.integralValue(poly_Cp[1:npol], T, T0) else Polynomials_Temp.integralValue(poly_Cp[1:npol], .Modelica.SIunits.Conversions.to_degC(T), .Modelica.SIunits.Conversions.to_degC(T0))) + Modelica.Math.log(T / T0) * Polynomials_Temp.evaluate(poly_Cp, if TinK then 0 else Modelica.Constants.T_zero);
+//           s := s0 + (if TinK then Polynomials_Temp.integralValue(poly_Cp[1:npol], T, T0) else Polynomials_Temp.integralValue(poly_Cp[1:npol], .Modelica.SIunits.Conversions.to_degC(T), .Modelica.SIunits.Conversions.to_degC(T0))) + Modelica.Math.log(T/T0)*Polynomials_Temp.evaluate(poly_Cp, if TinK then 0 else Modelica.Constants.T_zero);
 //           annotation(Inline = true, smoothOrder = 2);
 //         end s_T;
 //
@@ -3035,7 +3035,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Real dT \"Temperature derivative\";
 //           output Real dh \"Derivative of Specific enthalpy at T\";
 //         algorithm
-//           dh := Polynomials_Temp.evaluate(poly_Cp, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T)) * dT;
+//           dh := Polynomials_Temp.evaluate(poly_Cp, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T))*dT;
 //           annotation(smoothOrder = 1);
 //         end h_T_der;
 //
@@ -3046,7 +3046,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Boolean densityOfT = false \"Include or neglect density derivative dependence of enthalpy\";
 //           output .Modelica.SIunits.SpecificEnthalpy h \"Specific enthalpy at p, T\";
 //         algorithm
-//           h := h0 + Polynomials_Temp.integralValue(poly_Cp, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T), if TinK then T0 else .Modelica.SIunits.Conversions.to_degC(T0)) + (p - reference_p) / Polynomials_Temp.evaluate(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T)) * (if densityOfT then (1 + T / Polynomials_Temp.evaluate(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T)) * Polynomials_Temp.derivativeValue(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T))) else 1.0);
+//           h := h0 + Polynomials_Temp.integralValue(poly_Cp, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T), if TinK then T0 else .Modelica.SIunits.Conversions.to_degC(T0)) + (p - reference_p)/Polynomials_Temp.evaluate(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T))*(if densityOfT then (1 + T/Polynomials_Temp.evaluate(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T))*Polynomials_Temp.derivativeValue(poly_rho, if TinK then T else .Modelica.SIunits.Conversions.to_degC(T))) else 1.0);
 //           annotation(smoothOrder = 2);
 //         end h_pT;
 //
@@ -3076,7 +3076,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         redeclare function extends specificInternalEnergy \"Return specific internal energy as a function of the thermodynamic state record\"
 //         algorithm
-//           u := (if enthalpyOfT then h_T(state.T) else h_pT(state.p, state.T)) - (if singleState then reference_p else state.p) / density(state);
+//           u := (if enthalpyOfT then h_T(state.T) else h_pT(state.p, state.T)) - (if singleState then reference_p else state.p)/density(state);
 //           annotation(Inline = true, smoothOrder = 2);
 //         end specificInternalEnergy;
 //
@@ -3138,7 +3138,7 @@ readFile("BranchingDynamicPipes.mo");
 //           algorithm
 //             y := p[1];
 //             for j in 2:size(p, 1) loop
-//               y := p[j] + u * y;
+//               y := p[j] + u*y;
 //             end for;
 //             annotation(derivative(zeroDerivative = p) = evaluate_der);
 //           end evaluate;
@@ -3169,9 +3169,9 @@ readFile("BranchingDynamicPipes.mo");
 //           protected
 //             Integer n = size(p, 1);
 //           algorithm
-//             y := p[1] * (n - 1);
+//             y := p[1]*(n - 1);
 //             for j in 2:size(p, 1) - 1 loop
-//               y := p[j] * (n - j) + u * y;
+//               y := p[j]*(n - j) + u*y;
 //             end for;
 //             annotation(derivative(zeroDerivative = p) = derivativeValue_der);
 //           end derivativeValue;
@@ -3184,9 +3184,9 @@ readFile("BranchingDynamicPipes.mo");
 //           protected
 //             Integer n = size(p, 1);
 //           algorithm
-//             y := p[1] * (n - 1) * (n - 2);
+//             y := p[1]*(n - 1)*(n - 2);
 //             for j in 2:size(p, 1) - 2 loop
-//               y := p[j] * (n - j) * (n - j - 1) + u * y;
+//               y := p[j]*(n - j)*(n - j - 1) + u*y;
 //             end for;
 //           end secondDerivativeValue;
 //
@@ -3201,8 +3201,8 @@ readFile("BranchingDynamicPipes.mo");
 //             Real y_low = 0 \"Value at lower integrand\";
 //           algorithm
 //             for j in 1:n loop
-//               integral := u_high * (p[j] / (n - j + 1) + integral);
-//               y_low := u_low * (p[j] / (n - j + 1) + y_low);
+//               integral := u_high*(p[j]/(n - j + 1) + integral);
+//               y_low := u_low*(p[j]/(n - j + 1) + y_low);
 //             end for;
 //             integral := integral - y_low;
 //             annotation(derivative(zeroDerivative = p) = integralValue_der);
@@ -3219,7 +3219,7 @@ readFile("BranchingDynamicPipes.mo");
 //           algorithm
 //             V[:, n + 1] := ones(size(u, 1));
 //             for j in n:-1:1 loop
-//               V[:, j] := {u[i] * V[i, j + 1] for i in 1:size(u, 1)};
+//               V[:, j] := {u[i]*V[i, j + 1] for i in 1:size(u, 1)};
 //             end for;
 //             p := Modelica.Math.Matrices.leastSquares(V, y);
 //           end fitting;
@@ -3233,11 +3233,11 @@ readFile("BranchingDynamicPipes.mo");
 //           protected
 //             Integer n = size(p, 1);
 //           algorithm
-//             dy := p[1] * (n - 1);
+//             dy := p[1]*(n - 1);
 //             for j in 2:size(p, 1) - 1 loop
-//               dy := p[j] * (n - j) + u * dy;
+//               dy := p[j]*(n - j) + u*dy;
 //             end for;
-//             dy := dy * du;
+//             dy := dy*du;
 //           end evaluate_der;
 //
 //           function evaluateWithRange_der \"Evaluate derivative of polynomial at a given abscissa value with extrapolation outside of the defined range\"
@@ -3267,7 +3267,7 @@ readFile("BranchingDynamicPipes.mo");
 //             input Real du_low = 0 \"Low integrand value, default 0\";
 //             output Real dintegral = 0.0 \"Integral of polynomial p from u_low to u_high\";
 //           algorithm
-//             dintegral := evaluate(p, u_high) * du_high;
+//             dintegral := evaluate(p, u_high)*du_high;
 //           end integralValue_der;
 //
 //           function derivativeValue_der \"Time derivative of derivative of polynomial\"
@@ -3279,7 +3279,7 @@ readFile("BranchingDynamicPipes.mo");
 //           protected
 //             Integer n = size(p, 1);
 //           algorithm
-//             dy := secondDerivativeValue(p, u) * du;
+//             dy := secondDerivativeValue(p, u)*du;
 //           end derivativeValue_der;
 //         end Polynomials_Temp;
 //       end TableBased;
@@ -3301,7 +3301,7 @@ readFile("BranchingDynamicPipes.mo");
 //           parameter Modelica.SIunits.LinearTemperatureCoefficient alpha = 0 \"Temperature coefficient of heat flow rate\";
 //           Interfaces.HeatPort_b port;
 //         equation
-//           port.Q_flow = -Q_flow * (1 + alpha * (port.T - T_ref));
+//           port.Q_flow = -Q_flow*(1 + alpha*(port.T - T_ref));
 //         end FixedHeatFlow;
 //       end Sources;
 //
@@ -3338,7 +3338,7 @@ readFile("BranchingDynamicPipes.mo");
 //         extends Modelica.Icons.Function;
 //         input Real[:, :] A \"Matrix A\";
 //         input Real[size(A, 1)] b \"Vector b\";
-//         input Real rcond = 100 * Modelica.Constants.eps \"Reciprocal condition number to estimate the rank of A\";
+//         input Real rcond = 100*Modelica.Constants.eps \"Reciprocal condition number to estimate the rank of A\";
 //         output Real[size(A, 2)] x \"Vector x such that min|A*x-b|^2 if size(A,1) >= size(A,2) or min|x|^2 and A*x=b, if size(A,1) < size(A,2)\";
 //         output Integer rank \"Rank of A\";
 //       protected
@@ -3369,7 +3369,7 @@ readFile("BranchingDynamicPipes.mo");
 //           Integer nrow = size(A, 1);
 //           Integer ncol = size(A, 2);
 //           Integer nx = max(nrow, ncol);
-//           Real[max(min(size(A, 1), size(A, 2)) + 3 * size(A, 2), 2 * min(size(A, 1), size(A, 2)) + 1)] work;
+//           Real[max(min(size(A, 1), size(A, 2)) + 3*size(A, 2), 2*min(size(A, 1), size(A, 2)) + 1)] work;
 //           Real[size(A, 1), size(A, 2)] Awork = A;
 //           Integer[size(A, 2)] jpvt = zeros(ncol);
 //           external \"FORTRAN 77\" dgelsx(nrow, ncol, 1, Awork, nrow, x, nx, jpvt, rcond, rank, work, info) annotation(Library = \"lapack\");
@@ -3450,13 +3450,13 @@ readFile("BranchingDynamicPipes.mo");
 //
 //   package Constants \"Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)\"
 //     extends Modelica.Icons.Package;
-//     final constant Real pi = 2 * Math.asin(1.0);
+//     final constant Real pi = 2*Math.asin(1.0);
 //     final constant Real eps = ModelicaServices.Machine.eps \"Biggest number such that 1.0 + eps = 1.0\";
 //     final constant Real inf = ModelicaServices.Machine.inf \"Biggest Real number such that inf and -inf are representable on the machine\";
 //     final constant .Modelica.SIunits.Velocity c = 299792458 \"Speed of light in vacuum\";
 //     final constant .Modelica.SIunits.Acceleration g_n = 9.80665 \"Standard acceleration of gravity on earth\";
 //     final constant Real R(final unit = \"J/(mol.K)\") = 8.314472 \"Molar gas constant\";
-//     final constant Real mue_0(final unit = \"N/A2\") = 4 * pi * 1.e-7 \"Magnetic constant\";
+//     final constant Real mue_0(final unit = \"N/A2\") = 4*pi*1.e-7 \"Magnetic constant\";
 //     final constant .Modelica.SIunits.Conversions.NonSIunits.Temperature_degC T_zero = -273.15 \"Absolute zero temperature\";
 //   end Constants;
 //
@@ -3551,7 +3551,7 @@ readFile("BranchingDynamicPipes.mo");
 //         input Pressure Pa \"Pascal value\";
 //         output NonSIunits.Pressure_bar bar \"bar value\";
 //       algorithm
-//         bar := Pa / 1e5;
+//         bar := Pa/1e5;
 //         annotation(Inline = true);
 //       end to_bar;
 //     end Conversions;

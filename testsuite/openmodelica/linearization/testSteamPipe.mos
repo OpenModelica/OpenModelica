@@ -55,7 +55,7 @@ list(linearized_model);
 //   Real 'x_p[1]' = x[3];
 //   Real 'x_p[2]' = x[4];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // endResult
