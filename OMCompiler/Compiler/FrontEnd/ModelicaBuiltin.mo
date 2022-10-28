@@ -2068,20 +2068,6 @@ external "builtin";
 annotation(preferredView="text");
 end instantiateModel;
 
-function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
-  input TypeName className;
-  input String pythonTemplateFile;
-  input Boolean showFlatModelica = false;
-  output String outPythonScript;
-  external "builtin";
-end buildOpenTURNSInterface;
-
-function runOpenTURNSPythonScript "runs OpenTURNS with the given python script returning the log file"
-  input String pythonScriptFile;
-  output String logOutputFile;
-  external "builtin";
-end runOpenTURNSPythonScript;
-
 function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
   input TypeName className;
   output Boolean success;

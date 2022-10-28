@@ -117,7 +117,7 @@ SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
-main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls install-openturns copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
 
 include Makefile.common
 include Makefile.omsi.common
@@ -229,7 +229,7 @@ testlogwindows:
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
-omdev_extra_dlls: install-openturns
+omdev_extra_dlls:
 	echo Copying needed .dlls to the $(OMBUILDDIR)/bin directory
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	# build 32 bit libOpenCL.a
