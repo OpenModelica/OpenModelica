@@ -1157,18 +1157,22 @@ void communicateMsg(char id, unsigned int size, const char *data)
 #endif
 }
 
-
-/* \brief main function for simulator
+/**
+ * @brief Parses the commandline (program options) and sets some
+ * values. See initRuntimeAndSimulation for more info.
+ * This allows generated simulation code to check-on/read options and flags before
+ * it calls the main _main_SimulationRuntime function to do the simulation.
  *
- * The arguments for the main function are:
- * -v verbose = debug
- * -vf = flags set verbosity flags
- * -f init_file.txt use input data from init file.
- * -r res.plt write result to file.
+ * @param argc
+ * @param argv  This gets overwritten on Windows!!
+ * @param data
+ * @param threadData
+ * @return int    Returns 0 on success. Returns 1 otherwise.
+ *
+ * Note: The function will overwrite argv to its wide character representation. Not sure
+ * if this is a good idea. However, I am leaving it as it was for now.
  */
-
-int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
-{
+int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   /* Support for non-ASCII characters
    * Read the unicode command line arguments and replace the normal arguments with it.
@@ -1181,10 +1185,25 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   }
 #endif
 
-  int retVal = -1;
-  MMC_TRY_INTERNAL(globalJumpBuffer)
   if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
+
+  return 0;
+}
+
+/* \brief main function for simulator
+ *
+ * The arguments for the main function are:
+ * -v verbose = debug
+ * -vf = flags set verbosity flags
+ * -f init_file.txt use input data from init file.
+ * -r res.plt write result to file.
+ */
+
+int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
+{
+  int retVal = -1;
+  MMC_TRY_INTERNAL(globalJumpBuffer)
 
   /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1

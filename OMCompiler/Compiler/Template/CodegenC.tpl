@@ -1192,8 +1192,11 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data, threadData);
-      <%pminit%>
-      res = _main_SimulationRuntime(argc, argv, &data, threadData);
+      res = _main_initRuntimeAndSimulation(argc, argv, &data, threadData);
+      if(res == 0) {
+        <%pminit%>
+        res = _main_SimulationRuntime(argc, argv, &data, threadData);
+      }
       >>
     <<
     /* Main Simulation File */
