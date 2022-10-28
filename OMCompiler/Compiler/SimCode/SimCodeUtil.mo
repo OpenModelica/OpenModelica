@@ -440,11 +440,14 @@ algorithm
     // create parameter equations
     ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, globalKnownVars));
     if debug then execStat("simCode: createStartValueEquations"); end if;
-    ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, nominalValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromNominal, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
-    ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, minValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMin, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, minValueEquations));
     if debug then execStat("simCode: createMinValueEquations"); end if;
-    ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, maxValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMax, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
@@ -7202,24 +7205,54 @@ algorithm
   end matchcontinue;
 end createStartValueEquations;
 
+public function createValueEquationsShared
+  input BackendDAE.Shared shared;
+  input Function valueFunction;
+  input tuple<Integer, list<SimCode.SimEqSystem>> acc;
+  output tuple<Integer, list<SimCode.SimEqSystem>> maxValueEquations;
+
+  partial function Function
+    input BackendDAE.Var inVar;
+    input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+    output BackendDAE.Var outVar;
+    output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
+  end Function;
+algorithm
+  maxValueEquations := match(shared, acc)
+    local
+      list<BackendDAE.Equation> maxValueEquationsTmp;
+      list<SimCode.SimEqSystem> simeqns, simeqns1;
+      Integer uniqueEqIndex;
+
+    case (BackendDAE.SHARED(), (uniqueEqIndex, simeqns)) equation
+      // vars
+      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(shared.globalKnownVars, valueFunction, ({}, shared.aliasVars));
+      maxValueEquationsTmp = listReverse(maxValueEquationsTmp);
+
+      (simeqns1, uniqueEqIndex) = List.mapFold(maxValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
+    then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
+
+    else equation
+      Error.addInternalError("function createValueEquationsShared failed", sourceInfo());
+    then fail();
+  end match;
+end createValueEquationsShared;
+
 public function createNominalValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
   output tuple<Integer, list<SimCode.SimEqSystem>> nominalValueEquations;
 algorithm
-  nominalValueEquations := matchcontinue (syst, shared, acc)
+  nominalValueEquations := match (syst, shared, acc)
     local
-      BackendDAE.Variables vars, av;
       list<BackendDAE.Equation> nominalValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
-      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(), BackendDAE.SHARED(), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((nominalValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromNominal, ({}, av));
-      ((nominalValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromNominal, (nominalValueEquationsTmp, av));
+      ((nominalValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, createInitialAssignmentsFromNominal, ({}, shared.aliasVars));
       nominalValueEquationsTmp = listReverse(nominalValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(nominalValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
@@ -7228,7 +7261,7 @@ algorithm
     else equation
       Error.addInternalError("function createNominalValueEquations failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end createNominalValueEquations;
 
 public function createMinValueEquations
@@ -7237,18 +7270,15 @@ public function createMinValueEquations
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
   output tuple<Integer, list<SimCode.SimEqSystem>> minValueEquations;
 algorithm
-  minValueEquations := matchcontinue (syst, shared, acc)
+  minValueEquations := match (syst, shared, acc)
     local
-      BackendDAE.Variables vars, av;
       list<BackendDAE.Equation> minValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
-      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(), BackendDAE.SHARED(), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((minValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMin, ({}, av));
-      ((minValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromMin, (minValueEquationsTmp, av));
+      ((minValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, createInitialAssignmentsFromMin, ({}, shared.aliasVars));
       minValueEquationsTmp = listReverse(minValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(minValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
@@ -7257,7 +7287,7 @@ algorithm
     else equation
       Error.addInternalError("function createMinValueEquations failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end createMinValueEquations;
 
 public function createMaxValueEquations
@@ -7266,18 +7296,15 @@ public function createMaxValueEquations
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
   output tuple<Integer, list<SimCode.SimEqSystem>> maxValueEquations;
 algorithm
-  maxValueEquations := matchcontinue (syst, shared, acc)
+  maxValueEquations := match (syst, shared, acc)
     local
-      BackendDAE.Variables vars, av;
       list<BackendDAE.Equation> maxValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
-      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(), BackendDAE.SHARED(), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMax, ({}, av));
-      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromMax, (maxValueEquationsTmp, av));
+      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, createInitialAssignmentsFromMax, ({}, shared.aliasVars));
       maxValueEquationsTmp = listReverse(maxValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(maxValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
@@ -7286,7 +7313,7 @@ algorithm
     else equation
       Error.addInternalError("function createMaxValueEquations failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end createMaxValueEquations;
 
 protected function makeSolved_fromStartValue
@@ -7460,7 +7487,7 @@ algorithm
   end matchcontinue;
 end createInitialAssignmentsFromStart;
 
-protected function createInitialAssignmentsFromNominal "see also createInitialAssignmentsFromStart"
+public function createInitialAssignmentsFromNominal "see also createInitialAssignmentsFromStart"
   input BackendDAE.Var inVar;
   input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
   output BackendDAE.Var outVar;
@@ -7487,7 +7514,7 @@ algorithm
   end matchcontinue;
 end createInitialAssignmentsFromNominal;
 
-protected function createInitialAssignmentsFromMin "see also createInitialAssignmentsFromStart"
+public function createInitialAssignmentsFromMin "see also createInitialAssignmentsFromStart"
   input BackendDAE.Var inVar;
   input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
   output BackendDAE.Var outVar;
@@ -7514,7 +7541,7 @@ algorithm
   end matchcontinue;
 end createInitialAssignmentsFromMin;
 
-protected function createInitialAssignmentsFromMax "see also createInitialAssignmentsFromStart"
+public function createInitialAssignmentsFromMax "see also createInitialAssignmentsFromStart"
   input BackendDAE.Var inVar;
   input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
   output BackendDAE.Var outVar;
