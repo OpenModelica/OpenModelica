@@ -4721,15 +4721,32 @@ algorithm
      then
        outExp;
 
+    // ticket #9575
+    // For fractional exponents, i.e. roots, only distribute over non-negative factors
+    case (_, DAE.POW(), e1, e2 as DAE.RCONST(r), _, true) guard r <> intReal(realInt(r))
+      equation
+        /*
+         * Only do this for constant exponent and any constant expression.
+         * Exponentation is very expensive compared to the inner expressions.
+         */
+        exp_lst as (_ :: _ :: _ :: _) = Expression.factors(e1);
+        true = List.exist(exp_lst, Expression.isEvaluatedConst);
+        (exp_lst, exp_lst_1) = List.splitOnTrue(exp_lst, Expression.isPositiveOrZero);
+        exp_lst = simplifyBinaryDistributePow(exp_lst, e2);
+        e = Expression.makeProductLst(exp_lst_1);
+        e = DAE.BINARY(e, inOperator2, e2);
+        outExp = Expression.makeProductLst(e :: exp_lst);
+      then outExp;
+
     // (a1a2...an)^e2 => a1^e2a2^e2..an^e2
-    case (_,DAE.POW(),e1,e2,_,true)
+    case (_,DAE.POW(),e1,e2,_,true) guard Expression.isEvaluatedConst(e2)
       equation
         /*
          * Only do this for constant exponent and any constant expression.
          * Exponentation is very expensive compared to the inner expressions.
          */
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
-        true = List.exist(exp_lst,Expression.isConstValue);
+        true = List.exist(exp_lst,Expression.isEvaluatedConst);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
 
