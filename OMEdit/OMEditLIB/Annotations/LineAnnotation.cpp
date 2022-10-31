@@ -44,7 +44,7 @@
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   setLineType(LineAnnotation::ShapeType);
   setStartElement(0);
@@ -77,7 +77,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
 LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mpLine = pLine;
   setLineType(LineAnnotation::ShapeType);
@@ -111,6 +111,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, Graph
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setLineType(LineAnnotation::ComponentType);
   setStartElement(0);
@@ -137,6 +138,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
 LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
   : ShapeAnnotation(pParent)
 {
+  mpOriginItem = 0;
   mpLine = pLine;
   setLineType(LineAnnotation::ComponentType);
   setStartElement(0);
@@ -169,17 +171,18 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(getOriginItem());
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   mLineType = lineType;
   setZValue(1000);
   // set the default values
@@ -252,6 +255,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
 LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
   setZValue(1000);
@@ -294,6 +298,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
 LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
   setZValue(1000);
@@ -338,6 +343,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
                                QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
   setZValue(1000);
@@ -380,6 +386,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
 LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
   setZValue(1000);
@@ -427,6 +434,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
 LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
   setZValue(1000);
@@ -469,6 +477,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
 LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Element *pComponent, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
   setZValue(1000);
@@ -512,6 +521,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
 LineAnnotation::LineAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
+  mpOriginItem = 0;
   setLineType(LineAnnotation::ComponentType);
   setStartElement(0);
   setStartElementName("");
@@ -552,6 +562,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
 LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setLineType(LineAnnotation::ShapeType);
   setStartElement(0);
   setStartElementName("");

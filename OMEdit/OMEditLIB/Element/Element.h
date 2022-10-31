@@ -35,8 +35,6 @@
 #ifndef ELEMENT_H
 #define ELEMENT_H
 
-#include <memory>
-
 #include "Annotations/ShapeAnnotation.h"
 #include "Element/CornerItem.h"
 #include "Modeling/CoOrdinateSystem.h"
@@ -328,10 +326,10 @@ private:
   QStringList mChoicesAllMatchingAnnotation;
   QStringList mChoices;
   QString mParameterValue;
-  std::unique_ptr<LineAnnotation> mpNonExistingElementLine;
-  std::unique_ptr<RectangleAnnotation> mpDefaultElementRectangle;
-  std::unique_ptr<TextAnnotation> mpDefaultElementText;
-  std::unique_ptr<RectangleAnnotation> mpStateElementRectangle;
+  LineAnnotation *mpNonExistingElementLine;
+  RectangleAnnotation *mpDefaultElementRectangle;
+  TextAnnotation *mpDefaultElementText;
+  RectangleAnnotation *mpStateElementRectangle;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;

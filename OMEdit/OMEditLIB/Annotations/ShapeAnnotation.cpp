@@ -342,8 +342,6 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
-ShapeAnnotation::~ShapeAnnotation() = default;
-
 /*!
  * \brief ShapeAnnotation::setDefaults
  * Sets the default values for the shape annotations. Defaults valued as defined in Modelica specification 3.2 are used.
@@ -1232,7 +1230,7 @@ void ShapeAnnotation::referenceShapeAdded()
   if (pShapeAnnotation) {
     if (mpGraphicsView) {
       mpGraphicsView->addItem(this);
-      mpGraphicsView->addItem(getOriginItem());
+      mpGraphicsView->addItem(mpOriginItem);
     } else if (mpParentComponent) {
       setVisible(true);
       mpParentComponent->shapeAdded();
@@ -1279,7 +1277,7 @@ void ShapeAnnotation::referenceShapeDeleted()
   if (pShapeAnnotation) {
     if (mpGraphicsView) {
       mpGraphicsView->removeItem(this);
-      mpGraphicsView->removeItem(getOriginItem());
+      mpGraphicsView->removeItem(mpOriginItem);
     } else if (mpParentComponent) {
       setVisible(false);
       mpParentComponent->shapeDeleted();

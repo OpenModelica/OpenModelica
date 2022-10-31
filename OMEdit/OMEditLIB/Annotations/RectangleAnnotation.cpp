@@ -38,7 +38,7 @@
 RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
@@ -53,7 +53,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
 RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mpRectangle = pRectangle;
   // set the default values
@@ -69,6 +69,7 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, b
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   applyTransformation();
 }
@@ -76,6 +77,7 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Elem
 RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, Element *pParent)
   : ShapeAnnotation(pParent)
 {
+  mpOriginItem = 0;
   mpRectangle = pRectangle;
   // set the default values
   GraphicItem::setDefaults();
@@ -90,17 +92,18 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, E
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(getOriginItem());
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 RectangleAnnotation::RectangleAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -125,6 +128,7 @@ RectangleAnnotation::RectangleAnnotation(Element *pParent)
 RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();

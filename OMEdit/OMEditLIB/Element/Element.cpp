@@ -624,6 +624,9 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
   mpLibraryTreeItem = 0;
+  mpNonExistingElementLine = 0;
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
   createNonExistingElement();
   createDefaultElement();
   createStateElement();
@@ -692,6 +695,9 @@ Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
   mElementType = Element::Extend;
   mTransformationString = "";
   createNonExistingElement();
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
+  mpStateElementRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
@@ -728,6 +734,9 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   setChoicesAllMatchingAnnotation(QStringList());
   setChoices(QStringList());
 //  createNonExistingElement();
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
+  mpStateElementRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
@@ -848,6 +857,9 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
   mElementType = Element::Extend;
   mTransformationString = "";
   createNonExistingElement();
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
+  mpStateElementRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
@@ -886,6 +898,9 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mChoicesAllMatchingAnnotation = mpReferenceElement->getChoicesAllMatchingAnnotation();
   mChoices = mpReferenceElement->getChoices();
   createNonExistingElement();
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
+  mpStateElementRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
@@ -982,6 +997,7 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   mChoices.clear();
   createNonExistingElement();
   createDefaultElement();
+  mpStateElementRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
@@ -1781,6 +1797,10 @@ void Element::reDrawElementNew()
   mpModel = mpModelElement->getModel();
   mName = mpModelElement->getName();
   mClassName = mpModelElement->getType();
+  // delete if state element and then check if we need to create a state element
+  if (mpStateElementRectangle) {
+    delete mpStateElementRectangle;
+  }
   createStateElement();
   drawElement();
   updateConnections();
@@ -2282,7 +2302,7 @@ ModelInstance::Element* Element::getModelElementByName(ModelInstance::Model *pMo
  */
 void Element::createNonExistingElement()
 {
-  mpNonExistingElementLine = std::make_unique<LineAnnotation>(this);
+  mpNonExistingElementLine = new LineAnnotation(this);
   mpNonExistingElementLine->setVisible(false);
 }
 
@@ -2292,9 +2312,9 @@ void Element::createNonExistingElement()
  */
 void Element::createDefaultElement()
 {
-  mpDefaultElementRectangle = std::make_unique<RectangleAnnotation>(this);
+  mpDefaultElementRectangle = new RectangleAnnotation(this);
   mpDefaultElementRectangle->setVisible(false);
-  mpDefaultElementText = std::make_unique<TextAnnotation>(this);
+  mpDefaultElementText = new TextAnnotation(this);
   mpDefaultElementText->setVisible(false);
 }
 
@@ -2306,7 +2326,7 @@ void Element::createStateElement()
 {
   if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState())
       || (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState())) {
-    mpStateElementRectangle = std::make_unique<RectangleAnnotation>(this);
+    mpStateElementRectangle = new RectangleAnnotation(this);
     mpStateElementRectangle->setVisible(false);
     // create a state rectangle
     mpStateElementRectangle->setLineColor(QColor(95, 95, 95));
@@ -2317,7 +2337,7 @@ void Element::createStateElement()
     extents << QPointF(-100, -100) << QPointF(100, 100);
     mpStateElementRectangle->setExtents(extents);
   } else {
-    mpStateElementRectangle.reset();
+    mpStateElementRectangle = 0;
   }
 }
 
