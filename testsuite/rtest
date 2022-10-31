@@ -18,8 +18,8 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
     $OPENMODELICAHOME = "$1build";
   }
   $dirname=$2;
-  $ENV{'HOME'} = "$1testsuite/libraries-for-testing";
-  $ENV{'APPDATA'} = "$1testsuite/libraries-for-testing";
+  $ENV{'HOME'} = "$1/libraries";
+  $ENV{'APPDATA'} = "$1/libraries";
   $ENV{'OPENMODELICAHOME'} = $OPENMODELICAHOME;
   $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
   $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
