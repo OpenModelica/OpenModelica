@@ -357,6 +357,15 @@
           },
           "version": "2.2.0",
           "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.2.zip"
+        },
+        "OMCtest": {
+          "path": "SiemensPower OMCtest",
+          "support": "noSupport",
+          "uses": {
+            "Modelica": "3.1.0"
+          },
+          "version": "OMCtest",
+          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-OMCtest.20150519.zip"
         }
       }
     },

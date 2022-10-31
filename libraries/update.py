@@ -51,7 +51,7 @@ desired = {
   "SiemensPower": {
     "2.1.0-beta",
     "2.2.0",
-    "0.0.0-OMCtest"
+    "OMCtest"
   },
   "ThermoPower": {
     "3.1.0-master"
