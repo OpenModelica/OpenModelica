@@ -139,7 +139,11 @@ endif()
 ## Do not print unnecessary install messages when nothing has actually changed.
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
-
+# Set a 'catch-all' install component "unknown-install-component". If you see some install component under this
+# id, then you know that something has not set an install component either explicily on the install() command
+# or at higher level using 'set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME <id>)' to cover all install() commands
+# issues after it.
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
 
 ## Subdirectories ##########################################################################################
 omc_add_subdirectory(OMCompiler)

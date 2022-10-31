@@ -13,9 +13,6 @@ if(OM_OMC_USE_LAPACK)
   set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_OLD})
 endif()
 
-
-# find_package(ZLIB REQUIRED) # Not needed. We use the minizip lib from 3rdParty/FMIL instead
-
 # On Win32 we use system UUID lib which is one of the default libs that cmake adds to any target on Win32. On non Win32
 # systems we need to link explicitly to uuid. However, there is no FindUUID yet. We can add one later. Instead we use
 # find library for now. It should be okay for now since I am guessing uuid headers should be in the default include dirs

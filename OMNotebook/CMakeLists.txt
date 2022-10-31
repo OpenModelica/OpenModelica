@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.14)
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME gui)
 
 project(OMNotebook)
 

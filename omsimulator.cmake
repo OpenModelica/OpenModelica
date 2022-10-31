@@ -1,4 +1,6 @@
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omsimulator)
+
 
 include(ExternalProject)
 include(ProcessorCount)

@@ -61,7 +61,9 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
 foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
   list(APPEND SOURCE_FMU_COMMON_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
-  install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          COMPONENT fmu)
 endforeach()
 string(REPLACE ";" ",\n                                         " SOURCE_FMU_COMMON_FILES "${SOURCE_FMU_COMMON_FILES_LIST_QUOTED}")
 
@@ -175,6 +177,7 @@ file(GLOB_RECURSE 3RD_DGESV_HEADERS ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/incl
 install(FILES ${3RD_DGESV_HEADERS}
               ${3RD_DGESV_FILES}
         DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
+        COMPONENT fmu
 )
 
 foreach(source_file_full_path ${3RD_DGESV_FILES})
@@ -192,7 +195,9 @@ set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/nonlinearSolverHomotopy.c simula
 foreach(source_file ${SOURCE_FMU_NLS_FILES_LIST})
   list(APPEND SOURCE_FMU_NLS_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
-  install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          COMPONENT fmu)
 endforeach()
 string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}")
 
@@ -215,6 +220,7 @@ set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
 install(FILES ${3RD_CMINPACK_HEADERS}
               ${3RD_CMINPACK_FMU_FILES}
         DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
+        COMPONENT fmu
 )
 
 foreach(source_file_full_path ${3RD_CMINPACK_FMU_FILES})
@@ -232,7 +238,9 @@ set(SOURCE_FMU_LS_FILES_LIST simulation/solver/linearSystem.c simulation/solver/
 foreach(source_file ${SOURCE_FMU_LS_FILES_LIST})
   list(APPEND SOURCE_FMU_LS_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
-  install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          COMPONENT fmu)
 endforeach()
 string(REPLACE ";" "," SOURCE_FMU_LS_FILES "${SOURCE_FMU_LS_FILES_LIST_QUOTED}")
 
@@ -244,7 +252,9 @@ set(SOURCE_FMU_MIXED_FILES_LIST simulation/solver/mixedSearchSolver.c simulation
 foreach(source_file ${SOURCE_FMU_MIXED_FILES_LIST})
   list(APPEND SOURCE_FMU_MIXED_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
-  install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          COMPONENT fmu)
 endforeach()
 string(REPLACE ";" "," SOURCE_FMU_MIXED_FILES "${SOURCE_FMU_MIXED_FILES_LIST_QUOTED}")
 
@@ -257,7 +267,9 @@ set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c simulat
 foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
   list(APPEND SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
-  install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          COMPONENT fmu)
 endforeach()
 string(REPLACE ";" "," SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED}")
 
@@ -283,7 +295,8 @@ target_include_directories(SimulationRuntimeFMI PUBLIC ${CMAKE_CURRENT_SOURCE_DI
 
 target_link_libraries(SimulationRuntimeFMI PUBLIC OMCPThreads::OMCPThreads)
 
-install(TARGETS SimulationRuntimeFMI)
+install(TARGETS SimulationRuntimeFMI
+        COMPONENT fmu)
 
 
 # ######################################################################################################################
@@ -300,4 +313,5 @@ target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
 # target_link_libraries(OpenModelicaFMIRuntimeC_base PUBLIC omc::config)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
 
-install(TARGETS OpenModelicaFMIRuntimeC)
+install(TARGETS OpenModelicaFMIRuntimeC
+        COMPONENT fmu)
