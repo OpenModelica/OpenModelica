@@ -357,13 +357,13 @@
     },
     "SiemensPower": {
       "versions": {
-        "0.0.0-OMCtest": {
+        "OMCtest": {
           "path": "SiemensPower OMCtest",
           "support": "noSupport",
           "uses": {
             "Modelica": "3.1.0"
           },
-          "version": "0.0.0-OMCtest",
+          "version": "OMCtest",
           "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-OMCtest.20150519.zip"
         },
         "2.1.0-beta": {
