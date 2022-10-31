@@ -4,6 +4,13 @@ import requests
 import json
 import os
 from datetime import datetime
+import argparse
+
+parser = argparse.ArgumentParser(prog="OpenModelica index.json creator")
+parser.add_argument('--test', action="store_true")
+parser.add_argument('filenameprefix')
+args = parser.parse_args()
+
 
 data = requests.get('https://libraries.openmodelica.org/index/v1/index.json').json()
 desired = {
@@ -55,6 +62,17 @@ desired = {
   "WasteWater": {
     "2.1.0"
   }
+} if args.test else {
+  "Complex": {
+    "4.0.0+maint.om"
+  },
+  "Modelica": {
+    "3.2.3+maint.om",
+    "4.0.0+maint.om"
+  },
+  "ModelicaServices": {
+    "4.0.0+maint.om"
+  },
 }
 newdata = {}
 for key in data["libs"].keys():
@@ -70,7 +88,7 @@ for key in data["libs"].keys():
 now = datetime.now()
 stamp = now.strftime("%Y%m%d%H%M%S.stamp")
 
-with open("index.mos", "w") as fout:
+with open(args.filenameprefix + "index.mos", "w") as fout:
   fout.write('''
 setEnvironmentVar("HOME", OpenModelica.Scripting.cd());
 setEnvironmentVar("APPDATA", OpenModelica.Scripting.cd());
@@ -83,10 +101,6 @@ OpenModelica.Scripting.mkdir(".openmodelica");
 if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
   print("\\nmkdir failed\\n");
   print(getErrorString());
-  exit(1);
-end if;
-if 0 <> system("cp index.json .openmodelica/libraries/") then
-  print("Failed to cp index.json");
   exit(1);
 end if;
 vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "3.2.3");
@@ -111,9 +125,9 @@ else
   print("Installed: %s %s\\n");
 end if;
 ''' % (lib, version, lib, version, lib, version))
-  fout.write('system("touch .openmodelica/libraries/%s")' % stamp)
+  fout.write('system("touch .openmodelica/%s")' % stamp)
 
-with open("index.json", "w") as fout:
+with open(args.filenameprefix + "index.json", "w") as fout:
   fout.write(json.dumps({"libs":newdata}, indent=2))
 with open("Makefile.version", "w") as fout:
   fout.write('STAMP=%s' % stamp)

@@ -69,7 +69,7 @@ omc-diff:
 ReferenceFiles:
 	$(MAKE) -C testsuite/ReferenceFiles
 libs-for-testing: omc
-	$(MAKE) -C testsuite/libraries-for-testing/
+	$(MAKE) -C libraries/
 ffi-test-lib: ffi-test-lib.skip
 ffi-test-lib.skip:
 	$(MAKE) -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc

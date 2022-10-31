@@ -47,10 +47,10 @@
             "3.2.1",
             "3.2.2"
           ],
-          "sha": "fad7348c3ee4dae4cf0d762e3153c1336f4e0878",
+          "sha": "e68d7a0317c565ee00c1b8d44c527979ea0304bf",
           "support": "fullSupport",
           "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/fad7348c3ee4dae4cf0d762e3153c1336f4e0878.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e68d7a0317c565ee00c1b8d44c527979ea0304bf.zip"
         },
         "4.0.0+maint.om": {
           "path": "Complex.mo",
@@ -61,10 +61,10 @@
             "3.2.2",
             "3.2.3"
           ],
-          "sha": "34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34",
+          "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
           "support": "fullSupport",
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
         }
       }
     },
@@ -169,14 +169,14 @@
             "3.2.1",
             "3.2.2"
           ],
-          "sha": "fad7348c3ee4dae4cf0d762e3153c1336f4e0878",
+          "sha": "e68d7a0317c565ee00c1b8d44c527979ea0304bf",
           "support": "fullSupport",
           "uses": {
             "Complex": "3.2.3",
             "ModelicaServices": "3.2.3"
           },
           "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/fad7348c3ee4dae4cf0d762e3153c1336f4e0878.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e68d7a0317c565ee00c1b8d44c527979ea0304bf.zip"
         },
         "4.0.0+maint.om": {
           "convertFromVersion": [
@@ -189,20 +189,14 @@
             "3.2.3"
           ],
           "path": "Modelica",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "sha": "34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34",
+          "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
           "support": "fullSupport",
           "uses": {
             "Complex": "4.0.0",
             "ModelicaServices": "4.0.0"
           },
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
         }
       }
     },
@@ -230,12 +224,12 @@
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/c1feaafc23b4a122d20966109d76efd4f8853c58.zip"
         },
         "3.2.1+maint.om": {
-          "path": "ModelicaServices",
-          "provides": [
+          "convertFromVersion": [
             "1.0.0",
             "1.1.0",
             "1.2.0"
           ],
+          "path": "ModelicaServices",
           "sha": "06af0578789283267a4089fffd8f2fb302e0405a",
           "support": "obsolete",
           "uses": {
@@ -245,13 +239,13 @@
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
         },
         "3.2.2+maint.om": {
-          "path": "ModelicaServices",
-          "provides": [
+          "convertFromVersion": [
             "1.0.0",
             "1.1.0",
             "1.2.0",
             "3.2.1"
           ],
+          "path": "ModelicaServices",
           "sha": "9578058eff7a3a3d953a37d190a9bafa4e77092e",
           "support": "obsolete",
           "uses": {
@@ -269,13 +263,10 @@
             "3.2.1",
             "3.2.2"
           ],
-          "sha": "fad7348c3ee4dae4cf0d762e3153c1336f4e0878",
+          "sha": "e68d7a0317c565ee00c1b8d44c527979ea0304bf",
           "support": "fullSupport",
-          "uses": {
-            "Modelica": "3.2.3"
-          },
           "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/fad7348c3ee4dae4cf0d762e3153c1336f4e0878.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e68d7a0317c565ee00c1b8d44c527979ea0304bf.zip"
         },
         "4.0.0+maint.om": {
           "path": "ModelicaServices",
@@ -287,13 +278,10 @@
             "3.2.2",
             "3.2.3"
           ],
-          "sha": "34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34",
+          "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
           "support": "fullSupport",
-          "uses": {
-            "Modelica": "4.0.0"
-          },
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/34fe8cf3c7127ae09ca5f41e26b48fb6044e1e34.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
         }
       }
     },
@@ -301,13 +289,13 @@
       "versions": {
         "3.2.3+maint.om": {
           "path": "ModelicaTest",
-          "sha": "fad7348c3ee4dae4cf0d762e3153c1336f4e0878",
+          "sha": "e68d7a0317c565ee00c1b8d44c527979ea0304bf",
           "support": "fullSupport",
           "uses": {
             "Modelica": "3.2.3"
           },
           "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/fad7348c3ee4dae4cf0d762e3153c1336f4e0878.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e68d7a0317c565ee00c1b8d44c527979ea0304bf.zip"
         }
       }
     },
@@ -341,31 +329,8 @@
         }
       }
     },
-    "PowerSystems": {
-      "versions": {
-        "1.0.1": {
-          "path": "PowerSystems",
-          "sha": "07b5d32cc291e2397becd2f97351c0bc1a375d54",
-          "support": "support",
-          "uses": {
-            "Modelica": "3.2.3"
-          },
-          "version": "1.0.1",
-          "zipfile": "https://github.com/modelica-3rdparty/PowerSystems/archive/07b5d32cc291e2397becd2f97351c0bc1a375d54.zip"
-        }
-      }
-    },
     "SiemensPower": {
       "versions": {
-        "0.0.0-OMCtest": {
-          "path": "SiemensPower OMCtest",
-          "support": "noSupport",
-          "uses": {
-            "Modelica": "3.1.0"
-          },
-          "version": "0.0.0-OMCtest",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-OMCtest.20150519.zip"
-        },
         "2.1.0-beta": {
           "convertFromVersion": [
             "1.8.0",
@@ -399,30 +364,31 @@
       "versions": {
         "3.1.0-master": {
           "path": "ThermoPower",
-          "sha": "133554afb8e79a959eeea0b6cddf811f87d681f5",
+          "sha": "d028b9ee4ba18ff148726fffe50917de29102a0b",
           "support": "noSupport",
           "uses": {
             "Modelica": "3.2.3"
           },
           "version": "3.1.0-master",
-          "zipfile": "https://github.com/casella/ThermoPower/archive/133554afb8e79a959eeea0b6cddf811f87d681f5.zip"
+          "zipfile": "https://github.com/casella/ThermoPower/archive/d028b9ee4ba18ff148726fffe50917de29102a0b.zip"
         }
       }
     },
     "ThermoSysPro": {
       "versions": {
         "3.2.0": {
-          "path": "ThermoSysPro 3.2",
+          "path": "ThermoSysPro",
           "provides": [
             "0.0.0",
-            "3.1.0"
+            "4.0.0"
           ],
+          "sha": "ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501",
           "support": "experimental",
           "uses": {
-            "Modelica": "3.2.3"
+            "Modelica": "3.2.2"
           },
           "version": "3.2.0",
-          "zipfile": "https://build.openmodelica.org/libraries/ThermoSysPro/ThermoSysPro-3.2.zip"
+          "zipfile": "https://github.com/ThermoSysPro/ThermoSysPro/archive/ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501.zip"
         }
       }
     },
