@@ -126,14 +126,11 @@ utf8-iconv:
 
 clean:
 	test ! -d build || rm -r build/
-	for d in @subdirs@ testsuite/difftool testsuite/libraries-for-testing; do $(MAKE) -C $$d clean; done
-
-LIBGITDIRS = `ls -f libraries/git`
+	for d in @subdirs@ testsuite/difftool libraries; do $(MAKE) -C $$d clean; done
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch
-	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
