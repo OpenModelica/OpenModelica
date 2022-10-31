@@ -126,11 +126,9 @@ inline void check_container_dispaly(int index, const std::string& disp) {
 
 void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
 
-#ifndef NDEBUG
     if (json_eq["defines"].size() != 1) {
         utility::eq_index_fatal(current_node.index, "Assign with more than one define!");
     }
-#endif
 
     current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
 
@@ -141,11 +139,9 @@ void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
 
 void load_algorithm(Equation& current_node, const nlohmann::json& json_eq) {
 
-    if (json_eq["defines"].size() != 1) {
-        utility::eq_index_error(current_node.index, "Algorithm with more than one define!");
+    for (auto def : json_eq["defines"]) {
+        current_node.lhs.insert(def.get<std::string>());
     }
-
-    current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
 
     for (auto use : json_eq["uses"]) {
         current_node.rhs.insert(use.get<std::string>());
@@ -154,17 +150,15 @@ void load_algorithm(Equation& current_node, const nlohmann::json& json_eq) {
 
 void load_simple_assign_check_local_define(Equation& current_node, const nlohmann::json& int_eq) {
 
-#ifndef NDEBUG
     if (int_eq["defines"].size() != 1) {
         utility::eq_index_error(current_node.index, "Assign with more than one define!");
     }
-#endif
 
     current_node.lhs.insert(int_eq["defines"].front().get<std::string>());
 
     for (auto& use : int_eq["uses"]) {
         auto var_s = use.get<std::string>();
-        utility::indexed_dlog(current_node.index, "Checking if " + var_s + " is defined localy");
+        utility::indexed_dlog(current_node.index, "Checking if " + var_s + " is defined locally");
         auto local_defined = current_node.lhs.find(var_s) != current_node.lhs.end();
 
         // Disable me and see if graphs look different.
