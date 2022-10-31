@@ -232,7 +232,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Matching.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/MathematicaDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/OnRelaxation.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/OpenTURNS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/RemoveSimpleEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/ResolveLoops.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Sorting.mo

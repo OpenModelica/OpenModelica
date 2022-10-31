@@ -112,7 +112,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 omc-bootstrapped: $(SEMLA_LIB)
-	$(MAKE) interactive sim-dependencies install-openturns
+	$(MAKE) interactive sim-dependencies
 	$(MAKE) ModelicaExternalC
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)

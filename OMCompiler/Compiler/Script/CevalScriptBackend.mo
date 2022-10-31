@@ -110,7 +110,6 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import Obfuscate;
-import OpenTURNS;
 import PackageManagement;
 import Parser;
 import Print;
@@ -1431,30 +1430,6 @@ algorithm
         (b,outCache,_,executable,_,_,initfilename,_,_,_) = buildModel(outCache,inEnv, vals, msg);
       then
         ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
-
-    case ("buildOpenTURNSInterface",vals)
-      equation
-        (outCache,scriptFile) = buildOpenTURNSInterface(outCache,inEnv,vals,msg);
-      then
-        Values.STRING(scriptFile);
-
-    case ("buildOpenTURNSInterface",_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"buildOpenTURNSInterface failed. Use getErrorString() to see why."});
-      then
-        fail();
-
-    case ("runOpenTURNSPythonScript",vals)
-      equation
-        (outCache,logFile) = runOpenTURNSPythonScript(outCache,inEnv,vals,msg);
-      then
-        Values.STRING(logFile);
-
-    case ("runOpenTURNSPythonScript",_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"runOpenTURNSPythonScript failed. Use getErrorString() to see why"});
-      then
-        fail();
 
     // adrpo: see if the model exists before simulation!
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
@@ -5761,72 +5736,6 @@ algorithm
         (inCache,simValue);
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
-
-protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output String scriptFile;
-algorithm
-  (outCache,scriptFile):= match(inCache,inEnv,vals,inMsg)
-    local
-      String templateFile, str;
-      Absyn.Program p;
-      Absyn.Path className;
-      FCore.Cache cache;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      BackendDAE.BackendDAE dlow;
-      DAE.FunctionTree funcs;
-      Boolean showFlatModelica;
-      String filenameprefix,description;
-
-    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},_)
-      equation
-        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,false, transform = true);
-        //print("instantiated class\n");
-        funcs = FCore.getFunctionTree(cache);
-        if showFlatModelica then
-          print(DAEDump.dumpStr(dae, funcs));
-        end if;
-        // get all the variable names with a distribution
-        // TODO FIXME
-        // sort all variable names in the distribution order
-        // TODO FIXME
-        filenameprefix = AbsynUtil.pathString(className);
-        description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        //print("lowered class\n");
-        //print("calling generateOpenTurnsInterface\n");
-        scriptFile = OpenTURNS.generateOpenTURNSInterface(dlow, className, SymbolTable.getAbsyn(), templateFile);
-      then
-        (cache,scriptFile);
-
-  end match;
-end buildOpenTURNSInterface;
-
-protected function runOpenTURNSPythonScript
-"runs OpenTURNS with the given python script returning the log file"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output String outLogFile;
-algorithm
-  (outCache,outLogFile):= match(inCache,inEnv,vals,inMsg)
-    local
-      String pythonScriptFile, logFile;
-      FCore.Cache cache;
-    case(cache,_,{Values.STRING(pythonScriptFile)},_)
-      equation
-        logFile = OpenTURNS.runPythonScript(pythonScriptFile);
-      then
-        (cache,logFile);
-  end match;
-end runOpenTURNSPythonScript;
 
 public function getFileDir "author: x02lucpo
   returns the dir where class file (.mo) was saved or
