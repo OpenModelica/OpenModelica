@@ -2,7 +2,7 @@
 
 include Makefile.version
 
-lib-for-testing: .openmodelica/libraries/$(STAMP)
+lib-for-testing: .openmodelica/$(STAMP)
 lib-for-installing: installing/.openmodelica/$(STAMP)
 	mkdir -p ../build/share/omlibrary/cache
 	cp -u install-index.json ../build/share/omlibrary/cache/index.json
