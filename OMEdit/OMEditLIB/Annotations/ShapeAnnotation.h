@@ -35,8 +35,6 @@
 #ifndef SHAPEANNOTATION_H
 #define SHAPEANNOTATION_H
 
-#include <memory>
-
 #include "Util/StringHandler.h"
 #include "Element/Transformation.h"
 #include "FlatModelica/Expression.h"
@@ -140,7 +138,6 @@ public:
   ShapeAnnotation(QGraphicsItem *pParent);
   ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent);
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent = 0);
-  ~ShapeAnnotation();
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
@@ -173,7 +170,7 @@ public:
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  OriginItem* getOriginItem() {return mpOriginItem.get();}
+  OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QList<QPointF> points) {mPoints = points;}
   QList<QPointF> getPoints() {return mPoints;}
   void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
@@ -271,7 +268,7 @@ public slots:
 protected:
   GraphicsView *mpGraphicsView;
   Element *mpParentComponent;
-  std::unique_ptr<OriginItem> mpOriginItem;
+  OriginItem *mpOriginItem;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;

@@ -41,7 +41,7 @@
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
@@ -56,7 +56,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mpBitmap = pBitmap;
   mClassFileName = classFileName;
@@ -73,6 +73,7 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   applyTransformation();
 }
@@ -80,6 +81,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *p
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent)
   : ShapeAnnotation(pParent)
 {
+  mpOriginItem = 0;
   mpBitmap = pBitmap;
   mClassFileName = classFileName;
   // set the default values
@@ -95,12 +97,12 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(getOriginItem());
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 /*!
@@ -113,7 +115,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsVi
 BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
-  mpOriginItem = std::make_unique<OriginItem>(this);
+  mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
