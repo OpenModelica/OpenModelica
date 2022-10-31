@@ -51,7 +51,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpElement = 0;
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
@@ -67,7 +67,7 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, Graph
   : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
   mpElement = 0;
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   mpText = pText;
   // set the default values
@@ -83,7 +83,6 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, Graph
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
 {
-  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   initUpdateTextString();
   applyTransformation();
@@ -92,7 +91,6 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   : ShapeAnnotation(pParent), mpElement(pParent)
 {
-  mpOriginItem = 0;
   mpText = pText;
   // set the default values
   GraphicItem::setDefaults();
@@ -108,18 +106,17 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   mpElement = 0;
-  mpOriginItem = new OriginItem(this);
+  mpOriginItem = std::make_unique<OriginItem>(this);
   mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  mpGraphicsView->addItem(getOriginItem());
 }
 
 TextAnnotation::TextAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent), mpElement(pParent)
 {
-  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -137,7 +134,6 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
   : ShapeAnnotation(0, pLineAnnotation)
 {
   mpElement = 0;
-  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -161,7 +157,6 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLine
   : ShapeAnnotation(pLineAnnotation)
 {
   mpElement = 0;
-  mpOriginItem = 0;
   mpText = pText;
   // set the default values
   GraphicItem::setDefaults();
@@ -192,7 +187,6 @@ TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
   mpElement = 0;
-  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
