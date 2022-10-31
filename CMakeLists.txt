@@ -1,6 +1,9 @@
 
 cmake_minimum_required(VERSION 3.14)
-project(OpenModelica C CXX)
+project(OpenModelica
+        VERSION 1.19.3
+        HOMEPAGE_URL "https://openmodelica.org/"
+        LANGUAGES C CXX)
 
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
@@ -158,6 +161,8 @@ if(OM_ENABLE_GUI_CLIENTS)
 endif()
 
 omc_add_subdirectory(testsuite)
+
+include(cmake/packaging/common.cmake)
 
 
 ## Report some status info.
