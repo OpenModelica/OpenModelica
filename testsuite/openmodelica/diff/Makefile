@@ -13,10 +13,12 @@ ClosedDoors.mos \
 LargeFileChange.mos \
 LimPID.mos \
 ListFile.mos \
+MoistAirUnsaturated.mos \
 MoveComment.mos \
 MoveComponent.mos \
 MoveConnection.mos \
 multipoleFluidTemperature.mos \
+PartialCoolingCapacity.mos \
 Pipe.mos \
 removeComponentModifiers.mos \
 RLC.mos \
