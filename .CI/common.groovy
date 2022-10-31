@@ -143,11 +143,11 @@ void makeLibsAndCache(libs='core') {
   sh label: 'Create directory for omlibrary cache', script: """
   mkdir -p '${env.LIBRARIES}/om-pkg-cache'
   # Remove the symbolic link, or if it's a directory there... the entire thing
-  rm testsuite/libraries-for-testing/.openmodelica/cache || rm -rf testsuite/libraries-for-testing/.openmodelica/cache
-  mkdir -p testsuite/libraries-for-testing/.openmodelica/
-  test ! -e testsuite/libraries-for-testing/.openmodelica/cache
-  ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache
-  ls -lh testsuite/libraries-for-testing/.openmodelica/cache/
+  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
+  mkdir -p libraries/.openmodelica/
+  test ! -e libraries/.openmodelica/cache
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
   """
   generateTemplates()
   sh "touch omc.skip"
@@ -397,7 +397,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo export MAKETHREADS=-j16
      echo set -e
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
-     echo export "APPDATA=\${PWD}/testsuite/libraries-for-testing"
+     echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
@@ -420,7 +420,7 @@ void buildAndRunOMEditTestsuite(stash) {
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
-  HOME="\$PWD/testsuite/libraries-for-testing"
+  HOME="\$PWD/libraries"
   cd build/bin
   xvfb-run ./RunOMEditTestsuite.sh
   '''
@@ -455,7 +455,7 @@ void compliance() {
   standardSetup()
   unstash 'omc-clang'
   makeLibsAndCache('all')
-  sh 'HOME=$PWD/testsuite/libraries-for-testing/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
+  sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
