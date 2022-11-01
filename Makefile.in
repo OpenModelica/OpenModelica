@@ -197,6 +197,7 @@ install: install-dirs
 	cp -p "@OMBUILDDIR@"/share/omc/java/* ${INSTALL_JAVADIR}
 	# Translations
 	# cp -rp "@OMBUILDDIR@"/share/locale/* ${INSTALL_LOCALEDIR}/
+	test ! -d "@OMBUILDDIR@"/share/omlibrary || cp -rp "@OMBUILDDIR@"/share/omlibrary "${INSTALL_SHAREDIR}/"
 
 Makefile: Makefile.in config.status
 	./config.status
