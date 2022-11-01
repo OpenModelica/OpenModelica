@@ -7733,8 +7733,8 @@ algorithm
     // cosh(x)
     case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
       /* literals */
-    case DAE.ICONST(i) then i>=0;
-    case DAE.RCONST(r) then realGe(r,0.0);
+    case DAE.ICONST(i) then i >= 0;
+    case DAE.RCONST(r) then r >= 0.0;
       /* e1 + e2 */
     case DAE.BINARY(e1,DAE.ADD(),e2)
       then isPositiveOrZero(e1) and isPositiveOrZero(e2);
