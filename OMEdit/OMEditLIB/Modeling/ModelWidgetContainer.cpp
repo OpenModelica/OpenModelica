@@ -5426,6 +5426,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 ModelWidget::~ModelWidget()
 {
   qDebug() << "ModelWidget::~ModelWidget()" << mpLibraryTreeItem->getNameStructure();
+  if (mpModelInstance) {
+    delete mpModelInstance;
+  }
 }
 
 /*!
