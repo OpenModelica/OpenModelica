@@ -524,11 +524,12 @@ function installCachedPackages
    library directory is empty or doesn't exist, to allow bundling libraries with
    the installation."
 protected
-  String packageIndex;
+  String packageIndex, homeDir;
   JSON obj, libs_obj, lib_obj, versions_obj;
   list<String> libs;
 algorithm
-  if not listEmpty(System.subDirectories(getUserLibraryPath())) or Testsuite.isRunning() then
+  homeDir := Settings.getHomeDir(runningTestsuite=Testsuite.isRunning());
+  if not listEmpty(System.subDirectories(getUserLibraryPath())) or homeDir=="" or homeDir=="/" then
     // Return if the user's library directory isn't empty, or if we're running
     // e.g. rtest in which case the path might not be correct but we don't care
     // and don't want any extra output.
