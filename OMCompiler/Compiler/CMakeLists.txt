@@ -262,22 +262,22 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 install(TARGETS omc OpenModelicaCompiler
-            COMPONENT compiler)
+            COMPONENT omc)
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
 install(FILES NFFrontEnd/NFModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/ModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/PDEModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 
 # Install the scripts to 'share' dir.
 install(DIRECTORY scripts

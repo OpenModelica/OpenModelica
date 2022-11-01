@@ -33,7 +33,7 @@ endif()
 
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
-# an omc not compiled without large stack size. The tpl parser is quite recursive and will
+# an omc compiled without large stack size. The tpl parser is quite recursive and will
 # overflow on parsing comments with very long lines ~300. *CPP tpl files have lines longer
 # than that.
 if(MINGW)
