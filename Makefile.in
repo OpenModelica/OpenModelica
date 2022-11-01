@@ -17,7 +17,7 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
-all: @ALL_TARGETS@ omlibrary
+all: @ALL_TARGETS@
 
 .PRECIOUS: Makefile
 .PHONY: omc omlibrary omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing test fast-test testsuite-depends omsens_qt
