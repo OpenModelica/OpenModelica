@@ -206,6 +206,7 @@ public:
   Element(Element *pElement, GraphicsView *pGraphicsView);
   // used for interface point
   Element(ElementInfo *pElementInfo, Element *pParentElement);
+  ~Element();
   bool isInheritedElement() {return mIsInheritedElement;}
   bool hasShapeAnnotation(Element *pElement);
   bool hasNonExistingClass();

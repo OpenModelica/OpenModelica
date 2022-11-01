@@ -93,6 +93,7 @@ class GraphicsScene : public QGraphicsScene
   Q_OBJECT
 public:
   GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
+  ~GraphicsScene();
   ModelWidget *mpModelWidget;
   StringHandler::ViewType mViewType;
 };
@@ -177,6 +178,7 @@ private:
   QSet<QGraphicsItem*> mAllItems;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
+  ~GraphicsView();
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;

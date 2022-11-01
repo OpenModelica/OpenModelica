@@ -125,6 +125,11 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
   mpModelWidget = pModelWidget;
 }
 
+GraphicsScene::~GraphicsScene()
+{
+  qDebug() << "GraphicsScene::~GraphicsScene()";
+}
+
 /*!
  * \class GraphicsView
  * \brief The GraphicsView class is a class which display the content of a scene of components.
@@ -233,6 +238,34 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpBitmapShapeAnnotation = 0;
   createActions();
   mAllItems.clear();
+}
+
+GraphicsView::~GraphicsView()
+{
+  qDebug() << "GraphicsView::~GraphicsView()";
+
+  /* When the scene is deleted it will delete all the items inside it.
+   * We need to delete the items that are not part of the scene.
+   */
+  foreach (Element *pElement, mOutOfSceneElementsList) {
+    delete pElement;
+  }
+
+  foreach (LineAnnotation *pConnectionLineAnnotation, mOutOfSceneConnectionsList) {
+    delete pConnectionLineAnnotation;
+  }
+
+  foreach (LineAnnotation *pTransitionLineAnnotation, mOutOfSceneTransitionsList) {
+    delete pTransitionLineAnnotation;
+  }
+
+  foreach (LineAnnotation *pInitialStateLineAnnotation, mOutOfSceneInitialStatesList) {
+    delete pInitialStateLineAnnotation;
+  }
+
+  foreach (ShapeAnnotation *pShapeAnnotation, mOutOfSceneShapesList) {
+    delete pShapeAnnotation;
+  }
 }
 
 void GraphicsView::setIsVisualizationView(bool visualizationView)
@@ -5429,6 +5462,10 @@ ModelWidget::~ModelWidget()
   if (mpModelInstance) {
     delete mpModelInstance;
   }
+
+  if (mpDiagramGraphicsView) {
+
+  }
 }
 
 /*!
@@ -5987,7 +6024,7 @@ void ModelWidget::createModelWidgetComponents()
     mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
     mpDocumentationViewToolButton->setAutoRaise(true);
     // view buttons box
-    mpViewsButtonGroup = new QButtonGroup;
+    mpViewsButtonGroup = new QButtonGroup(this);
     mpViewsButtonGroup->setExclusive(true);
     mpViewsButtonGroup->addButton(mpDiagramViewToolButton);
     mpViewsButtonGroup->addButton(mpIconViewToolButton);
