@@ -590,10 +590,8 @@ void MainWindow::beforeClosingMainWindow()
   delete mpOMCProxy;
   // delete the OMSProxy object
   OMSProxy::destroy();
-  // Delete the top level LibraryTreeItems. The LibraryTreeItem destructor will delete the children recursively.
-  for (int i = 0; i < mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize(); ++i) {
-    delete mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
-  }
+  // Delete the root LibraryTreeItems. The LibraryTreeItem destructor will delete the children recursively.
+  delete mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
   delete mpModelWidgetContainer;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
