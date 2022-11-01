@@ -125,11 +125,6 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
   mpModelWidget = pModelWidget;
 }
 
-GraphicsScene::~GraphicsScene()
-{
-  qDebug() << "GraphicsScene::~GraphicsScene()";
-}
-
 /*!
  * \class GraphicsView
  * \brief The GraphicsView class is a class which display the content of a scene of components.
@@ -242,8 +237,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
 
 GraphicsView::~GraphicsView()
 {
-  qDebug() << "GraphicsView::~GraphicsView()";
-
   /* When the scene is deleted it will delete all the items inside it.
    * We need to delete the items that are not part of the scene.
    */
@@ -5461,13 +5454,8 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
 ModelWidget::~ModelWidget()
 {
-  qDebug() << "ModelWidget::~ModelWidget()" << mpLibraryTreeItem->getNameStructure();
   if (mpModelInstance) {
     delete mpModelInstance;
-  }
-
-  if (mpDiagramGraphicsView) {
-
   }
 }
 

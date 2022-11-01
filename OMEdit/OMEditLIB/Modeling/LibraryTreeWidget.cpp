@@ -147,7 +147,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
  */
 LibraryTreeItem::~LibraryTreeItem()
 {
-  qDebug() << "LibraryTreeItem::~LibraryTreeItem()" << mNameStructure;
   if (mpModelWidget) {
     delete mpModelWidget;
   }

@@ -1043,15 +1043,6 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   updateToolTip();
 }
 
-Element::~Element()
-{
-  if (mElementType == Element::Root) {
-    qDebug() << "Element::~Element()" << getName();
-  } else {
-    qDebug() << "Element::~Element() Childs";
-  }
-}
-
 /*!
  * \brief Element::hasShapeAnnotation
  * Checks if Element has any ShapeAnnotation

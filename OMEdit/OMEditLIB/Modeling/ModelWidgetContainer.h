@@ -93,7 +93,6 @@ class GraphicsScene : public QGraphicsScene
   Q_OBJECT
 public:
   GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
-  ~GraphicsScene();
   ModelWidget *mpModelWidget;
   StringHandler::ViewType mViewType;
 };
