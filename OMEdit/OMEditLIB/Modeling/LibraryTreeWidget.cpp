@@ -147,6 +147,10 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
  */
 LibraryTreeItem::~LibraryTreeItem()
 {
+  qDebug() << "LibraryTreeItem::~LibraryTreeItem()" << mNameStructure;
+  if (mpModelWidget) {
+    delete mpModelWidget;
+  }
   qDeleteAll(mChildren);
   mChildren.clear();
 }
@@ -4095,6 +4099,12 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
   pMainLayout->addWidget(mpLibraryTreeView, 2, 0);
   setLayout(pMainLayout);
+}
+
+LibraryWidget::~LibraryWidget()
+{
+  qDebug() << "LibraryWidget::~LibraryWidget()";
+  delete mpLibraryTreeView;
 }
 
 /*!

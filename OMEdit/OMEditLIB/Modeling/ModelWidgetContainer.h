@@ -566,6 +566,7 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer);
+  ~ModelWidget();
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}

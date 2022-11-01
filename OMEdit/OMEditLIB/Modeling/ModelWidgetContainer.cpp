@@ -5423,6 +5423,11 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
   }
 }
 
+ModelWidget::~ModelWidget()
+{
+  qDebug() << "ModelWidget::~ModelWidget()" << mpLibraryTreeItem->getNameStructure();
+}
+
 /*!
  * \brief ModelWidget::getExtendsModifiersMap
  * Returns a extends modifier map for extends class
@@ -7692,7 +7697,7 @@ void ModelWidget::createUndoStack()
       assert(mpUndoStack);
     }
   } else {
-    mpUndoStack = new UndoStack;
+    mpUndoStack = new UndoStack(this);
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
   }
@@ -8882,7 +8887,10 @@ void ModelWidget::handleCanRedoChanged(bool canRedo)
 void ModelWidget::closeEvent(QCloseEvent *event)
 {
   Q_UNUSED(event);
-  mpModelWidgetContainer->removeSubWindow(this);
+  QMdiSubWindow *pMdiSubWindow = mpModelWidgetContainer->getMdiSubWindow(this);
+  if (pMdiSubWindow) {
+    mpModelWidgetContainer->removeSubWindow(this);
+  }
 }
 
 /*!
@@ -9051,8 +9059,9 @@ ModelWidget* ModelWidgetContainer::getModelWidget(const QString& className)
 {
   foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-    if (className == pModelWidget->getLibraryTreeItem()->getNameStructure())
+    if (className == pModelWidget->getLibraryTreeItem()->getNameStructure()) {
       return pModelWidget;
+    }
   }
   return NULL;
 }

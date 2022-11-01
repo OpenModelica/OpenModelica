@@ -477,6 +477,7 @@ class LibraryWidget : public QWidget
   Q_OBJECT
 public:
   LibraryWidget(QWidget *pParent = 0);
+  ~LibraryWidget();
   TreeSearchFilters* getTreeSearchFilters() {return mpTreeSearchFilters;}
   LibraryTreeModel* getLibraryTreeModel() {return mpLibraryTreeModel;}
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
