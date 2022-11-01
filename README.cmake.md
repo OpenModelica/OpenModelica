@@ -81,6 +81,22 @@ On macOS you need to install:
 If some of the above instructions fail, read on below.
 On macOS there are a few pitfalls/issues which need attention.
 
+- if your compilation fails because of some weird linking issues:
+  
+  ```ld: warning: ignoring file /opt/local/lib/libboost_filesystem-mt.dylib, building for macOS-x86_64 but attempting to link with file built for macOS-arm64```
+  
+  then check your $PATH and set it to something sane like:
+  
+  ```export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH```
+  
+  then clean 
+  ```
+  cd OpenModelica
+  git clean -ffdx
+  git submodule foreach --recursive git clean -ffdx
+  ``` 
+  and start again with the commands above.
+
 - if building simulation code fails go OMEdit -> Preferences -> Simulation and change the C / C++ compiler to gcc/g++.
 
 - once Qt5 is installed via ```port```, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
