@@ -248,6 +248,9 @@ GraphicsView::~GraphicsView()
    * We need to delete the items that are not part of the scene.
    */
   foreach (Element *pElement, mOutOfSceneElementsList) {
+    if (pElement->getOriginItem()) {
+      delete pElement->getOriginItem();
+    }
     delete pElement;
   }
 
