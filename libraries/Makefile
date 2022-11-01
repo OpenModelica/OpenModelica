@@ -1,4 +1,4 @@
-.PHONY: lib-for-testing clean update clean-test clean-install
+.PHONY: lib-for-testing lib-for-installing clean update clean-test clean-install
 
 include Makefile.version
 

@@ -56,9 +56,9 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
-all: omc testsuite-depends omlibrary-core
+all: omc testsuite-depends
 
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
@@ -83,11 +83,8 @@ fast-test: testsuite-depends
 	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
 	cd testsuite/partest && ./runtests.pl -f -with-txt
 
-omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core CC="$(CC)" CXX="$(CXX)"
-
-omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all CC="$(CC)" CXX="$(CXX)"
+omlibrary: omc
+	$(MAKE) -C libraries lib-for-installing
 
 omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
