@@ -936,6 +936,12 @@ void OptionsDialog::readSimulationSettings()
   }
 #endif
 
+  if (mpSettings->contains("simulation/postCompilationCommand")) {
+    mpSimulationPage->setPostCompilationCommand(mpSettings->value("simulation/postCompilationCommand").toString());
+  } else {
+    mpSimulationPage->setPostCompilationCommand(OptionsDefaults::Simulation::postCompilationCommand);
+  }
+
   if (mpSettings->contains("simulation/ignoreCommandLineOptionsAnnotation")) {
     mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->setChecked(mpSettings->value("simulation/ignoreCommandLineOptionsAnnotation").toBool());
   } else {
@@ -2510,6 +2516,13 @@ void OptionsDialog::saveGlobalSimulationSettings()
     mpSettings->setValue("simulation/useStaticLinking", useStaticLinking);
   }
 #endif
+  // post compilation command
+  const QString postCompilationCommand = mpSimulationPage->getPostCompilationCommand();
+  if (postCompilationCommand == OptionsDefaults::Simulation::postCompilationCommand) {
+    mpSettings->remove("simulation/postCompilationCommand");
+  } else {
+    mpSettings->setValue("simulation/postCompilationCommand", postCompilationCommand);
+  }
   // save ignore command line options
   bool ignoreCommandLineOptionsAnnotation = mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked();
   if (ignoreCommandLineOptionsAnnotation == OptionsDefaults::Simulation::ignoreCommandLineOptionsAnnotation) {
@@ -5529,6 +5542,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpUseStaticLinkingCheckBox = new QCheckBox(tr("Use static Linking"));
   mpUseStaticLinkingCheckBox->setToolTip(tr("Enables static linking for the simulation executable. Default is dynamic linking."));
 #endif
+  // post compilation command line edit
+  mpPostCompilationCommandLineEdit = new QLineEdit;
+  QLayout * mpPostCompilationCommandLayout = new QHBoxLayout;
+  mpPostCompilationCommandLayout->addWidget(new Label(tr("Post compilation command:")));
+  mpPostCompilationCommandLayout->addWidget(mpPostCompilationCommandLineEdit);
   // ignore command line options annotation checkbox
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
@@ -5597,6 +5615,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
 #ifdef Q_OS_WIN
   pSimulationLayout->addWidget(mpUseStaticLinkingCheckBox, row++, 0, 1, 2);
 #endif
+  pSimulationLayout->addLayout(mpPostCompilationCommandLayout, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);

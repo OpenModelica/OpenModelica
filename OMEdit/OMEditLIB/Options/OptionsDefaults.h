@@ -161,6 +161,7 @@ namespace OptionsDefaults
     QString cCompiler; // this value is set in SimulationPage constructor.
     QString cxxCompiler; // this value is set in SimulationPage constructor.
     bool useStaticLinking = false;
+    QString postCompilationCommand = "";
     bool ignoreCommandLineOptionsAnnotation = false;
     bool ignoreSimulationFlagsAnnotation = false;
     bool saveClassBeforeSimulation = true;
