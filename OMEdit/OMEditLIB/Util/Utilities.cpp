@@ -71,7 +71,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpFilterTextBox->installEventFilter(this);
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
-  mpFilterTimer = new QTimer;
+  mpFilterTimer = new QTimer(this);
   mpFilterTimer->setSingleShot(true);
   mpScrollToActiveButton = new QToolButton;
   QString scrollToActiveButtonText = tr("Scroll to Active");

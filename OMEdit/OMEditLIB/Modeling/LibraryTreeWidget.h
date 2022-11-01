@@ -75,7 +75,7 @@ public:
     SaveInOneFile,
     SaveFolderStructure
   };
-  LibraryTreeItem();
+  LibraryTreeItem(QAbstractItemModel *pParent);
   LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                   QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();

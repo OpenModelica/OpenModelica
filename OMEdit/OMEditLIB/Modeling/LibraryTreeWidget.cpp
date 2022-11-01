@@ -58,7 +58,8 @@
  * \brief LibraryTreeItem::LibraryTreeItem
  * Used for creating the root item.
  */
-LibraryTreeItem::LibraryTreeItem()
+LibraryTreeItem::LibraryTreeItem(QAbstractItemModel *pParent)
+  : QObject(pParent)
 {
   mIsRootItem = true;
   mpParentLibraryTreeItem = 0;
@@ -107,7 +108,7 @@ LibraryTreeItem::LibraryTreeItem()
  */
 LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                                  QString fileName, bool isSaved, LibraryTreeItem *pParent)
-  : mComponentsLoaded(false), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
+  : QObject(pParent), mComponentsLoaded(false), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
 {
   mIsRootItem = false;
   mpParentLibraryTreeItem = pParent;
@@ -150,7 +151,6 @@ LibraryTreeItem::~LibraryTreeItem()
   if (mpModelWidget) {
     delete mpModelWidget;
   }
-  qDeleteAll(mChildren);
   mChildren.clear();
 }
 
@@ -1179,7 +1179,7 @@ LibraryTreeModel::LibraryTreeModel(LibraryWidget *pLibraryWidget)
   : QAbstractItemModel(pLibraryWidget)
 {
   mpLibraryWidget = pLibraryWidget;
-  mpRootLibraryTreeItem = new LibraryTreeItem;
+  mpRootLibraryTreeItem = new LibraryTreeItem(this);
 }
 
 /*!
