@@ -97,6 +97,12 @@ On macOS there are a few pitfalls/issues which need attention.
   ``` 
   and start again with the commands above.
 
+- if building simulation code fails because your compiler cannot find ```stdio.h``` then try to set the proper SDKROOT and PATH in a terminal before starting OMEdit:
+  ```
+  export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+  export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+  ```
+
 - if building simulation code fails go OMEdit -> Preferences -> Simulation and change the C / C++ compiler to gcc/g++.
 
 - once Qt5 is installed via ```port```, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
