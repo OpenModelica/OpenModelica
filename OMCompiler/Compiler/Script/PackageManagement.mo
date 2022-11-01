@@ -437,13 +437,12 @@ function installPackage
   input String pkg;
   input String version;
   input Boolean exactMatch;
-  input String cachePath = getCachePath();
   input Boolean skipDownload = false;
   output Boolean success;
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
+  String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation, cachePath=getCachePath(), installCachePath=getInstallationCachePath(), curCachePath;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -462,7 +461,7 @@ algorithm
   end for;
 
   if not skipDownload then
-    urlPathList := List.sort(list((p.urlToZipFile, cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    urlPathList := List.sort(list((p.urlToZipFile, if System.regularFileExists(installCachePath + System.basename(p.urlToZipFile)) then installCachePath + System.basename(p.urlToZipFile) else cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
     urlPathList := List.unique(urlPathList);
     urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
     if not Curl.multiDownload(urlPathListToDownload) then
@@ -486,22 +485,23 @@ algorithm
       end try;
     end if;
 
+    curCachePath := if System.regularFileExists(installCachePath + System.basename(pack.urlToZipFile)) then installCachePath else cachePath;
     if Util.endsWith(pack.path, ".mo") then
       // We are not copying a full directory, so also look for Resources in the zip-file
       dirOfPath := System.dirname(pack.path);
       if pack.singleFileStructureCopyAllFiles then
-        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
+        Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
         expectedLocation := destPath + "/" + System.basename(pack.path);
         if not System.rename(expectedLocation, destPathPkgMo) then
-          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
+          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {curCachePath + System.basename(pack.urlToZipFile), expectedLocation});
           // System.removeDirectory(destPath);
           fail();
         end if;
       else
-        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
+        Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
       end if;
     else
-      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
+      Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
     end if;
 
     if System.regularFileExists(destPathPkgMo) then
@@ -511,7 +511,7 @@ algorithm
         Error.addSourceMessage(Error.NOTIFY_PKG_UPGRADE_DONE, {pack.sha, oldSha}, makeSourceInfo(destPathPkgMo));
       end if;
     else
-      Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), destPathPkgMo});
+      Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {curCachePath + System.basename(pack.urlToZipFile), destPathPkgMo});
       System.removeDirectory(destPath);
       fail();
     end if;
@@ -575,7 +575,7 @@ algorithm
     versions_obj := JSON.getOrDefault(lib_obj, "versions", JSON.emptyObject());
 
     for version in JSON.getKeys(versions_obj) loop
-      installPackage(lib, version, true, getInstallationCachePath(), skipDownload = true);
+      installPackage(lib, version, true, skipDownload = true);
     end for;
   end for;
 
@@ -758,13 +758,13 @@ protected
 function getInstallationIndexPath
   output String path;
 algorithm
-  path := Settings.getInstallationDirectoryPath() + "/lib/omlibrary/libraries/index.json";
+  path := Settings.getInstallationDirectoryPath() + "/share/omlibrary/cache/index.json";
 end getInstallationIndexPath;
 
 function getInstallationCachePath
   output String path;
 algorithm
-  path := Settings.getInstallationDirectoryPath() + "/lib/omlibrary/cache/";
+  path := Settings.getInstallationDirectoryPath() + "/share/omlibrary/cache/";
 end getInstallationCachePath;
 
 function makeSourceInfo

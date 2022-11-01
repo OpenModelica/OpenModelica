@@ -1,9 +1,6 @@
 [submodule "OMOptim"]
 	path = OMOptim
 	url = ../OMOptim.git
-[submodule "libraries"]
-	path = libraries
-	url = ../OMLibraries.git
 [submodule "OMSimulator"]
 	path = OMSimulator
 	url = ../OMSimulator.git
