@@ -4100,12 +4100,6 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   setLayout(pMainLayout);
 }
 
-LibraryWidget::~LibraryWidget()
-{
-  qDebug() << "LibraryWidget::~LibraryWidget()";
-  delete mpLibraryTreeView;
-}
-
 /*!
  * \brief LibraryWidget::openFile
  * Opens a file.
