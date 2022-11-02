@@ -235,6 +235,35 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mAllItems.clear();
 }
 
+GraphicsView::~GraphicsView()
+{
+  /* When the scene is deleted it will delete all the items inside it.
+   * We need to delete the items that are not part of the scene.
+   */
+  foreach (Element *pElement, mOutOfSceneElementsList) {
+    if (pElement->getOriginItem()) {
+      delete pElement->getOriginItem();
+    }
+    delete pElement;
+  }
+
+  foreach (LineAnnotation *pConnectionLineAnnotation, mOutOfSceneConnectionsList) {
+    delete pConnectionLineAnnotation;
+  }
+
+  foreach (LineAnnotation *pTransitionLineAnnotation, mOutOfSceneTransitionsList) {
+    delete pTransitionLineAnnotation;
+  }
+
+  foreach (LineAnnotation *pInitialStateLineAnnotation, mOutOfSceneInitialStatesList) {
+    delete pInitialStateLineAnnotation;
+  }
+
+  foreach (ShapeAnnotation *pShapeAnnotation, mOutOfSceneShapesList) {
+    delete pShapeAnnotation;
+  }
+}
+
 void GraphicsView::setIsVisualizationView(bool visualizationView)
 {
   setItemsFlags(!visualizationView);
@@ -5423,6 +5452,13 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
   }
 }
 
+ModelWidget::~ModelWidget()
+{
+  if (mpModelInstance) {
+    delete mpModelInstance;
+  }
+}
+
 /*!
  * \brief ModelWidget::getExtendsModifiersMap
  * Returns a extends modifier map for extends class
@@ -5979,7 +6015,7 @@ void ModelWidget::createModelWidgetComponents()
     mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
     mpDocumentationViewToolButton->setAutoRaise(true);
     // view buttons box
-    mpViewsButtonGroup = new QButtonGroup;
+    mpViewsButtonGroup = new QButtonGroup(this);
     mpViewsButtonGroup->setExclusive(true);
     mpViewsButtonGroup->addButton(mpDiagramViewToolButton);
     mpViewsButtonGroup->addButton(mpIconViewToolButton);
@@ -7692,7 +7728,7 @@ void ModelWidget::createUndoStack()
       assert(mpUndoStack);
     }
   } else {
-    mpUndoStack = new UndoStack;
+    mpUndoStack = new UndoStack(this);
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
   }
@@ -8882,7 +8918,10 @@ void ModelWidget::handleCanRedoChanged(bool canRedo)
 void ModelWidget::closeEvent(QCloseEvent *event)
 {
   Q_UNUSED(event);
-  mpModelWidgetContainer->removeSubWindow(this);
+  QMdiSubWindow *pMdiSubWindow = mpModelWidgetContainer->getMdiSubWindow(this);
+  if (pMdiSubWindow) {
+    mpModelWidgetContainer->removeSubWindow(this);
+  }
 }
 
 /*!
@@ -9051,8 +9090,9 @@ ModelWidget* ModelWidgetContainer::getModelWidget(const QString& className)
 {
   foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-    if (className == pModelWidget->getLibraryTreeItem()->getNameStructure())
+    if (className == pModelWidget->getLibraryTreeItem()->getNameStructure()) {
       return pModelWidget;
+    }
   }
   return NULL;
 }

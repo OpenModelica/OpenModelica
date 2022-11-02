@@ -177,6 +177,7 @@ private:
   QSet<QGraphicsItem*> mAllItems;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
+  ~GraphicsView();
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
@@ -566,6 +567,7 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer);
+  ~ModelWidget();
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}

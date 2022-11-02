@@ -3671,7 +3671,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpHorizontalViewRadioButton = new QRadioButton(tr("Horizontal View"));
   mpHorizontalViewRadioButton->setChecked(true);
   mpVerticalViewRadioButton = new QRadioButton(tr("Vertical View"));
-  QButtonGroup *pWelcomePageViewButtons = new QButtonGroup;
+  QButtonGroup *pWelcomePageViewButtons = new QButtonGroup(this);
   pWelcomePageViewButtons->addButton(mpHorizontalViewRadioButton);
   pWelcomePageViewButtons->addButton(mpVerticalViewRadioButton);
   // plotting view radio buttons layout
@@ -5013,7 +5013,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   mpModelingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
   mpModelingTabbedViewRadioButton->setChecked(true);
   mpModelingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
-  QButtonGroup *pModelingViewModeButtonGroup = new QButtonGroup;
+  QButtonGroup *pModelingViewModeButtonGroup = new QButtonGroup(this);
   pModelingViewModeButtonGroup->addButton(mpModelingTabbedViewRadioButton);
   pModelingViewModeButtonGroup->addButton(mpModelingSubWindowViewRadioButton);
   // modeling view radio buttons layout
@@ -5033,7 +5033,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   mpDiagramViewRadioButton->setChecked(true);
   mpTextViewRadioButton = new QRadioButton(Helper::textView);
   mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
-  QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
+  QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup(this);
   pDefaultViewButtonGroup->addButton(mpIconViewRadioButton);
   pDefaultViewButtonGroup->addButton(mpDiagramViewRadioButton);
   pDefaultViewButtonGroup->addButton(mpTextViewRadioButton);
@@ -5573,7 +5573,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpStructuredRadioButton->setChecked(true);
   mpFormattedTextRadioButton = new QRadioButton(tr("Formatted Text"));
   mpFormattedTextRadioButton->setToolTip(tr("Shows the simulation output in the form of formatted text."));
-  QButtonGroup *pOutputButtonGroup = new QButtonGroup;
+  QButtonGroup *pOutputButtonGroup = new QButtonGroup(this);
   pOutputButtonGroup->addButton(mpStructuredRadioButton);
   pOutputButtonGroup->addButton(mpFormattedTextRadioButton);
   // output view buttons layout
@@ -6158,7 +6158,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
   mpPlottingTabbedViewRadioButton->setChecked(true);
   mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
-  QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup;
+  QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup(this);
   pPlottingViewModeButtonGroup->addButton(mpPlottingTabbedViewRadioButton);
   pPlottingViewModeButtonGroup->addButton(mpPlottingSubWindowViewRadioButton);
   // plotting view radio buttons layout

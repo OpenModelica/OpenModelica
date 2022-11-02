@@ -2019,7 +2019,7 @@ void ElementAttributes::setUpDialog()
   pVariabilityGroupBoxLayout->addWidget(mpParameterRadio);
   pVariabilityGroupBoxLayout->addWidget(mpDiscreteRadio);
   pVariabilityGroupBoxLayout->addWidget(mpDefaultRadio);
-  mpVariabilityButtonGroup = new QButtonGroup;
+  mpVariabilityButtonGroup = new QButtonGroup(this);
   mpVariabilityButtonGroup->addButton(mpConstantRadio);
   mpVariabilityButtonGroup->addButton(mpParameterRadio);
   mpVariabilityButtonGroup->addButton(mpDiscreteRadio);
@@ -2044,7 +2044,7 @@ void ElementAttributes::setUpDialog()
   pCausalityGroupBoxLayout->addWidget(mpInputRadio);
   pCausalityGroupBoxLayout->addWidget(mpOutputRadio);
   pCausalityGroupBoxLayout->addWidget(mpNoneRadio);
-  mpCausalityButtonGroup = new QButtonGroup;
+  mpCausalityButtonGroup = new QButtonGroup(this);
   mpCausalityButtonGroup->addButton(mpInputRadio);
   mpCausalityButtonGroup->addButton(mpOutputRadio);
   mpCausalityButtonGroup->addButton(mpNoneRadio);

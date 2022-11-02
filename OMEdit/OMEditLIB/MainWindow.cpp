@@ -590,6 +590,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpOMCProxy;
   // delete the OMSProxy object
   OMSProxy::destroy();
+  delete mpLibraryWidget;
   delete mpModelWidgetContainer;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
