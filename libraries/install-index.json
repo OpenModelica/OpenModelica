@@ -67,6 +67,17 @@
         }
       }
     },
+    "ModelicaReference": {
+      "versions": {
+        "4.0.0+maint.om": {
+          "path": "ModelicaReference",
+          "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
+          "support": "fullSupport",
+          "version": "4.0.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
+        }
+      }
+    },
     "ModelicaServices": {
       "versions": {
         "4.0.0+maint.om": {
@@ -81,6 +92,20 @@
           ],
           "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
           "support": "fullSupport",
+          "version": "4.0.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
+        }
+      }
+    },
+    "ObsoleteModelica4": {
+      "versions": {
+        "4.0.0+maint.om": {
+          "path": "ObsoleteModelica4.mo",
+          "sha": "74d056ef1b4a89463408ba70fc4ea4db83a6296f",
+          "support": "fullSupport",
+          "uses": {
+            "Modelica": "4.0.0"
+          },
           "version": "4.0.0+maint.om",
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/74d056ef1b4a89463408ba70fc4ea4db83a6296f.zip"
         }

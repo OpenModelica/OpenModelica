@@ -73,6 +73,12 @@ desired = {
   "ModelicaServices": {
     "4.0.0+maint.om"
   },
+  "ObsoleteModelica4": { # Used by MSL 3 to 4 conversion scripts
+    "4.0.0+maint.om"
+  },
+  "ModelicaReference": {
+    "4.0.0+maint.om"
+  }
 }
 newdata = {}
 for key in data["libs"].keys():
