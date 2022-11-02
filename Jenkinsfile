@@ -676,8 +676,15 @@ pipeline {
               alwaysPull true
             }
           }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           steps {
-            script { common.buildAndRunOMEditTestsuite('omedit-testsuite-clang') }
+            script {
+              common.makeLibsAndCache()
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang')
+            }
           }
         }
       }

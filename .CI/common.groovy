@@ -130,7 +130,7 @@ void patchConfigStatus() {
   }
 }
 
-void makeLibsAndCache(libs='core') {
+void makeLibsAndCache() {
   if (isWindows())
   {
     // do nothing
@@ -454,7 +454,7 @@ void compliance() {
   } else {
   standardSetup()
   unstash 'omc-clang'
-  makeLibsAndCache('all')
+  makeLibsAndCache()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
