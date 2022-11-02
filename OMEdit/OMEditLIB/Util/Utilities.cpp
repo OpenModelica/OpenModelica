@@ -439,6 +439,22 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   setProcessState(QProcess::NotRunning);
 }
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+/*!
+ * \brief QDetachableProcess::start
+ * Starts a process and detaches from it.
+ * \param command
+ * \param mode
+ */
+void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
+{
+  QProcess::start(command, mode);
+  waitForStarted();
+  setProcessState(QProcess::NotRunning);
+}
+#endif
+
+
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
 {
