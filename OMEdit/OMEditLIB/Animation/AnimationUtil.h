@@ -45,6 +45,8 @@
 #include <string>
 #include <osg/Vec3>
 
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
 #include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
 
@@ -150,9 +152,8 @@ inline std::string extractCADFilename(const std::string& s)
 {
   QString str(s.c_str());
   if (str.startsWith("modelica://")) {
-    std::string fileKey = "modelica://";
-    std::string s2 = s.substr(fileKey.length(), s.length());
-    return s2;
+    const QString absoluteFileName = MainWindow::instance()->getOMCProxy()->uriToFilename(str);
+    return absoluteFileName.toStdString();
   } else {
     std::string fileKey = "file://";
     std::string s2 = s.substr(fileKey.length(), s.length());
