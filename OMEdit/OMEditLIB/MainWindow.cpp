@@ -2747,13 +2747,17 @@ void MainWindow::openTerminal()
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
-  QStringList args = arguments.split(" ");
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  const QStringList args(QProcess::splitCommand(arguments));
   process.start(terminalCommand, args);
+#else
+  process.start(terminalCommand + " " + arguments);
+#endif
   if (process.error() == QProcess::FailedToStart) {
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")
-                          .arg(terminalCommand, args.join(" "), process.errorString());
+                          .arg(terminalCommand, arguments, process.errorString());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
 }
