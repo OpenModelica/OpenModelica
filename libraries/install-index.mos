@@ -30,19 +30,19 @@ if not installPackage(Complex, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: Complex 4.0.0+maint.om\n");
 end if;
-if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
-  print("Modelica 3.2.3+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: Modelica 3.2.3+maint.om\n");
-end if;
 if not installPackage(Modelica, "4.0.0+maint.om", exactMatch=true) then
   print("Modelica 4.0.0+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: Modelica 4.0.0+maint.om\n");
+end if;
+if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
+  print("Modelica 3.2.3+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 3.2.3+maint.om\n");
 end if;
 if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
   print("ModelicaServices 4.0.0+maint.om failed.\n");
@@ -51,4 +51,11 @@ if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaServices 4.0.0+maint.om\n");
 end if;
-system("touch .openmodelica/20221031104147.stamp")
+if not installPackage(ModelicaReference, "4.0.0+maint.om", exactMatch=true) then
+  print("ModelicaReference 4.0.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaReference 4.0.0+maint.om\n");
+end if;
+system("touch .openmodelica/20221102134914.stamp")

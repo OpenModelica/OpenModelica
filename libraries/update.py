@@ -73,6 +73,9 @@ desired = {
   "ModelicaServices": {
     "4.0.0+maint.om"
   },
+  "ModelicaReference": {
+    "4.0.0+maint.om"
+  }
 }
 newdata = {}
 for key in data["libs"].keys():
