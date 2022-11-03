@@ -47,7 +47,9 @@ OMEDITTEST_MAIN(BrowseMSL)
 
 void BrowseMSL::initTestCase()
 {
-  MainWindow::instance()->getOMCProxy()->loadModel("Modelica", "default");
+  QVector<QPair<QString, QString> > libraries;
+  libraries.append(qMakePair(QString("Modelica"), QString("default")));
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->addModelicaLibraries(libraries);
 }
 
 void BrowseMSL::electricalAnalogBasic()

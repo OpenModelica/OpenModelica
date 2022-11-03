@@ -750,10 +750,16 @@ QString OMCProxy::getVersion(QString className)
  * \brief OMCProxy::loadSystemLibraries
  * Loads the Modelica System Libraries.\n
  * Reads the omedit.ini file to get the libraries to load.
+ * \param libraries
  */
-void OMCProxy::loadSystemLibraries()
+void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libraries)
 {
-  if (!MainWindow::instance()->isTestsuiteRunning()) {
+  if (MainWindow::instance()->isTestsuiteRunning()) {
+    QPair<QString, QString> library;
+    foreach (library, libraries) {
+      loadModel(library.first, library.second);
+    }
+  } else {
     const bool loadLatestModelica = OptionsDialog::instance()->getLibrariesPage()->getLoadLatestModelicaCheckbox()->isChecked();
     if (loadLatestModelica) {
       loadModel("Modelica", "default");
@@ -783,14 +789,16 @@ void OMCProxy::loadSystemLibraries()
  */
 void OMCProxy::loadUserLibraries()
 {
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("userlibraries");
-  QStringList libraries = pSettings->childKeys();
-  pSettings->endGroup();
-  foreach (QString lib, libraries) {
-    QString encoding = pSettings->value("userlibraries/" + lib).toString();
-    QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toUtf8().constData()));
-    MainWindow::instance()->getLibraryWidget()->openFile(fileName, encoding);
+  if (!MainWindow::instance()->isTestsuiteRunning()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    pSettings->beginGroup("userlibraries");
+    QStringList libraries = pSettings->childKeys();
+    pSettings->endGroup();
+    foreach (QString lib, libraries) {
+      QString encoding = pSettings->value("userlibraries/" + lib).toString();
+      QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toUtf8().constData()));
+      MainWindow::instance()->getLibraryWidget()->openFile(fileName, encoding);
+    }
   }
 }
 
