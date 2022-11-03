@@ -45,6 +45,11 @@ extern "C" {
 
 OMEDITTEST_MAIN(Diagram)
 
+void Diagram::initTestCase()
+{
+  MainWindow::instance()->getOMCProxy()->loadModel("Modelica", "default");
+}
+
 void Diagram::chuaCircuit()
 {
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");

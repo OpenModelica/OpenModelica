@@ -753,10 +753,7 @@ QString OMCProxy::getVersion(QString className)
  */
 void OMCProxy::loadSystemLibraries()
 {
-  if (MainWindow::instance()->isTestsuiteRunning()) {
-    loadModel("Modelica", "default");
-    loadModel("ModelicaReference", "default");
-  } else {
+  if (!MainWindow::instance()->isTestsuiteRunning()) {
     const bool loadLatestModelica = OptionsDialog::instance()->getLibrariesPage()->getLoadLatestModelicaCheckbox()->isChecked();
     if (loadLatestModelica) {
       loadModel("Modelica", "default");
