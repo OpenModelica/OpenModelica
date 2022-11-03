@@ -82,6 +82,16 @@ public
     outMap := LINEAR_MAP(arrayCopy(map.gain), arrayCopy(map.offset));
   end copy;
 
+  function replace
+    input output SBLinearMap map;
+    input Integer gain;
+    input Integer offset;
+    input Integer dim;
+  algorithm
+    map.gain[dim]   := gain;
+    map.offset[dim] := offset;
+  end replace;
+
   function ndim
     input SBLinearMap map;
     output Integer ndim = arrayLength(map.gain);
@@ -171,12 +181,15 @@ public
       g := arrayGetNoBoundsChecking(map.gain, i);
       o := arrayGetNoBoundsChecking(map.offset, i);
 
-      if g <> 0 then
+      if g > intReal(System.intMaxLit()) * 0.99 then
+        arrayUpdateNoBoundsChecking(gain, i, 0.0);
+        arrayUpdateNoBoundsChecking(offset, i, -o / g);
+      elseif g <> 0 then
         arrayUpdateNoBoundsChecking(gain, i, 1.0 / g);
         arrayUpdateNoBoundsChecking(offset, i, -o / g);
       else
         arrayUpdateNoBoundsChecking(gain, i, intReal(System.intMaxLit()));
-        arrayUpdateNoBoundsChecking(offset, i, intReal(System.intMaxLit()));
+        arrayUpdateNoBoundsChecking(offset, i, intReal(-System.intMaxLit()));
       end if;
     end for;
 

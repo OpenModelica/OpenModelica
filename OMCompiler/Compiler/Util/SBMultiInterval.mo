@@ -210,6 +210,38 @@ public
     res := MULTI_INTERVAL(ints, arrayLength(ints));
   end crossProd;
 
+  function normalize
+    input SBMultiInterval mi1;
+    input SBMultiInterval mi2;
+    output SBMultiInterval res;
+  protected
+    Integer diffCount, dimDiff;
+    SBInterval i1, i2, norm;
+  algorithm
+    if mi1.ndim == mi2.ndim then
+      diffCount := 0;
+      dimDiff := 0;
+      for i in 1:mi1.ndim loop
+        if not SBInterval.isEqual(mi1.intervals[i], mi2.intervals[i]) then
+          diffCount := diffCount + 1;
+          dimDiff := i + 1;
+          i1 := mi1.intervals[i];
+          i2 := mi2.intervals[i];
+        end if;
+      end for;
+
+      if diffCount == 1 then
+        norm := SBInterval.normalize(i1, i2);
+        if not SBInterval.isEmpty(norm) then
+          res := replace(norm, dimDiff, mi2);
+          return;
+        end if;
+      end if;
+    else
+      res := MULTI_INTERVAL(listArray({}), 0);
+    end if;
+  end normalize;
+
   function cardinality
     input SBMultiInterval mi;
     output Integer card = 0;
@@ -254,7 +286,11 @@ public
     array<SBInterval> ints;
   algorithm
     ints := arrayCopy(mi.intervals);
-    ints[dim] := i;
+    if dim > arrayLength(ints) then
+      ints := Array.expand(dim - arrayLength(ints), ints, i);
+    else
+      ints[dim] := i;
+    end if;
     res := fromArray(ints);
   end replace;
 
