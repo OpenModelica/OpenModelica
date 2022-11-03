@@ -685,7 +685,6 @@ pipeline {
           }
           steps {
             script {
-              common.makeLibsAndCache()
               common.buildAndRunOMEditTestsuite('omedit-testsuite-clang')
             }
           }

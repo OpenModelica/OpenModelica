@@ -415,6 +415,7 @@ void buildAndRunOMEditTestsuite(stash) {
   sh 'autoconf'
   if (stash) {
     patchConfigStatus()
+    common.makeLibsAndCache()
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
