@@ -52,6 +52,8 @@ private slots:
   void operators_data();
   void functions();
   void functions_data();
+  void parseJSON();
+  void parseJSON_data();
   void cleanupTestCase();
 };
 

@@ -302,6 +302,103 @@ void ExpressionTest::functions_data()
     << "{{1,0,0},{0,2,0},{0,0,3}}";
 }
 
+void ExpressionTest::parseJSON()
+{
+  QFETCH(QJsonValue, jsonValue);
+
+  try {
+    FlatModelica::Expression e;
+    e.deserialize(jsonValue);
+    //qDebug() << jsonValue;
+    //qDebug() << e.serialize();
+    QCOMPARE(e.serialize(), jsonValue);
+  } catch (const std::exception &e) {
+    QFAIL(e.what());
+  }
+}
+
+void ExpressionTest::parseJSON_data()
+{
+  QTest::addColumn<QJsonValue>("jsonValue");
+  QJsonValue value;
+
+  value = 3;
+  QTest::newRow("json_integer1") << value;
+
+  value = -52;
+  QTest::newRow("json_integer2") << value;
+
+  value = 3.14;
+  QTest::newRow("json_real1") << value;
+
+  value = true;
+  QTest::newRow("json_boolean1") << value;
+
+  value = false;
+  QTest::newRow("json_boolean2") << value;
+
+  value = "string";
+  QTest::newRow("json_string1") << value;
+
+  value = QJsonArray{1, 2, 3, 4, 5};
+  QTest::newRow("json_array1") << value;
+
+  //value = QJsonObject{
+  //  {"$kind", "cref"},
+  //  {"parts", QJsonArray{
+  //    QJsonObject{
+  //      {"name", "a"},
+  //      {"subscripts", QJsonArray{1, 2, ":"}}
+  //    },
+  //    QJsonObject{
+  //      {"name", "b"}
+  //    },
+  //    QJsonObject{
+  //      {"name", "c"},
+  //      {"subscripts", QJsonArray{3}}
+  //    }
+  //  }}
+  //};
+  //QTest::newRow("json_cref1") << value;
+
+  value = QJsonObject{
+    {"$kind", "record"},
+    {"name", "TestRecord"},
+    {"elements", QJsonArray{4, "test"}}
+  };
+  QTest::newRow("json_record1") << value;
+
+  value = QJsonObject{
+    {"$kind", "call"},
+    {"name", "fill"},
+    {"arguments", QJsonArray{1, 2, 3}}
+  };
+  QTest::newRow("json_call1") << value;
+
+  value = QJsonObject{
+    {"$kind", "binary_op"},
+    {"lhs", QJsonArray{1, 2, 3}},
+    {"op", ".+"},
+    {"rhs", QJsonArray{4, 5, 6}}
+  };
+  QTest::newRow("json_binary1") << value;
+
+  value = QJsonObject{
+    {"$kind", "unary_op"},
+    {"op", "not"},
+    {"exp", false}
+  };
+  QTest::newRow("json_unary1") << value;
+
+  value = QJsonObject{
+    {"$kind", "if"},
+    {"condition", true},
+    {"true", 1},
+    {"false", 2}
+  };
+  QTest::newRow("json_if1") << value;
+}
+
 void ExpressionTest::cleanupTestCase()
 {
   MainWindow::instance()->close();
