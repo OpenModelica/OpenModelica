@@ -1411,15 +1411,16 @@ QModelIndex LibraryTreeModel::libraryTreeItemIndex(const LibraryTreeItem *pLibra
 
 /*!
  * \brief LibraryTreeModel::addModelicaLibraries
- * Loads the user defined Modelica Libraries.
+ * Loads the system and user defined Modelica Libraries.
  * Automatically loads the OpenModelica as system library.
+ * \param libraries
  */
-void LibraryTreeModel::addModelicaLibraries()
+void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString> > libraries)
 {
   // load Modelica System Libraries.
   mpLibraryWidget->setLoadingLibraries(true);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  pOMCProxy->loadSystemLibraries();
+  pOMCProxy->loadSystemLibraries(libraries);
   QStringList systemLibs = pOMCProxy->getClassNames();
   /*! @note OpenModelica is needed for the auto completion to work. Do not remove/move the following line. */
   systemLibs.prepend("OpenModelica");

@@ -360,7 +360,9 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   //Set the centralwidget
   setCentralWidget(mpCentralStackedWidget);
   // Load and add user defined Modelica libraries into the Library Widget.
-  mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
+  if (!isTestsuiteRunning()) {
+    mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
+  }
   // set command line options
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");

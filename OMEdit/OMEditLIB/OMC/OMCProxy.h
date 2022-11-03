@@ -115,7 +115,7 @@ public:
   QString getErrorLevel();
   int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
-  void loadSystemLibraries();
+  void loadSystemLibraries(const QVector<QPair<QString, QString> > libraries);
   void loadUserLibraries();
   QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = false,
                             bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
