@@ -12,9 +12,16 @@ if (defined $ENV{"RTEST_OMCFLAGS"}) {
 (undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
 $cwd = getcwd;
 if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
+  # See if we have the the CMake config's common install dirs.
   if (-e "$1build/install_cmake/bin/omc") {
     $OPENMODELICAHOME = "$1build/install_cmake";
-  } else {
+  }
+  # See if we have the the CMake config's common install dirs.
+  elsif (-e "$1build_cmake/install_cmake/bin/omc") {
+    $OPENMODELICAHOME = "$1build_cmake/install_cmake";
+  }
+  # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
+  else {
     $OPENMODELICAHOME = "$1build";
   }
   $dirname=$2;
