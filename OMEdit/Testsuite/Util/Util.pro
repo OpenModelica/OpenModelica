@@ -29,10 +29,11 @@
  #/
 
 include(../Common/Testsuite.pri)
-include(../Common/Util.pri)
 
-TARGET = Homotopy
+TARGET = Util
+TEMPLATE = lib
+CONFIG += staticlib
 
-SOURCES += HomotopyTest.cpp
+SOURCES += Util.cpp
 
-HEADERS += HomotopyTest.h
+HEADERS += Util.h

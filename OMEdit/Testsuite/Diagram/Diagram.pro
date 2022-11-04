@@ -29,11 +29,10 @@
  #/
 
 include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
 TARGET = Diagram
 
-SOURCES += ../Common/Util.cpp \
-  Diagram.cpp
+SOURCES += Diagram.cpp
 
-HEADERS += ../Common/Util.h \
-  Diagram.h
+HEADERS += Diagram.h

@@ -29,11 +29,10 @@
  #/
 
 include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
 TARGET = BrowseMSL
 
-SOURCES += ../Common/Util.cpp \
-  BrowseMSL.cpp
+SOURCES += BrowseMSL.cpp
 
-HEADERS += ../Common/Util.h \
-  BrowseMSL.h
+HEADERS += BrowseMSL.h

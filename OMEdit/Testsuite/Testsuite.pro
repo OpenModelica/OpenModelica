@@ -30,9 +30,17 @@
 
 TEMPLATE = subdirs
 
-SUBDIRS = BrowseMSL \
+SUBDIRS = Util \
+  BrowseMSL \
   Diagram \
   Transformation \
   Homotopy \
-  Expression
+  Expression \
+  ModelInstance
 
+BrowseMSL.depends = Util
+Diagram.depends = Util
+Transformation.depends = Util
+Homotopy.depends = Util
+Expression.depends = Util
+ModelInstance.depends = Util

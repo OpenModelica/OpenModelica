@@ -31,8 +31,8 @@
 include(../Common/Testsuite.pri)
 include(../Common/Util.pri)
 
-TARGET = Homotopy
+TARGET = ModelInstance
 
-SOURCES += HomotopyTest.cpp
+SOURCES += ModelInstanceTest.cpp
 
-HEADERS += HomotopyTest.h
+HEADERS += ModelInstanceTest.h

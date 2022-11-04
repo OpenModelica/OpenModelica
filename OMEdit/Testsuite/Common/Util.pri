@@ -28,11 +28,4 @@
  #
  #/
 
-include(../Common/Testsuite.pri)
-include(../Common/Util.pri)
-
-TARGET = Homotopy
-
-SOURCES += HomotopyTest.cpp
-
-HEADERS += HomotopyTest.h
+LIBS += -L../../bin/tests -lUtil
