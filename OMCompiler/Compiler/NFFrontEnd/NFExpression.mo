@@ -5979,7 +5979,7 @@ public
       case Expression.RELATION()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("relation"), json);
+          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);

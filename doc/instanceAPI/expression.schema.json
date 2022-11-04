@@ -200,6 +200,10 @@
           "type": "string",
           "const": "record"
         },
+        "name": {
+          "description": "Name of the record type",
+          "type": "string"
+        },
         "elements": {
           "type": "array",
           "items": {
@@ -207,7 +211,7 @@
           }
         }
       },
-      "required": ["$kind", "elements"]
+      "required": ["$kind", "name", "elements"]
     },
     {
       "description": "Function call expression",
@@ -315,7 +319,7 @@
         "op": {
           "description": "Operator",
           "type": "string",
-          "enum": ["+", ".+", "-", ".-", "*", ".*", "/", "./", "^", ".^", "and", "or"]
+          "enum": ["+", ".+", "-", ".-", "*", ".*", "/", "./", "^", ".^", "and", "or", "<", "<=", ">", ">=", "==", "<>"]
         },
         "rhs": {
           "description": "Right operand",
@@ -343,30 +347,6 @@
         }
       },
       "required": ["$kind", "op", "exp"]
-    },
-    {
-      "description": "Relation expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "relation"
-        },
-        "lhs": {
-          "description": "Left operand",
-          "$ref": "#"
-        },
-        "op": {
-          "description": "Operator",
-          "type": "string",
-          "enum": ["<", "<=", ">", ">=", "==", "<>"]
-        },
-        "rhs": {
-          "description": "Right operand",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "lhs", "op", "rhs"]
     },
     {
       "description": "If-expression",

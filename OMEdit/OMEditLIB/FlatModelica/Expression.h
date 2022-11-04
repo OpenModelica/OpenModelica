@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <QString>
+#include <QJsonValue>
 
 namespace FlatModelica
 {
@@ -64,6 +65,9 @@ namespace FlatModelica
 
       static Expression parse(std::string str);
       static Expression parse(const QString &str);
+
+      void deserialize(const QJsonValue &value);
+      QJsonValue serialize() const;
 
       Expression evaluate(const VariableEvaluator &var_eval) const;
 
