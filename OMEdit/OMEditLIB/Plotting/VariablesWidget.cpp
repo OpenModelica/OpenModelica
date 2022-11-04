@@ -182,7 +182,7 @@ void VariablesTreeItem::setActive()
   }
   // set VariablesTreeView to active.
   mActive = true;
-  MainWindow::instance()->getVariablesWidget()->initializeVisualization(mSimulationOptions);
+  MainWindow::instance()->getVariablesWidget()->initializeVisualization();
 }
 
 QIcon VariablesTreeItem::getVariableTreeItemIcon(QString name) const
@@ -1845,18 +1845,19 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
 
 /*!
  * \brief VariablesWidget::initializeVisualization
- * Initializes the TimeManager with SimulationOptions for Visualization.
- * \param simulationOptions
+ * Initializes the TimeManager for Visualization.
  */
-void VariablesWidget::initializeVisualization(SimulationOptions simulationOptions)
+void VariablesWidget::initializeVisualization()
 {
   // close any result file before opening a new one
   closeResultFile();
   // Open the file for reading
-  openResultFile();
+  double startTime = 0.0;
+  double stopTime = 0.0;
+  openResultFile(startTime, stopTime);
   // Initialize the time manager
-  mpTimeManager->setStartTime(simulationOptions.getStartTime().toDouble());
-  mpTimeManager->setEndTime(simulationOptions.getStopTime().toDouble());
+  mpTimeManager->setStartTime(startTime);
+  mpTimeManager->setEndTime(stopTime);
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setPause(true);
   // reset the visualization controls
@@ -2443,7 +2444,7 @@ void VariablesWidget::closeResultFile()
  * \brief VariablesWidget::openResultFile
  * Opens the result file.
  */
-void VariablesWidget::openResultFile()
+void VariablesWidget::openResultFile(double &startTime, double &stopTime)
 {
   if (mpVariablesTreeModel->getActiveVariablesTreeItem()) {
     // read filename
@@ -2453,18 +2454,64 @@ void VariablesWidget::openResultFile()
     QString errorString = "";
     if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".mat")) {
       const char *msg[] = {""};
-      if (0 != (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
+      if (0 == (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
+        startTime = omc_matlab4_startTime(&mModelicaMatReader);
+        stopTime = omc_matlab4_stopTime(&mModelicaMatReader);
+      } else {
         errorOpeningFile = true;
         errorString = msg[0];
       }
     } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".csv")) {
       mpCSVData = read_csv(fileName.toUtf8().constData());
-      if (!mpCSVData) {
+      if (mpCSVData) {
+        //Read in timevector
+        double *timeVals = read_csv_dataset(mpCSVData, "time");
+        if (timeVals == NULL) {
+          errorOpeningFile = true;
+          errorString = "Error reading time from CSV file.";
+        } else {
+          startTime = timeVals[0];
+          stopTime = timeVals[mpCSVData->numsteps-1];
+        }
+      } else {
         errorOpeningFile = true;
+        errorString = "Error reading CSV file.";
       }
     } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".plt")) {
       mPlotFileReader.setFileName(fileName);
-      if (!mPlotFileReader.open(QIODevice::ReadOnly)) {
+      if (mPlotFileReader.open(QIODevice::ReadOnly)) {
+        QTextStream textStream(&mPlotFileReader);
+        // read the interval size from the file
+        int intervalSize = 0;
+        QString currentLine;
+        while (!textStream.atEnd()) {
+          currentLine = textStream.readLine();
+          if (currentLine.startsWith("#IntervalSize")) {
+            intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
+            break;
+          }
+        }
+        // Read start and stop time
+        while (!textStream.atEnd()) {
+          currentLine = textStream.readLine();
+          QString currentVariable;
+          if (currentLine.contains("DataSet:")) {
+            currentVariable = currentLine.remove("DataSet: ");
+            if (currentVariable == "time") {
+              // read the variable values now
+              currentLine = textStream.readLine();
+              QStringList values = currentLine.split(",");
+              startTime = QString(values[0]).toDouble();
+              for(int j = 0; j < intervalSize-1; j++) {
+                currentLine = textStream.readLine();
+              }
+              values = currentLine.split(",");
+              stopTime = QString(values[0]).toDouble();
+              break;
+            }
+          }
+        }
+      } else {
         errorOpeningFile = true;
         errorString = mPlotFileReader.errorString();
       }
@@ -2622,9 +2669,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     QAction *pSetResultActiveAction = new QAction(tr("Set Active"), this);
     pSetResultActiveAction->setData(pVariablesTreeItem->getVariableName());
     pSetResultActiveAction->setStatusTip(tr("An active item is used for the visualization"));
-    pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid()
-                                       && !pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()
-                                       && !pVariablesTreeItem->isActive());
+    pSetResultActiveAction->setEnabled(!pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation() && !pVariablesTreeItem->isActive());
     connect(pSetResultActiveAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(setVariableTreeItemActive()));
 
     QMenu menu(this);
