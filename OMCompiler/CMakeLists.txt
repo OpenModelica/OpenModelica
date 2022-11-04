@@ -17,8 +17,7 @@ endif()
 
 omc_option(OM_OMC_ENABLE_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
 if(OM_OMC_ENABLE_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
-message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled.
-    ***Note: currently it is not possible to disable IPOPT from OpenModelica. This Option is here as a placeholder. ")
+  message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled. You can disable Ipopt by adding -DOM_OMC_ENABLE_IPOPT=OFF to the CMake configure command.")
 endif()
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
