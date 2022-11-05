@@ -208,7 +208,8 @@ pipeline {
               def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
-              deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}'") {
+              deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
+                          "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
                 common.standardSetup()
                 unstash 'omc-clang'
                 common.makeLibsAndCache()
@@ -446,6 +447,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16.3'
               label 'linux'
               alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
           steps {
@@ -674,10 +676,17 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16.3'
               label 'linux'
               alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           steps {
-            script { common.buildAndRunOMEditTestsuite('omedit-testsuite-clang') }
+            script {
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang')
+            }
           }
         }
       }

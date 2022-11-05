@@ -130,7 +130,7 @@ void patchConfigStatus() {
   }
 }
 
-void makeLibsAndCache(libs='core') {
+void makeLibsAndCache() {
   if (isWindows())
   {
     // do nothing
@@ -417,6 +417,9 @@ void buildAndRunOMEditTestsuite(stash) {
     patchConfigStatus()
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  if (stash) {
+    makeLibsAndCache()
+  }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
@@ -454,7 +457,7 @@ void compliance() {
   } else {
   standardSetup()
   unstash 'omc-clang'
-  makeLibsAndCache('all')
+  makeLibsAndCache()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
