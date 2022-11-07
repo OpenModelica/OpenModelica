@@ -573,8 +573,20 @@ omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 
-lis:
+lis: lis-configure
+	@echo Building Lis from sources
+	$(MAKE) -C 3rdParty/lis-1.4.12/src
+	# Copy the library; not headers (as they are not used by the runtime system)
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis*.dll $(OMBUILDDIR)/bin/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis*.dll.a $(OMBUILDDIR)/$(LIB_OMC)/
+
+lis-configure:
+	# Configure and build lis
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && autoconf && ./configure --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean; fi
 
 lis-clean:
+	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
+	rm -f 3rdParty/lis-1.4.12/Makefile
+
 
 .PRECIOUS: Makefile.omdev.mingw
