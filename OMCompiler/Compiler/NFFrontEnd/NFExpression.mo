@@ -5943,7 +5943,7 @@ public
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -5952,7 +5952,7 @@ public
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -5962,7 +5962,7 @@ public
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -5971,7 +5971,7 @@ public
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -5981,7 +5981,7 @@ public
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
