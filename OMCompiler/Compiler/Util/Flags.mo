@@ -1238,7 +1238,7 @@ constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(115,
   "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
 
-constant ConfigFlag Load_PACKAGE_FILE = CONFIG_FLAG(116,
+constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(116,
   "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
 
