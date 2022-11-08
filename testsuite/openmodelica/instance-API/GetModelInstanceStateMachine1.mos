@@ -149,7 +149,7 @@ getModelInstance(M, prettyPrint=true);
 //               }
 //             ]
 //           },
-//           \"op\": \" > \",
+//           \"op\": \">\",
 //           \"rhs\": 10
 //         },
 //         false,
