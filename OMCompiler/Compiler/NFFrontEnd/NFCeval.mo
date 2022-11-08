@@ -334,6 +334,7 @@ algorithm
         else
           // Crefs can be evaluated even if they have non-evaluated subscripts.
           outExp := evalCref(e.cref, e, target, evalSubscripts = false);
+          outEvaluated := Expression.isLiteral(outExp);
         end if;
       then
         outExp;
