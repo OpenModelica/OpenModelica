@@ -252,6 +252,7 @@ namespace FlatModelica
 
   Expression evalMatrix(const Expression &A)
   {
+    Q_UNUSED(A);
     throw std::runtime_error("evalMatrix: not implemented yet");
   }
 
@@ -468,6 +469,7 @@ namespace FlatModelica
 
   Expression evalCat(const std::vector<Expression> &args)
   {
+    Q_UNUSED(args);
     throw std::runtime_error("evalCat: not implemented yet");
   }
 }
