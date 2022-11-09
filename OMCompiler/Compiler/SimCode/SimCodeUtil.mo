@@ -15604,6 +15604,36 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
+public function getCmakeSundialsLinkCode
+  "Code for FMU CMakeLists.txt to specify if CVODE is needed."
+  output String code = "";
+algorithm
+  if not cvodeFmiFlagIsSet() then
+    code := "set(NEED_CVODE FALSE)";
+  else
+    code := "set(NEED_CVODE TRUE)\n" +
+            "set(CVODE_DIRECTORY \"" +  Settings.getInstallationDirectoryPath() + "/lib/omc\")";
+  end if;
+end getCmakeSundialsLinkCode;
+
+public function cvodeFmiFlagIsSet
+  "Checks if s:cvode is part of FMI_FLAGS."
+  output Boolean needsCvode = false;
+protected
+  list<String> fmiFlagsList;
+algorithm
+  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  if listLength(fmiFlagsList) >= 1 then
+    for flag in fmiFlagsList loop
+      if stringEqual(flag, "s:cvode") then
+        needsCvode := true;
+        return;
+      end if;
+    end for;
+  end if;
+  return;
+end cvodeFmiFlagIsSet;
+
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"
   input list<String> includes;

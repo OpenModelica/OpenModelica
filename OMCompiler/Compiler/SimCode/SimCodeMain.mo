@@ -924,13 +924,9 @@ algorithm
             Error.addCompilerError("Unsupported value " + Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS) + "for compiler flag 'fmuRuntimeDepends'.");
             then();
         end match;
-        if isSome(simCode.fmiSimulationFlags) then
-          cmakelistsStr := System.stringReplace(cmakelistsStr, "@WITH_SUNDIALS@", ";WITH_SUNDIALS");
-        else
-          cmakelistsStr := System.stringReplace(cmakelistsStr, "@WITH_SUNDIALS@", "");
-        end if;
 
         // Add external libraries and includes
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", SimCodeUtil.getCmakeSundialsLinkCode());
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 
