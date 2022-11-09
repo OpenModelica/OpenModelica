@@ -70,7 +70,7 @@ public:
   void reset();
   bool isComplete() const;
 
-  CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) noexcept = default;
+  CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) = default;
 private:
   ExtentAnnotation mExtent;
   bool mHasExtent;

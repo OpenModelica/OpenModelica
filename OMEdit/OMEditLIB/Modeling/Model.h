@@ -92,7 +92,7 @@ private:
     bool isComplete() const;
     void deserialize(const QJsonObject &jsonObject);
 
-    CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) noexcept = default;
+    CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) = default;
   private:
     ExtentAnnotation mExtent;
     bool mHasExtent;
