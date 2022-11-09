@@ -125,8 +125,8 @@ TextAnnotation::TextAnnotation(Element *pParent)
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
   // give a reasonable size to default element text
-  mExtents.replace(0, QPointF(-100, -50));
-  mExtents.replace(1, QPointF(100, 50));
+  mExtent.replace(0, QPointF(-100, -50));
+  mExtent.replace(1, QPointF(100, 50));
   setTextString("%name");
   initUpdateTextString();
   setPos(mOrigin);
@@ -198,8 +198,8 @@ TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
   // give a reasonable size
-  mExtents.replace(0, QPointF(-100, 20));
-  mExtents.replace(1, QPointF(100, -20));
+  mExtent.replace(0, QPointF(-100, 20));
+  mExtent.replace(1, QPointF(100, -20));
   setTextString("%name");
   initUpdateTextString();
   setPos(mOrigin);
@@ -222,7 +222,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the extent points
-  mExtents.parse(list.at(8));
+  mExtent.parse(list.at(8));
   // 10th item of the list contains the textString.
   mTextString.parse(list.at(9));
   initUpdateTextString();
@@ -265,7 +265,7 @@ void TextAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpText);
   FilledShape::parseShapeAnnotation(mpText);
 
-  mExtents = mpText->getExtent();
+  mExtent = mpText->getExtent();
   mTextString = mpText->getTextString();
   initUpdateTextString();
 
@@ -470,7 +470,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the extents
-  annotationString.append(mExtents.toQString());
+  annotationString.append(mExtent.toQString());
   // get the text string
   annotationString.append(mTextString.toQString());
   // get the font size
@@ -517,8 +517,8 @@ QString TextAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getTextShapeAnnotation());
   // get the extents
-  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
-    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
+  if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the text string
   annotationString.append(QString("textString=%1").arg(mTextString.toQString()));

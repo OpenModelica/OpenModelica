@@ -1,10 +1,9 @@
 #include "StringAnnotation.h"
 
-StringAnnotation::StringAnnotation() = default;
-
-StringAnnotation::StringAnnotation(const QString &str)
-  : DynamicAnnotation(str)
+StringAnnotation::StringAnnotation()
+  : DynamicAnnotation()
 {
+  clear();
 }
 
 void StringAnnotation::clear()

@@ -358,11 +358,8 @@ void ShapeAnnotation::setDefaults()
   mArrow.append(StringHandler::ArrowNone);
   mArrowSize = 3;
   mSmooth = StringHandler::SmoothNone;
-  mExtents.clear();
-  QList<QPointF> extents;
-  extents.append(QPointF(0, 0));
-  extents.append(QPointF(0, 0));
-  mExtents = extents;
+  mExtent.clear();
+  mExtent = QVector<QPointF>(2, QPointF(0, 0));
   mBorderPattern = StringHandler::BorderNone;
   mRadius = 0;
   mStartAngle = 0;
@@ -492,8 +489,8 @@ QPainterPath ShapeAnnotation::addPathStroker(QPainterPath &path) const
   */
 QRectF ShapeAnnotation::getBoundingRect() const
 {
-  QPointF p1 = mExtents.size() > 0 ? mExtents.at(0) : QPointF(-100.0, -100.0);
-  QPointF p2 = mExtents.size() > 1 ? mExtents.at(1) : QPointF(100.0, 100.0);
+  QPointF p1 = mExtent.size() > 0 ? mExtent.at(0) : QPointF(-100.0, -100.0);
+  QPointF p2 = mExtent.size() > 1 ? mExtent.at(1) : QPointF(100.0, 100.0);
   return QRectF(p1, p2);
 }
 
@@ -650,11 +647,11 @@ void ShapeAnnotation::applyTransformation()
   setPos(0, 0);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
 
-  mTransformation.setWidth(qFabs(mExtents.at(0).x() - mExtents.at(1).x()));
-  mTransformation.setHeight(qFabs(mExtents.at(0).y() - mExtents.at(1).y()));
+  mTransformation.setWidth(qFabs(mExtent.at(0).x() - mExtent.at(1).x()));
+  mTransformation.setHeight(qFabs(mExtent.at(0).y() - mExtent.at(1).y()));
   mTransformation.setOrigin(mOrigin);
   mTransformation.setRotateAngle(mRotation);
-  mTransformation.setExtent(mExtents);
+  mTransformation.setExtent(mExtent);
   setTransform(mTransformation.getTransformationMatrix());
 
   QPointF origin = mOrigin;
@@ -718,8 +715,8 @@ void ShapeAnnotation::drawCornerItems()
       mCornerItemsList.append(pCornerItem);
     }
   } else {
-    QPointF extent1 = QPointF(qMin(mExtents.at(0).x(), mExtents.at(1).x()), qMin(mExtents.at(0).y(), mExtents.at(1).y()));
-    QPointF extent2 = QPointF(qMax(mExtents.at(0).x(), mExtents.at(1).x()), qMax(mExtents.at(0).y(), mExtents.at(1).y()));
+    QPointF extent1 = QPointF(qMin(mExtent.at(0).x(), mExtent.at(1).x()), qMin(mExtent.at(0).y(), mExtent.at(1).y()));
+    QPointF extent2 = QPointF(qMax(mExtent.at(0).x(), mExtent.at(1).x()), qMax(mExtent.at(0).y(), mExtent.at(1).y()));
     mCornerItemsList.append(new CornerItem(extent1.x(), extent1.y(), 0, this));
     mCornerItemsList.append(new CornerItem(extent2.x(), extent2.y(), 1, this));
   }
@@ -761,9 +758,9 @@ void ShapeAnnotation::updateCornerItems()
       }
     }
   } else {
-    if (mExtents.size() > 1) {
-      QPointF extent1 = QPointF(qMin(mExtents.at(0).x(), mExtents.at(1).x()), qMin(mExtents.at(0).y(), mExtents.at(1).y()));
-      QPointF extent2 = QPointF(qMax(mExtents.at(0).x(), mExtents.at(1).x()), qMax(mExtents.at(0).y(), mExtents.at(1).y()));
+    if (mExtent.size() > 1) {
+      QPointF extent1 = QPointF(qMin(mExtent.at(0).x(), mExtent.at(1).x()), qMin(mExtent.at(0).y(), mExtent.at(1).y()));
+      QPointF extent2 = QPointF(qMax(mExtent.at(0).x(), mExtent.at(1).x()), qMax(mExtent.at(0).y(), mExtent.at(1).y()));
       if (mCornerItemsList.size() > 1) {
         mCornerItemsList.at(0)->setPos(QPointF(extent1.x(), extent1.y()));
         mCornerItemsList.at(1)->setPos(QPointF(extent2.x(), extent2.y()));
@@ -792,9 +789,9 @@ void ShapeAnnotation::removeCornerItems()
  */
 void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
 {
-  if (mExtents.size() > 1 && index >= 0 && index <= 1) {
+  if (mExtent.size() > 1 && index >= 0 && index <= 1) {
     prepareGeometryChange();
-    mExtents.replace(index, point);
+    mExtent.replace(index, point);
   }
 }
 
@@ -806,9 +803,9 @@ void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
  */
 void ShapeAnnotation::updateExtent(const int index, const QPointF point)
 {
-  if (mExtents.size() > 1 && index >= 0 && index <= 1) {
+  if (mExtent.size() > 1 && index >= 0 && index <= 1) {
     prepareGeometryChange();
-    mExtents.replace(index, point);
+    mExtent.replace(index, point);
   }
   applyTransformation();
 }
@@ -938,11 +935,11 @@ void ShapeAnnotation::adjustPointsWithOrigin()
   */
 void ShapeAnnotation::adjustExtentsWithOrigin()
 {
-  QList<QPointF> extents;
-  for (auto &extent: mExtents) {
+  QVector<QPointF> extents;
+  for (auto &extent: mExtent) {
     extents.append(extent - mOrigin);
   }
-  mExtents = extents;
+  mExtent = extents;
 }
 
 /*!
@@ -974,7 +971,7 @@ void ShapeAnnotation::updateCornerItem(int index)
     if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this)) {
       pCornerItem->setPos(mPoints.at(index));
     } else {
-      pCornerItem->setPos(mExtents.at(index));
+      pCornerItem->setPos(mExtent.at(index));
     }
     pCornerItem->setFlag(QGraphicsItem::ItemSendsGeometryChanges, flagState);
     pCornerItem->blockSignals(signalsState);
@@ -1119,7 +1116,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mFillColor.update(time, mpParentComponent);
     updated |= mLineThickness.update(time, mpParentComponent);
     updated |= mArrowSize.update(time, mpParentComponent);
-    updated |= mExtents.update(time, mpParentComponent);
+    updated |= mExtent.update(time, mpParentComponent);
     updated |= mRadius.update(time, mpParentComponent);
     updated |= mStartAngle.update(time, mpParentComponent);
     updated |= mEndAngle.update(time, mpParentComponent);
@@ -1145,7 +1142,7 @@ void ShapeAnnotation::resetDynamicSelect()
   mFillColor.resetDynamicToStatic();
   mLineThickness.resetDynamicToStatic();
   mArrowSize.resetDynamicToStatic();
-  mExtents.resetDynamicToStatic();
+  mExtent.resetDynamicToStatic();
   mRadius.resetDynamicToStatic();
   mStartAngle.resetDynamicToStatic();
   mEndAngle.resetDynamicToStatic();
@@ -1512,7 +1509,7 @@ void ShapeAnnotation::cornerItemPressed(const int index)
   mTransform = transform();
   mSceneBoundingRect = sceneBoundingRect().normalized();
   mOldOrigin = mOrigin;
-  mOldExtents = mExtents;
+  mOldExtents = mExtent;
 
   CornerItem *pClickedCornerItem = getCornerItem(index);
   int otherIndex = index == 0 ? 1 : 0;
@@ -1736,7 +1733,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
       extent2.setY(qRound(sy * rect.bottom()));
     }
 
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     extents.append(extent1);
     extents.append(extent2);
     prepareGeometryChange();

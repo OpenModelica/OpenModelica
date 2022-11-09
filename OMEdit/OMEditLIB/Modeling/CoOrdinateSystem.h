@@ -47,7 +47,7 @@ class CoOrdinateSystem
 public:
   CoOrdinateSystem();
   CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem);
-  void setExtent(const QList<QPointF> extent);
+  void setExtent(const QVector<QPointF> extent);
   ExtentAnnotation getExtent() const {return mExtent;}
   bool hasExtent() const {return mHasExtent;}
   void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}

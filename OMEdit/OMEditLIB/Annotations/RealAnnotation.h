@@ -7,7 +7,6 @@ class RealAnnotation : public DynamicAnnotation
 {
   public:
     RealAnnotation();
-    explicit RealAnnotation(const QString &str);
 
     void clear() override;
 

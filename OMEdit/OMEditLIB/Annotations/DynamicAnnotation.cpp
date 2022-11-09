@@ -5,16 +5,6 @@
 
 DynamicAnnotation::DynamicAnnotation() = default;
 
-DynamicAnnotation::DynamicAnnotation(const QString &str)
-{
-  parse(str);
-}
-
-DynamicAnnotation::DynamicAnnotation(const QJsonValue &value)
-{
-  deserialize(value);
-}
-
 DynamicAnnotation::~DynamicAnnotation() = default;
 
 /*!

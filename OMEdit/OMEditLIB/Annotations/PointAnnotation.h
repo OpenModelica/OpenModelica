@@ -10,7 +10,6 @@ class PointAnnotation : public DynamicAnnotation
 {
   public:
     PointAnnotation();
-    explicit PointAnnotation(const QString &str);
 
     void clear() override;
 

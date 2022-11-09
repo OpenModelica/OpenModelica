@@ -96,7 +96,7 @@ namespace ModelInstance
     setHasGrid(coOrdinateSystem.hasGrid());
   }
 
-  void CoordinateSystem::setExtent(const QList<QPointF> extent)
+  void CoordinateSystem::setExtent(const QVector<QPointF> extent)
   {
     mExtent = extent;
     setHasExtent(true);
@@ -158,10 +158,7 @@ namespace ModelInstance
 
   void CoordinateSystem::reset()
   {
-    QList<QPointF> extent;
-    extent.append(QPointF(-100.0, -100.0));
-    extent.append(QPointF(100.0, 100.0));
-    mExtent = extent;
+    mExtent.clear();
     mHasExtent = false;
     mPreserveAspectRatio = true;
     mHasPreserveAspectRatio = false;
@@ -436,10 +433,7 @@ namespace ModelInstance
   {
     mBorderPattern = "BorderPattern::None";
     mExtent.clear();
-    QList<QPointF> extent;
-    extent.append(QPointF(0, 0));
-    extent.append(QPointF(0, 0));
-    mExtent = extent;
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mRadius = 0;
   }
 
@@ -461,10 +455,7 @@ namespace ModelInstance
   Ellipse::Ellipse()
   {
     mExtent.clear();
-    QList<QPointF> extent;
-    extent.append(QPointF(0, 0));
-    extent.append(QPointF(0, 0));
-    mExtent = extent;
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
@@ -493,10 +484,7 @@ namespace ModelInstance
   Text::Text()
   {
     mExtent.clear();
-    QList<QPointF> extent;
-    extent.append(QPointF(0, 0));
-    extent.append(QPointF(0, 0));
-    mExtent = extent;
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mTextString = "";
     mFontSize = 0;
     mFontName = "";
@@ -586,10 +574,7 @@ namespace ModelInstance
   Bitmap::Bitmap()
   {
     mExtent.clear();
-    QList<QPointF> extent;
-    extent.append(QPointF(0, 0));
-    extent.append(QPointF(0, 0));
-    mExtent = extent;
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mFileName = "";
     mImageSource = "";
   }
@@ -1068,10 +1053,7 @@ namespace ModelInstance
   {
     mOrigin = QPointF(0, 0);
     mExtent.clear();
-    QList<QPointF> extent;
-    extent.append(QPointF(0, 0));
-    extent.append(QPointF(0, 0));
-    mExtent = extent;
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mRotation = 0;
   }
 

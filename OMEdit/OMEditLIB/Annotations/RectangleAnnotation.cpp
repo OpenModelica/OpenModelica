@@ -112,7 +112,7 @@ RectangleAnnotation::RectangleAnnotation(Element *pParent)
   setLineColor(QColor(0, 0, 0));
   setFillColor(QColor(240, 240, 240));
   setFillPattern(StringHandler::FillSolid);
-  QList<QPointF> extents;
+  QVector<QPointF> extents;
   extents << QPointF(-100, -100) << QPointF(100, 100);
   setExtents(extents);
   setPos(mOrigin);
@@ -137,9 +137,6 @@ RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
   setLineColor(QColor(0, 0, 0));
   setFillColor(QColor(240, 240, 240));
   setFillPattern(StringHandler::FillSolid);
-  QList<QPointF> extents;
-  extents << QPointF(-100, -100) << QPointF(100, 100);
-  setExtents(extents);
   setPos(mOrigin);
   setRotation(mRotation);
   setShapeFlags(true);
@@ -157,7 +154,7 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   // 9th item of the list contains the border pattern.
   mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(list.at(8)));
   // 10th item is the extent points
-  mExtents.parse(list.at(9));
+  mExtent.parse(list.at(9));
   // 11th item of the list contains the corner radius.
   mRadius.parse(list.at(10));
 }
@@ -168,7 +165,7 @@ void RectangleAnnotation::parseShapeAnnotation()
   FilledShape::parseShapeAnnotation(mpRectangle);
 
   mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(mpRectangle->getBorderPattern()));
-  mExtents = mpRectangle->getExtent();
+  mExtent = mpRectangle->getExtent();
   mRadius = mpRectangle->getRadius();
 }
 
@@ -226,7 +223,7 @@ QString RectangleAnnotation::getOMCShapeAnnotation()
   // get the border pattern
   annotationString.append(StringHandler::getBorderPatternString(mBorderPattern));
   // get the extents
-  annotationString.append(mExtents.toQString());
+  annotationString.append(mExtent.toQString());
   // get the radius
   annotationString.append(mRadius.toQString());
   return annotationString.join(",");
@@ -257,8 +254,8 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString("borderPattern=").append(StringHandler::getBorderPatternString(mBorderPattern)));
   }
   // get the extents
-  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
-    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
+  if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the radius
   if (mRadius.isDynamicSelectExpression() || mRadius != 0) {

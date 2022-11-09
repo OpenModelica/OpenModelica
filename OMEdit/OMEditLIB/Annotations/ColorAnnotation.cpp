@@ -1,13 +1,9 @@
 #include "ColorAnnotation.h"
 
 ColorAnnotation::ColorAnnotation()
-  : mValue(0, 0, 0)
+  : DynamicAnnotation()
 {
-}
-
-ColorAnnotation::ColorAnnotation(const QString &str)
-  : DynamicAnnotation(str)
-{
+  clear();
 }
 
 void ColorAnnotation::clear()

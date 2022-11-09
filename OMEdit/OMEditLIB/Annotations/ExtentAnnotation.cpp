@@ -3,19 +3,19 @@
 
 #include "ExtentAnnotation.h"
 
-ExtentAnnotation::ExtentAnnotation() = default;
-
-ExtentAnnotation::ExtentAnnotation(const QString &str)
-  : DynamicAnnotation(str)
+ExtentAnnotation::ExtentAnnotation()
+  : DynamicAnnotation()
 {
+  clear();
 }
 
 void ExtentAnnotation::clear()
 {
-  mValue.clear();
+  mValue.replace(0, QPointF(-100.0, -100.0));
+  mValue.replace(1, QPointF(100.0, 100.0));
 }
 
-ExtentAnnotation& ExtentAnnotation::operator= (const QList<QPointF> &value)
+ExtentAnnotation& ExtentAnnotation::operator= (const QVector<QPointF> &value)
 {
   mValue = value;
   setExp();

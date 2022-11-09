@@ -1,10 +1,9 @@
 #include "PointAnnotation.h"
 
-PointAnnotation::PointAnnotation() = default;
-
-PointAnnotation::PointAnnotation(const QString &str)
-  : DynamicAnnotation(str)
+PointAnnotation::PointAnnotation()
+  : DynamicAnnotation()
 {
+  clear();
 }
 
 void PointAnnotation::clear()

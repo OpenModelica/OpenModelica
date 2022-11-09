@@ -37,8 +37,6 @@ class DynamicAnnotation
 
   public:
     DynamicAnnotation();
-    DynamicAnnotation(const QString &str);
-    DynamicAnnotation(const QJsonValue &value);
     virtual ~DynamicAnnotation() = 0;
 
     bool parse(const QString &str);
