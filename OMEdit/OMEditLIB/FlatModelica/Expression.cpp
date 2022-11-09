@@ -1046,43 +1046,46 @@ namespace FlatModelica
   {
     public:
       json_error(const QString &msg, const QJsonValue &value)
-        : _error(msg)
       {
+        QString err = msg;
+
         switch (value.type()) {
           case QJsonValue::Null:
-            _error += "null";
+            err += "null";
             break;
 
           case QJsonValue::Bool:
-            _error += value.toBool() ? "true" : "false";
+            err += value.toBool() ? "true" : "false";
             break;
 
           case QJsonValue::Double:
-            _error += QString::number(value.toDouble());
+            err += QString::number(value.toDouble());
             break;
 
           case QJsonValue::String:
-            _error += value.toString();
+            err += value.toString();
             break;
 
           case QJsonValue::Array:
-            _error += QJsonDocument(value.toArray()).toJson();
+            err += QJsonDocument(value.toArray()).toJson();
             break;
 
           case QJsonValue::Object:
-            _error += QJsonDocument(value.toObject()).toJson();
+            err += QJsonDocument(value.toObject()).toJson();
             break;
 
           case QJsonValue::Undefined:
-            _error += "undefined";
+            err += "undefined";
             break;
         }
+
+        _error = err.toStdString();
       }
 
-      const char* what() const noexcept override { return _error.toStdString().c_str(); }
+      const char* what() const noexcept override { return _error.c_str(); }
 
     private:
-      QString _error;
+      std::string _error;
   };
 
   std::unique_ptr<ExpressionBase> parseJsonNumber(const QJsonValue &value)
