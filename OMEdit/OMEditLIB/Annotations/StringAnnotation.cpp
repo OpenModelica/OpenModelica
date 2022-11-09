@@ -1,7 +1,6 @@
 #include "StringAnnotation.h"
 
 StringAnnotation::StringAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }

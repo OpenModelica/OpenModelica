@@ -1,7 +1,6 @@
 #include "PointAnnotation.h"
 
 PointAnnotation::PointAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }

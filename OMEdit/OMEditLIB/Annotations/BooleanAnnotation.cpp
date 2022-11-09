@@ -1,7 +1,6 @@
 #include "BooleanAnnotation.h"
 
 BooleanAnnotation::BooleanAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }

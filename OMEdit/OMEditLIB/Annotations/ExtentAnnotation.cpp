@@ -4,7 +4,6 @@
 #include "ExtentAnnotation.h"
 
 ExtentAnnotation::ExtentAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }

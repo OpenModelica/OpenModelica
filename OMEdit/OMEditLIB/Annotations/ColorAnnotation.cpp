@@ -1,7 +1,6 @@
 #include "ColorAnnotation.h"
 
 ColorAnnotation::ColorAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }

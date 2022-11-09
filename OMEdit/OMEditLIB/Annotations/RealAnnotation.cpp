@@ -1,7 +1,6 @@
 #include "RealAnnotation.h"
 
 RealAnnotation::RealAnnotation()
-  : DynamicAnnotation()
 {
   clear();
 }
