@@ -38,6 +38,13 @@
 #include <QColor>
 #include <QRectF>
 
+#include "Annotations/BooleanAnnotation.h"
+#include "Annotations/PointAnnotation.h"
+#include "Annotations/RealAnnotation.h"
+#include "Annotations/ColorAnnotation.h"
+#include "Annotations/ExtentAnnotation.h"
+#include "Annotations/StringAnnotation.h"
+
 namespace ModelInstance
 {
   class Point
@@ -56,40 +63,25 @@ private:
     double mValue[2];
   };
 
-  class Extent
-  {
-  public:
-    Extent();
-    Extent(const Point &extent1, const Point extent2);
-    Extent(const Extent &extent);
-    void deserialize(const QJsonArray &jsonArray);
-    Point getExtent1() const {return mPoint[0];}
-    Point getExtent2() const {return mPoint[1];}
-
-    Extent& operator=(const Extent &extent) noexcept = default;
-private:
-    Point mPoint[2];
-  };
-
   class CoordinateSystem
   {
   public:
     CoordinateSystem();
     CoordinateSystem(const CoordinateSystem &coOrdinateSystem);
-    void setExtent(const Extent &extent);
-    Extent getExtent() const {return mExtent;}
+    void setExtent(const QList<QPointF> extent);
+    ExtentAnnotation getExtent() const {return mExtent;}
     void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
     bool hasExtent() const {return mHasExtent;}
     void setPreserveAspectRatio(const bool preserveAspectRatio);
-    bool getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+    BooleanAnnotation getPreserveAspectRatio() const {return mPreserveAspectRatio;}
     bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
     void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
     void setInitialScale(const qreal initialScale);
-    double getInitialScale() const {return mInitialScale;}
+    RealAnnotation getInitialScale() const {return mInitialScale;}
     bool hasInitialScale() const {return mHasInitialScale;}
     void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
-    void setGrid(const Point &grid);
-    Point getGrid() const {return mGrid;}
+    void setGrid(const QPointF grid);
+    PointAnnotation getGrid() const {return mGrid;}
     void setHasGrid(const bool hasGrid) {mHasGrid = hasGrid;}
     bool hasGrid() const {return mHasGrid;}
 
@@ -100,15 +92,15 @@ private:
     bool isComplete() const;
     void deserialize(const QJsonObject &jsonObject);
 
-    CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) noexcept = default;
+    CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) = default;
   private:
-    Extent mExtent;
+    ExtentAnnotation mExtent;
     bool mHasExtent;
-    bool mPreserveAspectRatio;
+    BooleanAnnotation mPreserveAspectRatio;
     bool mHasPreserveAspectRatio;
-    qreal mInitialScale;
+    RealAnnotation mInitialScale;
     bool mHasInitialScale;
-    Point mGrid;
+    PointAnnotation mGrid;
     bool mHasGrid;
   };
 
@@ -116,29 +108,16 @@ private:
   {
   public:
     GraphicItem();
-    bool getVisible() const {return mVisible;}
-    Point getOrigin() const {return mOrigin;}
-    double getRotation() const {return mRotation;}
+    BooleanAnnotation getVisible() const {return mVisible;}
+    PointAnnotation getOrigin() const {return mOrigin;}
+    RealAnnotation getRotation() const {return mRotation;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 private:
-    bool mVisible;
-    Point mOrigin;
-    double mRotation;
-  };
-
-  class Color
-  {
-  public:
-    Color();
-    void deserialize(const QJsonArray &jsonArray);
-    void setColor(const QColor &color) {mColor = color;}
-    QColor getColor() const {return mColor;}
-
-    bool operator==(const Color &color) const;
-  private:
-    QColor mColor;
+    BooleanAnnotation mVisible;
+    PointAnnotation mOrigin;
+    RealAnnotation mRotation;
   };
 
   enum class LinePattern {None, Solid, Dash, Dot, DashDot, DashDotDot};
@@ -154,20 +133,20 @@ private:
   {
   public:
     FilledShape();
-    Color getLineColor() const {return mLineColor;}
-    Color getFillColor() const {return mFillColor;}
+    ColorAnnotation getLineColor() const {return mLineColor;}
+    ColorAnnotation getFillColor() const {return mFillColor;}
     QString getPattern() const {return mPattern;}
     QString getFillPattern() const {return mFillPattern;}
-    double getLineThickness() const {return mLineThickness;}
+    RealAnnotation getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
   private:
-    Color mLineColor;
-    Color mFillColor;
+    ColorAnnotation mLineColor;
+    ColorAnnotation mFillColor;
     QString mPattern;
     QString mFillPattern;
-    double mLineThickness;
+    RealAnnotation mLineThickness;
   };
 
   class Shape : public GraphicItem, public FilledShape
@@ -188,28 +167,28 @@ private:
     QList<Point> getPoints() const {return mPoints;}
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
-    Color getColor() const {return mColor;}
+    ColorAnnotation getColor() const {return mColor;}
     void setLinePattern(const QString &pattern) {mPattern = pattern;}
     QString getPattern() const {return mPattern;}
     void setThickness(double thickness) {mThickness = thickness;}
-    double getThickness() const {return mThickness;}
+    RealAnnotation getThickness() const {return mThickness;}
     void setStartArrow(const QString &startArrow) {mArrow[0] = startArrow;}
     QString getStartArrow() const {return mArrow[0];}
     void setEndArrow(const QString &endArrow) {mArrow[1] = endArrow;}
     QString getEndArrow() const {return mArrow[1];}
     void setArrowSize(double arrowSize) {mArrowSize = arrowSize;}
-    double getArrowSize() const {return mArrowSize;}
+    RealAnnotation getArrowSize() const {return mArrowSize;}
     void setSmooth(const QString &smooth) {mSmooth = smooth;}
     QString getSmooth() const {return mSmooth;}
 
     bool operator==(const Line &line) const;
   private:
     QList<Point> mPoints;
-    Color mColor;
+    ColorAnnotation mColor;
     QString mPattern;
-    double mThickness;
+    RealAnnotation mThickness;
     QString mArrow[2];
-    double mArrowSize = 3;
+    RealAnnotation mArrowSize;
     QString mSmooth;
   };
 
@@ -233,12 +212,12 @@ private:
     void deserialize(const QJsonArray &jsonArray);
 
     QString getBorderPattern() const {return mBorderPattern;}
-    Extent getExtent() const {return mExtent;}
-    double getRadius() const {return mRadius;}
+    ExtentAnnotation getExtent() const {return mExtent;}
+    RealAnnotation getRadius() const {return mRadius;}
   private:
     QString mBorderPattern;
-    Extent mExtent;
-    double mRadius;
+    ExtentAnnotation mExtent;
+    RealAnnotation mRadius;
   };
 
   class Ellipse : public Shape
@@ -247,14 +226,14 @@ private:
     Ellipse();
     void deserialize(const QJsonArray &jsonArray);
 
-    Extent getExtent() const {return mExtent;}
-    double getStartAngle() const {return mStartAngle;}
-    double getEndAngle() const {return mEndAngle;}
+    ExtentAnnotation getExtent() const {return mExtent;}
+    RealAnnotation getStartAngle() const {return mStartAngle;}
+    RealAnnotation getEndAngle() const {return mEndAngle;}
     QString getClosure() const {return mClosure;}
   private:
-    Extent mExtent;
-    double mStartAngle;
-    double mEndAngle;
+    ExtentAnnotation mExtent;
+    RealAnnotation mStartAngle;
+    RealAnnotation mEndAngle;
     QString mClosure;
   };
 
@@ -265,20 +244,20 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    Extent getExtent() const {return mExtent;}
-    QString getTextString() const {return mTextString;}
-    double getFontSize() const {return mFontSize;}
+    ExtentAnnotation getExtent() const {return mExtent;}
+    StringAnnotation getTextString() const {return mTextString;}
+    RealAnnotation getFontSize() const {return mFontSize;}
     QString getFontName() const {return mFontName;}
     QStringList getTextStyle() const {return mTextStyle;}
-    Color getTextColor() const {return mTextColor;}
+    ColorAnnotation getTextColor() const {return mTextColor;}
     QString getHorizontalAlignment() const {return mHorizontalAlignment;}
   private:
-    Extent mExtent;
-    QString mTextString;
-    double mFontSize;
+    ExtentAnnotation mExtent;
+    StringAnnotation mTextString;
+    RealAnnotation mFontSize;
     QString mFontName;
     QStringList mTextStyle;
-    Color mTextColor;
+    ColorAnnotation mTextColor;
     QString mHorizontalAlignment;
   };
 
@@ -288,11 +267,11 @@ private:
     Bitmap();
     void deserialize(const QJsonArray &jsonArray);
 
-    Extent getExtent() const {return mExtent;}
+    ExtentAnnotation getExtent() const {return mExtent;}
     QString getFileName() const {return mFileName;}
     QString getImageSource() const {return mImageSource;}
   private:
-    Extent mExtent;
+    ExtentAnnotation mExtent;
     QString mFileName;
     QString mImageSource;
   };
@@ -440,13 +419,13 @@ private:
   public:
     Transformation();
     void deserialize(const QJsonObject &jsonObject);
-    Point getOrigin() const {return mOrigin;}
-    Extent getExtent() const {return mExtent;}
+    PointAnnotation getOrigin() const {return mOrigin;}
+    ExtentAnnotation getExtent() const {return mExtent;}
     double getRotation() const {return mRotation;}
   private:
-    Point mOrigin;
-    Extent mExtent;
-    double mRotation;
+    PointAnnotation mOrigin;
+    ExtentAnnotation mExtent;
+    RealAnnotation mRotation;
   };
 
   class PlacementAnnotation
@@ -454,14 +433,14 @@ private:
   public:
     PlacementAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    bool getVisible() const {return mVisible;}
+    BooleanAnnotation getVisible() const {return mVisible;}
     Transformation getTransformation() const {return mTransformation;}
-    bool getIconVisible() const {return mIconVisible;}
+    BooleanAnnotation getIconVisible() const {return mIconVisible;}
     Transformation getIconTransformation() const {return mIconTransformation;}
   private:
-    bool mVisible;
+    BooleanAnnotation mVisible;
     Transformation mTransformation;
-    bool mIconVisible;
+    BooleanAnnotation mIconVisible;
     Transformation mIconTransformation;
   };
 

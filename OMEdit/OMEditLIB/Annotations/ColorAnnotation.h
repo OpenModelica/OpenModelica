@@ -15,6 +15,8 @@ class ColorAnnotation : public DynamicAnnotation
     operator const QColor&() const { return mValue; }
     ColorAnnotation& operator= (const QColor &value);
 
+    bool isValid() const {return mValue.isValid();}
+
     int red()   const { return mValue.red(); }
     int green() const { return mValue.green(); }
     int blue()  const { return mValue.blue(); }

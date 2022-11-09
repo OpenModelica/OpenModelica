@@ -57,17 +57,15 @@ public:
   bool isValid() const {return mValid;}
   void setWidth(const qreal &width) {mWidth = width;}
   void setHeight(const qreal &height) {mHeight = height;}
-  bool getVisible() const {return mVisible;}
-  bool getVisibleIcon() const {return mVisibleIcon;}
+  BooleanAnnotation getVisible() const {return mVisible;}
+  BooleanAnnotation getVisibleIcon() const {return mVisibleIcon;}
   void adjustPosition(qreal x, qreal y);
   void setOrigin(QPointF origin);
-  QPointF getOrigin() const;
-  void setExtent1(QPointF extent);
-  QPointF getExtent1() const;
-  void setExtent2(QPointF extent);
-  QPointF getExtent2() const;
+  PointAnnotation getOrigin() const;
+  void setExtent(QList<QPointF> extent);
+  ExtentAnnotation getExtent() const;
   void setRotateAngle(qreal rotateAngle);
-  qreal getRotateAngle() const;
+  RealAnnotation getRotateAngle() const;
   QPointF getPosition();
   // operator overloading
   bool operator==(const Transformation &transformation) const;
@@ -77,17 +75,15 @@ private:
   StringHandler::ViewType mViewType;
   qreal mWidth;
   qreal mHeight;
-  bool mVisible;
-  QPointF mOriginDiagram;
-  QPointF mExtent1Diagram;
-  QPointF mExtent2Diagram;
-  qreal mRotateAngleDiagram;
-  QPointF mPositionDiagram;
-  bool mVisibleIcon;
-  QPointF mOriginIcon;
-  QPointF mExtent1Icon;
-  QPointF mExtent2Icon;
-  qreal mRotateAngleIcon;
+  BooleanAnnotation mVisible;
+  PointAnnotation mOriginDiagram;
+  ExtentAnnotation mExtentDiagram;
+  RealAnnotation mRotateAngleDiagram;
+  PointAnnotation mPositionDiagram;
+  BooleanAnnotation mVisibleIcon;
+  PointAnnotation mOriginIcon;
+  ExtentAnnotation mExtentIcon;
+  RealAnnotation mRotateAngleIcon;
   QPointF mPositionIcon;
 
   QTransform getTransformationMatrixDiagram() const;
@@ -97,24 +93,20 @@ private:
   qreal getHeight() const {return mHeight;}
   void adjustPositionDiagram(qreal x, qreal y);
   void setOriginDiagram(QPointF origin);
-  QPointF getOriginDiagram() const {return mOriginDiagram;}
-  void setExtent1Diagram(QPointF extent) {mExtent1Diagram = extent;}
-  QPointF getExtent1Diagram() const {return mExtent1Diagram;}
-  void setExtent2Diagram(QPointF extent) {mExtent2Diagram = extent;}
-  QPointF getExtent2Diagram() const {return mExtent2Diagram;}
+  PointAnnotation getOriginDiagram() const {return mOriginDiagram;}
+  void setExtentDiagram(QList<QPointF> extent) {mExtentDiagram = extent;}
+  ExtentAnnotation getExtentDiagram() const {return mExtentDiagram;}
   void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
-  qreal getRotateAngleDiagram() const {return mRotateAngleDiagram;}
+  RealAnnotation getRotateAngleDiagram() const {return mRotateAngleDiagram;}
   QPointF getPositionDiagram() const;
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
   void setOriginIcon(QPointF origin);
-  QPointF getOriginIcon() const {return mOriginIcon;}
-  void setExtent1Icon(QPointF extent) {mExtent1Icon = extent;}
-  QPointF getExtent1Icon() const {return mExtent1Icon;}
-  void setExtent2Icon(QPointF extent) {mExtent2Icon = extent;}
-  QPointF getExtent2Icon() const {return mExtent2Icon;}
+  PointAnnotation getOriginIcon() const {return mOriginIcon;}
+  void setExtentIcon(QList<QPointF> extent) {mExtentIcon = extent;}
+  ExtentAnnotation getExtentIcon() const {return mExtentIcon;}
   void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
-  qreal getRotateAngleIcon() const {return mRotateAngleIcon;}
+  RealAnnotation getRotateAngleIcon() const {return mRotateAngleIcon;}
   QPointF getPositionIcon() const;
 };
 

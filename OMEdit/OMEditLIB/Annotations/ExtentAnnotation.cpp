@@ -22,6 +22,11 @@ ExtentAnnotation& ExtentAnnotation::operator= (const QList<QPointF> &value)
   return *this;
 }
 
+bool ExtentAnnotation::operator==(const ExtentAnnotation &extent) const
+{
+  return mValue.at(0) == extent.at(0) && mValue.at(1) == extent.at(1);
+}
+
 FlatModelica::Expression ExtentAnnotation::toExp() const
 {
   std::vector<FlatModelica::Expression> elems;

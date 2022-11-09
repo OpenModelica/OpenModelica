@@ -68,28 +68,6 @@ namespace ModelInstance
     return (qFuzzyCompare(point.x(), this->x()) && qFuzzyCompare(point.y(), this->y()));
   }
 
-  Extent::Extent() = default;
-
-  Extent::Extent(const Point &extent1, const Point extent2)
-  {
-    mPoint[0] = extent1;
-    mPoint[1] = extent2;
-  }
-
-  Extent::Extent(const Extent &extent)
-  {
-    mPoint[0] = extent.getExtent1();
-    mPoint[1] = extent.getExtent2();
-  }
-
-  void Extent::deserialize(const QJsonArray &jsonArray)
-  {
-    if (jsonArray.size() == 2) {
-      mPoint[0].deserialize(jsonArray.at(0).toArray());
-      mPoint[1].deserialize(jsonArray.at(1).toArray());
-    }
-  }
-
   /*!
    * \class CoordinateSystem
    * \brief A class to represent the coordinate system of view.
@@ -118,7 +96,7 @@ namespace ModelInstance
     setHasGrid(coOrdinateSystem.hasGrid());
   }
 
-  void CoordinateSystem::setExtent(const Extent &extent)
+  void CoordinateSystem::setExtent(const QList<QPointF> extent)
   {
     mExtent = extent;
     setHasExtent(true);
@@ -136,7 +114,7 @@ namespace ModelInstance
     setHasInitialScale(true);
   }
 
-  void CoordinateSystem::setGrid(const Point &grid)
+  void CoordinateSystem::setGrid(const QPointF grid)
   {
     mGrid = grid;
     setHasGrid(true);
@@ -168,8 +146,8 @@ namespace ModelInstance
 
   QRectF CoordinateSystem::getExtentRectangle() const
   {
-    Point leftBottom = mExtent.getExtent1();
-    Point topRight = mExtent.getExtent2();
+    QPointF leftBottom = mExtent.at(0);
+    QPointF topRight = mExtent.at(1);
 
     qreal left = qMin(leftBottom.x(), topRight.x());
     qreal bottom = qMin(leftBottom.y(), topRight.y());
@@ -180,14 +158,17 @@ namespace ModelInstance
 
   void CoordinateSystem::reset()
   {
-    setExtent(Extent(Point(-100, -100), Point(100, 100)));
-    setHasExtent(false);
-    setPreserveAspectRatio(true);
-    setHasPreserveAspectRatio(false);
-    setInitialScale(0.1);
-    setHasInitialScale(false);
-    setGrid(Point(2, 2));
-    setHasGrid(false);
+    QList<QPointF> extent;
+    extent.append(QPointF(-100.0, -100.0));
+    extent.append(QPointF(100.0, 100.0));
+    mExtent = extent;
+    mHasExtent = false;
+    mPreserveAspectRatio = true;
+    mHasPreserveAspectRatio = false;
+    mInitialScale = 0.1;
+    mHasInitialScale = false;
+    mGrid = QPointF(2, 2);
+    mHasGrid = false;
   }
 
   bool CoordinateSystem::isComplete() const
@@ -198,76 +179,52 @@ namespace ModelInstance
   void CoordinateSystem::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("extent")) {
-      mExtent.deserialize(jsonObject.value("extent").toArray());
-      setHasExtent(true);
+      mHasExtent = mExtent.deserialize(jsonObject.value("extent"));
     }
     if (jsonObject.contains("preserveAspectRatio")) {
-      setPreserveAspectRatio(jsonObject.value("preserveAspectRatio").toBool());
+      mHasPreserveAspectRatio = mPreserveAspectRatio.deserialize(jsonObject.value("preserveAspectRatio"));
     }
     if (jsonObject.contains("initialScale")) {
-      setInitialScale(jsonObject.value("initialScale").toDouble());
+      mHasInitialScale = mInitialScale.deserialize(jsonObject.value("initialScale"));
     }
     if (jsonObject.contains("grid")) {
-      mGrid.deserialize(jsonObject.value("grid").toArray());
-      setHasGrid(true);
+      mHasGrid = mGrid.deserialize(jsonObject.value("grid"));
     }
   }
 
   GraphicItem::GraphicItem()
   {
     mVisible = true;
-    mOrigin = Point(0, 0);
+    mOrigin = QPointF(0, 0);
     mRotation = 0;
   }
 
   void GraphicItem::deserialize(const QJsonArray &jsonArray)
   {
-    mVisible = jsonArray.at(0).toBool();
-    mOrigin.deserialize(jsonArray.at(1).toArray());
-    mRotation = jsonArray.at(2).toDouble();
+    mVisible.deserialize(jsonArray.at(0));
+    mOrigin.deserialize(jsonArray.at(1));
+    mRotation.deserialize(jsonArray.at(2));
   }
 
   void GraphicItem::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
-      mVisible = jsonObject.value("visible").toBool();
+      mVisible.deserialize(jsonObject.value("visible"));
     }
 
     if (jsonObject.contains("origin")) {
-      mOrigin.deserialize(jsonObject.value("origin").toArray());
+      mOrigin.deserialize(jsonObject.value("origin"));
     }
 
     if (jsonObject.contains("rotation")) {
-      mRotation = jsonObject.value("rotation").toDouble();
+      mRotation.deserialize(jsonObject.value("rotation"));
     }
-  }
-
-  Color::Color()
-  {
-    mColor = Qt::black;
-  }
-
-  void Color::deserialize(const QJsonArray &jsonArray)
-  {
-    if (jsonArray.size() == 3) {
-      // if invalid color
-      if (jsonArray.at(0).toInt() == -1 && jsonArray.at(1).toInt() == -1 && jsonArray.at(2).toInt() == -1) {
-        mColor = QColor();
-      } else {
-        mColor.setRed(jsonArray.at(0).toInt());
-        mColor.setGreen(jsonArray.at(1).toInt());
-        mColor.setBlue(jsonArray.at(2).toInt());
-      }
-    }
-  }
-
-  bool Color::operator==(const Color &color) const
-  {
-    return (color.getColor() == this->getColor());
   }
 
   FilledShape::FilledShape()
   {
+    mLineColor = QColor(0, 0, 0);
+    mFillColor = QColor(0, 0, 0);
     mPattern = "LinePattern.Solid";
     mFillPattern = "FillPattern.None";
     mLineThickness = 0.25;
@@ -275,8 +232,8 @@ namespace ModelInstance
 
   void FilledShape::deserialize(const QJsonArray &jsonArray)
   {
-    mLineColor.deserialize(jsonArray.at(3).toArray());
-    mFillColor.deserialize(jsonArray.at(4).toArray());
+    mLineColor.deserialize(jsonArray.at(3));
+    mFillColor.deserialize(jsonArray.at(4));
     QJsonObject pattern = jsonArray.at(5).toObject();
     if (pattern.contains("name")) {
       mPattern = pattern.value("name").toString();
@@ -285,17 +242,17 @@ namespace ModelInstance
     if (fillPattern.contains("name")) {
       mFillPattern = fillPattern.value("name").toString();
     }
-    mLineThickness = jsonArray.at(7).toDouble();
+    mLineThickness.deserialize(jsonArray.at(7));
   }
 
   void FilledShape::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("lineColor")) {
-      mLineColor.deserialize(jsonObject.value("lineColor").toArray());
+      mLineColor.deserialize(jsonObject.value("lineColor"));
     }
 
     if (jsonObject.contains("fillColor")) {
-      mFillColor.deserialize(jsonObject.value("fillColor").toArray());
+      mFillColor.deserialize(jsonObject.value("fillColor"));
     }
 
     if (jsonObject.contains("pattern")) {
@@ -313,7 +270,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("lineThickness")) {
-      mLineThickness = jsonObject.value("lineThickness").toDouble();
+      mLineThickness.deserialize(jsonObject.value("lineThickness"));
     }
   }
 
@@ -328,6 +285,7 @@ namespace ModelInstance
   Line::Line()
   {
     mPoints.clear();
+    mColor = QColor(0, 0, 0);
     mPattern = "LinePattern.Solid";
     mThickness = 0.25;
     mArrow[0] = "Arrow.None";
@@ -347,7 +305,7 @@ namespace ModelInstance
         point.deserialize(pointValue.toArray());
         mPoints.append(point);
       }
-      mColor.deserialize(jsonArray.at(4).toArray());
+      mColor.deserialize(jsonArray.at(4));
       QJsonObject pattern = jsonArray.at(5).toObject();
       if (pattern.contains("name")) {
         mPattern = pattern.value("name").toString();
@@ -386,7 +344,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("color")) {
-      mColor.deserialize(jsonObject.value("color").toArray());
+      mColor.deserialize(jsonObject.value("color"));
     }
 
     if (jsonObject.contains("pattern")) {
@@ -433,7 +391,7 @@ namespace ModelInstance
 
   void Line::setColor(const QColor &color)
   {
-    mColor.setColor(color);
+    mColor = color;
   }
 
   bool Line::operator==(const Line &line) const
@@ -477,6 +435,11 @@ namespace ModelInstance
   Rectangle::Rectangle()
   {
     mBorderPattern = "BorderPattern::None";
+    mExtent.clear();
+    QList<QPointF> extent;
+    extent.append(QPointF(0, 0));
+    extent.append(QPointF(0, 0));
+    mExtent = extent;
     mRadius = 0;
   }
 
@@ -490,13 +453,18 @@ namespace ModelInstance
       if (borderPattern.contains("name")) {
         mBorderPattern = borderPattern.value("name").toString();
       }
-      mExtent.deserialize(jsonArray.at(9).toArray());
-      mRadius = jsonArray.at(10).toDouble();
+      mExtent.deserialize(jsonArray.at(9));
+      mRadius.deserialize(jsonArray.at(10));
     }
   }
 
   Ellipse::Ellipse()
   {
+    mExtent.clear();
+    QList<QPointF> extent;
+    extent.append(QPointF(0, 0));
+    extent.append(QPointF(0, 0));
+    mExtent = extent;
     mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
@@ -512,9 +480,9 @@ namespace ModelInstance
       GraphicItem::deserialize(jsonArray);
       FilledShape::deserialize(jsonArray);
 
-      mExtent.deserialize(jsonArray.at(8).toArray());
-      mStartAngle = jsonArray.at(9).toDouble();
-      mEndAngle = jsonArray.at(10).toDouble();
+      mExtent.deserialize(jsonArray.at(8));
+      mStartAngle.deserialize(jsonArray.at(9));
+      mEndAngle.deserialize(jsonArray.at(10));
       QJsonObject closure = jsonArray.at(11).toObject();
       if (closure.contains("name")) {
         mClosure = closure.value("name").toString();
@@ -524,10 +492,16 @@ namespace ModelInstance
 
   Text::Text()
   {
+    mExtent.clear();
+    QList<QPointF> extent;
+    extent.append(QPointF(0, 0));
+    extent.append(QPointF(0, 0));
+    mExtent = extent;
     mTextString = "";
     mFontSize = 0;
     mFontName = "";
     mTextStyle.clear();
+    mTextColor = QColor(0, 0, 0);
     mHorizontalAlignment = "TextAlignment.Center";
   }
 
@@ -537,10 +511,16 @@ namespace ModelInstance
       GraphicItem::deserialize(jsonArray);
       FilledShape::deserialize(jsonArray);
 
-      mExtent.deserialize(jsonArray.at(8).toArray());
-      mTextString = jsonArray.at(9).toString();
-      mFontSize = jsonArray.at(10).toDouble();
-      mTextColor.deserialize(jsonArray.at(11).toArray());
+      mExtent.deserialize(jsonArray.at(8));
+      mTextString.deserialize(jsonArray.at(9));
+      mFontSize.deserialize(jsonArray.at(10));
+      // if invalid color
+      QJsonArray colorArray = jsonArray.at(11).toArray();
+      if (colorArray.size() == 3 && colorArray.at(0).toInt() == -1 && colorArray.at(1).toInt() == -1 && colorArray.at(2).toInt() == -1) {
+        mTextColor = QColor();
+      } else {
+        mTextColor.deserialize(jsonArray.at(11));
+      }
       mFontName = jsonArray.at(12).toString();
       QJsonArray textStyles = jsonArray.at(13).toArray();
       foreach (QJsonValue textStyle, textStyles) {
@@ -562,19 +542,19 @@ namespace ModelInstance
     FilledShape::deserialize(jsonObject);
 
     if (jsonObject.contains("extent")) {
-      mExtent.deserialize(jsonObject.value("extent").toArray());
+      mExtent.deserialize(jsonObject.value("extent"));
     }
 
     if (jsonObject.contains("string")) {
-      mTextString = jsonObject.value("string").toString();
+      mTextString.deserialize(jsonObject.value("string"));
     }
 
     if (jsonObject.contains("fontSize")) {
-      mFontSize = jsonObject.value("fontSize").toDouble();
+      mFontSize.deserialize(jsonObject.value("fontSize"));
     }
 
     if (jsonObject.contains("textColor")) {
-      mTextColor.deserialize(jsonObject.value("textColor").toArray());
+      mTextColor.deserialize(jsonObject.value("textColor"));
     }
 
     if (jsonObject.contains("fontName")) {
@@ -605,6 +585,11 @@ namespace ModelInstance
 
   Bitmap::Bitmap()
   {
+    mExtent.clear();
+    QList<QPointF> extent;
+    extent.append(QPointF(0, 0));
+    extent.append(QPointF(0, 0));
+    mExtent = extent;
     mFileName = "";
     mImageSource = "";
   }
@@ -614,7 +599,7 @@ namespace ModelInstance
     if (jsonArray.size() == 6) {
       GraphicItem::deserialize(jsonArray);
 
-      mExtent.deserialize(jsonArray.at(3).toArray());
+      mExtent.deserialize(jsonArray.at(3));
       mFileName = jsonArray.at(4).toString();
       mImageSource = jsonArray.at(5).toString();
     }
@@ -1081,20 +1066,25 @@ namespace ModelInstance
 
   Transformation::Transformation()
   {
-    mOrigin = Point(0, 0);
+    mOrigin = QPointF(0, 0);
+    mExtent.clear();
+    QList<QPointF> extent;
+    extent.append(QPointF(0, 0));
+    extent.append(QPointF(0, 0));
+    mExtent = extent;
     mRotation = 0;
   }
 
   void Transformation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("origin")) {
-      mOrigin.deserialize(jsonObject.value("origin").toArray());
+      mOrigin.deserialize(jsonObject.value("origin"));
     }
     if (jsonObject.contains("extent")) {
-      mExtent.deserialize(jsonObject.value("extent").toArray());
+      mExtent.deserialize(jsonObject.value("extent"));
     }
     if (jsonObject.contains("rotation")) {
-      mRotation = jsonObject.value("rotation").toDouble();
+      mRotation.deserialize(jsonObject.value("rotation"));
     }
   }
 
@@ -1108,7 +1098,7 @@ namespace ModelInstance
   void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
-      mVisible = jsonObject.value("visible").toBool();
+      mVisible.deserialize(jsonObject.value("visible"));
     } else {
       // if there is no visible then assume it to be true.
       mVisible = true;
@@ -1119,7 +1109,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("iconVisible")) {
-      mIconVisible = jsonObject.value("iconVisible").toBool();
+      mIconVisible.deserialize(jsonObject.value("iconVisible"));
     } else {
       mIconVisible = mVisible;
     }

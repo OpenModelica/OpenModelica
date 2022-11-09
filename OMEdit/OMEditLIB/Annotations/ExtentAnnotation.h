@@ -15,6 +15,7 @@ class ExtentAnnotation : public DynamicAnnotation
 
     operator const QList<QPointF>&() const { return mValue; }
     ExtentAnnotation& operator= (const QList<QPointF> &value);
+    bool operator== (const ExtentAnnotation &extent) const;
 
     const QPointF& at(int i) const { return mValue.at(i); }
     int size() const { return mValue.size(); }

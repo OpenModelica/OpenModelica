@@ -96,8 +96,7 @@ void GraphicItem::parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem)
   // if first item of list is true then the shape should be visible.
   mVisible = pGraphicItem->getVisible();
   // 2nd item is the origin
-  ModelInstance::Point origin = pGraphicItem->getOrigin();
-  mOrigin = QPointF(origin.x(), origin.y());
+  mOrigin = pGraphicItem->getOrigin();
   // 3rd item is the rotation
   mRotation = pGraphicItem->getRotation();
 }
@@ -194,8 +193,8 @@ void FilledShape::parseShapeAnnotation(QString annotation)
 
 void FilledShape::parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape)
 {
-  mLineColor = pFilledShape->getLineColor().getColor();
-  mFillColor = pFilledShape->getFillColor().getColor();
+  mLineColor = pFilledShape->getLineColor();
+  mFillColor = pFilledShape->getFillColor();
   mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pFilledShape->getPattern()));
   mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pFilledShape->getFillPattern()));
   mLineThickness = pFilledShape->getLineThickness();
@@ -599,8 +598,9 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
 
 QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation)
 {
-  QPointF defaultPoint1 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getLeft(), pGraphicsView->mMergedCoOrdinateSystem.getBottom());
-  QPointF defaultPoint2 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getRight(), pGraphicsView->mMergedCoOrdinateSystem.getTop());
+  ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
+  QPointF defaultPoint1 = QPointF(extent.at(0).x(), extent.at(0).y());
+  QPointF defaultPoint2 = QPointF(extent.at(1).x(), extent.at(1).y());
   QPointF point1 = defaultPoint1;
   QPointF point2 = defaultPoint2;
 
@@ -654,8 +654,7 @@ void ShapeAnnotation::applyTransformation()
   mTransformation.setHeight(qFabs(mExtents.at(0).y() - mExtents.at(1).y()));
   mTransformation.setOrigin(mOrigin);
   mTransformation.setRotateAngle(mRotation);
-  mTransformation.setExtent1(mExtents.at(0));
-  mTransformation.setExtent2(mExtents.at(1));
+  mTransformation.setExtent(mExtents);
   setTransform(mTransformation.getTransformationMatrix());
 
   QPointF origin = mOrigin;
@@ -675,10 +674,11 @@ void ShapeAnnotation::applyTransformation()
       && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
 
-    qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
-    qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
-    qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
-    qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
+    ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
+    qreal left = extent.at(0).x();
+    qreal bottom = extent.at(0).y();
+    qreal right = extent.at(1).x();
+    qreal top = extent.at(1).y();
     // map the origin to extends CoOrdinateSystem
     origin.setX(Utilities::mapToCoOrdinateSystem(mOrigin.x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x()));
     origin.setY(Utilities::mapToCoOrdinateSystem(mOrigin.y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y()));
