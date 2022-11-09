@@ -649,8 +649,10 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.setOrigin(position);
     ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
     qreal initialScale = coordinateSystem.getInitialScale();
-    mTransformation.setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    QList<QPointF> extent;
+    extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+    extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   } else {
     mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
@@ -795,8 +797,10 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
     mTransformation.setOrigin(position);
     CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
     qreal initialScale = coOrdinateSystem.getInitialScale();
-    mTransformation.setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    QList<QPointF> extent;
+    extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+    extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   }
   // dynamically adjust the interface points.
@@ -1126,10 +1130,11 @@ QRectF Element::boundingRect() const
     return coordinateSystem.getExtentRectangle();
   } else {
     CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
-    qreal left = coOrdinateSystem.getLeft();
-    qreal bottom = coOrdinateSystem.getBottom();
-    qreal right = coOrdinateSystem.getRight();
-    qreal top = coOrdinateSystem.getTop();
+    ExtentAnnotation extent = coOrdinateSystem.getExtent();
+    qreal left = extent.at(0).x();
+    qreal bottom = extent.at(0).y();
+    qreal right = extent.at(1).x();
+    qreal top = extent.at(1).y();
     return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
   }
 }
@@ -1299,8 +1304,9 @@ QString Element::getTransformationAnnotation(bool ModelicaSyntax)
   annotationString.append("origin={").append(QString::number(mTransformation.getOrigin().x())).append(",");
   annotationString.append(QString::number(mTransformation.getOrigin().y())).append("}, ");
   // add extent points
-  QPointF extent1 = mTransformation.getExtent1();
-  QPointF extent2 = mTransformation.getExtent2();
+  ExtentAnnotation extent = mTransformation.getExtent();
+  QPointF extent1 = extent.at(0);
+  QPointF extent2 = extent.at(1);
   annotationString.append("extent={").append("{").append(QString::number(extent1.x()));
   annotationString.append(",").append(QString::number(extent1.y())).append("},");
   annotationString.append("{").append(QString::number(extent2.x())).append(",");
@@ -1365,8 +1371,9 @@ QString Element::getOMCTransformationAnnotation(QPointF position)
   annotationString.append(QString::number(mTransformation.getOrigin().x())).append(",");
   annotationString.append(QString::number(mTransformation.getOrigin().y())).append(",");
   // add extent points
-  QPointF extent1 = mTransformation.getExtent1();
-  QPointF extent2 = mTransformation.getExtent2();
+  ExtentAnnotation extent = mTransformation.getExtent();
+  QPointF extent1 = extent.at(0);
+  QPointF extent2 = extent.at(1);
   annotationString.append(QString::number(extent1.x())).append(",");
   annotationString.append(QString::number(extent1.y())).append(",");
   annotationString.append(QString::number(extent2.x())).append(",");
@@ -1434,8 +1441,9 @@ QString Element::getTransformationExtent()
 {
   QString transformationExtent;
   // add extent points
-  QPointF extent1 = mTransformation.getExtent1();
-  QPointF extent2 = mTransformation.getExtent2();
+  ExtentAnnotation extent = mTransformation.getExtent();
+  QPointF extent1 = extent.at(0);
+  QPointF extent2 = extent.at(1);
   transformationExtent.append("{").append(QString::number(extent1.x()));
   transformationExtent.append(",").append(QString::number(extent1.y())).append(",");
   transformationExtent.append(QString::number(extent2.x())).append(",");
@@ -2393,8 +2401,10 @@ void Element::reDrawElement(bool coOrdinateSystemUpdated)
     if (mTransformationString.isEmpty()) {
       CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
       qreal initialScale = coOrdinateSystem.getInitialScale();
-      mTransformation.setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-      mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+      QList<QPointF> extent;
+      extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+      extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+      mTransformation.setExtent(extent);
       mTransformation.setRotateAngle(0.0);
     }
     setTransform(mTransformation.getTransformationMatrix());
@@ -3117,8 +3127,9 @@ void Element::updatePlacementAnnotation()
   } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
     if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
       ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
-      QPointF extent1 = mTransformation.getExtent1();
-      QPointF extent2 = mTransformation.getExtent2();
+      ExtentAnnotation extent = mTransformation.getExtent();
+      QPointF extent1 = extent.at(0);
+      QPointF extent2 = extent.at(1);
       extent1.setX(extent1.x() + mTransformation.getOrigin().x());
       extent1.setY(extent1.y() + mTransformation.getOrigin().y());
       extent2.setX(extent2.x() + mTransformation.getOrigin().x());
@@ -3442,8 +3453,10 @@ void Element::resizeElement(QPointF newPosition)
   extent2.setX(sx * boundingRect().right());
   extent2.setY(sy * boundingRect().bottom());
   mTransformation.setOrigin(scenePos());
-  mTransformation.setExtent1(extent1);
-  mTransformation.setExtent2(extent2);
+  QList<QPointF> extent;
+  extent.append(extent1);
+  extent.append(extent2);
+  mTransformation.setExtent(extent);
   setTransform(mTransformation.getTransformationMatrix());
   // let connections know that component has changed.
   emit transformChange(false);
@@ -3585,11 +3598,14 @@ void Element::rotateAntiClockwise()
 void Element::flipHorizontal()
 {
   Transformation oldTransformation = mTransformation;
-  QPointF extent1 = mTransformation.getExtent1();
-  QPointF extent2 = mTransformation.getExtent2();
+  ExtentAnnotation extent = mTransformation.getExtent();
+  QPointF extent1 = extent.at(0);
+  QPointF extent2 = extent.at(1);
   // invert x value of extents and the angle
-  mTransformation.setExtent1(QPointF(-extent1.x(), extent1.y()));
-  mTransformation.setExtent2(QPointF(-extent2.x(), extent2.y()));
+  QList<QPointF> newExtent;
+  newExtent.append(QPointF(-extent1.x(), extent1.y()));
+  newExtent.append(QPointF(-extent2.x(), extent2.y()));
+  mTransformation.setExtent(newExtent);
   mTransformation.setRotateAngle(-mTransformation.getRotateAngle());
   updateElementTransformations(oldTransformation, false);
   showResizerItems();
@@ -3602,11 +3618,14 @@ void Element::flipHorizontal()
 void Element::flipVertical()
 {
   Transformation oldTransformation = mTransformation;
-  QPointF extent1 = mTransformation.getExtent1();
-  QPointF extent2 = mTransformation.getExtent2();
+  ExtentAnnotation extent = mTransformation.getExtent();
+  QPointF extent1 = extent.at(0);
+  QPointF extent2 = extent.at(1);
   // invert y value of extents and the angle
-  mTransformation.setExtent1(QPointF(extent1.x(), -extent1.y()));
-  mTransformation.setExtent2(QPointF(extent2.x(), -extent2.y()));
+  QList<QPointF> newExtent;
+  newExtent.append(QPointF(extent1.x(), -extent1.y()));
+  newExtent.append(QPointF(extent2.x(), -extent2.y()));
+  mTransformation.setExtent(newExtent);
   mTransformation.setRotateAngle(-mTransformation.getRotateAngle());
   updateElementTransformations(oldTransformation, false);
   showResizerItems();

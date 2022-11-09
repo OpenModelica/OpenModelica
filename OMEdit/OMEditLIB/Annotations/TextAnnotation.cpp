@@ -265,19 +265,13 @@ void TextAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpText);
   FilledShape::parseShapeAnnotation(mpText);
 
-  QList<QPointF> extents;
-  ModelInstance::Extent extent = mpText->getExtent();
-  ModelInstance::Point extent1 = extent.getExtent1();
-  ModelInstance::Point extent2 = extent.getExtent2();
-  extents.append(QPointF(extent1.x(), extent1.y()));
-  extents.append(QPointF(extent2.x(), extent2.y()));
-  mExtents = extents;
+  mExtents = mpText->getExtent();
   mTextString = mpText->getTextString();
   initUpdateTextString();
 
   mFontSize = mpText->getFontSize();
-  if (mpText->getTextColor().getColor().isValid()) {
-    mLineColor = mpText->getTextColor().getColor();
+  if (mpText->getTextColor().isValid()) {
+    mLineColor = mpText->getTextColor();
   }
   if (!mpText->getFontName().isEmpty()) {
     mFontName = mpText->getFontName().isEmpty();

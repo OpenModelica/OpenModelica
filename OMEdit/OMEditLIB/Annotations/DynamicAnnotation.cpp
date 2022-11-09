@@ -10,6 +10,11 @@ DynamicAnnotation::DynamicAnnotation(const QString &str)
   parse(str);
 }
 
+DynamicAnnotation::DynamicAnnotation(const QJsonValue &value)
+{
+  deserialize(value);
+}
+
 DynamicAnnotation::~DynamicAnnotation() = default;
 
 /*!
@@ -17,7 +22,7 @@ DynamicAnnotation::~DynamicAnnotation() = default;
  * Parses an annotation expression string and stores the expression, then either
  * calls reset or clear based on whether the parsing succeeded or not.
  */
-void DynamicAnnotation::parse(const QString &str)
+bool DynamicAnnotation::parse(const QString &str)
 {
   try {
     mExp = FlatModelica::Expression::parse(str);
@@ -27,7 +32,24 @@ void DynamicAnnotation::parse(const QString &str)
     qDebug() << "Failed to parse annotation: " << str;
     qDebug() << e.what();
     clear();
+    return false;
   }
+  return true;
+}
+
+bool DynamicAnnotation::deserialize(const QJsonValue &value)
+{
+  try {
+    mExp.deserialize(value);
+    mState = mExp.isCall("DynamicSelect") ? State::Static : State::None;
+    reset();
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to deserialize json: " << value;
+    qDebug() << e.what();
+    clear();
+    return false;
+  }
+  return true;
 }
 
 /*!
@@ -45,8 +67,10 @@ bool DynamicAnnotation::update(double time, Element *parent)
 
     fromExp(mExp.arg(1).evaluate([&] (std::string name) {
       auto vname = QString::fromStdString(name);
+      // the instance api returns the qualified cref
+      vname = StringHandler::getLastWordAfterDot(vname);
 
-      if (parent && parent->getElementInfo()) {
+      if (parent) {
         vname = QString("%1.%2").arg(parent->getName(), vname);
       }
 

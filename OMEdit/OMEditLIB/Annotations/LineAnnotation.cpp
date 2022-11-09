@@ -645,7 +645,7 @@ void LineAnnotation::parseShapeAnnotation()
   foreach (ModelInstance::Point point, mpLine->getPoints()) {
     addPoint(QPointF(point.x(), point.y()));
   }
-  mLineColor = mpLine->getColor().getColor();
+  mLineColor = mpLine->getColor();
   mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
   mLineThickness = mpLine->getLineThickness();
   mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));

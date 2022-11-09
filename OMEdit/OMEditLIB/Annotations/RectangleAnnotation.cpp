@@ -168,13 +168,7 @@ void RectangleAnnotation::parseShapeAnnotation()
   FilledShape::parseShapeAnnotation(mpRectangle);
 
   mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(mpRectangle->getBorderPattern()));
-  QList<QPointF> extents;
-  ModelInstance::Extent extent = mpRectangle->getExtent();
-  ModelInstance::Point extent1 = extent.getExtent1();
-  ModelInstance::Point extent2 = extent.getExtent2();
-  extents.append(QPointF(extent1.x(), extent1.y()));
-  extents.append(QPointF(extent2.x(), extent2.y()));
-  mExtents = extents;
+  mExtents = mpRectangle->getExtent();
   mRadius = mpRectangle->getRadius();
 }
 

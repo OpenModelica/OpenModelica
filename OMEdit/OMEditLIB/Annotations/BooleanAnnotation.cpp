@@ -10,6 +10,12 @@ BooleanAnnotation::BooleanAnnotation(const QString &str)
 {
 }
 
+BooleanAnnotation::BooleanAnnotation(const QJsonValue &value)
+  : DynamicAnnotation(value)
+{
+
+}
+
 void BooleanAnnotation::clear()
 {
   mValue = true;

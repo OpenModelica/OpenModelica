@@ -8,6 +8,7 @@ class BooleanAnnotation : public DynamicAnnotation
   public:
     BooleanAnnotation();
     explicit BooleanAnnotation(const QString &str);
+    explicit BooleanAnnotation(const QJsonValue &value);
 
     void clear() override;
 

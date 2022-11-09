@@ -124,13 +124,7 @@ void EllipseAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpEllipse);
   FilledShape::parseShapeAnnotation(mpEllipse);
 
-  QList<QPointF> extents;
-  ModelInstance::Extent extent = mpEllipse->getExtent();
-  ModelInstance::Point extent1 = extent.getExtent1();
-  ModelInstance::Point extent2 = extent.getExtent2();
-  extents.append(QPointF(extent1.x(), extent1.y()));
-  extents.append(QPointF(extent2.x(), extent2.y()));
-  mExtents = extents;
+  mExtents = mpEllipse->getExtent();
   mStartAngle = mpEllipse->getStartAngle();
   mEndAngle = mpEllipse->getEndAngle();
   mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
