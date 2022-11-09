@@ -98,9 +98,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int numEventIterations = 0;
-  int discreteChanged = 0;
-  modelica_boolean relationChanged = 0;
-  data->simulationInfo->needToIterate = 0;
+  modelica_boolean discreteChanged = FALSE;
+  modelica_boolean relationChanged = FALSE;
+  data->simulationInfo->needToIterate = FALSE;
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
