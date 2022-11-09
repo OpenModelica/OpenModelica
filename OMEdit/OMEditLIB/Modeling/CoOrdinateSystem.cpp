@@ -140,5 +140,5 @@ void CoOrdinateSystem::reset()
 
 bool CoOrdinateSystem::isComplete() const
 {
-  return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasHorizontal && mHasVertical;
+  return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasGrid;
 }

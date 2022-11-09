@@ -80,10 +80,6 @@ private:
   bool mHasInitialScale;
   PointAnnotation mGrid;
   bool mHasGrid;
-  qreal mHorizontal;
-  bool mHasHorizontal;
-  qreal mVertical;
-  bool mHasVertical;
 };
 
 #endif // COORDINATESYSTEM_H

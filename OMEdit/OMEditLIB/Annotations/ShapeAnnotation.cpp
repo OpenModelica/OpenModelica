@@ -678,7 +678,7 @@ void ShapeAnnotation::applyTransformation()
     qreal left = extent.at(0).x();
     qreal bottom = extent.at(0).y();
     qreal right = extent.at(1).x();
-    qreal top = extent.at(0).y();
+    qreal top = extent.at(1).y();
     // map the origin to extends CoOrdinateSystem
     origin.setX(Utilities::mapToCoOrdinateSystem(mOrigin.x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x()));
     origin.setY(Utilities::mapToCoOrdinateSystem(mOrigin.y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y()));
