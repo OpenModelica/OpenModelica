@@ -3997,7 +3997,7 @@ package Flags
   constant ConfigFlag REDUCE_TERMS;
   constant ConfigFlag LABELED_REDUCTION;
   constant ConfigFlag LOAD_MSL_MODEL;
-  constant ConfigFlag Load_PACKAGE_FILE;
+  constant ConfigFlag LOAD_PACKAGE_FILE;
   constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER;
   constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE;
   constant ConfigFlag USE_ZEROMQ_IN_SIM;
@@ -4008,6 +4008,7 @@ package Flags
   constant ConfigFlag ZEROMQ_CLIENT_ID;
   constant ConfigFlag FMI_FILTER;
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
+  constant ConfigFlag OBFUSCATE;
 
   function isSet
     input DebugFlag inFlag;

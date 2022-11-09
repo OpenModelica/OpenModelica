@@ -371,7 +371,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LABELED_REDUCTION,
   Flags.DISABLE_EXTRA_LABELING,
   Flags.LOAD_MSL_MODEL,
-  Flags.Load_PACKAGE_FILE,
+  Flags.LOAD_PACKAGE_FILE,
   Flags.BUILDING_FMU,
   Flags.BUILDING_MODEL,
   Flags.POST_OPT_MODULES_DAE,

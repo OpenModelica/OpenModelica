@@ -45,8 +45,8 @@
 
 package CodegenUtil
 
-import ExpressionDumpTpl.*;
 import interface SimCodeTV;
+import ExpressionDumpTpl.*;
 
 /* public */ template symbolName(String modelNamePrefix, String symbolName)
   "Creates a unique name for the function"
@@ -168,12 +168,20 @@ template escapeCComments(String stringWithCComments)
 ::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'
 end escapeCComments;
 
+template crefCComment(SimVar v)
+"write the C comment for a cref, if it is not to be obfuscated"
+::=
+  match v
+  case SIMVAR(isProtected = true, source = SOURCE(info = SOURCEINFO(fileName = fileName))) then
+    if not boolOr(boolOr(stringEq(getConfigString(OBFUSCATE), "protected"), stringEq(getConfigString(OBFUSCATE), "full")),
+                  boolAnd(stringEq(getConfigString(OBFUSCATE), "encrypted"), Util.endsWith(fileName, ".moc")))
+    then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+  case SIMVAR(__) then
+    if not stringEq(getConfigString(OBFUSCATE), "full")
+    then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+end crefCComment;
+
 /*********************************************************/
-
-
-
-
-
 
 
 template initDefaultValXml(DAE.Type type_)
