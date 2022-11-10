@@ -625,26 +625,25 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           if (displayUnit.isEmpty()) {
             displayUnit = unit;
           }
-          // do not do any conversion if unit or displayUnit is empty of if both are 1!
-          if (displayUnit.isEmpty() || unit.isEmpty() || (displayUnit.compare("1") == 0 && unit.compare("1") == 0)) {
-            qs = mTextString.replace(pos, regExp.matchedLength(), textValue);
-            pos += textValue.length();
+          QString textValueWithDisplayUnit;
+          // Do not show displayUnit if value is not a literal constant or if displayUnit is empty or if unit and displayUnit are 1!
+          if (!Utilities::isValueLiteralConstant(textValue) || displayUnit.isEmpty() || (displayUnit.compare("1") == 0 && unit.compare("1") == 0)) {
+            textValueWithDisplayUnit = textValue;
+          } else if (unit.compare(displayUnit) == 0) {  // Do not do any conversion if unit and displayUnit are same.
+            textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit));
           } else {
-            QString textValueWithDisplayUnit;
             OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
             OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
             if (convertUnit.unitsCompatible) {
               qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
               textValue = StringHandler::number(convertedValue, textValue);
-              displayUnit = Utilities::convertUnitToSymbol(displayUnit);
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displayUnit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit));
             } else {
-              unit = Utilities::convertUnitToSymbol(unit);
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, unit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit));
             }
-            qs = mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
-            pos += textValueWithDisplayUnit.length();
           }
+          qs = mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
+          pos += textValueWithDisplayUnit.length();
         } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
         }
