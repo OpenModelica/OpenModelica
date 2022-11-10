@@ -126,7 +126,7 @@ private:
   QPointF mTransformationStartPosition;
   QPointF mPivotPoint;
   QPointF mOldOrigin;
-  QList<QPointF> mOldExtents;
+  QVector<QPointF> mOldExtents;
   QString mOldAnnotation;
   QAction *mpShapePropertiesAction;
   QAction *mpAlignInterfacesAction;
@@ -181,8 +181,8 @@ public:
   qreal getArrowSize() {return mArrowSize;}
   void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
   StringHandler::Smooth getSmooth() {return mSmooth;}
-  void setExtents(QList<QPointF> extents) {mExtents = extents;}
-  QList<QPointF> getExtents() {return mExtents;}
+  void setExtents(QVector<QPointF> extents) {mExtent = extents;}
+  QVector<QPointF> getExtents() {return mExtent;}
   void setBorderPattern(StringHandler::BorderPattern pattern) {mBorderPattern = pattern;}
   StringHandler::BorderPattern getBorderPattern() {return mBorderPattern;}
   void setRadius(qreal radius) {mRadius = radius;}
@@ -274,7 +274,7 @@ protected:
   QList<StringHandler::Arrow> mArrow;
   RealAnnotation mArrowSize;
   StringHandler::Smooth mSmooth;
-  ExtentAnnotation mExtents;
+  ExtentAnnotation mExtent;
   StringHandler::BorderPattern mBorderPattern;
   RealAnnotation mRadius;
   RealAnnotation mStartAngle;

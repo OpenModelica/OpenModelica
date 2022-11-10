@@ -2,19 +2,18 @@
 #define EXTENTANNOTATION_H
 
 #include <QPointF>
-#include <QList>
+#include <QVector>
 #include "DynamicAnnotation.h"
 
 class ExtentAnnotation : public DynamicAnnotation
 {
   public:
     ExtentAnnotation();
-    explicit ExtentAnnotation(const QString &str);
 
     void clear() override;
 
-    operator const QList<QPointF>&() const { return mValue; }
-    ExtentAnnotation& operator= (const QList<QPointF> &value);
+    operator const QVector<QPointF>&() const { return mValue; }
+    ExtentAnnotation& operator= (const QVector<QPointF> &value);
     bool operator== (const ExtentAnnotation &extent) const;
 
     const QPointF& at(int i) const { return mValue.at(i); }
@@ -32,7 +31,7 @@ class ExtentAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    QList<QPointF> mValue;
+    QVector<QPointF> mValue = QVector<QPointF>(2);
 };
 
 #endif /* EXTENTANNOTATION_H */

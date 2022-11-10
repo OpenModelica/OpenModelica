@@ -68,7 +68,7 @@ private:
   public:
     CoordinateSystem();
     CoordinateSystem(const CoordinateSystem &coOrdinateSystem);
-    void setExtent(const QList<QPointF> extent);
+    void setExtent(const QVector<QPointF> extent);
     ExtentAnnotation getExtent() const {return mExtent;}
     void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
     bool hasExtent() const {return mHasExtent;}

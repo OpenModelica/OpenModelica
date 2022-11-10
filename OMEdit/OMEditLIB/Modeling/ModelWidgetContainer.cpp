@@ -163,7 +163,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
     const qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
     const qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
     if (!qFuzzyCompare(left, -100) || !qFuzzyCompare(bottom, -100) || !qFuzzyCompare(right, 100) || !qFuzzyCompare(top, 100)) {
-      QList<QPointF> extent;
+      QVector<QPointF> extent;
       extent.append(QPointF(left, bottom));
       extent.append(QPointF(right, top));
       mCoOrdinateSystem.setExtent(extent);
@@ -6238,7 +6238,7 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
     // Text for name
     TextAnnotation *pTextAnnotation = new TextAnnotation(mpIconGraphicsView);
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
-      QList<QPointF> extents;
+      QVector<QPointF> extents;
       extents << QPointF(-100, 80) << QPointF(100, 40);
       pTextAnnotation->setExtents(extents);
       if (mpLibraryTreeItem->isSystemElement()) {
@@ -6255,7 +6255,7 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
     // Text for further information
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
       TextAnnotation *pInfoTextAnnotation = new TextAnnotation(mpIconGraphicsView);
-      QList<QPointF> extents;
+      QVector<QPointF> extents;
       extents << QPointF(-100, -40) << QPointF(100, -80);
       pInfoTextAnnotation->setExtents(extents);
       if (mpLibraryTreeItem->isSystemElement()) {
@@ -7880,10 +7880,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
    */
   if (list.size() >= 8) {
     CoOrdinateSystem coOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
-    QList<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
     ExtentAnnotation extent;
-    extent = extents;
     if (list.at(0) != '-' && list.at(1) != '-' && list.at(2) != '-' && list.at(3) != '-' &&
         extent.parse(QString("{{%1, %2}, {%3, %4}}").arg(list.at(0), list.at(1), list.at(2), list.at(3)))) {
       coOrdinateSystem.setExtent(extent);
@@ -9857,7 +9854,7 @@ void ModelWidgetContainer::fitToDiagram()
         QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
         // construct a new CoOrdinateSystem
         CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
-        QList<QPointF> extent;
+        QVector<QPointF> extent;
         extent.append(QPointF(adaptedRect.left(), adaptedRect.bottom()));
         extent.append(QPointF(adaptedRect.right(), adaptedRect.top()));
         newCoOrdinateSystem.setExtent(extent);

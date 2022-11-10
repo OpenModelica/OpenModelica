@@ -1,13 +1,8 @@
 #include "RealAnnotation.h"
 
 RealAnnotation::RealAnnotation()
-  : mValue(0.0)
 {
-}
-
-RealAnnotation::RealAnnotation(const QString &str)
-  : DynamicAnnotation(str)
-{
+  clear();
 }
 
 void RealAnnotation::clear()

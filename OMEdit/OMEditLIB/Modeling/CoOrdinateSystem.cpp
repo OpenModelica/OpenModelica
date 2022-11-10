@@ -62,7 +62,7 @@ CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
   setHasGrid(coOrdinateSystem.hasGrid());
 }
 
-void CoOrdinateSystem::setExtent(const QList<QPointF> extent)
+void CoOrdinateSystem::setExtent(const QVector<QPointF> extent)
 {
   mExtent = extent;
   setHasExtent(true);
@@ -125,10 +125,6 @@ QRectF CoOrdinateSystem::getExtentRectangle() const
 void CoOrdinateSystem::reset()
 {
   mExtent.clear();
-  QList<QPointF> extent;
-  extent.append(QPointF(-100.0, -100.0));
-  extent.append(QPointF(100.0, 100.0));
-  mExtent = extent;
   setHasExtent(false);
   mPreserveAspectRatio = true;
   setHasPreserveAspectRatio(false);

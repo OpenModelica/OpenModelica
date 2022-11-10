@@ -1869,7 +1869,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     QString bottom = mpBottomTextBox->text().isEmpty() ? mpBottomTextBox->placeholderText() : mpBottomTextBox->text();
     QString right = mpRightTextBox->text().isEmpty() ? mpRightTextBox->placeholderText() : mpRightTextBox->text();
     QString top = mpTopTextBox->text().isEmpty() ? mpTopTextBox->placeholderText() : mpTopTextBox->text();
-    QList<QPointF> extent;
+    QVector<QPointF> extent;
     extent.append(QPointF(qMin(left.toDouble(), right.toDouble()), qMin(bottom.toDouble(), top.toDouble())));
     extent.append(QPointF(qMax(left.toDouble(), right.toDouble()), qMax(bottom.toDouble(), top.toDouble())));
     newCoOrdinateSystem.setExtent(extent);

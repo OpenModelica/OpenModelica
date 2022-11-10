@@ -8,7 +8,6 @@ class ColorAnnotation : public DynamicAnnotation
 {
   public:
     ColorAnnotation();
-    explicit ColorAnnotation(const QString &str);
 
     void clear() override;
 

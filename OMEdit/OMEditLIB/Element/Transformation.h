@@ -62,7 +62,7 @@ public:
   void adjustPosition(qreal x, qreal y);
   void setOrigin(QPointF origin);
   PointAnnotation getOrigin() const;
-  void setExtent(QList<QPointF> extent);
+  void setExtent(QVector<QPointF> extent);
   ExtentAnnotation getExtent() const;
   void setRotateAngle(qreal rotateAngle);
   RealAnnotation getRotateAngle() const;
@@ -94,7 +94,7 @@ private:
   void adjustPositionDiagram(qreal x, qreal y);
   void setOriginDiagram(QPointF origin);
   PointAnnotation getOriginDiagram() const {return mOriginDiagram;}
-  void setExtentDiagram(QList<QPointF> extent) {mExtentDiagram = extent;}
+  void setExtentDiagram(QVector<QPointF> extent) {mExtentDiagram = extent;}
   ExtentAnnotation getExtentDiagram() const {return mExtentDiagram;}
   void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
   RealAnnotation getRotateAngleDiagram() const {return mRotateAngleDiagram;}
@@ -103,7 +103,7 @@ private:
   void adjustPositionIcon(qreal x, qreal y);
   void setOriginIcon(QPointF origin);
   PointAnnotation getOriginIcon() const {return mOriginIcon;}
-  void setExtentIcon(QList<QPointF> extent) {mExtentIcon = extent;}
+  void setExtentIcon(QVector<QPointF> extent) {mExtentIcon = extent;}
   ExtentAnnotation getExtentIcon() const {return mExtentIcon;}
   void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
   RealAnnotation getRotateAngleIcon() const {return mRotateAngleIcon;}

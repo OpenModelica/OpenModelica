@@ -110,7 +110,7 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item is the extent points
-  mExtents.parse(list.at(8));
+  mExtent.parse(list.at(8));
   // 10th item of the list contains the start angle.
   mStartAngle.parse(list.at(9));
   // 11th item of the list contains the end angle.
@@ -124,7 +124,7 @@ void EllipseAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpEllipse);
   FilledShape::parseShapeAnnotation(mpEllipse);
 
-  mExtents = mpEllipse->getExtent();
+  mExtent = mpEllipse->getExtent();
   mStartAngle = mpEllipse->getStartAngle();
   mEndAngle = mpEllipse->getEndAngle();
   mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
@@ -186,7 +186,7 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the extents
-  annotationString.append(mExtents.toQString());
+  annotationString.append(mExtent.toQString());
   // get the start angle
   annotationString.append(mStartAngle.toQString());
   // get the end angle
@@ -217,8 +217,8 @@ QString EllipseAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
-    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
+  if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the start angle
   if (mStartAngle.isDynamicSelectExpression() || mStartAngle != 0) {

@@ -7,7 +7,6 @@ class StringAnnotation : public DynamicAnnotation
 {
   public:
     StringAnnotation();
-    explicit StringAnnotation(const QString &str);
 
     void clear() override;
 

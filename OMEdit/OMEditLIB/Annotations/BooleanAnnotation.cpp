@@ -1,19 +1,8 @@
 #include "BooleanAnnotation.h"
 
 BooleanAnnotation::BooleanAnnotation()
-  : mValue(true)
 {
-}
-
-BooleanAnnotation::BooleanAnnotation(const QString &str)
-  : DynamicAnnotation(str)
-{
-}
-
-BooleanAnnotation::BooleanAnnotation(const QJsonValue &value)
-  : DynamicAnnotation(value)
-{
-
+  clear();
 }
 
 void BooleanAnnotation::clear()

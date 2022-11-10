@@ -649,7 +649,7 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.setOrigin(position);
     ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
     qreal initialScale = coordinateSystem.getInitialScale();
-    QList<QPointF> extent;
+    QVector<QPointF> extent;
     extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
     extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
     mTransformation.setExtent(extent);
@@ -797,7 +797,7 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
     mTransformation.setOrigin(position);
     CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
     qreal initialScale = coOrdinateSystem.getInitialScale();
-    QList<QPointF> extent;
+    QVector<QPointF> extent;
     extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
     extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
     mTransformation.setExtent(extent);
@@ -2341,7 +2341,7 @@ void Element::createStateElement()
     mpStateElementRectangle->setLinePattern(StringHandler::LineDash);
     mpStateElementRectangle->setRadius(40);
     mpStateElementRectangle->setFillColor(QColor(255, 255, 255));
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     extents << QPointF(-100, -100) << QPointF(100, 100);
     mpStateElementRectangle->setExtents(extents);
   } else {
@@ -2401,7 +2401,7 @@ void Element::reDrawElement(bool coOrdinateSystemUpdated)
     if (mTransformationString.isEmpty()) {
       CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
       qreal initialScale = coOrdinateSystem.getInitialScale();
-      QList<QPointF> extent;
+      QVector<QPointF> extent;
       extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
       extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
       mTransformation.setExtent(extent);
@@ -2530,7 +2530,7 @@ void Element::drawOMSElement()
     }
   } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
     RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     extents << QPointF(-100, -100) << QPointF(100, 100);
     pBusRectangleAnnotation->setExtents(extents);
     pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
@@ -2539,7 +2539,7 @@ void Element::drawOMSElement()
     mShapesList.append(pBusRectangleAnnotation);
   } else if (mpLibraryTreeItem->getOMSTLMBusConnector()) { // if component is a tlm bus
     RectangleAnnotation *pTLMBusRectangleAnnotation = new RectangleAnnotation(this);
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     extents << QPointF(-100, -100) << QPointF(100, 100);
     pTLMBusRectangleAnnotation->setExtents(extents);
     switch (mpLibraryTreeItem->getOMSTLMBusConnector()->domain) {
@@ -3453,7 +3453,7 @@ void Element::resizeElement(QPointF newPosition)
   extent2.setX(sx * boundingRect().right());
   extent2.setY(sy * boundingRect().bottom());
   mTransformation.setOrigin(scenePos());
-  QList<QPointF> extent;
+  QVector<QPointF> extent;
   extent.append(extent1);
   extent.append(extent2);
   mTransformation.setExtent(extent);
@@ -3602,7 +3602,7 @@ void Element::flipHorizontal()
   QPointF extent1 = extent.at(0);
   QPointF extent2 = extent.at(1);
   // invert x value of extents and the angle
-  QList<QPointF> newExtent;
+  QVector<QPointF> newExtent;
   newExtent.append(QPointF(-extent1.x(), extent1.y()));
   newExtent.append(QPointF(-extent2.x(), extent2.y()));
   mTransformation.setExtent(newExtent);
@@ -3622,7 +3622,7 @@ void Element::flipVertical()
   QPointF extent1 = extent.at(0);
   QPointF extent2 = extent.at(1);
   // invert y value of extents and the angle
-  QList<QPointF> newExtent;
+  QVector<QPointF> newExtent;
   newExtent.append(QPointF(extent1.x(), -extent1.y()));
   newExtent.append(QPointF(extent2.x(), -extent2.y()));
   mTransformation.setExtent(newExtent);

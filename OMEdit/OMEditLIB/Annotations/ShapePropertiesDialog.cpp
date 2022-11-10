@@ -95,7 +95,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Extent Group Box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   // Extent1X
-  QList<QPointF> extents = mpShapeAnnotation->getExtents();
+  QVector<QPointF> extents = mpShapeAnnotation->getExtents();
   mpExtent1XLabel = new Label(Helper::extent1X);
   mpExtent1XSpinBox = new DoubleSpinBox;
   mpExtent1XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
@@ -816,7 +816,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   mpShapeAnnotation->setOrigin(QPointF(mpOriginXSpinBox->value(), mpOriginYSpinBox->value()));
   mpShapeAnnotation->setRotationAngle(mpRotationSpinBox->value());
   if (!mpLineAnnotation && !mpPolygonAnnotation) {
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     QPointF p1(mpExtent1XSpinBox->value(), mpExtent1YSpinBox->value());
     QPointF p2(mpExtent2XSpinBox->value(), mpExtent2YSpinBox->value());
     extents << p1 << p2;

@@ -62,16 +62,11 @@ void Transformation::initialize(StringHandler::ViewType viewType)
   mVisible = true;
   mOriginDiagram = QPointF(0.0, 0.0);
   mExtentDiagram.clear();
-  QList<QPointF> extent;
-  extent.append(QPointF(-100.0, -100.0));
-  extent.append(QPointF(100.0, 100.0));
-  mExtentDiagram = extent;
   mRotateAngleDiagram = 0.0;
   mPositionDiagram = QPointF(0.0, 0.0);
   mVisibleIcon = true;
   mOriginIcon = QPointF(0.0, 0.0);
   mExtentIcon.clear();
-  mExtentIcon = extent;
   mRotateAngleIcon = 0.0;
   mPositionIcon = QPointF(0.0, 0.0);
 }
@@ -266,7 +261,7 @@ bool Transformation::operator==(const Transformation &transformation) const
       (transformation.getRotateAngle() == this->getRotateAngle());
 }
 
-void Transformation::setExtent(QList<QPointF> extent)
+void Transformation::setExtent(QVector<QPointF> extent)
 {
   switch (mViewType) {
     case StringHandler::Icon:
