@@ -86,6 +86,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // "BouncingBallFMI20.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
+// caution: filename not matched:  resources/BouncingBallFMI20_flags.json
 // 11
 // ""
 // true
