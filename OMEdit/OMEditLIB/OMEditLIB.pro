@@ -75,6 +75,14 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
 }
 
+# On older msys the include directory for binutils is in binutils
+# On recent (November 2022) MSYS2 this is no longer needed.
+contains(QT_ARCH, i386) { # 32-bit
+  QMAKE_CFLAGS += -I$$(OMDEV)/tools/msys/mingw32/include/binutils
+} else { # 64-bit
+  QMAKE_CFLAGS += -I$$(OMDEV)/tools/msys/mingw64/include/binutils
+}
+
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
 
