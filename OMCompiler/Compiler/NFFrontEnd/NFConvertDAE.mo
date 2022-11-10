@@ -1288,7 +1288,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
-  binding := Flatten.flattenBinding(binding, ComponentRef.EMPTY());
+  binding := Flatten.flattenBinding(binding, NFFlatten.EMPTY_PREFIX);
   bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);
