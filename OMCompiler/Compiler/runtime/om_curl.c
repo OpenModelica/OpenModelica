@@ -72,7 +72,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
   curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writeDataCallback);
   curl_easy_setopt(eh, CURLOPT_URL, url);
-  curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT, 8L);
+  curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT, 16L);
   curl_easy_setopt(eh, CURLOPT_FAILONERROR, 1);
 
   curl_easy_setopt(eh, CURLOPT_PRIVATE, p);
