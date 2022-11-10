@@ -845,9 +845,8 @@ algorithm
           cminpack_sources := {};
         end if;
 
-        // Check if the sundials files are needed. Shouldn't this actually check what the flags are
-        // instead of just checking if flags are set only?
-        if isSome(simCode.fmiSimulationFlags) then
+        // Check if the sundials files are needed
+        if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
           // The sundials headers are in the include directory.
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
@@ -926,7 +925,7 @@ algorithm
         end match;
 
         // Add external libraries and includes
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", SimCodeUtil.getCmakeSundialsLinkCode());
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags));
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 

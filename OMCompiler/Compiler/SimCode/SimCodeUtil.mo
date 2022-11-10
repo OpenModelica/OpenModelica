@@ -13706,6 +13706,7 @@ public function createFMISimulationFlags
   "Function reads FMI simulation flags from user input --fmiFlags
    and creates FmiSimulationFlags record for code generation.
    Author: AnHeuermann"
+  input Boolean printWarning = true;
   output Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
 protected
   list<String> fmiFlagsList;
@@ -13730,7 +13731,7 @@ algorithm
     fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
 
   // User supplied file
-  // --fmiFlags=none
+  // --fmiFlags=path/to/*.json
   elseif listLength(fmiFlagsList) == 1 and stringEqual( List.last(Util.stringSplitAtChar(List.first(fmiFlagsList),".")) , "json" )  then
     pathToFile := List.first(fmiFlagsList);
     if System.regularFileExists(pathToFile) then
@@ -13740,8 +13741,10 @@ algorithm
       fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=Util.absoluteOrRelative(pathToFile)));
       return;
     else
-      msg := "Could not find file \"" + pathToFile + "\nIgnoring \"--fmiFlags=" + pathToFile + "\" and using default setting.\n";
-      Error.addCompilerWarning(msg);
+      if printWarning then
+        msg := "Could not find file \"" + pathToFile + "\nIgnoring \"--fmiFlags=" + pathToFile + "\" and using default setting.\n";
+        Error.addCompilerWarning(msg);
+      end if;
       fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
       return;
     end if;
@@ -13753,8 +13756,10 @@ algorithm
       // Check each flag
       tmpSplitted := Util.stringSplitAtChar(flag,":");
       if not listLength(tmpSplitted) == 2 then
-        msg := "Can't process flag \"" + flag + "\".\nSeperate flag name and flag value with \":\".\n";
-        Error.addCompilerWarning(msg);
+        if printWarning then
+          msg := "Can't process flag \"" + flag + "\".\nSeperate flag name and flag value with \":\".\n";
+          Error.addCompilerWarning(msg);
+        end if;
         fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
         return;
       end if;
@@ -13763,12 +13768,16 @@ algorithm
       // Save value
       if stringEqual(tmpName, "s") then
         if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
-          msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
-          Error.addCompilerWarning(msg);
+          if printWarning then
+            msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
+            Error.addCompilerWarning(msg);
+          end if;
         end if;
       else
-        msg := "Adding unknown FMU simulation flag \"" + tmpName + "\" .";
-        Error.addCompilerWarning(msg);
+        if printWarning then
+          msg := "Adding unknown FMU simulation flag \"" + tmpName + "\" .";
+          Error.addCompilerWarning(msg);
+        end if;
       end if;
       nameValueTuples := (tmpName, tmpValue) :: nameValueTuples;
     end for;
@@ -15606,9 +15615,10 @@ end getCmakeLinkLibrariesCode;
 
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if CVODE is needed."
+  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
   output String code = "";
 algorithm
-  if not cvodeFmiFlagIsSet() then
+  if not cvodeFmiFlagIsSet(fmiSimulationFlags) then
     code := "set(NEED_CVODE FALSE)";
   else
     code := "set(NEED_CVODE TRUE)\n" +
@@ -15617,21 +15627,38 @@ algorithm
 end getCmakeSundialsLinkCode;
 
 public function cvodeFmiFlagIsSet
-  "Checks if s:cvode is part of FMI_FLAGS."
+  "Checks if s:cvode is part of FMI_FLAGS.
+   If a *.json exists we don't check and assume cvode will be needed at some point."
+  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
   output Boolean needsCvode = false;
-protected
-  list<String> fmiFlagsList;
 algorithm
-  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
-  if listLength(fmiFlagsList) >= 1 then
-    for flag in fmiFlagsList loop
-      if stringEqual(flag, "s:cvode") then
-        needsCvode := true;
-        return;
-      end if;
-    end for;
-  end if;
-  return;
+  _ := match fmiSimulationFlags
+    local
+      list<tuple<String,String>> nameValueTuples;
+      String setting, value;
+      String configFile;
+      String fileContent;
+    case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
+      algorithm
+        if listLength(nameValueTuples) >= 1 then
+          for tpl in nameValueTuples loop
+            (setting, value) := tpl;
+            if stringEqual(setting, "s") and stringEqual(value, "cvode") then
+              needsCvode := true;
+              break;
+            end if;
+          end for;
+        end if;
+      then();
+    case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
+      algorithm
+        fileContent := System.readFile(configFile);
+        if not -1 == System.stringFind(fileContent, "\"cvode\"") then
+          needsCvode := true;
+        end if;
+      then();
+    else then();
+  end match;
 end cvodeFmiFlagIsSet;
 
 public function make2CMakeInclude
