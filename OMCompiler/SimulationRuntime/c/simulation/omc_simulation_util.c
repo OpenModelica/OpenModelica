@@ -55,7 +55,11 @@ extern const char* OpenModelica_parseFmuResourcePath(const char *path)
       }
     }
 #endif
-    return path;
+    {
+      char *res = strdup(path);
+      OpenModelica_decode_uri_inplace(res);
+      return res;
+    }
   }
   return NULL;
 }
