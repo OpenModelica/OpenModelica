@@ -525,6 +525,7 @@ algorithm
     case "given" then DAE.Uncertainty.GIVEN();
     case "sought" then DAE.Uncertainty.SOUGHT();
     case "refine" then DAE.Uncertainty.REFINE();
+    case "propagate" then DAE.Uncertainty.PROPAGATE();
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());

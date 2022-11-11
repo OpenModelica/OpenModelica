@@ -2820,6 +2820,7 @@ algorithm
     case(SOME(DAE.GIVEN())) then "uncertain=Uncertainty.given";
     case(SOME(DAE.SOUGHT())) then "uncertain=Uncertainty.sought";
     case(SOME(DAE.REFINE())) then "uncertain=Uncertainty.refine";
+    case(SOME(DAE.PROPAGATE())) then "uncertain=Uncertainty.propagate";
   end match;
 end optUncertainty;
 

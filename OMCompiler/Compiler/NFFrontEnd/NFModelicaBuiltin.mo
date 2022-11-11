@@ -40,7 +40,8 @@ type StateSelect = enumeration(
 type Uncertainty = enumeration(
   given,
   sought,
-  refine
+  refine,
+  propagate
 ) annotation(__OpenModelica_builtin = true);
 
 partial class Clock

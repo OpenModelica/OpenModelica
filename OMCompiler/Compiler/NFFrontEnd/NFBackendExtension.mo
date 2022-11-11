@@ -1145,7 +1145,7 @@ public
 
   type StateSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
   type TearingSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
-  type Uncertainty = enumeration(GIVEN, SOUGHT, REFINE);
+  type Uncertainty = enumeration(GIVEN, SOUGHT, REFINE, PROPAGATE);
 
   uniontype Distribution
     record DISTRIBUTION

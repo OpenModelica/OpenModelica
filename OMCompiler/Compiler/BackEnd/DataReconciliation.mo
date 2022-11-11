@@ -1569,7 +1569,7 @@ protected
 algorithm
   for var in BackendVariable.varList(shared.globalKnownVars) loop
     // check for param Vars, as we are only interested in causality = calculatedParameters
-    if BackendVariable.isRealParam(var) and BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
+    if BackendVariable.isRealParam(var) and (BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) or BackendVariable.varHasUncertainValueRefine(var)) then
       //print("\n knownsVars :" + anyString(var.bindExp));
       lhs := BackendVariable.varExp(var);
       rhs := BackendVariable.varBindExpStartValueNoFail(var);
