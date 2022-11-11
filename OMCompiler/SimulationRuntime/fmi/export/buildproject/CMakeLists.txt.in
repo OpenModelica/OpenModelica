@@ -5,6 +5,9 @@ set(FMU_NAME @FMU_NAME_IN@)
 
 project(${FMU_NAME})
 
+# CVODE needed
+@NEED_CVODE@
+
 # Test if RUNTIME_DEPENDENCIES is needed and available
 set(RUNTIME_DEPENDENCIES_LEVEL @RUNTIME_DEPENDENCIES_LEVEL@)
 if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
@@ -36,7 +39,10 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-
+if (NOT ${NEED_CVODE})
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
+endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -78,12 +84,26 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
 endif()
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
+if(${NEED_CVODE})
+  find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
+               PATHS ${CVODE_DIRECTORY}
+               NO_DEFAULT_PATH)
+  find_library(SUNDIALS_NVSERIAL_LIBRARY sundials_nvecserial
+               PATHS ${CVODE_DIRECTORY}
+               NO_DEFAULT_PATH)
+  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
+  target_include_directories(${FMU_NAME} PRIVATE sundials)
+  set(WITH_SUNDIALS ";WITH_SUNDIALS")
+  message(STATUS "CVODE: ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY}")
+else()
+  message(STATUS "CVODE: Not linked")
+endif()
 
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
                                                sundials@FMU_ADDITIONAL_INCLUDES@)
 
-target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
+target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
 
 if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
   install(TARGETS ${FMU_NAME}

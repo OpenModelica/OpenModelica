@@ -4052,12 +4052,7 @@ algorithm
   end if;
 
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
-  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
-  if listLength(fmiFlagsList) >= 1 and not stringEqual(List.first(fmiFlagsList), "none") then
-    needs3rdPartyLibs := true;
-  else
-    needs3rdPartyLibs := false;
-  end if;
+  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
 
   // Use CMake on Windows when cross-compiling with docker
   _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD), needs3rdPartyLibs)

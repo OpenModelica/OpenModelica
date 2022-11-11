@@ -1305,7 +1305,6 @@ template settingsfile(SimCode simCode)
   #define OMC_MODEL_PREFIX "<%modelNamePrefix(simCode)%>"
   #define OMC_MINIMAL_RUNTIME 1
   #define OMC_FMI_RUNTIME 1
-  <%if isSome(fmiSimulationFlags) then "#define WITH_SUNDIALS 1"%>
   #endif
  >>
 end settingsfile;
