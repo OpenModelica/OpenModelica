@@ -1724,9 +1724,9 @@ primary returns [void* ast]
       if (errno || *endptr != 0) {
         double d = 0;
         errno = 0;
-        d = strtod(chars,&endptr);
+        d = strtod(chars, &endptr);
         modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to be represented by a double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
-        c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
+        c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         $ast = Absyn__REAL(mmc_mk_scon(chars));
@@ -1737,7 +1737,7 @@ primary returns [void* ast]
           mmc_sint_t lt = ((mmc_sint_t)1<<(MMC_SIZE_INT == 8 ? 62 : 30))-1;
           if (l > lt) {
             const char *msg = MMC_SIZE_INT != 8 ? "\%s-bit signed integers! Truncating integer: \%s to 1073741823" : "\%s-bit signed integers! Truncating integer: \%s to 4611686018427387903";
-            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, msg,
+            c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_warning, msg,
                                  args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                  ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
             $ast = Absyn__INTEGER(MMC_IMMEDIATE(MMC_TAGFIXNUM(lt)));
@@ -1755,12 +1755,22 @@ primary returns [void* ast]
       char* chars = (char*)$v.text->chars;
       char *endptr;
       errno = 0;
-      double d = strtod(chars,&endptr);
+      double d = strtod(chars, &endptr);
       if (!(*endptr == 0 && errno==0)) {
-        c_add_source_message(NULL,2,ErrorType_syntax, ErrorLevel_error, "\%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        ModelicaParser_lexerError = ANTLR3_TRUE;
+        if (*endptr == 0 && errno == ERANGE && fabs(d) > DBL_TRUE_MIN) { // overflow is an error
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Overflow: \%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+          $ast = Absyn__REAL(mmc_mk_scon(chars));
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+        } else if (*endptr == 0 && errno == ERANGE) { // underflow is OK, convert to 0.0
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_warning, "Underflow: \%s cannot be represented by a double on this machine. It will be converted to 0.0.", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+          $ast = Absyn__REAL(mmc_mk_scon("0.0"));
+        } else {
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "\%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+        }
+      } else { // all dandy!
+        $ast = Absyn__REAL(mmc_mk_scon(chars));
       }
-      $ast = Absyn__REAL(mmc_mk_scon(chars));
     }
   | v=STRING           { $ast = Absyn__STRING(mmc_mk_scon((char*)$v.text->chars)); }
   | T_FALSE            { $ast = Absyn__BOOL(MMC_FALSE); }
