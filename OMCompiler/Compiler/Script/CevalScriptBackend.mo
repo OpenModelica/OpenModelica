@@ -3083,6 +3083,9 @@ algorithm
     case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then NFApi.getModelInstance(classpath, b);
 
+    case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then NFApi.getModelInstanceIcon(classpath, b);
+
     case ("storeAST", {})
       then Values.INTEGER(SymbolTable.storeAST());
 

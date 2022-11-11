@@ -4386,11 +4386,21 @@ annotation(preferredView="text",Documentation(info="<html>
 end convertPackageToLibrary;
 
 function getModelInstance
+  "Dumps a model instance as a JSON string."
   input TypeName className;
   input Boolean prettyPrint = false;
   output String result;
 external "builtin";
 end getModelInstance;
+
+function getModelInstanceIcon
+  "Dumps only the Icon and IconMap annotations of a model, using the same JSON
+   format as getModelInstance."
+  input TypeName className;
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+end getModelInstanceIcon;
 
 function storeAST
   output Integer id;

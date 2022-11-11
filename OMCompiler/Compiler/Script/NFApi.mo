@@ -875,6 +875,26 @@ algorithm
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstance;
 
+function getModelInstanceIcon
+  input Absyn.Path classPath;
+  input Boolean prettyPrint;
+  output Values.Value res;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+  JSON json;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := InstNode.resolveInner(cls_node);
+
+  json := dumpJSONInstanceIcon(cls_node);
+  res := Values.STRING(JSON.toString(json, prettyPrint));
+end getModelInstanceIcon;
+
 function buildInstanceTree
   input InstNode node;
   input Boolean isDerived = false;
@@ -982,6 +1002,50 @@ algorithm
 
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
+
+function dumpJSONInstanceIcon
+  input InstNode node;
+  output JSON json = JSON.emptyObject();
+protected
+  Option<SCode.Comment> cmt;
+  SCode.Annotation ann;
+  array<InstNode> exts;
+  JSON j;
+algorithm
+  Inst.expand(node);
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
+  exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(node)));
+
+  if not arrayEmpty(exts) then
+    if InstNode.isDerivedClass(node) then
+      j := dumpJSONInstanceIcon(exts[1]);
+    else
+      j := JSON.emptyArray();
+
+      for ext in exts loop
+        j := JSON.addElement(dumpJSONInstanceIcon(ext), j);
+      end for;
+    end if;
+
+    json := JSON.addPair("extends", j, json);
+  end if;
+
+  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
+
+  cmt := match cmt
+    case SOME(SCode.Comment.COMMENT(annotation_ = SOME(ann as SCode.Annotation.ANNOTATION())))
+      algorithm
+        ann.modification := SCodeUtil.filterSubMods(ann.modification,
+          function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+      then
+        if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
+
+    else NONE();
+  end match;
+
+  json := dumpJSONCommentOpt(cmt, node, json, failOnError = true);
+end dumpJSONInstanceIcon;
 
 function dumpJSONNodePath
   input InstNode node;
@@ -1367,6 +1431,7 @@ function dumpJSONCommentOpt
   input output JSON json;
   input Boolean dumpComment = true;
   input Boolean dumpAnnotation = true;
+  input Boolean failOnError = false;
 protected
   SCode.Comment cmt;
 algorithm
@@ -1378,7 +1443,7 @@ algorithm
     end if;
 
     if dumpAnnotation then
-      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, json);
+      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, failOnError, json);
     end if;
   end if;
 end dumpJSONCommentOpt;
@@ -1386,24 +1451,26 @@ end dumpJSONCommentOpt;
 function dumpJSONAnnotationOpt
   input Option<SCode.Annotation> annOpt;
   input InstNode scope;
+  input Boolean failOnError;
   input output JSON json;
 protected
   SCode.Annotation ann;
 algorithm
   if isSome(annOpt) then
     SOME(ann) := annOpt;
-    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope), json);
+    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope, failOnError), json);
   end if;
 end dumpJSONAnnotationOpt;
 
 function dumpJSONAnnotationMod
   input SCode.Mod mod;
   input InstNode scope;
+  input Boolean failOnError;
   output JSON json;
 algorithm
   json := match mod
     case SCode.Mod.MOD()
-      then dumpJSONAnnotationSubMods(mod.subModLst, scope);
+      then dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError);
 
     else JSON.makeNull();
   end match;
@@ -1412,16 +1479,18 @@ end dumpJSONAnnotationMod;
 function dumpJSONAnnotationSubMods
   input list<SCode.SubMod> subMods;
   input InstNode scope;
+  input Boolean failOnError;
   output JSON json = JSON.makeNull();
 algorithm
   for m in subMods loop
-    json := dumpJSONAnnotationSubMod(m, scope, json);
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
   end for;
 end dumpJSONAnnotationSubMods;
 
 function dumpJSONAnnotationSubMod
   input SCode.SubMod subMod;
   input InstNode scope;
+  input Boolean failOnError;
   input output JSON json;
 protected
   String name;
@@ -1443,6 +1512,10 @@ algorithm
           binding_exp := SimplifyExp.simplify(binding_exp);
           json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
         else
+          if failOnError then
+            fail();
+          end if;
+
           j := JSON.emptyObject();
           j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
           j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
@@ -1455,7 +1528,7 @@ algorithm
 
     case SCode.Mod.MOD()
       algorithm
-        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope), json);
+        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError), json);
       then
         ();
 

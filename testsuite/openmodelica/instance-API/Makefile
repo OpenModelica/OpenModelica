@@ -16,6 +16,8 @@ GetModelInstanceEnum2.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
+GetModelInstanceIcon1.mos \
+GetModelInstanceIcon2.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceMod1.mos \
