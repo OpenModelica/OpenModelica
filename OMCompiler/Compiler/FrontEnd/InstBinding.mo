@@ -87,14 +87,16 @@ public constant DAE.Type stateSelectType =
           },{});
 
 public constant DAE.Type uncertaintyType =
-          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine"},
+          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine","propagate"},
           {
            DAE.TYPES_VAR("given",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),false,NONE()),
+             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine","propagate"},{},{}),DAE.UNBOUND(),false,NONE()),
            DAE.TYPES_VAR("sought",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),false,NONE()),
+             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine","propagate"},{},{}),DAE.UNBOUND(),false,NONE()),
            DAE.TYPES_VAR("refine",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),false,NONE())
+             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine","propagate"},{},{}),DAE.UNBOUND(),false,NONE()),
+           DAE.TYPES_VAR("propagate",DAE.dummyAttrParam,
+             DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"given","sought","refine","propagate"},{},{}),DAE.UNBOUND(),false,NONE())
           },{});
 
 public constant DAE.Type distributionType =
@@ -504,6 +506,7 @@ algorithm
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("propagate"))))) then SOME(DAE.PROPAGATE());
     else NONE();
   end match;
 end getUncertainFromExpOption;

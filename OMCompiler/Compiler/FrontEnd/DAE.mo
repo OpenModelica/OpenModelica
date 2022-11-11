@@ -565,6 +565,7 @@ public uniontype Uncertainty
   record GIVEN end GIVEN;
   record SOUGHT end SOUGHT;
   record REFINE end REFINE;
+  record PROPAGATE end PROPAGATE;
 end Uncertainty;
 
 public uniontype Distribution
