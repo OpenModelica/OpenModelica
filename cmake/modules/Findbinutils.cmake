@@ -10,23 +10,29 @@ if(binutils_FOUND)
 endif()
 
 find_library(LIBBFD_LIBRARY
-              NAMES libbfd.a
-              PATH_SUFFIXES binutils)
+             NAMES libbfd.a
+             PATH_SUFFIXES binutils)
 
 find_library(LIBIBERTY_LIBRARY
-              NAMES libiberty.a
-              PATH_SUFFIXES binutils)
+             NAMES libiberty.a
+             PATH_SUFFIXES binutils)
 
+if(MINGW)
+  find_path(BINUTILS_INCLUDE_DIR
+            bfd.h
+            PATHS include
+            PATH_SUFFIXES binutils)
+endif()
 
 include (FindPackageHandleStandardArgs)
 
 
 # handle the QUIETLY and REQUIRED arguments and set binutils_FOUND to TRUE if all listed variables are TRUE
 find_package_handle_standard_args(binutils
-                                  REQUIRED_VARS LIBBFD_LIBRARY LIBIBERTY_LIBRARY
+                                  REQUIRED_VARS LIBBFD_LIBRARY LIBIBERTY_LIBRARY BINUTILS_INCLUDE_DIR
                                   HANDLE_COMPONENTS)
 
-mark_as_advanced(LIBBFD_LIBRARY LIBIBERTY_LIBRARY)
+mark_as_advanced(LIBBFD_LIBRARY LIBIBERTY_LIBRARY BINUTILS_INCLUDE_DIR)
 
 if(binutils_FOUND)
 
@@ -37,6 +43,7 @@ if(binutils_FOUND)
 
   add_library(binutils::bfd STATIC IMPORTED)
   set_target_properties(binutils::bfd PROPERTIES IMPORTED_LOCATION ${LIBBFD_LIBRARY})
+  set_target_properties(binutils::bfd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${BINUTILS_INCLUDE_DIR})
 
   target_link_libraries(binutils::bfd INTERFACE binutils::iberty)
   target_link_libraries(binutils::bfd INTERFACE ${Intl_LIBRARIES})
