@@ -1754,14 +1754,19 @@ primary returns [void* ast]
     {
       char* chars = (char*)$v.text->chars;
       char *endptr;
-      errno = 0;
+      int errno_saved = errno; // save errno
+      int errno_local = 0;
+      errno = 0; // set the errno to zero
       double d = strtod(chars, &endptr);
-      if (!(*endptr == 0 && errno==0)) {
-        if (*endptr == 0 && errno == ERANGE && fabs(d) > DBL_TRUE_MIN) { // overflow is an error
+      errno_local = errno; // get the local one
+      if (errno == 0) // restore errno
+        errno = errno_saved;
+      if (!(*endptr == 0 && errno_local == 0)) {
+        if (*endptr == 0 && errno_local == ERANGE && fabs(d) == HUGE_VAL) { // overflow is an error
           c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Overflow: \%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
           $ast = Absyn__REAL(mmc_mk_scon(chars));
           ModelicaParser_lexerError = ANTLR3_TRUE;
-        } else if (*endptr == 0 && errno == ERANGE) { // underflow is OK, convert to 0.0
+        } else if (*endptr == 0 && errno_local == ERANGE && fabs(d) <= DBL_MIN) { // underflow is OK, convert to 0.0
           c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_warning, "Underflow: \%s cannot be represented by a double on this machine. It will be converted to 0.0.", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
           $ast = Absyn__REAL(mmc_mk_scon("0.0"));
         } else {
