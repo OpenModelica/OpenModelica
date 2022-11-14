@@ -3463,14 +3463,30 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 
 /*!
  * \brief OMCProxy::getModelInstance
- * Returns the class information as json string.
  * \param className
  * \param prettyPrint
+ * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
+QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint, bool icon)
 {
-  QString modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+  QString modelInstanceJson = "";
+  if (icon) {
+    modelInstanceJson = mpOMCInterface->getModelInstanceIcon(className, prettyPrint);
+    if (modelInstanceJson.isEmpty()) {
+      if (MainWindow::instance()->isDebug()) {
+        QString msg = QString("<b>getModelInstanceIcon(%1, %2)</b> failed. Using getModelInstance(%1, %2).").arg(className).arg(prettyPrint);
+        MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+        MessagesWidget::instance()->addGUIMessage(messageItem);
+        printMessagesStringInternal();
+      } else {
+        getErrorString();
+      }
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+    }
+  } else {
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+  }
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
     QJsonParseError jsonParserError;

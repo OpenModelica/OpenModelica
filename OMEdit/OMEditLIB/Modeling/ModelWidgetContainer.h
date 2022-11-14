@@ -614,6 +614,8 @@ public:
   void drawModel(const ModelInfo &modelInfo);
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
+  void loadModelInstance(bool icon, const ModelInfo &modelInfo);
+  void loadDiagramViewNAPI();
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
@@ -625,7 +627,7 @@ public:
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
-  void reDrawModelWidget(const QJsonObject &modelInstanceJson, const ModelInfo &modelInfo);
+  void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
