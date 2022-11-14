@@ -1019,12 +1019,12 @@ algorithm
 
   if not arrayEmpty(exts) then
     if InstNode.isDerivedClass(node) then
-      j := dumpJSONInstanceIcon(exts[1]);
+      j := dumpJSONInstanceIconExtends(exts[1]);
     else
       j := JSON.emptyArray();
 
       for ext in exts loop
-        j := JSON.addElement(dumpJSONInstanceIcon(ext), j);
+        j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
       end for;
     end if;
 
@@ -1046,6 +1046,13 @@ algorithm
 
   json := dumpJSONCommentOpt(cmt, node, json, failOnError = true);
 end dumpJSONInstanceIcon;
+
+function dumpJSONInstanceIconExtends
+  input InstNode ext;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
+end dumpJSONInstanceIconExtends;
 
 function dumpJSONNodePath
   input InstNode node;
