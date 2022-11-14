@@ -139,6 +139,16 @@ public
     annotation(__OpenModelica_EarlyInline=true);
   end makeAssignment;
 
+  function isAssignment
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case ASSIGNMENT() then true;
+      else false;
+    end match;
+  end isAssignment;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;
