@@ -1762,7 +1762,9 @@ primary returns [void* ast]
       if (errno == 0) // restore errno
         errno = errno_saved;
       if (!(*endptr == 0 && errno_local == 0)) {
-        if (*endptr == 0 && errno_local == ERANGE && fabs(d) == HUGE_VAL) { // overflow is an error
+        if (*endptr == 0 && !(d == 0 || fabs(d) > DBL_MIN)) { // ignore errors for subnormal values
+          $ast = Absyn__REAL(mmc_mk_scon(chars));
+        } else if (*endptr == 0 && errno_local == ERANGE && fabs(d) == HUGE_VAL) { // overflow is an error
           c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Overflow: \%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
           $ast = Absyn__REAL(mmc_mk_scon(chars));
           ModelicaParser_lexerError = ANTLR3_TRUE;
