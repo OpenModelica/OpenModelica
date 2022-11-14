@@ -1662,12 +1662,12 @@ void OMCUndoCommand::redoInternal()
   if (mUndoDoneOnce) {
     MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpLibraryTreeItem->getFileName());
   }
-  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true), mNewModelInfo);
+  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
 }
 
 void OMCUndoCommand::undo()
 {
   MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpLibraryTreeItem->getFileName());
   mUndoDoneOnce = true;
-  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true), mOldModelInfo);
+  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

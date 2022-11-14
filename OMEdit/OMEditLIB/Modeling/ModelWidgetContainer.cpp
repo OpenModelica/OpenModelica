@@ -5365,9 +5365,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
     if (isNewApi()) {
       connect(this, SIGNAL(updateModel(QString)), MainWindow::instance(), SLOT(updateModel(QString)));
-      QJsonObject modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
-      mpModelInstance = new ModelInstance::Model(modelInstanceJson);
-      drawModel(ModelInfo());
+      loadModelInstance(true, ModelInfo());
     } else {
 
       getModelInheritedClasses();
@@ -5756,6 +5754,46 @@ void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, boo
   mpDiagramGraphicsView->drawConnections(pModelInstance, inherited, modelInfo);
   mpDiagramGraphicsView->drawTransitions(pModelInstance, inherited, modelInfo);
   mpDiagramGraphicsView->drawInitialStates(pModelInstance, inherited, modelInfo);
+}
+
+/*!
+ * \brief ModelWidget::loadModelInstance
+ * Calls getModelInstance and draws the model.
+ * \param icon
+ */
+void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
+{
+  // save the current ModelInstance pointer so we can delete it later.
+  ModelInstance::Model *pOldModelInstance = mpModelInstance;
+  // set the new ModelInstance
+  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true, icon));
+  drawModel(modelInfo);
+  // delete the old ModelInstance
+  if (pOldModelInstance) {
+    delete pOldModelInstance;
+  }
+}
+
+/*!
+ * \brief ModelWidget::loadDiagramViewNAPI
+ * Loads the diagram view if its not loaded before.
+ */
+void ModelWidget::loadDiagramViewNAPI()
+{
+  if (!mDiagramViewLoaded) {
+    mDiagramViewLoaded = true;
+    // clear graphical views
+    clearGraphicsViews();
+    // reset the CoOrdinateSystem
+    if (mpIconGraphicsView) {
+      mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    }
+    if (mpDiagramGraphicsView) {
+      mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    }
+    loadModelInstance(false, ModelInfo());
+    mpLibraryTreeItem->handleIconUpdated();
+  }
 }
 
 /*!
@@ -6384,19 +6422,14 @@ void ModelWidget::reDrawModelWidget()
     if (mpIconGraphicsView) {
       mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
-    /* remove everything from the diagram view */
     if (mpDiagramGraphicsView) {
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
     if (isNewApi()) {
-      // save the current ModelInstance pointer so we can delete it later.
-      ModelInstance::Model *pOldModelInstance = mpModelInstance;
-      // set the new ModelInstance
-      mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true));
-      drawModel(ModelInfo());
-      // delete the old ModelInstance
-      if (pOldModelInstance) {
-        delete pOldModelInstance;
+      if (mDiagramViewLoaded) {
+        loadModelInstance(false, ModelInfo());
+      } else {
+        loadModelInstance(true, ModelInfo());
       }
     } else {
       // Draw icon view
@@ -6446,7 +6479,7 @@ void ModelWidget::reDrawModelWidget()
   QApplication::restoreOverrideCursor();
 }
 
-void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson, const ModelInfo &modelInfo)
+void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   // Remove all elements from the scene
@@ -6472,19 +6505,10 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson, const 
   if (mpIconGraphicsView) {
     mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   }
-  /* remove everything from the diagram view */
   if (mpDiagramGraphicsView) {
     mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   }
-  // save the current ModelInstance pointer so we can delete it later.
-  ModelInstance::Model *pOldModelInstance = mpModelInstance;
-  // set the new ModelInstance
-  mpModelInstance = new ModelInstance::Model(modelInstanceJson);
-  drawModel(modelInfo);
-  // delete the old ModelInstance
-  if (pOldModelInstance) {
-    delete pOldModelInstance;
-  }
+  loadModelInstance(false, modelInfo);
   // update the icon
   mpLibraryTreeItem->handleIconUpdated();
   // if documentation view is visible then update it
@@ -7665,7 +7689,7 @@ void ModelWidget::emitUpdateModel()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDependsOnModelsList.contains(modelName)) {
-    reDrawModelWidget(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true), createModelInfo());
+    reDrawModelWidget(createModelInfo());
   }
 }
 
@@ -8977,7 +9001,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
     if (pSubModelWidget == pModelWidget) {
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-        if (!pModelWidget->isNewApi()) {
+        if (pModelWidget->isNewApi()) {
+          pModelWidget->loadDiagramViewNAPI();
+        } else {
           pModelWidget->loadDiagramView();
           pModelWidget->loadConnections();
         }
@@ -8995,7 +9021,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      if (!pModelWidget->isNewApi()) {
+      if (pModelWidget->isNewApi()) {
+        pModelWidget->loadDiagramViewNAPI();
+      } else {
         pModelWidget->loadDiagramView();
         pModelWidget->loadConnections();
       }
