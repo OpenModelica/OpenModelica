@@ -408,7 +408,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.DUMP_FLAT_MODEL,
   Flags.SIMULATION,
   Flags.OBFUSCATE,
-  Flags.FMU_RUNTIME_DEPENDS
+  Flags.FMU_RUNTIME_DEPENDS,
+  Flags.FRONTEND_INLINE
 };
 
 public function new

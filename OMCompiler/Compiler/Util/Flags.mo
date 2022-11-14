@@ -1447,6 +1447,10 @@ constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(153, "fmuRuntimeDepends",
     })),
   Gettext.gettext("Defines if runtime library dependencies are included in the FMU. Only used when compiler flag fmuCMakeBuild=true."));
 
+constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(154, "frontendInline",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Enables inlining of functions in the frontend."));
+
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
