@@ -101,7 +101,7 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
   MMC_CHECK_STRING(s);
   errno = 0;
   res = om_strtod(str,&endptr);
-  if (errno != 0 || str == endptr)
+  if ((errno != 0 && (res == 0 || res > DBL_MIN)) || str == endptr)
     MMC_THROW_INTERNAL();
   if (*endptr != '\0')
     MMC_THROW_INTERNAL();
