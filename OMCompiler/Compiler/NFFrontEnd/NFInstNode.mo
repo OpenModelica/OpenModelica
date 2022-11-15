@@ -1971,6 +1971,16 @@ uniontype InstNode
       else Type.isDiscrete(Class.getType(cls, base_node));
     end match;
   end isDiscreteClass;
+
+  function clearGeneratedInners
+    input InstNode node;
+  protected
+    InstNode top;
+    UnorderedMap<String, InstNode> inners;
+  algorithm
+    InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));
+    UnorderedMap.clear(inners);
+  end clearGeneratedInners;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

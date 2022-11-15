@@ -21,6 +21,7 @@ GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
+GetModelInstanceInnerOuter3.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceReplaceable1.mos \

@@ -614,6 +614,7 @@ algorithm
     // if absyn is the same, all fine, reuse
     if referenceEq(absynProgram, Util.tuple21(listHead(cache))) then
       (program, top) := Util.tuple22(listHead(cache));
+      InstNode.clearGeneratedInners(top);
       update := false;
     else
       update := true;
