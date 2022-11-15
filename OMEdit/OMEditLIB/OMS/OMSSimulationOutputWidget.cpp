@@ -31,6 +31,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "zmq.h"
 #include "OMSSimulationOutputWidget.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
@@ -41,7 +42,6 @@
 #include "Options/OptionsDialog.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Util/OutputPlainTextEdit.h"
-#include "zmq.h"
 
 #include <QGridLayout>
 
