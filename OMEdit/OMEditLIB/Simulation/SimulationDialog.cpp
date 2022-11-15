@@ -322,8 +322,7 @@ void SimulationDialog::setUpForm()
   // interactive simulation tab
   mpInteractiveSimulationTab = new QWidget;
   // interactive simulation
-  QString interactiveSimulationText = tr("Interactive Simulation");
-  mpInteractiveSimulationGroupBox = new QGroupBox(interactiveSimulationText);
+  mpInteractiveSimulationGroupBox = new QGroupBox(Helper::interactiveSimulation);
   mpInteractiveSimulationGroupBox->setCheckable(true);
   mpInteractiveSimulationStepCheckBox = new QCheckBox(tr("Simulate with steps"));
   mpInteractiveSimulationStepCheckBox->setToolTip(tr("Activates communication with the simulation remote every time step.\n"
@@ -345,7 +344,7 @@ void SimulationDialog::setUpForm()
   pInteractiveSimulationTabLayout->addWidget(mpInteractiveSimulationGroupBox, 0, 0);
   mpInteractiveSimulationTab->setLayout(pInteractiveSimulationTabLayout);
   // add interactive simulation Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpInteractiveSimulationTab, interactiveSimulationText);
+  mpSimulationTabWidget->addTab(mpInteractiveSimulationTab, Helper::interactiveSimulation);
   // Translation Tab
   mpTranslationTab = new QWidget;
   mpTranslationFlagsWidget = new TranslationFlagsWidget(this);
@@ -1888,7 +1887,7 @@ void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
     // determine the model owner of the interactive plot window
     QString owner = simulationOptions.getClassName();
     PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(owner, true, simulationOptions.getInteractiveSimulationPortNumber());
     connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
     connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
     connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));

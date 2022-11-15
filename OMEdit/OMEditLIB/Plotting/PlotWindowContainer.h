@@ -73,7 +73,7 @@ public slots:
   void addParametricPlotWindow();
   void addArrayPlotWindow(bool maximized = false);
   void addArrayParametricPlotWindow();
-  OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
+  OMPlot::PlotWindow* addInteractivePlotWindow(const QString &title, bool maximized = false, int port = 0);
   void addAnimationWindow(bool maximized = false);
   void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
   void clearPlotWindow();

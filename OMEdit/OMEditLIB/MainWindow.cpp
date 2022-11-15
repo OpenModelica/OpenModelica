@@ -735,16 +735,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
     }
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    if (pTopLevelLibraryTreeItem) {
-      if (!mpOMSSimulationDialog) {
-        mpOMSSimulationDialog = new OMSSimulationDialog(this);
-      }
-      if (pTopLevelLibraryTreeItem) {
-        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
-      }
-    }
+    simulateOMSModel(pLibraryTreeItem, false, false);
   }
 }
 
@@ -806,14 +797,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     }
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    if (pTopLevelLibraryTreeItem) {
-      if (!mpOMSSimulationDialog) {
-        mpOMSSimulationDialog = new OMSSimulationDialog(this);
-      }
-      mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
-    }
+    simulateOMSModel(pLibraryTreeItem, true, false);
   }
 }
 
@@ -2324,16 +2308,7 @@ void MainWindow::simulateModelInteractive()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
-    if (pTopLevelLibraryTreeItem) {
-      if (!mpOMSSimulationDialog) {
-        mpOMSSimulationDialog = new OMSSimulationDialog(this);
-      }
-      if (pTopLevelLibraryTreeItem) {
-        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem, true);
-      }
-    }
+    simulateOMSModel(pModelWidget->getLibraryTreeItem(), false, true);
   }
 }
 
@@ -3625,8 +3600,8 @@ void MainWindow::createActions()
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
 #endif
   // simulate interactive action
-  mpSimulateModelInteractiveAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
-  mpSimulateModelInteractiveAction->setStatusTip(Helper::simulateTip);
+  mpSimulateModelInteractiveAction = new QAction(QIcon(":/Resources/icons/simulate-interactive.svg"), Helper::interactiveSimulation, this);
+  mpSimulateModelInteractiveAction->setStatusTip(Helper::interactiveSimulationTip);
   mpSimulateModelInteractiveAction->setEnabled(false);
   connect(mpSimulateModelInteractiveAction, SIGNAL(triggered()), SLOT(simulateModelInteractive()));
   // archived simulations action
@@ -4066,7 +4041,7 @@ void MainWindow::createMenus()
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
-//  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
+  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
   pSimulationMenu->addSeparator();
   pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
@@ -4416,6 +4391,30 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QSt
   pFetchInterfaceDataDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::simulateOMSModel
+ * Simulate the OMS model.
+ * \param pLibraryTreeItem
+ * \param interactive
+ */
+void MainWindow::simulateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool setup, bool interactive)
+{
+  // get the top level LibraryTreeItem
+  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+  if (pTopLevelLibraryTreeItem) {
+    if (!mpOMSSimulationDialog) {
+      mpOMSSimulationDialog = new OMSSimulationDialog(this);
+    }
+    if (pTopLevelLibraryTreeItem) {
+      if (setup) {
+        mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
+      } else {
+        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem, interactive);
+      }
+    }
+  }
+}
+
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
@@ -4517,7 +4516,7 @@ void MainWindow::createToolbars()
 #if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
-//  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
+  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");

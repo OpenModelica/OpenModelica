@@ -26,6 +26,7 @@
         <file>Resources/icons/simulate-equation.svg</file>
         <file>Resources/icons/simulate-debug.svg</file>
         <file>Resources/icons/simulate-animation.svg</file>
+        <file>Resources/icons/simulate-interactive.svg</file>
         <file>Resources/icons/control-panel.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
         <file>Resources/css/stylesheet.qss</file>

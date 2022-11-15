@@ -41,11 +41,28 @@
 #include "Options/OptionsDialog.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/ResourceCache.h"
 #include "zmq.h"
 
 #include <QGridLayout>
 
 const long timeout = 500;
+
+QString OMSInteractiveCommands::fcn = QStringLiteral("fcn");
+QString OMSInteractiveCommands::arg = QStringLiteral("arg");
+QString OMSInteractiveCommands::enable = QStringLiteral("enable");
+QString OMSInteractiveCommands::disable = QStringLiteral("disable");
+QString OMSInteractiveCommands::cref = QStringLiteral("cref");
+QString OMSInteractiveCommands::status = QStringLiteral("status");
+QString OMSInteractiveCommands::ack = QStringLiteral("ack");
+QString OMSInteractiveCommands::nack = QStringLiteral("nack");
+QString OMSInteractiveCommands::simulation = QStringLiteral("simulation");
+QString OMSInteractiveCommands::_continue = QStringLiteral("continue");
+QString OMSInteractiveCommands::pause = QStringLiteral("pause");
+QString OMSInteractiveCommands::end = QStringLiteral("end");
+QString OMSInteractiveCommands::_signals = QStringLiteral("signals");
+QString OMSInteractiveCommands::available = QStringLiteral("available");
+QString OMSInteractiveCommands::results = QStringLiteral("results");
 
 /*!
  * \class SimulationSubscriberSocket
@@ -100,6 +117,7 @@ void SimulationSubscriberSocket::readSimulationData()
       memcpy(reply, zmq_msg_data(&replyMsg), size);
       reply[size] = 0;
       emit simulationDataPublished(QByteArray(reply));
+      free(reply);
     }
     zmq_msg_close(&replyMsg);
   }
@@ -145,15 +163,11 @@ SimulationRequestSocket::~SimulationRequestSocket()
  * \brief SimulationRequestSocket::sendRequest
  * * Send request in json form,
  * {"fcn": "simulation", "arg": "pause"}"
- * \param function
- * \param argument
+ * \param jsonObject
  */
-void SimulationRequestSocket::sendRequest(const QString &function, const QString &argument)
+void SimulationRequestSocket::sendRequest(const QJsonObject &jsonObject)
 {
   // send request
-  QJsonObject jsonObject;
-  jsonObject.insert(QStringLiteral("fcn"), QJsonValue::fromVariant(function));
-  jsonObject.insert(QStringLiteral("arg"), QJsonValue::fromVariant(argument));
   QJsonDocument doc(jsonObject);
   QByteArray request = doc.toJson(QJsonDocument::Compact);
   const char* request_ = request.constData();
@@ -173,7 +187,8 @@ void SimulationRequestSocket::sendRequest(const QString &function, const QString
     char *reply = (char*)malloc(size + 1);
     memcpy(reply, zmq_msg_data(&replyMsg), size);
     reply[size] = 0;
-    emit simulationReply(QByteArray(reply), function, argument);
+    emit simulationReply(QByteArray(reply), jsonObject);
+    free(reply);
   }
   zmq_msg_close(&replyMsg);
 }
@@ -193,12 +208,18 @@ void SimulationRequestSocket::sendRequest(const QString &function, const QString
 OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, bool interactive, QWidget *pParent)
   : QWidget(pParent), mCref(cref)
 {
+  mIsInteractive = interactive;
   // progress label
   mpProgressLabel = new Label(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mCref));
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpCancelSimulationButton = new QPushButton(Helper::cancelSimulation);
   mpCancelSimulationButton->setEnabled(false);
   connect(mpCancelSimulationButton, SIGNAL(clicked()), SLOT(cancelSimulation()));
+  mpRunOrPauseButton = new QToolButton;
+  mpRunOrPauseButton->setEnabled(false);
+  mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/play_animation.svg"));
+  mpRunOrPauseButton->setToolTip(Helper::run);
+  connect(mpRunOrPauseButton, SIGNAL(clicked()), SLOT(runOrPauseSimulation()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->setRange(0, 100);
@@ -212,16 +233,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
   pMainLayout->addWidget(mpProgressBar, 0, 1);
-  if (interactive) {
-    QPushButton *pPauseButton = new QPushButton("Pause");
-    connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
-    pMainLayout->addWidget(pPauseButton, 0, 2);
-    QPushButton *pContinueButton = new QPushButton("Continue");
-    connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
-    pMainLayout->addWidget(pContinueButton, 0, 3);
-    QPushButton *pEndButton = new QPushButton("End");
-    connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
-    //pMainLayout->addWidget(pEndButton, 0, 4);
+  if (mIsInteractive) {
+    pMainLayout->addWidget(mpRunOrPauseButton, 0, 2);
   }
   pMainLayout->addWidget(mpCancelSimulationButton, 0, 5);
   pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
@@ -243,9 +256,10 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpSimulationProcess = 0;
   mIsSimulationProcessKilled = false;
   mIsSimulationProcessRunning = false;
+  mSimulationIsPaused = true;
   // create subscriber socket
   mpSimulationSubscriberSocket = new SimulationSubscriberSocket;
-  if (interactive) {
+  if (mIsInteractive) {
     // create request socket
     mpSimulationRequestSocket = new SimulationRequestSocket;
   } else {
@@ -256,7 +270,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     writeSimulationOutput(mpSimulationSubscriberSocket->getErrorString(), StringHandler::Error);
     errorInitializingSockets = true;
   }
-  if (interactive && !mpSimulationRequestSocket->getErrorString().isEmpty()) {
+  if (mIsInteractive && !mpSimulationRequestSocket->getErrorString().isEmpty()) {
     writeSimulationOutput(mpSimulationRequestSocket->getErrorString(), StringHandler::Error);
     errorInitializingSockets = true;
   }
@@ -266,8 +280,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(mpSimulationSubscriberSocket, SIGNAL(simulationDataPublished(QByteArray)), this, SLOT(simulationDataPublished(QByteArray)));
     if (mpSimulationRequestSocket) {
       mpSimulationRequestSocket->moveToThread(&mSimulationRequestThread);
-      connect(this, SIGNAL(sendRequest(QString,QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString,QString)));
-      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QByteArray,QString,QString)), SLOT(simulationReply(QByteArray,QString,QString)));
+      connect(this, SIGNAL(sendRequest(QJsonObject)), mpSimulationRequestSocket, SLOT(sendRequest(QJsonObject)));
+      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QByteArray,QJsonObject)), SLOT(simulationReply(QByteArray,QJsonObject)));
     }
     // start the simulation process
     mpSimulationProcess = new QProcess;
@@ -284,7 +298,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--model=%1").arg(fileName);
     args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
-    if (interactive) {
+    if (mIsInteractive) {
       args << QString("--endpoint-rep=%1").arg(QString(mpSimulationRequestSocket->getEndPoint()));
       args << QStringLiteral("--interactive");
     }
@@ -379,7 +393,18 @@ void OMSSimulationOutputWidget::parseSimulationVariables(const QVariant variable
     ++iterator;
   }
 
-  MainWindow::instance()->getVariablesWidget()->insertVariablesItemsToTree(mCref, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), variablesList, SimulationOptions());
+  SimulationOptions simulationOptions;
+  simulationOptions.setInteractiveSimulation(true);
+  MainWindow::instance()->getVariablesWidget()->insertVariablesItemsToTree(mCref, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), variablesList, simulationOptions);
+}
+
+/*!
+ * \brief OMSSimulationOutputWidget::parseSimulationResults
+ * \param results
+ */
+void OMSSimulationOutputWidget::parseSimulationResults(const QVariant results)
+{
+  qDebug() << results.toMap();
 }
 
 /*!
@@ -399,7 +424,10 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   if (mpSimulationRequestSocket) {
     mpSimulationRequestSocket->setSocketConnected(true);
     mSimulationRequestThread.start();
-    emit sendRequest("signals", "available");
+    QJsonObject jsonObject;
+    jsonObject.insert(OMSInteractiveCommands::fcn, QJsonValue::fromVariant(OMSInteractiveCommands::_signals));
+    jsonObject.insert(OMSInteractiveCommands::arg, QJsonValue::fromVariant(OMSInteractiveCommands::available));
+    emit sendRequest(jsonObject);
   }
 }
 
@@ -464,8 +492,10 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
 //  writeSimulationOutput(data + "\n", StringHandler::Info);
 //  return;
   QByteArray jsonData;
-  if (data.startsWith("status")) {
-    jsonData = data.mid(QString("status").length());
+  if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
+    jsonData = data.mid(QString(OMSInteractiveCommands::status).length());
+  } else if (data.startsWith(OMSInteractiveCommands::results.toStdString().c_str())) {
+    jsonData = data.mid(QString(OMSInteractiveCommands::results).length());
   } else {
     writeSimulationOutput(QString("Unknown simulation data %1.\n").arg(QString(data)), StringHandler::Error);
     return;
@@ -475,8 +505,10 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
     writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(jsonData)), StringHandler::Error);
     return;
   } else {
-    if (data.startsWith("status")) {
+    if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
       parseSimulationProgress(jsonDocument.result);
+    } else if (data.startsWith(OMSInteractiveCommands::results.toStdString().c_str())) {
+      parseSimulationResults(jsonDocument.result);
     }
   }
 }
@@ -488,17 +520,41 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
  * {'status': 'nack', 'error'}
  * \param reply
  */
-void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply, const QString &function, const QString &argument)
+void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply, const QJsonObject &jsonObject)
 {
-//  writeSimulationOutput(reply + "\n", StringHandler::Info);
+  if (MainWindow::instance()->isDebug()) {
+    writeSimulationOutput("client: " + reply + "\n", StringHandler::OMEditInfo);
+  }
   JsonDocument jsonDocument;
   if (jsonDocument.parse(reply)) {
     QVariantMap resultMap = jsonDocument.result.toMap();
-    if (resultMap.value("status").toString().compare(QStringLiteral("nack")) == 0) {
+    // write the error in case of failure i.e., status is nack.
+    QString status = resultMap.value(OMSInteractiveCommands::status).toString();
+    if (status.compare(OMSInteractiveCommands::nack) == 0) {
       writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(reply)), StringHandler::Error);
-    } else if (resultMap.value("status").toString().compare(QStringLiteral("ack")) == 0) {
-      if ((function.compare(QStringLiteral("signals")) == 0) && (argument.compare(QStringLiteral("available")) == 0)) {
-        parseSimulationVariables(resultMap.value("result"));
+    } else if (status.compare(OMSInteractiveCommands::ack) == 0) {
+      const QString fcn = jsonObject.value(OMSInteractiveCommands::fcn).toString();
+      const QString arg = jsonObject.value(OMSInteractiveCommands::arg).toString();
+      // handle simulation command results
+      if (fcn.compare(OMSInteractiveCommands::simulation) == 0) {
+        mpRunOrPauseButton->setEnabled(true);
+        if (arg.compare(OMSInteractiveCommands::_continue) == 0) {
+          mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/pause.svg"));
+          mpRunOrPauseButton->setToolTip(Helper::animationPause);
+          mpRunOrPauseButton->setEnabled(true);
+        } else if (arg.compare(OMSInteractiveCommands::pause) == 0) {
+          mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/play_animation.svg"));
+          mpRunOrPauseButton->setToolTip(Helper::run);
+        }
+      } else if (fcn.compare(OMSInteractiveCommands::_signals) == 0) {
+        if (arg.compare(OMSInteractiveCommands::available) == 0) {
+          parseSimulationVariables(resultMap.value("result"));
+          mpRunOrPauseButton->setEnabled(true);
+        } else if (arg.compare(OMSInteractiveCommands::enable) == 0) {
+
+        } else if (arg.compare(OMSInteractiveCommands::disable) == 0) {
+
+        }
       }
     }
   } else {
@@ -527,6 +583,7 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mCref));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelSimulationButton->setEnabled(false);
+  mpRunOrPauseButton->setEnabled(false);
   // simulation finished show the results
   if (!mpSimulationRequestSocket) {
     MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
@@ -550,32 +607,56 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
 void OMSSimulationOutputWidget::cancelSimulation()
 {
   if (isSimulationProcessRunning()) {
+    if (mIsInteractive) {
+      QJsonObject jsonObject;
+      jsonObject.insert(OMSInteractiveCommands::fcn, QJsonValue::fromVariant(OMSInteractiveCommands::simulation));
+      jsonObject.insert(OMSInteractiveCommands::arg, QJsonValue::fromVariant(OMSInteractiveCommands::end));
+      emit sendRequest(jsonObject);
+    }
     mIsSimulationProcessKilled = true;
     mpSimulationProcess->kill();
     mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
+    mpRunOrPauseButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   }
 }
 
-void OMSSimulationOutputWidget::pauseSimulation()
+/*!
+ * \brief OMSSimulationOutputWidget::runOrPauseSimulation
+ * Run or pause the interactive simulation.
+ */
+void OMSSimulationOutputWidget::runOrPauseSimulation()
 {
   if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "pause");
+    mpRunOrPauseButton->setEnabled(false);
+    if (mpRunOrPauseButton->toolTip().compare(Helper::run) == 0) {
+      QJsonObject jsonObject;
+      jsonObject.insert(OMSInteractiveCommands::fcn, QJsonValue::fromVariant(OMSInteractiveCommands::simulation));
+      jsonObject.insert(OMSInteractiveCommands::arg, QJsonValue::fromVariant(OMSInteractiveCommands::_continue));
+      emit sendRequest(jsonObject);
+    } else {
+      QJsonObject jsonObject;
+      jsonObject.insert(OMSInteractiveCommands::fcn, QJsonValue::fromVariant(OMSInteractiveCommands::simulation));
+      jsonObject.insert(OMSInteractiveCommands::arg, QJsonValue::fromVariant(OMSInteractiveCommands::pause));
+      emit sendRequest(jsonObject);
+    }
   }
 }
 
-void OMSSimulationOutputWidget::continueSimulation()
+/*!
+ * \brief OMSSimulationOutputWidget::checkVariable
+ * Tells the server which signals are checked/unchecked.
+ * \param variableName
+ * \param enable
+ */
+void OMSSimulationOutputWidget::checkVariable(const QString &variableName, bool enable)
 {
-  if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "continue");
-  }
-}
-
-void OMSSimulationOutputWidget::endSimulation()
-{
-  if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "end");
-  }
+  QJsonObject jsonObject;
+  jsonObject.insert(OMSInteractiveCommands::fcn, QJsonValue::fromVariant(OMSInteractiveCommands::_signals));
+  jsonObject.insert(OMSInteractiveCommands::arg, enable ? QJsonValue::fromVariant(OMSInteractiveCommands::enable) : QJsonValue::fromVariant(OMSInteractiveCommands::disable));
+  jsonObject.insert(OMSInteractiveCommands::cref, QJsonValue::fromVariant(variableName));
+  emit sendRequest(jsonObject);
+  qDebug() << variableName;
 }
