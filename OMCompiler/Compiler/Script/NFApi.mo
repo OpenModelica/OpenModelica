@@ -868,6 +868,7 @@ algorithm
   inst_tree := buildInstanceTree(cls_node);
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
 
+  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
 
