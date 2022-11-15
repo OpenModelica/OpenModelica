@@ -34,7 +34,7 @@ encapsulated package Curl
 import Config;
 
 function multiDownload
-  input list<tuple<String,String>> urlFileList;
+  input list<tuple<list<String>,String>> urlFileList;
   input Integer maxParallel = Config.noProc();
   output Boolean success;
   external "C" success = om_curl_multi_download(urlFileList, maxParallel);

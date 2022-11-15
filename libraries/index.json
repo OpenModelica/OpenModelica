@@ -444,4 +444,7 @@
       }
     }
   }
+  "mirrors": [
+    "https://libraries.openmodelica.org/cache/"
+  ]
 }
