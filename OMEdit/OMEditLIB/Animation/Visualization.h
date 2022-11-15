@@ -87,7 +87,12 @@ public:
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node) override;
   virtual void apply(osg::Transform& node) override;
-  virtual void apply(osg::AutoTransform& node); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
+  // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
+#ifdef Q_OS_WIN
+  virtual void apply(osg::AutoTransform& node) override;
+#else
+  virtual void apply(osg::AutoTransform& node);
+#endif
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
