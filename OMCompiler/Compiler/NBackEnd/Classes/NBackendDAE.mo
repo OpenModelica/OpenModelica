@@ -222,8 +222,9 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
-      (simplify,           "simplify"),
+      (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
+      (simplify,           "simplify2"),
       (Events.main,        "Events"),
       (DetectStates.main,  "DetectStates")
     };

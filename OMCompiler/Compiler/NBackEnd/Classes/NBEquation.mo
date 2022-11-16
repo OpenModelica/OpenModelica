@@ -1420,7 +1420,7 @@ public
         eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
       end if;
 
-      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", eqnAttr);
+      eqn := Equation.fromLHSandRHS(lhs, SimplifyExp.simplifyDump(rhs, getInstanceName()), idx, "BND", eqnAttr);
     end generateBindingEquation;
 
     function mergeIterators
