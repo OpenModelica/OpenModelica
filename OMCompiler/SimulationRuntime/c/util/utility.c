@@ -270,13 +270,40 @@ static modelica_string lookupDirectoryFromName(const char *name, void *nameDirAr
   return obj[1];
 }
 
-static void getIdent(const char *str, char *this, const char **next)
+static void getIdent(char *str, char *this, char **next)
 {
   while (*str != 0 && *str != '.' && *str != '/') {
     *(this++) = *(str++);
   }
   *this = '\0';
   *next = str;
+}
+
+extern void OpenModelica_decode_uri_inplace(char *src)
+{
+  char *tmp = src;
+  while (*src) {
+    if (*src == '+') *(tmp++) = ' ';
+    else if (*src == '%' && src[1]) {
+      char buf[3];
+      int i;
+      buf[0] = src[1];
+      buf[1] = src[2];
+      buf[2] = '\0';
+      errno = 0;
+      i = strtol(buf,NULL,16);
+      if (errno) {
+        *(tmp++) = *src;
+        errno = 0;
+      } else {
+        *(tmp++) = i;
+        *tmp = 0;
+        src += 2;
+      }
+    } else *(tmp++) = *src;
+    src++;
+  }
+  *tmp = '\0';
 }
 
 extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData, modelica_string uri_om, const char *resourcesDir)
@@ -287,8 +314,10 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
 
   FILE_INFO info = omc_dummyFileInfo;
   char buf[PATH_MAX];
-  const char *uri = MMC_STRINGDATA(uri_om);
+  char uribuf[MMC_STRLEN(uri_om)+1];
+  char *uri = uribuf;
   modelica_string dir;
+  strcpy(uri, MMC_STRINGDATA(uri_om));
   if (0==strncasecmp(uri, "modelica://", 11)) {
     omc_stat_t stat_buf;
     uri += 11;
@@ -315,6 +344,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
         }
       }
     }
+    OpenModelica_decode_uri_inplace(uri);
     /* We found where the package is stored */
     while (1) {
       if (*uri == '.') {
