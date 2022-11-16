@@ -244,7 +244,7 @@ algorithm
   userLibraries := getUserLibraryPath();
   Util.createDirectoryTree(userLibraries);
   packageIndex := userLibraries + "index.json";
-  if not Curl.multiDownload({(url,packageIndex)}) then
+  if not Curl.multiDownload({({url},packageIndex)}) then
     Error.addMessage(Error.ERROR_PKG_INDEX_FAILED_DOWNLOAD, {url,packageIndex});
     success := false;
   else
@@ -441,8 +441,9 @@ function installPackage
   output Boolean success;
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
-  list<tuple<String,String>> urlPathList, urlPathListToDownload;
+  list<tuple<list<String>,String>> urlPathList, urlPathListToDownload;
   String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation, cachePath=getCachePath(), installCachePath=getInstallationCachePath(), curCachePath;
+  list<String> mirrors;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -461,7 +462,8 @@ algorithm
   end for;
 
   if not skipDownload then
-    urlPathList := List.sort(list((p.urlToZipFile, if System.regularFileExists(installCachePath + System.basename(p.urlToZipFile)) then installCachePath + System.basename(p.urlToZipFile) else cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    mirrors := getMirrors();
+    urlPathList := List.sort(list((getAllUrls(p.urlToZipFile, mirrors), if System.regularFileExists(installCachePath + System.basename(p.urlToZipFile)) then installCachePath + System.basename(p.urlToZipFile) else cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
     urlPathList := List.unique(urlPathList);
     urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
     if not Curl.multiDownload(urlPathListToDownload) then
@@ -587,13 +589,13 @@ end installCachedPackages;
 protected
 
 function compareUrlBool
-  input tuple<String,String> tpl1, tpl2;
+  input tuple<list<String>,String> tpl1, tpl2;
   output Boolean b;
 protected
   String s1, s2;
 algorithm
-  (s1,_) := tpl1;
-  (s2,_) := tpl2;
+  (s1::_,_) := tpl1;
+  (s2::_,_) := tpl2;
   b := stringCompare(s1, s2) > 0;
 end compareUrlBool;
 
@@ -734,6 +736,38 @@ function getShaOrZipfile
 algorithm
   res := if JSON.hasKey(obj, "sha") then JSON.getString(JSON.get(obj, "sha")) else System.basename(JSON.getString(JSON.get(obj, "zipfile")));
 end getShaOrZipfile;
+
+function getAllUrls
+  input String url;
+  input list<String> mirrors;
+  output list<String> urls;
+protected
+  String urlWithoutProtocol, newUrl;
+algorithm
+  urls := {url};
+  if not Util.stringStartsWith("https://", url) then
+    return;
+  end if;
+  urlWithoutProtocol := substring(url,9,stringLength(url));
+  for mirror in mirrors loop
+    newUrl := if Util.endsWith(mirror, "/") then (mirror + urlWithoutProtocol) else (mirror + "/" + urlWithoutProtocol);
+    urls := newUrl::urls;
+  end for;
+end getAllUrls;
+
+function getMirrors
+  output list<String> mirrors;
+protected
+  JSON obj;
+algorithm
+  obj := getPackageIndex(false);
+  if not JSON.hasKey(obj, "mirrors") then
+    mirrors := {};
+    return;
+  end if;
+  obj := JSON.get(obj, "mirrors");
+  mirrors := JSON.getStringList(obj);
+end getMirrors;
 
 function getUserLibraryPath
   output String path;
