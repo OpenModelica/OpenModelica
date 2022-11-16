@@ -842,7 +842,24 @@ public
   algorithm
     exp := match (exp)
       local
+        Integer i;
         Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
+
+      // Special cases
+      case (Expression.CALL()) guard(name == "smooth")
+      algorithm
+        {arg1, arg2} := Call.arguments(exp.call);
+        ret := match arg1
+          case Expression.INTEGER(i) guard(i > 0) algorithm
+            (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            exp.call := Call.setArguments(exp.call, {Expression.INTEGER(i-1), ret2});
+          then exp;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)
+              + " because the first argument has to be > 0."});
+          then fail();
+        end match;
+      then ret;
 
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
