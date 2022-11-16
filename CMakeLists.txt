@@ -1,7 +1,6 @@
 
 cmake_minimum_required(VERSION 3.14)
 project(OpenModelica
-        VERSION 1.19.3
         HOMEPAGE_URL "https://openmodelica.org/"
         LANGUAGES C CXX)
 
@@ -143,7 +142,7 @@ endif()
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
 # Set a 'catch-all' install component "unknown-install-component". If you see some install component under this
-# id, then you know that something has not set an install component either explicily on the install() command
+# id, then you know that something has not set an install component either explicitly on the install() command
 # or at higher level using 'set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME <id>)' to cover all install() commands
 # issues after it.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
@@ -158,6 +157,7 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMNotebook)
   include(omsimulator.cmake)
   omc_add_subdirectory(OMEdit)
+  omc_add_subdirectory(OMSens_Qt)
 endif()
 
 omc_add_subdirectory(testsuite)
