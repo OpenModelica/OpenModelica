@@ -867,7 +867,7 @@ public
       algorithm
         // differentiate the call
         {arg1} := Call.arguments(exp.call);
-        ret := differentiateBuiltinCall1Arg(name, arg1);
+        (ret, diffArguments) := differentiateBuiltinCall1Arg(name, arg1, diffArguments);
         if not Expression.isZero(ret) then
           // differentiate the argument (inner derivative)
           diffArg1 := differentiateExpression(arg1, diffArguments);
@@ -908,6 +908,7 @@ public
     input String name;
     input Expression arg;
     output Expression derFuncCall;
+    input output DifferentiationArguments diffArguments;
   protected
     // these probably need to be adapted to the size and type of arg
     Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
@@ -924,6 +925,16 @@ public
       case ("ceil")     then Expression.makeZero(Type.REAL());
       case ("floor")    then Expression.makeZero(Type.REAL());
       case ("integer")  then Expression.makeZero(Type.INTEGER());
+
+      // sum(arg) -> sum(d arg)
+      case ("sum") algorithm
+        (ret, diffArguments) := differentiateExpression(arg, diffArguments);
+      then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SUM,
+          args        = {ret},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
 
       // abs(arg) -> sign(arg)
       case ("abs") then Expression.CALL(Call.makeTypedCall(
