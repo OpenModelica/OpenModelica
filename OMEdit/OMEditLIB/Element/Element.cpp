@@ -2899,7 +2899,7 @@ void Element::hideResizerItems()
 void Element::getScale(qreal *sx, qreal *sy)
 {
   qreal angle = mTransformation.getRotateAngle();
-  if (transform().type() == QTransform::TxScale || transform().type() == QTransform::TxTranslate) {
+  if (transform().type() == QTransform::TxScale || transform().type() == QTransform::TxTranslate || transform().type() == QTransform::TxNone) {
     *sx = transform().m11() / (cos(angle * (M_PI / 180)));
     *sy = transform().m22() / (cos(angle * (M_PI / 180)));
   } else {
