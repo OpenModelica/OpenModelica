@@ -134,6 +134,6 @@ end if;
   fout.write('system("touch .openmodelica/%s")' % stamp)
 
 with open(args.filenameprefix + "index.json", "w") as fout:
-  fout.write(json.dumps({"libs":newdata}, indent=2))
+  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2))
 with open("Makefile.version", "w") as fout:
   fout.write('STAMP=%s' % stamp)
