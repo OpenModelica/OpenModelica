@@ -1263,12 +1263,12 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel->isConnector()) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coordinateSystem = mpModel->getIconAnnotation()->getMergedCoordinateSystem();
+      coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
     } else {
-      coordinateSystem = mpModel->getDiagramAnnotation()->getMergedCoordinateSystem();
+      coordinateSystem = mpModel->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
   } else {
-    coordinateSystem = mpModel->getIconAnnotation()->getMergedCoordinateSystem();
+    coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
   }
   return coordinateSystem;
 }
