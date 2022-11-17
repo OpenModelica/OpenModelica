@@ -645,6 +645,69 @@ namespace ModelInstance
     }
   }
 
+  Modifier::Modifier()
+  {
+    mName = "";
+    mValue = "";
+    mFinal = false;
+    mEach = false;
+    mModifiers.clear();
+  }
+
+  void Modifier::deserialize(const QJsonValue &jsonValue)
+  {
+    if (jsonValue.isObject()) {
+      QJsonObject modifiers = jsonValue.toObject();
+      for (QJsonObject::iterator modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+        const QString modifierKey = modifiersIterator.key();
+        const QJsonValue modifierValue = modifiersIterator.value();
+        if (modifierKey.compare(QStringLiteral("$value")) == 0) {
+          mValue = modifierValue.toString();
+        } else if (modifierKey.compare(QStringLiteral("final")) == 0) {
+          mFinal = true;
+        } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
+          mEach = true;
+        } else {
+          Modifier modifier;
+          modifier.setName(modifierKey);
+          modifier.deserialize(modifierValue);
+          mModifiers.append(modifier);
+        }
+      }
+    } else {
+      mValue = jsonValue.toString();
+    }
+  }
+
+  QString Modifier::getValue() const
+  {
+    return StringHandler::removeFirstLastQuotes(mValue);
+  }
+
+  QString Modifier::getModifierValue(QStringList qualifiedModifierName)
+  {
+    if (qualifiedModifierName.isEmpty()) {
+      return "";
+    }
+
+    return Modifier::getModifierValue(*this, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+  }
+
+  QString Modifier::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName)
+  {
+    foreach (auto subModifier, modifier.getModifiers()) {
+      if (subModifier.getName().compare(modifierName) == 0) {
+        if (qualifiedModifierName.isEmpty()) {
+          return StringHandler::removeFirstLastQuotes(subModifier.getValue());
+        } else {
+          return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+        }
+      }
+    }
+
+    return "";
+  }
+
   Model::Model()
   {
     initialize();
@@ -817,11 +880,11 @@ namespace ModelInstance
      *
      * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
      */
-    if (!mpIconAnnotation->getCoordinateSystem().isComplete()) {
+    if (!mpIconAnnotation->mCoordinateSystem.isComplete()) {
       readCoordinateSystemFromExtendsClass(true);
     }
 
-    if (!mpDiagramAnnotation->getCoordinateSystem().isComplete()) {
+    if (!mpDiagramAnnotation->mCoordinateSystem.isComplete()) {
       readCoordinateSystemFromExtendsClass(false);
     }
 
@@ -940,10 +1003,10 @@ namespace ModelInstance
       ModelInstance::CoordinateSystem coordinateSystem;
       IconDiagramAnnotation *pIconDiagramAnnotation = 0;
       if (isIcon) {
-        coordinateSystem = pExtend->getIconAnnotation()->getCoordinateSystem();
+        coordinateSystem = pExtend->getIconAnnotation()->mCoordinateSystem;
         pIconDiagramAnnotation = mpIconAnnotation;
       } else {
-        coordinateSystem = pExtend->getDiagramAnnotation()->getCoordinateSystem();
+        coordinateSystem = pExtend->getDiagramAnnotation()->mCoordinateSystem;
         pIconDiagramAnnotation = mpDiagramAnnotation;
       }
 
@@ -1172,69 +1235,6 @@ namespace ModelInstance
     if (jsonObject.contains("connectorSizing")) {
       mConnectorSizing = jsonObject.value("connectorSizing").toBool();
     }
-  }
-
-  Modifier::Modifier()
-  {
-    mName = "";
-    mValue = "";
-    mFinal = false;
-    mEach = false;
-    mModifiers.clear();
-  }
-
-  void Modifier::deserialize(const QJsonValue &jsonValue)
-  {
-    if (jsonValue.isObject()) {
-      QJsonObject modifiers = jsonValue.toObject();
-      for (QJsonObject::iterator modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
-        const QString modifierKey = modifiersIterator.key();
-        const QJsonValue modifierValue = modifiersIterator.value();
-        if (modifierKey.compare(QStringLiteral("$value")) == 0) {
-          mValue = modifierValue.toString();
-        } else if (modifierKey.compare(QStringLiteral("final")) == 0) {
-          mFinal = true;
-        } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
-          mEach = true;
-        } else {
-          Modifier modifier;
-          modifier.setName(modifierKey);
-          modifier.deserialize(modifierValue);
-          mModifiers.append(modifier);
-        }
-      }
-    } else {
-      mValue = jsonValue.toString();
-    }
-  }
-
-  QString Modifier::getValue() const
-  {
-    return StringHandler::removeFirstLastQuotes(mValue);
-  }
-
-  QString Modifier::getModifierValue(QStringList qualifiedModifierName)
-  {
-    if (qualifiedModifierName.isEmpty()) {
-      return "";
-    }
-
-    return Modifier::getModifierValue(*this, qualifiedModifierName.takeFirst(), qualifiedModifierName);
-  }
-
-  QString Modifier::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName)
-  {
-    foreach (auto subModifier, modifier.getModifiers()) {
-      if (subModifier.getName().compare(modifierName) == 0) {
-        if (qualifiedModifierName.isEmpty()) {
-          return StringHandler::removeFirstLastQuotes(subModifier.getValue());
-        } else {
-          return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
-        }
-      }
-    }
-
-    return "";
   }
 
   Choices::Choices()
@@ -1654,6 +1654,23 @@ namespace ModelInstance
     return "initialState(" % mpStartConnector->getName() % ")";
   }
 
+  IconDiagramMap::IconDiagramMap()
+  {
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mPrimitivesVisible = true;
+  }
+
+  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("extent")) {
+      mExtent.deserialize(jsonObject.value("extent"));
+    }
+
+    if (jsonObject.contains("primitivesVisible")) {
+      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
+    }
+  }
+
   Extend::Extend()
     : Model()
   {
@@ -1669,6 +1686,18 @@ namespace ModelInstance
   {
     if (jsonObject.contains("modifiers")) {
       mExtendsModifier.deserialize(jsonObject.value("modifiers"));
+    }
+
+    if (jsonObject.contains("annotation")) {
+      QJsonObject annotation = jsonObject.value("annotation").toObject();
+
+      if (annotation.contains("IconMap")) {
+        mIconMap.deserialize(annotation.value("IconMap").toObject());
+      }
+
+      if (annotation.contains("DiagramMap")) {
+        mDiagramMap.deserialize(annotation.value("DiagramMap").toObject());
+      }
     }
 
     if (jsonObject.contains("baseClass")) {

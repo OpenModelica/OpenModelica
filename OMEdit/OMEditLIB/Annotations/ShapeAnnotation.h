@@ -151,7 +151,7 @@ public:
   virtual QString getOMCShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;
-  static QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
+  QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
   void applyTransformation();
   void drawCornerItems();
   void setCornerItemsActiveOrPassive();
@@ -218,6 +218,7 @@ public:
   void adjustCornerItemsConnectedIndexes();
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
+  void setExtendModel(ModelInstance::Extend *pExtendModel) {mpExtendModel = pExtendModel;}
   void moveShape(const qreal dx, const qreal dy);
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
@@ -293,6 +294,7 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   FlatModelica::Expression mTextExpression;
+  ModelInstance::Extend *mpExtendModel = 0;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

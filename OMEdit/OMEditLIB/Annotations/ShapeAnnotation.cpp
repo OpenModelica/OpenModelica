@@ -600,35 +600,50 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   QPointF defaultPoint2 = QPointF(extent.at(1).x(), extent.at(1).y());
   QPointF point1 = defaultPoint1;
   QPointF point2 = defaultPoint2;
+  bool preserveAspectRatio = false;
 
-  int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
-  if (index > 0) {
-    QList<QPointF> extent;
-    if (pGraphicsView->getViewType() == StringHandler::Icon) {
-      extent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
-    } else {
-      extent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
+  if (MainWindow::instance()->isNewApi()) {
+    if (mpExtendModel) {
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        extent = mpExtendModel->mIconMap.getExtent();
+        preserveAspectRatio = mpExtendModel->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+      } else {
+        extent = mpExtendModel->mDiagramMap.getExtent();
+        preserveAspectRatio = mpExtendModel->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+      }
     }
-    point1 = extent.size() > 0 ? extent.at(0) : defaultPoint1;
-    point2 = extent.size() > 1 ? extent.at(1) : defaultPoint2;
-    // find the width and height
-    qreal width = qFabs(point1.x() - point2.x());
-    qreal height = qFabs(point1.y() - point2.y());
-    if (width < 1 || height < 1) {
-      point1 = defaultPoint1;
-      point2 = defaultPoint2;
-    } else {
-      /* if preserveAspectRatio of the base class is true
-       * Take x if width is lesser than height otherwise take y
-       */
-      if (pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mMergedCoOrdinateSystem.getPreserveAspectRatio()) {
-        if (width < height) {
-          point1.setY(point1.x());
-          point2.setY(point2.x());
-        } else {
-          point1.setX(point1.y());
-          point2.setX(point2.y());
-        }
+  } else {
+    int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
+    if (index > 0) {
+      QList<QPointF> extent;
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        extent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
+      } else {
+        extent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
+      }
+      preserveAspectRatio = pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+    }
+  }
+
+  point1 = extent.size() > 0 ? extent.at(0) : defaultPoint1;
+  point2 = extent.size() > 1 ? extent.at(1) : defaultPoint2;
+  // find the width and height
+  qreal width = qFabs(point1.x() - point2.x());
+  qreal height = qFabs(point1.y() - point2.y());
+  if (width < 1 || height < 1) {
+    point1 = defaultPoint1;
+    point2 = defaultPoint2;
+  } else {
+    /* if preserveAspectRatio of the base class is true
+     * Take x if width is lesser than height otherwise take y
+     */
+    if (preserveAspectRatio) {
+      if (width < height) {
+        point1.setY(point1.x());
+        point2.setY(point2.x());
+      } else {
+        point1.setX(point1.y());
+        point2.setX(point2.y());
       }
     }
   }
@@ -666,11 +681,10 @@ void ShapeAnnotation::applyTransformation()
   } else {
     pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
   }
-  if (!mpParentComponent && pGraphicsView
-      && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
-      && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
-    QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
 
+  if (!mpParentComponent && pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
+      && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (MainWindow::instance()->isNewApi() && mIsInheritedShape))) {
+    QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
     ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
     qreal left = extent.at(0).x();
     qreal bottom = extent.at(0).y();

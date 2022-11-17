@@ -282,15 +282,14 @@ private:
     IconDiagramAnnotation();
     ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    CoordinateSystem getCoordinateSystem() {return mCoordinateSystem;}
-    CoordinateSystem getMergedCoordinateSystem() {return mMergedCoOrdinateSystem;}
+
     QList<Shape*> getGraphics() const {return mGraphics;}
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
     CoordinateSystem mMergedCoOrdinateSystem;
+  private:
     QList<Shape*> mGraphics;
-
   };
 
   class Modifier
@@ -648,6 +647,19 @@ private:
     Line *mpLine;
   };
 
+  class IconDiagramMap
+  {
+  public:
+    IconDiagramMap();
+    void deserialize(const QJsonObject &jsonObject);
+
+    ExtentAnnotation getExtent() const {return mExtent;}
+    BooleanAnnotation getprimitivesVisible() const {return mPrimitivesVisible;}
+  private:
+    ExtentAnnotation mExtent;
+    BooleanAnnotation mPrimitivesVisible;
+  };
+
   class Extend : public Model
   {
   public:
@@ -656,6 +668,9 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     Modifier getExtendsModifier() const {return mExtendsModifier;}
+
+    IconDiagramMap mIconMap;
+    IconDiagramMap mDiagramMap;
   private:
     Modifier mExtendsModifier;
   };
