@@ -225,6 +225,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   mExtents.parse(list.at(8));
   // 10th item of the list contains the textString.
   mTextString.parse(list.at(9));
+  mOriginalTextString = mTextString;
   initUpdateTextString();
 
   // 11th item of the list contains the fontSize.
@@ -273,6 +274,7 @@ void TextAnnotation::parseShapeAnnotation()
   extents.append(QPointF(extent2.x(), extent2.y()));
   mExtents = extents;
   mTextString = mpText->getTextString();
+  mOriginalTextString = mTextString;
   initUpdateTextString();
 
   mFontSize = mpText->getFontSize();
@@ -337,7 +339,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(widget);
   //! @note We don't show text annotation that contains % for Library Icons or if it is too long.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    if (mTextString.contains("%") || mTextString.length() > OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconTextLengthSpinBox()->value()) {
+    if (mOriginalTextString.contains("%") || mOriginalTextString.length() > OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconTextLengthSpinBox()->value()) {
       return;
     }
   } else if (mpElement && mpElement->getGraphicsView()->isRenderingLibraryPixmap()) {
@@ -478,7 +480,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   // get the extents
   annotationString.append(mExtents.toQString());
   // get the text string
-  annotationString.append(mTextString.toQString());
+  annotationString.append(mOriginalTextString.toQString());
   // get the font size
   annotationString.append(mFontSize.toQString());
   // get the text color
@@ -527,7 +529,7 @@ QString TextAnnotation::getShapeAnnotation()
     annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
   }
   // get the text string
-  annotationString.append(QString("textString=%1").arg(mTextString.toQString()));
+  annotationString.append(QString("textString=%1").arg(mOriginalTextString.toQString()));
   // get the font size
   if (mFontSize.isDynamicSelectExpression() || mFontSize != 0) {
     annotationString.append(QString("fontSize=%1").arg(mFontSize.toQString()));
@@ -571,7 +573,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpElement) {
-    if (mTextString.contains("%")) {
+    if (mOriginalTextString.contains("%")) {
       updateTextString();
       connect(mpElement, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -587,7 +589,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 {
   int pos = 0;
   while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
-    QString variable = regExp.cap(0).trimmed(); QString qs;
+    QString variable = regExp.cap(0).trimmed();
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
       variable = StringHandler::removeFirstLastCurlBrackets(variable);
@@ -642,7 +644,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit));
             }
           }
-          qs = mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
+          mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
           pos += textValueWithDisplayUnit.length();
         } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
@@ -672,6 +674,7 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the element (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
+  mTextString = mOriginalTextString;
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
   if (pLineAnnotation) {
     if (mTextString.toLower().contains("%condition")) {
@@ -683,8 +686,6 @@ void TextAnnotation::updateTextString()
       }
     }
   } else if (mpElement) {
-    mTextString.reset();
-
     if (!mTextString.contains("%")) {
       return;
     }

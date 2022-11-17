@@ -280,6 +280,7 @@ protected:
   RealAnnotation mStartAngle;
   RealAnnotation mEndAngle;
   StringHandler::EllipseClosure mClosure;
+  StringAnnotation mOriginalTextString;
   StringAnnotation mTextString;
   RealAnnotation mFontSize;
   QString mFontName;
