@@ -706,7 +706,12 @@ public
 
         eqn_idx_arr := 1;
         for eqn_ptr in EquationPointers.toList(eqns) loop
-          updateRow(eqn_ptr, diffArgs_ptr, st, vars.map, m, mapping_opt, modes, eqn_idx_arr, true, funcTree);
+          try
+            updateRow(eqn_ptr, diffArgs_ptr, st, vars.map, m, mapping_opt, modes, eqn_idx_arr, true, funcTree);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Equation.pointerToString(eqn_ptr)});
+            fail();
+          end try;
           eqn_idx_arr := eqn_idx_arr + 1;
         end for;
 
@@ -788,6 +793,7 @@ public
       eqn := Pointer.access(eqn_ptr);
       // possibly adapt for algorithms
       dependencies := BEquation.Equation.collectCrefs(eqn, function Slice.getDependentCref(map = map, pseudo = pseudo));
+      dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
 
       if (st < MatrixStrictness.FULL) then
         // SOLVABLE & LINEAR
