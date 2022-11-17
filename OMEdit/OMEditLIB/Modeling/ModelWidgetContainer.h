@@ -526,7 +526,7 @@ public:
     mPrimitivesVisible = true;
   }
 
-  QList<QPointF> mExtent;
+  QVector<QPointF> mExtent;
   bool mPrimitivesVisible;
 };
 
