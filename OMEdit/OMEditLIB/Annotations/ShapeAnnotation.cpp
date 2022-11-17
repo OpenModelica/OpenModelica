@@ -365,7 +365,6 @@ void ShapeAnnotation::setDefaults()
   mStartAngle = 0;
   mEndAngle = 360;
   mClosure = StringHandler::ClosureChord;
-  mTextString = "";
   mFontSize = 0;
   mFontName = Helper::systemFontInfo.family();
   mTextStyles.clear();
@@ -400,6 +399,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mStartAngle = pShapeAnnotation->mStartAngle;
   mEndAngle = pShapeAnnotation->mEndAngle;
   mClosure = pShapeAnnotation->mClosure;
+  mOriginalTextString = pShapeAnnotation->mOriginalTextString;
   mTextString = pShapeAnnotation->mTextString;
   mFontSize = pShapeAnnotation->mFontSize;
   mFontName = pShapeAnnotation->mFontName;
@@ -823,6 +823,7 @@ void ShapeAnnotation::setOriginItemPos(const QPointF point)
   */
 void ShapeAnnotation::setTextString(QString textString)
 {
+  mOriginalTextString = textString;
   mTextString = textString;
 }
 
