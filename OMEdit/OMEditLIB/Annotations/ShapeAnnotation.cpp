@@ -615,12 +615,13 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   } else {
     int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
     if (index > 0) {
-      QList<QPointF> extent;
+      QVector<QPointF> mapExtent(2, QPointF(0, 0));
       if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        extent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
+        mapExtent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
       } else {
-        extent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
+        mapExtent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
       }
+      extent = mapExtent;
       preserveAspectRatio = pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
     }
   }
