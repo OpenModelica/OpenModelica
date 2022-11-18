@@ -314,10 +314,11 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
 
   FILE_INFO info = omc_dummyFileInfo;
   char buf[PATH_MAX];
-  char uribuf[MMC_STRLEN(uri_om)+1];
-  char *uri = uribuf;
-  modelica_string dir;
+
+  char* uri = (char*)omc_alloc_interface.malloc_atomic(sizeof(char) * (MMC_STRLEN(uri_om)+1));
   strcpy(uri, MMC_STRINGDATA(uri_om));
+
+  modelica_string dir;
   if (0==strncasecmp(uri, "modelica://", 11)) {
     omc_stat_t stat_buf;
     uri += 11;
@@ -394,6 +395,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
     omc_assert(threadData, info, "Unknown URI schema: %s", MMC_STRINGDATA(uri_om));
     MMC_THROW();
   }
+
   return uriToFilenameRegularPaths(uri_om, uri, buf, MMC_STRINGDATA(uri_om), resourcesDir);
 }
 
