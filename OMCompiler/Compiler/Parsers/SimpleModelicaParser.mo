@@ -1348,10 +1348,12 @@ protected
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.RPAR); // Easier than checking First.expression, etc
+  (tokens, tree) := eatWhitespace(tokens, tree);
   if not b then
     (tokens, tree) := function_arguments(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
   end if;
+  (tokens, tree) := eatWhitespace(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end function_call_args;
 
@@ -1392,7 +1394,7 @@ algorithm
   end while;
   outTree := inTree;
   for tree in listReverse(trees) loop
-    outTree := makeNodePrependTree(listReverse(tree), outTree);
+    outTree := makeNodePrependTree(listReverse(tree), outTree, label=LEAF(makeToken(TokenId.IDENT, "function_arguments")));
   end for;
 end function_arguments;
 
@@ -1439,11 +1441,13 @@ function named_argument
 protected
   TokenId id;
   Boolean b;
+  ParseTree label;
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
+  label := List.first(tree);
   (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   (tokens, tree) := expression(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=label);
 end named_argument;
 
 function for_indices
@@ -2092,6 +2096,19 @@ algorithm
   if debug then
     print("nadd: " + String(nadd) + " ndel: " + String(ndel) + "\n");
     print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
+    if nadd <> ndel then
+      for r in res loop
+        (d,ts) := r;
+        if d==Diff.Equal then
+          continue;
+        end if;
+        for t in ts loop
+          if isLabeledNode(t) then
+            print(String(d) + " " + parseTreeStr(nodeLabel(t)::{})+"\n");
+          end if;
+        end for;
+      end for;
+    end if;
   end if;
   if depth>300 then
     // Do nothing; it's a diff... Just not perfect and might be really slow to process...
