@@ -245,6 +245,11 @@ unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx){
     index++;
   }
 
+  //for(int j = 0; j < nlp->numberOfNonlinear; j++)
+  //  printf("nlp->columns[%d] = %d\n", j, nlp->columns[j]);
+  //for(int j = 0; j < nlp->numberOfVars+1; j++)
+  //  printf("nlp->indexVar[%d] = %d\n", j, nlp->indexVar[j]);
+
   return col;
 }
 
@@ -256,14 +261,22 @@ unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx){
   }else{
     idx_stop = nlp->indexEqn[eqn_idx + 1];
   }
-
+  //printf("   eqn_idx   = %d\n", eqn_idx);
+  //printf("   idx_start = %d\n", idx_start);
+  //printf("   idx_stop  = %d\n", idx_stop);
   unsigned int* row = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
 
   int index = 0;
   for(int i = idx_start; i < idx_stop + 1; i++){
     row[index] = nlp->rows[i];
+    //printf("      row[index] = row[%d] = %d\n", index, row[index]);
     index++;
   }
+
+  //for(int j = 0; j < nlp->numberOfNonlinear; j++)
+  //  printf("nlp->rows[%d] = %d\n", j, nlp->rows[j]);
+  //for(int j = 0; j < nlp->numberOfEqns; j++)
+  //  printf("nlp->indexEqn[%d] = %d\n", j, nlp->indexEqn[j]);
 
   return row;
 }

@@ -254,7 +254,7 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned z_idx[l],
    for( i = 0; i < m; i++)
    {
       fz_dz = 0;
-      for( j = 0; j < l; j++)
+      for( j = 1; j < l; j++)  // iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)
          fz_dz += fx[i][z_idx[j]] * dx[z_idx[j]];
 
       r_x0[i] = fabs(f[i] + fz_dz);
@@ -321,28 +321,49 @@ void getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsig
          for( i = 0; i < m; i++)
             fxx[i][k][j] = (fxPls[i][j] - fxMin[i][j]) / (2 * delta_x);
    }
+
+   // ----------------------------------------------- Debug -------------------------------------------------
+   /*printf( "\n");
+   for( k = 0; k < m; k++)
+   {
+      // For each eqn. k print m x m matrix
+      for( i = 0; i < m; i++)
+      {
+         if (i == 0)
+            printf( "\n\neqn k = %2d: ", k);
+         else
+            printf( "\n            ");
+
+         for( j = 0; j < m; j++)
+            printf( "%7.2f ", fxx[k][i][j]);
+      }
+   }
+   printf( "\n\n");*/
+   // -------------------------------------------- end of Debug ---------------------------------------------
+
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-void calcGamma( unsigned m, unsigned p, unsigned w_idx[p], unsigned n_idx[p], double dx[m],
-                double fxx[m][m][m], double maxRes, double Gamma_ijk[p][p][p])
+void calcGamma( unsigned m, unsigned p, unsigned q, unsigned n_idx[p], unsigned w_idx[q],
+                double dx[m], double fxx[m][m][m], double maxRes, double Gamma_ijk[p][q][q])
 {
    // Calculation of curvature factors Gamma_ijk
    // ------------------------------------------
    //
    // m     : total number of equations/independents
-   // p     : number of non-linear equations/independents
-   // w_idx : index of non-linear dependent, ie of j in dx[j] and of j and k in fxx[i][j][k]
+   // p     : number of non-linear equations
+   // q     : number of non-linear independents
    // n_idx : index of non-linear equation, ie of i in fxx[i][j][k]
+   // w_idx : index of non-linear dependent, ie of j in dx[j] and of j and k in fxx[i][j][k]
    // dx    : Newton step first iteration = x1 - x0, and dx[w_idx] = w1 - w0
    // fxx   : Hessian as function of x0
 
    unsigned i, j, k;
 
    for( i = 0; i < p; i++)
-      for( j = 0; j < p; j++)
-         for( k = 0; k < p; k++)
+      for( j = 0; j < q; j++)
+         for( k = 0; k < q; k++)
             Gamma_ijk[i][j][k] = fabs(0.5 * fxx[n_idx[i]][w_idx[j]][w_idx[k]] * (dx[w_idx[j]] * dx[w_idx[k]]) / maxRes);
 }
 
@@ -350,16 +371,17 @@ void calcGamma( unsigned m, unsigned p, unsigned w_idx[p], unsigned n_idx[p], do
 // --------------------------------------------------------------------------------------------------------------------------------
 
 void calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, unsigned m, unsigned p,
-                unsigned w_idx[p], unsigned n_idx[p], double x[m], double dx[m], double f[m],
-                double fxx[m][m][m], double lambda, double maxRes, double alpha[p])
+                unsigned q, unsigned n_idx[p], unsigned w_idx[p], double x[m], double dx[m],
+                double f[m], double fxx[m][m][m], double lambda, double maxRes, double alpha[p])
 {
    // Calculation of alpha coefficients for all non-linear equations
    // --------------------------------------------------------------
    //
    // m     : total number of equations/independents
-   // p     : number of non-linear equations/independents
-   // w_idx : index of non-linear dependent, ie of j in x[j] and dx[j] and of j and k in fxx[i][j][k]
+   // p     : number of non-linear equations
+   // q     : number of non-linear independents
    // n_idx : index of non-linear equation, ie of i in f[i] and fxx[i][j][k]
+   // w_idx : index of non-linear dependent, ie of j in x[j] and dx[j] and of j and k in fxx[i][j][k]
    // x     : all independents (non-linear & linear)
    // dx    : Newton step first iteration = x1 - x0, and dx[w_idx] = w1 - w0
    // f     : Function values (ie residuals) as function of x0
@@ -380,31 +402,30 @@ void calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, unsign
 
    // Calculate residuals f_x1_star for damped guess x1_star
    double f_x1_star[m];
-   //(systemData->residualFunc)(dataAndThreadData, x1_star, f_x1_star, (int*)&systemData->size);
    (systemData->residualFunc)(&resUserData, x1_star, f_x1_star, (int*)&systemData->size);
 
    // For each non-linear independent get w1_star - w0
-   double w1_star_w0[p];
-   for( j = 0; j < p; j++)
+   double w1_star_w0[q];
+   for( j = 0; j < q; j++)
       w1_star_w0[j] = lambda * dx[w_idx[j]];
 
    // Calculate alpha for each non-linear equation i
    for( i = 0; i < p; ++i)
    {
-      // Vector w_times_fww_w0 = (w1_star - w0)' * fww_w0  (1 x p * p x p --> 1 x p vector)
-      double w_times_fww_w0[p];
-      for( j = 0; j < p; j++)
+      // Vector w_times_fww_w0 = (w1_star - w0)' * fww_w0  (1 x q * q x q --> 1 x q vector)
+      double w_times_fww_w0[q];
+      for( j = 0; j < q; j++)
       {
          // For each independent
          w_times_fww_w0[j] = 0;
-         for( k = 0; k < p; k++)
+         for( k = 0; k < q; k++)
             w_times_fww_w0[j] += w1_star_w0[k] * fxx[n_idx[i]][w_idx[k]][w_idx[j]];
       }
 
       // Scalar w_times_f_times_w = w_times_f_i_ww_w0 * (w1_star - w0) = (w1_star - w0)' * f_i_ww_w0 * (w1_star - w0)
-      // (1 x p * p x 1 vector --> scalar)
+      // (1 x q * q x 1 vector --> scalar)
       double w_times_fww_times_w = 0;
-      for( k = 0; k < p; k++)
+      for( k = 0; k < q; k++)
          w_times_fww_times_w += w_times_fww_w0[k] * w1_star_w0[k];
 
       // Calculate alpha for the non-linear equations
@@ -416,7 +437,7 @@ void calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, unsign
 
 void getInvJacobian( unsigned m, double fx[m][m], double inv_fx[m][m])
 {
-   // Calculates inverse matrix of Jacobian fx as function of w0 (p x p matrix)
+   // Calculates inverse matrix of Jacobian fx as function of x0 (m x m matrix)
    // -------------------------------------------------------------------------
    //
    // m     : total number of equations/independents
@@ -452,16 +473,15 @@ void getInvJacobian( unsigned m, double fx[m][m], double inv_fx[m][m])
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-void calcSigma( unsigned m, unsigned p, unsigned w_idx[p], unsigned n_idx[p],
-                double dx[m], double fx[m][m], double fxx[m][m][m], double Sigma[p][p])
+void calcSigma( unsigned m, unsigned q, unsigned w_idx[q], double dx[m],
+                double fx[m][m], double fxx[m][m][m], double Sigma[q][q])
 {
    // Calculation of solution sensitivities Sigma_ij
    // ----------------------------------------------
    //
    // m     : total number of equations/independents
-   // p     : number of non-linear equations/independents
+   // q     : number of non-linear variables
    // w_idx : index of non-linear dependent, ie of j in dx[j] and of j and k in fxx[i][j][k]
-   // n_idx : index of non-linear equation, ie of i in fx[i][j] and fxx[i][j][k]
    // dx    : Newton step first iteration = x1 - x0, and dx[w_idx] = w1 - w0
    // fx    : Jacobian as function of x0
    // fxx   : Hessian as function of x0
@@ -490,41 +510,41 @@ void calcSigma( unsigned m, unsigned p, unsigned w_idx[p], unsigned n_idx[p],
          inv_fx[i][j] = -inv_fx[i][j];
    MatMult( m, m, m, inv_fx, H_i, tmp1);
 
-   // Abstract matrix tmp2 from tmp1 for only non-linear (p x p matrix)
-   double tmp2[p][p];
-   for( i = 0; i < p; i++)
-      for( j = 0; j < p; j++)
+   // Abstract matrix tmp2 from tmp1 for only non-linear (q x q matrix)
+   double tmp2[q][q];
+   for( i = 0; i < q; i++)
+      for( j = 0; j < q; j++)
          tmp2[i][j] = tmp1[w_idx[i]][w_idx[j]];
 
-   // Create a p x p matrix wDiag with w1 - w0 = dx[w_idx] on diagonal
-   double wDiag[p][p];
-   for( i = 0; i < p; i++)
-      for( j = 0; j < p; j++)
+   // Create a q x q matrix wDiag with w1 - w0 = dx[w_idx] on diagonal
+   double wDiag[q][q];
+   for( i = 0; i < q; i++)
+      for( j = 0; j < q; j++)
          if (i == j)
             wDiag[i][j] = dx[w_idx[i]];
          else
             wDiag[i][j] = 0;
 
    // Get inverse matrix inv_wDiag of wDiag
-   double inv_wDiag[p][p];
-   getInvJacobian( p, wDiag, inv_wDiag);
+   double inv_wDiag[q][q];
+   getInvJacobian( q, wDiag, inv_wDiag);
 
    // Calculate tmp3 = | inv_wDiag | * tmp2
-   // (p x p matrix) *  (p x p matrix) --> p x p matrix
-   double tmp3[p][p];
-   for( i = 0; i < p; i++)
-      for( j = 0; j < p; j++)
+   // (q x q matrix) *  (q x q matrix) --> q x q matrix
+   double tmp3[q][q];
+   for( i = 0; i < q; i++)
+      for( j = 0; j < q; j++)
          inv_wDiag[i][j] = fabs(inv_wDiag[i][j]);
-   MatMult( p, p, p, inv_wDiag, tmp2, tmp3);
+   MatMult( q, q, q, inv_wDiag, tmp2, tmp3);
 
    // Calculate Sigma = tmp3 * wDiag =  | inv_wDiag | * tmp2 * wDiag = | inv_wDiag | * -inv_fx * H_i * wDiag
-   MatMult( p, p, p, tmp3, wDiag, Sigma);
+   MatMult( q, q, q, tmp3, wDiag, Sigma);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-void PrintResults( DATA* data, unsigned sysNumber, unsigned p, unsigned w_idx[p], unsigned n_idx[p], double x0[p],
-                   double lambda, double alpha[p], double Gamma_ijk[p][p][p], double Sigma_ij[p][p])
+void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsigned q, unsigned n_idx[p], unsigned w_idx[q],
+                   double x0[m], double lambda, double alpha[p], double Gamma_ijk[p][q][q], double Sigma_ij[q][q])
 {
    unsigned i, j, k;
 
@@ -538,7 +558,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned p, unsigned w_idx[p]
       printf("      eq_%d : %s\n", n_idx[i]+1, "???"); //, modelInfoGetFunction(&data->modelData->modelDataXml, i).name);
    printf("\n");
 
-   for( j = 0; j < p; j++)
+   for( j = 0; j < q; j++)
       printf("      var_%d: %8s = %10.8g\n", w_idx[j]+1, data->modelData->realVarsData[var_id(w_idx[j], data, systemData)].info.name, x0[w_idx[j]]);
    printf("\n");
 
@@ -558,20 +578,20 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned p, unsigned w_idx[p]
 
    for( i = 0; i < p; i++)
    {
-      for( j = 0; j < p; j++)
-          for( k = 0; k <= j; k++)
+      for( j = 0; j < q; j++)
+          for( k = j; k < q; k++)
              if (Gamma_ijk[i][j][k] > 1.e-6)
                 printf("      Gamma_%d%d%d = %8.3f\n", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
    }
    printf("\n");
 
    printf("      Sigma_ij\n           ");
-   for( j = 0; j < p; j++)
+   for( j = 0; j < q; j++)
       printf("      j=%2d", w_idx[j]+1);
-   for( i = 0; i < p; i++)
+   for( i = 0; i < q; i++)
    {
       printf("\n      i=%2d ", w_idx[i]+1);
-      for( j = 0; j < p; j++)
+      for( j = 0; j < q; j++)
          printf("%10.3f", Sigma_ij[i][j]);
    }
    printf("\n\n\n");
@@ -581,69 +601,154 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned p, unsigned w_idx[p]
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-  infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Hello newton diagnostics (version Teus)....");
+   infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Hello newton diagnostics (version Teus)....");
 
-  printf("\n   ****** Model name: %s\n", data->modelData->modelName);
-  printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
+   printf("\n   ****** Model name: %s\n", data->modelData->modelName);
+   printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
 
-  printf("   ****** Number of integer parameters    : %ld\n", data->modelData->nParametersInteger);
-  for( unsigned int i = 0; i < data->modelData->nParametersInteger; ++i)
-     printf("   ****** %2d: id=%d, name=%10s, value=%10ld\n", i+1, (data->modelData->integerParameterData[i].info.id),
-                                                                  (data->modelData->integerParameterData[i].info.name),
-                                                                  (data->modelData->integerParameterData[i].attribute.start));
+   printf("   ****** Number of integer parameters    : %ld\n", data->modelData->nParametersInteger);
+   for( unsigned int i = 0; i < data->modelData->nParametersInteger; ++i)
+      printf("   ****** %2d: id=%d, name=%10s, value=%10ld\n", i+1, (data->modelData->integerParameterData[i].info.id),
+                                                                    (data->modelData->integerParameterData[i].info.name),
+                                                                    (data->modelData->integerParameterData[i].attribute.start));
 
-  printf("   ****** Number of discrete real params  : %ld\n", data->modelData->nDiscreteReal);
-  printf("   ****** Number of real parameters       : %ld\n", data->modelData->nParametersReal);
-  for( unsigned int i = 0; i < data->modelData->nParametersReal; ++i)
-     printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realParameterData[i].info.id),
-                                                                  (data->modelData->realParameterData[i].info.name),
-                                                                  (data->modelData->realParameterData[i].attribute.start));
+   printf("   ****** Number of discrete real params  : %ld\n", data->modelData->nDiscreteReal);
+   printf("   ****** Number of real parameters       : %ld\n", data->modelData->nParametersReal);
+   for( unsigned int i = 0; i < data->modelData->nParametersReal; ++i)
+      printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realParameterData[i].info.id),
+                                                                   (data->modelData->realParameterData[i].info.name),
+                                                                   (data->modelData->realParameterData[i].attribute.start));
 
-  printf("   ****** Number of integer variables     : %ld\n", data->modelData->nVariablesInteger);
-  for( unsigned int i = 0; i < data->modelData->nVariablesInteger; ++i)
-     printf("   ****** %2d: id=%d, name=%10s, value=%10ld\n", i+1, (data->modelData->integerVarsData[i].info.id),
-                                                                  (data->modelData->integerVarsData[i].info.name),
-                                                                  (data->modelData->integerVarsData[i].attribute.start));
+   printf("   ****** Number of integer variables     : %ld\n", data->modelData->nVariablesInteger);
+   for( unsigned int i = 0; i < data->modelData->nVariablesInteger; ++i)
+      printf("   ****** %2d: id=%d, name=%10s, value=%10ld\n", i+1, (data->modelData->integerVarsData[i].info.id),
+                                                                    (data->modelData->integerVarsData[i].info.name),
+                                                                    (data->modelData->integerVarsData[i].attribute.start));
 
-  printf("   ****** Number of real variables        : %ld\n", data->modelData->nVariablesReal);
-  for( unsigned int i = 0; i < data->modelData->nVariablesReal; ++i)
-     printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realVarsData[i].info.id),
-                                                                  (data->modelData->realVarsData[i].info.name),
-                                                                  (data->modelData->realVarsData[i].attribute.start));
+   printf("   ****** Number of real variables        : %ld\n", data->modelData->nVariablesReal);
+   for( unsigned int i = 0; i < data->modelData->nVariablesReal; ++i)
+      printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realVarsData[i].info.id),
+                                                                   (data->modelData->realVarsData[i].info.name),
+                                                                   (data->modelData->realVarsData[i].attribute.start));
 
-  printf("   ****** Number of equations             : %ld\n", data->modelData->modelDataXml.nEquations);
-  printf("   ****** Number of functions             : %ld\n", data->modelData->modelDataXml.nFunctions);
-  printf("   ****** Number of relations             : %ld\n", data->modelData->nRelations);
-  printf("   ****** Number of Jacobians             : %ld\n", data->modelData->nJacobians);
-  printf("   ****** Number of sensitivity params    : %ld\n", data->modelData->nSensitivityVars);
-  printf("   ****** Number of input variables       : %ld\n", data->modelData->nInputVars);
-  printf("   ****** Number of output variables      : %ld\n", data->modelData->nOutputVars);
-  printf("   ****** Number of linear systems        : %ld\n", data->modelData->nLinearSystems);
-  printf("   ****** Number of nonlinear systems     : %ld\n", data->modelData->nNonLinearSystems);
-  printf("   ****** Current index linear equation   : %d\n", data->simulationInfo->currentLinearSystemIndex);
-  //printf("   ****** Current index nonlinear equation: %d\n", data->simulationInfo->currentNonlinearSystemIndex);
+   printf("   ****** Number of equations             : %ld\n", data->modelData->modelDataXml.nEquations);
+   printf("   ****** Number of functions             : %ld\n", data->modelData->modelDataXml.nFunctions);
+   printf("   ****** Number of relations             : %ld\n", data->modelData->nRelations);
+   printf("   ****** Number of Jacobians             : %ld\n", data->modelData->nJacobians);
+   printf("   ****** Number of sensitivity params    : %ld\n", data->modelData->nSensitivityVars);
+   printf("   ****** Number of input variables       : %ld\n", data->modelData->nInputVars);
+   printf("   ****** Number of output variables      : %ld\n", data->modelData->nOutputVars);
+   printf("   ****** Number of linear systems        : %ld\n", data->modelData->nLinearSystems);
+   printf("   ****** Number of nonlinear systems     : %ld\n", data->modelData->nNonLinearSystems);
+   printf("   ****** Current index linear equation   : %d\n", data->simulationInfo->currentLinearSystemIndex);
 
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  printf("   Nonlinear equation: %d\n", sysNumber);
-  printf("   equationIndex     : %ld\n", systemData->equationIndex);
-  printf("   size              : %ld\n", systemData->size);
+   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+   //printf("   Nonlinear equation: %d\n", sysNumber);
+   //printf("   equationIndex     : %ld\n", systemData->equationIndex);
+   //printf("   size              : %ld\n", systemData->size);
 
+   // --------------------------------------------------------------------------------------------------------------------------------
 
-  // --------------------------------------------------------------------------------------------------------------------------------
+   // m: total number of equations f(x)
+   // p: number of non-linear equations n(x)
+   // q: number of variables which non-linear equations n(x) just depend on
 
-  // m total number of equations f(x)
-  // p number of non-linear equations n(x)
+   unsigned m = systemData->size;
+   unsigned i;
 
-  unsigned m = systemData->size;
+   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
+   /*unsigned p = systemData->nonlinearPattern->numberOfNonlinear;
+   //unsigned q = ;
+   double w0[p];
+   unsigned w_idx[p];
+
+   // w_idx are the indices of the independent variables in vector x0 (sorted)
+   unsigned checked[p];
+   for( i = 0; i < p; i++)
+      checked[i] = 0;
+   for( i = 0; i < p; i++)
+   {
+      unsigned smallest = 9999;
+      unsigned idx_sml = 0;
+      for( unsigned j = 0; j < p; j++)
+      {
+         if ( systemData->nonlinearPattern->columns[j] < smallest && !checked[j])
+         {
+            smallest = systemData->nonlinearPattern->columns[j];
+            idx_sml = j;
+         }
+      }
+      w_idx[i] = smallest;
+      checked[idx_sml] = 1;
+   }
+
+   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
+   /*double n[p];
+   unsigned n_idx[p];
+
+   // n_idx are the indices of the non-linear functions (sorted) in vector f, fx, fxx, etc
+   for( i = 0; i < p; i++)
+      checked[i] = 0;
+   for( i = 0; i < p; i++)
+   {
+      unsigned smallest = 9999;
+      unsigned idx_sml = 0;
+      for( unsigned j = 0; j < p; j++)
+      {
+         if ( systemData->nonlinearPattern->rows[j] < smallest && !checked[j])
+         {
+            smallest = systemData->nonlinearPattern->rows[j];
+            idx_sml = j;
+         }
+      }
+      n_idx[i] = smallest;
+      checked[idx_sml] = 1;
+   }*/
+
+ // --------------------------------------------------------------------------------------------------------------------------------
+
+   // NONLINEAR_PATTERN* nonlinearPattern is part of NONLINEAR_SYSTEM_DATA
+   // non-linear dependents: unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
+   // non-linear functions : unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
+   // NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+   //unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, int var_idx);
+   //unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, int eqn_idx);
+
+   /*printf("\n\n   Non-linear variables of all equations ....\n");
+   if (!systemData->nonlinearPattern)
+      printf("      systemData->nonlinearPattern empty ....\n");
+   else
+   {
+      printf("      systemData->nonlinearPattern exists ....\n");
+      printf("      number of equations          = %d\n", systemData->nonlinearPattern->numberOfEqns);
+      printf("      number of variables          = %d\n", systemData->nonlinearPattern->numberOfVars);
+      printf("      number of non-linear entries = %d\n", systemData->nonlinearPattern->numberOfNonlinear);
+
+      for ( unsigned int i = 0; i < systemData->nonlinearPattern->numberOfNonlinear; i++)
+      {
+         // row contains index of the non-linear function i in
+	 unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, i);
+         printf("f_%d, func: %d, ", i, *row);
+         printf("\n");
+      }
+      for ( unsigned int j = 0; j < systemData->nonlinearPattern->numberOfNonlinear; j++)
+      {
+         unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, j);
+         printf("v_%d: var: %d, ", j, *col);
+         printf("\n");
+      }
+   }*/
+
 
   // --------------------------------------------------------------------------------------------------------------------------------
   //  Thermo hydraulic case
   // --------------------------------------------------------------------------------------------------------------------------------
 
   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-  /*unsigned p = m;
-  double w0[p];
-  unsigned w_idx[p];
+  unsigned p = m;
+  unsigned q = m;
+  double w0[q];
+  unsigned w_idx[q];
   w_idx[0] = 0;
   w_idx[1] = 1;
   w_idx[2] = 2;
@@ -659,96 +764,71 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   n_idx[2] = 2;
   n_idx[3] = 3;
   n_idx[4] = 4;
-  n_idx[5] = 5;*/
+  n_idx[5] = 5;
 
    // --------------------------------------------------------------------------------------------------------------------------------
    //  DC circuit case
    // --------------------------------------------------------------------------------------------------------------------------------
 
    // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-   unsigned p = 3;
-   double w0[p];
-   unsigned w_idx[p];
+   /*unsigned q;
+   //double* w0;
+   //unsigned* w_idx;
 
-   // w_idx are the indices of the independent variable in vector x0
+   q = 3;
+   double w0[q];
+   unsigned w_idx[q];
+
+   //w0 = (double*)malloc(p);
+   //w_idx = (unsigned*)malloc(p);
+
    w_idx[0] = 2;  // var^3
    w_idx[1] = 3;  // var^4
    w_idx[2] = 4;  // var^5
 
+   printf("\n   .....");
+   for( i = 0; i < q; i++)
+      printf("\n   .....w_idx[%d] = %d", i, w_idx[i]);
+   printf("\n");
+
    // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
+   unsigned p;
+   //double* n;
+   //unsigned* n_idx;
+
+   p = 2;
    double n[p];
    unsigned n_idx[p];
 
-   // n_idx are the indices of the non-linear functions in vector f, fx, fxx, etc
-   n_idx[0] = 1;  // f^2
-   n_idx[1] = 3;  // f^4
-   n_idx[2] = 4;  // f^5
+   //n = (double*)malloc(p);
+   //n_idx = (unsigned*)malloc(p);
 
-   // NONLINEAR_PATTERN* nonlinearPattern is part of NONLINEAR_SYSTEM_DATA
-   // non-linear dependents: unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
-   // non-linear functions : unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
-   // NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-   //unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, int var_idx);
-   //unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, int eqn_idx);
-   //printf("\n\n   Non-linear varaibles of all equations ....%d\n",systemData->nonlinearPattern->numberOfNonlinear);
-   printf("\n\n   Non-linear variables of all equations ....\n");
-   if (!systemData->nonlinearPattern)
-      printf("   systemData->nonlinearPattern empty ....\n");
-   else
-   {
-      printf("   systemData->nonlinearPattern exists ....\n");
-      for ( unsigned int i = 0; i < systemData->nonlinearPattern->numberOfNonlinear; i++)
-      {
-         unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, i);
-         printf("f_%d vars: ", i);
-         for (unsigned int j = 0 ; j < systemData->nonlinearPattern->numberOfEqns; j++)
-            printf("%d, ", j);
-         printf("\n");
-      }
-   }
+   //n_idx[0] = 1;  // f^2
+   //n_idx[1] = 3;  // f^4
+   //n_idx[2] = 4;  // f^5
 
-// --------------------------------------------------------------------------------------------------------------------------------
+   n_idx[0] = 3;  // f^4
+   n_idx[1] = 4;  // f^5
 
-   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-   /*unsigned p;
-   double* w0;
-   unsigned* w_idx;
-
-   p = 3;
-
-   w0 = (double*)malloc(p);
-   w_idx = (unsigned*)malloc(p);
-
-   w_idx[0] = 2;  // var^3
-   w_idx[1] = 3;  // var^4
-   w_idx[2] = 4;  // var^5
-
-   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-   double* n;
-   unsigned* n_idx;
-
-   n = (double*)malloc(p);
-   n_idx = (unsigned*)malloc(p);
-
-   n_idx[0] = 1;  // f^2
-   n_idx[1] = 3;  // f^4
-   n_idx[2] = 4;  // f^5*/
+   printf("\n   .....");
+   for( i = 0; i < p; i++)
+      printf("\n   .....n_idx[%d] = %d", i, n_idx[i]);
+   printf("\n");*/
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
    // Linear dependables "z": store the remaining ones (those not being in w_idx) in z_idx
-   unsigned i;
    double* z;
    unsigned* z_idx;
-   if (m > p)
+   if (m > q)
    {
-      z = (double*)malloc(m-p);
-      z_idx = (unsigned*)malloc(m-p);
+      z = (double*)malloc(m-q);
+      z_idx = (unsigned*)malloc(m-q);
       unsigned j = 0;
       for( i = 0; i < m; i++)
       {
          unsigned i_in_w = 0;
-         for( unsigned k = 0; k < p; k++)
+         for( unsigned k = 0; k < q; k++)
          {
             if (w_idx[k] == i)
             {
@@ -762,9 +842,6 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
             j++;
          }
       }
-      for( i = 0; i < m-p; i++)
-         printf("\n               z_idx[%d] = %d", i, z_idx[i]);
-      printf("\n");
    }
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -779,18 +856,44 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    }
 
    // Store non-linear dependents in w0
-   for( i = 0; i < p; i++)
+   for( i = 0; i < q; i++)
       w0[i] = x0[w_idx[i]];
 
+// --------------------------------------------------------------------------------------------------------------------------------
+
+   printf("\n   Information about equations from non-linear pattern ....\n\n");
+   printf("               Total number of equations    = %d\n", systemData->nonlinearPattern->numberOfEqns);
+   printf("               Number of independents       = %d\n", systemData->nonlinearPattern->numberOfVars);
+   printf("               Number of non-linear entries = %d\n", systemData->nonlinearPattern->numberOfNonlinear);
+
    // Prints values of vector x0
-   printf("\n   Vector x0 ....\n");
+   printf("\n   Vector x0: all dependents ....\n");
    for( i = 0; i < m; i++)
       printf("\n               x0[%d] = %14.10f  (%s)", i, x0[i], data->modelData->realVarsData[var_id(i, data, systemData)].info.name);
+   printf("\n");
+
+   // Prints vector w0
+   printf("\n   Vector w0: non-linear dependents ....\n");
+   for( i = 0; i < q; i++)
+      printf("\n               w0[%d] = %14.10f  (%s)", i, w0[i], data->modelData->realVarsData[var_id(w_idx[i], data, systemData)].info.name);
+   printf("\n");
+
+   // Prints vector z0
+   printf("\n   Vector z0: linear dependents ....\n");
+   for( i = 0; i < m-q; i++)
+      printf("\n               z0[%d] = %14.10f  (%s)", i, x0[z_idx[i]], data->modelData->realVarsData[var_id(z_idx[i], data, systemData)].info.name);
+   printf("\n");
 
    // Prints function values "f", i.e. residuals as function of x0
-   printf("\n\n   Function values of all equations f(x0) ....\n");
+   printf("\n   Function values of all equations f(x0) ....\n");
    for( i = 0; i < m; i++)
       printf("\n               f^%d = %14.10f", i+1, f[i]);
+   printf("\n");
+
+   // Prints function values "n" of non-linear equations, i.e. residuals as function of w0
+   printf("\n   Function values of non-linear equations n(w0) ....\n");
+   for( i = 0; i < p; i++)
+      printf("\n               n^%d = %14.10f", i+1, f[n_idx[i]]);
    printf("\n");
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -806,20 +909,38 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    double fxx[m][m][m];
    getHessian( data, threadData, sysNumber, m, fxx);
 
+   /*double Gam[m][m][m];
+   for( i = 0; i < p; i++)
+      for( unsigned j = 0; j < q; j++)
+         for( unsigned k = 0; k < q; k++)
+         {
+            Gam[n_idx[i]][w_idx[j]][w_idx[k]] = fabs(0.5 * fxx[n_idx[i]][w_idx[j]][w_idx[k]] * (dx[w_idx[j]] * dx[w_idx[k]]) / maxRes);
+            if (fabs(fxx[n_idx[i]][w_idx[j]][w_idx[k]]) > 1.e-6)
+            {
+               printf( "               ijk=%d%d%d ==> n_idx[i]=%d, w_idx[j]=%d, w_idx[k]=%d", i,j,k,n_idx[i]+1,w_idx[j]+1,w_idx[k]+1);
+               printf( ", fxx_%d%d%d= %7.3f",n_idx[i]+1,w_idx[j]+1,w_idx[k]+1,fxx[n_idx[i]][w_idx[j]][w_idx[k]]);
+               printf( ", Gamma_%d%d%d= %7.3f",n_idx[i]+1,w_idx[j]+1,w_idx[k]+1,Gam[n_idx[i]][w_idx[j]][w_idx[k]]);
+               printf( ", dx[w_idx[%d]]=dx[%d]=%7.3f"  ,j,w_idx[j]+1,dx[w_idx[j]]);
+               printf( ", dx[w_idx[%d]]=dx[%d]=%7.3f",k,w_idx[k]+1,dx[w_idx[k]]);
+               printf( ", maxRes=%7.3f\n", maxRes);
+            }
+         }
+    printf("\n\n");
+    return;*/
 // --------------------------------------------------------------------------------------------------------------------------------
 
    double lambda = 1.0; // 0.49; //
 
    double alpha[p];
-   calcAlpha( data, threadData, sysNumber, m, p, w_idx, n_idx, x0, dx, f, fxx, lambda, maxRes, alpha);
+   calcAlpha( data, threadData, sysNumber, m, p, q, n_idx, w_idx, x0, dx, f, fxx, lambda, maxRes, alpha);
 
-   double Gamma_ijk[p][p][p];
-   calcGamma( m, p, w_idx, n_idx, dx, fxx, maxRes, Gamma_ijk);
+   double Gamma_ijk[p][q][q];
+   calcGamma( m, p, q, n_idx, w_idx, dx, fxx, maxRes, Gamma_ijk);
 
-   double Sigma[p][p];
-   calcSigma( m, p, w_idx, n_idx, dx, fx, fxx, Sigma);
+   double Sigma[q][q];
+   calcSigma( m, q, w_idx, dx, fx, fxx, Sigma);
 
-   PrintResults( data, sysNumber, p, w_idx, n_idx, x0, lambda, alpha, Gamma_ijk, Sigma);
+   PrintResults( data, sysNumber, m, p, q, n_idx, w_idx, x0, lambda, alpha, Gamma_ijk, Sigma);
 
    infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Newton diagnostics (version Teus) finished!!");
 
