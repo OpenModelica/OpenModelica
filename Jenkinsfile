@@ -2,6 +2,7 @@ def common
 def shouldWeBuildMINGW
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
+def shouldWeEnableMinGWCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -16,7 +17,8 @@ pipeline {
   parameters {
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
-    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with CMake on macOS')
+    booleanParam(name: 'ENABLE_MINGW_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MinGW')
+    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on macOS')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -41,6 +43,8 @@ pipeline {
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
           print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
+          shouldWeEnableMinGWCMakeBuild_value = common.shouldWeEnableMinGWCMakeBuild()
+          print "shouldWeEnableMinGWCMakeBuild: ${shouldWeEnableMinGWCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -163,6 +167,29 @@ pipeline {
                                           + " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
                                       )
                 sh "build/bin/omc --version"
+              }
+            }
+          }
+        }
+        stage('cmake-OMDev-gcc') {
+          agent {
+            node {
+              label 'windows'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMinGWCMakeBuild_value}
+          }
+          steps {
+            script {
+              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
+                                        + ' -DOM_USE_CCACHE=OFF'
+                                        + ' -DCMAKE_INSTALL_PREFIX=build'
+                                        + ' -G "MSYS Makefiles"'
+                                      )
               }
             }
           }
