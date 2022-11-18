@@ -2292,7 +2292,7 @@ algorithm
     // print(String(diffEnum) + ":\n");
     // print(parseTreeStr(tree));
     // print("\n");
-    (_, treeLast) := List.first(diffLocal);
+    (diffEnum, treeLast) := List.first(diffLocal);
     (firstTreeSecondLast, firstTreeLast) := match treeLast
       case {} then (EMPTY(),EMPTY());
       case {firstTreeLast} then (EMPTY(),firstTreeLast);
@@ -2406,6 +2406,14 @@ algorithm
       case ((diffEnum1,tree1)::(diffEnum2, tree2)::diffLocal)
         guard diffEnum1==diffEnum2
         then (diffEnum1, listAppend(tree1, tree2))::diffLocal;
+
+      // ADD(WS) NEWLINE => NEWLINE
+      case (Diff.Add,tree1)::(diffLocal as ((Diff.Equal,tree2)::_))
+        guard tokenId(lastToken(firstTreeLast))==TokenId.WHITESPACE and tokenId(firstToken(tree2))==TokenId.NEWLINE
+        algorithm
+          diff := (Diff.Add,removeLastTokenInTrees(tree1))::diff;
+        then diffLocal;
+
       // A normal tree :)
       case diff1::diffLocal
         algorithm
@@ -2421,7 +2429,7 @@ algorithm
   hasAddedWS := false;
   for d in diff loop
     _ := match d
-      case (Diff.Add,_)
+      case (Diff.Add,tree)
         algorithm
           for t in tree loop
             _ := match firstNTokensInTree_reverse(t, 2)
@@ -2817,7 +2825,7 @@ function lastToken
   output Token token;
 algorithm
   token := match t
-    case EMPTY() then fail();
+    case EMPTY() algorithm if debug then print("lastToken fail\n"); end if; then fail();
     case LEAF() then t.token;
     case NODE() then lastToken(List.last(t.nodes));
   end match;
@@ -2883,7 +2891,7 @@ function makeNode
   input ParseTree label = EMPTY();
   output ParseTree node;
 algorithm
-  node := match (nodes,label)
+  node := match (list(n for n guard not isEmpty(n) in nodes),label)
     case ({},EMPTY()) then EMPTY();
     case ({node},EMPTY()) then node;
     else NODE(label, nodes);
