@@ -510,6 +510,15 @@ def shouldWeDisableAllCMakeBuilds() {
   return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
+def shouldWeEnableMinGWCMakeBuild() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/MinGW")) {
+      return true
+    }
+  }
+  return params.ENABLE_MINGW_CMAKE_BUILD
+}
+
 def shouldWeEnableMacOSCMakeBuild() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Enable/macOS")) {
