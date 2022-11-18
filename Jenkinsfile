@@ -131,7 +131,10 @@ pipeline {
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build"
+                                    , "/opt/cmake-3.17.2/bin/cmake")
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
@@ -152,12 +155,12 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
                 sh "echo PATH: $PATH"
-                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release" +
-                                          " -DOM_USE_CCACHE=OFF" +
-                                          " -DCMAKE_INSTALL_PREFIX=build" +
-                                          " -DOM_OMC_ENABLE_FORTRAN=OFF" +
-                                          " -DOM_OMC_ENABLE_IPOPT=OFF" +
-                                          " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                          + " -DOM_USE_CCACHE=OFF"
+                                          + " -DCMAKE_INSTALL_PREFIX=build"
+                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
+                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
+                                          + " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
                                       )
                 sh "build/bin/omc --version"
               }

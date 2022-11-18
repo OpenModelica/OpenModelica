@@ -12,10 +12,11 @@
     - [4.1.1. OpenModelica Options](#411-openmodelica-options)
     - [4.1.2. OpenModelica/OMCompiler Options](#412-openmodelicaomcompiler-options)
     - [4.1.3. OpenModelica/OMEdit Options](#413-openmodelicaomedit-options)
-    - [4.1.4. Other Options](#414-other-options)
-  - [4.2. Selecting a Compiler.](#42-selecting-a-compiler)
-  - [4.3. Disabling Colors for Makefile Generators](#43-disabling-colors-for-makefile-generators)
-  - [4.4. Enabling Verbose Output](#44-enabling-verbose-output)
+    - [4.1.4. OpenModelica/OMShell Options](#414-openmodelicaomshell-options)
+    - [4.1.4. Other OpenModleica specific Options](#414-other-openmodleica-specific-options)
+  - [4.2. Useful CMake Configuration Options](#42-useful-cmake-configuration-options)
+    - [4.2.1. Disabling Colors for Makefile Generators](#421-disabling-colors-for-makefile-generators)
+    - [4.2.2 Enabling Verbose Output](#422-enabling-verbose-output)
 - [5. Integration with Editors/Tools](#5-integration-with-editorstools)
 - [6. Running Tests (rtest)](#6-running-tests-rtest)
 
@@ -187,6 +188,7 @@ OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_IPOPT=ON
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
+OM_OMSHELL_ENABLE_TERMINAL=ON
 ```
 ### 4.1.1. OpenModelica Options
 `OM_USE_CCACHE` option is for enabling/disabling ccache support as explained in [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
@@ -194,9 +196,9 @@ OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser, OMPlot, OMShell. You will need to install and make available the necessary packages (and their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
 
 ### 4.1.2. OpenModelica/OMCompiler Options
-`OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This will require multiple Boost library components (file_system, program_options, ...)
+`OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This requires multiple Boost library components (file_system, program_options, ...)
 
-`OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does not have a Fortran compile you can disable this. Fortran is required if you enable IPOPT support (`OM_OMC_ENABLE_IPOPT`).
+`OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does not have a Fortran compiler you can disable this. Fortran is required if you enable IPOPT support (`OM_OMC_ENABLE_IPOPT`).
 
 `OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization support with Ipopt. Enabling this requires having a working Fortran compiler.
 
@@ -209,7 +211,10 @@ You should disable this if you are either
 
   - Using OMDev or other MSYS/MinGW setup and have specified the MSYS/MinGW system directories as your CMake install directory.
 
-### 4.1.4. Other Options
+### 4.1.4. OpenModelica/OMShell Options
+`OM_OMSHELL_ENABLE_TERMINAL` allows you to enable/disable the building of the OMShell-terminal command-line REPL application. This requires the GNU readline library. Note that this is different from the Qt based OMShell GUI application.
+
+### 4.1.4. Other OpenModleica specific Options
 There are also some additional options that are kept as a migration step to maintain the similarity with the `autotools` build system.
 
 
@@ -220,19 +225,8 @@ OM_OMC_USE_LAPACK=ON
 
 These options are not guaranteed to work properly if they are changed from their default values as of now.
 
-## 4.2. Selecting a Compiler.
-If you, for example, want to use clang instead of GCC, you can do so by modifying `CMAKE_<LANG>_COMPILER`
-```sh
-cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-```
-
-CMake picks up the default compiler by checking for CC/CXX in your environment. This means you can also achieve the same thing by modifying the environment just for the current CMake invocation:
-
-```sh
-CC=clang CXX=clang++ cmake ..
-```
-
-## 4.3. Disabling Colors for Makefile Generators
+## 4.2. Useful CMake Configuration Options
+### 4.2.1. Disabling Colors for Makefile Generators
 If you do not like colors you can disable them.
 ```sh
 cmake .. -DCMAKE_COLOR_MAKEFILE=OFF
@@ -240,7 +234,7 @@ cmake .. -DCMAKE_COLOR_MAKEFILE=OFF
 
 This can be useful if you want to redirect output to a file for example.
 
-## 4.4. Enabling Verbose Output
+### 4.2.2 Enabling Verbose Output
 Sometimes you might want to get a verbose output to see what CMake is actually doing and what exact commands it is issuing.
 
 If you are using CMake itself to issue builds (recommended) instead of invoking the generator directly, you can specify `-v` to the build command
