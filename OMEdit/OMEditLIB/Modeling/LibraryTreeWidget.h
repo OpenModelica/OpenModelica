@@ -314,6 +314,7 @@ public:
   void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
+  bool reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
@@ -399,6 +400,7 @@ private:
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
+  QAction *mpReloadClassAction;
   QAction *mpUnloadCompositeModelFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
@@ -448,6 +450,7 @@ public slots:
   void simulationSetup();
   void duplicateClass();
   void unloadClass();
+  void reloadClass();
   void unloadCompositeModelOrTextFile();
   void createNewFile();
   void createNewFileEmpty();
