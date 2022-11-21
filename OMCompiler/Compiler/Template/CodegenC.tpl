@@ -6290,7 +6290,9 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       <<
       if(<%helpIf%>)
       {
+        <%modelicaLine(eqInfo(eq))%>
         <%assign%>
+        <%endModelicaLine()%>
       }
       >>
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
@@ -6301,7 +6303,9 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       <<
       if(<%helpIf%>)
       {
+        <%modelicaLine(eqInfo(eq))%>
         <%assign%>
+        <%endModelicaLine()%>
       }
       <%elseWhen%>
       >>
@@ -6320,7 +6324,9 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE())
     <<
     else if(<%helpIf%>)
     {
+      <%modelicaLine(eqInfo(eq))%>
       <%assign%>
+      <%endModelicaLine()%>
     }
     >>
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
@@ -6331,7 +6337,9 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(el
     <<
     else if(<%helpIf%>)
     {
+      <%modelicaLine(eqInfo(eq))%>
       <%assign%>
+      <%endModelicaLine()%>
     }
     >>
 
