@@ -327,10 +327,11 @@ algorithm
   execStat(getInstanceName());
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
-  if settings.arrayConnect then
+  if settings.arrayConnect and
+     FlatModel.hasArrayConnections(flatModel, Flags.getConfigInt(Flags.ARRAY_CONNECT_MIN_SIZE)) then
     flatModel := resolveArrayConnections(flatModel);
   else
-    flatModel := resolveConnections(flatModel, deleted_vars);
+    flatModel := resolveConnections(flatModel, deleted_vars, settings);
   end if;
   InstUtil.dumpFlatModelDebug("connections", flatModel);
 end flatten;
@@ -1512,13 +1513,10 @@ algorithm
 
     case Equation.FOR()
       algorithm
-        if settings.arrayConnect then
-          eq.body := flattenEquations(eq.body, EMPTY_PREFIX, settings);
-          eql := eq :: equations;
-        elseif not settings.scalarize then
-          eql := splitForLoop(eq, prefix, equations, settings);
-        else
+        if settings.scalarize then
           eql := unrollForLoop(eq, prefix, equations, settings);
+        else
+          eql := splitForLoop(eq, prefix, equations, settings);
         end if;
       then eql;
 
@@ -1742,6 +1740,7 @@ algorithm
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
+    range := Ceval.evalExpOpt(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
     eq := Equation.FOR(iter, range, connects, scope, src);
 
     if settings.arrayConnect then
@@ -1966,6 +1965,7 @@ function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
   input UnorderedSet<ComponentRef> deletedVars;
+  input FlattenSettings settings;
 protected
   Connections conns;
   list<Equation> conn_eql, ec_eql;
@@ -1985,9 +1985,11 @@ algorithm
   // get the connections from the model
   (flatModel, conns) := Connections.collect(flatModel,
     function isDeletedConnector(deletedVars = deletedVars));
+  ctable := CardinalityTable.fromConnections(conns);
 
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+
   // handle overconstrained connections
   // - build the graph
   // - evaluate the Connections.* operators
@@ -2000,6 +2002,12 @@ algorithm
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
   // build the sets, check the broken connects
+  conns := Connections.split(conns);
+
+  if settings.scalarize or settings.newBackend then
+    conns := Connections.scalarize(conns);
+  end if;
+
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   // generate the equations
@@ -2014,8 +2022,6 @@ algorithm
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
   flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
-
-  ctable := CardinalityTable.fromConnections(conns);
 
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then

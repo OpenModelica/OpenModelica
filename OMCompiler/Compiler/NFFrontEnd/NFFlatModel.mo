@@ -1005,5 +1005,20 @@ public
     end match;
   end obfuscateAbsynCref2;
 
+  function hasArrayConnections
+    input FlatModel flatModel;
+    input Integer minSize = 100;
+    output Boolean hasArrays = false;
+  protected
+    Type ty;
+  algorithm
+    for eq in flatModel.equations loop
+      if Equation.contains(eq, Equation.isConnect) and Equation.sizeOf(eq) >= minSize then
+        hasArrays := true;
+        return;
+      end if;
+    end for;
+  end hasArrayConnections;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

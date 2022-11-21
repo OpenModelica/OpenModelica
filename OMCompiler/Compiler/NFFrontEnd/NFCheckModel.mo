@@ -57,7 +57,7 @@ algorithm
     (variables, equations) := countVariableSize(v, variables, equations);
   end for;
 
-  equations := equations + countEquationListSize(flatModel.equations);
+  equations := equations + Equation.sizeOfList(flatModel.equations);
 
   for a in flatModel.algorithms loop
     equations := equations + countAlgorithmSize(a);
@@ -89,44 +89,6 @@ algorithm
 
   equations := equations + Type.sizeOf(Binding.getType(binding));
 end countVariableSize;
-
-function countEquationListSize
-  input list<Equation> eqs;
-  output Integer equations = 0;
-algorithm
-  for e in eqs loop
-    equations := equations + countEquationSize(e);
-  end for;
-end countEquationListSize;
-
-function countEquationSize
-  input Equation eq;
-  output Integer equations;
-algorithm
-  equations := match eq
-    case Equation.EQUALITY() then Type.sizeOf(eq.ty);
-    case Equation.ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
-    case Equation.FOR() then countEquationListSize(eq.body);
-    case Equation.IF() then countEquationBranchSize(listHead(eq.branches));
-    case Equation.WHEN() then countEquationBranchSize(listHead(eq.branches));
-    else 0;
-  end match;
-end countEquationSize;
-
-function countEquationBranchSize
-  input Equation.Branch branch;
-  output Integer equations;
-algorithm
-  equations := match branch
-    case Equation.Branch.BRANCH() then countEquationListSize(branch.body);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got invalid branch", sourceInfo());
-      then
-        fail();
-  end match;
-end countEquationBranchSize;
 
 function countAlgorithmSize
   input Algorithm alg;

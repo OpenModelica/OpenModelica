@@ -409,7 +409,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SIMULATION,
   Flags.OBFUSCATE,
   Flags.FMU_RUNTIME_DEPENDS,
-  Flags.FRONTEND_INLINE
+  Flags.FRONTEND_INLINE,
+  Flags.ARRAY_CONNECT_MIN_SIZE
 };
 
 public function new
