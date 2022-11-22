@@ -82,24 +82,29 @@ bool DynamicAnnotation::update(double time, Element *parent)
  */
 void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
 {
-  FlatModelica::Expression expression;
-  if (isDynamicSelectExpression()) {
-    expression = mExp.arg(0);
-  } else {
-    expression = mExp;
-  }
-  fromExp(expression.evaluate([&] (std::string name) {
-            auto vname = QString::fromStdString(name);
-            // the instance api returns the qualified cref
-            vname = StringHandler::getLastWordAfterDot(vname);
+  try {
+    FlatModelica::Expression expression;
+    if (isDynamicSelectExpression()) {
+      expression = mExp.arg(0);
+    } else {
+      expression = mExp;
+    }
+    fromExp(expression.evaluate([&] (std::string name) {
+              auto vname = QString::fromStdString(name);
+              // the instance api returns the qualified cref
+              vname = StringHandler::getLastWordAfterDot(vname);
 
-            foreach (auto pElement, pModel->getElements()) {
-              if (pElement->getName().compare(vname) == 0) {
-                return pElement->getBinding();
+              foreach (auto pElement, pModel->getElements()) {
+                if (pElement->getName().compare(vname) == 0) {
+                  return pElement->getBinding();
+                }
               }
-            }
-            return FlatModelica::Expression();
-          }));
+              return FlatModelica::Expression();
+            }));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to evaluate expression.";
+    qDebug() << e.what();
+  }
 }
 
 /*!

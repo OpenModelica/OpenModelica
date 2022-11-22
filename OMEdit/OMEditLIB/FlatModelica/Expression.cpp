@@ -1629,7 +1629,12 @@ namespace FlatModelica
 
   void Unary::print(std::ostream &os) const
   {
-    os << _op << " " << _e;
+    os << _op;
+    // add space for not operator
+    if (_op.type() == Operator::Not) {
+      os << " ";
+    }
+    os << _e;
   }
 
   QJsonValue Unary::serialize() const
