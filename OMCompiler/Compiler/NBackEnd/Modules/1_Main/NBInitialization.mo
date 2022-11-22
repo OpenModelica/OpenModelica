@@ -173,7 +173,7 @@ public
         guard BackendExtension.VariableAttributes.isFixed(attributes) algorithm
           name := BVariable.getVarName(state);
           (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
-          start_eq := BEquation.Equation.makeEq(name, start_name, idx, NBEquation.START_STR);
+          start_eq := BEquation.Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
           Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
           Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
@@ -267,7 +267,7 @@ public
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
     (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
-    start_eq := Equation.makeEq(name, start_name, idx, NBEquation.START_STR, frames);
+    start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
@@ -288,7 +288,7 @@ public
         Pointer<BEquation.Equation> pre_eq;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE_STATE(previous = previous)))
         algorithm
-          pre_eq := BEquation.Equation.makeEq(BVariable.getVarName(disc_state), BVariable.getVarName(previous), idx, NBEquation.PRE_STR);
+          pre_eq := BEquation.Equation.makeAssignment(BVariable.getVarName(disc_state), Expression.fromCref(BVariable.getVarName(previous)), idx, NBEquation.PRE_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
           Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       then ();
       else ();
@@ -321,7 +321,7 @@ public
     pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name);
     name := ComponentRef.mergeSubscripts(subscripts, name);
 
-    pre_eq := BEquation.Equation.makeEq(name, pre_name, idx, NBEquation.PRE_STR);
+    pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
 
     if not listEmpty(disc_state.indices) then
       // empty list indicates full array, slice otherwise

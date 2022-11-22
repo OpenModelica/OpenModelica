@@ -1544,7 +1544,7 @@ public
         s_lst := 1 :: s_lst;
       else
         for sub in subs_tmp loop
-          s_lst := Expression.integerValue(Subscript.toExp(sub)) :: s_lst;
+          s_lst := Expression.integerValueOrDefault(Subscript.toExp(sub), 1) :: s_lst;
         end for;
       end if;
     end for;

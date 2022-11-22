@@ -606,7 +606,7 @@ protected
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
-      iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
+      iterators := listAppend(Equation.getForIteratorCrefs(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
     varData := VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
@@ -706,9 +706,9 @@ protected
   end lowerEquationsAndAlgorithms;
 
   function lowerEquation
-    input FEquation frontend_equation         "Original Frontend equation.";
-    input Boolean init                        "True if an initial equation should be created.";
-    output list<Pointer<Equation>> backend_equations   "Resulting Backend equations.";
+    input FEquation frontend_equation                 "Original Frontend equation.";
+    input Boolean init                                "True if an initial equation should be created.";
+    output list<Pointer<Equation>> backend_equations  "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local

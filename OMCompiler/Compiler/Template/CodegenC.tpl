@@ -7049,7 +7049,6 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
   separator="\n\n")
 end genericCallBodies;
 
-
 template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR() then

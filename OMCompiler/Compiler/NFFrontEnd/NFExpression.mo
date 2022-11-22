@@ -923,6 +923,16 @@ public
     INTEGER(value=value) := exp;
   end integerValue;
 
+  function integerValueOrDefault
+    input Expression exp;
+    input output Integer value = 0;
+  algorithm
+    value := match exp
+      case INTEGER() then exp.value;
+      else value;
+    end match;
+  end integerValueOrDefault;
+
   function makeInteger
     input Integer value;
     output Expression exp = INTEGER(value);
@@ -1112,7 +1122,7 @@ public
     Integer start, step, stop;
   algorithm
     (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start) / step);
+    size := realInt((stop - start + 1) / step);
   end rangeSize;
 
   function applySubscripts

@@ -62,6 +62,7 @@ public
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
+  import NBEquation.Iterator;
   import BVariable = NBVariable;
 
   //Util Imports
@@ -969,19 +970,35 @@ public
   function makeEventVar
     "Creates a generic boolean variable pointer from a unique index and context name.
     e.g. (\"$WHEN\", 4) --> $WHEN_4"
-    input String name                 "context name e.g. §WHEN";
-    input Integer uniqueIndex         "unique identifier index";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
-    output ComponentRef cref          "new component reference";
+    input String name                           "context name e.g. §WHEN";
+    input Integer uniqueIndex                   "unique identifier index";
+    input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
+    output Pointer<Variable> var_ptr            "pointer to new variable";
+    output ComponentRef cref                    "new component reference";
   protected
     InstNode node;
+    ComponentRef var_cref;
     Variable var;
+    list<ComponentRef> iter_crefs;
+    list<Subscript> iter_subs;
+    list<Integer> sub_sizes;
+    Type ty;
   algorithm
+    // get subscripts from optional iterator
+    (iter_crefs, _) := Iterator.getFrames(iterator);
+    iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
+    if listEmpty(iter_subs) then
+      ty := Type.BOOLEAN();
+    else
+      sub_sizes := Iterator.sizes(iterator);
+      ty := Type.ARRAY(Type.BOOLEAN(), list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+    end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, {}, Type.BOOLEAN(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
-    var := fromCref(cref);
+    var := fromCref(var_cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
     // create the new variable pointer and safe it to the component reference
