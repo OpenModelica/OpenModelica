@@ -38,6 +38,7 @@
 #include <QtMath>
 #include <QVariant>
 #include <QStringBuilder>
+#include <QDebug>
 
 namespace ModelInstance
 {
