@@ -1629,7 +1629,7 @@ namespace FlatModelica
 
   void Unary::print(std::ostream &os) const
   {
-    os << _op << _e;
+    os << _op << " " << _e;
   }
 
   QJsonValue Unary::serialize() const

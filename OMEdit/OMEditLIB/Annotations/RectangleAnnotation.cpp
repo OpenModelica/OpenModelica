@@ -166,7 +166,9 @@ void RectangleAnnotation::parseShapeAnnotation()
 
   mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(mpRectangle->getBorderPattern()));
   mExtent = mpRectangle->getExtent();
+  mExtent.evaluate(mpRectangle->getParentModel());
   mRadius = mpRectangle->getRadius();
+  mRadius.evaluate(mpRectangle->getParentModel());
 }
 
 QRectF RectangleAnnotation::boundingRect() const
@@ -258,7 +260,7 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the radius
-  if (mRadius.isDynamicSelectExpression() || mRadius != 0) {
+  if (mRadius.isDynamicSelectExpression() || mRadius.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("radius=%1").arg(mRadius.toQString()));
   }
   return QString("Rectangle(").append(annotationString.join(",")).append(")");

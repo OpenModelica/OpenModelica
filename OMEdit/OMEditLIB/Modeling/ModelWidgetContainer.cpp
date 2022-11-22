@@ -3193,7 +3193,7 @@ void GraphicsView::addConnection(Element *pElement)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              mpConnectionLineAnnotation->setLine(new ModelInstance::Line);
+              mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
               mpConnectionLineAnnotation->updateLine();
               mpConnectionLineAnnotation->drawCornerItems();
               mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
@@ -4155,7 +4155,7 @@ void GraphicsView::setInitialState()
     mpTransitionLineAnnotation->setEndElementName("");
     mpTransitionLineAnnotation->setLineType(LineAnnotation::InitialStateType);
     if (mpModelWidget->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line);
+      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
       mpTransitionLineAnnotation->updateLine();
       mpTransitionLineAnnotation->drawCornerItems();
       mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();

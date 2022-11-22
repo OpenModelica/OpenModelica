@@ -42,7 +42,7 @@ namespace FlatModelica
   class Expression
   {
     public:
-      using VariableEvaluator = std::function<double(std::string cref_name)>;
+      using VariableEvaluator = std::function<Expression(std::string cref_name)>;
 
     public:
       Expression();

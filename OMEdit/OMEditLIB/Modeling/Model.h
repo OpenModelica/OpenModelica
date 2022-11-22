@@ -152,14 +152,18 @@ private:
   class Shape : public GraphicItem, public FilledShape
   {
   public:
-    Shape();
+    Shape(Model *pParentModel);
     virtual ~Shape();
+
+    Model *getParentModel() const {return mpParentModel;}
+  private:
+    Model *mpParentModel;
   };
 
   class Line : public Shape
   {
   public:
-    Line();
+    Line(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
@@ -195,7 +199,7 @@ private:
   class Polygon : public Shape
   {
   public:
-    Polygon();
+    Polygon(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
     QList<Point> getPoints() const {return mPoints;}
@@ -208,7 +212,7 @@ private:
   class Rectangle : public Shape
   {
   public:
-    Rectangle();
+    Rectangle(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
     QString getBorderPattern() const {return mBorderPattern;}
@@ -223,7 +227,7 @@ private:
   class Ellipse : public Shape
   {
   public:
-    Ellipse();
+    Ellipse(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
     ExtentAnnotation getExtent() const {return mExtent;}
@@ -240,7 +244,7 @@ private:
   class Text : public Shape
   {
   public:
-    Text();
+    Text(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
@@ -264,7 +268,7 @@ private:
   class Bitmap : public Shape
   {
   public:
-    Bitmap();
+    Bitmap(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
     ExtentAnnotation getExtent() const {return mExtent;}
@@ -279,16 +283,18 @@ private:
   class IconDiagramAnnotation
   {
   public:
-    IconDiagramAnnotation();
+    IconDiagramAnnotation(Model *pParentModel);
     ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
 
+    Model *getParentModel() const {return mpParentModel;}
     QList<Shape*> getGraphics() const {return mGraphics;}
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
     CoordinateSystem mMergedCoOrdinateSystem;
   private:
+    Model *mpParentModel;
     QList<Shape*> mGraphics;
   };
 
@@ -512,6 +518,7 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
+    FlatModelica::Expression getBinding() const {return mBinding;}
     QString getModifierValueFromType(QStringList modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
@@ -539,6 +546,7 @@ private:
     QString mType;
     Model *mpModel;
     Modifier mModifier;
+    FlatModelica::Expression mBinding;
     QStringList mAbsynDims;
     QStringList mTypedDims;
     bool mPublic;
@@ -589,16 +597,18 @@ private:
   class Connection
   {
   public:
-    Connection();
+    Connection(Model *pParentModel);
     ~Connection();
     void deserialize(const QJsonObject &jsonObject);
 
+    Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector;}
     Connector *getEndConnector() const {return mpEndConnector;}
     Line *getLine() const {return mpLine;}
     Text *getText() const {return mpText;}
     QString toString() const;
   private:
+    Model *mpParentModel;
     Connector *mpStartConnector;
     Connector *mpEndConnector;
     Line *mpLine;
@@ -608,9 +618,10 @@ private:
   class Transition
   {
   public:
-    Transition();
+    Transition(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
 
+    Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector;}
     Connector *getEndConnector() const {return mpEndConnector;}
     bool getCondition() const {return mCondition;}
@@ -622,6 +633,7 @@ private:
     Text *getText() const {return mpText;}
     QString toString() const;
   private:
+    Model *mpParentModel;
     Connector *mpStartConnector;
     Connector *mpEndConnector;
     bool mCondition;
@@ -636,13 +648,15 @@ private:
   class InitialState
   {
   public:
-    InitialState();
+    InitialState(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
 
+    Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector;}
     Line *getLine() const {return mpLine;}
     QString toString() const;
   private:
+    Model *mpParentModel;
     Connector *mpStartConnector;
     Line *mpLine;
   };

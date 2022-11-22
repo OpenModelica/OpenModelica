@@ -2,6 +2,7 @@
 
 #include "Element/Element.h"
 #include "Plotting/VariablesWidget.h"
+#include "Modeling/Model.h"
 
 DynamicAnnotation::DynamicAnnotation() = default;
 
@@ -52,24 +53,53 @@ bool DynamicAnnotation::deserialize(const QJsonValue &value)
  */
 bool DynamicAnnotation::update(double time, Element *parent)
 {
-  if (mState != State::None) {
+  if (isDynamicSelectExpression()) {
     mState = State::Dynamic;
 
     fromExp(mExp.arg(1).evaluate([&] (std::string name) {
-      auto vname = QString::fromStdString(name);
-      // the instance api returns the qualified cref
-      vname = StringHandler::getLastWordAfterDot(vname);
+              auto vname = QString::fromStdString(name);
+              // the instance api returns the qualified cref
+              vname = StringHandler::getLastWordAfterDot(vname);
 
-      if (parent) {
-        vname = QString("%1.%2").arg(parent->getName(), vname);
-      }
+              if (parent) {
+                vname = QString("%1.%2").arg(parent->getName(), vname);
+              }
 
-      return MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time);
-    }));
+              return FlatModelica::Expression(MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time));
+            }));
     return true;
   }
 
   return false;
+}
+
+/*!
+ * \brief DynamicAnnotation::evaluate
+ * Evaluates the expression using the containing model.
+ * Containing model provides the binding variable value.
+ * If expression is DynamicSelect then use the static part of the expression.
+ * \param pModel
+ */
+void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
+{
+  FlatModelica::Expression expression;
+  if (isDynamicSelectExpression()) {
+    expression = mExp.arg(0);
+  } else {
+    expression = mExp;
+  }
+  fromExp(expression.evaluate([&] (std::string name) {
+            auto vname = QString::fromStdString(name);
+            // the instance api returns the qualified cref
+            vname = StringHandler::getLastWordAfterDot(vname);
+
+            foreach (auto pElement, pModel->getElements()) {
+              if (pElement->getName().compare(vname) == 0) {
+                return pElement->getBinding();
+              }
+            }
+            return FlatModelica::Expression();
+          }));
 }
 
 /*!

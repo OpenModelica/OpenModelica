@@ -271,15 +271,16 @@ namespace ModelInstance
     }
   }
 
-  Shape::Shape()
+  Shape::Shape(Model *pParentModel)
     : GraphicItem(), FilledShape()
   {
-
+    mpParentModel = pParentModel;
   }
 
   Shape::~Shape() = default;
 
-  Line::Line()
+  Line::Line(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mPoints.clear();
     mColor = QColor(0, 0, 0);
@@ -403,7 +404,8 @@ namespace ModelInstance
         (line.getSmooth() == this->getSmooth());
   }
 
-  Polygon::Polygon()
+  Polygon::Polygon(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mPoints.clear();
     mSmooth = "Smooth.None";
@@ -429,7 +431,8 @@ namespace ModelInstance
   }
 
 
-  Rectangle::Rectangle()
+  Rectangle::Rectangle(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mBorderPattern = "BorderPattern::None";
     mExtent.clear();
@@ -452,7 +455,8 @@ namespace ModelInstance
     }
   }
 
-  Ellipse::Ellipse()
+  Ellipse::Ellipse(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
@@ -481,7 +485,8 @@ namespace ModelInstance
     }
   }
 
-  Text::Text()
+  Text::Text(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
@@ -571,7 +576,8 @@ namespace ModelInstance
 //    }
   }
 
-  Bitmap::Bitmap()
+  Bitmap::Bitmap(Model *pParentModel)
+    : Shape(pParentModel)
   {
     mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
@@ -590,8 +596,9 @@ namespace ModelInstance
     }
   }
 
-  IconDiagramAnnotation::IconDiagramAnnotation()
+  IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mGraphics.clear();
   }
 
@@ -616,27 +623,27 @@ namespace ModelInstance
         if (graphicObject.contains("name") && graphicObject.contains("elements")) {
           const QString name = graphicObject.value("name").toString();
           if (name.compare(QStringLiteral("Line")) == 0) {
-            Line *pLine = new Line;
+            Line *pLine = new Line(mpParentModel);
             pLine->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pLine);
           } else if (name.compare(QStringLiteral("Polygon")) == 0) {
-            Polygon *pPolygon = new Polygon;
+            Polygon *pPolygon = new Polygon(mpParentModel);
             pPolygon->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pPolygon);
           } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
-            Rectangle *pRectangle = new Rectangle;
+            Rectangle *pRectangle = new Rectangle(mpParentModel);
             pRectangle->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pRectangle);
           } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
-            Ellipse *pEllipse = new Ellipse;
+            Ellipse *pEllipse = new Ellipse(mpParentModel);
             pEllipse->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pEllipse);
           } else if (name.compare(QStringLiteral("Text")) == 0) {
-            Text *pText = new Text;
+            Text *pText = new Text(mpParentModel);
             pText->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pText);
           } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
-            Bitmap *pBitmap = new Bitmap;
+            Bitmap *pBitmap = new Bitmap(mpParentModel);
             pBitmap->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pBitmap);
           }
@@ -933,7 +940,7 @@ namespace ModelInstance
       foreach (QJsonValue connection, connections) {
         QJsonObject connectionObject = connection.toObject();
         if (!connectionObject.isEmpty()) {
-          Connection *pConnection = new Connection;
+          Connection *pConnection = new Connection(this);
           pConnection->deserialize(connection.toObject());
           mConnections.append(pConnection);
         }
@@ -945,7 +952,7 @@ namespace ModelInstance
       foreach (QJsonValue transition, transitions) {
         QJsonObject transitionObject = transition.toObject();
         if (!transitionObject.isEmpty()) {
-          Transition *pTransition = new Transition;
+          Transition *pTransition = new Transition(this);
           pTransition->deserialize(transition.toObject());
           mTransitions.append(pTransition);
         }
@@ -957,7 +964,7 @@ namespace ModelInstance
       foreach (QJsonValue initialState, initialStates) {
         QJsonObject initialStateObject = initialState.toObject();
         if (!initialStateObject.isEmpty()) {
-          InitialState *pInitialState = new InitialState;
+          InitialState *pInitialState = new InitialState(this);
           pInitialState->deserialize(initialState.toObject());
           mInitialStates.append(pInitialState);
         }
@@ -1090,8 +1097,8 @@ namespace ModelInstance
     mEncapsulated = false;
     mExtends.clear();
     mComment = "";
-    mpIconAnnotation = new IconDiagramAnnotation;
-    mpDiagramAnnotation = new IconDiagramAnnotation;
+    mpIconAnnotation = new IconDiagramAnnotation(this);
+    mpDiagramAnnotation = new IconDiagramAnnotation(this);
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
@@ -1316,6 +1323,19 @@ namespace ModelInstance
       mModifier.deserialize(jsonObject.value("modifiers"));
     }
 
+    if (jsonObject.contains("value")) {
+      QJsonObject valueObject = jsonObject.value("value").toObject();
+
+      if (valueObject.contains("binding")) {
+        try {
+          mBinding.deserialize(valueObject.value("binding"));
+        } catch (const std::exception &e) {
+          qDebug() << "Failed to deserialize json: " << valueObject.value("binding");
+          qDebug() << e.what();
+        }
+      }
+    }
+
     if (jsonObject.contains("dims")) {
       QJsonObject dims = jsonObject.value("dims").toObject();
 
@@ -1503,8 +1523,9 @@ namespace ModelInstance
     return parts;
   }
 
-  Connection::Connection()
+  Connection::Connection(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mpStartConnector = 0;
     mpEndConnector = 0;
     mpLine = 0;
@@ -1542,12 +1563,12 @@ namespace ModelInstance
     if (jsonObject.contains("annotation")) {
       QJsonObject annotation = jsonObject.value("annotation").toObject();
       if (annotation.contains("Line")) {
-        mpLine = new Line;
+        mpLine = new Line(mpParentModel);
         mpLine->deserialize(annotation.value("Line").toObject());
       }
 
       if (annotation.contains("Text")) {
-        mpText = new Text;
+        mpText = new Text(mpParentModel);
         mpText->deserialize(annotation.value("Text").toObject());
       }
     }
@@ -1558,8 +1579,9 @@ namespace ModelInstance
     return "connect(" % mpStartConnector->getName() % ", " % mpEndConnector->getName() % ")";
   }
 
-  Transition::Transition()
+  Transition::Transition(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mpStartConnector = 0;
     mpEndConnector = 0;
     mCondition = false;
@@ -1597,12 +1619,12 @@ namespace ModelInstance
     if (jsonObject.contains("annotation")) {
       QJsonObject annotation = jsonObject.value("annotation").toObject();
       if (annotation.contains("Line")) {
-        mpLine = new Line;
+        mpLine = new Line(mpParentModel);
         mpLine->deserialize(annotation.value("Line").toObject());
       }
 
       if (annotation.contains("Text")) {
-        mpText = new Text;
+        mpText = new Text(mpParentModel);
         mpText->deserialize(annotation.value("Text").toObject());
       }
     }
@@ -1622,8 +1644,9 @@ namespace ModelInstance
     return "transition(" % transitionArgs.join(", ") % ")";
   }
 
-  InitialState::InitialState()
+  InitialState::InitialState(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mpStartConnector = 0;
     mpLine = 0;
   }
@@ -1643,7 +1666,7 @@ namespace ModelInstance
     if (jsonObject.contains("annotation")) {
       QJsonObject annotation = jsonObject.value("annotation").toObject();
       if (annotation.contains("Line")) {
-        mpLine = new Line;
+        mpLine = new Line(mpParentModel);
         mpLine->deserialize(annotation.value("Line").toObject());
       }
     }

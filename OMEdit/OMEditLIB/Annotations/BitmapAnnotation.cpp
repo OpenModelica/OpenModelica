@@ -168,6 +168,7 @@ void BitmapAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpBitmap);
 
   mExtent = mpBitmap->getExtent();
+  mExtent.evaluate(mpBitmap->getParentModel());
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
   mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
   if (!mImageSource.isEmpty()) {
