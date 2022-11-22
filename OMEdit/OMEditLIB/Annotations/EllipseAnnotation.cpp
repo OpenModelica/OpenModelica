@@ -125,8 +125,11 @@ void EllipseAnnotation::parseShapeAnnotation()
   FilledShape::parseShapeAnnotation(mpEllipse);
 
   mExtent = mpEllipse->getExtent();
+  mExtent.evaluate(mpEllipse->getParentModel());
   mStartAngle = mpEllipse->getStartAngle();
+  mStartAngle.evaluate(mpEllipse->getParentModel());
   mEndAngle = mpEllipse->getEndAngle();
+  mEndAngle.evaluate(mpEllipse->getParentModel());
   mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
 }
 
@@ -221,11 +224,11 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the start angle
-  if (mStartAngle.isDynamicSelectExpression() || mStartAngle != 0) {
+  if (mStartAngle.isDynamicSelectExpression() || mStartAngle.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("startAngle=%1").arg(mStartAngle.toQString()));
   }
   // get the end angle
-  if (mEndAngle.isDynamicSelectExpression() || mEndAngle != 360) {
+  if (mEndAngle.isDynamicSelectExpression() || mEndAngle.toQString().compare(QStringLiteral("360")) != 0) {
     annotationString.append(QString("endAngle=%1").arg(mEndAngle.toQString()));
   }
   // get the closure

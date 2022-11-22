@@ -91,14 +91,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   mRotation.parse(list.at(2));
 }
 
-void GraphicItem::parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem)
+void GraphicItem::parseShapeAnnotation(ModelInstance::Shape *pShape)
 {
   // if first item of list is true then the shape should be visible.
-  mVisible = pGraphicItem->getVisible();
+  mVisible = pShape->getVisible();
+  mVisible.evaluate(pShape->getParentModel());
   // 2nd item is the origin
-  mOrigin = pGraphicItem->getOrigin();
+  mOrigin = pShape->getOrigin();
+  mOrigin.evaluate(pShape->getParentModel());
   // 3rd item is the rotation
-  mRotation = pGraphicItem->getRotation();
+  mRotation = pShape->getRotation();
+  mRotation.evaluate(pShape->getParentModel());
 }
 
 /*!
@@ -127,15 +130,15 @@ QStringList GraphicItem::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  if (mVisible.isDynamicSelectExpression() || !mVisible) {
+  if (mVisible.isDynamicSelectExpression() || mVisible.toQString().compare(QStringLiteral("true")) != 0) {
     annotationString.append(QString("visible=%1").arg(mVisible.toQString()));
   }
   /* get origin */
-  if (mOrigin.isDynamicSelectExpression() || mOrigin != QPointF(0, 0)) {
+  if (mOrigin.isDynamicSelectExpression() || mOrigin.toQString().compare(QStringLiteral("{0,0}")) != 0) {
     annotationString.append(QString("origin=%1").arg(mOrigin.toQString()));
   }
   /* get rotation */
-  if (mRotation.isDynamicSelectExpression() || mRotation != 0) {
+  if (mRotation.isDynamicSelectExpression() || mRotation.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("rotation=%1").arg(mRotation.toQString()));
   }
   return annotationString;
@@ -191,13 +194,16 @@ void FilledShape::parseShapeAnnotation(QString annotation)
   mLineThickness.parse(list.at(7));
 }
 
-void FilledShape::parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape)
+void FilledShape::parseShapeAnnotation(ModelInstance::Shape *pShape)
 {
-  mLineColor = pFilledShape->getLineColor();
-  mFillColor = pFilledShape->getFillColor();
-  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pFilledShape->getPattern()));
-  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pFilledShape->getFillPattern()));
-  mLineThickness = pFilledShape->getLineThickness();
+  mLineColor = pShape->getLineColor();
+  mLineColor.evaluate(pShape->getParentModel());
+  mFillColor = pShape->getFillColor();
+  mFillColor.evaluate(pShape->getParentModel());
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pShape->getPattern()));
+  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pShape->getFillPattern()));
+  mLineThickness = pShape->getLineThickness();
+  mLineThickness.evaluate(pShape->getParentModel());
 }
 
 /*!
@@ -230,11 +236,11 @@ QStringList FilledShape::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get the line color */
-  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+  if (mLineColor.isDynamicSelectExpression() || mLineColor.toQString().compare(QStringLiteral("{0,0,0}")) != 0) {
     annotationString.append(QString("lineColor=%1").arg(mLineColor.toQString()));
   }
   /* get the fill color */
-  if (mFillColor.isDynamicSelectExpression() || mFillColor != Qt::black) {
+  if (mFillColor.isDynamicSelectExpression() || mFillColor.toQString().compare(QStringLiteral("{0,0,0}")) != 0) {
     annotationString.append(QString("fillColor=%1").arg(mFillColor.toQString()));
   }
   /* get the line pattern */
@@ -246,7 +252,7 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("fillPattern=").append(StringHandler::getFillPatternString(mFillPattern)));
   }
   // get the thickness
-  if (mLineThickness.isDynamicSelectExpression() || mLineThickness != 0.25) {
+  if (mLineThickness.isDynamicSelectExpression() || mLineThickness.toQString().compare(QStringLiteral("0.25")) != 0) {
     annotationString.append(QString("lineThickness=%1").arg(mLineThickness.toQString()));
   }
   return annotationString;
@@ -262,7 +268,7 @@ QStringList FilledShape::getTextShapeAnnotation()
 {
   QStringList annotationString;
   /* get the text color */
-  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+  if (mLineColor.isDynamicSelectExpression() || mLineColor.toQString().compare(QStringLiteral("{0,0,0}")) != 0) {
     annotationString.append(QString("textColor=%1").arg(mLineColor.toQString()));
   }
   return annotationString;
@@ -744,7 +750,7 @@ void ShapeAnnotation::drawCornerItems()
 void ShapeAnnotation::setCornerItemsActiveOrPassive()
 {
   foreach (CornerItem *pCornerItem, mCornerItemsList) {
-    if (isSelected()) {
+    if (mVisible && isSelected()) {
       pCornerItem->setToolTip(Helper::clickAndDragToResize);
       pCornerItem->setVisible(true);
     } else {
@@ -753,7 +759,7 @@ void ShapeAnnotation::setCornerItemsActiveOrPassive()
     }
   }
   if (mpOriginItem) {
-    if (isSelected()) {
+    if (mVisible && isSelected()) {
       mpOriginItem->setActive();
     } else {
       mpOriginItem->setPassive();

@@ -267,13 +267,16 @@ void TextAnnotation::parseShapeAnnotation()
   FilledShape::parseShapeAnnotation(mpText);
 
   mExtent = mpText->getExtent();
+  mExtent.evaluate(mpText->getParentModel());
   mTextString = mpText->getTextString();
   mOriginalTextString = mTextString;
   initUpdateTextString();
 
   mFontSize = mpText->getFontSize();
+  mFontSize.evaluate(mpText->getParentModel());
   if (mpText->getTextColor().isValid()) {
     mLineColor = mpText->getTextColor();
+    mLineColor.evaluate(mpText->getParentModel());
   }
   if (!mpText->getFontName().isEmpty()) {
     mFontName = mpText->getFontName().isEmpty();
@@ -525,7 +528,7 @@ QString TextAnnotation::getShapeAnnotation()
   // get the text string
   annotationString.append(QString("textString=%1").arg(mOriginalTextString.toQString()));
   // get the font size
-  if (mFontSize.isDynamicSelectExpression() || mFontSize != 0) {
+  if (mFontSize.isDynamicSelectExpression() || mFontSize.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("fontSize=%1").arg(mFontSize.toQString()));
   }
   // get the font name

@@ -646,11 +646,14 @@ void LineAnnotation::parseShapeAnnotation()
     addPoint(QPointF(point.x(), point.y()));
   }
   mLineColor = mpLine->getColor();
+  mLineColor.evaluate(mpLine->getParentModel());
   mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
   mLineThickness = mpLine->getLineThickness();
+  mLineThickness.evaluate(mpLine->getParentModel());
   mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
   mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
   mArrowSize = mpLine->getArrowSize();
+  mArrowSize.evaluate(mpLine->getParentModel());
   mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpLine->getSmooth()));
 }
 
@@ -993,7 +996,7 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the line color
-  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+  if (mLineColor.isDynamicSelectExpression() || mLineColor.toQString().compare(QStringLiteral("{0,0,0}")) != 0) {
     annotationString.append(QString("color=%1").arg(mLineColor.toQString()));
   }
   // get the line pattern
@@ -1001,7 +1004,7 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
   }
   // get the thickness
-  if (mLineThickness.isDynamicSelectExpression() || mLineThickness != 0.25) {
+  if (mLineThickness.isDynamicSelectExpression() || mLineThickness.toQString().compare(QStringLiteral("0.25")) != 0) {
     annotationString.append(QString("thickness=%1").arg(mLineThickness.toQString()));
   }
   // get the start and end arrow
@@ -1013,7 +1016,7 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(arrowString);
   }
   // get the arrow size
-  if (mArrowSize.isDynamicSelectExpression() || mArrowSize != 3) {
+  if (mArrowSize.isDynamicSelectExpression() || mArrowSize.toQString().compare(QStringLiteral("3")) != 0) {
     annotationString.append(QString("arrowSize=%1").arg(mArrowSize.toQString()));
   }
   // get the smooth
@@ -2468,7 +2471,7 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    mpConnectionLineAnnotation->setLine(new ModelInstance::Line);
+    mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
     mpConnectionLineAnnotation->updateLine();
     mpConnectionLineAnnotation->drawCornerItems();
     mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
@@ -2600,7 +2603,7 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
                                                                                        mpTransitionLineAnnotation->getOMCShapeAnnotation()));
   } else {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line);
+      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
       mpTransitionLineAnnotation->updateLine();
       mpTransitionLineAnnotation->drawCornerItems();
       mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
