@@ -49,7 +49,7 @@ QString evalString(const QString &str)
 {
   return FlatModelica::Expression::parse(str).evaluate([] (const std::string &) {
     // Assume that all variables have the value 1.0 for testing purposes.
-    return 1.0;
+    return FlatModelica::Expression(1.0);
   }).toQString();
 }
 
