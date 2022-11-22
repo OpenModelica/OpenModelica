@@ -379,6 +379,8 @@ private:
     bool isParameterConnectorSizing(const QString &parameter);
     QString getParameterValue(const QString &parameter, QString &typeName);
     QString getParameterValueFromExtendsModifiers(const QString &parameter);
+
+    FlatModelica::Expression getVariableBinding(const QString &variableName);
   private:
     void initialize();
 

@@ -1083,6 +1083,25 @@ namespace ModelInstance
     return value;
   }
 
+  FlatModelica::Expression Model::getVariableBinding(const QString &variableName)
+  {
+    foreach (auto pElement, mElements) {
+      if (pElement->getName().compare(variableName) == 0) {
+        return pElement->getBinding();
+      }
+    }
+
+    FlatModelica::Expression expression;
+    foreach (auto pExtend, mExtends) {
+      expression = pExtend->getVariableBinding(variableName);
+      if (!expression.isNull()) {
+        return expression;
+      }
+    }
+
+    return expression;
+  }
+
   void Model::initialize()
   {
     mModelJson = QJsonObject();
