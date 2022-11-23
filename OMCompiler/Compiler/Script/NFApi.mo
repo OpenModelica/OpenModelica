@@ -981,11 +981,7 @@ algorithm
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def), json);
 
   if not listEmpty(exts) then
-    if InstNode.isDerivedClass(node) then
-      json := JSON.addPair("extends", dumpJSONExtends(listHead(exts)), json);
-    else
-      json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
-    end if;
+    json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
   end if;
 
   json := dumpJSONCommentOpt(cmt, node, json);
@@ -1020,15 +1016,11 @@ algorithm
   exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(node)));
 
   if not arrayEmpty(exts) then
-    if InstNode.isDerivedClass(node) then
-      j := dumpJSONInstanceIconExtends(exts[1]);
-    else
-      j := JSON.emptyArray();
+    j := JSON.emptyArray();
 
-      for ext in exts loop
-        j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
-      end for;
-    end if;
+    for ext in exts loop
+      j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
+    end for;
 
     json := JSON.addPair("extends", j, json);
   end if;

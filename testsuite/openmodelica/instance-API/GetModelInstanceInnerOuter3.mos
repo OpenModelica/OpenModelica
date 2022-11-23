@@ -40,9 +40,11 @@ getModelInstance(P.RealInput, prettyPrint=true);
 //   \"prefixes\": {
 //     \"direction\": \"input\"
 //   },
-//   \"extends\": {
-//     \"baseClass\": \"Real\"
-//   },
+//   \"extends\": [
+//     {
+//       \"baseClass\": \"Real\"
+//     }
+//   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 7,

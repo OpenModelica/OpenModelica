@@ -43,9 +43,11 @@ getModelInstance(M, prettyPrint = true);
 //             \"$value\": \"\\\"Angle\\\"\"
 //           }
 //         },
-//         \"extends\": {
-//           \"baseClass\": \"Real\"
-//         },
+//         \"extends\": [
+//           {
+//             \"baseClass\": \"Real\"
+//           }
+//         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
 //           \"lineStart\": 3,
