@@ -2117,7 +2117,7 @@ public
         local
           Pointer<Variable> residualVar;
         case EQUATION_ATTRIBUTES(residualVar = SOME(residualVar))
-        then indent + "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ") ";
+        then indent + "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ")";
         else "";
       end match;
     end toString;
