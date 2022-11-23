@@ -67,19 +67,10 @@
     },
     "extends": {
       "description": "The extends clauses in the class instance",
-      "oneOf": [
-        {
-          "description": "The extends clauses in a long class definition",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/extends"
-          }
-        },
-        {
-          "description": "The extended class in a short class definition",
-          "$ref": "#/definitions/extends"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/extends"
+      }
     },
     "components": {
       "description": "The components in the class instance",
