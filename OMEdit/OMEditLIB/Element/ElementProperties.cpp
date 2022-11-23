@@ -282,6 +282,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
     mDefaultValue = value;
   }
   QFontMetrics fm = QFontMetrics(QFont());
+  bool signalsState;
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
@@ -315,7 +316,10 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       }
       break;
     case Parameter::CheckBox:
+      signalsState = mpValueCheckBox->blockSignals(true);
       mpValueCheckBox->setChecked(value.compare("true") == 0);
+      mpValueCheckBox->blockSignals(signalsState);
+      mValueCheckBoxModified = valueModified;
       break;
     case Parameter::Normal:
     default:
@@ -1800,15 +1804,15 @@ void ElementParameters::updateElementParameters()
         }
       }
       // if displayUnit is changed
-      if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
+      const QString unit = pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString();
+      if (pParameter->getUnitComboBox()->isEnabled() && !unit.isEmpty() && pParameter->getDisplayUnit().compare(unit) != 0) {
         valueChanged = true;
         /* If the element is inherited then add the modifier value into the extends. */
         if (mpElement->isInheritedElement()) {
           pOMCProxy->setExtendsModifierValue(className, mpElement->getModelElement()->getParentModel()->getName(), mpElement->getName() % "." % elementModifierKey % ".displayUnit",
-                                             "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
+                                             "\"" + unit + "\"");
         } else {
-          pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % elementModifierKey % ".displayUnit",
-                                               "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
+          pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % elementModifierKey % ".displayUnit", "\"" + unit + "\"");
         }
       }
     }
