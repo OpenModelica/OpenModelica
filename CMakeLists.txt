@@ -7,6 +7,7 @@ project(OpenModelica
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
+
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -24,6 +25,9 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 include(cmake/omc_utils.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
+
+## Get the revision info. The version is saved in the variable SOURCE_REVISION
+include(cmake/omc_git_revision.cmake)
 
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
@@ -89,18 +93,6 @@ endif()
 # a more accurate code navigation and intellisense. E.g. includes can be pinpointed instead of
 # using glob expressions to parse everything.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
-# get an idea of what it means. We intend to use this for portability reasons in the future.
-# You know. things like is it ctime_s() or ctime_r(), MvFileEx() vs rename() and the like.
-include(WriteCompilerDetectionHeader)
-write_compiler_detection_header(
-  FILE omc_compiler_detection.h
-  PREFIX OMC
-  COMPILERS GNU Clang MSVC
-  FEATURES cxx_static_assert
-)
-
 
 ### Installation configurations ###############################################################################
 # Install following GNU conventions (i.e., bin, lib, include, share ...)

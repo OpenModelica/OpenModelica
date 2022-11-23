@@ -1,7 +1,9 @@
 cmake_minimum_required (VERSION 3.14)
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME gui)
 
 project(OMEdit)
+## Anything installed from this directory and its subdirectories belongs
+## to the install component 'omedit' if it is not explicitly changed.
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 

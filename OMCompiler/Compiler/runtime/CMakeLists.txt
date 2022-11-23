@@ -193,14 +193,6 @@ if(LAPACK_FOUND)
 endif()
 
 
-find_package(Git)
-execute_process(COMMAND
-  ${GIT_EXECUTABLE} describe --match "v*.*" --always
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  OUTPUT_VARIABLE SOURCE_REVISION
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
 if(OpenMP_FOUND)
   set(CONFIG_WITH_OPENMP 1)
 else()
