@@ -845,7 +845,7 @@ public
         Integer i;
         Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
 
-      // Special cases
+      // SMOOTH
       case (Expression.CALL()) guard(name == "smooth")
       algorithm
         {arg1, arg2} := Call.arguments(exp.call);
@@ -854,12 +854,28 @@ public
             (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
             exp.call := Call.setArguments(exp.call, {Expression.INTEGER(i-1), ret2});
           then exp;
+          case Expression.INTEGER(i) algorithm
+            (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            exp := Expression.CALL(Call.makeTypedCall(
+              fn          = NFBuiltinFuncs.NO_EVENT,
+              args        = {ret2},
+              variability = Expression.variability(ret2),
+              purity      = NFPrefixes.Purity.PURE
+            ));
+          then exp;
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)
-              + " because the first argument has to be > 0."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
       then ret;
+
+      // NO_EVENT
+      case (Expression.CALL()) guard(name == "noEvent")
+      algorithm
+        {arg1} := Call.arguments(exp.call);
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
 
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
