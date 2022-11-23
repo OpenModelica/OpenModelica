@@ -1,4 +1,8 @@
 cmake_minimum_required (VERSION 3.14)
+## Anything installed from this directory and its subdirectories belongs
+## to the install component 'omshell' if it is not explicitly changed.
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omshell)
+
 
 project(OMShell)
 

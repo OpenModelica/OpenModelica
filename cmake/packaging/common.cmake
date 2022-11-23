@@ -10,9 +10,7 @@ SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_BINARY_DIR}/_packages")
 
 set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/omc")
 
-set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${SOURCE_REVISION})
 
 set(CPACK_PACKAGE_CONTACT "build@openmodelica.org")
 
@@ -30,32 +28,34 @@ cpack_add_component(omc
                     DISPLAY_NAME "OpenModelica core compiler(omc)"
                     # For graphical multi-component installers, set this to required.
                     REQUIRED
-                    DESCRIPTION "The OpenModelica Compiler without any of the simulation support.
-You can use this package to translate Modelica or MetaModelica files. If you
-are intending to simulate models you should install the simrt package as well."
+                    DESCRIPTION "The OpenModelica Compiler without any of the simulation support."
                     )
+
+## Runtimes
+cpack_add_component_group(Runtimes
+                    EXPANDED
+                    BOLD_TITLE
+                    DESCRIPTION
+                   "The OpenModleica simulation runtime libraries and tools.")
 
 cpack_add_component(simrt
                     DISPLAY_NAME "Simulation Runtime"
                     DEPENDS omc
-                    DESCRIPTION "The OpenModelica simulation runtime and tools.
-This is the core of the OpenModelica simulation infrastructure and is required if you intend to simulate
-Modelica models with OpenModelica.
-It is recommended to use it together with an OpenModelica client,
-such as OMShell (textual interface), OMNotebook (for teaching purposes)
-or OMEdit (graphical modeling) which are available in the openmodelica-gui package."
+                    GROUP Runtimes
+                    DESCRIPTION "The OpenModelica C simulation runtime libraries and tools."
                     )
 
-cpack_add_component(simrt-cpp
-                    DISPLAY_NAME "CPP Simulation Runtime"
+cpack_add_component(simrtcpp
+                    DISPLAY_NAME "C++ Simulation Runtime"
                     DEPENDS simrt
-                    DESCRIPTION "The C++ simulation runtime for OpenModelica. This is required
-if you plan to generate C++ code and simulate models, .i.e., use the --simCodeTarget=Cpp translation option."
+                    GROUP Runtimes
+                    DESCRIPTION "The OpenModelica C++ simulation runtime libraries and tools."
                     )
 
 cpack_add_component(fmu
                     DISPLAY_NAME "FMU Support"
                     DEPENDS simrt
+                    GROUP Runtimes
                     DESCRIPTION "The libaries and files needed to compile an OpenModelica
 FMU (normal or Source-Code FMU) including the simulation runtime source files needed for creating Source-Code FMUs."
                     )
@@ -65,14 +65,54 @@ cpack_add_component(omsimulator
                     DESCRIPTION "The OpenModelica FMI & SSP-based co-simulation environment."
                     )
 
-cpack_add_component(gui
-                    DISPLAY_NAME "GUI Clients"
-                    DEPENDS simrt omsimulator
-                    DESCRIPTION "The OpenModelica Graphical User Interface clients. These include OMEdit (graphical modeling),
-OMNotebook (for teaching purposes), OMShell (textual interface) and OMPlot (a plotting tool used by the other clients)."
+cpack_add_component(omshellterminal
+                    DISPLAY_NAME "OMShell-terminal"
+                    DEPENDS simrt omplot
+                    DESCRIPTION "A text-based REPL command-line interface to OpenModelica."
                     )
 
+## Graphical User Interface Clients
+cpack_add_component_group(GUIClients
+                    DISPLAY_NAME "GUI Clients"
+                    EXPANDED
+                    BOLD_TITLE
+                    DESCRIPTION
+                   "The OpenModelica Graphical User Interface clients.")
 
+cpack_add_component(omplot
+                    DISPLAY_NAME "OMPlot"
+                    DEPENDS simrt
+                    GROUP GUIClients
+                    DESCRIPTION "Plot tool for OpenModelica. This tool is essential for using the plot() command in omc."
+                    )
+
+cpack_add_component(omnotebook
+                    DISPLAY_NAME "OMNotebook"
+                    DEPENDS simrt omplot
+                    GROUP GUIClients
+                    DESCRIPTION "A Mathematica-style Notebook for OpenModelica."
+                    )
+
+cpack_add_component(omshell
+                    DISPLAY_NAME "OMShell"
+                    DEPENDS simrt omplot
+                    GROUP GUIClients
+                    DESCRIPTION "A text-based interface to OpenModelica (based on Qt)."
+                    )
+
+cpack_add_component(omedit
+                    DISPLAY_NAME "OMEdit"
+                    DEPENDS simrt omplot omsimulator
+                    GROUP GUIClients
+                    DESCRIPTION "The OpenModelica Graphical Connection Editor."
+                    )
+
+cpack_add_component(omsens
+                    DISPLAY_NAME "OMSens"
+                    DEPENDS omedit
+                    GROUP GUIClients
+                    DESCRIPTION "Sensitivity analysis support for OMEdit."
+                    )
 
 
 
