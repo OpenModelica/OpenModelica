@@ -1451,6 +1451,10 @@ constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(154, "frontendInline",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables inlining of functions in the frontend."));
 
+constant ConfigFlag ARRAY_CONNECT_MIN_SIZE = CONFIG_FLAG(155, "arrayConnectMinSize",
+  NONE(), EXTERNAL(), INT_FLAG(100), NONE(),
+  Gettext.gettext("The minimum size of array connections for -d=arrayConnect to have effect"));
+
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
