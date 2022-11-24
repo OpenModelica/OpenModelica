@@ -39,12 +39,10 @@
 
 #define FMT_BUFSIZE 400
 
-static const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
-
 static inline void checkBufSize(const char *str, int n)
 {
   if (n >= FMT_BUFSIZE) {
-    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string; ran out of buffer size (%d): %s", FMT_BUFSIZE, str);
+    omc_assert(NULL, omc_dummyFileInfo, "Could not parse format string; ran out of buffer size (%d): %s", FMT_BUFSIZE, str);
   }
 }
 
@@ -118,13 +116,13 @@ modelica_string modelica_string_format_to_c_string_format(modelica_string format
   case 'j':
   case 'z':
   case 't':
-    omc_assert(NULL, dummyFILE_INFO, "Length modifiers are not legal in Modelica format strings: %s", str);
+    omc_assert(NULL, omc_dummyFileInfo, "Length modifiers are not legal in Modelica format strings: %s", str);
     break;
   default:
-    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string: invalid conversion specifier: %c in %s", *tmp, str);
+    omc_assert(NULL, omc_dummyFileInfo, "Could not parse format string: invalid conversion specifier: %c in %s", *tmp, str);
   }
   if (*tmp) {
-    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string: trailing data after the format directive", *tmp, str);
+    omc_assert(NULL, omc_dummyFileInfo, "Could not parse format string: trailing data after the format directive", *tmp, str);
   }
   buf[n] = '\0';
   return mmc_mk_scon(buf);
@@ -168,7 +166,7 @@ modelica_string modelica_integer_to_modelica_string_format(modelica_integer i,mo
     break;
   default:
     /* integer values, etc */
-    omc_assert(NULL, dummyFILE_INFO, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
+    omc_assert(NULL, omc_dummyFileInfo, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
   }
   return res;
 }
@@ -194,7 +192,7 @@ modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica
     break;
   default:
     /* integer values, etc */
-    omc_assert(NULL, dummyFILE_INFO, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
+    omc_assert(NULL, omc_dummyFileInfo, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
   }
   return res;
 }

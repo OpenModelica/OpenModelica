@@ -1230,7 +1230,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     %>
 
     /* dummy VARINFO and FILEINFO */
-    const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
     const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
 
     <%functionInput(simCode, modelInfo, modelNamePrefixStr)%>

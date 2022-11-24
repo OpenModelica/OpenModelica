@@ -2358,8 +2358,7 @@ template varOutput(Variable var)
       <<
       if (out<%funArgName(var)%>) {
         if (out<%funArgName(var)%>->info == NULL) {
-          FILE_INFO info = omc_dummyFileInfo;
-          omc_assert(threadData, info, "Unknown size parallel array.");
+          omc_assert(threadData, omc_dummyFileInfo, "Unknown size parallel array.");
         }
         else {
           <%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);
@@ -3502,7 +3501,7 @@ case RANGE(__) then
                     case "1"
                     case "((modelica_integer) 1)"
                     case "((modelica_integer) -1)" then ''
-                    else 'if(!<%stepVar%>) {<%\n%>  FILE_INFO info = omc_dummyFileInfo;<%\n%>  omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
+                    else 'if(!<%stepVar%>) {<%\n%>  omc_assert<%AddionalFuncName%>(threadData, omc_dummyFileInfo, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
@@ -4566,8 +4565,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     <<
     if(!(<%condVar%>))
     {
-      FILE_INFO info = omc_dummyFileInfo;
-      omc_assert(threadData, info, "Common assertion failed");
+      omc_assert(threadData, omc_dummyFileInfo, "Common assertion failed");
     }
     >>
   case FUNCTION_CONTEXT(__) then
@@ -7369,8 +7367,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       let check =
       <<
       if (<%stepVar%> == 0) {
-        FILE_INFO info = omc_dummyFileInfo;
-        omc_assert(threadData, info, "Range with a step of zero.");
+        omc_assert(threadData, omc_dummyFileInfo, "Range with a step of zero.");
       }<%\n%>
       >>
       match iter.exp

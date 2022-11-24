@@ -417,7 +417,6 @@ static const char* readEquations(const char *str, MODEL_DATA_XML *xml)
 
 static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, const char* fileName)
 {
-  FILE_INFO info = omc_dummyFileInfo;
   size_t len;
   char *name;
   const char *str2;
@@ -430,7 +429,7 @@ static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, cons
   memcpy(name, str2, len-1);
   name[len-1] = '\0';
   xml->name = name;
-  xml->info = info;
+  xml->info = omc_dummyFileInfo;
   return str;
 }
 

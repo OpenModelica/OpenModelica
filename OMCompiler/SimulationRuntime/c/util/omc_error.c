@@ -34,6 +34,8 @@
 /* For MMC_THROW, so we can end this thing */
 #include "../meta/meta_modelica.h"
 
+const FILE_INFO omc_dummyFileInfo = omc_dummyFileInfo_val;
+
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
