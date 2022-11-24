@@ -167,7 +167,8 @@ void PolygonAnnotation::parseShapeAnnotation()
       mPoints.append(mPoints.first());
     }
   }
-  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpPolygon->getSmooth()));
+  mSmooth = mpPolygon->getSmooth();
+  mSmooth.evaluate(mpPolygon->getParentModel());
 }
 
 QPainterPath PolygonAnnotation::getShape() const
@@ -270,7 +271,7 @@ QString PolygonAnnotation::getOMCShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the smooth
-  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  annotationString.append(mSmooth.toQString());
   return annotationString.join(",");
 }
 
@@ -311,8 +312,8 @@ QString PolygonAnnotation::getShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the smooth
-  if (mSmooth != StringHandler::SmoothNone) {
-    annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
+  if (mSmooth.isDynamicSelectExpression() || mSmooth.toQString().compare(QStringLiteral("Smooth.None")) != 0) {
+    annotationString.append(QString("smooth=%1").arg(mSmooth.toQString()));
   }
   return QString("Polygon(").append(annotationString.join(",")).append(")");
 }

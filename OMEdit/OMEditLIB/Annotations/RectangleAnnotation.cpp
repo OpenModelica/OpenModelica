@@ -164,7 +164,8 @@ void RectangleAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpRectangle);
   FilledShape::parseShapeAnnotation(mpRectangle);
 
-  mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(mpRectangle->getBorderPattern()));
+  mBorderPattern = mpRectangle->getBorderPattern();
+  mBorderPattern.evaluate(mpRectangle->getParentModel());
   mExtent = mpRectangle->getExtent();
   mExtent.evaluate(mpRectangle->getParentModel());
   mRadius = mpRectangle->getRadius();
@@ -223,7 +224,7 @@ QString RectangleAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the border pattern
-  annotationString.append(StringHandler::getBorderPatternString(mBorderPattern));
+  annotationString.append(mBorderPattern.toQString());
   // get the extents
   annotationString.append(mExtent.toQString());
   // get the radius
@@ -252,8 +253,8 @@ QString RectangleAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the border pattern
-  if (mBorderPattern != StringHandler::BorderNone) {
-    annotationString.append(QString("borderPattern=").append(StringHandler::getBorderPatternString(mBorderPattern)));
+  if (mBorderPattern.isDynamicSelectExpression() || mBorderPattern.toQString().compare(QStringLiteral("BorderPattern.None")) != 0) {
+    annotationString.append(QString("borderPattern=%1").arg(mBorderPattern.toQString()));
   }
   // get the extents
   if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {

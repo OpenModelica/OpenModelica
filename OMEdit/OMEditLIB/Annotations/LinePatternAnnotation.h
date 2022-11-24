@@ -27,20 +27,24 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef REALANNOTATION_H
-#define REALANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef LINEPATTERNANNOTATION_H
+#define LINEPATTERNANNOTATION_H
 
 #include "DynamicAnnotation.h"
+#include "Util/StringHandler.h"
 
-class RealAnnotation : public DynamicAnnotation
+class LinePatternAnnotation : public DynamicAnnotation
 {
   public:
-    RealAnnotation();
+    LinePatternAnnotation();
 
     void clear() override;
 
-    operator qreal() const { return mValue; }
-    RealAnnotation& operator= (qreal value);
+    operator StringHandler::LinePattern() const { return mValue; }
+    LinePatternAnnotation& operator= (StringHandler::LinePattern linePattern);
 
     FlatModelica::Expression toExp() const override;
 
@@ -48,7 +52,7 @@ class RealAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    qreal mValue;
+    StringHandler::LinePattern mValue;
 };
 
-#endif /* REALANNOTATION_H */
+#endif // LINEPATTERNANNOTATION_H

@@ -223,8 +223,8 @@ namespace ModelInstance
   {
     mLineColor = QColor(0, 0, 0);
     mFillColor = QColor(0, 0, 0);
-    mPattern = "LinePattern.Solid";
-    mFillPattern = "FillPattern.None";
+    mPattern = StringHandler::LineSolid;
+    mFillPattern = StringHandler::FillNone;
     mLineThickness = 0.25;
   }
 
@@ -232,14 +232,8 @@ namespace ModelInstance
   {
     mLineColor.deserialize(jsonArray.at(3));
     mFillColor.deserialize(jsonArray.at(4));
-    QJsonObject pattern = jsonArray.at(5).toObject();
-    if (pattern.contains("name")) {
-      mPattern = pattern.value("name").toString();
-    }
-    QJsonObject fillPattern = jsonArray.at(6).toObject();
-    if (fillPattern.contains("name")) {
-      mFillPattern = fillPattern.value("name").toString();
-    }
+    mPattern.deserialize(jsonArray.at(5));
+    mFillPattern.deserialize(jsonArray.at(6));
     mLineThickness.deserialize(jsonArray.at(7));
   }
 
@@ -254,17 +248,11 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("pattern")) {
-      QJsonObject pattern = jsonObject.value("pattern").toObject();
-      if (pattern.contains("name")) {
-        mPattern = pattern.value("name").toString();
-      }
+      mPattern.deserialize(jsonObject.value("pattern"));
     }
 
     if (jsonObject.contains("fillPattern")) {
-      QJsonObject fillPattern = jsonObject.value("fillPattern").toObject();
-      if (fillPattern.contains("name")) {
-        mFillPattern = fillPattern.value("name").toString();
-      }
+      mFillPattern.deserialize(jsonObject.value("fillPattern"));
     }
 
     if (jsonObject.contains("lineThickness")) {
@@ -285,12 +273,12 @@ namespace ModelInstance
   {
     mPoints.clear();
     mColor = QColor(0, 0, 0);
-    mPattern = "LinePattern.Solid";
+    mPattern = StringHandler::LineSolid;
     mThickness = 0.25;
     mArrow[0] = "Arrow.None";
     mArrow[1] = "Arrow.None";
     mArrowSize = 3;
-    mSmooth = "Smooth.None";
+    mSmooth = StringHandler::SmoothNone;
   }
 
   void Line::deserialize(const QJsonArray &jsonArray)
@@ -305,11 +293,8 @@ namespace ModelInstance
         mPoints.append(point);
       }
       mColor.deserialize(jsonArray.at(4));
-      QJsonObject pattern = jsonArray.at(5).toObject();
-      if (pattern.contains("name")) {
-        mPattern = pattern.value("name").toString();
-      }
-      mThickness = jsonArray.at(6).toDouble();
+      mPattern.deserialize(jsonArray.at(5));
+      mThickness.deserialize(jsonArray.at(6));
       QJsonArray arrows = jsonArray.at(7).toArray();
       if (arrows.size() == 2) {
         QJsonObject startArrow = arrows.at(0).toObject();
@@ -321,11 +306,8 @@ namespace ModelInstance
           mArrow[1] = endArrow.value("name").toString();
         }
       }
-      mArrowSize = jsonArray.at(8).toDouble();
-      QJsonObject smooth = jsonArray.at(9).toObject();
-      if (smooth.contains("name")) {
-        mSmooth = smooth.value("name").toString();
-      }
+      mArrowSize.deserialize(jsonArray.at(8));
+      mSmooth.deserialize(jsonArray.at(9));
     }
   }
 
@@ -347,14 +329,11 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("pattern")) {
-      QJsonObject pattern = jsonObject.value("pattern").toObject();
-      if (pattern.contains("name")) {
-        mPattern = pattern.value("name").toString();
-      }
+      mPattern.deserialize(jsonObject.value("pattern"));
     }
 
     if (jsonObject.contains("thickness")) {
-      mThickness = jsonObject.value("thickness").toDouble();
+      mThickness.deserialize(jsonObject.value("thickness"));
     }
 
     if (jsonObject.contains("arrow")) {
@@ -372,14 +351,11 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("arrowSize")) {
-      mArrowSize = jsonObject.value("arrowSize").toDouble();
+      mArrowSize.deserialize(jsonObject.value("arrowSize"));
     }
 
     if (jsonObject.contains("smooth")) {
-      QJsonObject smooth = jsonObject.value("smooth").toObject();
-      if (smooth.contains("name")) {
-        mSmooth = smooth.value("name").toString();
-      }
+      mSmooth.deserialize(jsonObject.value("smooth"));
     }
   }
 
@@ -409,7 +385,7 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mPoints.clear();
-    mSmooth = "Smooth.None";
+    mSmooth = StringHandler::SmoothNone;
   }
 
   void Polygon::deserialize(const QJsonArray &jsonArray)
@@ -424,10 +400,7 @@ namespace ModelInstance
         point.deserialize(pointValue.toArray());
         mPoints.append(point);
       }
-      QJsonObject smooth = jsonArray.at(9).toObject();
-      if (smooth.contains("name")) {
-        mSmooth = smooth.value("name").toString();
-      }
+      mSmooth.deserialize(jsonArray.at(9));
     }
   }
 
@@ -435,7 +408,7 @@ namespace ModelInstance
   Rectangle::Rectangle(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mBorderPattern = "BorderPattern::None";
+    mBorderPattern = StringHandler::BorderNone;
     mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mRadius = 0;
@@ -447,10 +420,7 @@ namespace ModelInstance
       GraphicItem::deserialize(jsonArray);
       FilledShape::deserialize(jsonArray);
 
-      QJsonObject borderPattern = jsonArray.at(8).toObject();
-      if (borderPattern.contains("name")) {
-        mBorderPattern = borderPattern.value("name").toString();
-      }
+      mBorderPattern.deserialize(jsonArray.at(8));
       mExtent.deserialize(jsonArray.at(9));
       mRadius.deserialize(jsonArray.at(10));
     }
@@ -464,9 +434,9 @@ namespace ModelInstance
     mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
-      mClosure = "EllipseClosure::Chord";
+      mClosure = StringHandler::ClosureChord;
     } else {
-      mClosure = "EllipseClosure::Radial";
+      mClosure = StringHandler::ClosureRadial;
     }
   }
 
@@ -479,10 +449,7 @@ namespace ModelInstance
       mExtent.deserialize(jsonArray.at(8));
       mStartAngle.deserialize(jsonArray.at(9));
       mEndAngle.deserialize(jsonArray.at(10));
-      QJsonObject closure = jsonArray.at(11).toObject();
-      if (closure.contains("name")) {
-        mClosure = closure.value("name").toString();
-      }
+      mClosure.deserialize(jsonArray.at(11));
     }
   }
 

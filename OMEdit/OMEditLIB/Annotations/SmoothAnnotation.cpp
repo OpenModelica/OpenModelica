@@ -27,28 +27,36 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef REALANNOTATION_H
-#define REALANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#include "SmoothAnnotation.h"
 
-#include "DynamicAnnotation.h"
-
-class RealAnnotation : public DynamicAnnotation
+SmoothAnnotation::SmoothAnnotation()
 {
-  public:
-    RealAnnotation();
+  clear();
+}
 
-    void clear() override;
+void SmoothAnnotation::clear()
+{
+  mValue = StringHandler::SmoothNone;
+}
 
-    operator qreal() const { return mValue; }
-    RealAnnotation& operator= (qreal value);
+SmoothAnnotation& SmoothAnnotation::operator= (StringHandler::Smooth smooth)
+{
+  mValue = smooth;
+  setExp();
+  return *this;
+}
 
-    FlatModelica::Expression toExp() const override;
+FlatModelica::Expression SmoothAnnotation::toExp() const
+{
+  return FlatModelica::Expression(StringHandler::getSmoothString(mValue).toStdString(), mValue);
+}
 
-  private:
-    void fromExp(const FlatModelica::Expression &exp) override;
-
-  private:
-    qreal mValue;
-};
-
-#endif /* REALANNOTATION_H */
+void SmoothAnnotation::fromExp(const FlatModelica::Expression &exp)
+{
+  if (exp.isInteger()) {
+    mValue = StringHandler::getSmoothType(QString::fromStdString(exp.enumValue()));
+  }
+}

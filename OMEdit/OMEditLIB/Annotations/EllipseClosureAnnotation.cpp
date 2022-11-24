@@ -27,28 +27,36 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef REALANNOTATION_H
-#define REALANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#include "EllipseClosureAnnotation.h"
 
-#include "DynamicAnnotation.h"
-
-class RealAnnotation : public DynamicAnnotation
+EllipseClosureAnnotation::EllipseClosureAnnotation()
 {
-  public:
-    RealAnnotation();
+  clear();
+}
 
-    void clear() override;
+void EllipseClosureAnnotation::clear()
+{
+  mValue = StringHandler::ClosureNone;
+}
 
-    operator qreal() const { return mValue; }
-    RealAnnotation& operator= (qreal value);
+EllipseClosureAnnotation& EllipseClosureAnnotation::operator= (StringHandler::EllipseClosure ellipseClosure)
+{
+  mValue = ellipseClosure;
+  setExp();
+  return *this;
+}
 
-    FlatModelica::Expression toExp() const override;
+FlatModelica::Expression EllipseClosureAnnotation::toExp() const
+{
+  return FlatModelica::Expression(StringHandler::getClosureString(mValue).toStdString(), mValue);
+}
 
-  private:
-    void fromExp(const FlatModelica::Expression &exp) override;
-
-  private:
-    qreal mValue;
-};
-
-#endif /* REALANNOTATION_H */
+void EllipseClosureAnnotation::fromExp(const FlatModelica::Expression &exp)
+{
+  if (exp.isInteger()) {
+    mValue = StringHandler::getClosureType(QString::fromStdString(exp.enumValue()));
+  }
+}

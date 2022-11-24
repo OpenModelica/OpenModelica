@@ -37,13 +37,6 @@
 
 #include "Util/StringHandler.h"
 #include "Element/Transformation.h"
-#include "FlatModelica/Expression.h"
-#include "BooleanAnnotation.h"
-#include "ColorAnnotation.h"
-#include "ExtentAnnotation.h"
-#include "RealAnnotation.h"
-#include "PointAnnotation.h"
-#include "StringAnnotation.h"
 #include "Modeling/Model.h"
 
 #include <QGraphicsItem>
@@ -101,14 +94,14 @@ public:
   void setLinePattern(StringHandler::LinePattern pattern) {mLinePattern = pattern;}
   StringHandler::LinePattern getLinePattern() {return mLinePattern;}
   void setFillPattern(StringHandler::FillPattern pattern) {mFillPattern = pattern;}
-  StringHandler::FillPattern getFillPattern() {return mFillPattern;}
+  FillPatternAnnotation getFillPattern() {return mFillPattern;}
   void setLineThickness(qreal thickness) {mLineThickness = thickness;}
   qreal getLineThickness() {return mLineThickness;}
 protected:
   ColorAnnotation mLineColor;
   ColorAnnotation mFillColor;
-  StringHandler::LinePattern mLinePattern;
-  StringHandler::FillPattern mFillPattern;
+  LinePatternAnnotation mLinePattern;
+  FillPatternAnnotation mFillPattern;
   RealAnnotation mLineThickness;
 };
 
@@ -274,13 +267,13 @@ protected:
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;
   RealAnnotation mArrowSize;
-  StringHandler::Smooth mSmooth;
+  SmoothAnnotation mSmooth;
   ExtentAnnotation mExtent;
-  StringHandler::BorderPattern mBorderPattern;
+  BorderPatternAnnotation mBorderPattern;
   RealAnnotation mRadius;
   RealAnnotation mStartAngle;
   RealAnnotation mEndAngle;
-  StringHandler::EllipseClosure mClosure;
+  EllipseClosureAnnotation mClosure;
   StringAnnotation mOriginalTextString;
   StringAnnotation mTextString;
   RealAnnotation mFontSize;

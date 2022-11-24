@@ -647,14 +647,16 @@ void LineAnnotation::parseShapeAnnotation()
   }
   mLineColor = mpLine->getColor();
   mLineColor.evaluate(mpLine->getParentModel());
-  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
+  mLinePattern = mpLine->getPattern();
+  mLinePattern.evaluate(mpLine->getParentModel());
   mLineThickness = mpLine->getLineThickness();
   mLineThickness.evaluate(mpLine->getParentModel());
   mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
   mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
   mArrowSize = mpLine->getArrowSize();
   mArrowSize.evaluate(mpLine->getParentModel());
-  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpLine->getSmooth()));
+  mSmooth = mpLine->getSmooth();
+  mSmooth.evaluate(mpLine->getParentModel());
 }
 
 QPainterPath LineAnnotation::getShape() const
@@ -945,7 +947,7 @@ QString LineAnnotation::getOMCShapeAnnotation()
   // get the line color
   annotationString.append(mLineColor.toQString());
   // get the line pattern
-  annotationString.append(StringHandler::getLinePatternString(mLinePattern));
+  annotationString.append(mLinePattern.toQString());
   // get the thickness
   annotationString.append(mLineThickness.toQString());
   // get the start and end arrow
@@ -956,7 +958,7 @@ QString LineAnnotation::getOMCShapeAnnotation()
   // get the arrow size
   annotationString.append(mArrowSize.toQString());
   // get the smooth
-  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  annotationString.append(mSmooth.toQString());
   return annotationString.join(",");
 }
 
@@ -1000,8 +1002,8 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(QString("color=%1").arg(mLineColor.toQString()));
   }
   // get the line pattern
-  if (mLinePattern != StringHandler::LineSolid) {
-    annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
+  if (mLinePattern.isDynamicSelectExpression() || mLinePattern.toQString().compare(QStringLiteral("LinePattern.LineSolid")) != 0) {
+    annotationString.append(QString("pattern=&1").arg(mLinePattern.toQString()));
   }
   // get the thickness
   if (mLineThickness.isDynamicSelectExpression() || mLineThickness.toQString().compare(QStringLiteral("0.25")) != 0) {
@@ -1020,8 +1022,8 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(QString("arrowSize=%1").arg(mArrowSize.toQString()));
   }
   // get the smooth
-  if (mSmooth != StringHandler::SmoothNone) {
-    annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
+  if (mSmooth.isDynamicSelectExpression() || mSmooth.toQString().compare(QStringLiteral("Smooth.None")) != 0) {
+    annotationString.append(QString("smooth=%1").arg(mSmooth.toQString()));
   }
   return QString("Line(").append(annotationString.join(",")).append(")");
 }
@@ -2642,12 +2644,12 @@ void LineAnnotation::updateLine()
     mpLine->addPoint(point);
   }
   mpLine->setColor(mLineColor);
-  mpLine->setLinePattern(StringHandler::getLinePatternString(mLinePattern));
+  mpLine->setPattern(mLinePattern);
   mpLine->setThickness(mLineThickness);
   mpLine->setStartArrow(StringHandler::getArrowString(mArrow.at(0)));
   mpLine->setEndArrow(StringHandler::getArrowString(mArrow.at(1)));
   mpLine->setArrowSize(mArrowSize);
-  mpLine->setSmooth(StringHandler::getSmoothString(mSmooth));
+  mpLine->setSmooth(mSmooth);
 }
 
 void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)
