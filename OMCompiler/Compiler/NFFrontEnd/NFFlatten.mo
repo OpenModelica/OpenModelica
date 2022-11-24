@@ -746,6 +746,7 @@ algorithm
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       binding_exp := Ceval.evalExp(binding_exp);
+      binding_exp := flattenExp(binding_exp, Prefix.toNonIndexedPrefix(prefix));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
@@ -757,6 +758,7 @@ algorithm
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
           binding_exp_eval := Ceval.evalExp(binding_exp);
+          binding_exp_eval := flattenExp(binding_exp_eval, Prefix.toNonIndexedPrefix(prefix));
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
