@@ -4595,7 +4595,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};
         omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
-        throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+        throwStreamPrintWithEquationIndexes(threadData, info, equationIndexes, <%msgVar%>);
       }
     }
     >>

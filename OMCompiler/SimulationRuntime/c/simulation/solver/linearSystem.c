@@ -746,9 +746,9 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       return 1;
     }
 #ifdef USE_PARJAC
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
 #else
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {

@@ -100,7 +100,7 @@ int checkForStateEvent(DATA* data, LIST *eventList)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    debugStreamPrintWithEquationIndexes(LOG_EVENTS, 1, eq_indexes, "%s", exp_str);
+    debugStreamPrintWithEquationIndexes(LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
 
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
@@ -234,7 +234,7 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
         data->simulationInfo->chatteringInfo.messageEmitted = 1;
         if (omc_flag[FLAG_ABORT_SLOW])
         {
-          throwStreamPrintWithEquationIndexes(threadData, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
+          throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
         }
       }
     }
