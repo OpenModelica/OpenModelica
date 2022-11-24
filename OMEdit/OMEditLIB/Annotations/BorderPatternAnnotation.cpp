@@ -27,28 +27,36 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef REALANNOTATION_H
-#define REALANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#include "BorderPatternAnnotation.h"
 
-#include "DynamicAnnotation.h"
-
-class RealAnnotation : public DynamicAnnotation
+BorderPatternAnnotation::BorderPatternAnnotation()
 {
-  public:
-    RealAnnotation();
+  clear();
+}
 
-    void clear() override;
+void BorderPatternAnnotation::clear()
+{
+  mValue = StringHandler::BorderNone;
+}
 
-    operator qreal() const { return mValue; }
-    RealAnnotation& operator= (qreal value);
+BorderPatternAnnotation& BorderPatternAnnotation::operator= (StringHandler::BorderPattern borderPattern)
+{
+  mValue = borderPattern;
+  setExp();
+  return *this;
+}
 
-    FlatModelica::Expression toExp() const override;
+FlatModelica::Expression BorderPatternAnnotation::toExp() const
+{
+  return FlatModelica::Expression(StringHandler::getBorderPatternString(mValue).toStdString(), mValue);
+}
 
-  private:
-    void fromExp(const FlatModelica::Expression &exp) override;
-
-  private:
-    qreal mValue;
-};
-
-#endif /* REALANNOTATION_H */
+void BorderPatternAnnotation::fromExp(const FlatModelica::Expression &exp)
+{
+  if (exp.isInteger()) {
+    mValue = StringHandler::getBorderPatternType(QString::fromStdString(exp.enumValue()));
+  }
+}

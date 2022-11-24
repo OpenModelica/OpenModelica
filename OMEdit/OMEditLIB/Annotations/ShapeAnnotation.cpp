@@ -43,7 +43,6 @@
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
 
-
 QString stripDynamicSelect(const QString &str)
 {
   return str.startsWith("DynamicSelect") ?
@@ -200,8 +199,10 @@ void FilledShape::parseShapeAnnotation(ModelInstance::Shape *pShape)
   mLineColor.evaluate(pShape->getParentModel());
   mFillColor = pShape->getFillColor();
   mFillColor.evaluate(pShape->getParentModel());
-  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pShape->getPattern()));
-  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pShape->getFillPattern()));
+  mLinePattern = pShape->getPattern();
+  mLinePattern.evaluate(pShape->getParentModel());
+  mFillPattern = pShape->getFillPattern();
+  mFillPattern.evaluate(pShape->getParentModel());
   mLineThickness = pShape->getLineThickness();
   mLineThickness.evaluate(pShape->getParentModel());
 }
@@ -221,7 +222,7 @@ QStringList FilledShape::getOMCShapeAnnotation()
   /* get the line pattern */
   annotationString.append(StringHandler::getLinePatternString(mLinePattern));
   /* get the fill pattern */
-  annotationString.append(StringHandler::getFillPatternString(mFillPattern));
+  annotationString.append(mFillPattern.toQString());
   // get the thickness
   annotationString.append(mLineThickness.toQString());
   return annotationString;
@@ -248,8 +249,8 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
   }
   /* get the fill pattern */
-  if (mFillPattern != StringHandler::FillNone) {
-    annotationString.append(QString("fillPattern=").append(StringHandler::getFillPatternString(mFillPattern)));
+  if (mFillPattern.isDynamicSelectExpression() || mFillPattern.toQString().compare(QStringLiteral("FillPattern.None")) != 0) {
+    annotationString.append(QString("fillPattern=%1").arg(mFillPattern.toQString()));
   }
   // get the thickness
   if (mLineThickness.isDynamicSelectExpression() || mLineThickness.toQString().compare(QStringLiteral("0.25")) != 0) {

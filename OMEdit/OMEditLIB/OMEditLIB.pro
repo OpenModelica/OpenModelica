@@ -149,10 +149,15 @@ SOURCES += Util/Helper.cpp \
   Annotations/BitmapAnnotation.cpp \
   Annotations/DynamicAnnotation.cpp \
   Annotations/BooleanAnnotation.cpp \
-  Annotations/ColorAnnotation.cpp \
-  Annotations/ExtentAnnotation.cpp \
   Annotations/PointAnnotation.cpp \
   Annotations/RealAnnotation.cpp \
+  Annotations/ColorAnnotation.cpp \
+  Annotations/LinePatternAnnotation.cpp \
+  Annotations/FillPatternAnnotation.cpp \
+  Annotations/SmoothAnnotation.cpp \
+  Annotations/ExtentAnnotation.cpp \
+  Annotations/BorderPatternAnnotation.cpp \
+  Annotations/EllipseClosureAnnotation.cpp \
   Annotations/StringAnnotation.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
@@ -252,10 +257,15 @@ HEADERS  += Util/Helper.h \
   Annotations/BitmapAnnotation.h \
   Annotations/DynamicAnnotation.h \
   Annotations/BooleanAnnotation.h \
-  Annotations/ColorAnnotation.h \
-  Annotations/ExtentAnnotation.h \
   Annotations/PointAnnotation.h \
   Annotations/RealAnnotation.h \
+  Annotations/ColorAnnotation.h \
+  Annotations/LinePatternAnnotation.h \
+  Annotations/FillPatternAnnotation.h \
+  Annotations/SmoothAnnotation.h \
+  Annotations/ExtentAnnotation.h \
+  Annotations/BorderPatternAnnotation.h \
+  Annotations/EllipseClosureAnnotation.h \
   Annotations/StringAnnotation.h \
   Element/ElementProperties.h \
   Element/Transformation.h \

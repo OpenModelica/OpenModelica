@@ -27,20 +27,24 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef REALANNOTATION_H
-#define REALANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef SMOOTHANNOTATION_H
+#define SMOOTHANNOTATION_H
 
 #include "DynamicAnnotation.h"
+#include "Util/StringHandler.h"
 
-class RealAnnotation : public DynamicAnnotation
+class SmoothAnnotation : public DynamicAnnotation
 {
   public:
-    RealAnnotation();
+    SmoothAnnotation();
 
     void clear() override;
 
-    operator qreal() const { return mValue; }
-    RealAnnotation& operator= (qreal value);
+    operator StringHandler::Smooth() const { return mValue; }
+    SmoothAnnotation& operator= (StringHandler::Smooth smooth);
 
     FlatModelica::Expression toExp() const override;
 
@@ -48,7 +52,7 @@ class RealAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    qreal mValue;
+    StringHandler::Smooth mValue;
 };
 
-#endif /* REALANNOTATION_H */
+#endif // SMOOTHANNOTATION_H

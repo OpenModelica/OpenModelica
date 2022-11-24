@@ -29,11 +29,11 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Per Östlund <per.ostlund@liu.se>
  */
 
-#ifndef DIAGRAM_H
-#define DIAGRAM_H
+#ifndef EXPRESSIONTEST_H
+#define EXPRESSIONTEST_H
 
 #include <QObject>
 
@@ -57,4 +57,4 @@ private slots:
   void cleanupTestCase();
 };
 
-#endif // DIAGRAM_H
+#endif // EXPRESSIONTEST_H

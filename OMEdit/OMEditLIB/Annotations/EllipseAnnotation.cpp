@@ -130,7 +130,8 @@ void EllipseAnnotation::parseShapeAnnotation()
   mStartAngle.evaluate(mpEllipse->getParentModel());
   mEndAngle = mpEllipse->getEndAngle();
   mEndAngle.evaluate(mpEllipse->getParentModel());
-  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
+  mClosure = mpEllipse->getClosure();
+  mClosure.evaluate(mpEllipse->getParentModel());
 }
 
 QRectF EllipseAnnotation::boundingRect() const

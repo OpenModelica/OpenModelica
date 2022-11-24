@@ -647,14 +647,16 @@ void LineAnnotation::parseShapeAnnotation()
   }
   mLineColor = mpLine->getColor();
   mLineColor.evaluate(mpLine->getParentModel());
-  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
+  mLinePattern = mpLine->getPattern();
+  mLinePattern.evaluate(mpLine->getParentModel());
   mLineThickness = mpLine->getLineThickness();
   mLineThickness.evaluate(mpLine->getParentModel());
   mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
   mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
   mArrowSize = mpLine->getArrowSize();
   mArrowSize.evaluate(mpLine->getParentModel());
-  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpLine->getSmooth()));
+  mSmooth = mpLine->getSmooth();
+  mSmooth.evaluate(mpLine->getParentModel());
 }
 
 QPainterPath LineAnnotation::getShape() const
@@ -2642,12 +2644,12 @@ void LineAnnotation::updateLine()
     mpLine->addPoint(point);
   }
   mpLine->setColor(mLineColor);
-  mpLine->setLinePattern(StringHandler::getLinePatternString(mLinePattern));
+  mpLine->setPattern(mLinePattern);
   mpLine->setThickness(mLineThickness);
   mpLine->setStartArrow(StringHandler::getArrowString(mArrow.at(0)));
   mpLine->setEndArrow(StringHandler::getArrowString(mArrow.at(1)));
   mpLine->setArrowSize(mArrowSize);
-  mpLine->setSmooth(StringHandler::getSmoothString(mSmooth));
+  mpLine->setSmooth(mSmooth);
 }
 
 void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)

@@ -42,7 +42,12 @@
 #include "Annotations/PointAnnotation.h"
 #include "Annotations/RealAnnotation.h"
 #include "Annotations/ColorAnnotation.h"
+#include "Annotations/LinePatternAnnotation.h"
+#include "Annotations/FillPatternAnnotation.h"
+#include "Annotations/SmoothAnnotation.h"
 #include "Annotations/ExtentAnnotation.h"
+#include "Annotations/BorderPatternAnnotation.h"
+#include "Annotations/EllipseClosureAnnotation.h"
 #include "Annotations/StringAnnotation.h"
 
 namespace ModelInstance
@@ -135,8 +140,8 @@ private:
     FilledShape();
     ColorAnnotation getLineColor() const {return mLineColor;}
     ColorAnnotation getFillColor() const {return mFillColor;}
-    QString getPattern() const {return mPattern;}
-    QString getFillPattern() const {return mFillPattern;}
+    LinePatternAnnotation getPattern() const {return mPattern;}
+    FillPatternAnnotation getFillPattern() const {return mFillPattern;}
     RealAnnotation getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
@@ -144,8 +149,8 @@ private:
   private:
     ColorAnnotation mLineColor;
     ColorAnnotation mFillColor;
-    QString mPattern;
-    QString mFillPattern;
+    LinePatternAnnotation mPattern;
+    FillPatternAnnotation mFillPattern;
     RealAnnotation mLineThickness;
   };
 
@@ -172,8 +177,8 @@ private:
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
     ColorAnnotation getColor() const {return mColor;}
-    void setLinePattern(const QString &pattern) {mPattern = pattern;}
-    QString getPattern() const {return mPattern;}
+    void setPattern(StringHandler::LinePattern pattern) {mPattern = pattern;}
+    LinePatternAnnotation getPattern() const {return mPattern;}
     void setThickness(double thickness) {mThickness = thickness;}
     RealAnnotation getThickness() const {return mThickness;}
     void setStartArrow(const QString &startArrow) {mArrow[0] = startArrow;}
@@ -182,18 +187,18 @@ private:
     QString getEndArrow() const {return mArrow[1];}
     void setArrowSize(double arrowSize) {mArrowSize = arrowSize;}
     RealAnnotation getArrowSize() const {return mArrowSize;}
-    void setSmooth(const QString &smooth) {mSmooth = smooth;}
-    QString getSmooth() const {return mSmooth;}
+    void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
+    SmoothAnnotation getSmooth() const {return mSmooth;}
 
     bool operator==(const Line &line) const;
   private:
     QList<Point> mPoints;
     ColorAnnotation mColor;
-    QString mPattern;
+    LinePatternAnnotation mPattern;
     RealAnnotation mThickness;
     QString mArrow[2];
     RealAnnotation mArrowSize;
-    QString mSmooth;
+    SmoothAnnotation mSmooth;
   };
 
   class Polygon : public Shape
@@ -215,11 +220,11 @@ private:
     Rectangle(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    QString getBorderPattern() const {return mBorderPattern;}
+    BorderPatternAnnotation getBorderPattern() const {return mBorderPattern;}
     ExtentAnnotation getExtent() const {return mExtent;}
     RealAnnotation getRadius() const {return mRadius;}
   private:
-    QString mBorderPattern;
+    BorderPatternAnnotation mBorderPattern;
     ExtentAnnotation mExtent;
     RealAnnotation mRadius;
   };
@@ -233,12 +238,12 @@ private:
     ExtentAnnotation getExtent() const {return mExtent;}
     RealAnnotation getStartAngle() const {return mStartAngle;}
     RealAnnotation getEndAngle() const {return mEndAngle;}
-    QString getClosure() const {return mClosure;}
+    EllipseClosureAnnotation getClosure() const {return mClosure;}
   private:
     ExtentAnnotation mExtent;
     RealAnnotation mStartAngle;
     RealAnnotation mEndAngle;
-    QString mClosure;
+    EllipseClosureAnnotation mClosure;
   };
 
   class Text : public Shape

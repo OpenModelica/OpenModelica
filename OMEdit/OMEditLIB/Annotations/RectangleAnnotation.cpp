@@ -164,7 +164,8 @@ void RectangleAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpRectangle);
   FilledShape::parseShapeAnnotation(mpRectangle);
 
-  mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(mpRectangle->getBorderPattern()));
+  mBorderPattern = mpRectangle->getBorderPattern();
+  mBorderPattern.evaluate(mpRectangle->getParentModel());
   mExtent = mpRectangle->getExtent();
   mExtent.evaluate(mpRectangle->getParentModel());
   mRadius = mpRectangle->getRadius();

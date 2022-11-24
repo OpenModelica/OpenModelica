@@ -29,7 +29,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Per Östlund <per.ostlund@liu.se>
  */
 
 #include "ExpressionTest.h"
@@ -397,6 +397,13 @@ void ExpressionTest::parseJSON_data()
     {"false", 2}
   };
   QTest::newRow("json_if1") << value;
+
+  value = QJsonObject{
+    {"$kind", "enum"},
+    {"name", "FillPattern.Solid"},
+    {"index", 1}
+  };
+  QTest::newRow("json_enum") << value;
 }
 
 void ExpressionTest::cleanupTestCase()
