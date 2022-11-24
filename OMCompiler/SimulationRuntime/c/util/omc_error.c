@@ -371,7 +371,7 @@ void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list 
   }
 }
 
-void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+void infoStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
   if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];

@@ -4525,7 +4525,8 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     else
     <<
     if (data->simulationInfo->noThrowAsserts) {
-      infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
+      FILE_INFO info = {<%infoArgs(info)%>};
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);
       infoStreamPrint(LOG_ASSERT, 0, "%s", <%msgVar%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
@@ -4588,7 +4589,8 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     if(!(<%condVar%>))
     {
       if (data->simulationInfo->noThrowAsserts) {
-        infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        FILE_INFO info = {<%infoArgs(info)%>};
+        infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
         data->simulationInfo->needToReThrow = 1;
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};
