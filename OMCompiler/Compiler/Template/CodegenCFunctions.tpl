@@ -4533,8 +4533,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
       infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert_warning(info, <%infoTextContext%>);
-      <%omcAssertFunc%>info, equationIndexes, <%msgVar%>);
+      <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     }
     >>
   let warningTriggered = tempDeclZero("static int", &varDecls)
