@@ -319,6 +319,15 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
   for(i=0; i<level[stream]; ++i)
       printf("| ");
 
+  if (info.filename && strlen(info.filename) > 0) {
+  // Print to stdout because we are using printf down below as well.
+    printInfo(stdout, info);
+    printf("\n");
+
+    printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
+    printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
+  }
+
   for(i=0; msg[i]; i++)
   {
     if(msg[i] == '\n')
