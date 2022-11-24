@@ -208,10 +208,10 @@ private:
     void deserialize(const QJsonArray &jsonArray);
 
     QList<Point> getPoints() const {return mPoints;}
-    QString getSmooth() const {return mSmooth;}
+    SmoothAnnotation getSmooth() const {return mSmooth;}
   private:
     QList<Point> mPoints;
-    QString mSmooth;
+    SmoothAnnotation mSmooth;
   };
 
   class Rectangle : public Shape

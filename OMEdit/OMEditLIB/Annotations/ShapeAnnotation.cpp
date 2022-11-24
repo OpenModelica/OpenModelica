@@ -220,7 +220,7 @@ QStringList FilledShape::getOMCShapeAnnotation()
   /* get the fill color */
   annotationString.append(mFillColor.toQString());
   /* get the line pattern */
-  annotationString.append(StringHandler::getLinePatternString(mLinePattern));
+  annotationString.append(mLinePattern.toQString());
   /* get the fill pattern */
   annotationString.append(mFillPattern.toQString());
   // get the thickness
@@ -245,8 +245,8 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("fillColor=%1").arg(mFillColor.toQString()));
   }
   /* get the line pattern */
-  if (mLinePattern != StringHandler::LineSolid) {
-    annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
+  if (mLinePattern.isDynamicSelectExpression() || mLinePattern.toQString().compare(QStringLiteral("LinePattern.LineSolid")) != 0) {
+    annotationString.append(QString("pattern=%1").arg(mLinePattern.toQString()));
   }
   /* get the fill pattern */
   if (mFillPattern.isDynamicSelectExpression() || mFillPattern.toQString().compare(QStringLiteral("FillPattern.None")) != 0) {

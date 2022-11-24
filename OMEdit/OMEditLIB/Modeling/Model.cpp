@@ -385,7 +385,7 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mPoints.clear();
-    mSmooth = "Smooth.None";
+    mSmooth = StringHandler::SmoothNone;
   }
 
   void Polygon::deserialize(const QJsonArray &jsonArray)
@@ -400,10 +400,7 @@ namespace ModelInstance
         point.deserialize(pointValue.toArray());
         mPoints.append(point);
       }
-      QJsonObject smooth = jsonArray.at(9).toObject();
-      if (smooth.contains("name")) {
-        mSmooth = smooth.value("name").toString();
-      }
+      mSmooth.deserialize(jsonArray.at(9));
     }
   }
 

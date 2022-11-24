@@ -598,7 +598,7 @@ namespace FlatModelica
     Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
     bool isInteger() const override { return true; }
-    bool isLiteral() const override { return false; }
+    bool isLiteral() const override { return true; }
     const std::string& value() const { return _name; }
     void print(std::ostream &os) const override;
     QJsonValue serialize() const override;
