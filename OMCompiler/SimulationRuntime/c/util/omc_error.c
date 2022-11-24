@@ -320,12 +320,12 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
       printf("| ");
 
   if (info.filename && strlen(info.filename) > 0) {
-  // Print to stdout because we are using printf down below as well.
+    // Print to stdout because we are using printf down below as well.
     printInfo(stdout, info);
     printf("\n");
 
-    printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
-    printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
+    printf("%-17s | ", "|");
+    printf("%-7s | ", "|");
   }
 
   for(i=0; msg[i]; i++)
@@ -335,7 +335,7 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
       msg[i] = '\0';
       printf("%s\n", msg);
       if (msg[i+1]) {
-        messageText(type, stream, info, 0, &msg[i+1], 1, indexes);
+        messageText(type, stream, omc_dummyFileInfo, 0, &msg[i+1], 1, indexes);
       }
       return;
     }

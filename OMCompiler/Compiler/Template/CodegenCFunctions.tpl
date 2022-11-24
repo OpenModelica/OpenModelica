@@ -4514,7 +4514,10 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let AddionalFuncName = match context
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
-  let infoTextContext = '"The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue'
+  let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
+  /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
+     and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond, <%msgVar%>'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   let assertCode = match context case FUNCTION_CONTEXT(__) then
@@ -4524,10 +4527,10 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     >>
     else
     <<
+    const char* assert_cond = "(<%assertExpStr%>)";
     if (data->simulationInfo->noThrowAsserts) {
       FILE_INFO info = {<%infoArgs(info)%>};
-      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);
-      infoStreamPrint(LOG_ASSERT, 0, "%s", <%msgVar%>);<%rethrow%>
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
       omc_assert_warning(info, <%infoTextContext%>);
