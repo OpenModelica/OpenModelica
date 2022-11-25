@@ -868,6 +868,7 @@ algorithm
   cls_node := Inst.instantiateRootClass(cls_node, context);
   inst_tree := buildInstanceTree(cls_node);
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
 
   Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
   Typing.typeComponents(cls_node, context);
