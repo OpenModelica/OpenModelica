@@ -2030,7 +2030,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           } else {
-            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
+            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
           }
         }
         // update the time values if time unit is different then s
@@ -2090,6 +2090,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           plotParametricCurve.xVariable.variableName = pVariablesTreeItem->getPlotVariable();
           plotParametricCurve.xVariable.unit = pVariablesTreeItem->getUnit();
           plotParametricCurve.xVariable.displayUnit = pVariablesTreeItem->getDisplayUnit();
+          plotParametricCurve.xVariable.isString = pVariablesTreeItem->isString();
           mPlotParametricCurves.append(plotParametricCurve);
         } else {
           if (mPlotParametricCurves.isEmpty()) {
@@ -2106,6 +2107,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             plotParametricVariable.variableName = pVariablesTreeItem->getPlotVariable();
             plotParametricVariable.unit = pVariablesTreeItem->getUnit();
             plotParametricVariable.displayUnit = pVariablesTreeItem->getDisplayUnit();
+            plotParametricVariable.isString = pVariablesTreeItem->isString();
             plotParametricCurve.yVariables.append(plotParametricVariable);
             // Put the updated PlotParametricCurve to mPlotParametricCurves vector
             mPlotParametricCurves.append(plotParametricCurve);
@@ -2130,6 +2132,33 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             } else { /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/
               double timePercent = mpTimeTextBox->text().toDouble();
               pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
+            }
+            if (!pPlotCurve) {
+              pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
+            }
+            // convert x value
+            if (pPlotCurve && !plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
+              if (convertUnit.unitsCompatible) {
+                for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+                  pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                }
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              } else {
+                pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
+              }
+            }
+            // convert y value
+            if (pPlotCurve && !plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
+              if (convertUnit.unitsCompatible) {
+                for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+                  pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                }
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              } else {
+                pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
+              }
             }
 
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
@@ -2305,14 +2334,26 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       }
       /* update plots */
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        QString curveTitle = pPlotCurve->getNameStructure();
-        if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0) {
+        const QString yVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getYVariable());
+        if (yVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
           for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-          break;
+          if (!(pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+            break;
+          }
+        }
+        if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+          const QString xVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getXVariable());
+          if (xVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
+            for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+              pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+            }
+            pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+            pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+          }
         }
       }
       if (pPlotWindow->getAutoScaleButton()->isChecked()) {
