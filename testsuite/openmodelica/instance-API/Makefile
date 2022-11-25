@@ -14,6 +14,7 @@ GetModelInstanceDerived2.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
+GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
