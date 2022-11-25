@@ -216,7 +216,7 @@ pipeline {
             mkdir -p openmodelica.org-bibgen
             sh generate.sh "$PWD/openmodelica.org-bibgen"
             '''
-            stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen'
+            stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
           }
         }
       }
@@ -831,6 +831,7 @@ pipeline {
           userRemoteConfigs: [[credentialsId: 'git-credentials', url: 'https://github.com/OpenModelica/www.openmodelica.org.git']]
         ])
         unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
+        sh "git remote -v | grep www.openmodelica.org"
         sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
         sh "git add content/research/*.md"
         sshagent (credentials: ['Hudson-SSH-Key']) {
