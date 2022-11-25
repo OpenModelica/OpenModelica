@@ -1772,6 +1772,34 @@ void MainWindow::showOpenTransformationFileDialog()
 }
 
 /*!
+ * \brief MainWindow::unloadAll
+ * Slot activated when mpUnloadAll triggered signal is raised.\n
+ * Unloads all the loaded classes.
+ * \param onlyModelicaClasses
+ */
+void MainWindow::unloadAll(bool onlyModelicaClasses)
+{
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem) {
+      if ((pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OpenModelica")) == 0)
+          || (pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OMEdit.Search.Feature")) == 0)) {
+        continue;
+      } else if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pChildLibraryTreeItem, false, false);
+      } else if (!onlyModelicaClasses && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, true, false);
+      } else if (!onlyModelicaClasses) { // LibraryTreeItem::CompositeModel or LibraryTreeItem::Text
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pChildLibraryTreeItem, false);
+      }
+    }
+  }
+  // clear everything from OMC
+  MainWindow::instance()->getOMCProxy()->clear();
+}
+
+/*!
  * \brief MainWindow::createNewCompositeModelFile
  * Creates a new TLM LibraryTreeItem & ModelWidget.\n
  * Slot activated when mpNewCompositeModelFileAction triggered signal is raised.
@@ -3398,6 +3426,10 @@ void MainWindow::createActions()
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
+  // unload all action
+  mpUnloadAllAction = new QAction(tr("Unload All"), this);
+  mpUnloadAllAction->setStatusTip(tr("Unloads all loaded models"));
+  connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
   // create new CompositeModel action
   mpNewCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New Composite Model"), this);
   mpNewCompositeModelFileAction->setStatusTip(tr("Create New Composite Model file"));
@@ -3902,6 +3934,8 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpLoadEncryptedLibraryAction);
   mpFileMenu->addAction(mpOpenResultFileAction);
   mpFileMenu->addAction(mpOpenTransformationFileAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpUnloadAllAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpNewCompositeModelFileAction);
   mpFileMenu->addAction(mpOpenCompositeModelFileAction);
