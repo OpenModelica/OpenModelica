@@ -3811,7 +3811,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
   mpModelicaPathLabel = new Label("MODELICAPATH");
   mpModelicaPathTextBox = new QLineEdit;
-  QString modelicaPathToolTip = tr("List of paths searched while loading a library. Paths are separated by native path separator.");
+  QString modelicaPathToolTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
   mpModelicaPathTextBox->setPlaceholderText(Helper::ModelicaPath);
   mpModelicaPathTextBox->setToolTip(modelicaPathToolTip);
   mpModelicaPathBrowseButton = new QPushButton(Helper::browse);
