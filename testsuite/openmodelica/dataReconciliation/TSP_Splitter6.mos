@@ -2472,6 +2472,13 @@ getErrorString();
 // [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:29:3-31:17:writable] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Junctions/StaticDrum.mo:32:3-34:17:writable] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // endResult

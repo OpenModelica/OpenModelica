@@ -3023,6 +3023,29 @@ getErrorString();
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Splitter2.mo:14:3-16:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Splitter2.mo:17:3-18:82:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Splitter2.mo:19:3-21:17:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:14:3-16:24:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:17:3-18:52:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Junctions/Mixer2.mo:20:3-22:17:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourceP.mo:30:3-31:45:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // endResult
