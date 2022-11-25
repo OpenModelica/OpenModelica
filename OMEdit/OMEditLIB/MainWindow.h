@@ -148,6 +148,7 @@ public:
   bool isPlottingPerspectiveActive();
   bool isDebuggingPerspectiveActive();
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
+  QAction* getUnloadAllAction() {return mpUnloadAllAction;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
   QAction* getSaveTotalAction() {return mpSaveTotalAction;}
@@ -318,6 +319,7 @@ private:
   QAction *mpLoadEncryptedLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
+  QAction *mpUnloadAllAction;
   // CompositeModel File Actions
   QAction *mpNewCompositeModelFileAction;
   QAction *mpOpenCompositeModelFileAction;
@@ -485,6 +487,7 @@ public slots:
   void loadEncryptedLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
+  void unloadAll(bool onlyModelicaClasses = false);
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();

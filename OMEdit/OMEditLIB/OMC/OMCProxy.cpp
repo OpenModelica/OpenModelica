@@ -3528,6 +3528,17 @@ bool OMCProxy::restoreAST(int id)
 }
 
 /*!
+ * \brief OMCProxy::clear
+ * Clears all loaded classes.
+ */
+bool OMCProxy::clear()
+{
+  bool result = mpOMCInterface->clear();
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
