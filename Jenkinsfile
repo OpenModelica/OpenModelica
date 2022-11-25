@@ -824,12 +824,7 @@ pipeline {
         skipDefaultCheckout true
       }
       steps {
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: '*/main']],
-          extensions: scm.extensions + [[$class: 'CleanCheckout']],
-          userRemoteConfigs: [[credentialsId: 'git-credentials', url: 'https://github.com/OpenModelica/www.openmodelica.org.git']]
-        ])
+        git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'https://github.com/OpenModelica/www.openmodelica.org.git'
         unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
         sh "git remote -v | grep www.openmodelica.org"
         sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
@@ -839,7 +834,7 @@ pipeline {
           if ! git diff-index --quiet HEAD; then
             git commit -m 'Updated bibliography'
             ssh-keyscan github.com >> ~/.ssh/known_hosts
-            git push git@github.com:OpenModelica/www.openmodelica.org.git main:main
+            git push
           fi
           """
         }
