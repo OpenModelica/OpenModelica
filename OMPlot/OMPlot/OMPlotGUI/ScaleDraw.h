@@ -42,6 +42,7 @@ class ScaleDraw : public QwtScaleDraw
 public:
   ScaleDraw(QwtPlot::Axis axis, Plot *pParent);
   QString getUnitPrefix() const {return mUnitPrefix;}
+  int getExponent() const {return mExponent;}
   void invalidateCache();
   virtual QwtText label(double value) const;
 
@@ -49,6 +50,7 @@ private:
   QwtPlot::Axis mAxis;
   Plot *mpParentPlot;
   mutable QString mUnitPrefix;
+  mutable int mExponent;
 };
 }
 

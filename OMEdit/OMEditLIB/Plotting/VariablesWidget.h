@@ -205,6 +205,7 @@ typedef struct {
   QString variableName;
   QString unit;
   QString displayUnit;
+  bool isString;
 } PlotParametricVariable;
 
 typedef struct {
