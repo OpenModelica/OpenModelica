@@ -213,9 +213,10 @@ pipeline {
             sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
             sh '''
             cd doc/bibliography
-            mkdir -p /tmp/openmodelica.org-bibgen
-            sh generate.sh /tmp/openmodelica.org-bibgen
+            mkdir -p openmodelica.org-bibgen
+            sh generate.sh "$PWD/openmodelica.org-bibgen"
             '''
+            stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen'
           }
         }
       }
@@ -806,7 +807,40 @@ pipeline {
         githubNotify status: 'SUCCESS', description: 'Skipping CLA checks on omlib-staging', context: 'license/CLA'
         sshagent (credentials: ['Hudson-SSH-Key']) {
           sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
-          sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging & false)'
+          sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging && false)'
+        }
+      }
+    }
+    stage('push-bibliography') {
+      agent {
+        label 'linux'
+      }
+      when {
+        beforeAgent true
+        branch 'master'
+        expression { return currentBuild.currentResult == 'SUCCESS' }
+      }
+      options {
+        skipDefaultCheckout true
+      }
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/main']],
+          extensions: scm.extensions + [[$class: 'CleanCheckout']],
+          userRemoteConfigs: [[credentialsId: 'git-credentials', url: 'https://github.com/OpenModelica/www.openmodelica.org.git']]
+        ])
+        unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
+        sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
+        sh "git add content/research/*.md"
+        sshagent (credentials: ['Hudson-SSH-Key']) {
+          sh """
+          if ! git diff-index --quiet HEAD; then
+            git commit -m 'Updated bibliography'
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            git push git@github.com:OpenModelica/www.openmodelica.org.git main:main
+          fi
+          """
         }
       }
     }
