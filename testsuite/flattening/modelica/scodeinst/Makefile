@@ -662,6 +662,8 @@ FunctionSections3.mo \
 FunctionSections4.mo \
 FunctionSections5.mo \
 FunctionStreamPrefix.mo \
+FunctionUnitialized1.mo \
+FunctionUnitialized2.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
