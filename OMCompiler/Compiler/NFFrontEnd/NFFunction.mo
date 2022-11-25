@@ -2623,6 +2623,13 @@ protected
 
     body := getBody(fn);
     checkUseBeforeAssign2(unassigned, body);
+
+    for var in Vector.toList(unassigned) loop
+      if InstNode.isOutput(var) then
+        Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT, {InstNode.name(var)}, InstNode.info(var));
+        fail();
+      end if;
+    end for;
   end checkUseBeforeAssign;
 
   function addUnassignedComponents

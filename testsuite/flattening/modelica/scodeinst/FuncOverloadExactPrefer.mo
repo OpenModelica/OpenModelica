@@ -10,12 +10,16 @@ model FuncOverloadExactPrefer
   function F
     input Integer f1;
     output Integer f2;
+  algorithm
+    f2 := f1;
   end F;  
 
   function G
     input Real g1;
     input Integer g2 = 1;
     output Integer g3;
+  algorithm
+    g3 := g2;
   end G;
   
   function OV = $overload(F,G);
@@ -25,19 +29,8 @@ model FuncOverloadExactPrefer
 end FuncOverloadExactPrefer;
 
 // Result:
-// function FuncOverloadExactPrefer.F
-//   input Integer f1;
-//   output Integer f2;
-// end FuncOverloadExactPrefer.F;
-//
-// function FuncOverloadExactPrefer.G
-//   input Real g1;
-//   input Integer g2 = 1;
-//   output Integer g3;
-// end FuncOverloadExactPrefer.G;
-//
 // class FuncOverloadExactPrefer
-//   Integer x = FuncOverloadExactPrefer.F(1);
-//   Integer y = FuncOverloadExactPrefer.G(1.0, 1);
+//   Integer x = 1;
+//   Integer y = 1;
 // end FuncOverloadExactPrefer;
 // endResult
