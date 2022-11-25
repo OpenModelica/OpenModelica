@@ -109,7 +109,8 @@ public
     protected
       Expression start;
     algorithm
-      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind) + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
+      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind)
+        + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
       if Util.isSome(var.start) then
         start := Util.getOption(var.start);
         str := str + " = " + Expression.toString(start);
@@ -719,6 +720,8 @@ public
       str := str + SimVar.listToString(vars.stateVars, "States");
       str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := str + SimVar.listToString(vars.intAlgVars, "Integer Algebraic Variables");
+      str := str + SimVar.listToString(vars.boolAlgVars, "Boolean Algebraic Variables");
       str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
       str := str + SimVar.listToString(vars.residualVars, "Residual Variables");

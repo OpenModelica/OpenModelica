@@ -61,7 +61,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
-  import NBEvents.EventInfo;
+  import NBEvents.{EventInfo, StateEvent};
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import System = NBSystem;
@@ -661,9 +661,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings            = listLength(eventInfo.stateEvents),
+        numZeroCrossings            = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
         numTimeEvents               = listLength(eventInfo.timeEvents),
-        numRelations                = listLength(eventInfo.stateEvents),
+        numRelations                = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
         numMathEventFunctions       = eventInfo.numberMathEvents,
         numStateVars                = listLength(vars.stateVars),
         numAlgVars                  = listLength(vars.algVars),

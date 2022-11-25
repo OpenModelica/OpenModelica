@@ -849,8 +849,11 @@ package SimCode
       DAE.Exp rhs;
     end SINGLE_GENERIC_CALL;
 
-    record RESIDUAL_GENERIC_CALL
-    end RESIDUAL_GENERIC_CALL;
+    record IF_GENERIC_CALL
+      Integer index;
+      list<SimIterator> iters;
+      list<SimBranch> branches;
+    end IF_GENERIC_CALL;
   end SimGenericCall;
 
   uniontype SimIterator
@@ -861,6 +864,13 @@ package SimCode
       Integer size;
     end SIM_ITERATOR;
   end SimIterator;
+
+  uniontype SimBranch
+    record SIM_BRANCH
+      Option<DAE.Exp> condition;
+      list<tuple<DAE.Exp, DAE.Exp>> body;
+    end SIM_BRANCH;
+  end SimBranch;
 
   uniontype DaeModeConfig
     record ALL_EQUATIONS end ALL_EQUATIONS;
@@ -1406,6 +1416,10 @@ package SimCodeUtil
     output Boolean b ;
   end jacobianColumnsAreEmpty;
 
+  function getSimIteratorSize
+    input list<SimCode.SimIterator> iters;
+    output Integer size ;
+  end getSimIteratorSize;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1619,9 +1633,10 @@ package BackendDAE
 
   uniontype ZeroCrossing
     record ZERO_CROSSING
-      DAE.Exp relation_;
-      list<Integer> occurEquLst;
-      list<Integer> occurWhenLst;
+      Integer index                           "zero crossing index";
+      DAE.Exp relation_                       "function";
+      list<Integer> occurEquLst               "list of equations where the function occurs";
+      Option<list<SimCode.SimIterator>> iter  "optional iterator for for-loops";
     end ZERO_CROSSING;
   end ZeroCrossing;
 

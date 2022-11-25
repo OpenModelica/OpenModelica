@@ -555,6 +555,12 @@ public uniontype SimGenericCall
     DAE.Exp lhs;
     DAE.Exp rhs;
   end SINGLE_GENERIC_CALL;
+
+  record IF_GENERIC_CALL
+    Integer index;
+    list<SimIterator> iters;
+    list<SimBranch> branches;
+  end IF_GENERIC_CALL;
 end SimGenericCall;
 
 public uniontype SimIterator
@@ -565,6 +571,13 @@ public uniontype SimIterator
     Integer size;
   end SIM_ITERATOR;
 end SimIterator;
+
+public uniontype SimBranch
+  record SIM_BRANCH
+    Option<DAE.Exp> condition;
+    list<tuple<DAE.Exp, DAE.Exp>> body;
+  end SIM_BRANCH;
+end SimBranch;
 
 public
 uniontype DerivativeMatrix

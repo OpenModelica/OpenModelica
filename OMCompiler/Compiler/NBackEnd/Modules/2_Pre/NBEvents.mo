@@ -67,6 +67,10 @@ protected
   import NBVariable.VariablePointers;
   import NBEquation.WhenEquationBody;
 
+  // SimCode
+  import NSimGenericCall.SimIterator;
+  import OldSimIterator = SimCode.SimIterator;
+
   // Util
   import BackendUtil = NBBackendUtil;
   import DoubleEnded;
@@ -179,7 +183,7 @@ public
 
       eventInfo := EVENT_INFO(
         timeEvents        = timeEvents,
-        stateEvents       = stateEvents,
+        stateEvents       = StateEvent.updateIndices(stateEvents),
         numberMathEvents  = 0 // ToDo
       );
     end create;
@@ -209,7 +213,7 @@ public
     algorithm
       zeroCrossings := list(StateEvent.convert(stateEvent) for stateEvent in eventInfo.stateEvents);
       relations := zeroCrossings;
-      // for some reason this needs to be reverted
+      // for some reason this needs to be reversed
       timeEvents := listReverse(list(TimeEvent.convert(te) for te in eventInfo.timeEvents));
     end convert;
   end EventInfo;
@@ -579,6 +583,7 @@ public
 
   uniontype StateEvent
     record STATE_EVENT
+      Integer index                       "index for simcode";
       Pointer<Variable> auxiliary         "auxiliary variable representing the relation";
       Expression relation                 "function";
       Iterator iterator                   "optional iterator for events in for-loops (empty if none)";
@@ -620,11 +625,13 @@ public
 
       // create state event with dummy variable and update it later on if it does not already exist
       event := STATE_EVENT(
+        index       = 0,
         auxiliary   = Pointer.create(NBVariable.DUMMY_VARIABLE),
         relation    = condition,
         iterator    = iterator,
         occurEqLst  = {}
       );
+
       if StateEventTree.hasKey(bucket.stateEventTree, event) then
         // if the state event already exist just update the equations it belongs to
         bucket.stateEventTree := StateEventTree.update(bucket.stateEventTree, event, eqn :: StateEventTree.get(bucket.stateEventTree, event));
@@ -648,6 +655,11 @@ public
     algorithm
       outBoolean := 0==compare(se1, se2);
     end equals;
+
+    function size
+      input StateEvent se;
+      output Integer s = Iterator.size(se.iterator);
+    end size;
 
     function compare "Returns true if both zero crossings have the same function expression"
       input StateEvent se1;
@@ -675,13 +687,32 @@ public
       comp := BackendUtil.compareCombine(comp, comp1);
     end compare;
 
+    function updateIndices
+      input list<StateEvent> iEvents;
+      output list<StateEvent> oEvents = {};
+    protected
+      Integer idx = 0;
+    algorithm
+      for evt in iEvents loop
+        evt.index := idx;
+        idx := idx + Iterator.size(evt.iterator);
+        oEvents := evt :: oEvents;
+      end for;
+      oEvents := listReverse(oEvents);
+    end updateIndices;
+
     function convert
       input StateEvent se;
       output OldBackendDAE.ZeroCrossing oldZc;
+    protected
+      Option<list<OldSimIterator>> iter;
     algorithm
+      iter := if Iterator.isEmpty(se.iterator) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(se.iterator)));
       oldZc := OldBackendDAE.ZERO_CROSSING(
+        index       = se.index,
         relation_   = Expression.toDAE(se.relation),
-        occurEquLst = {} //ToDo: low priority - only for debugging
+        occurEquLst = {}, //ToDo: low priority - only for debugging
+        iter        = iter
       );
     end convert;
   end StateEvent;

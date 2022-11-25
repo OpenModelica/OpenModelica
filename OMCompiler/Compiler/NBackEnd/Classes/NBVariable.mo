@@ -969,7 +969,7 @@ public
 
   function makeEventVar
     "Creates a generic boolean variable pointer from a unique index and context name.
-    e.g. (\"$WHEN\", 4) --> $WHEN_4"
+    e.g. (\"$SEV\", 4) --> $SEV_4"
     input String name                           "context name e.g. §WHEN";
     input Integer uniqueIndex                   "unique identifier index";
     input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
@@ -997,9 +997,9 @@ public
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
-    // create variable and set its kind to dae_residual (change name?)
+    // create variable
     var := fromCref(var_cref);
-    // update the variable to be a seed and pass the pointer to the original variable
+    // update the variable to be discrete and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);

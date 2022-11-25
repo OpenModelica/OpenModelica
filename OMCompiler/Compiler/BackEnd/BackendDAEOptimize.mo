@@ -440,17 +440,13 @@ protected function traverseZeroCrossingExps<T>
     output DAE.Exp outExp;
     output T outA;
   end FuncExpType;
+protected
+  DAE.Exp relation;
 algorithm
-  (zc, arg) := match zc
-    local
-      DAE.Exp relation1, relation2;
-      list<Integer> occurEquLst;
-
-    case BackendDAE.ZERO_CROSSING(relation1, occurEquLst)
-      equation
-        (relation2, arg) = Expression.traverseExpBottomUp(relation1, func, arg);
-      then (if referenceEq(relation1, relation2) then BackendDAE.ZERO_CROSSING(relation2, occurEquLst) else zc, arg);
-  end match;
+  (relation, arg) := Expression.traverseExpBottomUp(zc.relation_, func, arg);
+  if not referenceEq(relation, zc.relation_) then
+    zc.relation_ := relation;
+  end if;
 end traverseZeroCrossingExps;
 
 protected function toplevelInputOrUnfixed

@@ -7553,15 +7553,14 @@ algorithm
   (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
-      DAE.Exp relation1, relation2;
-      list<Integer> occurEquLst;
+      DAE.Exp relation1;
       Type_a arg;
       BackendDAE.ZeroCrossing zc;
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case((zc as BackendDAE.ZERO_CROSSING(relation1,occurEquLst))::zeroCrossing,_,_,_)
+    case((zc as BackendDAE.ZERO_CROSSING())::zeroCrossing,_,_,_)
       equation
-        (relation2,arg) = Expression.traverseExpBottomUp(relation1,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,(if referenceEq(relation1,relation2) then zc else BackendDAE.ZERO_CROSSING(relation2,occurEquLst))::iAcc);
+        (relation1,arg) = Expression.traverseExpBottomUp(zc.relation_,func,inTypeA);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,(if referenceEq(relation1,zc.relation_) then zc else BackendDAE.ZERO_CROSSING(zc.index,relation1,zc.occurEquLst,zc.iter))::iAcc);
       then
         (zeroCrossing,arg);
   end match;

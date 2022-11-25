@@ -327,11 +327,21 @@ public
       sizes := match iter
         case SINGLE() then {Expression.rangeSize(iter.range)};
         case NESTED() then list(Expression.rangeSize(iter.ranges[i]) for i in 1:arrayLength(iter.ranges));
+        case EMPTY()  then {};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not get sizes for: " + toString(iter) + "\n"});
         then fail();
       end match;
     end sizes;
+
+    function size
+      input Iterator iter;
+      output Integer size = 1;
+    algorithm
+      for i in sizes(iter) loop
+        size := size * i;
+      end for;
+    end size;
 
     function createSingleReplacements
       "adds replacements rules for a single frame location"
