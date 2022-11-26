@@ -2709,6 +2709,7 @@ protected
   algorithm
     () := match assignedExp
       case Expression.CREF()
+        guard ComponentRef.isCref(assignedExp.cref)
         algorithm
           node := ComponentRef.node(ComponentRef.last(assignedExp.cref));
           (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
@@ -2790,6 +2791,7 @@ protected
   algorithm
     () := match exp
       case Expression.CREF()
+        guard ComponentRef.isCref(exp.cref)
         algorithm
           node := ComponentRef.node(ComponentRef.last(exp.cref));
           (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
