@@ -10,6 +10,8 @@ package P
       function f
         input Real x;
         output Real y;
+      algorithm
+        y := x;
       end f;
 
       Real x = f(time);
@@ -21,6 +23,8 @@ end P;
 // function P.P2.Prefix3.f
 //   input Real x;
 //   output Real y;
+// algorithm
+//   y := x;
 // end P.P2.Prefix3.f;
 //
 // class P.P2.Prefix3
