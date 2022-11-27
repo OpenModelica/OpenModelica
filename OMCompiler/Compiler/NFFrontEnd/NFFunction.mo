@@ -2611,6 +2611,8 @@ protected
   protected
     Vector<InstNode> unassigned;
     list<Statement> body;
+    InstNode parent;
+    list<SourceInfo> sources;
   algorithm
     // Skip external and builtin functions.
     if isExternal(fn) or isBuiltin(fn) then
@@ -2626,7 +2628,14 @@ protected
 
     for var in Vector.toList(unassigned) loop
       if InstNode.isOutput(var) then
-        Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT, {InstNode.name(var)}, InstNode.info(var));
+        parent := InstNode.InstNode.parent(var);
+        sources := {InstNode.info(var)};
+
+        if InstNode.isBaseClass(parent) then
+          sources := InstNode.info(InstNode.getDerivedNode(parent)) :: sources;
+        end if;
+
+        Error.addMultiSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT, {InstNode.name(var)}, sources);
         fail();
       end if;
     end for;

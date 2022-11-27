@@ -665,6 +665,7 @@ FunctionStreamPrefix.mo \
 FunctionUnitialized1.mo \
 FunctionUnitialized2.mo \
 FunctionUnitialized3.mo \
+FunctionUnitialized4.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
