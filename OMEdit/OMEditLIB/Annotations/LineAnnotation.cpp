@@ -1003,7 +1003,7 @@ QString LineAnnotation::getShapeAnnotation()
   }
   // get the line pattern
   if (mLinePattern.isDynamicSelectExpression() || mLinePattern.toQString().compare(QStringLiteral("LinePattern.LineSolid")) != 0) {
-    annotationString.append(QString("pattern=&1").arg(mLinePattern.toQString()));
+    annotationString.append(QString("pattern=%1").arg(mLinePattern.toQString()));
   }
   // get the thickness
   if (mLineThickness.isDynamicSelectExpression() || mLineThickness.toQString().compare(QStringLiteral("0.25")) != 0) {
