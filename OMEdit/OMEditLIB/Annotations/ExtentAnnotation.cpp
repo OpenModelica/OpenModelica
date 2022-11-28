@@ -29,8 +29,6 @@
  */
 #include "ExtentAnnotation.h"
 
-#include <QPointF>
-
 ExtentAnnotation::ExtentAnnotation()
 {
   clear();

@@ -32,8 +32,6 @@
  */
 #include "PointArrayAnnotation.h"
 
-#include <QPointF>
-
 PointArrayAnnotation::PointArrayAnnotation()
 {
   clear();

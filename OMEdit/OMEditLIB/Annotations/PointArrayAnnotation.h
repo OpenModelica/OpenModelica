@@ -35,6 +35,7 @@
 
 #include "DynamicAnnotation.h"
 
+#include <QPointF>
 #include <QVector>
 
 class PointArrayAnnotation : public DynamicAnnotation

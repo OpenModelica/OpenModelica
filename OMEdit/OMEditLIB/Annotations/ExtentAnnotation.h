@@ -32,6 +32,7 @@
 
 #include "DynamicAnnotation.h"
 
+#include <QPointF>
 #include <QVector>
 
 class ExtentAnnotation : public DynamicAnnotation
