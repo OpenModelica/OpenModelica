@@ -90,6 +90,7 @@ int omc_lstat(const char *filename, omc_stat_t *statbuf);
 int omc_file_exists(const char* filename);
 
 int omc_unlink(const char *filename);
+int omc_rename(const char *source, const char *dest);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 wchar_t* longabspath(wchar_t* unicodePath);
