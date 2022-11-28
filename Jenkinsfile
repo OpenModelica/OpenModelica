@@ -816,8 +816,10 @@ pipeline {
         }
         stage('push-bibliography') {
           agent {
-            label 'linux'
-            customWorkspace 'ws/OpenModelica-Bibliography'
+            node {
+              label 'linux'
+              customWorkspace 'ws/OpenModelica-Bibliography'
+            }
           }
           when {
             beforeAgent true
