@@ -487,15 +487,15 @@ public
       input Equation eq;
       input output String str = "";
     protected
-      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ") ";
+      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ")";
     algorithm
       str := match eq
-        case SCALAR_EQUATION() then str + "[SCAL] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
-        case ARRAY_EQUATION()  then str + "[ARRY] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
-        case RECORD_EQUATION() then str + "[RECD] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
-        case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
+        case SCALAR_EQUATION() then str + "[SCAL] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        case ARRAY_EQUATION()  then str + "[ARRY] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        case RECORD_EQUATION() then str + "[RECD] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr, " ") + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s);
-        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr));
+        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
         case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s);
         case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
         case DUMMY_EQUATION()  then str + "[DUMY] (0) Dummy equation.";
@@ -1823,7 +1823,7 @@ public
       IfEquationBody elseIf;
     algorithm
       if not Expression.isEnd(body.condition) then
-        str := elseStr + "if " + Expression.toString(body.condition) + " then \n";
+        str := elseStr + "if " + Expression.toString(body.condition) + " then\n";
       else
         str := elseStr + "\n";
       end if;
@@ -1832,7 +1832,7 @@ public
       end for;
       if isSome(body.else_if) then
         SOME(elseIf) := body.else_if;
-        str := str + toString(elseIf, indent, indent +"else ", true);
+        str := str + toString(elseIf, indent, indent + "else", true);
       end if;
       if not selfCall then
         str := str + indent + "end if;";
@@ -2172,13 +2172,14 @@ public
 
     function toString
       input EquationAttributes attr;
+      input String indent = "";
       output String str;
     algorithm
       str := match attr
         local
           Pointer<Variable> residualVar;
         case EQUATION_ATTRIBUTES(residualVar = SOME(residualVar))
-        then "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ") ";
+        then indent + "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ")";
         else "";
       end match;
     end toString;

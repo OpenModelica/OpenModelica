@@ -283,6 +283,7 @@ public:
   QJsonObject getModelInstance(const QString &className, bool prettyPrint = false, bool icon = false);
   int storeAST();
   bool restoreAST(int id);
+  bool clear();
 signals:
   void commandFinished();
 public slots:

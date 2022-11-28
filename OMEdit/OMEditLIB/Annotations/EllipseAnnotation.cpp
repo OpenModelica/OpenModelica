@@ -125,9 +125,13 @@ void EllipseAnnotation::parseShapeAnnotation()
   FilledShape::parseShapeAnnotation(mpEllipse);
 
   mExtent = mpEllipse->getExtent();
+  mExtent.evaluate(mpEllipse->getParentModel());
   mStartAngle = mpEllipse->getStartAngle();
+  mStartAngle.evaluate(mpEllipse->getParentModel());
   mEndAngle = mpEllipse->getEndAngle();
-  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
+  mEndAngle.evaluate(mpEllipse->getParentModel());
+  mClosure = mpEllipse->getClosure();
+  mClosure.evaluate(mpEllipse->getParentModel());
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -192,7 +196,7 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
   // get the end angle
   annotationString.append(mEndAngle.toQString());
   // get the closure
-  annotationString.append(StringHandler::getClosureString(mClosure));
+  annotationString.append(mClosure.toQString());
   return annotationString.join(",");
 }
 
@@ -221,17 +225,17 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the start angle
-  if (mStartAngle.isDynamicSelectExpression() || mStartAngle != 0) {
+  if (mStartAngle.isDynamicSelectExpression() || mStartAngle.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("startAngle=%1").arg(mStartAngle.toQString()));
   }
   // get the end angle
-  if (mEndAngle.isDynamicSelectExpression() || mEndAngle != 360) {
+  if (mEndAngle.isDynamicSelectExpression() || mEndAngle.toQString().compare(QStringLiteral("360")) != 0) {
     annotationString.append(QString("endAngle=%1").arg(mEndAngle.toQString()));
   }
   // get the closure
-  if (!((mStartAngle == 0 && mEndAngle == 360 && mClosure == StringHandler::ClosureChord)
-        || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure == StringHandler::ClosureRadial))) {
-    annotationString.append(QString("closure=").append(StringHandler::getClosureString(mClosure)));
+  if (mClosure.isDynamicSelectExpression() || !((mStartAngle == 0 && mEndAngle == 360 && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Chord")) == 0)
+                                                || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Radial")) == 0))) {
+    annotationString.append(QString("closure=%1").append(mClosure.toQString()));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }

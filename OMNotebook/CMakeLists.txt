@@ -1,7 +1,9 @@
 cmake_minimum_required (VERSION 3.14)
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME gui)
 
 project(OMNotebook)
+## Anything installed from this directory and its subdirectories belongs
+## to the install component 'omnotebook' if it is not explicitly changed.
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omnotebook)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

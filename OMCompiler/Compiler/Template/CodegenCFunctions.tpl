@@ -2358,8 +2358,7 @@ template varOutput(Variable var)
       <<
       if (out<%funArgName(var)%>) {
         if (out<%funArgName(var)%>->info == NULL) {
-          FILE_INFO info = omc_dummyFileInfo;
-          omc_assert(threadData, info, "Unknown size parallel array.");
+          omc_assert(threadData, omc_dummyFileInfo, "Unknown size parallel array.");
         }
         else {
           <%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);
@@ -3502,7 +3501,7 @@ case RANGE(__) then
                     case "1"
                     case "((modelica_integer) 1)"
                     case "((modelica_integer) -1)" then ''
-                    else 'if(!<%stepVar%>) {<%\n%>  FILE_INFO info = omc_dummyFileInfo;<%\n%>  omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
+                    else 'if(!<%stepVar%>) {<%\n%>  omc_assert<%AddionalFuncName%>(threadData, omc_dummyFileInfo, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
@@ -4515,7 +4514,10 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let AddionalFuncName = match context
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
-  let infoTextContext = '"The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue'
+  let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
+  /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
+     and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond, <%msgVar%>'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   let assertCode = match context case FUNCTION_CONTEXT(__) then
@@ -4525,13 +4527,13 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     >>
     else
     <<
+    const char* assert_cond = "(<%assertExpStr%>)";
     if (data->simulationInfo->noThrowAsserts) {
-      infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
-      infoStreamPrint(LOG_ASSERT, 0, "%s", <%msgVar%>);<%rethrow%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert_warning(info, <%infoTextContext%>);
-      <%omcAssertFunc%>info, equationIndexes, <%msgVar%>);
+      <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     }
     >>
   let warningTriggered = tempDeclZero("static int", &varDecls)
@@ -4566,8 +4568,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     <<
     if(!(<%condVar%>))
     {
-      FILE_INFO info = omc_dummyFileInfo;
-      omc_assert(threadData, info, "Common assertion failed");
+      omc_assert(threadData, omc_dummyFileInfo, "Common assertion failed");
     }
     >>
   case FUNCTION_CONTEXT(__) then
@@ -4590,12 +4591,13 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     if(!(<%condVar%>))
     {
       if (data->simulationInfo->noThrowAsserts) {
-        infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        FILE_INFO info = {<%infoArgs(info)%>};
+        infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
         data->simulationInfo->needToReThrow = 1;
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};
         omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
-        throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+        throwStreamPrintWithEquationIndexes(threadData, info, equationIndexes, <%msgVar%>);
       }
     }
     >>
@@ -4949,7 +4951,9 @@ end addRootsTempArray;
 
 template modelicaLine(builtin.SourceInfo info)
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+  match info
+  case SOURCEINFO(fileName="") then ""
+  else if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
     then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
     then '/*#modelicaLine <%infoStr(info)%>*/<%\n%><% match info case SOURCEINFO() then (if intEq(-1, stringFind(fileName,".interface.mo")) then 'mmc_set_current_pos("<%infoStr(info)%>");<%\n%>') %>'
     else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
@@ -7367,8 +7371,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       let check =
       <<
       if (<%stepVar%> == 0) {
-        FILE_INFO info = omc_dummyFileInfo;
-        omc_assert(threadData, info, "Range with a step of zero.");
+        omc_assert(threadData, omc_dummyFileInfo, "Range with a step of zero.");
       }<%\n%>
       >>
       match iter.exp

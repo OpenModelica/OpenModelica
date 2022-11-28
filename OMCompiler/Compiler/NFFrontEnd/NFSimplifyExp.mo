@@ -250,6 +250,7 @@ algorithm
       then
         exp;
 
+    case "delay"     then simplifyDelay(args, call);
     case "der"       then simplifyDer(listHead(args), call);
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
@@ -415,6 +416,27 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyHomotopy;
+
+function simplifyDelay
+  input list<Expression> args;
+  input Call call;
+  output Expression callExp;
+protected
+  Expression exp, delayTime;
+algorithm
+  exp :: delayTime :: _ := args;
+
+  if Expression.variability(delayTime) <= Variability.PARAMETER then
+    delayTime := Ceval.tryEvalExp(delayTime);
+
+    if Expression.isZero(delayTime) then
+      callExp := exp;
+      return;
+    end if;
+  end if;
+
+  callExp := Expression.CALL(call);
+end simplifyDelay;
 
 function simplifyDer
   input Expression arg;

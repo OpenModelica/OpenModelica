@@ -1175,7 +1175,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
 
-  infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes,
+  infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
                                      "Start Kinsol solver at time %g",
                                      data->localData[0]->timeValue);
 

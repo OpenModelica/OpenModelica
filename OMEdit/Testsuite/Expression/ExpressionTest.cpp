@@ -29,7 +29,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Per Östlund <per.ostlund@liu.se>
  */
 
 #include "ExpressionTest.h"
@@ -49,7 +49,7 @@ QString evalString(const QString &str)
 {
   return FlatModelica::Expression::parse(str).evaluate([] (const std::string &) {
     // Assume that all variables have the value 1.0 for testing purposes.
-    return 1.0;
+    return FlatModelica::Expression(1.0);
   }).toQString();
 }
 
@@ -397,6 +397,13 @@ void ExpressionTest::parseJSON_data()
     {"false", 2}
   };
   QTest::newRow("json_if1") << value;
+
+  value = QJsonObject{
+    {"$kind", "enum"},
+    {"name", "FillPattern.Solid"},
+    {"index", 1}
+  };
+  QTest::newRow("json_enum") << value;
 }
 
 void ExpressionTest::cleanupTestCase()

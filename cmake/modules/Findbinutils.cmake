@@ -1,7 +1,7 @@
 # This small module finds and sets up
-# libbfd from binutils which is need for providing bactrace support for OMEdit.
+# libbfd from binutils which is need for providing backtrace support for OMEdit.
 # The library is not installed in the standard location on MinGW. It is in
-# lib/binutils. This modules makes sure that it can be found.
+# lib/binutils. This module makes sure that it can be found.
 # It exports an imported target 'binutils::bfd' for the library
 # which brings in the dependency 'libiberty' (binutils::iberty) library with it.
 

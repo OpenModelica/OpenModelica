@@ -1451,6 +1451,10 @@ uniontype Function
       end if;
     end if;
 
+    if not InstContext.inRelaxed(context) then
+      checkUseBeforeAssign(fn);
+    end if;
+
     // Sort the local variables based on their dependencies.
     fn.locals := sortLocals(fn.locals, InstNode.info(fn.node));
   end typeFunctionBody;
@@ -2599,6 +2603,218 @@ protected
       UnorderedMap.add(key, true, interface_map);
     end for;
   end getDerivative;
+
+  function checkUseBeforeAssign
+    "Checks if any output or local variables in a function are used
+     uninitialized and prints warnings for such uses."
+    input Function fn;
+  protected
+    Vector<InstNode> unassigned;
+    list<Statement> body;
+    InstNode parent;
+    list<SourceInfo> sources;
+  algorithm
+    // Skip external and builtin functions.
+    if isExternal(fn) or isBuiltin(fn) then
+      return;
+    end if;
+
+    unassigned := Vector.new<InstNode>();
+    addUnassignedComponents(unassigned, fn.outputs);
+    addUnassignedComponents(unassigned, fn.locals);
+
+    body := getBody(fn);
+    checkUseBeforeAssign2(unassigned, body);
+
+    for var in Vector.toList(unassigned) loop
+      if InstNode.isOutput(var) then
+        parent := InstNode.InstNode.parent(var);
+        sources := {InstNode.info(var)};
+
+        if InstNode.isBaseClass(parent) then
+          sources := InstNode.info(InstNode.getDerivedNode(parent)) :: sources;
+        end if;
+
+        Error.addMultiSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT, {InstNode.name(var)}, sources);
+        fail();
+      end if;
+    end for;
+  end checkUseBeforeAssign;
+
+  function addUnassignedComponents
+    input Vector<InstNode> unassigned;
+    input list<InstNode> variables;
+  protected
+    Type ty;
+  algorithm
+    for var in variables loop
+      ty := InstNode.getType(var);
+
+      if Type.isScalarBuiltin(ty) and not Component.hasBinding(InstNode.component(var)) then
+        Vector.push(unassigned, var);
+      end if;
+    end for;
+  end addUnassignedComponents;
+
+  function checkUseBeforeAssign2
+    input Vector<InstNode> unassigned;
+    input list<Statement> statements;
+  protected
+    SourceInfo info;
+  algorithm
+    for stmt in statements loop
+      info := Statement.info(stmt);
+
+      () := match stmt
+        case Statement.ASSIGNMENT()
+          algorithm
+            checkUseBeforeAssignExp(unassigned, stmt.rhs, info);
+            markAssignedOutput(unassigned, stmt.lhs);
+          then
+            ();
+
+        case Statement.FOR()
+          algorithm
+            if isSome(stmt.range) then
+              checkUseBeforeAssignExp(unassigned, Util.getOption(stmt.range), info);
+            end if;
+
+            checkUseBeforeAssign2(unassigned, stmt.body);
+          then
+            ();
+
+        case Statement.IF()
+          algorithm
+            checkUseBeforeAssignIf(unassigned, stmt.branches, info);
+          then
+            ();
+
+        case Statement.ASSERT()
+          algorithm
+            checkUseBeforeAssignExp(unassigned, stmt.condition, info);
+            checkUseBeforeAssignExp(unassigned, stmt.message, info);
+            checkUseBeforeAssignExp(unassigned, stmt.level, info);
+          then
+            ();
+
+        case Statement.WHILE()
+          algorithm
+            checkUseBeforeAssignExp(unassigned, stmt.condition, info);
+            checkUseBeforeAssign2(unassigned, stmt.body);
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end checkUseBeforeAssign2;
+
+  function markAssignedOutput
+    input Vector<InstNode> unassigned;
+    input Expression assignedExp;
+  protected
+    InstNode node;
+    Integer index;
+  algorithm
+    () := match assignedExp
+      case Expression.CREF()
+        guard ComponentRef.isCref(assignedExp.cref)
+        algorithm
+          node := ComponentRef.node(ComponentRef.last(assignedExp.cref));
+          (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+
+          if index > 0 then
+            Vector.remove(unassigned, index);
+          end if;
+        then
+          ();
+
+      case Expression.TUPLE()
+        algorithm
+          for e in assignedExp.elements loop
+            markAssignedOutput(unassigned, e);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end markAssignedOutput;
+
+  function checkUseBeforeAssignIf
+    input Vector<InstNode> unassigned;
+    input list<tuple<Expression, list<Statement>>> branches;
+    input SourceInfo info;
+  protected
+    Vector<InstNode> unassigned_branch;
+    list<InstNode> assigned = {};
+    Integer index;
+  algorithm
+    for b in branches loop
+      checkUseBeforeAssignExp(unassigned, Util.tuple21(b), info);
+    end for;
+
+    // Check each branch separately, then assume that any variables that were
+    // assigned (or incorrectly used) in at least one branch are assigned after
+    // the if-statement to avoid false positives.
+    for b in branches loop
+      unassigned_branch := Vector.copy(unassigned);
+      checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b));
+
+      if Vector.size(unassigned) <> Vector.size(unassigned_branch) then
+        assigned := listAppend(
+          List.setDifferenceOnTrue(Vector.toList(unassigned), Vector.toList(unassigned_branch), InstNode.refEqual),
+          assigned);
+      end if;
+    end for;
+
+    if not listEmpty(assigned) then
+      assigned := List.uniqueOnTrue(assigned, InstNode.refEqual);
+
+      for a in assigned loop
+        (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = a));
+
+        if index > 0 then
+          Vector.remove(unassigned, index);
+        end if;
+      end for;
+    end if;
+  end checkUseBeforeAssignIf;
+
+  function checkUseBeforeAssignExp
+    input Vector<InstNode> unassigned;
+    input Expression exp;
+    input SourceInfo info;
+  algorithm
+    Expression.apply(exp,
+      function checkUseBeforeAssignExp_traverse(unassigned = unassigned, info = info));
+  end checkUseBeforeAssignExp;
+
+  function checkUseBeforeAssignExp_traverse
+    input Vector<InstNode> unassigned;
+    input Expression exp;
+    input SourceInfo info;
+  protected
+    Integer index;
+    InstNode node;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        guard ComponentRef.isCref(exp.cref)
+        algorithm
+          node := ComponentRef.node(ComponentRef.last(exp.cref));
+          (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+
+          if index > 0 then
+            Vector.remove(unassigned, index);
+            Error.addSourceMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end checkUseBeforeAssignExp_traverse;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

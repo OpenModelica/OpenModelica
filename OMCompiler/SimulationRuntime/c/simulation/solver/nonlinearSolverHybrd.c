@@ -472,7 +472,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start solving non-linear system >>%d<< using Hybrd solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "Start solving non-linear system >>%d<< using Hybrd solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
     for(i=0; i<hybrdData->n; i++)
     {
       infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], nlsData->nlsx[i]);
@@ -715,7 +715,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       {
         int indexes[2] = {1,eqSystemNumber};
         /* output solution */
-        infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "solution for NLS %d at t=%g", eqSystemNumber, data->localData[0]->timeValue);
+        infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "solution for NLS %d at t=%g", eqSystemNumber, data->localData[0]->timeValue);
         for(i=0; i<hybrdData->n; ++i)
         {
           infoStreamPrint(LOG_NLS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],  hybrdData->x[i]);

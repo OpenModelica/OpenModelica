@@ -21,9 +21,11 @@ getModelInstance(RealInput2, true); getErrorString();
 //   \"prefixes\": {
 //     \"direction\": \"input\"
 //   },
-//   \"extends\": {
-//     \"baseClass\": \"Real\"
-//   },
+//   \"extends\": [
+//     {
+//       \"baseClass\": \"Real\"
+//     }
+//   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 2,
@@ -39,25 +41,29 @@ getModelInstance(RealInput2, true); getErrorString();
 //   \"modifiers\": {
 //     \"start\": \"1.0\"
 //   },
-//   \"extends\": {
-//     \"baseClass\": {
-//       \"name\": \"RealInput\",
-//       \"restriction\": \"type\",
-//       \"prefixes\": {
-//         \"direction\": \"input\"
-//       },
-//       \"extends\": {
-//         \"baseClass\": \"Real\"
-//       },
-//       \"source\": {
-//         \"filename\": \"<interactive>\",
-//         \"lineStart\": 2,
-//         \"columnStart\": 3,
-//         \"lineEnd\": 2,
-//         \"columnEnd\": 30
+//   \"extends\": [
+//     {
+//       \"baseClass\": {
+//         \"name\": \"RealInput\",
+//         \"restriction\": \"type\",
+//         \"prefixes\": {
+//           \"direction\": \"input\"
+//         },
+//         \"extends\": [
+//           {
+//             \"baseClass\": \"Real\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 2,
+//           \"columnEnd\": 30
+//         }
 //       }
 //     }
-//   },
+//   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 3,

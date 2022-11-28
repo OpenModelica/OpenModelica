@@ -151,10 +151,7 @@ void PolygonAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpPolygon);
   FilledShape::parseShapeAnnotation(mpPolygon);
 
-  mPoints.clear();
-  foreach (ModelInstance::Point point, mpPolygon->getPoints()) {
-    mPoints.append(QPointF(point.x(), point.y()));
-  }
+  mPoints = mpPolygon->getPoints();
   /* The polygon is automatically closed, if the first and the last points are not identical. */
   if (mPoints.size() == 1) {
     mPoints.append(mPoints.first());
@@ -167,7 +164,9 @@ void PolygonAnnotation::parseShapeAnnotation()
       mPoints.append(mPoints.first());
     }
   }
-  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpPolygon->getSmooth()));
+  mPoints.evaluate(mpPolygon->getParentModel());
+  mSmooth = mpPolygon->getSmooth();
+  mSmooth.evaluate(mpPolygon->getParentModel());
 }
 
 QPainterPath PolygonAnnotation::getShape() const
@@ -206,7 +205,7 @@ QPainterPath PolygonAnnotation::getShape() const
         }
       }
     } else {
-      path.addPolygon(QPolygonF(mPoints.toVector()));
+      path.addPolygon(QPolygonF(mPoints));
     }
   }
   return path;
@@ -270,7 +269,7 @@ QString PolygonAnnotation::getOMCShapeAnnotation()
     annotationString.append(pointsString);
   }
   // get the smooth
-  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  annotationString.append(mSmooth.toQString());
   return annotationString.join(",");
 }
 
@@ -295,24 +294,12 @@ QString PolygonAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get points
-  QString pointsString;
   if (mPoints.size() > 0) {
-    pointsString.append("points={");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
-    }
-  }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
+    annotationString.append(QString("points=%1").arg(mPoints.toQString()));
   }
   // get the smooth
-  if (mSmooth != StringHandler::SmoothNone) {
-    annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
+  if (mSmooth.isDynamicSelectExpression() || mSmooth.toQString().compare(QStringLiteral("Smooth.None")) != 0) {
+    annotationString.append(QString("smooth=%1").arg(mSmooth.toQString()));
   }
   return QString("Polygon(").append(annotationString.join(",")).append(")");
 }
@@ -321,7 +308,7 @@ void PolygonAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
   mPoints.append(point);
-  mPoints.back() = mPoints.first();
+  mPoints.last() = mPoints.first();
 }
 
 void PolygonAnnotation::removePoint(int index)

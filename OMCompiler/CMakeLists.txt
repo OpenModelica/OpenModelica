@@ -3,7 +3,7 @@ project(OMCompiler C CXX)
 
 # For now, unless explicitly specified otherwise, we set install component simrt
 # for everything installed from the OMCompiler directory. There are some places that
-# modify this explictly, e.g., the omc compiler ('COMPONENT omc'), the cpp runtime (simrt-cpp),
+# modify this explicitly, e.g., the omc compiler ('COMPONENT omc'), the cpp runtime (COMPONENT simrtcpp),
 # and FMU realted installtions (COMPONENT fmu)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrt)
 

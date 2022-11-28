@@ -1,7 +1,7 @@
 // name: SD
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,arrayConnect,combineSubscripts -f
+// cflags: -d=newInst,-nfScalarize,arrayConnect,combineSubscripts -f --arrayConnectMinSize=3
 //
 
 connector C

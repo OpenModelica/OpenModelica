@@ -42,11 +42,10 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
 {
   modelica_real result = 1.0;
   modelica_integer m = n < 0;
-  FILE_INFO info = omc_dummyFileInfo;
   if(m)
   {
     if(base == 0.0)
-      omc_assert(threadData, info, "Model error. 0^(%i) is not defined", n);
+      omc_assert(threadData, omc_dummyFileInfo, "Model error. 0^(%i) is not defined", n);
     n = -n;
   }
   while(n != 0)
@@ -171,7 +170,6 @@ static int hasDriveLetter(const char* uri)
 
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
 {
-  FILE_INFO info = omc_dummyFileInfo;
   omc_stat_t stat_buf;
   size_t len, i, j = 0;
   int uriExists = 0==omc_stat(uri, &stat_buf);
@@ -198,17 +196,17 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
         return uriToFilenameRegularPaths(NULL, buf, newbuf, origUri, NULL);
       }
     } else {
-      omc_assert_warning(info, "Path longer than PATH_MAX: %s/%s", resourcesDir, uri);
+      omc_assert_warning(omc_dummyFileInfo, "Path longer than PATH_MAX: %s/%s", resourcesDir, uri);
     }
   }
   if (uriExists) {
     if (resourcesDir) {
-      omc_assert_warning(info, PATH_NOT_IN_FMU_RESOURCES, uri);
+      omc_assert_warning(omc_dummyFileInfo, PATH_NOT_IN_FMU_RESOURCES, uri);
     }
     /* This is a file, directory, etc. Can't use open to check this. */
     if (0==realpath(uri, buf)) {
       /* Unexpected; we know the file exists, but realpath failed. Just return the URI */
-      omc_assert_warning(info, "realpath failed for existing path %s: %s", uri, strerror(errno));
+      omc_assert_warning(omc_dummyFileInfo, "realpath failed for existing path %s: %s", uri, strerror(errno));
       return uri_om ? uri_om : mmc_mk_scon(uri);
     }
     /* Use the realpath result */
@@ -218,7 +216,7 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
       if (buf[len-1]!='/' && origUri[strlen(origUri)-1]=='/') {
         if (len+1 >= PATH_MAX) {
           /* Can't fit the path; just return the original URI */
-          omc_assert_warning(info, "Path longer than PATH_MAX: %s/, returning %s", buf, buf);
+          omc_assert_warning(omc_dummyFileInfo, "Path longer than PATH_MAX: %s/, returning %s", buf, buf);
           return uri_om ? uri_om : mmc_mk_scon(uri);
         }
         strcpy(buf+len, "/");
@@ -233,13 +231,13 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
   }
   if (0==realpath("./", buf)) {
     /* Failed to resolve ./ */
-    omc_assert_warning(info, "realpath failed to resolve ./");
+    omc_assert_warning(omc_dummyFileInfo, "realpath failed to resolve ./");
     return uri_om ? uri_om : mmc_mk_scon(uri);
   }
   len = strlen(buf);
   if (len+strlen(uri)+1 >= PATH_MAX) {
     /* Can't fit the path; just return the original URI */
-    omc_assert_warning(info, "Path longer than PATH_MAX: %s/%s, returning %s", buf, uri, uri);
+    omc_assert_warning(omc_dummyFileInfo, "Path longer than PATH_MAX: %s/%s, returning %s", buf, uri, uri);
     return uri_om ? uri_om : mmc_mk_scon(uri);
   }
   /* Copy the rest of the URI onto the buffer */
@@ -312,35 +310,35 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
 #define strncasecmp _strnicmp
 #endif
 
-  FILE_INFO info = omc_dummyFileInfo;
   char buf[PATH_MAX];
-  char uribuf[MMC_STRLEN(uri_om)+1];
-  char *uri = uribuf;
-  modelica_string dir;
+
+  char* uri = (char*)omc_alloc_interface.malloc_atomic(sizeof(char) * (MMC_STRLEN(uri_om)+1));
   strcpy(uri, MMC_STRINGDATA(uri_om));
+
+  modelica_string dir;
   if (0==strncasecmp(uri, "modelica://", 11)) {
     omc_stat_t stat_buf;
     uri += 11;
     getIdent(uri, buf, &uri);
     if (0 == *buf) {
-      omc_assert(threadData, info, "Malformed URI (couldn't get a class name): %s", MMC_STRINGDATA(uri_om));
+      omc_assert(threadData, omc_dummyFileInfo, "Malformed URI (couldn't get a class name): %s", MMC_STRINGDATA(uri_om));
       MMC_THROW();
     }
     dir = lookupDirectoryFromName(buf, threadData->localRoots[LOCAL_ROOT_URI_LOOKUP]);
     if (dir==NULL || MMC_STRLEN(dir)==0) {
-      omc_assert(threadData, info, "Failed to lookup URI (is the package loaded?) %s", MMC_STRINGDATA(uri_om));
+      omc_assert(threadData, omc_dummyFileInfo, "Failed to lookup URI (is the package loaded?) %s", MMC_STRINGDATA(uri_om));
       MMC_THROW();
     }
     if (resourcesDir) {
       if (MMC_STRLEN(dir)+2+strlen(resourcesDir) >= PATH_MAX) {
-        omc_assert_warning(info, "Path longer than PATH_MAX: %s/%s, ignoring the resourcesDir", MMC_STRINGDATA(dir), resourcesDir);
+        omc_assert_warning(omc_dummyFileInfo, "Path longer than PATH_MAX: %s/%s, ignoring the resourcesDir", MMC_STRINGDATA(dir), resourcesDir);
       } else {
         int dirExists = 0==omc_stat(MMC_STRINGDATA(dir), &stat_buf);
         sprintf(buf, "%s/%s", MMC_STRINGDATA(dir), resourcesDir);
         if (!dirExists || 0==omc_stat(buf, &stat_buf)) {
           dir = mmc_mk_scon(buf);
         } else {
-          omc_assert_warning(info, PATH_NOT_IN_FMU_RESOURCES, MMC_STRINGDATA(dir));
+          omc_assert_warning(omc_dummyFileInfo, PATH_NOT_IN_FMU_RESOURCES, MMC_STRINGDATA(dir));
         }
       }
     }
@@ -355,13 +353,13 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
       getIdent(uri, buf, &uri);
       if (0 == *buf) {
         if (*uri == '.') {
-          omc_assert(threadData, info, "Malformed URI (double dot in class name): %s", MMC_STRINGDATA(uri_om));
+          omc_assert(threadData, omc_dummyFileInfo, "Malformed URI (double dot in class name): %s", MMC_STRINGDATA(uri_om));
           MMC_THROW();
         }
         break; /* / or end of string */
       }
       if (MMC_STRLEN(dir)+strlen(buf)+1 >= PATH_MAX) {
-        omc_assert(threadData, info, "Failed to resolve URI; path longer than PATH_MAX(%d): %s", PATH_MAX, MMC_STRINGDATA(uri_om));
+        omc_assert(threadData, omc_dummyFileInfo, "Failed to resolve URI; path longer than PATH_MAX(%d): %s", PATH_MAX, MMC_STRINGDATA(uri_om));
         MMC_THROW();
       }
       /* Move the found ident last in the path */
@@ -391,9 +389,10 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
     return uriToFilenameRegularPaths(NULL, uri+7, buf, MMC_STRINGDATA(uri_om), resourcesDir);
   }
   if (strstr(uri, "://")) {
-    omc_assert(threadData, info, "Unknown URI schema: %s", MMC_STRINGDATA(uri_om));
+    omc_assert(threadData, omc_dummyFileInfo, "Unknown URI schema: %s", MMC_STRINGDATA(uri_om));
     MMC_THROW();
   }
+
   return uriToFilenameRegularPaths(uri_om, uri, buf, MMC_STRINGDATA(uri_om), resourcesDir);
 }
 

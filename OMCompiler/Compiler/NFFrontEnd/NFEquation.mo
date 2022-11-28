@@ -92,6 +92,16 @@ public
       end match;
     end mapExp;
 
+    function sizeOf
+      input Branch branch;
+      output Integer size;
+    algorithm
+      size := match branch
+        case Branch.BRANCH() then Equation.sizeOfList(branch.body);
+        else 0;
+      end match;
+    end sizeOf;
+
     function toStream
       input Branch branch;
       input String indent;
@@ -1064,6 +1074,35 @@ public
       else false;
     end match;
   end isConnect;
+
+  function sizeOfList
+    input list<Equation> eqs;
+    output Integer size = 0;
+  algorithm
+    for eq in eqs loop
+      size := size + sizeOf(eq);
+    end for;
+  end sizeOfList;
+
+  function sizeOf
+    input Equation eq;
+    output Integer size;
+  algorithm
+    size := matchcontinue eq
+      case EQUALITY() then Type.sizeOf(eq.ty);
+      case ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
+      case CONNECT() then Type.sizeOf(Expression.typeOf(eq.lhs));
+      case FOR()
+        algorithm
+          size := Type.sizeOf(Expression.typeOf(Util.getOption(eq.range)));
+        then
+          size * sizeOfList(eq.body);
+
+      case IF() then Branch.sizeOf(listHead(eq.branches));
+      case WHEN() then Branch.sizeOf(listHead(eq.branches));
+      else 1;
+    end matchcontinue;
+  end sizeOf;
 
   function toString
     input Equation eq;

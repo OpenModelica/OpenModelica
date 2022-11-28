@@ -202,6 +202,20 @@ public
     end if;
   end makeConnectors;
 
+  function split
+    input output Connections conns;
+  algorithm
+    conns.flows := List.mapFlat(conns.flows, Connector.split);
+    conns.connections := List.mapFlat(conns.connections, Connection.split);
+  end split;
+
+  function scalarize
+    input output Connections conns;
+  algorithm
+    conns.flows := List.mapFlat(conns.flows, Connector.scalarize);
+    conns.connections := List.mapFlat(conns.connections, Connection.scalarize);
+  end scalarize;
+
   function toString
     input Connections conns;
     output String str;

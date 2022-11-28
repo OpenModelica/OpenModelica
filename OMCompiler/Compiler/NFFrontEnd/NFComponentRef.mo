@@ -298,6 +298,20 @@ public
     end match;
   end firstName;
 
+  function first
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          cref.restCref := EMPTY();
+        then
+          ();
+
+      else ();
+    end match;
+  end first;
+
   function rest
     input ComponentRef cref;
     output ComponentRef restCref;

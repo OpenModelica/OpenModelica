@@ -48,11 +48,11 @@ val(x[4,2],1);
 // BLOCK: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	x[3, j]
+// 	y[j]
 // ### Equation:
 // 	[FOR-] (22) ($RES_SIM_0)
 // 	[----] for j in 1:22 loop
-// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time) ($RES_SIM_1)
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time) ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {21, 20, 19, 18, 17, 16, 15, 14, 13, 12, ...}
 //
@@ -63,7 +63,7 @@ val(x[4,2],1);
 // ### Equation:
 // 	[FOR-] (22) ($RES_SIM_0)
 // 	[----] for j in 1:22 loop
-// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time) ($RES_SIM_1)
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time) ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {21, 20, 19, 18, 17, 16, 15, 14, 13, 12, ...}
 //
@@ -72,11 +72,11 @@ val(x[4,2],1);
 // BLOCK: Sliced Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	y[j]
+// 	x[3, j]
 // ### Equation:
 // 	[FOR-] (22) ($RES_SIM_2)
 // 	[----] for j in 1:22 loop
-// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time) ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time) ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {21, 20, 19, 18, 17, 16, 15, 14, 13, 12, ...}
 //
@@ -87,7 +87,7 @@ val(x[4,2],1);
 // ### Equation:
 // 	[FOR-] (22) ($RES_SIM_2)
 // 	[----] for j in 1:22 loop
-// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time) ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time) ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {21, 20, 19, 18, 17, 16, 15, 14, 13, 12, ...}
 //

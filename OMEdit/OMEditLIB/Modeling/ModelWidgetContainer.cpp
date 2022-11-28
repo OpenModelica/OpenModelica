@@ -277,9 +277,9 @@ void GraphicsView::drawCoordinateSystem()
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->getCoordinateSystem();
+    coordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->mCoordinateSystem;
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->getCoordinateSystem();
+    coordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->mCoordinateSystem;
   }
 
   if (coordinateSystem.hasExtent()) {
@@ -299,9 +299,9 @@ void GraphicsView::drawCoordinateSystem()
   if (!mCoOrdinateSystem.isComplete()) {
     ModelInstance::CoordinateSystem mergedCoordinateSystem;
     if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->getMergedCoordinateSystem();
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->mMergedCoOrdinateSystem;
     } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->getMergedCoordinateSystem();
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
 
     if (mergedCoordinateSystem.hasExtent()) {
@@ -332,10 +332,18 @@ void GraphicsView::drawCoordinateSystem()
 void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel)
 {
   QList<ModelInstance::Shape*> shapes;
+  ModelInstance::Extend *pExtendModel = 0;
+  if (inhertied) {
+    pExtendModel = dynamic_cast<ModelInstance::Extend*>(pModelInstance);
+  }
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    shapes = pModelInstance->getIconAnnotation()->getGraphics();
+    if (!(pExtendModel && !pExtendModel->mIconMap.getprimitivesVisible())) {
+      shapes = pModelInstance->getIconAnnotation()->getGraphics();
+    }
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    shapes = pModelInstance->getDiagramAnnotation()->getGraphics();
+    if (!(pExtendModel && !pExtendModel->mDiagramMap.getprimitivesVisible())) {
+      shapes = pModelInstance->getDiagramAnnotation()->getGraphics();
+    }
   }
 
   // if inherited or openingModel then simply draw new shapes.
@@ -357,6 +365,7 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
       }
 
       if (pShapeAnnotation) {
+        pShapeAnnotation->setExtendModel(pExtendModel);
         pShapeAnnotation->drawCornerItems();
         pShapeAnnotation->setCornerItemsActiveOrPassive();
         pShapeAnnotation->applyTransformation();
@@ -3184,7 +3193,7 @@ void GraphicsView::addConnection(Element *pElement)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              mpConnectionLineAnnotation->setLine(new ModelInstance::Line);
+              mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
               mpConnectionLineAnnotation->updateLine();
               mpConnectionLineAnnotation->drawCornerItems();
               mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
@@ -3241,7 +3250,7 @@ void GraphicsView::addTransition(Element *pComponent)
     mpTransitionLineAnnotation->setEndElement(pComponent);
     // Remove reduntant points so that Liang Barsky algorithm can work well.
     mpTransitionLineAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-    QList<QPointF> points = mpTransitionLineAnnotation->getPoints();
+    QVector<QPointF> points = mpTransitionLineAnnotation->getPoints();
     // Find the start state intersection point.
     QRectF sceneRectF = mpTransitionLineAnnotation->getStartElement()->sceneBoundingRect();
     QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
@@ -4146,7 +4155,7 @@ void GraphicsView::setInitialState()
     mpTransitionLineAnnotation->setEndElementName("");
     mpTransitionLineAnnotation->setLineType(LineAnnotation::InitialStateType);
     if (mpModelWidget->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line);
+      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
       mpTransitionLineAnnotation->updateLine();
       mpTransitionLineAnnotation->drawCornerItems();
       mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();

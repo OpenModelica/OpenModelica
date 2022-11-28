@@ -2798,12 +2798,11 @@ void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem 
 }
 
 /*!
- * \brief LibraryTreeModel::unloadClassHelper
- * Helper function for unloading/deleting the LibraryTreeItem.
+ * \brief unloadHelper
+ * Helper function for LibraryTreeModel::unloadClassHelper and LibraryTreeModel::unloadFileHelper
  * \param pLibraryTreeItem
- * \param pParentLibraryTreeItem
  */
-void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
+void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
@@ -2829,6 +2828,17 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
+}
+
+/*!
+ * \brief LibraryTreeModel::unloadClassHelper
+ * Helper function for unloading/deleting the LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param pParentLibraryTreeItem
+ */
+void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
+{
+  unloadHelper(pLibraryTreeItem);
   // make the class non existing
   pLibraryTreeItem->setNonExisting(true);
   pLibraryTreeItem->setClassText("");
@@ -2864,15 +2874,7 @@ void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-  // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
-  if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
-    if (pMdiSubWindow) {
-      pMdiSubWindow->close();
-      pMdiSubWindow->deleteLater();
-    }
-    pLibraryTreeItem->getModelWidget()->deleteLater();
-  }
+  unloadHelper(pLibraryTreeItem);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
   pLibraryTreeItem->deleteLater();
 }
@@ -3338,7 +3340,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
             menu.addAction(mpCallFunctionAction);
           }
-          /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
+          /* If item is OpenModelica or part of it then don't show the duplicate and unload/delete menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
             menu.addAction(mpDuplicateClassAction);
@@ -3349,21 +3351,21 @@ void LibraryTreeView::showContextMenu(QPoint point)
             } else {
               mpDuplicateClassAction->setEnabled(false);
             }
+            if (pLibraryTreeItem->isTopLevel()) {
+              mpUnloadClassAction->setText(Helper::unloadClass);
+              mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+            } else {
+              mpUnloadClassAction->setText(Helper::deleteStr);
+              mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+            }
+            // only add unload/delete option for top level system libraries
+            if (!pLibraryTreeItem->isSystemLibrary()) {
+              menu.addAction(mpUnloadClassAction);
+            } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
+              menu.addAction(mpUnloadClassAction);
+            }
+            menu.addSeparator();
           }
-          if (pLibraryTreeItem->isTopLevel()) {
-            mpUnloadClassAction->setText(Helper::unloadClass);
-            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-          } else {
-            mpUnloadClassAction->setText(Helper::deleteStr);
-            mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-          }
-          // only add unload/delete option for top level system libraries
-          if (!pLibraryTreeItem->isSystemLibrary()) {
-            menu.addAction(mpUnloadClassAction);
-          } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
-            menu.addAction(mpUnloadClassAction);
-          }
-          menu.addSeparator();
           // add actions to Export menu
           exportMenu.addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
@@ -3431,6 +3433,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
     menu.addSeparator();
     menu.addAction(mpNewFileEmptyAction);
     menu.addAction(mpNewFolderEmptyAction);
+    menu.addSeparator();
+    menu.addAction(MainWindow::instance()->getUnloadAllAction());
   }
   menu.exec(viewport()->mapToGlobal(point));
 }
@@ -4022,7 +4026,12 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       copyClassPathHelper(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
-        unloadClass();
+        // If item is OpenModelica or part of it then don't unload it.
+        // If item is system library and not a toplevel then don't unload it.
+        if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)
+            && (!isSystemLibrary || (isSystemLibrary && isTopLevel))) {
+          unloadClass();
+        }
       } else if (isTopLevel && isOMSimulatorLibraryType) {
         unloadOMSModel();
       } else if (isTopLevel) {
@@ -5302,15 +5311,7 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
       }
       return false;
     case 1: // unload all and reload
-      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
-      foreach (QString loadedClass, classes1) {
-        pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
-        if (pLibraryTreeItem) {
-          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
-        } else {
-          MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
-        }
-      }
+      MainWindow::instance()->unloadAll(true);
       // Just return true and the calling function will load the library.
       return true;
   }

@@ -375,8 +375,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 {
   if (!_fullpath(resolved_path, path, PATH_MAX))
   {
-    FILE_INFO info = omc_dummyFileInfo;
-    omc_assert_warning(info, "System.realpath failed on %s with errno: %d", path, errno);
+    omc_assert_warning(omc_dummyFileInfo, "System.realpath failed on %s with errno: %d", path, errno);
     resolved_path = (char*)path;
   }
   return resolved_path;
@@ -518,8 +517,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 
   if (return_path == NULL)
   {
-    FILE_INFO info = omc_dummyFileInfo;
-    omc_assert_warning(info, "System.realpath failed on %s with errno: %d", path, errno);
+    omc_assert_warning(omc_dummyFileInfo, "System.realpath failed on %s with errno: %d", path, errno);
     resolved_path = (char*)path;
     return_path = (char*)path;
   }

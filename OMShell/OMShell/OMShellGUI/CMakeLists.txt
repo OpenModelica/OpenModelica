@@ -1,4 +1,9 @@
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml REQUIRED)
 
 set(OMSHELLLIB_SOURCES commandcompletion.cpp
                        omcinteractiveenvironment.cpp
@@ -11,14 +16,12 @@ set(OMSHELLLIB_HEADERS commandcompletion.h
 
 
 add_library(OMShellLib STATIC ${OMSHELLLIB_SOURCES} ${OMSHELLLIB_HEADERS})
-target_compile_definitions(OMShellLib PRIVATE OMSHELLLIB_MOC_INCLUDE)
 
+target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMShellLib PUBLIC Qt5::Xml)
 target_link_libraries(OMShellLib PUBLIC Qt5::Widgets)
 target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMShellLib PUBLIC Qt5::WebKitWidgets)
-target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
-
 
 
 if(APPLE)

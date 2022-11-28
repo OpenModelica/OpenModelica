@@ -1,12 +1,12 @@
 
 cmake_minimum_required(VERSION 3.14)
 project(OpenModelica
-        VERSION 1.19.3
         HOMEPAGE_URL "https://openmodelica.org/"
         LANGUAGES C CXX)
 
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+
 
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
@@ -25,6 +25,9 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 include(cmake/omc_utils.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
+
+## Get the revision info. The version is saved in the variable SOURCE_REVISION
+include(cmake/omc_git_revision.cmake)
 
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
@@ -91,18 +94,6 @@ endif()
 # using glob expressions to parse everything.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
-# get an idea of what it means. We intend to use this for portability reasons in the future.
-# You know. things like is it ctime_s() or ctime_r(), MvFileEx() vs rename() and the like.
-include(WriteCompilerDetectionHeader)
-write_compiler_detection_header(
-  FILE omc_compiler_detection.h
-  PREFIX OMC
-  COMPILERS GNU Clang MSVC
-  FEATURES cxx_static_assert
-)
-
-
 ### Installation configurations ###############################################################################
 # Install following GNU conventions (i.e., bin, lib, include, share ...)
 include(GNUInstallDirs)
@@ -143,7 +134,7 @@ endif()
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
 # Set a 'catch-all' install component "unknown-install-component". If you see some install component under this
-# id, then you know that something has not set an install component either explicily on the install() command
+# id, then you know that something has not set an install component either explicitly on the install() command
 # or at higher level using 'set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME <id>)' to cover all install() commands
 # issues after it.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
@@ -158,6 +149,7 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMNotebook)
   include(omsimulator.cmake)
   omc_add_subdirectory(OMEdit)
+  omc_add_subdirectory(OMSens_Qt)
 endif()
 
 omc_add_subdirectory(testsuite)

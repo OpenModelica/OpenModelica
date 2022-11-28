@@ -1,3 +1,32 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -473,7 +502,7 @@ namespace FlatModelica
         : _value(value) {}
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Integer>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); };
+      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
       bool isInteger() const override { return true; }
       bool isBooleanish() const override { return true; }
@@ -555,6 +584,28 @@ namespace FlatModelica
 
     private:
       std::string _value;
+  };
+
+  class Enum : public ExpressionBase
+  {
+  public:
+    Enum(std::string name, int index)
+      : _name(std::move(name)), _index(index) {}
+
+    Enum(const QJsonObject &value);
+
+    std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Enum>(*this); }
+    Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+    bool isInteger() const override { return true; }
+    bool isLiteral() const override { return true; }
+    const std::string& value() const { return _name; }
+    void print(std::ostream &os) const override;
+    QJsonValue serialize() const override;
+
+  private:
+    std::string _name;
+    int _index;
   };
 
   class Cref : public ExpressionBase
@@ -1105,7 +1156,7 @@ namespace FlatModelica
 
     if (kind.isString()) {
       switch (djb2_qHash(kind.toString().data())) {
-        //case djb2_hash("enum"):              return std::make_unique<Enum>(value);
+        case djb2_hash("enum"):              return std::make_unique<Enum>(value);
         //case djb2_hash("clock"):             return std::make_unique<Clock>(value);
         case djb2_hash("cref"):              return std::make_unique<Cref>(value);
         //case djb2_hash("typename"):          return std::make_unique<Typename>(value);
@@ -1218,6 +1269,32 @@ namespace FlatModelica
     auto tok = tokenizer.peekToken();
     tokenizer.popToken();
     return Expression(tok.data);
+  }
+
+  Enum::Enum(const QJsonObject &value)
+  {
+    _name = value["name"].toString().toStdString();
+    _index = value["index"].toInt();
+  }
+
+  Expression Enum::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    Q_UNUSED(var_eval);
+    return Expression(_name, _index);
+  }
+
+  void Enum::print(std::ostream &os) const
+  {
+    os << _name;
+  }
+
+  QJsonValue Enum::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "enum"},
+      { "name", QString::fromStdString(_name)},
+      {"index", _index}
+    };
   }
 
   Cref::Cref(const QJsonObject &value)
@@ -1629,7 +1706,12 @@ namespace FlatModelica
 
   void Unary::print(std::ostream &os) const
   {
-    os << _op << _e;
+    os << _op;
+    // add space for not operator
+    if (_op.type() == Operator::Not) {
+      os << " ";
+    }
+    os << _e;
   }
 
   QJsonValue Unary::serialize() const
@@ -1803,6 +1885,17 @@ namespace FlatModelica
   Expression::Expression(std::vector<Expression> elements)
     : _value(std::make_unique<Array>(std::move(elements)))
   {
+  }
+
+  /*!
+   * \brief Expression::Expression
+   * Constructs an Enum expression.
+   * \param elements
+   */
+  Expression::Expression(std::string value, int index)
+    : _value(std::make_unique<Enum>(std::move(value), index))
+  {
+
   }
 
   /*!
@@ -2132,6 +2225,17 @@ namespace FlatModelica
   std::string Expression::stringValue() const
   {
     return dynamic_cast<const String&>(*_value).value();
+  }
+
+  /*!
+   * \brief Expression::enumValue
+   * Returns the index value of the Expression if it's an Enum, or throws an
+   * error if the Expression is not an Enum.
+   * \return
+   */
+  std::string Expression::enumValue() const
+  {
+    return dynamic_cast<const Enum&>(*_value).value();
   }
 
   /*!
