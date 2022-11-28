@@ -793,50 +793,57 @@ pipeline {
         }
       }
     }
-    stage('push-to-master') {
-      agent {
-        label 'linux'
-      }
-      when {
-        beforeAgent true
-        branch 'omlib-staging'
-        expression { return currentBuild.currentResult == 'SUCCESS' }
-      }
-      steps {
-        githubNotify status: 'SUCCESS', description: 'The staged library changes are working', context: 'continuous-integration/jenkins/pr-merge'
-        githubNotify status: 'SUCCESS', description: 'Skipping CLA checks on omlib-staging', context: 'license/CLA'
-        sshagent (credentials: ['Hudson-SSH-Key']) {
-          sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
-          sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging && false)'
+    stage('publish') {
+      parallel {
+        stage('push-to-master') {
+          agent {
+            label 'linux'
+          }
+          when {
+            beforeAgent true
+            branch 'omlib-staging'
+            expression { return currentBuild.currentResult == 'SUCCESS' }
+          }
+          steps {
+            script { common.standardSetup() }
+            githubNotify status: 'SUCCESS', description: 'The staged library changes are working', context: 'continuous-integration/jenkins/pr-merge'
+            githubNotify status: 'SUCCESS', description: 'Skipping CLA checks on omlib-staging', context: 'license/CLA'
+            sshagent (credentials: ['Hudson-SSH-Key']) {
+              sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
+              sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging && false)'
+            }
+          }
         }
-      }
-    }
-    stage('push-bibliography') {
-      agent {
-        label 'linux'
-      }
-      when {
-        beforeAgent true
-        branch 'master'
-        expression { return currentBuild.currentResult == 'SUCCESS' }
-      }
-      options {
-        skipDefaultCheckout true
-      }
-      steps {
-        git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'https://github.com/OpenModelica/www.openmodelica.org.git'
-        unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
-        sh "git remote -v | grep www.openmodelica.org"
-        sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
-        sh "git add content/research/*.md"
-        sshagent (credentials: ['Hudson-SSH-Key']) {
-          sh """
-          if ! git diff-index --quiet HEAD; then
-            git commit -m 'Updated bibliography'
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            git push
-          fi
-          """
+        stage('push-bibliography') {
+          agent {
+            label 'linux'
+            customWorkspace 'ws/OpenModelica-Bibliography'
+          }
+          when {
+            beforeAgent true
+            branch 'master'
+            expression { return currentBuild.currentResult == 'SUCCESS' }
+          }
+          options {
+            skipDefaultCheckout true
+          }
+          steps {
+            script { common.standardSetup() }
+            git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'https://github.com/OpenModelica/www.openmodelica.org.git'
+            unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
+            sh "git remote -v | grep www.openmodelica.org"
+            sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
+            sh "git add content/research/*.md"
+            sshagent (credentials: ['Hudson-SSH-Key']) {
+              sh """
+              if ! git diff-index --quiet HEAD; then
+                git commit -m 'Updated bibliography'
+                ssh-keyscan github.com >> ~/.ssh/known_hosts
+                git push --set-upstream origin main
+              fi
+              """
+            }
+          }
         }
       }
     }
