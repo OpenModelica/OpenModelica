@@ -830,8 +830,8 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
-            script { common.standardSetup() }
             git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'https://github.com/OpenModelica/www.openmodelica.org.git'
+            script { common.standardSetup() }
             unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
             sh "git remote -v | grep www.openmodelica.org"
             sh "mv doc/bibliography/openmodelica.org-bibgen/*.md content/research/"
