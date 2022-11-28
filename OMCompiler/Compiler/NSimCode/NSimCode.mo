@@ -261,7 +261,7 @@ public
           list<SimJacobian> jacobians;
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           Option<DaeModeData> daeModeData;
-          SimJacobian jacA, jacB, jacC, jacD, jacF;
+          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
@@ -349,10 +349,11 @@ public
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+            (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jacobians := listReverse(jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
             // jacobian blocks only from simulation jacobians
-            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF});
+            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             generic_loop_calls := list(SimGenericCall.fromEquation(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
@@ -652,6 +653,7 @@ public
       Integer numSetcVars;
       Integer numDataReconVars;
       Integer numRealIntputVars;
+      Integer numSetbVars;
     end VAR_INFO;
 
     function create
@@ -693,7 +695,8 @@ public
         numSensitivityParameters    = 0,
         numSetcVars                 = 0,
         numDataReconVars            = 0,
-        numRealIntputVars           = 0);
+        numRealIntputVars           = 0,
+        numSetbVars                 = 0);
     end create;
 
     function convert
@@ -733,7 +736,8 @@ public
         numSensitivityParameters    = varInfo.numSensitivityParameters,
         numSetcVars                 = varInfo.numSetcVars,
         numDataReconVars            = varInfo.numDataReconVars,
-        numRealInputVars            = varInfo.numRealIntputVars);
+        numRealInputVars            = varInfo.numRealIntputVars,
+        numSetbVars                 = varInfo.numSetbVars);
     end convert;
   end VarInfo;
 

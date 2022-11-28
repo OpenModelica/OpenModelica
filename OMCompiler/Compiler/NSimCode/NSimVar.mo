@@ -710,6 +710,7 @@ public
       list<SimVar> sensitivityVars "variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates";
       list<SimVar> dataReconSetcVars;
       list<SimVar> dataReconinputVars;
+      list<SimVar> dataReconSetBVars;
     end SIMVARS;
 
     function toString
@@ -751,6 +752,7 @@ public
       list<SimVar> sensitivityVars = {};
       list<SimVar> dataReconSetcVars = {};
       list<SimVar> dataReconinputVars = {};
+      list<SimVar> dataReconSetBVars = {};
     algorithm
       _ := match varData
         local
@@ -807,7 +809,8 @@ public
         realOptimizeFinalConstraintsVars    = realOptimizeFinalConstraintsVars,
         sensitivityVars                     = sensitivityVars,
         dataReconSetcVars                   = dataReconSetcVars,
-        dataReconinputVars                  = dataReconinputVars
+        dataReconinputVars                  = dataReconinputVars,
+        dataReconSetBVars                   = dataReconSetBVars
       );
     end create;
 
@@ -863,7 +866,8 @@ public
                           + listLength(simVars.realOptimizeFinalConstraintsVars)
                           + listLength(simVars.sensitivityVars)
                           + listLength(simVars.dataReconSetcVars)
-                          + listLength(simVars.dataReconinputVars);
+                          + listLength(simVars.dataReconinputVars)
+                          + listLength(simVars.dataReconSetBVars);
     end size;
 
     function convert
@@ -899,7 +903,8 @@ public
         realOptimizeFinalConstraintsVars  = SimVar.convertList(simVars.realOptimizeFinalConstraintsVars),
         sensitivityVars                   = SimVar.convertList(simVars.sensitivityVars),
         dataReconSetcVars                 = SimVar.convertList(simVars.dataReconSetcVars),
-        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars));
+        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars),
+        dataReconSetBVars                 = SimVar.convertList(simVars.dataReconSetBVars));
     end convert;
 
     function createSimVarLists
@@ -1060,7 +1065,7 @@ public
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
   type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...

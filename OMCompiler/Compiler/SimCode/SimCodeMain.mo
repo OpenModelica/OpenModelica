@@ -1522,7 +1522,7 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         matrixnames := {"B", "C", "D"};
       else
-        matrixnames := {"B", "C", "D", "F"};
+        matrixnames := {"B", "C", "D", "F", "H"};
       end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
         inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring),
@@ -1544,7 +1544,7 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         matrixnames := {"A", "B", "C", "D"};
       else
-        matrixnames := {"A", "B", "C", "D", "F"};
+        matrixnames := {"A", "B", "C", "D", "F", "H"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     end if;

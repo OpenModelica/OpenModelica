@@ -1399,6 +1399,51 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
 
 /*
  * Function Which Computes the
+ * Jacobian Matrix H
+ */
+matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream & logfile, bool boundaryConditions = false)
+{
+  // initialize the jacobian call
+  const int index = data->callback->INDEX_JAC_H;
+  ANALYTIC_JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  data->callback->initialAnalyticJacobianH(data, threadData, jacobian);
+  int cols = jacobian->sizeCols;
+  int rows = jacobian->sizeRows;
+  std::cout << "\n check jacobian H :" << rows << "==>" << cols;
+  if (cols == 0)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix H");
+    logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix H" << "\n";
+    logfile.close();
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
+    exit(1);
+  }
+  double *jacF = (double*) calloc(rows * cols, sizeof(double)); // allocate for Matrix F
+  int k = 0;
+  for (int x = 0; x < cols; x++)
+  {
+    jacobian->seedVars[x] = 1.0;
+    data->callback->functionJacH_column(data, threadData, jacobian, NULL);
+    //cout << "Calculate one column\n:";
+    for (int y = 0; y < rows; y++)
+    {
+      jacF[k++] = jacobian->resultVars[y];
+    }
+    jacobian->seedVars[x] = 0.0;
+  }
+  matrixData Fdata = {rows, cols, jacF};
+  return Fdata;
+}
+
+/*
+ * Function Which Computes the
  * Transpose of Jacobian Matrix FT
  */
 matrixData getTransposeMatrix(matrixData jacF)
@@ -2260,6 +2305,8 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   //data->callback->functionODE(data,threadData);
   data->callback->setc_function(data, threadData);
 
+  //data->callback->setb_function(data, threadData);
+
   matrixData jacF = getJacobianMatrixF(data, threadData, logfile);
   matrixData jacFt = getTransposeMatrix(jacF);
 
@@ -2281,6 +2328,17 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     t++;
     //cout << "array_setc_vars:=>" << t << ":" << data->simulationInfo->setcVars[i-1] << "\n";
   }
+
+  // allocate data for boundaryconditions vars simulation results
+  // double *boundaryConditionVarsResults = (double *)calloc(data->modelData->nSetbVars, sizeof(double));
+  // int t1 = 0;
+  // for (int i = 3; i > 0; i--)
+  // {
+  //   boundaryConditionVarsResults[t] = data->simulationInfo->setbVars[i - 1];
+  //   t1++;
+  //   cout << "setB_results:=>" << t1 << ":" << data->simulationInfo->setbVars[i-1] << "\n";
+  // }
+
 
   int nsetcvars = data->modelData->nSetcVars;
   matrixData vector_c = {nsetcvars, 1, tmpsetc};
@@ -2411,6 +2469,37 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
 
   dumpReconciledSxToCSV(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, data);
+
+  // Compute Boundary conditions
+  // set the inputs from csv file to simulationInfo datainputVars
+  for (int i = 0; i < reconciled_X.rows * reconciled_X.column; i++)
+  {
+    data->simulationInfo->datainputVars[i] = reconciled_X.data[i];
+  }
+
+  /* set the inputs via this special function generated for dataReconciliation
+   * which also sets inputs for models not involving top level inputs
+   */
+  data->callback->data_function(data, threadData);
+  // solve the system with reconciled input values got from D.1
+  data->callback->functionDAE(data, threadData);
+  // call the setc function which stores the results of boundary conditions variable
+  data->callback->setb_function(data, threadData);
+
+  // allocate data for boundaryconditions vars simulation results
+  double *boundaryConditionVarsResults = (double *)calloc(data->modelData->nSetbVars, sizeof(double));
+  int t1 = 0;
+  for (int i = 3; i > 0; i--)
+  {
+    boundaryConditionVarsResults[t] = data->simulationInfo->setbVars[i - 1];
+    t1++;
+    cout << "setB_results_Arun:=>" << t1 << ":" << data->simulationInfo->setbVars[i-1] << "\n";
+  }
+
+  matrixData jacH = getJacobianMatrixH(data, threadData, logfile);
+
+  printMatrix(jacH.data, jacH.rows, jacH.column, "H", logfile);
+
 
   /*
    * Calculate half width Confidence interval

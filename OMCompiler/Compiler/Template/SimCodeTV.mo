@@ -252,6 +252,7 @@ package SimCodeVar
       list<SimVar> sensitivityVars;
       list<SimVar> dataReconSetcVars;
       list<SimVar> dataReconinputVars;
+      list<SimVar> dataReconSetBVars;
     end SIMVARS;
   end SimVars;
 
@@ -838,6 +839,7 @@ package SimCode
       Integer numSetcVars;
       Integer numDataReconVars;
       Integer numRealInputVars "for fmi cs to interpolate inputs";
+      Integer numSetbVars "for data reconciliation setB vars";
     end VARINFO;
   end VarInfo;
 
