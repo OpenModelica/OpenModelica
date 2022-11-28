@@ -132,7 +132,7 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
           }
         } else {
           fclose(fout);
-          if (rename(MMC_STRINGDATA(p->tmpFilename), MMC_STRINGDATA(p->filename))) {
+          if (omc_rename(MMC_STRINGDATA(p->tmpFilename), MMC_STRINGDATA(p->filename))) {
             const char *msgs[3] = {strerror(errno), MMC_STRINGDATA(p->filename), MMC_STRINGDATA(p->tmpFilename)};
             c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Failed to rename file after downloading with curl %s %s: %s", msgs, 3);
           }
