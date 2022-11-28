@@ -42,33 +42,6 @@
 
 namespace ModelInstance
 {
-  Point::Point() = default;
-
-  Point::Point(double x, double y)
-  {
-    mValue[0] = x;
-    mValue[1] = y;
-  }
-
-  Point::Point(const Point &point)
-  {
-    mValue[0] = point.x();
-    mValue[1] = point.y();
-  }
-
-  void Point::deserialize(const QJsonArray &jsonArray)
-  {
-    if (jsonArray.size() == 2) {
-      mValue[0] = jsonArray.at(0).toDouble();
-      mValue[1] = jsonArray.at(1).toDouble();
-    }
-  }
-
-  bool Point::operator==(const Point &point)
-  {
-    return (qFuzzyCompare(point.x(), this->x()) && qFuzzyCompare(point.y(), this->y()));
-  }
-
   /*!
    * \class CoordinateSystem
    * \brief A class to represent the coordinate system of view.
@@ -190,13 +163,6 @@ namespace ModelInstance
     }
   }
 
-  GraphicItem::GraphicItem()
-  {
-    mVisible = true;
-    mOrigin = QPointF(0, 0);
-    mRotation = 0;
-  }
-
   void GraphicItem::deserialize(const QJsonArray &jsonArray)
   {
     mVisible.deserialize(jsonArray.at(0));
@@ -221,10 +187,6 @@ namespace ModelInstance
 
   FilledShape::FilledShape()
   {
-    mLineColor = QColor(0, 0, 0);
-    mFillColor = QColor(0, 0, 0);
-    mPattern = StringHandler::LineSolid;
-    mFillPattern = StringHandler::FillNone;
     mLineThickness = 0.25;
   }
 
@@ -271,14 +233,10 @@ namespace ModelInstance
   Line::Line(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mPoints.clear();
-    mColor = QColor(0, 0, 0);
-    mPattern = StringHandler::LineSolid;
     mThickness = 0.25;
     mArrow[0] = "Arrow.None";
     mArrow[1] = "Arrow.None";
     mArrowSize = 3;
-    mSmooth = StringHandler::SmoothNone;
   }
 
   void Line::deserialize(const QJsonArray &jsonArray)
@@ -286,12 +244,7 @@ namespace ModelInstance
     if (jsonArray.size() == 10) {
       GraphicItem::deserialize(jsonArray);
 
-      QJsonArray points = jsonArray.at(3).toArray();
-      foreach (QJsonValue pointValue, points) {
-        Point point;
-        point.deserialize(pointValue.toArray());
-        mPoints.append(point);
-      }
+      mPoints.deserialize(jsonArray.at(3));
       mColor.deserialize(jsonArray.at(4));
       mPattern.deserialize(jsonArray.at(5));
       mThickness.deserialize(jsonArray.at(6));
@@ -316,12 +269,7 @@ namespace ModelInstance
     GraphicItem::deserialize(jsonObject);
 
     if (jsonObject.contains("points")) {
-      QJsonArray points = jsonObject.value("points").toArray();
-      foreach (QJsonValue pointValue, points) {
-        Point point;
-        point.deserialize(pointValue.toArray());
-        mPoints.append(point);
-      }
+      mPoints.deserialize(jsonObject.value("points"));
     }
 
     if (jsonObject.contains("color")) {
@@ -359,33 +307,15 @@ namespace ModelInstance
     }
   }
 
-  void Line::addPoint(const QPointF &point)
-  {
-    mPoints.append(Point(point.x(), point.y()));
-  }
-
   void Line::setColor(const QColor &color)
   {
     mColor = color;
   }
 
-  bool Line::operator==(const Line &line) const
-  {
-    return (line.getPoints() == this->getPoints()) &&
-        (line.getColor() == this->getColor()) &&
-        (line.getPattern() == this->getPattern()) &&
-        (line.getThickness() == this->getThickness()) &&
-        (line.getStartArrow() == this->getStartArrow()) &&
-        (line.getEndArrow() == this->getEndArrow()) &&
-        (line.getArrowSize() == this->getArrowSize()) &&
-        (line.getSmooth() == this->getSmooth());
-  }
-
   Polygon::Polygon(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mPoints.clear();
-    mSmooth = StringHandler::SmoothNone;
+
   }
 
   void Polygon::deserialize(const QJsonArray &jsonArray)
@@ -394,12 +324,7 @@ namespace ModelInstance
       GraphicItem::deserialize(jsonArray);
       FilledShape::deserialize(jsonArray);
 
-      QJsonArray points = jsonArray.at(8).toArray();
-      foreach (QJsonValue pointValue, points) {
-        Point point;
-        point.deserialize(pointValue.toArray());
-        mPoints.append(point);
-      }
+      mPoints.deserialize(jsonArray.at(8));
       mSmooth.deserialize(jsonArray.at(9));
     }
   }
@@ -408,10 +333,7 @@ namespace ModelInstance
   Rectangle::Rectangle(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mBorderPattern = StringHandler::BorderNone;
-    mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mRadius = 0;
   }
 
   void Rectangle::deserialize(const QJsonArray &jsonArray)
@@ -429,9 +351,7 @@ namespace ModelInstance
   Ellipse::Ellipse(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
       mClosure = StringHandler::ClosureChord;
@@ -456,13 +376,9 @@ namespace ModelInstance
   Text::Text(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mTextString = "";
-    mFontSize = 0;
     mFontName = "";
     mTextStyle.clear();
-    mTextColor = QColor(0, 0, 0);
     mHorizontalAlignment = "TextAlignment.Center";
   }
 
@@ -547,7 +463,6 @@ namespace ModelInstance
   Bitmap::Bitmap(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mExtent.clear();
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
     mFileName = "";
     mImageSource = "";

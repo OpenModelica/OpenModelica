@@ -164,8 +164,8 @@ public:
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   OriginItem* getOriginItem() {return mpOriginItem;}
-  void setPoints(QList<QPointF> points) {mPoints = points;}
-  QList<QPointF> getPoints() {return mPoints;}
+  void setPoints(QVector<QPointF> points) {mPoints = points;}
+  PointArrayAnnotation getPoints() {return mPoints;}
   void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
   StringHandler::Arrow getStartArrow() {return mArrow.at(0);}
   void setEndArrow(StringHandler::Arrow endArrow) {mArrow.replace(1, endArrow);}
@@ -263,7 +263,7 @@ protected:
   GraphicsView *mpGraphicsView;
   Element *mpParentComponent;
   OriginItem *mpOriginItem;
-  QList<QPointF> mPoints;
+  PointArrayAnnotation mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;
   RealAnnotation mArrowSize;

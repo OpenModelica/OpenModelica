@@ -3250,7 +3250,7 @@ void GraphicsView::addTransition(Element *pComponent)
     mpTransitionLineAnnotation->setEndElement(pComponent);
     // Remove reduntant points so that Liang Barsky algorithm can work well.
     mpTransitionLineAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-    QList<QPointF> points = mpTransitionLineAnnotation->getPoints();
+    QVector<QPointF> points = mpTransitionLineAnnotation->getPoints();
     // Find the start state intersection point.
     QRectF sceneRectF = mpTransitionLineAnnotation->getStartElement()->sceneBoundingRect();
     QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),

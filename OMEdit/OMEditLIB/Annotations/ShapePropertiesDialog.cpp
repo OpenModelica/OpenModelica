@@ -416,7 +416,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   headerLabels << "X" << "Y";
   mpPointsTableWidget->setHorizontalHeaderLabels(headerLabels);
   // add points to points table widget
-  QList<QPointF> points = mpShapeAnnotation->getPoints();
+  QVector<QPointF> points = mpShapeAnnotation->getPoints();
   mpPointsTableWidget->setRowCount(points.size());
   int rowIndex = 0;
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
@@ -860,7 +860,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   }
   /* save points */
   mpShapeAnnotation->clearPoints();
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++) {
     points.append(QPointF(mpPointsTableWidget->item(i, 0)->text().toDouble(), mpPointsTableWidget->item(i, 1)->text().toDouble()));
   }

@@ -154,6 +154,7 @@ SOURCES += Util/Helper.cpp \
   Annotations/ColorAnnotation.cpp \
   Annotations/LinePatternAnnotation.cpp \
   Annotations/FillPatternAnnotation.cpp \
+  Annotations/PointArrayAnnotation.cpp \
   Annotations/SmoothAnnotation.cpp \
   Annotations/ExtentAnnotation.cpp \
   Annotations/BorderPatternAnnotation.cpp \
@@ -262,6 +263,7 @@ HEADERS  += Util/Helper.h \
   Annotations/ColorAnnotation.h \
   Annotations/LinePatternAnnotation.h \
   Annotations/FillPatternAnnotation.h \
+  Annotations/PointArrayAnnotation.h \
   Annotations/SmoothAnnotation.h \
   Annotations/ExtentAnnotation.h \
   Annotations/BorderPatternAnnotation.h \

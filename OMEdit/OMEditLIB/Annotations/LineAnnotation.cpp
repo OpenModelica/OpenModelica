@@ -284,7 +284,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -328,7 +328,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -371,7 +371,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -415,7 +415,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -463,7 +463,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -507,7 +507,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     QPointF point = mOrigin + mPoints[i];
     points.append(point);
@@ -641,10 +641,8 @@ void LineAnnotation::parseShapeAnnotation()
 {
   GraphicItem::parseShapeAnnotation(mpLine);
 
-  mPoints.clear();
-  foreach (ModelInstance::Point point, mpLine->getPoints()) {
-    addPoint(QPointF(point.x(), point.y()));
-  }
+  mPoints = mpLine->getPoints();
+  mPoints.evaluate(mpLine->getParentModel());
   mLineColor = mpLine->getColor();
   mLineColor.evaluate(mpLine->getParentModel());
   mLinePattern = mpLine->getPattern();
@@ -982,20 +980,8 @@ QString LineAnnotation::getShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   // get points
-  QString pointsString;
   if (mPoints.size() > 0) {
-    pointsString.append("points={");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
-    }
-  }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
+    annotationString.append(QString("points=%1").arg(mPoints.toQString()));
   }
   // get the line color
   if (mLineColor.isDynamicSelectExpression() || mLineColor.toQString().compare(QStringLiteral("{0,0,0}")) != 0) {
@@ -1176,7 +1162,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
     }
     /* update the last point */
     if (mPoints.size() > 1) {
-      mPoints.back() = point;
+      mPoints.last() = point;
       updateCornerItem(lastIndex);
       /* update the 2nd point */
       if (secondLastIndex < mGeometries.size()) {
@@ -1192,7 +1178,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       removeRedundantPointsGeometriesAndCornerItems();
     }
   } else {
-    mPoints.back() = point;
+    mPoints.last() = point;
   }
 }
 
@@ -1271,7 +1257,7 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   // set the default values
   GraphicItem::setDefaults(pShapeAnnotation);
   mPoints.clear();
-  QList<QPointF> points = pShapeAnnotation->getPoints();
+  QVector<QPointF> points = pShapeAnnotation->getPoints();
   for (int i = 0 ; i < points.size() ; i++) {
     addPoint(points[i]);
   }
@@ -1302,7 +1288,7 @@ void LineAnnotation::updateOMSConnection()
 {
   // connection geometry
   ssd_connection_geometry_t connectionGeometry;
-  QList<QPointF> points = mPoints;
+  QVector<QPointF> points = mPoints;
   if (points.size() >= 2) {
     points.removeFirst();
     points.removeLast();
@@ -2639,10 +2625,7 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
  */
 void LineAnnotation::updateLine()
 {
-  mpLine->clearPoints();
-  foreach (QPointF point, mPoints) {
-    mpLine->addPoint(point);
-  }
+  mpLine->setPoints(mPoints);
   mpLine->setColor(mLineColor);
   mpLine->setPattern(mLinePattern);
   mpLine->setThickness(mLineThickness);

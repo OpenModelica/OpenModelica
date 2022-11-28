@@ -27,28 +27,37 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef EXTENTANNOTATION_H
-#define EXTENTANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef POINTARRAYANNOTATION_H
+#define POINTARRAYANNOTATION_H
 
 #include "DynamicAnnotation.h"
 
 #include <QVector>
 
-class ExtentAnnotation : public DynamicAnnotation
+class PointArrayAnnotation : public DynamicAnnotation
 {
   public:
-    ExtentAnnotation();
+    PointArrayAnnotation();
 
     void clear() override;
 
     operator const QVector<QPointF>&() const { return mValue; }
-    ExtentAnnotation& operator= (const QVector<QPointF> &value);
-    bool operator== (const ExtentAnnotation &extent) const;
+    PointArrayAnnotation& operator= (const QVector<QPointF> &value);
+    QPointF& operator[] (int i);
+    bool operator== (const PointArrayAnnotation &pointArray) const;
 
+    void append(const QPointF &value) { mValue.append(value); setExp(); }
+    void insert(int index, const QPointF &value) { mValue.insert(index, value); setExp(); }
     const QPointF& at(int i) const { return mValue.at(i); }
+    void removeAt(int index) { mValue.removeAt(index); setExp(); }
     int size() const { return mValue.size(); }
     void replace(int i, const QPointF &value) { mValue.replace(i, value); setExp(); }
 
+    QPointF& first()       { return mValue.first(); }
+    QPointF& last()       { return mValue.last(); }
     auto begin()       { return mValue.begin(); }
     auto begin() const { return mValue.begin(); }
     auto end()         { return mValue.end(); }
@@ -60,7 +69,7 @@ class ExtentAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    QVector<QPointF> mValue = QVector<QPointF>(2);
+    QVector<QPointF> mValue;
 };
 
-#endif /* EXTENTANNOTATION_H */
+#endif // POINTARRAYANNOTATION_H
