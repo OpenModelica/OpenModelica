@@ -2619,6 +2619,7 @@ protected
       return;
     end if;
 
+    // Check if there are variables being used uninitialized.
     unassigned := Vector.new<InstNode>();
     addUnassignedComponents(unassigned, fn.outputs);
     addUnassignedComponents(unassigned, fn.locals);
@@ -2626,17 +2627,19 @@ protected
     body := getBody(fn);
     checkUseBeforeAssign2(unassigned, body);
 
+    // Give a warning for any outputs that were not assigned in the function.
     for var in Vector.toList(unassigned) loop
       if InstNode.isOutput(var) then
         parent := InstNode.InstNode.parent(var);
         sources := {InstNode.info(var)};
 
+        // If the output is inherited then also give the source location of the
+        // derived function, since that's likely where the assignment is missing.
         if InstNode.isBaseClass(parent) then
           sources := InstNode.info(InstNode.getDerivedNode(parent)) :: sources;
         end if;
 
         Error.addMultiSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT, {InstNode.name(var)}, sources);
-        fail();
       end if;
     end for;
   end checkUseBeforeAssign;

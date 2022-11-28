@@ -678,7 +678,7 @@ algorithm
   () := match value
     case Expression.EMPTY()
       algorithm
-        Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+        Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
           {InstNode.name(outputNode)}, InstNode.info(outputNode));
       then
         fail();
