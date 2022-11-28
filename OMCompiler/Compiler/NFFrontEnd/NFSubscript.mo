@@ -1097,20 +1097,10 @@ public
     Boolean merged = true;
   algorithm
     // discard an index for backend if it is exactly one for scalars
-    if backend then
-      if dimensions == 0 and not listEmpty(newSubs) then
-        outSubs := {};
-        new_sub :: remainingSubs := newSubs;
-        remainingSubs := match new_sub
-          case INDEX(index = Expression.INTEGER(1)) then remainingSubs;
-          else newSubs;
-        end match;
-        return;
-      elseif listLength(oldSubs) >= dimensions and List.all(List.firstN(oldSubs, dimensions), isBackendIterator) then
-        (_, remainingSubs) := List.split(newSubs, dimensions);
-        (outSubs, _) := List.split(oldSubs, dimensions);
-        return;
-      end if;
+    if backend and listLength(oldSubs) >= dimensions and List.all(List.firstN(oldSubs, dimensions), isBackendIterator) then
+      (_, remainingSubs) := List.split(newSubs, dimensions);
+      (outSubs, _) := List.split(oldSubs, dimensions);
+      return;
     end if;
 
     // If there aren't any existing subscripts we just add as many subscripts

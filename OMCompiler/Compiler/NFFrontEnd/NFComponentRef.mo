@@ -1552,10 +1552,11 @@ public
 
   function subscriptsToExpression
     input ComponentRef cref;
+    input Boolean addScalar;
     output list<Expression> e_lst = {};
   algorithm
     for subs_tmp in subscriptsAll(cref) loop
-      if listEmpty(subs_tmp) then
+      if addScalar and listEmpty(subs_tmp) then
         e_lst := Expression.INTEGER(1) :: e_lst;
       else
         for sub in subs_tmp loop
