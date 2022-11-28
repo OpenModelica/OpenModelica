@@ -2992,7 +2992,7 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 
 int SystemImpl__rename(const char *source, const char *dest)
 {
-   return omc_rename(source, dest);
+   return (0 == omc_rename(source, dest));
 }
 
 char* SystemImpl__ctime(double time)
