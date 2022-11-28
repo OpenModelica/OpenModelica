@@ -26,9 +26,9 @@ getErrorString();
 // Value of x(=0.666667)
 // Value of x(=0.555556)
 // Value of x(=0.444444)
-// assert            | info    | The following assertion has been violated at time 0.555556
-// |                 | |       | assertTest.x >= 0.5
-// assert            | info    | Variable x(=0.444444) out of limit
+// assert            | info    | [simulation/modelica/asserts/AssertTest5.mo:26:3-26:65:writable]
+// |                 | |       | The following assertion has been violated at time 0.555556
+// |                 | |       | ((assertTest.x >= 0.5)) --> \"Variable x(=0.444444) out of limit\"
 // assert            | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;
