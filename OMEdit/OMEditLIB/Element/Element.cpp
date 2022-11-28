@@ -2471,7 +2471,7 @@ void Element::drawOMSElement()
   } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
     if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
       PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
-      QList<QPointF> points;
+      QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pInputPolygonAnnotation->setPoints(points);
       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
@@ -2500,7 +2500,7 @@ void Element::drawOMSElement()
       mShapesList.append(pInputPolygonAnnotation);
     } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
       PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
-      QList<QPointF> points;
+      QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pOutputPolygonAnnotation->setPoints(points);
       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);

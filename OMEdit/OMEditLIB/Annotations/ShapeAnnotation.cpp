@@ -946,8 +946,8 @@ void ShapeAnnotation::applyRotation(qreal angle)
   */
 void ShapeAnnotation::adjustPointsWithOrigin()
 {
-  QList<QPointF> points;
-  foreach (QPointF point, mPoints) {
+  QVector<QPointF> points;
+  for (auto &point: mPoints) {
     points.append(point - mOrigin);
   }
   mPoints = points;
@@ -1221,7 +1221,7 @@ void ShapeAnnotation::manhattanizeShape(bool addToStack)
       points.append(QPointF(points[0].x() + dx, points[0].y()));
     }
     points.removeLast();
-    QList<QPointF> oldPoints = mPoints;
+    QVector<QPointF> oldPoints = mPoints;
     clearPoints();
     for (int i = 0 ; i <= startIndex ; i++) {
       addPoint(oldPoints[i]);
@@ -1657,7 +1657,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
     mPoints.replace(index, point);
     /* if first point */
     if (index == 0) {
-      mPoints.back() = point;
+      mPoints.last() = point;
     } else if (index == mPoints.size() - 1) { /* if last point */
       mPoints.first() = point;
     }

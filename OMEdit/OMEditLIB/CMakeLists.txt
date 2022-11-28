@@ -62,6 +62,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Annotations/ColorAnnotation.cpp
                       Annotations/LinePatternAnnotation.cpp
                       Annotations/FillPatternAnnotation.cpp
+                      Annotations/PointArrayAnnotation.cpp
                       Annotations/SmoothAnnotation.cpp
                       Annotations/ExtentAnnotation.cpp
                       Annotations/BorderPatternAnnotation.cpp
@@ -186,6 +187,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Annotations/ColorAnnotation.h
                       Annotations/LinePatternAnnotation.h
                       Annotations/FillPatternAnnotation.h
+                      Annotations/PointArrayAnnotation.h
                       Annotations/SmoothAnnotation.h
                       Annotations/ExtentAnnotation.h
                       Annotations/BorderPatternAnnotation.h

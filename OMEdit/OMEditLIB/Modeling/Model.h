@@ -44,6 +44,7 @@
 #include "Annotations/ColorAnnotation.h"
 #include "Annotations/LinePatternAnnotation.h"
 #include "Annotations/FillPatternAnnotation.h"
+#include "Annotations/PointArrayAnnotation.h"
 #include "Annotations/SmoothAnnotation.h"
 #include "Annotations/ExtentAnnotation.h"
 #include "Annotations/BorderPatternAnnotation.h"
@@ -52,22 +53,6 @@
 
 namespace ModelInstance
 {
-  class Point
-  {
-  public:
-    Point();
-    Point(double x, double y);
-    Point(const Point &point);
-    void deserialize(const QJsonArray &jsonArray);
-    double x() const {return mValue[0];}
-    double y() const {return mValue[1];}
-
-    bool operator==(const Point &point);
-    Point& operator=(const Point &point) noexcept = default;
-private:
-    double mValue[2];
-  };
-
   class CoordinateSystem
   {
   public:
@@ -112,7 +97,7 @@ private:
   class GraphicItem
   {
   public:
-    GraphicItem();
+    GraphicItem() {}
     BooleanAnnotation getVisible() const {return mVisible;}
     PointAnnotation getOrigin() const {return mOrigin;}
     RealAnnotation getRotation() const {return mRotation;}
@@ -124,15 +109,6 @@ private:
     PointAnnotation mOrigin;
     RealAnnotation mRotation;
   };
-
-  enum class LinePattern {None, Solid, Dash, Dot, DashDot, DashDotDot};
-  enum class FillPattern {None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere};
-  enum class BorderPattern {None, Raised, Sunken, Engraved};
-  enum class Smooth {None, Bezier};
-  enum class EllipseClosure {None, Chord, Radial};
-  enum class Arrow {None, Open, Filled, Half};
-  enum class TextStyle {Bold, Italic, UnderLine};
-  enum class TextAlignment {Left, Center, Right};
 
   class FilledShape
   {
@@ -172,8 +148,8 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    void addPoint(const QPointF &point);
-    QList<Point> getPoints() const {return mPoints;}
+    void setPoints(const PointArrayAnnotation points) {mPoints = points;}
+    PointArrayAnnotation getPoints() const {return mPoints;}
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
     ColorAnnotation getColor() const {return mColor;}
@@ -189,10 +165,8 @@ private:
     RealAnnotation getArrowSize() const {return mArrowSize;}
     void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
     SmoothAnnotation getSmooth() const {return mSmooth;}
-
-    bool operator==(const Line &line) const;
   private:
-    QList<Point> mPoints;
+    PointArrayAnnotation mPoints;
     ColorAnnotation mColor;
     LinePatternAnnotation mPattern;
     RealAnnotation mThickness;
@@ -207,10 +181,10 @@ private:
     Polygon(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    QList<Point> getPoints() const {return mPoints;}
+    PointArrayAnnotation getPoints() const {return mPoints;}
     SmoothAnnotation getSmooth() const {return mSmooth;}
   private:
-    QList<Point> mPoints;
+    PointArrayAnnotation mPoints;
     SmoothAnnotation mSmooth;
   };
 

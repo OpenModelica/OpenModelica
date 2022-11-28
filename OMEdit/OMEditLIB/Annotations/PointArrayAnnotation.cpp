@@ -27,32 +27,51 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#include "ExtentAnnotation.h"
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#include "PointArrayAnnotation.h"
 
-ExtentAnnotation::ExtentAnnotation()
+PointArrayAnnotation::PointArrayAnnotation()
 {
   clear();
 }
 
-void ExtentAnnotation::clear()
+void PointArrayAnnotation::clear()
 {
-  mValue.replace(0, QPointF(-100.0, -100.0));
-  mValue.replace(1, QPointF(100.0, 100.0));
+  mValue.clear();
+  QVector<QPointF> v;
+  mValue.swap(v);
 }
 
-ExtentAnnotation& ExtentAnnotation::operator= (const QVector<QPointF> &value)
+PointArrayAnnotation& PointArrayAnnotation::operator= (const QVector<QPointF> &value)
 {
   mValue = value;
   setExp();
   return *this;
 }
 
-bool ExtentAnnotation::operator==(const ExtentAnnotation &extent) const
+QPointF &PointArrayAnnotation::operator[](int i)
 {
-  return mValue.at(0) == extent.at(0) && mValue.at(1) == extent.at(1);
+  return mValue[i];
 }
 
-FlatModelica::Expression ExtentAnnotation::toExp() const
+bool PointArrayAnnotation::operator==(const PointArrayAnnotation &pointArray) const
+{
+  if (size() != pointArray.size()) {
+    return false;
+  }
+
+  for (int i = 0; i < size(); ++i) {
+    if (mValue.at(0) != pointArray.at(i)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+FlatModelica::Expression PointArrayAnnotation::toExp() const
 {
   std::vector<FlatModelica::Expression> elems;
 
@@ -66,16 +85,18 @@ FlatModelica::Expression ExtentAnnotation::toExp() const
   return FlatModelica::Expression(std::move(elems));
 }
 
-void ExtentAnnotation::fromExp(const FlatModelica::Expression &exp)
+void PointArrayAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
   if (exp.isArray()) {
     auto &elems = exp.elements();
+    // clear before setting new value
+    clear();
 
-    for (size_t i = 0u; i < std::min(elems.size(), decltype(elems.size()){2}); ++i) {
+    for (size_t i = 0u; i < elems.size(); ++i) {
       auto &point = elems[i].elements();
 
       if (point.size() >= 2) {
-        mValue.replace(i, QPointF(
+        mValue.append(QPointF(
           point[0].isNumber() ? point[0].realValue() : 0.0,
           point[1].isNumber() ? point[1].realValue() : 0.0
         ));
