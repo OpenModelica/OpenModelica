@@ -47,7 +47,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1, 2}
 //
@@ -58,7 +58,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {8, 7, 6, 5, 4, 3}
 //
@@ -87,7 +87,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1, 2}
 //
@@ -98,7 +98,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {8, 7, 6, 5, 4, 3}
 //
@@ -127,7 +127,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1, 2}
 //
@@ -138,7 +138,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time)
+// 	[----]   [SCAL] (1) x[integer(CAST(Real, i) / 2.0)] = x[integer(CAST(Real, i) / 2.0) + 1] + sin(CAST(Real, i) / 2.0 * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {8, 7, 6, 5, 4, 3}
 //
@@ -167,7 +167,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * CAST(Real, i))] = x[1 + integer(0.5 * CAST(Real, i))] + sin(0.5 * CAST(Real, i) * time)
+// 	[----]   [SCAL] (1) x[integer(0.5 * CAST(Real, i))] = x[1 + integer(0.5 * CAST(Real, i))] + sin(0.5 * CAST(Real, i) * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1, 2}
 //
@@ -177,7 +177,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[1 + integer(0.5 * CAST(Real, i))] = -(sin(0.5 * CAST(Real, i) * time) - x[integer(0.5 * CAST(Real, i))])
+// 	[----]   [SCAL] (1) x[1 + integer(0.5 * CAST(Real, i))] = -(sin(0.5 * CAST(Real, i) * time) - x[integer(0.5 * CAST(Real, i))]) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {8, 7, 6, 5, 4, 3}
 //
@@ -204,7 +204,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * CAST(Real, i))] = x[1 + integer(0.5 * CAST(Real, i))] + sin(0.5 * CAST(Real, i) * time)
+// 	[----]   [SCAL] (1) x[integer(0.5 * CAST(Real, i))] = x[1 + integer(0.5 * CAST(Real, i))] + sin(0.5 * CAST(Real, i) * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1, 2}
 //
@@ -213,7 +213,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[1 + integer(0.5 * CAST(Real, i))] = -(sin(0.5 * CAST(Real, i) * time) - x[integer(0.5 * CAST(Real, i))])
+// 	[----]   [SCAL] (1) x[1 + integer(0.5 * CAST(Real, i))] = -(sin(0.5 * CAST(Real, i) * time) - x[integer(0.5 * CAST(Real, i))]) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {8, 7, 6, 5, 4, 3}
 //
