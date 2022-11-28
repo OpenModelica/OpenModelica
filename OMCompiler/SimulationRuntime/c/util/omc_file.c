@@ -217,8 +217,7 @@ int omc_file_exists(const char* filename) {
  * @param filename  File name
  * @return int      0 on success, -1 on error.
  */
-int omc_unlink(const char *filename)
-{
+int omc_unlink(const char *filename) {
   int result = 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
@@ -239,6 +238,13 @@ int omc_unlink(const char *filename)
   }
   */
   return result;
+}
+
+int omc_rename(const char *source, const char *dest) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return MoveFileEx(source, dest, MOVEFILE_REPLACE_EXISTING);
+#endif
+  return 0==rename(source,dest);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
