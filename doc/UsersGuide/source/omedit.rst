@@ -253,7 +253,7 @@ File Menu
 -  *Load Encrypted Library* - Loads an encrypted library. see :ref:`encryption`
 -  *Open Result File(s)* - Opens a result file.
 -  *Open Transformations File* - Opens a transformational debugger file.
--  *Unload All* - Unloads all loaded models.
+-  *Unload All* - Unloads all loaded classes.
 -  *New Composite Model* - Creates a new composite model.
 -  *Open Composite Model(s)* - Loads an existing composite model.
 -  *Load External Model(s)* - Loads the external models that can be used within

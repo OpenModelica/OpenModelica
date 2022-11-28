@@ -3428,7 +3428,7 @@ void MainWindow::createActions()
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
   // unload all action
   mpUnloadAllAction = new QAction(tr("Unload All"), this);
-  mpUnloadAllAction->setStatusTip(tr("Unloads all loaded models"));
+  mpUnloadAllAction->setStatusTip(tr("Unloads all loaded classes"));
   connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
   // create new CompositeModel action
   mpNewCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New Composite Model"), this);
