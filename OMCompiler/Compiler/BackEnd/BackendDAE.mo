@@ -43,7 +43,6 @@ import FCore;
 import HashTable3;
 import HashTableCG;
 import MMath;
-import SimCode;
 import SCode;
 import ZeroCrossings;
 
@@ -657,9 +656,18 @@ uniontype ZeroCrossing
     Integer index                           "zero crossing index";
     .DAE.Exp relation_                      "function";
     list<Integer> occurEquLst               "list of equations where the function occurs";
-    Option<list<SimCode.SimIterator>> iter  "optional iterator for for-loops";
+    Option<list<SimIterator>> iter  "optional iterator for for-loops";
   end ZERO_CROSSING;
 end ZeroCrossing;
+
+public uniontype SimIterator
+  record SIM_ITERATOR
+    .DAE.ComponentRef name;
+    Integer start;
+    Integer step;
+    Integer size;
+  end SIM_ITERATOR;
+end SimIterator;
 
 public
 uniontype TimeEvent

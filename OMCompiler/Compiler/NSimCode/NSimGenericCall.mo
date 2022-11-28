@@ -46,8 +46,9 @@ protected
   import Expression = NFExpression;
   import ComponentRef = NFComponentRef;
 
-  // old simcode import
+  // old backend import
   import OldSimCode = SimCode;
+  import OldBackendDAE = BackendDAE;
 
 public
   record SINGLE_GENERIC_CALL
@@ -167,7 +168,7 @@ public
 
     function convert
       input SimIterator iter;
-      output OldSimCode.SimIterator old_iter = OldSimCode.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+      output OldBackendDAE.SimIterator old_iter = OldBackendDAE.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
     end convert;
   end SimIterator;
 

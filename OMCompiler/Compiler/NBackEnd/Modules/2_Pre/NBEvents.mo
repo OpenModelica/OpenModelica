@@ -69,7 +69,7 @@ protected
 
   // SimCode
   import NSimGenericCall.SimIterator;
-  import OldSimIterator = SimCode.SimIterator;
+  import OldSimIterator = BackendDAE.SimIterator;
 
   // Util
   import BackendUtil = NBBackendUtil;

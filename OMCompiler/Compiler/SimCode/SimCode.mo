@@ -551,26 +551,17 @@ end SimEqSystem;
 public uniontype SimGenericCall
   record SINGLE_GENERIC_CALL
     Integer index;
-    list<SimIterator> iters;
+    list<BackendDAE.SimIterator> iters;
     DAE.Exp lhs;
     DAE.Exp rhs;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
-    list<SimIterator> iters;
+    list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
   end IF_GENERIC_CALL;
 end SimGenericCall;
-
-public uniontype SimIterator
-  record SIM_ITERATOR
-    DAE.ComponentRef name;
-    Integer start;
-    Integer step;
-    Integer size;
-  end SIM_ITERATOR;
-end SimIterator;
 
 public uniontype SimBranch
   record SIM_BRANCH

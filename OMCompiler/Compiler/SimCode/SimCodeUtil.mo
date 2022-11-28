@@ -15673,7 +15673,7 @@ algorithm
 end make2CMakeInclude;
 
 function getSimIteratorSize
-  input list<SimCode.SimIterator> iters;
+  input list<BackendDAE.SimIterator> iters;
   output Integer size = 1;
 algorithm
   for iter in iters loop

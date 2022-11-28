@@ -844,26 +844,17 @@ package SimCode
   uniontype SimGenericCall
     record SINGLE_GENERIC_CALL
       Integer index;
-      list<SimIterator> iters;
+      list<BackendDAE.SimIterator> iters;
       DAE.Exp lhs;
       DAE.Exp rhs;
     end SINGLE_GENERIC_CALL;
 
     record IF_GENERIC_CALL
       Integer index;
-      list<SimIterator> iters;
+      list<BackendDAE.SimIterator> iters;
       list<SimBranch> branches;
     end IF_GENERIC_CALL;
   end SimGenericCall;
-
-  uniontype SimIterator
-    record SIM_ITERATOR
-      DAE.ComponentRef name;
-      Integer start;
-      Integer step;
-      Integer size;
-    end SIM_ITERATOR;
-  end SimIterator;
 
   uniontype SimBranch
     record SIM_BRANCH
@@ -1417,7 +1408,7 @@ package SimCodeUtil
   end jacobianColumnsAreEmpty;
 
   function getSimIteratorSize
-    input list<SimCode.SimIterator> iters;
+    input list<BackendDAE.SimIterator> iters;
     output Integer size ;
   end getSimIteratorSize;
 end SimCodeUtil;
@@ -1636,9 +1627,18 @@ package BackendDAE
       Integer index                           "zero crossing index";
       DAE.Exp relation_                       "function";
       list<Integer> occurEquLst               "list of equations where the function occurs";
-      Option<list<SimCode.SimIterator>> iter  "optional iterator for for-loops";
+      Option<list<SimIterator>> iter  "optional iterator for for-loops";
     end ZERO_CROSSING;
   end ZeroCrossing;
+
+  uniontype SimIterator
+    record SIM_ITERATOR
+      DAE.ComponentRef name;
+      Integer start;
+      Integer step;
+      Integer size;
+    end SIM_ITERATOR;
+  end SimIterator;
 
   uniontype TimeEvent
     record SIMPLE_TIME_EVENT "e.g. time > 0.5"
