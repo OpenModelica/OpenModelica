@@ -559,7 +559,7 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
   }
   messageClose(stream);
 

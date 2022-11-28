@@ -27,16 +27,16 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "init_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -9.57311
+//     messages = "assert            | warning | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:148:4-148:63:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0)) --> \"Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -9.57311\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | info    | The following assertion has been violated at time 849.600000
-// |                 | |       | conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue
-// assert            | info    | Variable violating min/max constraint: conSigma.MinValue <= conSigma.con <= conSigma.MaxValue, has value: -150.308
-// assert            | info    | The following assertion has been violated at time 1252.800000
-// |                 | |       | der_V_v >= -0.02 and der_V_v <= 0.025
-// assert            | info    | Variable violating min/max constraint: -0.02 <= der_V_v <= 0.025, has value: 0.0252797
+// assert            | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:163:9-163:92:writable]
+// |                 | |       | The following assertion has been violated at time 849.600000
+// |                 | |       | ((conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue)) --> \"Variable violating min/max constraint: conSigma.MinValue <= conSigma.con <= conSigma.MaxValue, has value: -150.308\"
+// assert            | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:147:4-147:63:writable]
+// |                 | |       | The following assertion has been violated at time 1252.800000
+// |                 | |       | ((der_V_v >= -0.02 and der_V_v <= 0.025)) --> \"Variable violating min/max constraint: -0.02 <= der_V_v <= 0.025, has value: 0.0252797\"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -47,11 +47,9 @@ getErrorString();
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100'",
 //     messages = "assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $EqCon$der_evaporator_p >= 0.0 and $EqCon$der_evaporator_p <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$der_evaporator_p <= 0.0, has value: -1.33747e+06
+// |                 | |       | (($EqCon$der_evaporator_p >= 0.0 and $EqCon$der_evaporator_p <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$der_evaporator_p <= 0.0, has value: -1.33747e+06\"
 // assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $EqCon$evaporator_V_l >= 0.0 and $EqCon$evaporator_V_l <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$evaporator_V_l <= 0.0, has value: -0.5
+// |                 | |       | (($EqCon$evaporator_V_l >= 0.0 and $EqCon$evaporator_V_l <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$evaporator_V_l <= 0.0, has value: -0.5\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables

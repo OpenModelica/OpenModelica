@@ -1430,7 +1430,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   {
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
     if (!printFailingSystems) return 1;
-    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
     if(data->simulationInfo->initial)
     {
       warningStreamPrint(LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
