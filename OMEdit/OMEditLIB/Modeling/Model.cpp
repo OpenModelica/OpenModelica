@@ -1228,7 +1228,14 @@ namespace ModelInstance
     if (jsonObject.contains("value")) {
       QJsonObject valueObject = jsonObject.value("value").toObject();
 
-      if (valueObject.contains("binding")) {
+      if (valueObject.contains("value")) {
+        try {
+          mBinding.deserialize(valueObject.value("value"));
+        } catch (const std::exception &e) {
+          qDebug() << "Failed to deserialize json: " << valueObject.value("value");
+          qDebug() << e.what();
+        }
+      } else if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
         } catch (const std::exception &e) {
