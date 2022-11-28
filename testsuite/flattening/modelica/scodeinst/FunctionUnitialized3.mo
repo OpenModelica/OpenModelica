@@ -1,6 +1,6 @@
 // name: FunctionUnitialized3
 // keywords:
-// status: incorrect
+// status: correct
 // cflags: -d=newInst
 //
 //
@@ -15,11 +15,14 @@ model FunctionUnitialized3
 end FunctionUnitialized3;
 
 // Result:
-// Error processing file: FunctionUnitialized3.mo
-// [flattening/modelica/scodeinst/FunctionUnitialized3.mo:13:5-13:18:writable] Error: Output parameter y was not assigned a value
+// function FunctionUnitialized3.f
+//   input Real x;
+//   output Real y;
+// end FunctionUnitialized3.f;
 //
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
+// class FunctionUnitialized3
+//   Real y = FunctionUnitialized3.f(time);
+// end FunctionUnitialized3;
+// [flattening/modelica/scodeinst/FunctionUnitialized3.mo:13:5-13:18:writable] Warning: Output parameter y was not assigned a value
 //
-// Execution failed!
 // endResult
