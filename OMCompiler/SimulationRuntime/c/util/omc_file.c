@@ -240,11 +240,16 @@ int omc_unlink(const char *filename) {
   return result;
 }
 
+// zero on success, anything else on failure!
 int omc_rename(const char *source, const char *dest) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  return MoveFileEx(source, dest, MOVEFILE_REPLACE_EXISTING);
+  // If the function succeeds, the return value is nonzero.
+  // If the function fails, the return value is zero (0). To get extended error information, call GetLastError.
+  return !MoveFileEx(source, dest, MOVEFILE_REPLACE_EXISTING);
 #endif
-  return 0==rename(source,dest);
+  // On success, zero is returned.  On error, -1 is returned, and
+  // errno is set to indicate the error.
+  return rename(source,dest);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
