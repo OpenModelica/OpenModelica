@@ -229,6 +229,11 @@ end instClassInProgram;
 function resetGlobalFlags
   "Resets the global flags that the frontend uses."
 algorithm
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    FlagsUtil.set(Flags.NF_SCALARIZE, false);
+    FlagsUtil.set(Flags.ARRAY_CONNECT, true);
+  end if;
+
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
   if not Flags.isSet(Flags.NF_SCALARIZE) then
