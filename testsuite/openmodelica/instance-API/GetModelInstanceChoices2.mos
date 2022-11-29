@@ -1,0 +1,61 @@
+// name: GetModelInstanceChoices2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    replaceable Real x annotation(
+      choices(
+        choice(redeclare Real x = 1.0 \"A\"),
+        choice(redeclare Real x = 2.0 \"B\")));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"replaceable\": true
+//       },
+//       \"annotation\": {
+//         \"choices\": {
+//           \"choice\": [
+//             {
+//               \"$value\": \"redeclare Real x = 1.0 \\\"A\\\"\"
+//             },
+//             {
+//               \"$value\": \"redeclare Real x = 2.0 \\\"B\\\"\"
+//             }
+//           ]
+//         }
+//       }
+//     }
+//   ],
+//   \"replaceable\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

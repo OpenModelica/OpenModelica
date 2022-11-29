@@ -1503,8 +1503,15 @@ protected
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
 
-  () := match mod
-    case SCode.Mod.MOD(binding = SOME(absyn_binding))
+  () := match (name, mod)
+    case ("choices", SCode.Mod.MOD())
+      algorithm
+        j := dumpJSONChoicesAnnotation(mod.subModLst, scope, mod.info, failOnError);
+        json := JSON.addPairNotNull(name, j, json);
+      then
+        ();
+
+    case (_, SCode.Mod.MOD(binding = SOME(absyn_binding)))
       algorithm
         ErrorExt.setCheckpoint(getInstanceName());
 
@@ -1528,7 +1535,7 @@ algorithm
       then
         ();
 
-    case SCode.Mod.MOD()
+    case (_, SCode.Mod.MOD())
       algorithm
         json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError), json);
       then
@@ -1832,9 +1839,59 @@ algorithm
       then
         ();
 
+    case SCode.Mod.REDECL()
+      algorithm
+        if SCodeUtil.finalBool(mod.finalPrefix) then
+          json := JSON.addPair("final", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.eachBool(mod.eachPrefix) then
+          json := JSON.addPair("each", JSON.makeBoolean(true), json);
+        end if;
+
+        binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
+        json := JSON.addPair("$value", binding_json, json);
+      then
+        ();
+
     else ();
   end match;
 end dumpJSONSCodeMod_impl;
+
+function dumpJSONChoicesAnnotation
+  input list<SCode.SubMod> mods;
+  input InstNode scope;
+  input SourceInfo info;
+  input Boolean failOnError;
+  output JSON json = JSON.makeNull();
+protected
+  SCode.SubMod smod;
+  list<SCode.SubMod> choices, others;
+  SCode.Mod choices_mod;
+  JSON j;
+algorithm
+  choices := list(m for m guard m.ident == "choice" in mods);
+  others := list(m for m guard m.ident <> "choice" in mods);
+
+  if not listEmpty(choices) then
+    j := JSON.emptyArray(listLength(choices));
+
+    for m in choices loop
+      m := match m.mod
+        case SCode.Mod.MOD(binding = NONE(), subModLst = {smod}) then smod;
+        else m;
+      end match;
+
+      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod), j);
+    end for;
+
+    json := JSON.addPair("choice", j, json);
+  end if;
+
+  for m in others loop
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+  end for;
+end dumpJSONChoicesAnnotation;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;
