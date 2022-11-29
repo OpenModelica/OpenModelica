@@ -465,7 +465,7 @@ protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
   output BackendDAE.Shared outShared = inShared "unused";
   output Boolean outChanged;
 algorithm
-  (osyst, outChanged) := matchcontinue(isyst)
+  (osyst, outChanged) := match(isyst)
     local
       BackendDAE.EquationArray orderedEqs;
       list<DAE.Exp> explst;
@@ -474,10 +474,10 @@ algorithm
       ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
-    then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
+    then fail();
 
     else (isyst, inChanged);
-  end matchcontinue;
+  end match;
 end inputDerivativesUsedWork;
 
 protected function traverserinputDerivativesUsed "author: Frenkel TUD 2012-10"

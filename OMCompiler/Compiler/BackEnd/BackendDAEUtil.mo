@@ -9367,6 +9367,7 @@ algorithm
 end setFunctionTree;
 
 public function setEqSystEqs
+  "Set ordered equations of input equation system to given equations."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray inEqs;
   output BackendDAE.EqSystem syst = inSyst;
