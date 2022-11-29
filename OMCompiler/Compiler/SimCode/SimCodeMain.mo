@@ -1044,10 +1044,6 @@ algorithm
     // new backend - also activates new frontend by default
     case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
       algorithm
-        // set implied flags to true
-        FlagsUtil.enableDebug(Flags.SCODE_INST);
-        FlagsUtil.enableDebug(Flags.ARRAY_CONNECT);
-        FlagsUtil.disableDebug(Flags.NF_SCALARIZE);
         // ToDo: set permanently matching -> SBGraphs
 
         // ================================
