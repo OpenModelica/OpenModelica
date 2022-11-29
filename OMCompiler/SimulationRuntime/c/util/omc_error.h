@@ -215,8 +215,8 @@ extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else
-static void OMC_INLINE assertStreamPrint(threadData_t *threadData, FILE_INFO info, int cond, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
-static void OMC_INLINE assertStreamPrint(threadData_t *threadData, FILE_INFO info, int cond, const char *format, ...)
+static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)
 {
   va_list args;
   if (cond) return;
