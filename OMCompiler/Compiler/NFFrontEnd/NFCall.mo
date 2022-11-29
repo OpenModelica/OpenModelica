@@ -1132,6 +1132,13 @@ public
               then
                 Expression.CALL(call);
 
+            // For DynamicSelect we type cast both of the arguments.
+            case "DynamicSelect"
+              algorithm
+                call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
+              then
+                Expression.CALL(call);
+
             else Expression.CAST(cast_ty, callExp);
           end match;
 
