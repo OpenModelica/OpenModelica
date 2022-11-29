@@ -313,7 +313,7 @@ int omc_dladdr(void *addr, Dl_info *info)
 {
   HANDLE hProcess;
   DWORD dwModuleBase;
-  DWORD displacement;
+  DWORD64 displacement;
   char sModuleName[MAX_PATH + 1];
   sModuleName[MAX_PATH] = '\0';
 

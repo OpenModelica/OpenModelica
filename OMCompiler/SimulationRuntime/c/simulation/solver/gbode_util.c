@@ -651,7 +651,7 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, 
  *                    -1  <= step is preliminary accepted but needs refinement
  */
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
-  char fastStates_row[4096];
+  char fastStates_row[40960];
   unsigned int bufSize = 40960;
   unsigned int ct;
   int i, ii;
