@@ -701,7 +701,7 @@ pipeline {
             stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
-        stage('clang-qt5') {
+        stage('clang-qt5-omedit-testsuite') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.16.3'
