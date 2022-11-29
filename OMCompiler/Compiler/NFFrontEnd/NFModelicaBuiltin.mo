@@ -626,7 +626,7 @@ function size "Returns dimensions of an array"
 </html>"));
 end size;
 
-function DynamicSelect<__Any> "select static or dynamic expressions in the annotations"
+impure function DynamicSelect<__Any> "select static or dynamic expressions in the annotations"
   input __Any static;
   input __Any dynamic;
   output __Any selected;

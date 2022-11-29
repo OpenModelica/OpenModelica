@@ -5,6 +5,7 @@ GetModelInstanceAnnotation1.mos \
 GetModelInstanceAnnotation2.mos \
 GetModelInstanceAnnotation3.mos \
 GetModelInstanceAnnotation4.mos \
+GetModelInstanceAnnotation5.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceComment1.mos \
