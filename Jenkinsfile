@@ -187,7 +187,6 @@ pipeline {
               withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
                 common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
-                                        + ' -DOM_USE_CCACHE=OFF'
                                         + ' -DCMAKE_INSTALL_PREFIX=build'
                                         + ' -G "MSYS Makefiles"'
                                       )
