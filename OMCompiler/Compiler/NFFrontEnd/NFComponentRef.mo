@@ -1558,7 +1558,7 @@ public
         s_lst := 1 :: s_lst;
       else
         for sub in subs_tmp loop
-          s_lst := Expression.integerValue(Subscript.toExp(sub)) :: s_lst;
+          s_lst := Expression.integerValueOrDefault(Subscript.toExp(sub), 1) :: s_lst;
         end for;
       end if;
     end for;
@@ -1566,10 +1566,11 @@ public
 
   function subscriptsToExpression
     input ComponentRef cref;
+    input Boolean addScalar;
     output list<Expression> e_lst = {};
   algorithm
     for subs_tmp in subscriptsAll(cref) loop
-      if listEmpty(subs_tmp) then
+      if addScalar and listEmpty(subs_tmp) then
         e_lst := Expression.INTEGER(1) :: e_lst;
       else
         for sub in subs_tmp loop

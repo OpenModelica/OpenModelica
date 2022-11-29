@@ -679,7 +679,7 @@ public
           Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
           sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
           vals := Slice.indexToLocation(var_scal_idx-var_start_idx, sizes);
-          cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
+          cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, false, true);
           comp := SLICED_COMPONENT(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
         else
           // case 2: just create a single strong component

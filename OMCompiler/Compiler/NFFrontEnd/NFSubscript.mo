@@ -259,6 +259,20 @@ public
     end match;
   end toIterator;
 
+  function isBackendIterator
+    input Subscript sub;
+    output Boolean res;
+  protected
+    ComponentRef cref;
+  algorithm
+    res := match sub
+      case INDEX(index = Expression.CREF(cref = cref))
+        then ComponentRef.isIterator(cref);
+
+      else false;
+    end match;
+  end isBackendIterator;
+
   function isEqual
     input Subscript subscript1;
     input Subscript subscript2;
@@ -901,6 +915,7 @@ public
         then list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice)));
       case WHOLE()
         then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
+      else {subscript};
     end match;
   end scalarize;
 
@@ -1082,13 +1097,9 @@ public
     Boolean merged = true;
   algorithm
     // discard an index for backend if it is exactly one for scalars
-    if backend and dimensions == 0 and not listEmpty(newSubs) then
-      outSubs := {};
-      new_sub :: remainingSubs := newSubs;
-      remainingSubs := match new_sub
-        case INDEX(index = Expression.INTEGER(1)) then remainingSubs;
-        else newSubs;
-      end match;
+    if backend and listLength(oldSubs) >= dimensions and List.all(List.firstN(oldSubs, dimensions), isBackendIterator) then
+      (_, remainingSubs) := List.split(newSubs, dimensions);
+      (outSubs, _) := List.split(oldSubs, dimensions);
       return;
     end if;
 

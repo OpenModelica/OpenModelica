@@ -40,14 +40,15 @@ public
 
 protected
   // NB import
-  import NBEquation.{Equation, Iterator};
+  import NBEquation.{Equation, Iterator, IfEquationBody};
 
   // NF import
   import Expression = NFExpression;
   import ComponentRef = NFComponentRef;
 
-  // old simcode import
+  // old backend import
   import OldSimCode = SimCode;
+  import OldBackendDAE = BackendDAE;
 
 public
   record SINGLE_GENERIC_CALL
@@ -57,6 +58,12 @@ public
     Expression rhs;
   end SINGLE_GENERIC_CALL;
 
+  record IF_GENERIC_CALL
+    Integer index;
+    list<SimIterator> iters;
+    list<SimBranch> branches;
+  end IF_GENERIC_CALL;
+
   function toString
     input SimGenericCall call;
     output String str;
@@ -65,6 +72,9 @@ public
       case SINGLE_GENERIC_CALL() then "single generic call [index " + intString(call.index)  + "]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
         + Expression.toString(call.lhs) + " = " + Expression.toString(call.rhs);
+      case IF_GENERIC_CALL() then "if generic call [index " + intString(call.index) + "]: "
+        + List.toString(call.iters, SimIterator.toString) + "\n\t"
+        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
       else "CALL_NOT_SUPPORTED";
     end match;
   end toString;
@@ -80,6 +90,14 @@ public
     (eqn_ptr, index) := eqn_tpl;
     eqn := Pointer.access(eqn_ptr);
     call := match eqn
+
+      case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()})
+      then IF_GENERIC_CALL(
+          index = index,
+          iters = SimIterator.fromIterator(eqn.iter),
+          branches = SimBranch.fromIfBody(body.body)
+        );
+
       case Equation.FOR_EQUATION(body = {body})
       then SINGLE_GENERIC_CALL(
           index = index,
@@ -100,8 +118,12 @@ public
       case SINGLE_GENERIC_CALL() then OldSimCode.SINGLE_GENERIC_CALL(
         index = call.index,
         iters = list(SimIterator.convert(iter) for iter in call.iters),
-        lhs = Expression.toDAE(call.lhs),
-        rhs = Expression.toDAE(call.rhs));
+        lhs   = Expression.toDAE(call.lhs),
+        rhs   = Expression.toDAE(call.rhs));
+      case IF_GENERIC_CALL() then OldSimCode.IF_GENERIC_CALL(
+        index     = call.index,
+        iters     = list(SimIterator.convert(iter) for iter in call.iters),
+        branches  = list(SimBranch.convert(branch) for branch in call.branches));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect call: " + toString(call)});
       then fail();
@@ -146,9 +168,72 @@ public
 
     function convert
       input SimIterator iter;
-      output OldSimCode.SimIterator old_iter = OldSimCode.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+      output OldBackendDAE.SimIterator old_iter = OldBackendDAE.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
     end convert;
   end SimIterator;
+
+  uniontype SimBranch
+    record SIM_BRANCH
+      Expression condition;
+      list<tuple<Expression, Expression>> body;
+    end SIM_BRANCH;
+
+    function toString
+      input SimBranch branch;
+      output String str;
+    protected
+      Expression lhs, rhs;
+    algorithm
+      str := if Expression.isEnd(branch.condition) then "\n" else "if " + Expression.toString(branch.condition) + " then\n";
+      for tpl in branch.body loop
+        (lhs, rhs) := tpl;
+        str := str + "\t  " + Expression.toString(lhs) + " = " + Expression.toString(rhs) + "\n";
+      end for;
+    end toString;
+
+    function fromIfBody
+      input IfEquationBody if_body;
+      output list<SimBranch> branches;
+    protected
+      list<tuple<Expression, Expression>> body = {};
+      SimBranch branch;
+    algorithm
+      for eqn in listReverse(if_body.then_eqns) loop
+        // ToDo: what if there are more complex things inside?
+        body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
+      end for;
+      branch := SIM_BRANCH(if_body.condition, body) ;
+      if Util.isSome(if_body.else_if) then
+        branches := branch :: fromIfBody(Util.getOption(if_body.else_if));
+      else
+        branches := {branch};
+      end if;
+    end fromIfBody;
+
+    function convert
+      input SimBranch branch;
+      output OldSimCode.SimBranch old_branch;
+    protected
+      Option<DAE.Exp> old_condition;
+      list<tuple<DAE.Exp, DAE.Exp>> old_body = {};
+      Expression lhs, rhs;
+    algorithm
+      old_condition := match branch.condition
+        case Expression.END() then NONE();
+        else SOME(Expression.toDAE(branch.condition));
+      end match;
+
+      for tpl in listReverse(branch.body) loop
+        (lhs, rhs)  := tpl;
+        old_body    := (Expression.toDAE(lhs), Expression.toDAE(rhs)) :: old_body;
+      end for;
+
+      old_branch := OldSimCode.SIM_BRANCH(
+        condition = old_condition,
+        body      = old_body
+      );
+    end convert;
+  end SimBranch;
 
   annotation(__OpenModelica_Interface="backend");
 end NSimGenericCall;

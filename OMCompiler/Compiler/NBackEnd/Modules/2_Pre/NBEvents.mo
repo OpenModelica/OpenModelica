@@ -59,17 +59,17 @@ protected
   // New Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.Equation;
-  import NBEquation.EqData;
-  import NBEquation.EquationAttributes;
-  import NBEquation.EquationPointers;
-  import NBEquation.IfEquationBody;
+  import NBEquation.{Equation, Iterator, EqData, EquationAttributes, EquationPointers, IfEquationBody};
   import Solve = NBSolve;
   import System = NBSystem;
   import BVariable = NBVariable;
   import NBVariable.VarData;
   import NBVariable.VariablePointers;
   import NBEquation.WhenEquationBody;
+
+  // SimCode
+  import NSimGenericCall.SimIterator;
+  import OldSimIterator = BackendDAE.SimIterator;
 
   // Util
   import BackendUtil = NBBackendUtil;
@@ -158,6 +158,9 @@ public
       list<StateEvent> stateEvents = StateEventTree.toEventList(bucket.stateEventTree);
       list<tuple<Expression, Pointer<Variable>>> full_time_event_list = TimeEventTree.toList(bucket.timeEventTree);
       Expression rhs;
+      Iterator iterator;
+      list<ComponentRef> iter;
+      list<Expression> range;
       Pointer<Variable> aux_var;
       Pointer<Equation> aux_eqn;
     algorithm
@@ -171,15 +174,16 @@ public
 
       // get auxiliary eqns and vars from state events
       for stateEvent in stateEvents loop
-        STATE_EVENT(auxiliary = aux_var, relation = rhs) := stateEvent;
-        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+        STATE_EVENT(auxiliary = aux_var, relation = rhs, iterator = iterator) := stateEvent;
+        (iter, range) := Equation.Iterator.getFrames(iterator);
+        aux_eqn := Equation.makeAssignment(BVariable.getVarName(aux_var), rhs, idx, context, List.zip(iter, range), NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
         auxiliary_vars := aux_var :: auxiliary_vars;
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end for;
 
       eventInfo := EVENT_INFO(
         timeEvents        = timeEvents,
-        stateEvents       = stateEvents,
+        stateEvents       = StateEvent.updateIndices(stateEvents),
         numberMathEvents  = 0 // ToDo
       );
     end create;
@@ -209,7 +213,7 @@ public
     algorithm
       zeroCrossings := list(StateEvent.convert(stateEvent) for stateEvent in eventInfo.stateEvents);
       relations := zeroCrossings;
-      // for some reason this needs to be reverted
+      // for some reason this needs to be reversed
       timeEvents := listReverse(list(TimeEvent.convert(te) for te in eventInfo.timeEvents));
     end convert;
   end EventInfo;
@@ -324,7 +328,7 @@ public
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
-            (tmpEqn, _, status, invert) := Solve.solveEquation(tmpEqn, NFBuiltin.TIME_CREF, FunctionTreeImpl.EMPTY());
+            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, FunctionTreeImpl.EMPTY());
             if status == NBSolve.Status.EXPLICIT then
               // save simplified binary
               exp.exp1 := Equation.getLHS(tmpEqn);
@@ -579,8 +583,10 @@ public
 
   uniontype StateEvent
     record STATE_EVENT
+      Integer index                       "index for simcode";
       Pointer<Variable> auxiliary         "auxiliary variable representing the relation";
       Expression relation                 "function";
+      Iterator iterator                   "optional iterator for events in for-loops (empty if none)";
       list<Pointer<Equation>> occurEqLst  "list of equations where the function occurs";
     end STATE_EVENT;
 
@@ -606,6 +612,7 @@ public
       input output Bucket bucket;
       input Pointer<Equation> eqn;
     protected
+      Iterator iterator;
       StateEvent event;
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
@@ -613,18 +620,24 @@ public
       // collect possible state events from condition
       (condition, bucket) := Expression.mapFold(condition, TimeEvent.createSampleTraverse, bucket);
 
+      // get iterator (ToDo: what if nested if/for loops?)
+      iterator := Equation.getForIterator(Pointer.access(eqn));
+
       // create state event with dummy variable and update it later on if it does not already exist
       event := STATE_EVENT(
+        index       = 0,
         auxiliary   = Pointer.create(NBVariable.DUMMY_VARIABLE),
         relation    = condition,
+        iterator    = iterator,
         occurEqLst  = {}
       );
+
       if StateEventTree.hasKey(bucket.stateEventTree, event) then
         // if the state event already exist just update the equations it belongs to
         bucket.stateEventTree := StateEventTree.update(bucket.stateEventTree, event, eqn :: StateEventTree.get(bucket.stateEventTree, event));
       else
         // otherwise make a new auxiliary variable representing the state
-        (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex);
+        (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex, iterator);
         event.auxiliary := aux_var;
         bucket.auxiliaryStateEventIndex := bucket.auxiliaryStateEventIndex + 1;
 
@@ -643,11 +656,19 @@ public
       outBoolean := 0==compare(se1, se2);
     end equals;
 
+    function size
+      input StateEvent se;
+      output Integer s = Iterator.size(se.iterator);
+    end size;
+
     function compare "Returns true if both zero crossings have the same function expression"
       input StateEvent se1;
       input StateEvent se2;
       output Integer comp;
+    protected
+      Integer comp1;
     algorithm
+      comp1 := if Iterator.isEqual(se1.iterator, se2.iterator) then 0 else 1;
       comp := match (se1.relation, se2.relation)
         local
           Call call1, call2;
@@ -663,15 +684,35 @@ public
         end match;
         else Expression.compare(se1.relation, se2.relation);
       end match;
+      comp := BackendUtil.compareCombine(comp, comp1);
     end compare;
+
+    function updateIndices
+      input list<StateEvent> iEvents;
+      output list<StateEvent> oEvents = {};
+    protected
+      Integer idx = 0;
+    algorithm
+      for evt in iEvents loop
+        evt.index := idx;
+        idx := idx + Iterator.size(evt.iterator);
+        oEvents := evt :: oEvents;
+      end for;
+      oEvents := listReverse(oEvents);
+    end updateIndices;
 
     function convert
       input StateEvent se;
       output OldBackendDAE.ZeroCrossing oldZc;
+    protected
+      Option<list<OldSimIterator>> iter;
     algorithm
+      iter := if Iterator.isEmpty(se.iterator) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(se.iterator)));
       oldZc := OldBackendDAE.ZERO_CROSSING(
+        index       = se.index,
         relation_   = Expression.toDAE(se.relation),
-        occurEquLst = {} //ToDo: low priority - only for debugging
+        occurEquLst = {}, //ToDo: low priority - only for debugging
+        iter        = iter
       );
     end convert;
   end StateEvent;

@@ -4657,7 +4657,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let &varDecls2 = buffer ""
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
 
-  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%Util.escapeModelicaStringToCString(dumpExp(relation_,"\""))%>"'
+  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) =>
+    let &descStr = buffer '<%Util.escapeModelicaStringToCString(dumpExp(relation_,""))%>"'
+    <<<%descriptionString(&descStr, iter)%>>>
     ;separator=",\n")
 
   let desc = match zeroCrossings
@@ -4674,9 +4676,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes)
                {
                  static const char *res[] = {<%resDesc%>};
-                 <%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-                   'static const int occurEqs<%i0%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
-                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'occurEqs<%i0%>' ; separator = ","%>};
+                 <%zeroCrossings |> ZERO_CROSSING(__) =>
+                   'static const int occurEqs<%index%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
+                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) => 'occurEqs<%index%>' ; separator = ","%>};
                  *out_EquationIndexes = (int*) occurEqs[i];
                  return res[i];
                }
@@ -4724,68 +4726,103 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   >>
 end functionZeroCrossing;
 
+template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
+::=
+  match iter
+    case SOME(iter_) then (List.intRange(SimCodeUtil.getSimIteratorSize(iter_)) |> idx =>
+      '"[<%idx%>] <%descStr%>';separator=",\n")
+    else <<"<%descStr%>>>
+end descriptionString;
+
 template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text &auxFunction)
  "Generates code for zero crossings."
 ::=
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    zeroCrossingTpl(i0, relation_, &varDecls, &auxFunction)
+  (zeroCrossings |> ZERO_CROSSING(__) =>
+    zeroCrossingTpl(index, relation_, iter, &varDecls, &auxFunction)
   ;separator="\n";empty)
 end zeroCrossingsTpl;
 
 
-template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls, Text &auxFunction)
+template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
+  let &preExp = buffer ""
+  let &sub = buffer ""
+  let forHead = match iter
+    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+      forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      ;separator="\n";empty)
+    else ""
+  let forBody = match iter
+    case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
+      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
+    else ""
+  let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
+  let forTail = match iter
+    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    else ""
   match relation
   case exp as RELATION(__) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    <%forTail%>
     >>
   case (exp1 as LBINARY(__)) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    <%forTail%>
     >>
   case (exp1 as LUNARY(__)) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    <%forTail%>
     >>
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     << >>
   case CALL(path=IDENT(name="integer"), expLst={exp1, idx}) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forTail%>
     >>
   case CALL(path=IDENT(name="floor"), expLst={exp1, idx}) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forTail%>
     >>
   case CALL(path=IDENT(name="ceil"), expLst={exp1, idx}) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    <%forTail%>
     >>
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
@@ -4794,17 +4831,22 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls, Text &aux
     let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
     let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    <%forTail%>
     >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
-    let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    gout[<%index1%>] = (trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
+    <%forBody%>
+    gout[<%index1%><%tmp_%>] = (trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
+    <%forTail%>
     >>
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
@@ -4819,7 +4861,9 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls, &auxFunction)
   let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls, &auxFunction)
 
-  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%dumpExp(relation_,"\"")%>"'
+  let resDesc = (relations |> ZERO_CROSSING(__) =>
+    let &descStr = buffer '<%dumpExp(relation_,"")%>"'
+    <<<%descriptionString(&descStr, iter)%>>>
     ;separator=",\n")
 
   let desc = match relations
@@ -4865,22 +4909,40 @@ end functionRelations;
 template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &auxFunction)
  "Generates code for zero crossings."
 ::=
-  (relations |> ZERO_CROSSING(__) hasindex i0 =>
-    relationTpl(i0, relation_, context, &varDecls, &auxFunction)
+  (relations |> ZERO_CROSSING(__) =>
+    relationTpl(index, relation_, iter, context, &varDecls, &auxFunction)
   ;separator="\n";empty)
 end relationsTpl;
 
 
-template relationTpl(Integer index1, Exp relation, Context context, Text &varDecls, Text &auxFunction)
+template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Context context, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
+let &preExp = buffer ""
+  let &sub = buffer ""
+  let forHead = match iter
+    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+      forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      ;separator="\n";empty)
+    else ""
+  let forBody = match iter
+    case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
+      forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+      ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
+    else ""
+  let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
+  let forTail = match iter
+    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    else ""
   match relation
   case exp as RELATION(__) then
-    let &preExp = buffer ""
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
+    <%forHead%>
     <%preExp%>
-    data->simulationInfo->relations[<%index1%>] = <%res%>;
+    <%forBody%>
+    data->simulationInfo->relations[<%index1%><%tmp_%>] = <%res%>;
+    <%forTail%>
     >>
   else
     <<
@@ -7035,13 +7097,13 @@ end equationNames_Partial;
 template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
+  let &sub = buffer ""
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
   let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL() then
-      let &sub = buffer ""
-      let &preExp = buffer ""
-      let &varDecls = buffer ""
-      let &auxFunction = buffer ""
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
@@ -7052,10 +7114,36 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%iter_%>
         <%lhs_%> = <%rhs_%>;
       }
+      >>
+    case IF_GENERIC_CALL() then
+      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
+      <<
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      {
+        int tmp = idx;
+        <%iter_%>
+        <%branches_%>
+      }
       >>;
   separator="\n\n")
 end genericCallBodies;
 
+template genericBranch(SimBranch branch, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match branch
+  case SIM_BRANCH() then
+    let condition_ = match condition
+      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &auxFunction)%>)>>
+      else ""
+    let body_ = (body |> (lhs, rhs) =>
+      <<<%daeExp(lhs, context, &preExp, &varDecls, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &auxFunction)%>;>>
+      ; separator="\n")
+    <<
+    <%condition_%>{
+      <%body_%>
+    }
+    >>
+end genericBranch;
 
 template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
@@ -7068,12 +7156,33 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
   >>
 end genericIterator;
 
+template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR() then
+  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  let rel = if intGt(step, 0) then "<" else ">"
+  let sign = if intGt(step, 0) then "+" else "-"
+  <<
+  for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
+  >>
+end forIterator;
+
+template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR() then
+  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  <<
+  (<%iter_%>-<%start%>)/<%step%>+<%size%>*(
+  >>
+end forIteratorBody;
+
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
   (genericCalls |> call => match call
-    case SINGLE_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>;
+    case SINGLE_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>
+    case IF_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>;
   separator="\n\n")
 end genericCallHeaders;
 

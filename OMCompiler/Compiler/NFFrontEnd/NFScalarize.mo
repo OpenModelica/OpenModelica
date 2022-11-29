@@ -183,7 +183,7 @@ protected
   BackendInfo binfo;
   list<BackendInfo> backend_attributes;
 algorithm
-  crefs               := ComponentRef.scalarizeAll(var.name);
+  crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name));
   elem_ty             := Type.arrayElementType(var.ty);
   backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
   if Binding.isBound(var.binding) then

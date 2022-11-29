@@ -728,8 +728,8 @@ algorithm
       stateSets                   = stateSets,
       constraints                 = constraints,
       classAttributes             = classAttributes,
-      zeroCrossings               = zeroCrossings,
-      relations                   = relations,
+      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
@@ -2093,7 +2093,7 @@ protected function zeroCrossingEquations "
   input BackendDAE.ZeroCrossing inZC;
   output list<Integer> outLst;
 algorithm
-  BackendDAE.ZERO_CROSSING(_, outLst) := inZC;
+  BackendDAE.ZERO_CROSSING(_, _, outLst, _) := inZC;
 end zeroCrossingEquations;
 
 protected function whenEquationsIndices "
@@ -2146,7 +2146,7 @@ algorithm
    case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst)::rest, _, _)
      equation
        occurEquLst = convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(exp, occurEquLst)::iAccum);
+       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, NONE())::iAccum);
      then
        ozeroCrossings;
 
@@ -15671,6 +15671,15 @@ algorithm
                  "\"" + System.trim(include, "\"-I") + "\"";
   end for;
 end make2CMakeInclude;
+
+function getSimIteratorSize
+  input list<BackendDAE.SimIterator> iters;
+  output Integer size = 1;
+algorithm
+  for iter in iters loop
+    size := size * iter.size;
+  end for;
+end getSimIteratorSize;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

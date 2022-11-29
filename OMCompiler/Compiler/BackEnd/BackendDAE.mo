@@ -653,10 +653,21 @@ end ZeroCrossingSet;
 public
 uniontype ZeroCrossing
   record ZERO_CROSSING
-    .DAE.Exp relation_         "function";
-    list<Integer> occurEquLst  "list of equations where the function occurs";
+    Integer index                           "zero crossing index";
+    .DAE.Exp relation_                      "function";
+    list<Integer> occurEquLst               "list of equations where the function occurs";
+    Option<list<SimIterator>> iter  "optional iterator for for-loops";
   end ZERO_CROSSING;
 end ZeroCrossing;
+
+public uniontype SimIterator
+  record SIM_ITERATOR
+    .DAE.ComponentRef name;
+    Integer start;
+    Integer step;
+    Integer size;
+  end SIM_ITERATOR;
+end SimIterator;
 
 public
 uniontype TimeEvent

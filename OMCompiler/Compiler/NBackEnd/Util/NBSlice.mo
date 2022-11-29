@@ -369,7 +369,7 @@ public
       var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _)  := mapping.var_AtS[var_arr_idx];
       sizes           := ComponentRef.sizes(stripped);
-      subs            := ComponentRef.subscriptsToExpression(cref);
+      subs            := ComponentRef.subscriptsToExpression(cref, true);
       scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
 
       if listLength(scal_lst) <> eqn_size then
@@ -420,7 +420,7 @@ public
     frames := List.zip(names, ranges);
 
     // get new subscripts for row cref
-    subs := ComponentRef.subscriptsToExpression(row_cref);
+    subs := ComponentRef.subscriptsToExpression(row_cref, false);
     new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
     new_row_cref_subs := if not listEmpty(slice) then List.keepPositions(new_row_cref_subs, slice) else new_row_cref_subs;
 
@@ -434,7 +434,7 @@ public
     // get the scalar crefs for each column cref
     if not listEmpty(dependencies) then
       for cref in dependencies loop
-        subs := ComponentRef.subscriptsToExpression(cref);
+        subs := ComponentRef.subscriptsToExpression(cref, false);
         new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
         new_subs := if not listEmpty(slice) then List.keepPositions(new_subs, slice) else new_row_cref_subs;
 
