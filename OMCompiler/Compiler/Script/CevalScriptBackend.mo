@@ -3370,7 +3370,6 @@ algorithm
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
-  FlagsUtil.setConfigString(Flags.OBFUSCATE, obfuscate_mode);
 
   if inst_failed then
     fail();
