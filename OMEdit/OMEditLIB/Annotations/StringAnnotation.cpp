@@ -51,6 +51,11 @@ bool StringAnnotation::contains(const QString &str) const
   return mValue.contains(str);
 }
 
+bool StringAnnotation::isEmpty() const
+{
+  return mValue.isEmpty();
+}
+
 int StringAnnotation::length() const
 {
   return mValue.length();
