@@ -372,6 +372,44 @@ public
       end match;
     end createSingleReplacements;
 
+    function fromExp
+      "takes an expression and maps it to find all occuring iterators.
+      returns an iterator if all iterators are equal, fails otherwise.
+      also replaces all array constructors with indexed expressions."
+      output Iterator iter;
+      input output Expression exp;
+      function extractIterator
+        input output Expression exp;
+        input output Iterator iter;
+      algorithm
+        (exp, iter) := match exp
+          local
+            Call call;
+            list<Frame> frames = {};
+            InstNode node;
+            Expression range;
+            Iterator tmp;
+
+          case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+            for tpl in listReverse(call.iters) loop
+              (node, range) := tpl;
+              frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range) :: frames;
+            end for;
+            tmp := fromFrames(frames);
+            if not (isEmpty(iter) or isEqual(iter, tmp)) then fail(); end if;
+          then (call.exp, tmp);
+          else (exp, iter);
+        end match;
+      end extractIterator;
+    algorithm
+      try
+        (exp, iter) := Expression.mapFold(exp, extractIterator, EMPTY());
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the extracted iterators do not match: "
+          + Expression.toString(exp)});
+      end try;
+    end fromExp;
+
     function toString
       input Iterator iter;
       output String str = "";
@@ -1446,17 +1484,20 @@ public
       input Boolean initial_;
       output Pointer<Equation> eqn;
     protected
+      String context = "BND";
       Variable var;
       Expression lhs, rhs;
       EquationAttributes eqnAttr;
+      Iterator iter;
+      list<ComponentRef> sub_crefs;
+      list<Subscript> subs;
     algorithm
       var := Pointer.access(var_ptr);
-      lhs := Expression.fromCref(var.name);
       rhs := match var.binding
         local
           Binding qual;
         case qual as Binding.TYPED_BINDING()  then qual.bindingExp;
-        case qual as Binding.UNBOUND()        then Expression.makeZero(Expression.typeOf(lhs));
+        case qual as Binding.UNBOUND()        then Expression.makeZero(ComponentRef.getSubscriptedType(var.name));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
@@ -1470,7 +1511,27 @@ public
         eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
       end if;
 
-      eqn := Equation.fromLHSandRHS(lhs, SimplifyExp.simplifyDump(rhs, getInstanceName()), idx, "BND", eqnAttr);
+      // simplify rhs and get potential iterators
+      (iter, rhs) := Iterator.fromExp(rhs);
+      rhs := SimplifyExp.simplifyDump(rhs, getInstanceName());
+
+      if Iterator.isEmpty(iter) then
+        lhs := Expression.fromCref(var.name);
+        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
+      else
+        (sub_crefs, _) := Iterator.getFrames(iter);
+        subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
+        lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name));
+        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
+        eqn := Pointer.create(Equation.FOR_EQUATION(
+          ty = ComponentRef.getSubscriptedType(var.name),
+          iter = iter,
+          body = {Pointer.access(eqn)},
+          source = DAE.emptyElementSource,
+          attr = eqnAttr));
+        Equation.createName(eqn, idx, context);
+      end if;
+
     end generateBindingEquation;
 
     function mergeIterators
