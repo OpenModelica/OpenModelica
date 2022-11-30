@@ -279,26 +279,13 @@ void TextAnnotation::parseShapeAnnotation()
     mLineColor.evaluate(mpText->getParentModel());
   }
   if (!mpText->getFontName().isEmpty()) {
-    mFontName = mpText->getFontName().isEmpty();
+    mFontName = mpText->getFontName();
+    mFontName.evaluate(mpText->getParentModel());
   }
-  QStringList textStyles = mpText->getTextStyle();
-  foreach (QString textStyle, textStyles) {
-    if (textStyle == "TextStyle.Bold") {
-      mTextStyles.append(StringHandler::TextStyleBold);
-    } else if (textStyle == "TextStyle.Italic") {
-      mTextStyles.append(StringHandler::TextStyleItalic);
-    } else if (textStyle == "TextStyle.UnderLine") {
-      mTextStyles.append(StringHandler::TextStyleUnderLine);
-    }
-  }
-  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpText->getHorizontalAlignment()));
-  if (horizontalAlignment == "TextAlignment.Left") {
-    mHorizontalAlignment = StringHandler::TextAlignmentLeft;
-  } else if (horizontalAlignment == "TextAlignment.Center") {
-    mHorizontalAlignment = StringHandler::TextAlignmentCenter;
-  } else if (horizontalAlignment == "TextAlignment.Right") {
-    mHorizontalAlignment = StringHandler::TextAlignmentRight;
-  }
+  mTextStyles = mpText->getTextStyle();
+  mTextStyles.evaluate(mpText->getParentModel());
+  mHorizontalAlignment = mpText->getHorizontalAlignment();
+  mHorizontalAlignment.evaluate(mpText->getParentModel());
 }
 
 /*!
@@ -421,12 +408,10 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
   if (mFontSize > 0) {
     font.setPointSizeF(mFontSize);
   }
-  font.setWeight(StringHandler::getFontWeight(mTextStyles));
-  font.setItalic(StringHandler::getFontItalic(mTextStyles));
+  font.setWeight(mTextStyles.getWeight());
+  font.setItalic(mTextStyles.isItalic());
   // set font underline
-  if (StringHandler::getFontUnderline(mTextStyles)) {
-    font.setUnderline(true);
-  }
+  font.setUnderline(mTextStyles.isUnderLine());
   painter->setFont(font);
   /* From Modelica specification version 3.5-dev
    * "The style attribute fontSize specifies the font size. If the fontSize attribute is 0 the text is scaled to fit its extent. Otherwise, the size specifies the absolute size."
@@ -483,7 +468,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   // get the text color
   annotationString.append(mLineColor.toQString());
   // get the font name
-  if (!mFontName.isEmpty() && mFontName.compare(Helper::systemFontInfo.family()) != 0) {
+  if (!mFontName.isEmpty() && mFontName.toQString().compare(Helper::systemFontInfo.family()) != 0) {
     annotationString.append(QString("\"").append(mFontName).append("\""));
   } else {
     annotationString.append(QString("\"\""));
@@ -493,7 +478,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   QStringList stylesList;
   textStylesString.append("{");
   for (int i = 0 ; i < mTextStyles.size() ; i++) {
-    stylesList.append(StringHandler::getTextStyleString(mTextStyles[i]));
+    stylesList.append(StringHandler::getTextStyleString(mTextStyles.at(i)));
   }
   textStylesString.append(stylesList.join(","));
   textStylesString.append("}");
@@ -535,26 +520,16 @@ QString TextAnnotation::getShapeAnnotation()
   /* Ticket:4204
    * Don't insert the default font name as it might be operating system specific.
    */
-  if (!mFontName.isEmpty() && mFontName.compare(Helper::systemFontInfo.family()) != 0) {
-    annotationString.append(QString("fontName=\"").append(mFontName).append("\""));
+  if (!mFontName.isEmpty() && StringHandler::removeFirstLastQuotes(mFontName.toQString()).compare(Helper::systemFontInfo.family()) != 0) {
+    annotationString.append(QString("fontName=%1").arg(mFontName.toQString()));
   }
   // get the font styles
-  QString textStylesString;
-  QStringList stylesList;
   if (mTextStyles.size() > 0) {
-    textStylesString.append("textStyle={");
-  }
-  for (int i = 0 ; i < mTextStyles.size() ; i++) {
-    stylesList.append(StringHandler::getTextStyleString(mTextStyles[i]));
-  }
-  if (mTextStyles.size() > 0) {
-    textStylesString.append(stylesList.join(","));
-    textStylesString.append("}");
-    annotationString.append(textStylesString);
+    annotationString.append(QString("textStyle=%1").arg(mTextStyles.toQString()));
   }
   // get the font horizontal alignment
-  if (mHorizontalAlignment != StringHandler::TextAlignmentCenter) {
-    annotationString.append(QString("horizontalAlignment=").append(StringHandler::getTextAlignmentString(mHorizontalAlignment)));
+  if (mHorizontalAlignment.isDynamicSelectExpression() || mHorizontalAlignment.toQString().compare(QStringLiteral("TextAlignment.Center")) != 0) {
+    annotationString.append(QString("horizontalAlignment=%1").arg(mHorizontalAlignment.toQString()));
   }
   return QString("Text(").append(annotationString.join(",")).append(")");
 }

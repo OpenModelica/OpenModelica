@@ -27,32 +27,24 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef STRINGANNOTATION_H
-#define STRINGANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef TEXTALIGNMENTANNOTATION_H
+#define TEXTALIGNMENTANNOTATION_H
 
 #include "DynamicAnnotation.h"
+#include "Util/StringHandler.h"
 
-class StringAnnotation : public DynamicAnnotation
+class TextAlignmentAnnotation : public DynamicAnnotation
 {
   public:
-    StringAnnotation();
+    TextAlignmentAnnotation();
 
     void clear() override;
 
-    operator const QString&() const { return mValue; }
-    StringAnnotation& operator= (const QString &value);
-
-    bool contains(const QString &str) const;
-    bool isEmpty() const;
-    int length() const;
-    QString& prepend(const QString &str);
-    QString& prepend(QChar ch);
-    QString& replace(int position, int n, const QString &after);
-    QString& replace(int position, int n, QChar after);
-    QString& replace(const QRegExp &rx, const QString &after);
-    QString& replace(const QRegularExpression &re, const QString &after);
-    QString toLower() const;
-    QString toUpper() const;
+    operator StringHandler::TextAlignment() const { return mValue; }
+    TextAlignmentAnnotation& operator= (StringHandler::TextAlignment textAlignment);
 
     FlatModelica::Expression toExp() const override;
 
@@ -60,7 +52,7 @@ class StringAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    QString mValue;
+    StringHandler::TextAlignment mValue;
 };
 
-#endif /* STRINGANNOTATION_H */
+#endif // TEXTALIGNMENTANNOTATION_H

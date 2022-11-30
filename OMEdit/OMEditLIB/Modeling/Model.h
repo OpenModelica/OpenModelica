@@ -45,11 +45,14 @@
 #include "Annotations/LinePatternAnnotation.h"
 #include "Annotations/FillPatternAnnotation.h"
 #include "Annotations/PointArrayAnnotation.h"
+#include "Annotations/ArrowAnnotation.h"
 #include "Annotations/SmoothAnnotation.h"
 #include "Annotations/ExtentAnnotation.h"
 #include "Annotations/BorderPatternAnnotation.h"
 #include "Annotations/EllipseClosureAnnotation.h"
 #include "Annotations/StringAnnotation.h"
+#include "Annotations/TextStyleAnnotation.h"
+#include "Annotations/TextAlignmentAnnotation.h"
 
 namespace ModelInstance
 {
@@ -148,7 +151,7 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    void setPoints(const PointArrayAnnotation points) {mPoints = points;}
+    void setPoints(const PointArrayAnnotation &points) {mPoints = points;}
     PointArrayAnnotation getPoints() const {return mPoints;}
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
@@ -157,10 +160,8 @@ private:
     LinePatternAnnotation getPattern() const {return mPattern;}
     void setThickness(double thickness) {mThickness = thickness;}
     RealAnnotation getThickness() const {return mThickness;}
-    void setStartArrow(const QString &startArrow) {mArrow[0] = startArrow;}
-    QString getStartArrow() const {return mArrow[0];}
-    void setEndArrow(const QString &endArrow) {mArrow[1] = endArrow;}
-    QString getEndArrow() const {return mArrow[1];}
+    void setArrow(const ArrowAnnotation &arrow) {mArrow = arrow;}
+    ArrowAnnotation getArrow() {return mArrow;}
     void setArrowSize(double arrowSize) {mArrowSize = arrowSize;}
     RealAnnotation getArrowSize() const {return mArrowSize;}
     void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
@@ -170,7 +171,7 @@ private:
     ColorAnnotation mColor;
     LinePatternAnnotation mPattern;
     RealAnnotation mThickness;
-    QString mArrow[2];
+    ArrowAnnotation mArrow;
     RealAnnotation mArrowSize;
     SmoothAnnotation mSmooth;
   };
@@ -230,18 +231,18 @@ private:
     ExtentAnnotation getExtent() const {return mExtent;}
     StringAnnotation getTextString() const {return mTextString;}
     RealAnnotation getFontSize() const {return mFontSize;}
-    QString getFontName() const {return mFontName;}
-    QStringList getTextStyle() const {return mTextStyle;}
+    StringAnnotation getFontName() const {return mFontName;}
+    TextStyleAnnotation getTextStyle() const {return mTextStyle;}
     ColorAnnotation getTextColor() const {return mTextColor;}
-    QString getHorizontalAlignment() const {return mHorizontalAlignment;}
+    TextAlignmentAnnotation getHorizontalAlignment() const {return mHorizontalAlignment;}
   private:
     ExtentAnnotation mExtent;
     StringAnnotation mTextString;
     RealAnnotation mFontSize;
-    QString mFontName;
-    QStringList mTextStyle;
+    StringAnnotation mFontName;
+    TextStyleAnnotation mTextStyle;
     ColorAnnotation mTextColor;
-    QString mHorizontalAlignment;
+    TextAlignmentAnnotation mHorizontalAlignment;
   };
 
   class Bitmap : public Shape

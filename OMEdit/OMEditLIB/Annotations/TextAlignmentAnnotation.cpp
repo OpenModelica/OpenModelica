@@ -27,40 +27,36 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef STRINGANNOTATION_H
-#define STRINGANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#include "TextAlignmentAnnotation.h"
 
-#include "DynamicAnnotation.h"
-
-class StringAnnotation : public DynamicAnnotation
+TextAlignmentAnnotation::TextAlignmentAnnotation()
 {
-  public:
-    StringAnnotation();
+  clear();
+}
 
-    void clear() override;
+void TextAlignmentAnnotation::clear()
+{
+  mValue = StringHandler::TextAlignmentCenter;
+}
 
-    operator const QString&() const { return mValue; }
-    StringAnnotation& operator= (const QString &value);
+TextAlignmentAnnotation& TextAlignmentAnnotation::operator= (StringHandler::TextAlignment textAlignment)
+{
+  mValue = textAlignment;
+  setExp();
+  return *this;
+}
 
-    bool contains(const QString &str) const;
-    bool isEmpty() const;
-    int length() const;
-    QString& prepend(const QString &str);
-    QString& prepend(QChar ch);
-    QString& replace(int position, int n, const QString &after);
-    QString& replace(int position, int n, QChar after);
-    QString& replace(const QRegExp &rx, const QString &after);
-    QString& replace(const QRegularExpression &re, const QString &after);
-    QString toLower() const;
-    QString toUpper() const;
+FlatModelica::Expression TextAlignmentAnnotation::toExp() const
+{
+  return FlatModelica::Expression(StringHandler::getTextAlignmentString(mValue).toStdString(), mValue);
+}
 
-    FlatModelica::Expression toExp() const override;
-
-  private:
-    void fromExp(const FlatModelica::Expression &exp) override;
-
-  private:
-    QString mValue;
-};
-
-#endif /* STRINGANNOTATION_H */
+void TextAlignmentAnnotation::fromExp(const FlatModelica::Expression &exp)
+{
+  if (exp.isInteger()) {
+    mValue = StringHandler::getTextAlignmentType(QString::fromStdString(exp.enumValue()));
+  }
+}

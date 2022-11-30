@@ -649,8 +649,8 @@ void LineAnnotation::parseShapeAnnotation()
   mLinePattern.evaluate(mpLine->getParentModel());
   mLineThickness = mpLine->getLineThickness();
   mLineThickness.evaluate(mpLine->getParentModel());
-  mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
-  mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
+  mArrow = mpLine->getArrow();
+  mArrow.evaluate(mpLine->getParentModel());
   mArrowSize = mpLine->getArrowSize();
   mArrowSize.evaluate(mpLine->getParentModel());
   mSmooth = mpLine->getSmooth();
@@ -996,12 +996,8 @@ QString LineAnnotation::getShapeAnnotation()
     annotationString.append(QString("thickness=%1").arg(mLineThickness.toQString()));
   }
   // get the start and end arrow
-  if ((mArrow.at(0) != StringHandler::ArrowNone) || (mArrow.at(1) != StringHandler::ArrowNone)) {
-    QString arrowString;
-    arrowString.append("arrow=");
-    arrowString.append("{").append(StringHandler::getArrowString(mArrow.at(0))).append(",");
-    arrowString.append(StringHandler::getArrowString(mArrow.at(1))).append("}");
-    annotationString.append(arrowString);
+  if (mArrow.isDynamicSelectExpression() || mArrow.toQString().compare(QStringLiteral("{Arrow.None,Arrow.None}")) != 0) {
+    annotationString.append(QString("arrow=%1").arg(mArrow.toQString()));
   }
   // get the arrow size
   if (mArrowSize.isDynamicSelectExpression() || mArrowSize.toQString().compare(QStringLiteral("3")) != 0) {
@@ -2629,8 +2625,7 @@ void LineAnnotation::updateLine()
   mpLine->setColor(mLineColor);
   mpLine->setPattern(mLinePattern);
   mpLine->setThickness(mLineThickness);
-  mpLine->setStartArrow(StringHandler::getArrowString(mArrow.at(0)));
-  mpLine->setEndArrow(StringHandler::getArrowString(mArrow.at(1)));
+  mpLine->setArrow(mArrow);
   mpLine->setArrowSize(mArrowSize);
   mpLine->setSmooth(mSmooth);
 }

@@ -27,32 +27,29 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef STRINGANNOTATION_H
-#define STRINGANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef ARROWANNOTATION_H
+#define ARROWANNOTATION_H
 
 #include "DynamicAnnotation.h"
+#include "Util/StringHandler.h"
 
-class StringAnnotation : public DynamicAnnotation
+#include <QVector>
+
+class ArrowAnnotation : public DynamicAnnotation
 {
   public:
-    StringAnnotation();
+    ArrowAnnotation();
 
     void clear() override;
 
-    operator const QString&() const { return mValue; }
-    StringAnnotation& operator= (const QString &value);
+    operator const QVector<StringHandler::Arrow>&() const { return mValue; }
+    ArrowAnnotation& operator= (const QVector<StringHandler::Arrow> &value);
 
-    bool contains(const QString &str) const;
-    bool isEmpty() const;
-    int length() const;
-    QString& prepend(const QString &str);
-    QString& prepend(QChar ch);
-    QString& replace(int position, int n, const QString &after);
-    QString& replace(int position, int n, QChar after);
-    QString& replace(const QRegExp &rx, const QString &after);
-    QString& replace(const QRegularExpression &re, const QString &after);
-    QString toLower() const;
-    QString toUpper() const;
+    const StringHandler::Arrow& at(int i) const { return mValue.at(i); }
+    void replace(int i, const StringHandler::Arrow &value) { mValue.replace(i, value); setExp(); }
 
     FlatModelica::Expression toExp() const override;
 
@@ -60,7 +57,8 @@ class StringAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    QString mValue;
+    QVector<StringHandler::Arrow> mValue = QVector<StringHandler::Arrow>(2);
 };
 
-#endif /* STRINGANNOTATION_H */
+
+#endif // ARROWANNOTATION_H

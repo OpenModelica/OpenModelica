@@ -361,8 +361,7 @@ void ShapeAnnotation::setDefaults()
   mPoints.clear();
   mGeometries.clear();
   mArrow.clear();
-  mArrow.append(StringHandler::ArrowNone);
-  mArrow.append(StringHandler::ArrowNone);
+  mArrow = QVector<StringHandler::Arrow>(2, StringHandler::ArrowNone);
   mArrowSize = 3;
   mSmooth = StringHandler::SmoothNone;
   mExtent.clear();
@@ -394,10 +393,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mLineColor = pShapeAnnotation->mLineColor;
   mLinePattern = pShapeAnnotation->mLinePattern;
   mLineThickness = pShapeAnnotation->mLineThickness;
-  mArrow.append(StringHandler::ArrowNone);
-  mArrow.append(StringHandler::ArrowNone);
-  setStartArrow(pShapeAnnotation->getStartArrow());
-  setEndArrow(pShapeAnnotation->getEndArrow());
+  mArrow = pShapeAnnotation->getArrow();
   mArrowSize = pShapeAnnotation->mArrowSize;
   mSmooth = pShapeAnnotation->mSmooth;
   setExtents(pShapeAnnotation->getExtents());

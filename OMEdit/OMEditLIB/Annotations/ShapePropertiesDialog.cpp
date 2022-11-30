@@ -204,7 +204,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFontNameLabel = new Label(Helper::name);
   mpFontNameComboBox = new QFontComboBox;
   mpFontNameComboBox->insertItem(0, "Default");
-  currentIndex = mpFontNameComboBox->findText(mpShapeAnnotation->getFontName(), Qt::MatchExactly);
+  currentIndex = mpFontNameComboBox->findText(StringHandler::removeFirstLastQuotes(mpShapeAnnotation->getFontName()), Qt::MatchExactly);
   if (currentIndex > -1) {
     mpFontNameComboBox->setCurrentIndex(currentIndex);
   } else {
@@ -839,7 +839,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     qreal fontSize = 0;
     fontSize = mpFontSizeComboBox->lineEdit()->text().toDouble();
     mpShapeAnnotation->setFontSize(fontSize);
-    QList<StringHandler::TextStyle> textStyles;
+    QVector<StringHandler::TextStyle> textStyles;
     if (mpTextBoldCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleBold);
     if (mpTextItalicCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleItalic);
     if (mpTextUnderlineCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleUnderLine);

@@ -234,8 +234,6 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mThickness = 0.25;
-    mArrow[0] = "Arrow.None";
-    mArrow[1] = "Arrow.None";
     mArrowSize = 3;
   }
 
@@ -248,17 +246,7 @@ namespace ModelInstance
       mColor.deserialize(jsonArray.at(4));
       mPattern.deserialize(jsonArray.at(5));
       mThickness.deserialize(jsonArray.at(6));
-      QJsonArray arrows = jsonArray.at(7).toArray();
-      if (arrows.size() == 2) {
-        QJsonObject startArrow = arrows.at(0).toObject();
-        if (startArrow.contains("name")) {
-          mArrow[0] = startArrow.value("name").toString();
-        }
-        QJsonObject endArrow = arrows.at(1).toObject();
-        if (endArrow.contains("name")) {
-          mArrow[1] = endArrow.value("name").toString();
-        }
-      }
+      mArrow.deserialize(jsonArray.at(7));
       mArrowSize.deserialize(jsonArray.at(8));
       mSmooth.deserialize(jsonArray.at(9));
     }
@@ -285,17 +273,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("arrow")) {
-      QJsonArray arrows = jsonObject.value("arrow").toArray();
-      if (arrows.size() == 2) {
-        QJsonObject startArrow = arrows.at(0).toObject();
-        if (startArrow.contains("name")) {
-          mArrow[0] = startArrow.value("name").toString();
-        }
-        QJsonObject endArrow = arrows.at(1).toObject();
-        if (endArrow.contains("name")) {
-          mArrow[1] = endArrow.value("name").toString();
-        }
-      }
+      mArrow.deserialize(jsonObject.value("arrow"));
     }
 
     if (jsonObject.contains("arrowSize")) {
@@ -377,9 +355,6 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mFontName = "";
-    mTextStyle.clear();
-    mHorizontalAlignment = "TextAlignment.Center";
   }
 
   void Text::deserialize(const QJsonArray &jsonArray)
@@ -398,18 +373,12 @@ namespace ModelInstance
       } else {
         mTextColor.deserialize(jsonArray.at(11));
       }
-      mFontName = jsonArray.at(12).toString();
+      mFontName.deserialize(jsonArray.at(12));
       QJsonArray textStyles = jsonArray.at(13).toArray();
-      foreach (QJsonValue textStyle, textStyles) {
-        QJsonObject textStyleObject = textStyle.toObject();
-        if (textStyleObject.contains("name")) {
-          mTextStyle.append(textStyleObject.value("name").toString());
-        }
+      if (!textStyles.isEmpty()) {
+        mTextStyle.deserialize(jsonArray.at(13));
       }
-      QJsonObject horizontalAlignment = jsonArray.at(14).toObject();
-      if (horizontalAlignment.contains("name")) {
-        mHorizontalAlignment = horizontalAlignment.value("name").toString();
-      }
+      mHorizontalAlignment.deserialize(jsonArray.at(14));
     }
   }
 
@@ -435,24 +404,15 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("fontName")) {
-      mFontName = jsonObject.value("fontName").toString();
+      mFontName.deserialize(jsonObject.value("fontName"));
     }
 
     if (jsonObject.contains("textStyle")) {
-      QJsonArray textStyles = jsonObject.value("textStyle").toArray();
-      foreach (QJsonValue textStyle, textStyles) {
-        QJsonObject textStyleObject = textStyle.toObject();
-        if (textStyleObject.contains("name")) {
-          mTextStyle.append(textStyleObject.value("name").toString());
-        }
-      }
+      mTextStyle.deserialize(jsonObject.value("textStyle"));
     }
 
     if (jsonObject.contains("horizontalAlignment")) {
-      QJsonObject horizontalAlignment = jsonObject.value("horizontalAlignment").toObject();
-      if (horizontalAlignment.contains("name")) {
-        mHorizontalAlignment = horizontalAlignment.value("name").toString();
-      }
+      mHorizontalAlignment.deserialize(jsonObject.value("horizontalAlignment"));
     }
 
 //    if (jsonObject.contains("index")) {
