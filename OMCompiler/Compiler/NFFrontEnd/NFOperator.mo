@@ -623,7 +623,10 @@ public
       case Op.DIV_EW              then (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE);
       case Op.POW_EW              then (MathClassification.POWER,           SizeClassification.ELEMENT_WISE);
       case Op.MUL_ARRAY_SCALAR    then (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR);
+      case Op.MUL_SCALAR_ARRAY    then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR_ARRAY);
       case Op.ADD_ARRAY_SCALAR    then (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR);
+      case Op.ADD_SCALAR_ARRAY    then (MathClassification.ADDITION,        SizeClassification.SCALAR_ARRAY);
+      case Op.SUB_ARRAY_SCALAR    then (MathClassification.SUBTRACTION,     SizeClassification.ARRAY_SCALAR);
       case Op.SUB_SCALAR_ARRAY    then (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY);
       case Op.SCALAR_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR);
       case Op.MATRIX_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX);
