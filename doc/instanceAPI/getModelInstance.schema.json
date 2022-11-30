@@ -195,7 +195,13 @@
             "$ref": "#/definitions/annotation"
           },
           {
-            "$ref": "expression.schema.json"
+            "type": "object",
+            "properties": {
+              "value": {
+                "$ref": "expression.schema.json"
+              }
+            },
+            "required": ["value"]
           },
           {
             "description": "An invalid annotation",

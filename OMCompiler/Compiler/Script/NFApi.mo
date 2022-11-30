@@ -1472,7 +1472,7 @@ function dumpJSONAnnotationMod
 algorithm
   json := match mod
     case SCode.Mod.MOD()
-      then dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError);
+      then dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError, 1);
 
     else JSON.makeNull();
   end match;
@@ -1482,10 +1482,11 @@ function dumpJSONAnnotationSubMods
   input list<SCode.SubMod> subMods;
   input InstNode scope;
   input Boolean failOnError;
+  input Integer level;
   output JSON json = JSON.makeNull();
 algorithm
   for m in subMods loop
-    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, level, json);
   end for;
 end dumpJSONAnnotationSubMods;
 
@@ -1493,6 +1494,7 @@ function dumpJSONAnnotationSubMod
   input SCode.SubMod subMod;
   input InstNode scope;
   input Boolean failOnError;
+  input Integer level;
   input output JSON json;
 protected
   String name;
@@ -1519,7 +1521,12 @@ algorithm
           binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
           binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
           binding_exp := SimplifyExp.simplify(binding_exp);
-          json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+
+          if level == 2 then
+            json := JSON.addPair(name, JSON.fromPair("value", Expression.toJSON(binding_exp)), json);
+          else
+            json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+          end if;
         else
           if failOnError then
             fail();
@@ -1537,7 +1544,7 @@ algorithm
 
     case (_, SCode.Mod.MOD())
       algorithm
-        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError), json);
+        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError, level + 1), json);
       then
         ();
 
@@ -1889,7 +1896,7 @@ algorithm
   end if;
 
   for m in others loop
-    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, 1, json);
   end for;
 end dumpJSONChoicesAnnotation;
 

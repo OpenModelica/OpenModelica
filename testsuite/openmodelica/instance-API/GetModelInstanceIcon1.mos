@@ -21,57 +21,59 @@ getModelInstanceIcon(M, prettyPrint=true);
 //   \"name\": \"M\",
 //   \"annotation\": {
 //     \"Icon\": {
-//       \"graphics\": [
-//         {
-//           \"$kind\": \"record\",
-//           \"name\": \"Rectangle\",
-//           \"elements\": [
-//             true,
-//             [
-//               0,
-//               0
-//             ],
-//             0,
-//             [
-//               28,
-//               108,
-//               200
-//             ],
-//             [
-//               0,
-//               0,
-//               0
-//             ],
-//             {
-//               \"$kind\": \"enum\",
-//               \"name\": \"LinePattern.Solid\",
-//               \"index\": 2
-//             },
-//             {
-//               \"$kind\": \"enum\",
-//               \"name\": \"FillPattern.None\",
-//               \"index\": 1
-//             },
-//             0.25,
-//             {
-//               \"$kind\": \"enum\",
-//               \"name\": \"BorderPattern.None\",
-//               \"index\": 1
-//             },
-//             [
+//       \"graphics\": {
+//         \"value\": [
+//           {
+//             \"$kind\": \"record\",
+//             \"name\": \"Rectangle\",
+//             \"elements\": [
+//               true,
 //               [
-//                 -66,
-//                 78
+//                 0,
+//                 0
+//               ],
+//               0,
+//               [
+//                 28,
+//                 108,
+//                 200
 //               ],
 //               [
-//                 70,
-//                 -56
-//               ]
-//             ],
-//             0
-//           ]
-//         }
-//       ]
+//                 0,
+//                 0,
+//                 0
+//               ],
+//               {
+//                 \"$kind\": \"enum\",
+//                 \"name\": \"LinePattern.Solid\",
+//                 \"index\": 2
+//               },
+//               {
+//                 \"$kind\": \"enum\",
+//                 \"name\": \"FillPattern.None\",
+//                 \"index\": 1
+//               },
+//               0.25,
+//               {
+//                 \"$kind\": \"enum\",
+//                 \"name\": \"BorderPattern.None\",
+//                 \"index\": 1
+//               },
+//               [
+//                 [
+//                   -66,
+//                   78
+//                 ],
+//                 [
+//                   70,
+//                   -56
+//                 ]
+//               ],
+//               0
+//             ]
+//           }
+//         ]
+//       }
 //     }
 //   }
 // }"
