@@ -46,11 +46,13 @@ protected
   //NF imports
   import Attributes = NFAttributes;
   import NFBinding.Binding;
+  import Call = NFCall;
   import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import ExpressionIterator = NFExpressionIterator;
+  import NFFunction.Function;
   import NFPrefixes.Direction;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
@@ -1062,21 +1064,30 @@ public
       input Binding binding;
       output Option<StateSelect> stateSelect;
     protected
-      InstNode node;
-      String name;
       Expression exp = Binding.getTypedExp(binding);
-    algorithm
-      name := match exp
-        case Expression.ENUM_LITERAL() then exp.name;
-        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
-        else
-          algorithm
+      String name;
+      function getStateSelectName
+        input Expression exp;
+        output String name;
+      protected
+        Expression arg;
+        InstNode node;
+        Call call;
+      algorithm
+        name := match exp
+          case Expression.ENUM_LITERAL() then exp.name;
+          case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+          case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
+            guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
+          then getStateSelectName(arg);
+          else algorithm
             Error.assertion(false, getInstanceName() +
               " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
-          then
-            fail();
-      end match;
-
+          then fail();
+        end match;
+      end getStateSelectName;
+    algorithm
+      name := getStateSelectName(exp);
       stateSelect := SOME(lookupStateSelectMember(name));
     end createStateSelect;
 
