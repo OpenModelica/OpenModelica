@@ -131,6 +131,44 @@ public
     end match;
   end toInteger;
 
+  function toIndexList
+    input Subscript subscript;
+    input Integer length;
+    input Boolean baseZero = true;
+    output list<Integer> indices;
+  protected
+    Integer shift = if baseZero then 1 else 0;
+  algorithm
+    indices := match subscript
+      local
+        array<Expression> elems;
+        Integer start, step, stop;
+
+      case INDEX() then {toInteger(subscript)-shift};
+
+      case WHOLE() then List.intRange2(1-shift,length-shift);
+
+      case SLICE(slice = Expression.ARRAY(elements = elems))
+      then list(Expression.toInteger(e) for e in elems);
+
+      case SLICE(slice = Expression.RANGE(
+        start = Expression.INTEGER(start),
+        step  = SOME(Expression.INTEGER(step)),
+        stop  = Expression.INTEGER(stop)))
+      then List.intRange3(start-shift, step, stop-shift);
+
+      case SLICE(slice = Expression.RANGE(
+        start = Expression.INTEGER(start),
+        step  = NONE(),
+        stop  = Expression.INTEGER(stop)))
+      then List.intRange2(start-shift, stop-shift);
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
+      then fail();
+    end match;
+  end toIndexList;
+
   protected function isValidIndexType
     input Type ty;
     output Boolean b = Type.isInteger(ty) or Type.isBoolean(ty) or Type.isEnumeration(ty);
