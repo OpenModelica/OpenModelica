@@ -320,6 +320,14 @@ void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *PolygonAnnotation::getParentModel() const
+{
+  if (mpPolygon) {
+    return mpPolygon->getParentModel();
+  }
+  return 0;
+}
+
 /*!
  * \brief PolygonAnnotation::duplicate
  * Duplicates the shape.

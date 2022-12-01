@@ -212,10 +212,10 @@ public:
   void adjustCornerItemsConnectedIndexes();
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
-  void setExtendModel(ModelInstance::Extend *pExtendModel) {mpExtendModel = pExtendModel;}
   void moveShape(const qreal dx, const qreal dy);
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
+  virtual ModelInstance::Model* getParentModel() const = 0;
   void emitAdded() {emit added();}
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
@@ -288,7 +288,6 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   FlatModelica::Expression mTextExpression;
-  ModelInstance::Extend *mpExtendModel = 0;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

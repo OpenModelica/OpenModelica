@@ -1237,6 +1237,14 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *LineAnnotation::getParentModel() const
+{
+  if (mpLine) {
+    return mpLine->getParentModel();
+  }
+  return 0;
+}
+
 /*!
  * \brief LineAnnotation::setAligned
  * Marks the connection line as aligned or not aligned.

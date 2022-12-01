@@ -606,13 +606,14 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   bool preserveAspectRatio = false;
 
   if (MainWindow::instance()->isNewApi()) {
-    if (mpExtendModel) {
+    ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getParentModel());
+    if (pExtend) {
       if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        extent = mpExtendModel->mIconMap.getExtent();
-        preserveAspectRatio = mpExtendModel->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+        extent = pExtend->mIconMap.getExtent();
+        preserveAspectRatio = pExtend->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       } else {
-        extent = mpExtendModel->mDiagramMap.getExtent();
-        preserveAspectRatio = mpExtendModel->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+        extent = pExtend->mDiagramMap.getExtent();
+        preserveAspectRatio = pExtend->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       }
     }
   } else {

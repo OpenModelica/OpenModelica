@@ -527,6 +527,14 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *TextAnnotation::getParentModel() const
+{
+  if (mpText) {
+    return mpText->getParentModel();
+  }
+  return 0;
+}
+
 void TextAnnotation::initUpdateTextString()
 {
   if (mpElement) {
