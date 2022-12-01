@@ -1223,6 +1223,17 @@ public
     end match;
   end first;
 
+  function isSplit
+    input Subscript sub;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case SPLIT_PROXY() then true;
+      case SPLIT_INDEX() then true;
+      else false;
+    end match;
+  end isSplit;
+
   function isSplitIndex
     input Subscript sub;
     output Boolean res;
