@@ -60,7 +60,18 @@ bool DynamicAnnotation::parse(const QString &str)
 bool DynamicAnnotation::deserialize(const QJsonValue &value)
 {
   try {
-    mExp.deserialize(value);
+    if (value.isObject() && value.toObject().contains("$error")) {
+      QJsonObject valueObject = value.toObject();
+      if (valueObject.contains("$error")) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, valueObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+      }
+
+      if (valueObject.contains("value")) {
+        mExp.deserialize(valueObject.value("value"));
+      }
+    } else {
+      mExp.deserialize(value);
+    }
     mState = mExp.isCall("DynamicSelect") ? State::Static : State::None;
     reset();
   } catch (const std::exception &e) {

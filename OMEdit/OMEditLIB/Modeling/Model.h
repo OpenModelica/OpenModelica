@@ -339,7 +339,6 @@ private:
     bool isDocumentationClass() const {return mDocumentationClass;}
     QString getVersion() const {return mVersion;}
     QString getVersionDate() const {return mVersionDate;}
-    QString getVersionBuild() const {return mVersionBuild;}
     QString getDateModified() const {return mDateModified;}
     QString getPreferredView() const {return mPreferredView;}
     bool isState() const {return mState;}
@@ -381,14 +380,14 @@ private:
     QString mComment;
     IconDiagramAnnotation *mpIconAnnotation;
     IconDiagramAnnotation *mpDiagramAnnotation;
-    bool mDocumentationClass;
-    QString mVersion;
-    QString mVersionDate;
-    QString mVersionBuild;
-    QString mDateModified;
-    QString mPreferredView;
-    bool mState;
-    QString mAccess;
+    BooleanAnnotation mDocumentationClass;
+    StringAnnotation mVersion;
+    StringAnnotation mVersionDate;
+    RealAnnotation mVersionBuild;
+    StringAnnotation mDateModified;
+    StringAnnotation mPreferredView;
+    BooleanAnnotation mState;
+    StringAnnotation mAccess;
     QList<Element*> mElements;
     QString mFileName;
     int mLineStart;
@@ -418,13 +417,15 @@ private:
   class PlacementAnnotation
   {
   public:
-    PlacementAnnotation();
+    PlacementAnnotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    Model *getParentModel() const {return mpParentModel;}
     BooleanAnnotation getVisible() const {return mVisible;}
     Transformation getTransformation() const {return mTransformation;}
     BooleanAnnotation getIconVisible() const {return mIconVisible;}
     Transformation getIconTransformation() const {return mIconTransformation;}
   private:
+    Model *mpParentModel;
     BooleanAnnotation mVisible;
     Transformation mTransformation;
     BooleanAnnotation mIconVisible;
@@ -479,8 +480,8 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
   private:
-    bool mCheckBox;
-    bool mDymolaCheckBox;
+    BooleanAnnotation mCheckBox;
+    BooleanAnnotation mDymolaCheckBox;
   };
 
   class Element
@@ -541,11 +542,11 @@ private:
     QString mVariability;
     QString mDirection;
     QString mComment;
-    bool mChoicesAllMatching;
+    BooleanAnnotation mChoicesAllMatching;
     PlacementAnnotation mPlacementAnnotation;
     bool mHasDialogAnnotation;
     DialogAnnotation mDialogAnnotation;
-    bool mEvaluate;
+    BooleanAnnotation mEvaluate;
     Choices mChoices;
 
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);

@@ -692,31 +692,31 @@ namespace ModelInstance
       }
 
       if (annotation.contains("DocumentationClass")) {
-        mDocumentationClass = annotation.value("DocumentationClass").toBool();
+        mDocumentationClass.deserialize(annotation.value("DocumentationClass"));
       }
 
       if (annotation.contains("version")) {
-        mVersion = annotation.value("version").toString();
+        mVersion.deserialize(annotation.value("version"));
       }
 
       if (annotation.contains("versionDate")) {
-        mVersionDate = annotation.value("versionDate").toString();
+        mVersionDate.deserialize(annotation.value("versionDate"));
       }
 
       if (annotation.contains("versionBuild")) {
-        mVersionDate = QString::number(annotation.value("versionBuild").toInt());
+        mVersionBuild.deserialize(annotation.value("versionBuild"));
       }
 
       if (annotation.contains("dateModified")) {
-        mDateModified = annotation.value("dateModified").toString();
+        mDateModified.deserialize(annotation.value("dateModified"));
       }
 
       if (annotation.contains("preferredView")) {
-        mPreferredView = annotation.value("preferredView").toString();
+        mPreferredView.deserialize(annotation.value("preferredView"));
       }
 
       if (annotation.contains("__Dymola_state")) {
-        mState = annotation.value("__Dymola_state").toBool();
+        mState.deserialize(annotation.value("__Dymola_state"));
       }
 
       if (annotation.contains("Protection")) {
@@ -724,7 +724,7 @@ namespace ModelInstance
         if (protection.contains("access")) {
           QJsonObject access = protection.value("access").toObject();
           if (access.contains("name")) {
-            mAccess = access.value("name").toString();
+            mAccess.deserialize(access.value("name"));
           }
         }
       }
@@ -973,7 +973,7 @@ namespace ModelInstance
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
-    mVersionBuild = "";
+    mVersionBuild = 0;
     mDateModified = "";
     mPreferredView = "";
     mState = false;
@@ -1011,8 +1011,9 @@ namespace ModelInstance
     }
   }
 
-  PlacementAnnotation::PlacementAnnotation()
+  PlacementAnnotation::PlacementAnnotation(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     // set the visible to false. Otherwise we get elements in the center of the view.
     mVisible = false;
     mIconVisible = false;
@@ -1124,15 +1125,16 @@ namespace ModelInstance
   void Choices::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("checkBox")) {
-      mCheckBox = jsonObject.value("checkBox").toBool();
+      mCheckBox.deserialize(jsonObject.value("checkBox"));
     }
 
     if (jsonObject.contains("__Dymola_checkBox")) {
-      mDymolaCheckBox = jsonObject.value("__Dymola_checkBox").toBool();
+      mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
   }
 
   Element::Element(Model *pParentModel)
+    : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
     mpModel = 0;
@@ -1281,7 +1283,7 @@ namespace ModelInstance
       QJsonObject annotation = jsonObject.value("annotation").toObject();
 
       if (annotation.contains("choicesAllMatching")) {
-        mChoicesAllMatching = annotation.value("choicesAllMatching").toBool();
+        mChoicesAllMatching.deserialize(annotation.value("choicesAllMatching"));
       }
 
       if (annotation.contains("Placement")) {
@@ -1294,7 +1296,7 @@ namespace ModelInstance
       }
 
       if (annotation.contains("Evaluate")) {
-        mEvaluate = annotation.value("Evaluate").toBool();
+        mEvaluate.deserialize(annotation.value("Evaluate"));
       }
 
       if (annotation.contains("choices")) {
