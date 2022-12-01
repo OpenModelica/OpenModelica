@@ -157,16 +157,24 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
 
   // transformation
   mVisible = placementAnnotation.getVisible();
+  mVisible.evaluate(placementAnnotation.getParentModel());
   ModelInstance::Transformation transformation = placementAnnotation.getTransformation();
   mOriginDiagram = transformation.getOrigin();
+  mOriginDiagram.evaluate(placementAnnotation.getParentModel());
   mExtentDiagram = transformation.getExtent();
+  mExtentDiagram.evaluate(placementAnnotation.getParentModel());
   mRotateAngleDiagram = transformation.getRotation();
+  mRotateAngleDiagram.evaluate(placementAnnotation.getParentModel());
   // icon transformation
   mVisibleIcon = placementAnnotation.getIconVisible();
+  mVisibleIcon.evaluate(placementAnnotation.getParentModel());
   ModelInstance::Transformation iconTransformation = placementAnnotation.getIconTransformation();
   mOriginIcon = iconTransformation.getOrigin();
+  mOriginIcon.evaluate(placementAnnotation.getParentModel());
   mExtentIcon = iconTransformation.getExtent();
+  mExtentIcon.evaluate(placementAnnotation.getParentModel());
   mRotateAngleIcon = iconTransformation.getRotation();
+  mRotateAngleIcon.evaluate(placementAnnotation.getParentModel());
 }
 
 void Transformation::updateTransformation(const Transformation &transformation)
