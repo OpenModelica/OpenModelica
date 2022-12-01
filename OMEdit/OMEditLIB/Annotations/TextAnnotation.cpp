@@ -235,10 +235,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     mLineColor.parse(list.at(11));
   }
   // 13th item of the list contains the font name.
-  QString fontName = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(12)));
-  if (!fontName.isEmpty()) {
-    mFontName = fontName;
-  }
+  mFontName.parse(list.at(12));
   // 14th item of the list contains the text styles.
   QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(13))));
   foreach (QString textStyle, textStyles) {
@@ -467,24 +464,12 @@ QString TextAnnotation::getOMCShapeAnnotation()
   annotationString.append(mFontSize.toQString());
   // get the text color
   annotationString.append(mLineColor.toQString());
-  // get the font name
-  if (!mFontName.isEmpty() && mFontName.toQString().compare(Helper::systemFontInfo.family()) != 0) {
-    annotationString.append(QString("\"").append(mFontName).append("\""));
-  } else {
-    annotationString.append(QString("\"\""));
-  }
-  // get the font styles
-  QString textStylesString;
-  QStringList stylesList;
-  textStylesString.append("{");
-  for (int i = 0 ; i < mTextStyles.size() ; i++) {
-    stylesList.append(StringHandler::getTextStyleString(mTextStyles.at(i)));
-  }
-  textStylesString.append(stylesList.join(","));
-  textStylesString.append("}");
-  annotationString.append(textStylesString);
-  // get the font horizontal alignment
-  annotationString.append(StringHandler::getTextAlignmentString(mHorizontalAlignment));
+  // font name
+  annotationString.append(mFontName.toQString());
+  // text style
+  annotationString.append(mTextStyles.toQString());
+  // horizontal alignment
+  annotationString.append(mHorizontalAlignment.toQString());
   return annotationString.join(",");
 }
 
@@ -520,7 +505,7 @@ QString TextAnnotation::getShapeAnnotation()
   /* Ticket:4204
    * Don't insert the default font name as it might be operating system specific.
    */
-  if (!mFontName.isEmpty() && StringHandler::removeFirstLastQuotes(mFontName.toQString()).compare(Helper::systemFontInfo.family()) != 0) {
+  if (mFontName.isDynamicSelectExpression() || (!mFontName.isEmpty() && StringHandler::removeFirstLastQuotes(mFontName.toQString()).compare(Helper::systemFontInfo.family()) != 0)) {
     annotationString.append(QString("fontName=%1").arg(mFontName.toQString()));
   }
   // get the font styles

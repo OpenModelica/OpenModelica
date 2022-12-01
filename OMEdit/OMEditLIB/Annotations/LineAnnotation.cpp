@@ -611,14 +611,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   mPoints.clear();
-  // 4th item of list contains the points.
-  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(3))));
-  foreach (QString point, pointsList) {
-    QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
-    if (linePoints.size() >= 2) {
-      addPoint(QPointF(linePoints.at(0).toDouble(), linePoints.at(1).toDouble()));
-    }
-  }
+  mPoints.parse(list.at(3));
   // 5th item of list contains the color.
   mLineColor.parse(list.at(4));
   // 6th item of list contains the Line Pattern.
@@ -927,21 +920,7 @@ QString LineAnnotation::getOMCShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   // get points
-  QString pointsString;
-  if (mPoints.size() > 0) {
-    pointsString.append("{");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
-    }
-  }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
-  }
+  annotationString.append(mPoints.toQString());
   // get the line color
   annotationString.append(mLineColor.toQString());
   // get the line pattern
@@ -949,10 +928,7 @@ QString LineAnnotation::getOMCShapeAnnotation()
   // get the thickness
   annotationString.append(mLineThickness.toQString());
   // get the start and end arrow
-  QString arrowString;
-  arrowString.append("{").append(StringHandler::getArrowString(mArrow.at(0))).append(",");
-  arrowString.append(StringHandler::getArrowString(mArrow.at(1))).append("}");
-  annotationString.append(arrowString);
+  annotationString.append(mArrow.toQString());
   // get the arrow size
   annotationString.append(mArrowSize.toQString());
   // get the smooth
