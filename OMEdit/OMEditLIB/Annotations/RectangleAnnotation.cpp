@@ -275,6 +275,14 @@ void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *RectangleAnnotation::getParentModel() const
+{
+  if (mpRectangle) {
+    return mpRectangle->getParentModel();
+  }
+  return 0;
+}
+
 /*!
  * \brief RectangleAnnotation::duplicate
  * Duplicates the shape.

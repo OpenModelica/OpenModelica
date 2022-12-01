@@ -141,6 +141,7 @@ public:
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable) override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  ModelInstance::Model *getParentModel() const override;
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();

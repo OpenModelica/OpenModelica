@@ -276,6 +276,14 @@ void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *BitmapAnnotation::getParentModel() const
+{
+  if (mpBitmap) {
+    return mpBitmap->getParentModel();
+  }
+  return 0;
+}
+
 /*!
  * \brief BitmapAnnotation::duplicate
  * Duplicates the shape.
