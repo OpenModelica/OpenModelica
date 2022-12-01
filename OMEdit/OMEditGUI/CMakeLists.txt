@@ -26,7 +26,7 @@ install(TARGETS OMEdit
 if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
 
   # Escape the environment variable path
-  string(REPLACE "\\" "/" OMDEV_ESCAPED $ENV{OMDev})
+  string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDev}")
 
   # Check if 64 bit
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
