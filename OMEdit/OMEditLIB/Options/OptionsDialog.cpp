@@ -7065,11 +7065,16 @@ DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog(QWidget *
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Discard Local Translation Flags")));
   setMinimumWidth(400);
-  mpDescriptionLabel = new Label(tr("The global translation flags are changed. The following models have local translation flags. Select which models local translation flags"
-                                    " you want to discard. Discard means that the simulation settings of the models will be reset as if you closed OMEdit and restarted"
-                                    " a new session. The new global options will first be applied, and then any further setting saved in the annotations will be applied.\n"
-                                    "Double click the model to see its existing local translation flags.\n"));
+  mpDescriptionLabel = new Label(tr("You just changed some global translation flags.\n\n"
+                                    "The models listed below are currently open and have different local translation flags,"
+                                    "that were selected with the Simulation Setup dialog.\n\n"
+                                    "Select the models for which you want to discard the local translation flag and apply the new global flags (*)."
+                                    "All other models will retain the current local settings until you close OMEdit.\n"));
+  mpDescriptionLabel2 = new Label(tr("(*) If you discard local settings, the new global settings will first be applied, and then any further settings"
+                                     "saved in the model annotations will be applied. This is the same behaviour you would get if you closed OMEdit,"
+                                     "restarted it and reopened all models.\n"));
   mpDescriptionLabel->setWordWrap(true);
+  mpDescriptionLabel2->setWordWrap(true);
   mpClassesWithLocalTranslationFlagsListWidget = new QListWidget;
   mpClassesWithLocalTranslationFlagsListWidget->setObjectName("ClassesWithLocalTranslationFlagsListWidget");
   mpClassesWithLocalTranslationFlagsListWidget->setItemDelegate(new ItemDelegate(mpClassesWithLocalTranslationFlagsListWidget));
@@ -7097,6 +7102,7 @@ DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog(QWidget *
   pMainLayout->addWidget(mpDescriptionLabel);
   pMainLayout->addWidget(pSelectUnSelectAll);
   pMainLayout->addWidget(mpClassesWithLocalTranslationFlagsListWidget);
+  pMainLayout->addWidget(mpDescriptionLabel2);
   pMainLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
