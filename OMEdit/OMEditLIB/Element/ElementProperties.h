@@ -196,6 +196,7 @@ private:
   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
   void createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert = false);
+  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementExtendsModifiers();
   void fetchElementModifiers();
   void fetchClassExtendsModifiers();

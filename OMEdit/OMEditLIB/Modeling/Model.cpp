@@ -33,6 +33,8 @@
 
 #include "Model.h"
 #include "Util/StringHandler.h"
+#include "Util/Helper.h"
+#include "MessagesWidget.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -460,35 +462,42 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("graphics")) {
-      QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
-      for (int i = 0; i < graphicsArray.size(); ++i) {
-        QJsonObject graphicObject = graphicsArray.at(i).toObject();
-        if (graphicObject.contains("name") && graphicObject.contains("elements")) {
-          const QString name = graphicObject.value("name").toString();
-          if (name.compare(QStringLiteral("Line")) == 0) {
-            Line *pLine = new Line(mpParentModel);
-            pLine->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pLine);
-          } else if (name.compare(QStringLiteral("Polygon")) == 0) {
-            Polygon *pPolygon = new Polygon(mpParentModel);
-            pPolygon->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pPolygon);
-          } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
-            Rectangle *pRectangle = new Rectangle(mpParentModel);
-            pRectangle->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pRectangle);
-          } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
-            Ellipse *pEllipse = new Ellipse(mpParentModel);
-            pEllipse->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pEllipse);
-          } else if (name.compare(QStringLiteral("Text")) == 0) {
-            Text *pText = new Text(mpParentModel);
-            pText->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pText);
-          } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
-            Bitmap *pBitmap = new Bitmap(mpParentModel);
-            pBitmap->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pBitmap);
+      if (jsonObject.value("graphics").isObject()) {
+        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
+        if (graphicsObject.contains("$error")) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        }
+      } else if (jsonObject.value("graphics").isArray()) {
+        QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
+        for (int i = 0; i < graphicsArray.size(); ++i) {
+          QJsonObject graphicObject = graphicsArray.at(i).toObject();
+          if (graphicObject.contains("name") && graphicObject.contains("elements")) {
+            const QString name = graphicObject.value("name").toString();
+            if (name.compare(QStringLiteral("Line")) == 0) {
+              Line *pLine = new Line(mpParentModel);
+              pLine->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pLine);
+            } else if (name.compare(QStringLiteral("Polygon")) == 0) {
+              Polygon *pPolygon = new Polygon(mpParentModel);
+              pPolygon->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pPolygon);
+            } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
+              Rectangle *pRectangle = new Rectangle(mpParentModel);
+              pRectangle->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pRectangle);
+            } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
+              Ellipse *pEllipse = new Ellipse(mpParentModel);
+              pEllipse->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pEllipse);
+            } else if (name.compare(QStringLiteral("Text")) == 0) {
+              Text *pText = new Text(mpParentModel);
+              pText->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pText);
+            } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
+              Bitmap *pBitmap = new Bitmap(mpParentModel);
+              pBitmap->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pBitmap);
+            }
           }
         }
       }
