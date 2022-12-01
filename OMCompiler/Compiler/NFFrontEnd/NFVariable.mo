@@ -182,6 +182,22 @@ public
     end if;
   end expand;
 
+  function expandChildren
+    "Expands a variable into itself and its children if its complex."
+    input Variable var;
+    output list<Variable> children;
+  algorithm
+    children := match var.ty
+      case Type.COMPLEX() then var :: List.flatten(list(expandChildren(v) for v in var.children));
+      else {var};
+    end match;
+  end expandChildren;
+
+  function isComplex
+    input Variable var;
+    output Boolean b = Type.isComplex(var.ty);
+  end isComplex;
+
   function isStructural
     input Variable variable;
     output Boolean structural =

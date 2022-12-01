@@ -144,6 +144,9 @@ public
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
+    record RECORD
+      list<Pointer<Variable>> children;
+    end RECORD;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
     end START;
@@ -192,6 +195,7 @@ public
         case PARAMETER()          then "[PRMT]";
         case CONSTANT()           then "[CNST]";
         case ITERATOR()           then "[ITER]";
+        case RECORD()             then "[RECD]";
         case START()              then "[STRT]";
         case EXTOBJ()             then "[EXTO]";
         case JAC_VAR()            then "[JACV]";

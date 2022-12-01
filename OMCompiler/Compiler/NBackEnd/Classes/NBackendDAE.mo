@@ -203,6 +203,7 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
+    // expand records to its children. Put behind flag?
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
@@ -358,18 +359,21 @@ protected
     output VarData variableData;
   protected
     Variable lowVar;
+    list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
+    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
-    VariablePointers parameters, constants;
+    VariablePointers parameters, constants, records;
     Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
+    vars := List.flatten(list(Variable.expandChildren(v) for v in varList));
+
     // instantiate variable data (with one more space for time variable);
-    variables := VariablePointers.empty(listLength(varList) + 1, scalarized);
+    variables := VariablePointers.empty(listLength(vars) + 1, scalarized);
 
     // create dummy and time var and add then
     // needed to make function BVariable.getVarPointer() more universally applicable
@@ -379,7 +383,7 @@ protected
     variables := VariablePointers.add(time_ptr, variables);
 
     // routine to prepare the lists for pointer arrays
-    for var in listReverse(varList) loop
+    for var in listReverse(vars) loop
       lowVar_ptr := lowerVariable(var);
       lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
@@ -435,6 +439,11 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        case BackendExtension.RECORD() algorithm
+          records_lst := lowVar_ptr :: records_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         /* other cases should not occur up until now */
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
@@ -459,6 +468,7 @@ protected
 
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
+    records         := VariablePointers.fromList(records_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
@@ -466,9 +476,12 @@ protected
     knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
     variables       := VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
 
+    /* lower the records to add children */
+    records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
+
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, previous, states, parameters, constants);
+                    derivatives, algebraics, discretes, previous, states, parameters, constants, records);
   end lowerVariableData;
 
   function lowerVariable
@@ -516,19 +529,17 @@ protected
     input Type ty;
   algorithm
     varKind := match(variability, attributes, ty)
+      local
+        list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
-      // variable -> artificial state if it has stateSelect = StateSelect.prefer
-      /* I WANT TO REMOVE THIS AND CATCH IT PROPERLY IN STATE SELECTION!
-      case (Prefixes.Variability.CONTINUOUS(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-      then BackendExtension.STATE(1, NONE(), false);
-      */
+      // add children pointers for records afterwards
+      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({});
 
-      // is this just a hack? Do we need those cases, or do we need even more?
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.ENUMERATION()) then BackendExtension.DISCRETE();
@@ -584,6 +595,23 @@ protected
       else var;
     end match;
   end lowerVariableBinding;
+
+  function lowerRecordChildren
+    input output Variable var;
+    input VariablePointers variables;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo binfo;
+        BackendExtension.VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
+        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        binfo.varKind := varKind;
+        var.backendinfo := binfo;
+      then var;
+      else var;
+    end match;
+  end lowerRecordChildren;
 
   function lowerEquationData
     "Lowers all equations to backend structure.
