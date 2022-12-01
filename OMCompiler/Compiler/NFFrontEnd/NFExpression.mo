@@ -5541,7 +5541,12 @@ public
         algorithm
           subs := list(s for s guard not filterSplitIndices2(s, node) in subs);
         then
-          applySubscripts(subs, exp.exp);
+          if listEmpty(subs) then
+            exp.exp
+          elseif Type.isUnknown(exp.ty) then
+            SUBSCRIPTED_EXP(exp.exp, subs, exp.ty, List.any(subs, Subscript.isSplit))
+          else
+            applySubscripts(subs, exp.exp);
 
       else exp;
     end match;
