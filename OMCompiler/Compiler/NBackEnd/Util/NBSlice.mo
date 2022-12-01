@@ -39,6 +39,7 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -291,6 +292,8 @@ public
     list<Integer> scal_lst;
     Integer idx;
     array<Integer> mode_to_var_row;
+    list<Subscript> subs;
+    list<Dimension> dims;
   algorithm
     (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     indices := arrayCreate(eqn_size, {});
@@ -302,8 +305,11 @@ public
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
+
       // build range in reverse, it will be flipped anyway
-      scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, true);
+      subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      dims := Type.arrayDims(ComponentRef.getSubscriptedType(stripped));
+      scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, subs, dims, true);
 
       if intMod(eqn_size, listLength(scal_lst)) <> 0 then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
