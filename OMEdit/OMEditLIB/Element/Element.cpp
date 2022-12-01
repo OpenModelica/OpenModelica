@@ -2677,7 +2677,7 @@ void Element::createClassShapes()
      *
      * Always use the icon annotation when element type is port.
      */
-    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mElementType != Element::Port) {
+    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
       shapes = mpModel->getDiagramAnnotation()->getGraphics();
     } else {
       shapes = mpModel->getIconAnnotation()->getGraphics();
@@ -2712,7 +2712,7 @@ void Element::createClassShapes()
          *
          * Always use the icon annotation when element type is port.
          */
-        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mElementType != Element::Port) {
+        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
           mpLibraryTreeItem->getModelWidget()->loadDiagramView();
           pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         }
@@ -3113,6 +3113,24 @@ void Element::updateToolTip()
       }
     }
   }
+}
+
+/*!
+ * \brief Element::canUseDiagramAnnotation
+ * If the component is a port component or has a port component as parent in the hirerchy
+ * then we should not use the diagram annotation.
+ * \return
+ */
+bool Element::canUseDiagramAnnotation()
+{
+  Element *pElement = this;
+  while (pElement->getParentElement()) {
+    if (pElement->getElementType() == Element::Port) {
+      return false;
+    }
+    pElement = pElement->getParentElement();
+  }
+  return true;
 }
 
 void Element::updatePlacementAnnotation()

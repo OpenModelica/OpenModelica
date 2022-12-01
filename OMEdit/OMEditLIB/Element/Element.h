@@ -382,6 +382,7 @@ private:
   static QString getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
+  bool canUseDiagramAnnotation();
 signals:
   void added();
   void transformChange(bool positionChanged);
