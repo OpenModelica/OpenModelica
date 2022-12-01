@@ -278,8 +278,8 @@ The initial equations are consistent however and a tool shall reduce them approp
     model DynamicPipesSeriesLargeNSteadyStateInitial
       "Same as DynamicPipesSeriesSteadyStateInitial but with larger number of nodes"
        extends DynamicPipesSeriesSteadyStateInitial(
-         pipe1(nNodes = 50),
-         pipe2(nNodes = 50));
+         pipe1(nNodes = 10),
+         pipe2(nNodes = 10));
     equation
 
     end DynamicPipesSeriesLargeNSteadyStateInitial;
