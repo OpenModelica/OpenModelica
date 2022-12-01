@@ -122,14 +122,7 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   mPoints.clear();
-  // 9th item of list contains the points.
-  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
-  foreach (QString point, pointsList) {
-    QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
-    if (polygonPoints.size() >= 2) {
-      mPoints.append(QPointF(polygonPoints.at(0).toDouble(), polygonPoints.at(1).toDouble()));
-    }
-  }
+  mPoints.parse(list.at(8));
   /* The polygon is automatically closed, if the first and the last points are not identical. */
   if (mPoints.size() == 1) {
     mPoints.append(mPoints.first());
@@ -253,21 +246,7 @@ QString PolygonAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get points
-  QString pointsString;
-  if (mPoints.size() > 0) {
-    pointsString.append("{");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
-    }
-  }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
-  }
+  annotationString.append(mPoints.toQString());
   // get the smooth
   annotationString.append(mSmooth.toQString());
   return annotationString.join(",");
