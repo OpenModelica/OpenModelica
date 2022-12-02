@@ -350,6 +350,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*dataReconciliationInputNames)(DATA* modelData, char ** names);
 
+ /*
+  * return unmeasured variables of interest related with dataReconciliation state estimation problem
+  */
+  int (*dataReconciliationUnmeasuredVariables)(DATA* modelData, char ** names);
+
   /*
   * FMU's do not need the XML-file; they use this callback instead.
   */

@@ -256,7 +256,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
 /*
 * create html report for data Reconciliation D.1
 */
-void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, double &J, correlationDataWarning &warningCorrelationData)
+void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, double &J, correlationDataWarning &warningCorrelationData, boundaryConditionData& boundaryconditiondata)
 {
   ofstream myfile;
   time_t now = time(0);
@@ -369,7 +369,15 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
 
   // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_IntermediateEquations.html" << " target=_blank> Intermediate equations for measured variables </a> </h3>\n";
+
+  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+  {
+    // Boundary Conditions
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+    // Intermediate Conditions
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations for unmeasured variables </a> </h3>\n";
+  }
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
@@ -502,14 +510,48 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
       myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
       csvfile << "Not reconciled" << ",\n";
     }
-    csvfile.flush();
     myfile << "</tr>\n";
-    myfile.flush();
   }
 
+  // check for boundary condition vars and unmeasured vars
+  if (!boundaryconditiondata.boundaryConditionVars.empty())
+  {
+    for (int i=0; i<boundaryconditiondata.boundaryConditionVars.size(); i++)
+    {
+      myfile << "<tr>\n";
+      myfile << "<td>" << boundaryconditiondata.boundaryConditionVars[i] << "</td>\n";
+      csvfile << boundaryconditiondata.boundaryConditionVars[i] << ",";
+
+      myfile << "<td> </td>\n";
+      csvfile << "" << ",";
+
+      myfile << "<td>" << boundaryconditiondata.boundaryConditionVarsResults[i] << "</td>\n";
+      csvfile << boundaryconditiondata.boundaryConditionVarsResults[i] << ",";
+
+      // Initial Uncertainty Values
+      myfile << "<td>" << "" << "</td>\n";
+      csvfile << "" << ",";
+
+      // Reconciled Uncertainty Values
+      myfile << "<td>" << boundaryconditiondata.reconSt_diag[i] << "</td>\n";
+      csvfile << boundaryconditiondata.reconSt_diag[i] << ",";
+
+      myfile << "<td>" << "" << "</td>\n";
+      csvfile << "" << ",";
+
+      myfile << "<td>" << "" << "</td>\n";
+      csvfile << "" << ",";
+
+      myfile << "<td>" << "" << "</td>\n";
+      csvfile << "" << ",\n";
+      myfile << "</tr>\n";
+    }
+  }
+  csvfile.flush();
   csvfile.close();
   myfile << "</table>\n";
   myfile << "</body>\n</html>";
+  myfile.flush();
   myfile.close();
 }
 
@@ -2571,10 +2613,10 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   // copy the outputs for state Estimation
   datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
-
+  boundaryConditionData boundaryconditiondata;
   // create HTML Report for D.1
   if (omc_flag[FLAG_DATA_RECONCILE])
-    createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData);
+    createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData, boundaryconditiondata);
 
   free(tmpFstar.data);
   free(tmpfstar.data);
@@ -2751,8 +2793,8 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   free(S_t);
   free(jacF.data);
   free(jacFt.data);
-  free(reconSt_diag);
-  free(boundaryConditionVarsResults);
+  //free(reconSt_diag);
+  //free(boundaryConditionVarsResults);
   TRACE_POP
   return 0;
 }
@@ -2764,12 +2806,13 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
 
 int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream &logfile, correlationDataWarning & warningCorrelationData)
 {
+  // run the data Reconciliation
   dataReconciliationData datareconciliationdata;
   RunReconciliation(data, threadData, x, Sx, tmpjacF, tmpjacFt, eps, 1, csvinputs, xdiag, sxdiag, logfile, warningCorrelationData, datareconciliationdata);
 
-  printMatrixWithHeaders(datareconciliationdata.reconciled_X.data, datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, csvinputs.headers, "ARRRRRreconciled_X ===> (x - (Sx*Ft*fstar))", logfile);
-  printMatrixWithHeaders(datareconciliationdata.copyreconSx_diag.data, datareconciliationdata.copyreconSx_diag.rows, datareconciliationdata.copyreconSx_diag.column, csvinputs.headers, "ARRRRRRreconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
-  printMatrixWithHeaders(datareconciliationdata.reconciled_SX.data, datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, csvinputs.headers, "NovakreconciledS_X ===> (x - (Sx*Ft*fstar))", logfile);
+  //printMatrixWithHeaders(datareconciliationdata.reconciled_X.data, datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, csvinputs.headers, "ARRRRRreconciled_X ===> (x - (Sx*Ft*fstar))", logfile);
+  //printMatrixWithHeaders(datareconciliationdata.copyreconSx_diag.data, datareconciliationdata.copyreconSx_diag.rows, datareconciliationdata.copyreconSx_diag.column, csvinputs.headers, "ARRRRRRreconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
+  //printMatrixWithHeaders(datareconciliationdata.reconciled_SX.data, datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, csvinputs.headers, "NovakreconciledS_X ===> (x - (Sx*Ft*fstar))", logfile);
 
   // Compute Boundary conditions
   boundaryConditionData boundaryconditiondata;
@@ -2780,7 +2823,7 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
 
   printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Arun", logfile);
 
-  createHtmlReportFordataReconciliation(data, datareconciliationdata.csvinputs, datareconciliationdata.xdiag, datareconciliationdata.reconciled_X, datareconciliationdata.copyreconSx_diag, datareconciliationdata.newX, eps, iterationcount, datareconciliationdata.value, datareconciliationdata.J, warningCorrelationData);
+  createHtmlReportFordataReconciliation(data, datareconciliationdata.csvinputs, datareconciliationdata.xdiag, datareconciliationdata.reconciled_X, datareconciliationdata.copyreconSx_diag, datareconciliationdata.newX, eps, iterationcount, datareconciliationdata.value, datareconciliationdata.J, warningCorrelationData, boundaryconditiondata);
 
   return 0;
 }

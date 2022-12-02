@@ -194,6 +194,7 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>(DATA* data, char ** names);
+    extern int <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
     extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA* data, threadData_t* threadData);
     extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA* data, threadData_t* threadData);
@@ -1328,6 +1329,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"inputNames")%>,
        <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
+       <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>,
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" else "NULL" %>,
@@ -1916,6 +1918,22 @@ let &sub = buffer ""
     }
 
     int <%symbolName(modelNamePrefix,"dataReconciliationInputNames")%>(DATA *data, char ** names){
+      TRACE_PUSH
+
+      <%vars.dataReconinputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        match cref2simvar(name, simCode)
+        case SIMVAR(aliasvar=NOALIAS()) then
+        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        ;separator="\n"
+      %>
+
+      TRACE_POP
+      return 0;
+    }
+
+    int <%symbolName(modelNamePrefix,"dataReconciliationUnmeasuredVariables")%>(DATA *data, char ** names)
+    {
       TRACE_PUSH
 
       <%vars.dataReconinputVars |> simVar as SIMVAR(__) hasindex i0 =>
