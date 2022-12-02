@@ -38,8 +38,8 @@ extern "C" {
 #endif
 
 int dataReconciliation(DATA* data, threadData_t *threadData, int status);
-int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, int status);
-
+int boundaryConditions(DATA * data, threadData_t * threadData, int status);
+int stateEstimation(DATA * data, threadData_t * threadData, int status);
 #ifdef __cplusplus
 }
 #endif

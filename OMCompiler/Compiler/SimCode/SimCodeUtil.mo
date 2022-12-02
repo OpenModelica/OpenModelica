@@ -560,8 +560,13 @@ algorithm
     if Util.isSome(shared.dataReconciliationData) then
       BackendDAE.DATA_RECON(dataReconJac, setcVars, datareconinputvars, setBVars, dataReconJacH) := Util.getOption(shared.dataReconciliationData);
       (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
-      (SOME(dataReconSimJacH), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(Util.getOption(dataReconJacH), uniqueEqIndex, tempvars);
-      (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac, dataReconSimJacH}, modelInfo);
+      // check for jacobian H for state estimation, if exist generate Matrix H
+      if (Util.isSome(dataReconJacH)) then
+        (SOME(dataReconSimJacH), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(Util.getOption(dataReconJacH), uniqueEqIndex, tempvars);
+        (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac, dataReconSimJacH}, modelInfo);
+      else
+        (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
+      end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
     end if;
@@ -667,12 +672,11 @@ algorithm
 
         // set setBVars
         if Util.isSome(setBVars) then
-          print("\n inside arunnnnnnnnnnnnnnnnnnnnnnnnnnnn");
           ((tmpsetBVars, _)) :=  BackendVariable.traverseBackendDAEVars(Util.getOption(setBVars), traversingdlowvarToSimvar, ({}, emptyVars));
           tmpsetBVars := rewriteIndex(tmpsetBVars, 0);
           tmpSimVars.dataReconSetBVars := tmpsetBVars;
           modelInfo.vars := tmpSimVars;
-          // set varInfo nsetcvars
+          // set varInfo nsetbvars
           varInfo := modelInfo.varInfo;
           varInfo.numSetbVars := listLength(tmpsetBVars);
           modelInfo.varInfo := varInfo;
@@ -4900,6 +4904,7 @@ algorithm
       SimCode.HashTableCrefToSimVar crefSimVarHT;
       SimCode.JacobianMatrix tmpJac;
       list<String> matrixnames;
+      Option<BackendDAE.Jacobian> jacH;
     case (_, _, _)
       algorithm
         // b := FlagsUtil.disableDebug(Flags.EXEC_STAT);
@@ -4910,8 +4915,14 @@ algorithm
         // This is used to set the matrixnames for Linearization and DataReconciliation procedure
         // For dataReconciliation F is set in earlier order which cause index problem for linearization matrix and hence identify if
         // dataReconciliation is involved and pass the matrix names
+        // for stateEstimation problem two jacobinas are needed F and H
         if Util.isSome(shared.dataReconciliationData) then
-           matrixnames := {"A", "B", "C", "D"};
+          BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
+          if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
+            matrixnames := {"A", "B", "C", "D"};
+          else
+            matrixnames := {"A", "B", "C", "D", "H"};
+          end if;
         else
            matrixnames := {"A", "B", "C", "D", "F", "H"};
         end if;

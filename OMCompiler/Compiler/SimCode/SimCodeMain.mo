@@ -1407,6 +1407,7 @@ protected
 
   tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJacobian;
   Option<BackendDAE.SymbolicJacobian> daeModeJac;
+  Option<BackendDAE.Jacobian> jacH;
   BackendDAE.SparsePattern daeModeSparsity;
   BackendDAE.SparseColoring daeModeColoring;
 
@@ -1520,7 +1521,12 @@ algorithm
       // create symbolic jacobian (like nls systems!)
       (daeModeJac, daeModeSparsity, daeModeColoring) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
-        matrixnames := {"B", "C", "D"};
+        BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
+        if isSome(jacH) then
+          matrixnames := {"B", "C", "D"};
+        else
+          matrixnames := {"B", "C", "D", "H"};
+        end if;
       else
         matrixnames := {"B", "C", "D", "F", "H"};
       end if;
@@ -1542,7 +1548,12 @@ algorithm
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
-        matrixnames := {"A", "B", "C", "D"};
+        BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
+        if isSome(jacH) then
+          matrixnames := {"A", "B", "C", "D"};
+        else
+          matrixnames := {"A", "B", "C", "D", "H"};
+        end if;
       else
         matrixnames := {"A", "B", "C", "D", "F", "H"};
       end if;

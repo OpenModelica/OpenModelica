@@ -277,10 +277,8 @@ algorithm
   // generate symbolicJacobian matrix F
   (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outResidualEqns, outResidualVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
 
-  (simCodeJacobianH, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outResidualEqns, outResidualVars, outOtherEqns, outOtherVars, shared, outOtherVars, "H", false);
-
   // put the jacobian also into shared object
-  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars, setBVars=NONE(), symbolicJacobianH=SOME(simCodeJacobianH)));
+  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars, setBVars=NONE(), symbolicJacobianH=NONE()));
 
   // Prepare the final DAE System with Set-C equations as residual equations
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outResidualVars, outOtherVars));
@@ -288,10 +286,6 @@ algorithm
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
-
-  BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
-  BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
-  BackendDump.dumpVariables(shared.globalKnownVars, "FinalGlobalKnownVars");
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
@@ -602,7 +596,7 @@ public function stateEstimation
 protected
   BackendDAE.EqSystem currentSystem;
   BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outOtherEqnsSetSPrime, outResidualEqns, outBoundaryConditionEquations;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations;
+  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations, allDaeEqs;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
@@ -748,6 +742,53 @@ algorithm
 
   print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
 
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
+
+  // prepare outdiff vars (i.e) variables of interest
+  outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
+  // set uncertain variables unreplaceable attributes to be true
+  outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
+
+  // prepare set-c residual equations and residual vars
+  (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  outResidualVars := BackendVariable.listVar(listReverse(residualVars));
+  outResidualEqns := BackendEquation.listEquation(residualEquations);
+
+  // prepare set-s other equations
+  outOtherEqns := BackendEquation.listEquation(setS_Eq);
+  // extract parameters from set-s equations
+  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
+
+  // prepare variables stucture from list of extracted equations
+  outOtherVars := BackendVariable.listVar(List.map1r(extractedVarsfromSetS, BackendVariable.getVarAt, currentSystem.orderedVars));
+
+  dumpSetSVars(outOtherVars, "Unknown variables in SET_S");
+  //BackendDump.dumpVariables(BackendVariable.listVar(setSVars),"Unknown variables in SET_S_checks ");
+  BackendDump.dumpVariables(BackendVariable.listVar(paramVars),"Parameters in SET_S");
+
+  // write set-C equation to HTML file
+  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
+  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setC_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setC_Eq))) + ")");
+  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
+
+  // write set-S equation to HTML file
+  intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
+
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
+  System.writeFile(intermediateEquationsFilename, intermediateEquations);
+
+  // write relatedBoundaryConditions equations to a file
+  dumpRelatedBoundaryConditionsEquations(setBFailedBoundaryConditionEquations, shared.info.fileNamePrefix);
+
+  VerifyDataReconciliation(ebltEqsLst, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared, setC, setS);
+
+  /*
+   * Compute the boundary conditions algorithm for unmeasured variables of interest
+  */
+
   // get equations that computes unmeasured variables Of interest
   unMeasuredEqsLst := getEBLTEquations(unMeasuredVariablesOfInterest, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem);
   // remove binding equations from E-BLT
@@ -768,7 +809,7 @@ algorithm
   setSPrime := List.setDifferenceOnTrue(setSPrime, unMeasuredEqsLst, intEq);
 
   if debug then
-    dumpSetSVarsSolvedInfo(setSPrime, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-S Solved-Variables Information");
+    dumpSetSVarsSolvedInfo(setSPrime, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-SPrime Solved-Variables Information");
   end if;
 
   setSPrime := List.unique(getAbsoluteIndexHelper(setSPrime, mapIncRowEqn));
@@ -777,13 +818,8 @@ algorithm
   // combine set-S Prime with setB
   //setSPrime_Eq := List.unique(listAppend(setSPrime_Eq, failedboundaryConditionEquations));
 
-  print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\n");
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
-
   BackendDump.dumpEquationArray(BackendEquation.listEquation(failedboundaryConditionEquations), "SET_B");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setSPrime_Eq), "SET_SPrime");
-
 
   paramVars := BackendEquation.equationsVars(BackendEquation.listEquation(setSPrime_Eq), shared.globalKnownVars);
   setSVars  := BackendEquation.equationsVars(BackendEquation.listEquation(setSPrime_Eq), currentSystem.orderedVars);
@@ -800,40 +836,19 @@ algorithm
   BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
   BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
 
-  //fail();
-  // prepare outdiff vars (i.e) variables of interest
-  outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
-
-  // set uncertain variables unreplaceable attributes to be true
-  outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
-
-  // prepare set-c residual equations and residual vars
-  (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
-  outResidualVars := BackendVariable.listVar(listReverse(residualVars));
-  outResidualEqns := BackendEquation.listEquation(residualEquations);
-
   // set boundaryConditionsVars unreplaceable attributes to be true
   outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(failedboundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
-
-  // set uncertain variables unreplaceable attributes to be true
-  outBoundaryConditionVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outBoundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
 
   // boundary condition equations
   outBoundaryConditionEquations := BackendEquation.listEquation(failedboundaryConditionEquations);
 
-  // prepare set-s other equations
-  outOtherEqns := BackendEquation.listEquation(setS_Eq);
-
-
   // prepare variables stucture from list of extracted equations for boundary conditions
   outOtherEqnsSetSPrime := BackendEquation.listEquation(setSPrime_Eq);
+
+  // prepare intermediate vars in SET-SPRime
   outOtherVarsSetSPrime := BackendVariable.listVar(setSVars);
 
-    // prepare variables stucture from list of extracted equations
-  outOtherVars := BackendVariable.listVar(List.map1r(extractedVarsfromSetS, BackendVariable.getVarAt, currentSystem.orderedVars));
-
-  dumpSetSVars(outOtherVars, "Unknown variables in SET_S'");
+  dumpSetSVars(outOtherVarsSetSPrime, "Unknown variables in SET_SPrime");
 
   // write set-B equation to HTML file
   auxillaryConditionsFilename := shared.info.fileNamePrefix + "_BoundaryConditionsEquations.html";
@@ -845,16 +860,8 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(outOtherEqns, "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(outOtherEqns)) + ", " + intString(BackendEquation.equationArraySize(outOtherEqns)) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
-  //VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqns, shared);
+  VerifySetSPrime(outBoundaryConditionVars, outOtherVarsSetSPrime, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqnsSetSPrime, shared);
 
-  // Boundary condition jacobian
-  //if debug then
-    BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
-    BackendDump.dumpEquationArray(outBoundaryConditionEquations, "Jacobian_ResidualEquation");
-    BackendDump.dumpVariables(outBoundaryConditionVars, "Jacobian_outResidualVars");
-    BackendDump.dumpEquationArray(outOtherEqnsSetSPrime, "Jacobian_outOtherEquations");
-    BackendDump.dumpVariables(outOtherVarsSetSPrime, "Jacobian_outOtherVars");
-  //end if;
   // Data Reconciliation jacobian
   if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
@@ -864,73 +871,86 @@ algorithm
     BackendDump.dumpEquationArray(outOtherEqns, "Jacobian_other_Equation");
   end if;
 
+  // Boundary condition jacobian
+  if debug then
+    BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
+    BackendDump.dumpEquationArray(outBoundaryConditionEquations, "Jacobian_ResidualEquation");
+    BackendDump.dumpVariables(outBoundaryConditionVars, "Jacobian_outResidualVars");
+    BackendDump.dumpEquationArray(outOtherEqnsSetSPrime, "Jacobian_outOtherEquations");
+    BackendDump.dumpVariables(outOtherVarsSetSPrime, "Jacobian_outOtherVars");
+  end if;
+
+  /*
+    For state Estimation problem, we need to generate two jacobians for Data Reconciliation setC w.r.to setS
+    and Boundary condition setB w.r.to setSPrime
+  */
   // generate symbolicJacobian matrix F for Data Reconciliation
   (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outResidualEqns, outResidualVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
-
 
   // generate symbolicJacobian matrix H for boundary conditions
   (simCodeJacobianH, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outBoundaryConditionEquations, outBoundaryConditionVars, outOtherEqnsSetSPrime, outOtherVarsSetSPrime, shared, outOtherVarsSetSPrime, "H", false);
 
-  //(simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outBoundaryConditionEquations, outBoundaryConditionVars, outBoundaryConditionEquations, outOtherVars, shared, outOtherVars, "F", false);
-
-
   // put the jacobian also into shared object
   shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars, setBVars= SOME(outBoundaryConditionVars), symbolicJacobianH=SOME(simCodeJacobianH)));
+
+  // Prepare the final DAE System with Set-C, Set-S, Set-B and Set-S' equations
+
 
   // combine set-S and set-SPrime
   setSPrime_Eq := List.unique(listAppend(setSPrime_Eq, failedboundaryConditionEquations));
   setSPrime_Eq := List.unique(listAppend(setSPrime_Eq, setS_Eq));
 
+  // combine set-SPrime with set-C
+  allDaeEqs := List.unique(listAppend(setSPrime_Eq, residualEquations));
+
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setSPrime_Eq), "SET_SPrime_Updated");
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(allDaeEqs), "Final DAE with set-c, set-S and set-SPrime combined");
 
-  paramVars := BackendEquation.equationsVars(BackendEquation.listEquation(setSPrime_Eq), shared.globalKnownVars);
-  setSVars  := BackendEquation.equationsVars(BackendEquation.listEquation(setSPrime_Eq), currentSystem.orderedVars);
+  paramVars := BackendEquation.equationsVars(BackendEquation.listEquation(allDaeEqs), shared.globalKnownVars);
+  setSVars  := BackendEquation.equationsVars(BackendEquation.listEquation(allDaeEqs), currentSystem.orderedVars);
+  // combine residual Vars with setSVars
+  //setSVars := listAppend(residualVars, setSVars);
 
-  setCVars  := BackendEquation.equationsVars(BackendEquation.listEquation(setC_Eq), currentSystem.orderedVars);
+  // filter the variables of iterest and intermediate Vars
+  (knownVars, setSVars) := List.extractOnTrue(setSVars, BackendVariable.varHasUncertainValueRefine);
 
-  (_, setCVars) := List.extractOnTrue(setSVars, BackendVariable.varHasUncertainValueRefine); // filter the variables of iterest and intermediate Vars
+  BackendDump.dumpVarList(setSVars, "Intermediate vars in final DAE updated'");
+  BackendDump.dumpVarList(paramVars, "parameters in final DAE updated");
 
-  (knownVars, setSVars) := List.extractOnTrue(setSVars, BackendVariable.varHasUncertainValueRefine); // filter the variables of iterest and intermediate Vars
-
-  (_, setSVars) := List.extract1OnTrue(setSVars, isBoundaryConditionVars, failedboundaryConditionVars); // filter the variables of iterest and intermediate Vars
-
-  BackendDump.dumpVarList(setSVars, "Intermediate vars in set-SPrime updated'");
-  BackendDump.dumpVarList(setCVars, "ALL vars in setC updated");
-
-  // Prepare the final DAE System with Set-B and Set-S' equations
-  currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outResidualEqns, BackendEquation.listEquation(setSPrime_Eq)));
-  currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outBoundaryConditionVars, BackendVariable.listVar(setSVars)));
-  currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(currentSystem.orderedVars, BackendVariable.listVar(residualVars)));
+  currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.listEquation(allDaeEqs));
+  currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.listVar(listAppend(setSVars, residualVars)));
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+
 
   BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
   BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
   BackendDump.dumpVariables(shared.globalKnownVars, "FinalGlobalKnownVars");
 
-  //fail();
+  // write the list of known variables + unmeasured variables of interest to the csv file with the headers
+  str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+  str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
+  str := dumpToCsv(str, BackendVariable.varList(outBoundaryConditionVars));
+  System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
 
-
-  // write the list of boundary condition variables to txt file "XXX_BoundaryConditionVars.txt"
+  // write the list of unmeasured variables variables to txt file "XXX_BoundaryConditionVars.txt"
   str := dumpToCsv("", BackendVariable.varList(outBoundaryConditionVars));
   System.writeFile(shared.info.fileNamePrefix + "_BoundaryConditionVars.txt", str);
 
-
-  // write the new Reconciled vars and equations to .mo File
   // write the new Reconciled vars and equations to .mo File
   modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
   modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
   modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
   // Variables Declaration section
   modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
-  modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters in SET-S");
+  modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters");
   modelicaOutput := dumpResidualVars(modelicaOutput, BackendVariable.varList(outResidualVars), "residualVars");
-  modelicaOutput := dumpExtractedVars(modelicaOutput, setSVars, "remaining variables in setS");
+  modelicaOutput := dumpExtractedVars(modelicaOutput, setSVars, "intermediate variables");
+
   // Equation Declaration section
   modelicaOutput := modelicaOutput + "\nequation";
-  modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "set-C Canonical form");
-  //modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedVars, "remaining equations in Set-S");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "extracted equations");
   modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
@@ -993,15 +1013,10 @@ algorithm
     (_, varIndex) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
     intermediateVars := getVariablesAfterExtraction({eq}, {}, sBltAdjacencyMatrix);
     intermediateVars := listReverse(List.setDifferenceOnTrue(intermediateVars, knownVars, intEq));
-    print("\n equation No: " + anyString(eq) + "==>" + anyString(varIndex));
+    //print("\n equation No: " + anyString(eq) + "==>" + anyString(varIndex));
     unmeasuredEq := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), eq));
     setBFailedBoundaryConditionEquations := (varIndex, unmeasuredEq, intermediateVars) :: setBFailedBoundaryConditionEquations;
   end for;
-  // for item in setBFailedBoundaryConditionEquations loop
-  //   (varIndex, _, _) := item;
-  //   (eqIndex, _) := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
-  //   failedboundaryConditionEquationIndex := eqIndex :: failedboundaryConditionEquationIndex;
-  // end for;
   setBFailedBoundaryConditionEquations := List.unique(setBFailedBoundaryConditionEquations);
 end prepareUnmeasuredVariablesEquations;
 

@@ -136,6 +136,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                            "r",
   /* FLAG_DATA_RECONCILE  */              "reconcile",
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "reconcileBoundaryConditions",
+  /* FLAG_DATA_RECONCILE_STATE */         "reconcileState",
   /* FLAG_SR */                           "gbm",
   /* FLAG_SR_CTRL */                      "gbctrl",
   /* FLAG_SR_ERR */                       "gberr",
@@ -267,6 +268,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                            "value specifies a new result file than the default Model_res.mat",
   /* FLAG_DATA_RECONCILE */               "Run the Data Reconciliation numerical computation algorithm for constrained equations",
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
+  /* FLAG_DATA_RECONCILE_STATE */         "Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_ERR */                       "Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode (single-rate, slow states integrator)",
@@ -565,6 +567,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Run the Data Reconciliation numerical computation algorithm for constrained equations",
   /* FLAG_DATA_RECONCILE_BOUNDARY */
   "  Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
+  /* FLAG_DATA_RECONCILE_STATE */
+  "  Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */
   "  Value specifies the chosen solver of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_CTRL */
@@ -721,6 +725,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_R */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE  */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_DATA_RECONCILE_STATE  */        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
@@ -851,6 +856,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_R */                            FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE */               FLAG_TYPE_FLAG,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_TYPE_FLAG,
+  /* FLAG_DATA_RECONCILE_STATE */         FLAG_TYPE_FLAG,
   /* FLAG_SR */                           FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL */                      FLAG_TYPE_OPTION,
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
