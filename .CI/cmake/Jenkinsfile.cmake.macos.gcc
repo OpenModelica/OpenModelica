@@ -40,6 +40,26 @@ pipeline {
                                           + " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
                                       )
                 sh "build/bin/omc --version"
+                // Create a product build package
+                sh '''
+                cd build_cmake
+                cpack -G productbuild
+                du -sh _packages/*
+                '''
+                sshPublisher (
+                  failOnError: true,
+                  publishers: [
+                    sshPublisherDesc(
+                      configName: 'cmake-macos-packages',
+                      transfers: [
+                        sshTransfer(
+                          remoteDirectory: 'pkg/arm64/nightly/',
+                          sourceFiles: 'build_cmake/_packages/*.pkg',
+                          removePrefix: 'build_cmake/_packages/')
+                      ]
+                    )
+                  ]
+                )
               }
             }
           }
