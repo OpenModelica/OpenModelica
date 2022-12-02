@@ -12,3 +12,5 @@ if(Git_FOUND)
 else()
   set(SOURCE_REVISION "unknown-cmake")
 endif()
+
+omc_add_to_report(SOURCE_REVISION)
