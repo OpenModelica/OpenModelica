@@ -163,7 +163,7 @@ function simplifyCall
 protected
   Call call;
   list<Expression> args;
-  Boolean builtin, is_pure;
+  Boolean builtin, is_pure, scalarize;
 algorithm
   Expression.CALL(call = call) := callExp;
 
@@ -181,19 +181,16 @@ algorithm
 
         // Use Ceval for builtin pure functions with literal arguments.
         if builtin then
-          if is_pure and List.all(args, Expression.isLiteral) then
+          scalarize := Flags.isSet(Flags.NF_SCALARIZE);
+
+          if is_pure and List.all(args, Expression.isLiteral) and (scalarize or Type.isScalar(call.ty)) then
             try
               callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
             else
               callExp := Expression.CALL(call);
             end try;
           else
-            // do not expand builtin calls if we should not scalarize
-            if Flags.isSet(Flags.NF_SCALARIZE) then
-              callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
-            else
-              callExp := Expression.CALL(call);
-            end if;
+            callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call, expand = scalarize);
           end if;
         elseif Flags.isSet(Flags.NF_EVAL_CONST_ARG_FUNCS) and is_pure and List.all(args, Expression.isLiteral) then
           callExp := simplifyCall2(call);
@@ -241,6 +238,7 @@ function simplifyBuiltinCall
   input Absyn.Path name;
   input list<Expression> args;
   input Call call;
+  input Boolean expand;
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
@@ -252,16 +250,16 @@ algorithm
 
     case "delay"     then simplifyDelay(args, call);
     case "der"       then simplifyDer(listHead(args), call);
-    case "fill"      then simplifyFill(listHead(args), listRest(args), call);
+    case "fill"      then simplifyFill(listHead(args), listRest(args), call, expand);
     case "homotopy"  then simplifyHomotopy(args, call);
     case "max"       then simplifyMinMax(args, call, isMin = false);
     case "min"       then simplifyMinMax(args, call, isMin = true);
-    case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
-    case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
-    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
-    case "transpose" then simplifyTranspose(listHead(args), call);
+    case "ones"      then simplifyFill(Expression.INTEGER(1), args, call, expand);
+    case "product"   then simplifySumProduct(listHead(args), call, expand, isSum = false);
+    case "sum"       then simplifySumProduct(listHead(args), call, expand, isSum = true);
+    case "transpose" then simplifyTranspose(listHead(args), call, expand);
     case "vector"    then simplifyVector(listHead(args), call);
-    case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call);
+    case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call, expand);
 
     else Expression.CALL(call);
   end match;
@@ -295,6 +293,7 @@ end simplifyMinMax;
 function simplifySumProduct
   input Expression arg;
   input Call call;
+  input Boolean expand;
   input Boolean isSum;
   output Expression exp;
 protected
@@ -303,26 +302,30 @@ protected
   Type ty;
   Operator op;
 algorithm
-  (exp, expanded) := ExpandExp.expand(arg);
+  if expand then
+    (exp, expanded) := ExpandExp.expand(arg);
 
-  if expanded then
-    args := Expression.arrayScalarElements(exp);
-    ty := Type.arrayElementType(Expression.typeOf(arg));
+    if expanded then
+      args := Expression.arrayScalarElements(exp);
+      ty := Type.arrayElementType(Expression.typeOf(arg));
 
-    if listEmpty(args) then
-      exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
-    else
-      exp :: args := args;
-      op := if isSum then Operator.makeAdd(ty) else
-                          Operator.makeMul(ty);
+      if listEmpty(args) then
+        exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
+      else
+        exp :: args := args;
+        op := if isSum then Operator.makeAdd(ty) else
+                            Operator.makeMul(ty);
 
-      for e in args loop
-        exp := Expression.BINARY(exp, op, e);
-      end for;
+        for e in args loop
+          exp := Expression.BINARY(exp, op, e);
+        end for;
+      end if;
+
+      return;
     end if;
-  else
-    exp := simplifyReducedArrayConstructor(exp, call);
   end if;
+
+  exp := simplifyReducedArrayConstructor(arg, call);
 end simplifySumProduct;
 
 function simplifyReducedArrayConstructor
@@ -352,11 +355,12 @@ end simplifyReducedArrayConstructor;
 function simplifyTranspose
   input Expression arg;
   input Call call;
+  input Boolean expand;
   output Expression exp;
 protected
   Expression e;
 algorithm
-  e := if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg);
+  e := if not expand or Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg);
 
   exp := match e
     case Expression.ARRAY()
@@ -396,9 +400,10 @@ function simplifyFill
   input Expression fillArg;
   input list<Expression> dimArgs;
   input Call call;
+  input Boolean expand;
   output Expression exp;
 algorithm
-  if List.all(dimArgs, Expression.isLiteral) then
+  if List.all(dimArgs, Expression.isLiteral) and expand then
     exp := Expression.fillArgs(fillArg, dimArgs);
   else
     exp := Expression.CALL(call);
@@ -547,6 +552,7 @@ algorithm
           then Ceval.tryEvalExp(Expression.CALL(call));
 
         case _
+          guard Flags.isSet(Flags.NF_SCALARIZE)
           then simplifyReduction2(AbsynUtil.pathString(Function.name(call.fn)), call.exp, iters);
 
         else
