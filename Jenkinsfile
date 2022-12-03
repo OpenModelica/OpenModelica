@@ -162,9 +162,9 @@ pipeline {
                 common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                           + " -DOM_USE_CCACHE=OFF"
                                           + " -DCMAKE_INSTALL_PREFIX=build"
-                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
-                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
-                                          + " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                                          // Look in /opt/local first to prefer the macports libraries
+                                          // over others in the system.
+                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
                                       )
                 sh "build/bin/omc --version"
               }
