@@ -53,6 +53,7 @@ class StringAnnotation : public DynamicAnnotation
     QString& replace(const QRegularExpression &re, const QString &after);
     QString toLower() const;
     QString toUpper() const;
+    int compare(const QString &other, Qt::CaseSensitivity cs = Qt::CaseSensitive) const;
 
     FlatModelica::Expression toExp() const override;
 

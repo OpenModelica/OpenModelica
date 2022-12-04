@@ -437,11 +437,11 @@ private:
   public:
     Selector();
     void deserialize(const QJsonObject &jsonObject);
-    QString getFilter() const {return mFilter;}
-    QString getCaption() const {return mCaption;}
+    StringAnnotation getFilter() const {return mFilter;}
+    StringAnnotation getCaption() const {return mCaption;}
   private:
-    QString mFilter;
-    QString mCaption;
+    StringAnnotation mFilter;
+    StringAnnotation mCaption;
   };
 
   class DialogAnnotation
@@ -449,27 +449,27 @@ private:
   public:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    QString getTab() const {return mTab;}
-    QString getGroup() const {return mGroup;}
-    bool isEnabled() const {return mEnable;}
-    bool getShowStartAttribute() const {return mShowStartAttribute;}
-    bool isColorSelector() const {return mColorSelector;}
+    StringAnnotation getTab() const {return mTab;}
+    StringAnnotation getGroup() const {return mGroup;}
+    BooleanAnnotation isEnabled() const {return mEnable;}
+    BooleanAnnotation getShowStartAttribute() const {return mShowStartAttribute;}
+    BooleanAnnotation isColorSelector() const {return mColorSelector;}
     Selector getLoadSelector() const {return mLoadSelector;}
     Selector getSaveSelector() const {return mSaveSelector;}
     Selector getDirectorySelector() const {return mDirectorySelector;}
     QString getGroupImage() const {return mGroupImage;}
-    bool isConnectorSizing() const {return mConnectorSizing;}
+    BooleanAnnotation isConnectorSizing() const {return mConnectorSizing;}
   private:
-    QString mTab;
-    QString mGroup;
-    bool mEnable;
-    bool mShowStartAttribute;
-    bool mColorSelector;
+    StringAnnotation mTab;
+    StringAnnotation mGroup;
+    BooleanAnnotation mEnable;
+    BooleanAnnotation mShowStartAttribute;
+    BooleanAnnotation mColorSelector;
     Selector mLoadSelector;
     Selector mSaveSelector;
     Selector mDirectorySelector;
-    QString mGroupImage;
-    bool mConnectorSizing;
+    StringAnnotation mGroupImage;
+    BooleanAnnotation mConnectorSizing;
   };
 
   class Choices
@@ -502,6 +502,7 @@ private:
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
     FlatModelica::Expression getBinding() const {return mBinding;}
+    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
     QString getModifierValueFromType(QStringList modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}

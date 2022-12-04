@@ -143,14 +143,46 @@ Parameter::Parameter(Element *pElement, bool showStartAttribute, QString tab, QS
   mpCommentLabel = new Label(mpElement->getElementInfo()->getComment());
 }
 
-Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, QString tab, QString groupBox)
+Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters)
 {
   mpElement = 0;
   mpModelInstanceElement = pElement;
-  mTab = tab;
-  mGroupBox = groupBox;
-  mGroupBoxDefined = false;
-  mShowStartAttribute = showStartAttribute;
+  mpElementParameters = pElementParameters;
+  const ModelInstance::DialogAnnotation dialogAnnotation = mpModelInstanceElement->getDialogAnnotation();
+  mTab = dialogAnnotation.getTab();
+  mGroupBox = dialogAnnotation.getGroup();
+  mGroupBoxDefined = !mGroupBox.isEmpty();
+  mEnable = dialogAnnotation.isEnabled();
+  mShowStartAttribute = dialogAnnotation.getShowStartAttribute();
+  //mColorSelector = dialogAnnotation.getCol;
+  const ModelInstance::Selector loadSelector = dialogAnnotation.getLoadSelector();
+  mLoadSelectorFilter = loadSelector.getFilter();
+  mLoadSelectorCaption = loadSelector.getCaption();
+  const ModelInstance::Selector saveSelector = dialogAnnotation.getSaveSelector();
+  mSaveSelectorFilter = saveSelector.getFilter();
+  mSaveSelectorCaption = saveSelector.getCaption();
+  mGroupImage = dialogAnnotation.getGroupImage();
+  if (!mGroupImage.isEmpty()) {
+    mGroupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(mGroupImage);
+  }
+  mConnectorSizing = dialogAnnotation.isConnectorSizing();
+
+  QString start = "", fixed = "";
+  bool isParameter = (mpModelInstanceElement->getVariability().compare(QStringLiteral("parameter")) == 0);
+  // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
+  if (!isParameter && !mShowStartAttribute) {
+    start = mpModelInstanceElement->getModifier().getModifierValue(QStringList() << "start");
+    fixed = mpModelInstanceElement->getModifier().getModifierValue(QStringList() << "fixed");
+    mShowStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
+  }
+
+  // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
+  if (mShowStartAttribute && mGroupBox.isEmpty()) {
+    mGroupBox = "Initialization";
+  } else if (mGroupBox.isEmpty() && (isParameter || mpModelInstanceElement->hasDialogAnnotation() || mpModelInstanceElement->isReplaceable())) {
+    mGroupBox = "Parameters";
+  }
+
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
@@ -183,10 +215,6 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, 
   mpFileSelectorButton->setText("...");
   mpFileSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
   connect(mpFileSelectorButton, SIGNAL(clicked()), SLOT(fileSelectorButtonClicked()));
-  setLoadSelectorFilter("-");
-  setLoadSelectorCaption("-");
-  setSaveSelectorFilter("-");
-  setSaveSelectorCaption("-");
   createValueWidget();
   // Get unit value
   mUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
@@ -226,6 +254,22 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool showStartAttribute, 
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
   mpCommentLabel = new Label(mpModelInstanceElement->getComment());
+
+  if (mValueType == Parameter::ReplaceableClass) {
+    QString className = mpModelInstanceElement->getModel()->getName();
+    QString comment = mpModelInstanceElement->getComment();
+    setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, mUnit);
+  } else if (mValueType == Parameter::ReplaceableComponent) {
+    setValueWidget(QString("replaceable %1 %2").arg(mpModelInstanceElement->getParentModel()->getName(), mpModelInstanceElement->getName()), true, mUnit);
+  } else {
+    setValueWidget(mpModelInstanceElement->getModifier().getValue(), true, mUnit);
+  }
+  if (mShowStartAttribute) {
+    setValueWidget(start, true, mUnit);
+    setFixedState(fixed, true);
+  }
+  mEnable.evaluate(mpModelInstanceElement->getParentModel());
+  setEnabled(mEnable);
 }
 
 /*!
@@ -439,6 +483,16 @@ void Parameter::setEnabled(bool enable)
   }
 }
 
+/*!
+ * \brief Parameter::update
+ * Enable/disable the parameter.
+ */
+void Parameter::update()
+{
+  mEnable.evaluate(mpModelInstanceElement->getParentModel());
+  setEnabled(mEnable);
+}
+
 void Parameter::createValueWidget()
 {
   int i;
@@ -598,6 +652,20 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
 }
 
 /*!
+ * \brief Parameter::updateValueBinding
+ * Updates the value binding of the parameter and call updateParameters so depending parameters gets updated.
+ * \param value
+ */
+void Parameter::updateValueBinding(bool value)
+{
+  if (MainWindow::instance()->isNewApi()) {
+    // update the binding with the new value
+    mpModelInstanceElement->setBinding(FlatModelica::Expression(value));
+    mpElementParameters->updateParameters();
+  }
+}
+
+/*!
  * \brief Parameter::fileSelectorButtonClicked
  * Slot activated when mpFileSelectorButton clicked SIGNAL is raised.
  * Opens a QFileDialog::getOpenFileName or QFileDialog::getSaveFileName so user can select a file.
@@ -664,6 +732,13 @@ void Parameter::valueComboBoxChanged(int index)
 {
   mpValueComboBox->lineEdit()->setText(mpValueComboBox->itemData(index).toString());
   mpValueComboBox->lineEdit()->setModified(true);
+
+  QString value = mpValueComboBox->lineEdit()->text();
+  if (value.isEmpty()) {
+    value = mpValueComboBox->lineEdit()->placeholderText();
+  }
+
+  updateValueBinding(value.compare(QStringLiteral("true")) == 0);
 }
 
 /*!
@@ -674,8 +749,8 @@ void Parameter::valueComboBoxChanged(int index)
  */
 void Parameter::valueCheckBoxChanged(bool toggle)
 {
-  Q_UNUSED(toggle);
   mValueCheckBoxModified = true;
+  updateValueBinding(toggle);
 }
 
 /*!
@@ -888,6 +963,17 @@ ElementParameters::~ElementParameters()
 {
   qDeleteAll(mParametersList.begin(), mParametersList.end());
   mParametersList.clear();
+}
+
+/*!
+ * \brief ElementParameters::updateParameters
+ * Updates the parameters.
+ */
+void ElementParameters::updateParameters()
+{
+  foreach (Parameter *pParameter, mParametersList) {
+    pParameter->update();
+  }
 }
 
 /*!
@@ -1296,103 +1382,32 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
     if (!pElement->isPublic() || pElement->isFinal()) {
       continue;
     }
-    /* I didn't find anything useful in the specification regarding this issue.
-     * The parameters dialog is only suppose to show the parameters. However, Dymola also shows the variables in the parameters window
-     * which have the dialog annotation with them. So, if the variable has dialog annotation or it is a parameter then show it.
-     * If the variable have start/fixed attribute set then show it also.
-     */
-    QString tab = "";
-    QString groupBox = "";
-    bool enable = true;
-    bool showStartAttribute = false;
-    QString loadSelectorFilter = "-", loadSelectorCaption = "-", saveSelectorFilter = "-", saveSelectorCaption = "-";
-    QString start = "", fixed = "";
-    /* get the dialog annotation */
-    ModelInstance::DialogAnnotation dialogAnnotation = pElement->getDialogAnnotation();
-    QString groupImage = "";
-    bool connectorSizing = false;
-    // get the tab value
-    tab = dialogAnnotation.getTab();
-    // get the group value
-    groupBox = dialogAnnotation.getGroup();
-    // get the enable value
-    enable = dialogAnnotation.isEnabled();
-    // get the showStartAttribute value
-    showStartAttribute = dialogAnnotation.getShowStartAttribute();
-    // get the loadSelector
-    ModelInstance::Selector loadSelector = dialogAnnotation.getLoadSelector();
-    loadSelectorFilter = loadSelector.getFilter();
-    loadSelectorCaption = loadSelector.getCaption();
-    // get the saveSelector
-    ModelInstance::Selector saveSelector = dialogAnnotation.getSaveSelector();
-    saveSelectorFilter = saveSelector.getFilter();
-    saveSelectorCaption = saveSelector.getCaption();
-    // get the group image
-    groupImage = dialogAnnotation.getGroupImage();
-    if (!groupImage.isEmpty()) {
-      groupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(groupImage);
-    }
-    // get the connectorSizing
-    connectorSizing = dialogAnnotation.isConnectorSizing();
-
-    bool isParameter = (pElement->getVariability().compare(QStringLiteral("parameter")) == 0);
-    // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
-    if (!isParameter && !showStartAttribute) {
-      start = pElement->getModifier().getModifierValue(QStringList() << "start");
-      fixed = pElement->getModifier().getModifierValue(QStringList() << "fixed");
-      showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
-    }
-
     // if connectorSizing is present then don't show the parameter
-    if (connectorSizing) {
+    if (pElement->getDialogAnnotation().isConnectorSizing()) {
       continue;
     }
-    // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
-    if (showStartAttribute && groupBox.isEmpty()) {
-      groupBox = "Initialization";
-    } else if (groupBox.isEmpty() && (isParameter || pElement->hasDialogAnnotation() || pElement->isReplaceable())) {
-      groupBox = "Parameters";
-    }
-    if (!mTabsMap.contains(tab)) {
+    // create the Parameter
+    Parameter *pParameter = new Parameter(pElement, this);
+
+    if (!mTabsMap.contains(pParameter->getTab())) {
       ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-      GroupBox *pGroupBox = new GroupBox(groupBox);
+      GroupBox *pGroupBox = new GroupBox(pParameter->getGroupBox());
       // set the group image
-      pGroupBox->setGroupImage(groupImage);
+      pGroupBox->setGroupImage(pParameter->getGroupImage());
       pParametersScrollArea->addGroupBox(pGroupBox);
-      mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
+      mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
     } else {
       ParametersScrollArea *pParametersScrollArea;
-      pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
-      GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(groupBox);
+      pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
+      GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroupBox());
       if (pParametersScrollArea && !pGroupBox) {
-        pGroupBox = new GroupBox(groupBox);
+        pGroupBox = new GroupBox(pParameter->getGroupBox());
         pParametersScrollArea->addGroupBox(pGroupBox);
       }
       // set the group image
-      pGroupBox->setGroupImage(groupImage);
+      pGroupBox->setGroupImage(pParameter->getGroupImage());
     }
 
-    // create the Parameter
-    Parameter *pParameter = new Parameter(pElement, showStartAttribute, tab, groupBox);
-    pParameter->setGroupBoxDefined(!dialogAnnotation.getGroup().isEmpty());
-    pParameter->setEnabled(enable);
-    pParameter->setLoadSelectorFilter(loadSelectorFilter);
-    pParameter->setLoadSelectorCaption(loadSelectorCaption);
-    pParameter->setSaveSelectorFilter(saveSelectorFilter);
-    pParameter->setSaveSelectorCaption(saveSelectorCaption);
-    if (pParameter->getValueType() == Parameter::ReplaceableClass) {
-      QString className = pElement->getModel()->getName();
-      QString comment = pElement->getComment();
-      pParameter->setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, pParameter->getUnit());
-    } else if (pParameter->getValueType() == Parameter::ReplaceableComponent) {
-      pParameter->setValueWidget(QString("replaceable %1 %2").arg(pElement->getModel()->getName(), pElement->getName()), true, pParameter->getUnit());
-    } else {
-      pParameter->setValueWidget(pElement->getModifier().getValue(), true, pParameter->getUnit());
-    }
-    if (showStartAttribute) {
-      pParameter->setValueWidget(start, true, pParameter->getUnit());
-      pParameter->setFixedState(fixed, true);
-    }
     if (useInsert) {
       mParametersList.insert(insertIndex, pParameter);
     } else {
