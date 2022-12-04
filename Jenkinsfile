@@ -165,6 +165,10 @@ pipeline {
                                           // Look in /opt/local first to prefer the macports libraries
                                           // over others in the system.
                                           + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                          // Always specify the compilers explicilty for macOS
+                                          + " -DCMAKE_C_COMPILER=gcc"
+                                          + " -DCMAKE_CXX_COMPILER=g++"
+                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
                                       )
                 sh "build/bin/omc --version"
               }
