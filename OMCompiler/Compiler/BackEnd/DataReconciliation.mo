@@ -604,7 +604,7 @@ protected
   Integer varCount, eqCount;
   list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, setSPrime_, boundaryConditionEquations, bindingEquations, setSPrime, unMeasuredEqsLst;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, setCVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime;
+  list<BackendDAE.Var> paramVars, setSVars, setCVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
@@ -794,6 +794,8 @@ algorithm
   // remove binding equations from E-BLT
   unMeasuredEqsLst := List.setDifferenceOnTrue(unMeasuredEqsLst, bindingEquations, intEq);
 
+  unMeasuredVariables := List.map1r(listReverse(unMeasuredVariablesOfInterest), BackendVariable.getVarAt, currentSystem.orderedVars);
+
   // prepare unmeasured equation list, along with boundary condition equations that failed the extraction of set-C and set-S
   (setBFailedBoundaryConditionEquations, failedboundaryConditionEquationIndex) := prepareUnmeasuredVariablesEquations(unMeasuredEqsLst, sBltAdjacencyMatrix, knowns, solvedEqsAndVarsInfo, currentSystem.orderedEqs, mapIncRowEqn, setBFailedBoundaryConditionEquations);
 
@@ -830,14 +832,15 @@ algorithm
   (extraVarsinSetSPrime, _) := List.extract1OnTrue(setSVars, isBoundaryConditionVars, List.map1r(listReverse(boundaryConditionVars), BackendVariable.getVarAt, currentSystem.orderedVars)); // filter the overdetermined variables in set-S'
 
   //failedboundaryConditionVars := listAppend(setSVars, failedboundaryConditionVars);
-  BackendDump.dumpVarList(failedboundaryConditionVars, "Boundary condition Vars'");
+  BackendDump.dumpVarList(unMeasuredVariables, "unmeasured variables");
   BackendDump.dumpVarList(setSVars, "Intermediate vars in set-S'");
   BackendDump.dumpVarList(knownVars, "Known vars in set-S'");
   BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
   BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
 
-  // set boundaryConditionsVars unreplaceable attributes to be true
-  outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(failedboundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
+
+  // set unmeasured variables unreplaceable attributes to be true
+  outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(unMeasuredVariables), BackendVariable.setVarUnreplaceable, true));
 
   // boundary condition equations
   outBoundaryConditionEquations := BackendEquation.listEquation(failedboundaryConditionEquations);
@@ -913,6 +916,11 @@ algorithm
 
   // filter the variables of iterest and intermediate Vars
   (knownVars, setSVars) := List.extractOnTrue(setSVars, BackendVariable.varHasUncertainValueRefine);
+  // filter the unmeasured variables and intermediate Vars
+  (_, setSVars) := List.extractOnTrue(setSVars, BackendVariable.varHasUncertainValuePropagate);
+
+  // combine unmeasured variables with attribute unreplaceable = true
+  setSVars := listAppend(BackendVariable.varList(outBoundaryConditionVars), setSVars);
 
   BackendDump.dumpVarList(setSVars, "Intermediate vars in final DAE updated'");
   BackendDump.dumpVarList(paramVars, "parameters in final DAE updated");

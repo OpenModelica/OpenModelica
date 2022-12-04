@@ -778,6 +778,27 @@ bool isLineEmptyData(std::string &cref)
 }
 
 /*
+* function which checks whether a variable
+* is unmeasured (i.e) uncertain=Uncertainty.propagate
+*/
+bool isUnmeasuredVariables(DATA* data, const char* name)
+{
+  char **unmeasuredvariable = (char**) malloc(data->modelData->nSetbVars * sizeof(char*));
+  data->callback->dataReconciliationUnmeasuredVariables(data, unmeasuredvariable);
+
+  // check for unmeasured variables
+  for (int i = 0; i < data->modelData->nSetbVars; i++)
+  {
+    if (strcmp(unmeasuredvariable[i], name) == 0)
+    {
+      return true;
+    }
+  }
+  free(unmeasuredvariable);
+  return false;
+}
+
+/*
  * Function which reads the csv file
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
@@ -861,6 +882,15 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
       bool col0 = false, col1 = false, col2 = false;
       while (getline(ss, temp, ','))
       {
+        // ignore unmeasured variables of interest
+        if (columnCount == 0 && isUnmeasuredVariables(data, temp.c_str()))
+        {
+          col0 = true;
+          col1 = true;
+          col2 = true;
+          break;
+        }
+
         if (columnCount == 0)
         {
           // // error : no variable of interest is provided by user at column #1
@@ -2614,25 +2644,34 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   // copy the outputs for state Estimation
   datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
   boundaryConditionData boundaryconditiondata;
+
   // create HTML Report for D.1
   if (omc_flag[FLAG_DATA_RECONCILE])
+  {
     createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData, boundaryconditiondata);
-
-  free(tmpFstar.data);
-  free(tmpfstar.data);
-  //free(tmpmatrixC);
-  //free(tmpmatrixD);
-  //free(setc);
-  free(reconciled_Sx.data);
-  free(reconciled_X.data);
-  free(copyreconSx_diag.data);
-  free(tmpcopyreconSx_diag.data);
-  free(newSx_diag);
-  free(newX);
-  //free(jacF.data);
-  //free(jacFt.data);
-  //free(x.data);
-  //free(Sx.data);
+    // free the memory for data Reconciliation
+    free(tmpFstar.data);
+    free(tmpfstar.data);
+    // free(tmpmatrixC);
+    // free(tmpmatrixD);
+    // free(setc);
+    free(reconciled_Sx.data);
+    free(reconciled_X.data);
+    free(copyreconSx_diag.data);
+    free(tmpcopyreconSx_diag.data);
+    free(newSx_diag);
+    free(newX);
+    // free(jacF.data);
+    // free(jacFt.data);
+    // free(x.data);
+    // free(Sx.data);
+  }
+  else
+  {
+    // stateEstimation
+    free(tmpFstar.data);
+    free(tmpfstar.data);
+  }
   return 0;
 }
 
@@ -2787,14 +2826,26 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   boundaryconditiondata = {boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag};
 
   // free the memory
-  //free(reconciled_Sx.data);
-  //free(reconciled_x.data);
-  free(tmpMatrixAf);
-  free(S_t);
-  free(jacF.data);
-  free(jacFt.data);
-  //free(reconSt_diag);
-  //free(boundaryConditionVarsResults);
+  if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
+  {
+    // free(reconciled_Sx.data);
+    // free(reconciled_x.data);
+    free(tmpMatrixAf);
+    free(S_t);
+    free(jacF.data);
+    free(jacFt.data);
+    free(reconSt_diag);
+    free(boundaryConditionVarsResults);
+  }
+  else
+  {
+    // state Estimation
+    free(tmpMatrixAf);
+    free(S_t);
+    free(jacF.data);
+    free(jacFt.data);
+  }
+
   TRACE_POP
   return 0;
 }
@@ -2823,7 +2874,17 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
 
   printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Arun", logfile);
 
-  createHtmlReportFordataReconciliation(data, datareconciliationdata.csvinputs, datareconciliationdata.xdiag, datareconciliationdata.reconciled_X, datareconciliationdata.copyreconSx_diag, datareconciliationdata.newX, eps, iterationcount, datareconciliationdata.value, datareconciliationdata.J, warningCorrelationData, boundaryconditiondata);
+  createHtmlReportFordataReconciliation(data, datareconciliationdata.csvinputs, datareconciliationdata.xdiag, datareconciliationdata.reconciled_X, datareconciliationdata.copyreconSx_diag, datareconciliationdata.newX, eps, datareconciliationdata.iterationcount, datareconciliationdata.value, datareconciliationdata.J, warningCorrelationData, boundaryconditiondata);
+
+  // free data Reconciliation data
+  free(datareconciliationdata.reconciled_SX.data);
+  free(datareconciliationdata.reconciled_X.data);
+  free(datareconciliationdata.copyreconSx_diag.data);
+  free(datareconciliationdata.newX);
+
+  // free boundaryCondition data
+  free(boundaryconditiondata.boundaryConditionVarsResults);
+  free(boundaryconditiondata.reconSt_diag);
 
   return 0;
 }

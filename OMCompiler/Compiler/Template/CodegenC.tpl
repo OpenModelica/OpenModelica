@@ -1936,7 +1936,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.dataReconinputVars |> simVar as SIMVAR(__) hasindex i0 =>
+      <%vars.dataReconSetBVars |> simVar as SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
