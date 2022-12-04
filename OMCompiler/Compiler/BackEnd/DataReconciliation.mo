@@ -536,13 +536,13 @@ algorithm
 
   VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqns, shared);
 
-  //if debug then
+  if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
     BackendDump.dumpEquationArray(outBoundaryConditionEquations, "Jacobian_ResidualEquation");
     BackendDump.dumpVariables(outBoundaryConditionVars, "Jacobian_outResidualVars");
     BackendDump.dumpEquationArray(outOtherEqns, "Jacobian_outOtherEquations");
     BackendDump.dumpVariables(outOtherVars, "Jacobian_outOtherVars");
-  //end if;
+  end if;
 
   // generate symbolicJacobian matrix F
   (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outBoundaryConditionEquations, outBoundaryConditionVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
