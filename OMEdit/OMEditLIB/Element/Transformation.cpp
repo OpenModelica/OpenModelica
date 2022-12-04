@@ -35,6 +35,8 @@
 #include "Transformation.h"
 #include "Element.h"
 
+#include <QStringBuilder>
+
 Transformation::Transformation()
 {
   mValid = false;
@@ -96,36 +98,24 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
       if (list.size() > 13) {
         // get transformations of diagram
         // get the visible value
-        if (list.at(0) != '-') {
-          mVisible.parse(list.at(0));
-        }
+        mVisible.parse(list.at(0));
         // origin
-        if (list.at(1) != '-' && list.at(2) != '-') {
-          mOriginDiagram.parse(QString("{%1, %2}").arg(list.at(1), list.at(2)));
-        }
+        mOriginDiagram.parse("{" % QString::number(list.at(1).toDouble()) % ", " % QString::number(list.at(2).toDouble()) % "}");
         // extent
-        if (list.at(3) != '-' && list.at(4) != '-' && list.at(5) != '-' && list.at(6) != '-') {
-          mExtentDiagram.parse(QString("{{%1, %2}, {%3, %4}}").arg(list.at(3), list.at(4), list.at(5), list.at(6)));
-        }
+        mExtentDiagram.parse("{{" % QString::number(list.at(3).toDouble()) % ", " % QString::number(list.at(4).toDouble()) % "}, "
+                             "{"  % QString::number(list.at(5).toDouble()) % ", " % QString::number(list.at(6).toDouble()) % "}}");
         // rotate angle
-        if (list.at(7) != '-') {
-          mRotateAngleDiagram.parse(list.at(7));
-        }
+        mRotateAngleDiagram.parse(QString::number(list.at(7).toDouble()));
         // get transformations of icon now
         // origin x position
         bool hasOrigin = false, hasExtent = false, hasRotation = false;
         // origin
-        if (list.at(8) != '-' && list.at(9) != '-') {
-          hasOrigin = mOriginIcon.parse(QString("{%1, %2}").arg(list.at(8), list.at(9)));
-        }
+        mOriginIcon.parse("{" % QString::number(list.at(8).toDouble(&hasOrigin)) % ", " % QString::number(list.at(9).toDouble(&hasOrigin)) % "}");
         // extent
-        if (list.at(10) != '-' && list.at(11) != '-' && list.at(12) != '-' && list.at(13) != '-') {
-          hasExtent = mExtentIcon.parse(QString("{{%1, %2}, {%3, %4}}").arg(list.at(10), list.at(11), list.at(12), list.at(13)));
-        }
+        mExtentIcon.parse("{{" % QString::number(list.at(10).toDouble(&hasExtent)) % ", " % QString::number(list.at(11).toDouble(&hasExtent)) % "}, "
+                             "{"  % QString::number(list.at(12).toDouble(&hasExtent)) % ", " % QString::number(list.at(13).toDouble(&hasExtent)) % "}}");
         // rotate angle
-        if (list.size() > 14 && list.at(14) != '-' && !list.at(14).isEmpty()) {
-          hasRotation = mRotateAngleIcon.parse(list.at(14));
-        }
+        mRotateAngleIcon.parse(QString::number(list.at(14).toDouble(&hasRotation)));
         /* Ticket:4215
          * Only use transformation values when no iconTransformation value is available. Don't mix.
          */

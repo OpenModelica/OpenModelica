@@ -1054,11 +1054,11 @@ namespace ModelInstance
   void Selector::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("filter")) {
-      mFilter = jsonObject.value("filter").toString();
+      mFilter.deserialize(jsonObject.value("filter"));
     }
 
     if (jsonObject.contains("caption")) {
-      mCaption = jsonObject.value("caption").toString();
+      mCaption.deserialize(jsonObject.value("caption"));
     }
   }
 
@@ -1076,23 +1076,23 @@ namespace ModelInstance
   void DialogAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("tab")) {
-      mTab = jsonObject.value("tab").toString();
+      mTab.deserialize(jsonObject.value("tab"));
     }
 
     if (jsonObject.contains("group")) {
-      mGroup = jsonObject.value("group").toString();
+      mGroup.deserialize(jsonObject.value("group"));
     }
 
     if (jsonObject.contains("enable")) {
-      mEnable = jsonObject.value("enable").toBool();
+      mEnable.deserialize(jsonObject.value("enable"));
     }
 
     if (jsonObject.contains("showStartAttribute")) {
-      mShowStartAttribute = jsonObject.value("showStartAttribute").toBool();
+      mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
     }
 
     if (jsonObject.contains("colorSelector")) {
-      mColorSelector = jsonObject.value("colorSelector").toBool();
+      mColorSelector.deserialize(jsonObject.value("colorSelector"));
     }
 
     if (jsonObject.contains("loadSelector")) {
@@ -1108,11 +1108,11 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("groupImage")) {
-      mGroupImage = jsonObject.value("groupImage").toString();
+      mGroupImage.deserialize(jsonObject.value("groupImage"));
     }
 
     if (jsonObject.contains("connectorSizing")) {
-      mConnectorSizing = jsonObject.value("connectorSizing").toBool();
+      mConnectorSizing.deserialize(jsonObject.value("connectorSizing"));
     }
   }
 

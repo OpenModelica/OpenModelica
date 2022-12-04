@@ -113,6 +113,11 @@ QString StringAnnotation::toUpper() const
   return mValue.toUpper();
 }
 
+int StringAnnotation::compare(const QString &other, Qt::CaseSensitivity cs) const
+{
+  return mValue.compare(other, cs);
+}
+
 FlatModelica::Expression StringAnnotation::toExp() const
 {
   return FlatModelica::Expression(mValue);
