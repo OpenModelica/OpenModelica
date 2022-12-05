@@ -385,7 +385,7 @@ int solveLinearSystem(int n, int* iwork, double* fvec, double *fjac, DATA_NEWTON
 
   if(lapackinfo > 0)
   {
-    warningStreamPrint(LOG_NLS, 0, "Jacobian Matrix singular!");
+    warningStreamPrint(LOG_NLS, 0, "Newton iteration linear solver: Jacobian matrix singular.");
     return -1;
   }
   else if(lapackinfo < 0)
