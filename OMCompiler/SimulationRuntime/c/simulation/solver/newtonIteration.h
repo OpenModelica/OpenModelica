@@ -80,6 +80,10 @@ typedef struct DATA_NEWTON
 
   rtclock_t timeClock;
 
+  /* Debug information */
+  double time;                /**< Simulation time */
+  modelica_boolean initial;   /**< True if in initialization */
+
   NLS_USERDATA* userData;
 } DATA_NEWTON;
 

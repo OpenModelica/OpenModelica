@@ -251,6 +251,8 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   } else {
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
   }
+  solverData->time = data->localData[0]->timeValue;
+  solverData->initial = data->simulationInfo->initial;
 
   /* start solving loop */
   while(!giveUp && success != NLS_SOLVED)

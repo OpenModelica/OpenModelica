@@ -297,14 +297,18 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       if (++l > *maxfev)
       {
         *info = -1;
-        warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number of iteration reached but no root found");
+        if (solverData->initial) {
+          warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at initialization, but no root found.");
+        } else {
+          warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at time %f, but no root found.", solverData->time);
+        }
         break;
       }
       /* check if maximum iteration is reached */
       if (k > 5)
       {
         *info = -1;
-        warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number threshold reached");
+        warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iterations reached.");
         break;
       }
     }
