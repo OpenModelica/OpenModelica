@@ -1477,6 +1477,9 @@ function expandProxySubscripts
 protected
   Integer dim_count;
   Expression cr_exp;
+  Type ty;
+  list<Dimension> dims;
+  Dimension dim;
 algorithm
   for s in subscripts loop
     outSubscripts := match s
@@ -1504,10 +1507,18 @@ algorithm
 
             // Add size expressions to the list of fill dimensions.
             if dim_count > 0 then
-              cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, InstNode.getType(s.parent)));
+              ty := InstNode.getType(s.parent);
+              cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, ty));
+              dims := Type.arrayDims(ty);
 
               for i in 1:dim_count loop
-                fillDimensions := Expression.SIZE(cr_exp, SOME(Expression.INTEGER(i))) :: fillDimensions;
+                dim :: dims := dims;
+
+                if Dimension.isKnown(dim, allowExp = true) then
+                  fillDimensions := Dimension.sizeExp(dim) :: fillDimensions;
+                else
+                  fillDimensions := Expression.SIZE(cr_exp, SOME(Expression.INTEGER(i))) :: fillDimensions;
+                end if;
               end for;
             end if;
           end if;
