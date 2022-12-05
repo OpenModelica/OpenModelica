@@ -41,7 +41,11 @@ pipeline {
                                           // Always specify the compilers explicilty for macOS
                                           + " -DCMAKE_C_COMPILER=gcc"
                                           + " -DCMAKE_CXX_COMPILER=g++"
-                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
+                                          // Disable fortran (and ipopt) for this build because
+                                          // we build a pkg from it and we do not want to depend
+                                          // on Fortran for now.
+                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
+                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
                                       )
                 sh "build/bin/omc --version"
                 // Create a product build package
