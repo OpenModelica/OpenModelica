@@ -5,6 +5,7 @@ QMAKE=@QMAKE@
 install: build
 	cp -p ../bin/tests/* @OMBUILDDIR@/bin
 	cp -p RunOMEditTestsuite.sh @OMBUILDDIR@/bin
+	cp -p RunOMEditTest.sh @OMBUILDDIR@/bin
 
 build: Makefile OMEditGUI.unix.config.pri
 	$(MAKE) -f Makefile

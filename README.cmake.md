@@ -188,6 +188,7 @@ OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_IPOPT=ON
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
+OM_OMEDIT_ENABLE_TESTS=OFF
 OM_OMSHELL_ENABLE_TERMINAL=ON
 ```
 ### 4.1.1. OpenModelica Options
@@ -203,6 +204,9 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 `OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization support with Ipopt. Enabling this requires having a working Fortran compiler.
 
 ### 4.1.3. OpenModelica/OMEdit Options
+OM_OMEDIT_ENABLE_TESTS
+`OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
+
 `OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the required runtime DLLs for MSYS/MinGW builds.
 
 You should disable this if you are either

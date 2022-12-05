@@ -326,4 +326,4 @@ if(MINGW)
   target_link_libraries(OMEditLib PUBLIC zlib)
 endif()
 
-target_include_directories(OMEditLib PRIVATE ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)
