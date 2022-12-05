@@ -233,7 +233,7 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 }
 
 /**
- * @brief Free homotpy data.
+ * @brief Free homotopy data.
  *
  * @param homotopyData  Pointer to homotopy data.
  */
@@ -1154,9 +1154,9 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
     if (absMax<DBL_EPSILON) {
       *rank = i;
       if (data->simulationInfo->initial) {
-        warningStreamPrint(LOG_NLS_V, 1, "Homotpy solver total pivot: Matrix (nearly) singular at initialization.");
+        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at initialization.");
       } else {
-        warningStreamPrint(LOG_NLS_V, 1, "Homotpy solver total pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
+        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
       }
       warningStreamPrint(LOG_NLS_V, 0, "Continuing anyway. For more information please use -lv %s.", LOG_STREAM_NAME[LOG_NLS_V]);
       messageCloseWarning(LOG_NLS_V);
@@ -1623,9 +1623,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     {
       solverData->info = -1;
       if (data->simulationInfo->initial) {
-        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iteration reached at initialization, but no root found.");
+        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at initialization, but no root found.");
       } else {
-        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iteration reached at time %f, but no root found.", data->localData[0]->timeValue);
+        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at time %f, but no root found.", data->localData[0]->timeValue);
       }
       /* debug information */
       debugString(LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
