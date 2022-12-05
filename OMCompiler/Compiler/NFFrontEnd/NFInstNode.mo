@@ -31,19 +31,25 @@
 
 encapsulated package NFInstNode
 
+import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
 import SCode;
 import Absyn;
 import AbsynUtil;
 import Type = NFType;
+import Typing = NFTyping;
+import Inst = NFInst;
+import InstContext = NFInstContext;
 import NFFunction.Function;
 import Sections = NFSections;
 import Pointer;
 import Error;
+import Flatten = NFFlatten;
+import NFFlatten.Prefix;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
-import NFModifier.Modifier;
+import NFModifier.{Modifier, ModifierScope};
 import SCodeDump;
 import DAE;
 import Expression = NFExpression;
@@ -1100,6 +1106,90 @@ uniontype InstNode
           fail();
     end match;
   end scopeListClass;
+
+  function propagateAnnotation
+    input String name;
+    input InstNode node;
+  protected
+    Option<SCode.SubMod> mod;
+    function getSubMod
+      input String name;
+      input InstNode node;
+      output Option<SCode.SubMod> mod = NONE();
+    algorithm
+      mod := match node
+        local
+          Pointer<Component> component;
+          list<SCode.SubMod> subModLst;
+          Boolean done = false;
+
+        case COMPONENT_NODE(component = component)
+        then match Pointer.access(component)
+          case Component.TYPED_COMPONENT(
+            comment = SOME(SCode.COMMENT(
+            annotation_ = SOME(SCode.ANNOTATION(
+            modification = SCode.MOD(subModLst = subModLst))))))
+          algorithm
+            for sm in subModLst loop
+              if sm.ident == name then
+                mod := SOME(sm);
+                done := true;
+              end if;
+            end for;
+          if not done then
+            mod := getSubMod(name, node.parent);
+          end if;
+          then mod;
+          else NONE();
+        end match;
+        else NONE();
+      end match;
+    end getSubMod;
+  algorithm
+    if isNone(getSubMod(name, node)) then
+      _:= match node
+        local
+          Component component;
+          SCode.Comment comment;
+          SCode.Annotation anno;
+          SCode.Mod modification;
+        case COMPONENT_NODE() algorithm
+          component := Pointer.access(node.component);
+          _ := match component
+          case Component.TYPED_COMPONENT(
+            comment = SOME(comment as SCode.COMMENT()))
+          algorithm
+            mod := getSubMod(name, node.parent);
+            if isSome(mod) then
+              anno := match comment.annotation_
+                case SOME(anno as SCode.ANNOTATION(
+                  modification = modification as SCode.MOD()))
+                algorithm
+                  modification.subModLst := Util.getOption(mod) :: modification.subModLst;
+                  anno.modification := modification;
+                then anno;
+                case NONE() algorithm
+                  anno := SCode.ANNOTATION(modification = SCode.MOD(
+                    finalPrefix = SCode.NOT_FINAL(),
+                    eachPrefix  = SCode.NOT_EACH(),
+                    subModLst   = {Util.getOption(mod)},
+                    binding     = NONE(),
+                    info        = sourceInfo()));
+                then anno;
+              end match;
+              comment.annotation_ := SOME(anno);
+              component.comment := SOME(comment);
+              Pointer.update(node.component, component);
+            end if;
+          then ();
+          else ();
+          end match;
+
+        then ();
+        else ();
+      end match;
+    end if;
+  end propagateAnnotation;
 
   type ScopeType = enumeration(
     RELATIVE       "Stops at a root class and doesn't include the root",

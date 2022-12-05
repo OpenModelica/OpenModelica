@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import NFFlatten.Prefix;
   import NFPrefixes.Visibility;
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
@@ -289,6 +290,15 @@ public
 
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
+
+  function propagateAnnotation
+    input String name;
+    input output Variable var;
+  algorithm
+    if ComponentRef.isCref(var.name) then
+      InstNode.propagateAnnotation(name, ComponentRef.node(var.name));
+    end if;
+  end propagateAnnotation;
 
   function mapExp
     input output Variable var;
