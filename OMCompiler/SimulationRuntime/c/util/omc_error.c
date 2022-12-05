@@ -351,12 +351,28 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
   if (indentNext) level[stream]++;
 }
 
+/**
+ * @brief Close messages.
+ *
+ * Use for active streams to reduce level of indentation by one.
+ *
+ * @param stream Log stream.
+ */
 static void messageCloseText(int stream)
 {
-  if(ACTIVE_STREAM(stream))
+  if(ACTIVE_STREAM(stream)) {
     level[stream]--;
+  }
 }
 
+/**
+ * @brief Close warning messages.
+ *
+ * Use for warning messages that indented the stream either because the stream is active
+ * or showAllWarnings is true.
+ *
+ * @param stream Log stream.
+ */
 static void messageCloseTextWarning(int stream)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
@@ -365,7 +381,15 @@ static void messageCloseTextWarning(int stream)
 }
 
 void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes) = messageText;
+/**
+ * @brief Close messages.
+ * See messageCloseText() for more info.
+ */
 void (*messageClose)(int stream) = messageCloseText;
+/**
+ * @brief Close warning messages.
+ * See messageCloseTextWarning() for more info.
+ */
 void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
 
 #define SIZE_LOG_BUFFER 2048
@@ -416,6 +440,18 @@ void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inden
   }
 }
 
+/**
+ * @brief Print warning to stream.
+ *
+ * Prints message only if stream is active or global variable showAllWarnings is true.
+ *
+ * Use messageCloseWarning to close message, if indentNext is true.
+ *
+ * @param stream      Stream to print to.
+ * @param indentNext  Will increase indentation level by one if true.
+ * @param format      Format string with message to print.
+ * @param ...         Arguments for format string.
+ */
 void warningStreamPrint(int stream, int indentNext, const char *format, ...)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {

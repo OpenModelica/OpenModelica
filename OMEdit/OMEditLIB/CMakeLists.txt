@@ -63,11 +63,14 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Annotations/LinePatternAnnotation.cpp
                       Annotations/FillPatternAnnotation.cpp
                       Annotations/PointArrayAnnotation.cpp
+                      Annotations/ArrowAnnotation.cpp
                       Annotations/SmoothAnnotation.cpp
                       Annotations/ExtentAnnotation.cpp
                       Annotations/BorderPatternAnnotation.cpp
                       Annotations/EllipseClosureAnnotation.cpp
                       Annotations/StringAnnotation.cpp
+                      Annotations/TextAlignmentAnnotation.cpp
+                      Annotations/TextStyleAnnotation.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
@@ -188,11 +191,14 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Annotations/LinePatternAnnotation.h
                       Annotations/FillPatternAnnotation.h
                       Annotations/PointArrayAnnotation.h
+                      Annotations/ArrowAnnotation.h
                       Annotations/SmoothAnnotation.h
                       Annotations/ExtentAnnotation.h
                       Annotations/BorderPatternAnnotation.h
                       Annotations/EllipseClosureAnnotation.h
                       Annotations/StringAnnotation.h
+                      Annotations/TextAlignmentAnnotation.h
+                      Annotations/TextStyleAnnotation.h
                       Element/ElementProperties.h
                       Element/Transformation.h
                       Modeling/DocumentationWidget.h

@@ -45,11 +45,14 @@
 #include "Annotations/LinePatternAnnotation.h"
 #include "Annotations/FillPatternAnnotation.h"
 #include "Annotations/PointArrayAnnotation.h"
+#include "Annotations/ArrowAnnotation.h"
 #include "Annotations/SmoothAnnotation.h"
 #include "Annotations/ExtentAnnotation.h"
 #include "Annotations/BorderPatternAnnotation.h"
 #include "Annotations/EllipseClosureAnnotation.h"
 #include "Annotations/StringAnnotation.h"
+#include "Annotations/TextStyleAnnotation.h"
+#include "Annotations/TextAlignmentAnnotation.h"
 
 namespace ModelInstance
 {
@@ -148,7 +151,7 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    void setPoints(const PointArrayAnnotation points) {mPoints = points;}
+    void setPoints(const PointArrayAnnotation &points) {mPoints = points;}
     PointArrayAnnotation getPoints() const {return mPoints;}
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
@@ -157,10 +160,8 @@ private:
     LinePatternAnnotation getPattern() const {return mPattern;}
     void setThickness(double thickness) {mThickness = thickness;}
     RealAnnotation getThickness() const {return mThickness;}
-    void setStartArrow(const QString &startArrow) {mArrow[0] = startArrow;}
-    QString getStartArrow() const {return mArrow[0];}
-    void setEndArrow(const QString &endArrow) {mArrow[1] = endArrow;}
-    QString getEndArrow() const {return mArrow[1];}
+    void setArrow(const ArrowAnnotation &arrow) {mArrow = arrow;}
+    ArrowAnnotation getArrow() {return mArrow;}
     void setArrowSize(double arrowSize) {mArrowSize = arrowSize;}
     RealAnnotation getArrowSize() const {return mArrowSize;}
     void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
@@ -170,7 +171,7 @@ private:
     ColorAnnotation mColor;
     LinePatternAnnotation mPattern;
     RealAnnotation mThickness;
-    QString mArrow[2];
+    ArrowAnnotation mArrow;
     RealAnnotation mArrowSize;
     SmoothAnnotation mSmooth;
   };
@@ -230,18 +231,18 @@ private:
     ExtentAnnotation getExtent() const {return mExtent;}
     StringAnnotation getTextString() const {return mTextString;}
     RealAnnotation getFontSize() const {return mFontSize;}
-    QString getFontName() const {return mFontName;}
-    QStringList getTextStyle() const {return mTextStyle;}
+    StringAnnotation getFontName() const {return mFontName;}
+    TextStyleAnnotation getTextStyle() const {return mTextStyle;}
     ColorAnnotation getTextColor() const {return mTextColor;}
-    QString getHorizontalAlignment() const {return mHorizontalAlignment;}
+    TextAlignmentAnnotation getHorizontalAlignment() const {return mHorizontalAlignment;}
   private:
     ExtentAnnotation mExtent;
     StringAnnotation mTextString;
     RealAnnotation mFontSize;
-    QString mFontName;
-    QStringList mTextStyle;
+    StringAnnotation mFontName;
+    TextStyleAnnotation mTextStyle;
     ColorAnnotation mTextColor;
-    QString mHorizontalAlignment;
+    TextAlignmentAnnotation mHorizontalAlignment;
   };
 
   class Bitmap : public Shape
@@ -338,7 +339,6 @@ private:
     bool isDocumentationClass() const {return mDocumentationClass;}
     QString getVersion() const {return mVersion;}
     QString getVersionDate() const {return mVersionDate;}
-    QString getVersionBuild() const {return mVersionBuild;}
     QString getDateModified() const {return mDateModified;}
     QString getPreferredView() const {return mPreferredView;}
     bool isState() const {return mState;}
@@ -380,14 +380,14 @@ private:
     QString mComment;
     IconDiagramAnnotation *mpIconAnnotation;
     IconDiagramAnnotation *mpDiagramAnnotation;
-    bool mDocumentationClass;
-    QString mVersion;
-    QString mVersionDate;
-    QString mVersionBuild;
-    QString mDateModified;
-    QString mPreferredView;
-    bool mState;
-    QString mAccess;
+    BooleanAnnotation mDocumentationClass;
+    StringAnnotation mVersion;
+    StringAnnotation mVersionDate;
+    RealAnnotation mVersionBuild;
+    StringAnnotation mDateModified;
+    StringAnnotation mPreferredView;
+    BooleanAnnotation mState;
+    StringAnnotation mAccess;
     QList<Element*> mElements;
     QString mFileName;
     int mLineStart;
@@ -417,13 +417,15 @@ private:
   class PlacementAnnotation
   {
   public:
-    PlacementAnnotation();
+    PlacementAnnotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    Model *getParentModel() const {return mpParentModel;}
     BooleanAnnotation getVisible() const {return mVisible;}
     Transformation getTransformation() const {return mTransformation;}
     BooleanAnnotation getIconVisible() const {return mIconVisible;}
     Transformation getIconTransformation() const {return mIconTransformation;}
   private:
+    Model *mpParentModel;
     BooleanAnnotation mVisible;
     Transformation mTransformation;
     BooleanAnnotation mIconVisible;
@@ -435,11 +437,11 @@ private:
   public:
     Selector();
     void deserialize(const QJsonObject &jsonObject);
-    QString getFilter() const {return mFilter;}
-    QString getCaption() const {return mCaption;}
+    StringAnnotation getFilter() const {return mFilter;}
+    StringAnnotation getCaption() const {return mCaption;}
   private:
-    QString mFilter;
-    QString mCaption;
+    StringAnnotation mFilter;
+    StringAnnotation mCaption;
   };
 
   class DialogAnnotation
@@ -447,27 +449,27 @@ private:
   public:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    QString getTab() const {return mTab;}
-    QString getGroup() const {return mGroup;}
-    bool isEnabled() const {return mEnable;}
-    bool getShowStartAttribute() const {return mShowStartAttribute;}
-    bool isColorSelector() const {return mColorSelector;}
+    StringAnnotation getTab() const {return mTab;}
+    StringAnnotation getGroup() const {return mGroup;}
+    BooleanAnnotation isEnabled() const {return mEnable;}
+    BooleanAnnotation getShowStartAttribute() const {return mShowStartAttribute;}
+    BooleanAnnotation isColorSelector() const {return mColorSelector;}
     Selector getLoadSelector() const {return mLoadSelector;}
     Selector getSaveSelector() const {return mSaveSelector;}
     Selector getDirectorySelector() const {return mDirectorySelector;}
     QString getGroupImage() const {return mGroupImage;}
-    bool isConnectorSizing() const {return mConnectorSizing;}
+    BooleanAnnotation isConnectorSizing() const {return mConnectorSizing;}
   private:
-    QString mTab;
-    QString mGroup;
-    bool mEnable;
-    bool mShowStartAttribute;
-    bool mColorSelector;
+    StringAnnotation mTab;
+    StringAnnotation mGroup;
+    BooleanAnnotation mEnable;
+    BooleanAnnotation mShowStartAttribute;
+    BooleanAnnotation mColorSelector;
     Selector mLoadSelector;
     Selector mSaveSelector;
     Selector mDirectorySelector;
-    QString mGroupImage;
-    bool mConnectorSizing;
+    StringAnnotation mGroupImage;
+    BooleanAnnotation mConnectorSizing;
   };
 
   class Choices
@@ -478,8 +480,8 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
   private:
-    bool mCheckBox;
-    bool mDymolaCheckBox;
+    BooleanAnnotation mCheckBox;
+    BooleanAnnotation mDymolaCheckBox;
   };
 
   class Element
@@ -500,6 +502,7 @@ private:
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
     FlatModelica::Expression getBinding() const {return mBinding;}
+    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
     QString getModifierValueFromType(QStringList modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
@@ -540,11 +543,11 @@ private:
     QString mVariability;
     QString mDirection;
     QString mComment;
-    bool mChoicesAllMatching;
+    BooleanAnnotation mChoicesAllMatching;
     PlacementAnnotation mPlacementAnnotation;
     bool mHasDialogAnnotation;
     DialogAnnotation mDialogAnnotation;
-    bool mEvaluate;
+    BooleanAnnotation mEvaluate;
     Choices mChoices;
 
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);

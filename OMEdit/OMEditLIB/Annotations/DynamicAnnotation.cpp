@@ -57,9 +57,23 @@ bool DynamicAnnotation::parse(const QString &str)
   return true;
 }
 
+/*!
+ * \brief DynamicAnnotation::deserialize
+ * Deserialize an annotation expression json and stores the expression, then either
+ * calls reset or clear based on whether the deserializing succeeded or not.
+ * \param value
+ * \return
+ */
 bool DynamicAnnotation::deserialize(const QJsonValue &value)
 {
   try {
+    if (value.isObject()) {
+      QJsonObject valueObject = value.toObject();
+      if (valueObject.contains("$error")) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, valueObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        return false;
+      }
+    }
     mExp.deserialize(value);
     mState = mExp.isCall("DynamicSelect") ? State::Static : State::None;
     reset();

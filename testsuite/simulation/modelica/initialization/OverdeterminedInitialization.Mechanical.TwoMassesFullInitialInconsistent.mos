@@ -1,9 +1,9 @@
 // name: OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsistent
 // keywords: initialization, over-determined
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
 setCommandLineOptions("-d=initialization"); getErrorString();

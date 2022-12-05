@@ -27,33 +27,34 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-#ifndef STRINGANNOTATION_H
-#define STRINGANNOTATION_H
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+#ifndef TEXTSTYLEANNOTATION_H
+#define TEXTSTYLEANNOTATION_H
 
 #include "DynamicAnnotation.h"
+#include "Util/StringHandler.h"
 
-class StringAnnotation : public DynamicAnnotation
+#include <QVector>
+
+class TextStyleAnnotation : public DynamicAnnotation
 {
   public:
-    StringAnnotation();
+    TextStyleAnnotation();
 
     void clear() override;
 
-    operator const QString&() const { return mValue; }
-    StringAnnotation& operator= (const QString &value);
+    operator const QVector<StringHandler::TextStyle>&() const { return mValue; }
+    TextStyleAnnotation& operator= (const QVector<StringHandler::TextStyle> &value);
 
-    bool contains(const QString &str) const;
-    bool isEmpty() const;
-    int length() const;
-    QString& prepend(const QString &str);
-    QString& prepend(QChar ch);
-    QString& replace(int position, int n, const QString &after);
-    QString& replace(int position, int n, QChar after);
-    QString& replace(const QRegExp &rx, const QString &after);
-    QString& replace(const QRegularExpression &re, const QString &after);
-    QString toLower() const;
-    QString toUpper() const;
-    int compare(const QString &other, Qt::CaseSensitivity cs = Qt::CaseSensitive) const;
+    void append(const StringHandler::TextStyle &value) { mValue.append(value); setExp(); }
+    const StringHandler::TextStyle& at(int i) const { return mValue.at(i); }
+    int size() const { return mValue.size(); }
+
+    QFont::Weight getWeight() const;
+    bool isItalic() const;
+    bool isUnderLine() const;
 
     FlatModelica::Expression toExp() const override;
 
@@ -61,7 +62,7 @@ class StringAnnotation : public DynamicAnnotation
     void fromExp(const FlatModelica::Expression &exp) override;
 
   private:
-    QString mValue;
+    QVector<StringHandler::TextStyle> mValue;
 };
 
-#endif /* STRINGANNOTATION_H */
+#endif // TEXTSTYLEANNOTATION_H

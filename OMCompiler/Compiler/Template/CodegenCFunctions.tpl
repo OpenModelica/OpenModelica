@@ -289,13 +289,17 @@ end commonHeader;
 
 /* public */ template externalFunctionIncludes(list<String> includes)
  "Generates external includes part in function files.
-  used in Compiler/Template/CodegenFMU.tpl"
+  used in Compiler/Template/CodegenFMU.tpl.
+  Include openmodelica.h, because some Modelica libraries test if some tool depedent variable is set, e.g. TILMedia."
 ::=
   if includes then
   <<
   #ifdef __cplusplus
   extern "C" {
   #endif
+  #include "openmodelica.h"       // Defines OPENMODELICA_H_ for libraris to test if called from OpenModelica.
+  #include "ModelicaUtilities.h"  // Make Modelica C util functions available for external includes.
+
   <% (includes ;separator="\n") %>
   #ifdef __cplusplus
   }

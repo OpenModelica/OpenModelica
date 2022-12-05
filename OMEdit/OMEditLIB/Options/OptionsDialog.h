@@ -1108,6 +1108,7 @@ public:
   DiscardLocalTranslationFlagsDialog(QWidget *pParent = 0);
 private:
   Label *mpDescriptionLabel;
+  Label *mpDescriptionLabel2;
   QListWidget *mpClassesWithLocalTranslationFlagsListWidget;
   QPushButton *mpYesButton;
   QPushButton *mpNoButton;

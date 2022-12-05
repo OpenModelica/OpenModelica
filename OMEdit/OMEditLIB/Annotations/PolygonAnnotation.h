@@ -67,6 +67,7 @@ public:
   void clearPoints() override;
   void updateEndPoint(QPointF point);
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  ModelInstance::Model *getParentModel() const override;
   void setPolygon(ModelInstance::Polygon *pPolygon) {mpPolygon = pPolygon;}
 private:
   ModelInstance::Polygon *mpPolygon;

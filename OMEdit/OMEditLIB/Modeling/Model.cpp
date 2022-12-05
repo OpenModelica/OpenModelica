@@ -33,6 +33,8 @@
 
 #include "Model.h"
 #include "Util/StringHandler.h"
+#include "Util/Helper.h"
+#include "MessagesWidget.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -234,8 +236,6 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mThickness = 0.25;
-    mArrow[0] = "Arrow.None";
-    mArrow[1] = "Arrow.None";
     mArrowSize = 3;
   }
 
@@ -248,17 +248,7 @@ namespace ModelInstance
       mColor.deserialize(jsonArray.at(4));
       mPattern.deserialize(jsonArray.at(5));
       mThickness.deserialize(jsonArray.at(6));
-      QJsonArray arrows = jsonArray.at(7).toArray();
-      if (arrows.size() == 2) {
-        QJsonObject startArrow = arrows.at(0).toObject();
-        if (startArrow.contains("name")) {
-          mArrow[0] = startArrow.value("name").toString();
-        }
-        QJsonObject endArrow = arrows.at(1).toObject();
-        if (endArrow.contains("name")) {
-          mArrow[1] = endArrow.value("name").toString();
-        }
-      }
+      mArrow.deserialize(jsonArray.at(7));
       mArrowSize.deserialize(jsonArray.at(8));
       mSmooth.deserialize(jsonArray.at(9));
     }
@@ -285,17 +275,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("arrow")) {
-      QJsonArray arrows = jsonObject.value("arrow").toArray();
-      if (arrows.size() == 2) {
-        QJsonObject startArrow = arrows.at(0).toObject();
-        if (startArrow.contains("name")) {
-          mArrow[0] = startArrow.value("name").toString();
-        }
-        QJsonObject endArrow = arrows.at(1).toObject();
-        if (endArrow.contains("name")) {
-          mArrow[1] = endArrow.value("name").toString();
-        }
-      }
+      mArrow.deserialize(jsonObject.value("arrow"));
     }
 
     if (jsonObject.contains("arrowSize")) {
@@ -377,9 +357,6 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mFontName = "";
-    mTextStyle.clear();
-    mHorizontalAlignment = "TextAlignment.Center";
   }
 
   void Text::deserialize(const QJsonArray &jsonArray)
@@ -398,18 +375,12 @@ namespace ModelInstance
       } else {
         mTextColor.deserialize(jsonArray.at(11));
       }
-      mFontName = jsonArray.at(12).toString();
+      mFontName.deserialize(jsonArray.at(12));
       QJsonArray textStyles = jsonArray.at(13).toArray();
-      foreach (QJsonValue textStyle, textStyles) {
-        QJsonObject textStyleObject = textStyle.toObject();
-        if (textStyleObject.contains("name")) {
-          mTextStyle.append(textStyleObject.value("name").toString());
-        }
+      if (!textStyles.isEmpty()) {
+        mTextStyle.deserialize(jsonArray.at(13));
       }
-      QJsonObject horizontalAlignment = jsonArray.at(14).toObject();
-      if (horizontalAlignment.contains("name")) {
-        mHorizontalAlignment = horizontalAlignment.value("name").toString();
-      }
+      mHorizontalAlignment.deserialize(jsonArray.at(14));
     }
   }
 
@@ -435,24 +406,15 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("fontName")) {
-      mFontName = jsonObject.value("fontName").toString();
+      mFontName.deserialize(jsonObject.value("fontName"));
     }
 
     if (jsonObject.contains("textStyle")) {
-      QJsonArray textStyles = jsonObject.value("textStyle").toArray();
-      foreach (QJsonValue textStyle, textStyles) {
-        QJsonObject textStyleObject = textStyle.toObject();
-        if (textStyleObject.contains("name")) {
-          mTextStyle.append(textStyleObject.value("name").toString());
-        }
-      }
+      mTextStyle.deserialize(jsonObject.value("textStyle"));
     }
 
     if (jsonObject.contains("horizontalAlignment")) {
-      QJsonObject horizontalAlignment = jsonObject.value("horizontalAlignment").toObject();
-      if (horizontalAlignment.contains("name")) {
-        mHorizontalAlignment = horizontalAlignment.value("name").toString();
-      }
+      mHorizontalAlignment.deserialize(jsonObject.value("horizontalAlignment"));
     }
 
 //    if (jsonObject.contains("index")) {
@@ -500,35 +462,42 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("graphics")) {
-      QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
-      for (int i = 0; i < graphicsArray.size(); ++i) {
-        QJsonObject graphicObject = graphicsArray.at(i).toObject();
-        if (graphicObject.contains("name") && graphicObject.contains("elements")) {
-          const QString name = graphicObject.value("name").toString();
-          if (name.compare(QStringLiteral("Line")) == 0) {
-            Line *pLine = new Line(mpParentModel);
-            pLine->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pLine);
-          } else if (name.compare(QStringLiteral("Polygon")) == 0) {
-            Polygon *pPolygon = new Polygon(mpParentModel);
-            pPolygon->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pPolygon);
-          } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
-            Rectangle *pRectangle = new Rectangle(mpParentModel);
-            pRectangle->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pRectangle);
-          } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
-            Ellipse *pEllipse = new Ellipse(mpParentModel);
-            pEllipse->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pEllipse);
-          } else if (name.compare(QStringLiteral("Text")) == 0) {
-            Text *pText = new Text(mpParentModel);
-            pText->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pText);
-          } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
-            Bitmap *pBitmap = new Bitmap(mpParentModel);
-            pBitmap->deserialize(graphicObject.value("elements").toArray());
-            mGraphics.append(pBitmap);
+      if (jsonObject.value("graphics").isObject()) {
+        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
+        if (graphicsObject.contains("$error")) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        }
+      } else if (jsonObject.value("graphics").isArray()) {
+        QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
+        for (int i = 0; i < graphicsArray.size(); ++i) {
+          QJsonObject graphicObject = graphicsArray.at(i).toObject();
+          if (graphicObject.contains("name") && graphicObject.contains("elements")) {
+            const QString name = graphicObject.value("name").toString();
+            if (name.compare(QStringLiteral("Line")) == 0) {
+              Line *pLine = new Line(mpParentModel);
+              pLine->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pLine);
+            } else if (name.compare(QStringLiteral("Polygon")) == 0) {
+              Polygon *pPolygon = new Polygon(mpParentModel);
+              pPolygon->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pPolygon);
+            } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
+              Rectangle *pRectangle = new Rectangle(mpParentModel);
+              pRectangle->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pRectangle);
+            } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
+              Ellipse *pEllipse = new Ellipse(mpParentModel);
+              pEllipse->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pEllipse);
+            } else if (name.compare(QStringLiteral("Text")) == 0) {
+              Text *pText = new Text(mpParentModel);
+              pText->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pText);
+            } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
+              Bitmap *pBitmap = new Bitmap(mpParentModel);
+              pBitmap->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pBitmap);
+            }
           }
         }
       }
@@ -723,31 +692,31 @@ namespace ModelInstance
       }
 
       if (annotation.contains("DocumentationClass")) {
-        mDocumentationClass = annotation.value("DocumentationClass").toBool();
+        mDocumentationClass.deserialize(annotation.value("DocumentationClass"));
       }
 
       if (annotation.contains("version")) {
-        mVersion = annotation.value("version").toString();
+        mVersion.deserialize(annotation.value("version"));
       }
 
       if (annotation.contains("versionDate")) {
-        mVersionDate = annotation.value("versionDate").toString();
+        mVersionDate.deserialize(annotation.value("versionDate"));
       }
 
       if (annotation.contains("versionBuild")) {
-        mVersionDate = QString::number(annotation.value("versionBuild").toInt());
+        mVersionBuild.deserialize(annotation.value("versionBuild"));
       }
 
       if (annotation.contains("dateModified")) {
-        mDateModified = annotation.value("dateModified").toString();
+        mDateModified.deserialize(annotation.value("dateModified"));
       }
 
       if (annotation.contains("preferredView")) {
-        mPreferredView = annotation.value("preferredView").toString();
+        mPreferredView.deserialize(annotation.value("preferredView"));
       }
 
       if (annotation.contains("__Dymola_state")) {
-        mState = annotation.value("__Dymola_state").toBool();
+        mState.deserialize(annotation.value("__Dymola_state"));
       }
 
       if (annotation.contains("Protection")) {
@@ -755,7 +724,7 @@ namespace ModelInstance
         if (protection.contains("access")) {
           QJsonObject access = protection.value("access").toObject();
           if (access.contains("name")) {
-            mAccess = access.value("name").toString();
+            mAccess.deserialize(access.value("name"));
           }
         }
       }
@@ -1004,7 +973,7 @@ namespace ModelInstance
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
-    mVersionBuild = "";
+    mVersionBuild = 0;
     mDateModified = "";
     mPreferredView = "";
     mState = false;
@@ -1042,8 +1011,9 @@ namespace ModelInstance
     }
   }
 
-  PlacementAnnotation::PlacementAnnotation()
+  PlacementAnnotation::PlacementAnnotation(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     // set the visible to false. Otherwise we get elements in the center of the view.
     mVisible = false;
     mIconVisible = false;
@@ -1084,11 +1054,11 @@ namespace ModelInstance
   void Selector::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("filter")) {
-      mFilter = jsonObject.value("filter").toString();
+      mFilter.deserialize(jsonObject.value("filter"));
     }
 
     if (jsonObject.contains("caption")) {
-      mCaption = jsonObject.value("caption").toString();
+      mCaption.deserialize(jsonObject.value("caption"));
     }
   }
 
@@ -1106,23 +1076,23 @@ namespace ModelInstance
   void DialogAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("tab")) {
-      mTab = jsonObject.value("tab").toString();
+      mTab.deserialize(jsonObject.value("tab"));
     }
 
     if (jsonObject.contains("group")) {
-      mGroup = jsonObject.value("group").toString();
+      mGroup.deserialize(jsonObject.value("group"));
     }
 
     if (jsonObject.contains("enable")) {
-      mEnable = jsonObject.value("enable").toBool();
+      mEnable.deserialize(jsonObject.value("enable"));
     }
 
     if (jsonObject.contains("showStartAttribute")) {
-      mShowStartAttribute = jsonObject.value("showStartAttribute").toBool();
+      mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
     }
 
     if (jsonObject.contains("colorSelector")) {
-      mColorSelector = jsonObject.value("colorSelector").toBool();
+      mColorSelector.deserialize(jsonObject.value("colorSelector"));
     }
 
     if (jsonObject.contains("loadSelector")) {
@@ -1138,11 +1108,11 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("groupImage")) {
-      mGroupImage = jsonObject.value("groupImage").toString();
+      mGroupImage.deserialize(jsonObject.value("groupImage"));
     }
 
     if (jsonObject.contains("connectorSizing")) {
-      mConnectorSizing = jsonObject.value("connectorSizing").toBool();
+      mConnectorSizing.deserialize(jsonObject.value("connectorSizing"));
     }
   }
 
@@ -1155,15 +1125,16 @@ namespace ModelInstance
   void Choices::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("checkBox")) {
-      mCheckBox = jsonObject.value("checkBox").toBool();
+      mCheckBox.deserialize(jsonObject.value("checkBox"));
     }
 
     if (jsonObject.contains("__Dymola_checkBox")) {
-      mDymolaCheckBox = jsonObject.value("__Dymola_checkBox").toBool();
+      mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
   }
 
   Element::Element(Model *pParentModel)
+    : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
     mpModel = 0;
@@ -1312,7 +1283,7 @@ namespace ModelInstance
       QJsonObject annotation = jsonObject.value("annotation").toObject();
 
       if (annotation.contains("choicesAllMatching")) {
-        mChoicesAllMatching = annotation.value("choicesAllMatching").toBool();
+        mChoicesAllMatching.deserialize(annotation.value("choicesAllMatching"));
       }
 
       if (annotation.contains("Placement")) {
@@ -1325,7 +1296,7 @@ namespace ModelInstance
       }
 
       if (annotation.contains("Evaluate")) {
-        mEvaluate = annotation.value("Evaluate").toBool();
+        mEvaluate.deserialize(annotation.value("Evaluate"));
       }
 
       if (annotation.contains("choices")) {

@@ -365,7 +365,6 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
       }
 
       if (pShapeAnnotation) {
-        pShapeAnnotation->setExtendModel(pExtendModel);
         pShapeAnnotation->drawCornerItems();
         pShapeAnnotation->setCornerItemsActiveOrPassive();
         pShapeAnnotation->applyTransformation();

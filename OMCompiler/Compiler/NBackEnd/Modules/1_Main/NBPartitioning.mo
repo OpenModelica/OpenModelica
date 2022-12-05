@@ -39,6 +39,7 @@ public
 
 protected
   // NF
+  import NFBackendExtension.{BackendInfo, VariableKind};
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Variable = NFVariable;
@@ -442,50 +443,66 @@ protected
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   protected
     ComponentRef stripped;
+    list<ComponentRef> children;
     Boolean b;
   algorithm
-    stripped := ComponentRef.stripSubscriptsAll(varCref);
+    // extract potential record children
+    children := match BVariable.getVar(varCref)
+      local
+        list<Pointer<Variable>> children_vars;
 
-    b := match systemType
-      case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
-      case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
-      then fail();
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
+      then list(BVariable.getVarName(var) for var in children_vars);
+
+      else {varCref};
     end match;
-    if not b then
-      _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
-        local
-          ClusterPointer cluster1, cluster2;
-          Cluster c;
 
-        // neither equation nor variable already have a cluster
-        case (NONE(), NONE()) algorithm
-          cluster1 := Pointer.create(CLUSTER({}, {}));
-          addCrefToMap(stripped, cluster1, map);
-          addCrefToMap(eqCref, cluster1, map);
-        then ();
+    for child in children loop
+      stripped := ComponentRef.stripSubscriptsAll(child);
 
-        // equation does not have a cluster, but variable has one
-        case (NONE(), SOME(cluster2)) algorithm
-          addCrefToMap(eqCref, cluster2, map);
-        then ();
-
-        // variable does not have a cluster, but equation has one
-        case (SOME(cluster1), NONE()) algorithm
-          addCrefToMap(stripped, cluster1, map);
-        then ();
-
-        // both already have a different cluster
-        case (SOME(cluster1), SOME(cluster2))
-        guard(not referenceEq(cluster1, cluster2)) algorithm
-          Cluster.merge(cluster1, cluster2, map);
-        then ();
-
-        // both already have the same cluster
-        else ();
+      // check if cref has to be considered as a dependency
+      b := match systemType
+        case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
+        case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
+        then fail();
       end match;
-    end if;
+
+      if not b then
+        _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
+          local
+            ClusterPointer cluster1, cluster2;
+            Cluster c;
+
+          // neither equation nor variable already have a cluster
+          case (NONE(), NONE()) algorithm
+            cluster1 := Pointer.create(CLUSTER({}, {}));
+            addCrefToMap(stripped, cluster1, map);
+            addCrefToMap(eqCref, cluster1, map);
+          then ();
+
+         // equation does not have a cluster, but variable has one
+          case (NONE(), SOME(cluster2)) algorithm
+            addCrefToMap(eqCref, cluster2, map);
+          then ();
+
+          // variable does not have a cluster, but equation has one
+          case (SOME(cluster1), NONE()) algorithm
+            addCrefToMap(stripped, cluster1, map);
+          then ();
+
+          // both already have a different cluster
+          case (SOME(cluster1), SOME(cluster2))
+          guard(not referenceEq(cluster1, cluster2)) algorithm
+            Cluster.merge(cluster1, cluster2, map);
+          then ();
+
+          // both already have the same cluster
+          else ();
+        end match;
+      end if;
+    end for;
   end collectPartitionsCref;
 
   function addCrefToMap

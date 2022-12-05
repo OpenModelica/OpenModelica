@@ -46,11 +46,13 @@ protected
   //NF imports
   import Attributes = NFAttributes;
   import NFBinding.Binding;
+  import Call = NFCall;
   import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import ExpressionIterator = NFExpressionIterator;
+  import NFFunction.Function;
   import NFPrefixes.Direction;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
@@ -142,6 +144,9 @@ public
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
+    record RECORD
+      list<Pointer<Variable>> children;
+    end RECORD;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
     end START;
@@ -190,6 +195,7 @@ public
         case PARAMETER()          then "[PRMT]";
         case CONSTANT()           then "[CNST]";
         case ITERATOR()           then "[ITER]";
+        case RECORD()             then "[RECD]";
         case START()              then "[STRT]";
         case EXTOBJ()             then "[EXTO]";
         case JAC_VAR()            then "[JACV]";
@@ -1062,21 +1068,30 @@ public
       input Binding binding;
       output Option<StateSelect> stateSelect;
     protected
-      InstNode node;
-      String name;
       Expression exp = Binding.getTypedExp(binding);
-    algorithm
-      name := match exp
-        case Expression.ENUM_LITERAL() then exp.name;
-        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
-        else
-          algorithm
+      String name;
+      function getStateSelectName
+        input Expression exp;
+        output String name;
+      protected
+        Expression arg;
+        InstNode node;
+        Call call;
+      algorithm
+        name := match exp
+          case Expression.ENUM_LITERAL() then exp.name;
+          case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+          case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
+            guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
+          then getStateSelectName(arg);
+          else algorithm
             Error.assertion(false, getInstanceName() +
               " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
-          then
-            fail();
-      end match;
-
+          then fail();
+        end match;
+      end getStateSelectName;
+    algorithm
+      name := getStateSelectName(exp);
       stateSelect := SOME(lookupStateSelectMember(name));
     end createStateSelect;
 

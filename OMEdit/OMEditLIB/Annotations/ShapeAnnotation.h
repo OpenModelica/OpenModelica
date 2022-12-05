@@ -166,6 +166,7 @@ public:
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
   PointArrayAnnotation getPoints() {return mPoints;}
+  ArrowAnnotation getArrow() {return mArrow;}
   void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
   StringHandler::Arrow getStartArrow() {return mArrow.at(0);}
   void setEndArrow(StringHandler::Arrow endArrow) {mArrow.replace(1, endArrow);}
@@ -192,8 +193,8 @@ public:
   QString getFontName() {return mFontName;}
   void setFontSize(qreal fontSize) {mFontSize = fontSize;}
   qreal getFontSize() {return mFontSize;}
-  void setTextStyles(QList<StringHandler::TextStyle> textStyles) {mTextStyles = textStyles;}
-  QList<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
+  void setTextStyles(QVector<StringHandler::TextStyle> textStyles) {mTextStyles = textStyles;}
+  QVector<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
   void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
   StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
   void setFileName(QString fileName);
@@ -211,10 +212,10 @@ public:
   void adjustCornerItemsConnectedIndexes();
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
-  void setExtendModel(ModelInstance::Extend *pExtendModel) {mpExtendModel = pExtendModel;}
   void moveShape(const qreal dx, const qreal dy);
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
+  virtual ModelInstance::Model* getParentModel() const = 0;
   void emitAdded() {emit added();}
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
@@ -265,7 +266,7 @@ protected:
   OriginItem *mpOriginItem;
   PointArrayAnnotation mPoints;
   QList<LineGeometryType> mGeometries;
-  QList<StringHandler::Arrow> mArrow;
+  ArrowAnnotation mArrow;
   RealAnnotation mArrowSize;
   SmoothAnnotation mSmooth;
   ExtentAnnotation mExtent;
@@ -277,9 +278,9 @@ protected:
   StringAnnotation mOriginalTextString;
   StringAnnotation mTextString;
   RealAnnotation mFontSize;
-  QString mFontName;
-  QList<StringHandler::TextStyle> mTextStyles;
-  StringHandler::TextAlignment mHorizontalAlignment;
+  StringAnnotation mFontName;
+  TextStyleAnnotation mTextStyles;
+  TextAlignmentAnnotation mHorizontalAlignment;
   QString mOriginalFileName;
   QString mFileName;
   QString mClassFileName; /* Used to find the bitmap relative locations. */
@@ -287,7 +288,6 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   FlatModelica::Expression mTextExpression;
-  ModelInstance::Extend *mpExtendModel = 0;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

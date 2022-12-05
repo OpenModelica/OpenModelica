@@ -248,6 +248,14 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+ModelInstance::Model *EllipseAnnotation::getParentModel() const
+{
+  if (mpEllipse) {
+    return mpEllipse->getParentModel();
+  }
+  return 0;
+}
+
 /*!
  * \brief EllipseAnnotation::duplicate
  * Duplicates the shape.

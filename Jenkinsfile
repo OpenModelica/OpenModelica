@@ -162,9 +162,13 @@ pipeline {
                 common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                           + " -DOM_USE_CCACHE=OFF"
                                           + " -DCMAKE_INSTALL_PREFIX=build"
-                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
-                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
-                                          + " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                                          // Look in /opt/local first to prefer the macports libraries
+                                          // over others in the system.
+                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                          // Always specify the compilers explicilty for macOS
+                                          + " -DCMAKE_C_COMPILER=gcc"
+                                          + " -DCMAKE_CXX_COMPILER=g++"
+                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
                                       )
                 sh "build/bin/omc --version"
               }
@@ -829,7 +833,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
-            git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'https://github.com/OpenModelica/www.openmodelica.org.git'
+            git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'git@github.com:OpenModelica/www.openmodelica.org.git'
             script { common.standardSetup() }
             unstash 'bibliography' // 'doc/bibliography/openmodelica.org-bibgen'
             sh "git remote -v | grep www.openmodelica.org"

@@ -343,6 +343,8 @@ DimUnknown6.mo \
 DimUnknown7.mo \
 DimUnknown8.mo \
 DimUnknown9.mo \
+DimUnknown10.mo \
+DimUnknown11.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \

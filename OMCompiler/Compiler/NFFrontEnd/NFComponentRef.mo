@@ -1663,7 +1663,7 @@ public
     end ApplyFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           for s in cref.subscripts loop
             Subscript.applyExp(s, func);
@@ -1686,7 +1686,7 @@ public
     end ApplyFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           for s in cref.subscripts loop
             Subscript.applyExpShallow(s, func);
@@ -1714,7 +1714,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
           rest := mapExp(cref.restCref, func);
@@ -1739,7 +1739,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           subs := list(Subscript.mapShallowExp(s, func) for s in cref.subscripts);
           rest := mapExpShallow(cref.restCref, func);
@@ -1761,7 +1761,7 @@ public
     end FoldFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           arg := List.fold(cref.subscripts, function Subscript.foldExp(func = func), arg);
           arg := foldExp(cref.restCref, func, arg);
@@ -1788,7 +1788,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExp, func, arg);
           (rest, arg) := mapFoldExp(cref.restCref, func, arg);
@@ -1815,7 +1815,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExpShallow, func, arg);
           (rest, arg) := mapFoldExpShallow(cref.restCref, func, arg);

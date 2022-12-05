@@ -233,7 +233,7 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 }
 
 /**
- * @brief Free homotpy data.
+ * @brief Free homotopy data.
  *
  * @param homotopyData  Pointer to homotopy data.
  */
@@ -1121,7 +1121,7 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
  *  \author bbachmann
  *
  */
-int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int casualTearingSet)
+int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int casualTearingSet)
 {
    int i, k, j, m=n+1, nPivot=n;
    int pCol, pRow;
@@ -1153,7 +1153,13 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     getIndicesOfPivotElement(&n, &nPivot, &i, A, indRow, indCol, &pRow, &pCol, &absMax);
     if (absMax<DBL_EPSILON) {
       *rank = i;
-      warningStreamPrint(LOG_NLS_V, 0, "Matrix singular!");
+      if (data->simulationInfo->initial) {
+        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at initialization.");
+      } else {
+        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
+      }
+      warningStreamPrint(LOG_NLS_V, 0, "Continuing anyway. For more information please use -lv %s.", LOG_STREAM_NAME[LOG_NLS_V]);
+      messageCloseWarning(LOG_NLS_V);
       debugInt(LOG_NLS_V,"rank = ", *rank);
       debugInt(LOG_NLS_V,"position = ", *pos);
       break;
@@ -1230,7 +1236,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
 
 /*! \fn linearSolverWrapper
  */
-int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int method, int casualTearingSet)
+int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int method, int casualTearingSet)
 {
   /* First try to use lapack and if it fails then
    * use solveSystemWithTotalPivotSearch */
@@ -1247,7 +1253,7 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
   switch(method){
     case NLS_LS_TOTALPIVOT:
 
-      solverinfo = solveSystemWithTotalPivotSearch(n, x, A, indRow, indCol, pos, rank, casualTearingSet);
+      solverinfo = solveSystemWithTotalPivotSearch(data, n, x, A, indRow, indCol, pos, rank, casualTearingSet);
       /* in case of failing */
       if (solverinfo == -1)
       {
@@ -1370,7 +1376,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
     if (numberOfIterations>1)
-      solverinfo = linearSolverWrapper(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod, solverData->casualTearingSet);
+      solverinfo = linearSolverWrapper(data, solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod, solverData->casualTearingSet);
 
     if (solverinfo == -1)
     {
@@ -1616,7 +1622,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     if (numberOfIterations > solverData->maxNumberOfIterations)
     {
       solverData->info = -1;
-      warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number of iteration reached but no root found");
+      if (data->simulationInfo->initial) {
+        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at initialization, but no root found.");
+      } else {
+        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at time %f, but no root found.", data->localData[0]->timeValue);
+      }
       /* debug information */
       debugString(LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
       debugString(LOG_NLS_V, "******************************************************");
@@ -1822,7 +1832,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
-      if (assert || (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1))
+      if (assert || (solveSystemWithTotalPivotSearch(data, solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1))
       {
         /* report solver abortion */
         solverData->info=-1;
@@ -1983,7 +1993,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian:", solverData->hvec, solverData->n);
         vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
         scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
-        if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
+        if (solveSystemWithTotalPivotSearch(data, solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
         {
           debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
@@ -1995,7 +2005,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         scaleMatrixRows(solverData->n+1, solverData->m+1, solverData->hJac2);
         pos = solverData->n+1;
-        if (solveSystemWithTotalPivotSearch(solverData->n+1, solverData->dy1, solverData->hJac2, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
+        if (solveSystemWithTotalPivotSearch(data, solverData->n+1, solverData->dy1, solverData->hJac2, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
         {
           debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
@@ -2269,7 +2279,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
       pos = homotopyData->n;
-      assert = (solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
+      assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
         debugString(LOG_NLS_V, "regular initial point!!!");
       giveUp = 0;
@@ -2379,7 +2389,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
           scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
           pos = homotopyData->n;
-          solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet);
+          solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet);
           debugDouble(LOG_NLS_V,"solve mixed system at time : ", homotopyData->timeValue);
           continue;
         }
@@ -2493,7 +2503,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
       pos = homotopyData->n;
-      assert = (solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
+      assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
         debugString(LOG_NLS_V, "regular initial point!!!");
 #ifndef OMC_EMCC
