@@ -255,15 +255,15 @@ protected
   list<SimCode.SimEqSystem> equationsForZeroCrossings;
   list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
   list<SimCode.SimEqSystem> initialEquations_lambda0;   // --> initial_equations_lambda0
-  list<SimCode.SimEqSystem> jacobianEquations;
-  list<SimCode.SimEqSystem> maxValueEquations;          // --> updateBoundMaxValues
-  list<SimCode.SimEqSystem> minValueEquations;          // --> updateBoundMinValues
-  list<SimCode.SimEqSystem> nominalValueEquations;      // --> updateBoundNominalValues
+  list<SimCode.SimEqSystem> jacobianEquations = {};
+  list<SimCode.SimEqSystem> maxValueEquations = {};          // --> updateBoundMaxValues
+  list<SimCode.SimEqSystem> minValueEquations = {};          // --> updateBoundMinValues
+  list<SimCode.SimEqSystem> nominalValueEquations = {};      // --> updateBoundNominalValues
   //list<SimCode.SimEqSystem> paramAssertSimEqs;
-  list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+  list<SimCode.SimEqSystem> parameterEquations = {};         // --> updateBoundParameters
   list<SimCode.SimEqSystem> removedEquations;
   list<SimCode.SimEqSystem> removedInitialEquations;    // -->
-  list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
+  list<SimCode.SimEqSystem> startValueEquations = {};        // --> updateBoundStartValues
   list<SimCode.StateSet> stateSets;
   list<SimCodeVar.SimVar> tempvars, jacobianSimvars, seedVars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
@@ -438,15 +438,28 @@ algorithm
 
     // Assertions and crap
     // create parameter equations
+
     ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, globalKnownVars));
     if debug then execStat("simCode: createStartValueEquations"); end if;
-    ((uniqueEqIndex, nominalValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromNominal, (uniqueEqIndex, {}));
+
+    // For now, disable traversal of globalknownvars for creation of nominal, min, and max assignments (if we are not doing
+    // dynamic optimizations).
+    // We need to revise how we handle these assignments for parameters with regard to maintaining the binding values
+    // for those that we end up generating these assignments. See #9825 for discussions.
+    // If you change these remember to change the coresponding code for daemode in SimCodeMain.mo.
+    if (Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM)) then
+      ((uniqueEqIndex, nominalValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
+      if debug then execStat("simCode: createNominalValueEquationsShared"); end if;
+      ((uniqueEqIndex, minValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
+      if debug then execStat("simCode: createMinValueEquationsShared"); end if;
+      ((uniqueEqIndex, maxValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
+      if debug then execStat("simCode: createMaxValueEquationsShared"); end if;
+    end if;
+
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
-    ((uniqueEqIndex, minValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMin, (uniqueEqIndex, {}));
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, minValueEquations));
     if debug then execStat("simCode: createMinValueEquations"); end if;
-    ((uniqueEqIndex, maxValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMax, (uniqueEqIndex, {}));
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
