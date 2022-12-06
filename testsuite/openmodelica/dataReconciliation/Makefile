@@ -21,6 +21,7 @@ Splitter5e.mos\
 Splitter5f.mos\
 Splitter5g.mos\
 Splitter5h.mos\
+stateEstimation.mos\
 FourFlows.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
