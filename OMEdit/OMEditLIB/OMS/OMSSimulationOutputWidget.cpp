@@ -448,7 +448,7 @@ void OMSSimulationOutputWidget::simulationProcessError(QProcess::ProcessError er
 void OMSSimulationOutputWidget::writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type)
 {
   QTextCharFormat textCharFormat;
-  textCharFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  textCharFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpSimulationOutputPlainTextEdit->appendOutput(output, textCharFormat);
 }
 

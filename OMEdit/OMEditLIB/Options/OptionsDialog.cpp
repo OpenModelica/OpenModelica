@@ -5793,6 +5793,30 @@ void MessagesPage::setErrorPickColorButtonIcon()
   mpErrorColorButton->setIcon(pixmap);
 }
 
+/*!
+ * \brief MessagesPage::getColor
+ * Returns the color based on the error type.
+ * \param type
+ * \return
+ */
+QColor MessagesPage::getColor(const StringHandler::SimulationMessageType type) const
+{
+  switch (type) {
+    case StringHandler::OMEditInfo:
+      return Qt::blue;
+    case StringHandler::SMWarning:
+      return getWarningColor();
+    case StringHandler::Error:
+    case StringHandler::Assert:
+      return getErrorColor();
+    case StringHandler::Debug:
+    case StringHandler::Info:
+    case StringHandler::Unknown:
+    default:
+      return getNotificationColor();
+  }
+}
+
 void MessagesPage::pickNotificationColor()
 {
   QColor color = QColorDialog::getColor(getNotificationColor());

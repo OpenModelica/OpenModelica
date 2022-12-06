@@ -157,7 +157,6 @@ public:
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
   static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
-  static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
   static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
   static QString toCamelCase(QString str);
   static QMap<int, int> getLeadingSpaces(QString contents);
