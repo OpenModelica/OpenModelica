@@ -37,6 +37,7 @@
 
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+#include "Util/StringHandler.h"
 
 #include <QFontComboBox>
 #include <QStackedWidget>
@@ -721,14 +722,15 @@ public:
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
-  QColor getNotificationColor() {return mNotificaitonColor;}
+  QColor getNotificationColor() const {return mNotificaitonColor;}
   void setNotificationPickColorButtonIcon();
   void setWarningColor(QColor color) {mWarningColor = color;}
-  QColor getWarningColor() {return mWarningColor;}
+  QColor getWarningColor() const {return mWarningColor;}
   void setWarningPickColorButtonIcon();
   void setErrorColor(QColor color) {mErrorColor = color;}
-  QColor getErrorColor() {return mErrorColor;}
+  QColor getErrorColor() const {return mErrorColor;}
   void setErrorPickColorButtonIcon();
+  QColor getColor(const StringHandler::SimulationMessageType type) const;
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;

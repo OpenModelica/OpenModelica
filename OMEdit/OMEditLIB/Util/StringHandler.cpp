@@ -1723,24 +1723,6 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
   }
 }
 
-QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMessageType type)
-{
-  switch (type) {
-    case StringHandler::OMEditInfo:
-      return Qt::blue;
-    case StringHandler::SMWarning:
-    case StringHandler::Error:
-    case StringHandler::Assert:
-      return Qt::red;
-    case StringHandler::Debug:
-    case StringHandler::Info:
-    case StringHandler::Unknown:
-    default:
-      return Qt::black;
-      break;
-  }
-}
-
 /*!
  * \brief StringHandler::makeClassNameRelative
  * Removes the first characters matching with droppedClassName from draggedClassName.

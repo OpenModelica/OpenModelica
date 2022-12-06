@@ -30,6 +30,7 @@
 
 #include "FetchInterfaceDataDialog.h"
 #include "Util/Helper.h"
+#include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
@@ -148,7 +149,7 @@ void FetchInterfaceDataDialog::managerProcessStarted()
 void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
   QTextCharFormat format;
-  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  format.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpOutputTextBox->appendOutput(output, format);
 }
 
