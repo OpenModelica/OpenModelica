@@ -836,13 +836,14 @@ algorithm
 
   (extraVarsinSetSPrime, _) := List.extract1OnTrue(setSVars, isBoundaryConditionVars, List.map1r(listReverse(boundaryConditionVars), BackendVariable.getVarAt, currentSystem.orderedVars)); // filter the overdetermined variables in set-S'
 
-  //failedboundaryConditionVars := listAppend(setSVars, failedboundaryConditionVars);
-  BackendDump.dumpVarList(unMeasuredVariables, "unmeasured variables");
-  BackendDump.dumpVarList(setSVars, "Intermediate vars in set-S'");
-  BackendDump.dumpVarList(knownVars, "Known vars in set-S'");
-  BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
-  BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
-
+  if debug then
+    //failedboundaryConditionVars := listAppend(setSVars, failedboundaryConditionVars);
+    BackendDump.dumpVarList(unMeasuredVariables, "unmeasured variables");
+    BackendDump.dumpVarList(setSVars, "Intermediate vars in set-S'");
+    BackendDump.dumpVarList(knownVars, "Known vars in set-S'");
+    BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
+    BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
+  end if;
 
   // set unmeasured variables unreplaceable attributes to be true
   outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(unMeasuredVariables), BackendVariable.setVarUnreplaceable, true));
@@ -903,7 +904,6 @@ algorithm
 
   // Prepare the final DAE System with Set-C, Set-S, Set-B and Set-S' equations
 
-
   // combine set-S and set-SPrime
   setSPrime_Eq := List.unique(listAppend(setSPrime_Eq, failedboundaryConditionEquations));
   setSPrime_Eq := List.unique(listAppend(setSPrime_Eq, setS_Eq));
@@ -911,7 +911,8 @@ algorithm
   // combine set-SPrime with set-C
   allDaeEqs := List.unique(listAppend(setSPrime_Eq, residualEquations));
 
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setSPrime_Eq), "SET_SPrime_Updated");
+
+  //BackendDump.dumpEquationArray(BackendEquation.listEquation(setSPrime_Eq), "SET_SPrime_Updated");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(allDaeEqs), "Final DAE with set-c, set-S and set-SPrime combined");
 
   paramVars := BackendEquation.equationsVars(BackendEquation.listEquation(allDaeEqs), shared.globalKnownVars);
@@ -927,7 +928,7 @@ algorithm
   // combine unmeasured variables with attribute unreplaceable = true
   setSVars := listAppend(BackendVariable.varList(outBoundaryConditionVars), setSVars);
 
-  BackendDump.dumpVarList(setSVars, "Intermediate vars in final DAE updated'");
+  BackendDump.dumpVarList(listAppend(setSVars, residualVars), "Intermediate vars in final DAE updated'");
   BackendDump.dumpVarList(paramVars, "parameters in final DAE updated");
 
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.listEquation(allDaeEqs));
@@ -936,10 +937,11 @@ algorithm
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
 
-
-  BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
-  BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
-  BackendDump.dumpVariables(shared.globalKnownVars, "FinalGlobalKnownVars");
+  if debug then
+    BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
+    BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
+    BackendDump.dumpVariables(shared.globalKnownVars, "FinalGlobalKnownVars");
+  end if;
 
   // write the list of known variables + unmeasured variables of interest to the csv file with the headers
   str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";

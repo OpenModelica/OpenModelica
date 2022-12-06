@@ -2872,6 +2872,9 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
   // pepare data to compute boundary condition
   inputData reconciled_x = {datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, datareconciliationdata.reconciled_X.data, {}};
   matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
+
+  logfile << "\n\nCalculation of Boundary condition \n" << "====================================\n";
+
   reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
 
   //printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Copied", logfile);
