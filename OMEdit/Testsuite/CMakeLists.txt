@@ -29,7 +29,8 @@ macro(add_omedit_test test_name test_source_files)
   target_link_libraries(${test_name} PUBLIC omedit::testsuite::util)
 
   add_test(NAME ${test_name}
-         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/RunOMEditTest.sh $<TARGET_FILE:${test_name}>)
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/RunOMEditTest.sh $<TARGET_FILE:${test_name}>
+                                                              ${CMAKE_CURRENT_BINARY_DIR}/OMEditTestResult/)
 
   # Label the tests (does not matter just now but it will of more types of tests are added.).
   set_tests_properties(${TEST_FILE_NAME} PROPERTIES LABELS "OMEditTestsuite")
@@ -53,6 +54,9 @@ add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
 set(OMEDIT_TEST_HOMOTOPY_SOURCES Homotopy/HomotopyTest.cpp
                                  Homotopy/HomotopyTest.h)
 add_omedit_test(Homotopy "${OMEDIT_TEST_HOMOTOPY_SOURCES}")
+# Set a 5 min timeout for the Homotopy test. This should be investigated
+# to figure out why it takes so long in the first place.
+# set_tests_properties(Homotopy PROPERTIES TIMEOUT 300)
 
 set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
                                    Expression/ExpressionTest.h)

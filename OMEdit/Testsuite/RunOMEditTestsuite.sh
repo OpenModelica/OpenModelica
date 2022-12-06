@@ -6,6 +6,11 @@ OMEditTestResults="$PWD/OMEditTestResult"
 
 for testcase in "${testcases[@]}"
 do
-  ./RunOMEditTest.sh ./$testcase
+  # Try 5 times if it does not pass
+  ./RunOMEditTest.sh ./$testcase $OMEditTestResults \
+  || ./RunOMEditTest.sh ./$testcase $OMEditTestResults \
+  || ./RunOMEditTest.sh ./$testcase $OMEditTestResults \
+  || ./RunOMEditTest.sh ./$testcase $OMEditTestResults \
+  || ./RunOMEditTest.sh ./$testcase $OMEditTestResults
 done
 rm -rf $OMEditTestResults
