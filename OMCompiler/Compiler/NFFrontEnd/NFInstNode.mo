@@ -31,22 +31,16 @@
 
 encapsulated package NFInstNode
 
-import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
 import SCode;
 import Absyn;
 import AbsynUtil;
 import Type = NFType;
-import Typing = NFTyping;
-import Inst = NFInst;
-import InstContext = NFInstContext;
 import NFFunction.Function;
 import Sections = NFSections;
 import Pointer;
 import Error;
-import Flatten = NFFlatten;
-import NFFlatten.Prefix;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
 import NFModifier.Modifier;
