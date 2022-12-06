@@ -313,47 +313,47 @@ public
       end if;
 
       if isSome(mod) then
-	      var.comment := match var.comment
-	        local
-	          SCode.Comment comment;
-	          SCode.Annotation anno;
-	          SCode.Mod modification;
+        var.comment := match var.comment
+          local
+            SCode.Comment comment;
+            SCode.Annotation anno;
+            SCode.Mod modification;
 
-	        // no comment at all
-	        case NONE() algorithm
-	          anno := SCode.ANNOTATION(modification = SCode.MOD(
-	                    finalPrefix = SCode.NOT_FINAL(),
-	                    eachPrefix  = SCode.NOT_EACH(),
-	                    subModLst   = {Util.getOption(mod)},
-	                    binding     = NONE(),
-	                    info        = sourceInfo()));
-	          comment := SCode.COMMENT(SOME(anno), NONE());
-	        then SOME(comment);
+          // no comment at all
+          case NONE() algorithm
+            anno := SCode.ANNOTATION(modification = SCode.MOD(
+                      finalPrefix = SCode.NOT_FINAL(),
+                      eachPrefix  = SCode.NOT_EACH(),
+                      subModLst   = {Util.getOption(mod)},
+                      binding     = NONE(),
+                      info        = sourceInfo()));
+            comment := SCode.COMMENT(SOME(anno), NONE());
+          then SOME(comment);
 
           // no annotation
-	        case SOME(comment as SCode.COMMENT(annotation_ = NONE())) algorithm
-	          anno := SCode.ANNOTATION(modification = SCode.MOD(
-	            finalPrefix = SCode.NOT_FINAL(),
-	            eachPrefix  = SCode.NOT_EACH(),
-	            subModLst   = {Util.getOption(mod)},
-	            binding     = NONE(),
-	            info        = sourceInfo()));
-	          comment.annotation_ := SOME(anno);
-	        then SOME(comment);
+          case SOME(comment as SCode.COMMENT(annotation_ = NONE())) algorithm
+            anno := SCode.ANNOTATION(modification = SCode.MOD(
+              finalPrefix = SCode.NOT_FINAL(),
+              eachPrefix  = SCode.NOT_EACH(),
+              subModLst   = {Util.getOption(mod)},
+              binding     = NONE(),
+              info        = sourceInfo()));
+            comment.annotation_ := SOME(anno);
+          then SOME(comment);
 
           // update existing annotation
-	        case SOME(comment as SCode.COMMENT(
-	          annotation_ = SOME(anno as SCode.ANNOTATION(
-	          modification = modification as SCode.MOD()))))
-	        algorithm
-	          modification.subModLst := Util.getOption(mod) :: list(modi for modi guard(modi.ident <> name) in modification.subModLst);
-	          anno.modification := modification;
+          case SOME(comment as SCode.COMMENT(
+            annotation_ = SOME(anno as SCode.ANNOTATION(
+            modification = modification as SCode.MOD()))))
+          algorithm
+            modification.subModLst := Util.getOption(mod) :: list(modi for modi guard(modi.ident <> name) in modification.subModLst);
+            anno.modification := modification;
             comment.annotation_ := SOME(anno);
-	        then SOME(comment);
+          then SOME(comment);
 
-	        else var.comment;
-	      end match;
-	    end if;
+          else var.comment;
+        end match;
+      end if;
     end if;
   end propagateAnnotation;
 
