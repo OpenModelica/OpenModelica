@@ -1107,89 +1107,40 @@ uniontype InstNode
     end match;
   end scopeListClass;
 
-  function propagateAnnotation
+  function getAnnotation
     input String name;
     input InstNode node;
-  protected
-    Option<SCode.SubMod> mod;
-    function getSubMod
-      input String name;
-      input InstNode node;
-      output Option<SCode.SubMod> mod = NONE();
-    algorithm
-      mod := match node
-        local
-          Pointer<Component> component;
-          list<SCode.SubMod> subModLst;
-          Boolean done = false;
+    output Option<SCode.SubMod> mod = NONE();
+  algorithm
+    mod := match node
+      local
+        Pointer<Component> component;
+        list<SCode.SubMod> subModLst;
+        Boolean done = false;
 
-        case COMPONENT_NODE(component = component)
-        then match Pointer.access(component)
-          case Component.TYPED_COMPONENT(
-            comment = SOME(SCode.COMMENT(
-            annotation_ = SOME(SCode.ANNOTATION(
-            modification = SCode.MOD(subModLst = subModLst))))))
-          algorithm
-            for sm in subModLst loop
-              if sm.ident == name then
-                mod := SOME(sm);
-                done := true;
-              end if;
-            end for;
-          if not done then
-            mod := getSubMod(name, node.parent);
-          end if;
-          then mod;
-          else NONE();
-        end match;
+      case COMPONENT_NODE(component = component)
+      then match Pointer.access(component)
+        case Component.TYPED_COMPONENT(
+          comment = SOME(SCode.COMMENT(
+          annotation_ = SOME(SCode.ANNOTATION(
+          modification = SCode.MOD(subModLst = subModLst))))))
+        algorithm
+          for sm in subModLst loop
+            if sm.ident == name then
+              mod := SOME(sm);
+              done := true;
+            end if;
+          end for;
+        if not done then
+          mod := getAnnotation(name, node.parent);
+        end if;
+        then mod;
+        case Component.TYPED_COMPONENT() then getAnnotation(name, node.parent);
         else NONE();
       end match;
-    end getSubMod;
-  algorithm
-    if isNone(getSubMod(name, node)) then
-      _:= match node
-        local
-          Component component;
-          SCode.Comment comment;
-          SCode.Annotation anno;
-          SCode.Mod modification;
-        case COMPONENT_NODE() algorithm
-          component := Pointer.access(node.component);
-          _ := match component
-          case Component.TYPED_COMPONENT(
-            comment = SOME(comment as SCode.COMMENT()))
-          algorithm
-            mod := getSubMod(name, node.parent);
-            if isSome(mod) then
-              anno := match comment.annotation_
-                case SOME(anno as SCode.ANNOTATION(
-                  modification = modification as SCode.MOD()))
-                algorithm
-                  modification.subModLst := Util.getOption(mod) :: modification.subModLst;
-                  anno.modification := modification;
-                then anno;
-                case NONE() algorithm
-                  anno := SCode.ANNOTATION(modification = SCode.MOD(
-                    finalPrefix = SCode.NOT_FINAL(),
-                    eachPrefix  = SCode.NOT_EACH(),
-                    subModLst   = {Util.getOption(mod)},
-                    binding     = NONE(),
-                    info        = sourceInfo()));
-                then anno;
-              end match;
-              comment.annotation_ := SOME(anno);
-              component.comment := SOME(comment);
-              Pointer.update(node.component, component);
-            end if;
-          then ();
-          else ();
-          end match;
-
-        then ();
-        else ();
-      end match;
-    end if;
-  end propagateAnnotation;
+      else NONE();
+    end match;
+  end getAnnotation;
 
   type ScopeType = enumeration(
     RELATIVE       "Stops at a root class and doesn't include the root",

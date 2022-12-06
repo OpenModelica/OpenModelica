@@ -293,10 +293,67 @@ public
 
   function propagateAnnotation
     input String name;
+    input Boolean overwrite;
     input output Variable var;
+  protected
+    InstNode node;
+    Option<SCode.SubMod> mod;
   algorithm
     if ComponentRef.isCref(var.name) then
-      InstNode.propagateAnnotation(name, ComponentRef.node(var.name));
+      node := ComponentRef.node(var.name);
+      // InstNode.getAnnotation is recursive and returns the first annotation found.
+      // if the original is supposed to be overwritten, skip the node itself and look at the parent
+      if overwrite then
+        mod := match node
+          case InstNode.COMPONENT_NODE() then InstNode.getAnnotation(name, node.parent);
+          else NONE();
+        end match;
+      else
+        mod := InstNode.getAnnotation(name, node);
+      end if;
+
+      if isSome(mod) then
+	      var.comment := match var.comment
+	        local
+	          SCode.Comment comment;
+	          SCode.Annotation anno;
+	          SCode.Mod modification;
+
+	        // no comment at all
+	        case NONE() algorithm
+	          anno := SCode.ANNOTATION(modification = SCode.MOD(
+	                    finalPrefix = SCode.NOT_FINAL(),
+	                    eachPrefix  = SCode.NOT_EACH(),
+	                    subModLst   = {Util.getOption(mod)},
+	                    binding     = NONE(),
+	                    info        = sourceInfo()));
+	          comment := SCode.COMMENT(SOME(anno), NONE());
+	        then SOME(comment);
+
+          // no annotation
+	        case SOME(comment as SCode.COMMENT(annotation_ = NONE())) algorithm
+	          anno := SCode.ANNOTATION(modification = SCode.MOD(
+	            finalPrefix = SCode.NOT_FINAL(),
+	            eachPrefix  = SCode.NOT_EACH(),
+	            subModLst   = {Util.getOption(mod)},
+	            binding     = NONE(),
+	            info        = sourceInfo()));
+	          comment.annotation_ := SOME(anno);
+	        then SOME(comment);
+
+          // update existing annotation
+	        case SOME(comment as SCode.COMMENT(
+	          annotation_ = SOME(anno as SCode.ANNOTATION(
+	          modification = modification as SCode.MOD()))))
+	        algorithm
+	          modification.subModLst := Util.getOption(mod) :: list(modi for modi guard(modi.ident <> name) in modification.subModLst);
+	          anno.modification := modification;
+            comment.annotation_ := SOME(anno);
+	        then SOME(comment);
+
+	        else var.comment;
+	      end match;
+	    end if;
     end if;
   end propagateAnnotation;
 
