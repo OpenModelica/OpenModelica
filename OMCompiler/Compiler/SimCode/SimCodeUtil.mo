@@ -290,6 +290,7 @@ protected
   Option<BackendDAE.Variables> setBVars;
   list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
   SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
+  Integer numRelatedBoundaryConditions;
   String fullPathPrefix;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
@@ -558,7 +559,7 @@ algorithm
 
     // Generate jacobian code for DataReconciliation
     if Util.isSome(shared.dataReconciliationData) then
-      BackendDAE.DATA_RECON(dataReconJac, setcVars, datareconinputvars, setBVars, dataReconJacH) := Util.getOption(shared.dataReconciliationData);
+      BackendDAE.DATA_RECON(dataReconJac, setcVars, datareconinputvars, setBVars, dataReconJacH, numRelatedBoundaryConditions) := Util.getOption(shared.dataReconciliationData);
       (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
       // check for jacobian H for state estimation, if exist generate Matrix H
       if (Util.isSome(dataReconJacH)) then
@@ -686,6 +687,7 @@ algorithm
         varInfo := modelInfo.varInfo;
         varInfo.numSetcVars := listLength(tmpsetcVars);
         varInfo.numDataReconVars := listLength(tmpdatareconinputvars);
+        varInfo.numRelatedBoundaryConditions := numRelatedBoundaryConditions;
         modelInfo.varInfo := varInfo;
         //print("\n simcode gen setc:*****"+anyString(tmpsetcVars) + "\n lenght of vars :" +anyString(listLength(tmpsetcVars)));
     end if;
@@ -7721,7 +7723,7 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0, 0);
 end createVarInfo;
 
 protected function getNumberOfRealInputs

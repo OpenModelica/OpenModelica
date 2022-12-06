@@ -1525,6 +1525,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
     data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
     data->modelData->nSetbVars = <%varInfo.numSetbVars%>;
+    data->modelData->nRelatedBoundaryConditions = <%varInfo.numRelatedBoundaryConditions%>;
     data->modelData->linearizationDumpLanguage =
     <%
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA'

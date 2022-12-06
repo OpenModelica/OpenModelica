@@ -151,7 +151,7 @@ void copyReferenceFile(DATA * data, const std::string & filename)
   }
 }
 
-int getRealtedBoundaryConditions(DATA * data)
+int getRelatedBoundaryConditions(DATA * data)
 {
   // check for _relatedBoundaryConditionsEquations.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
   std::string relatedBoundaryConditionsFilename = string(data->modelData->modelFilePrefix) +  "_relatedBoundaryConditionsEquations.txt";
@@ -225,7 +225,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile << "<table> \n";
   myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << getRealtedBoundaryConditions(data) << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << data->modelData->nRelatedBoundaryConditions << "</td> </tr>\n";
   myfile << "</table> \n";
 
   // Auxiliary Conditions
@@ -339,7 +339,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of measured variables: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of unmeasured variables: </th> \n" << "<td>" << data->modelData->nSetbVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << getRealtedBoundaryConditions(data) << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << data->modelData->nRelatedBoundaryConditions << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
@@ -378,6 +378,8 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     // Intermediate Conditions
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations for unmeasured variables </a> </h3>\n";
   }
+
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.txt" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";

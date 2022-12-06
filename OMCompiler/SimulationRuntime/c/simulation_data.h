@@ -578,6 +578,7 @@ typedef struct MODEL_DATA
   long nSetcVars;
   long ndataReconVars;
   long nSetbVars;
+  long nRelatedBoundaryConditions;
 } MODEL_DATA;
 
 /**

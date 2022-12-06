@@ -840,6 +840,7 @@ package SimCode
       Integer numDataReconVars;
       Integer numRealInputVars "for fmi cs to interpolate inputs";
       Integer numSetbVars "for data reconciliation setB vars";
+      Integer numRelatedBoundaryConditions "for data reconciliation count number of boundary conditions which failed the extraction algorithm";
     end VARINFO;
   end VarInfo;
 
