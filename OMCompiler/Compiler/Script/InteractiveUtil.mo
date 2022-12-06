@@ -2013,7 +2013,7 @@ algorithm
       algorithm
         typename := AbsynUtil.pathString(qualifyPath(inEnv, p));
 
-        names := getComponentItemsNameAndComment(comps, inQuoteNames);
+        names := getComponentItemsNameAndComment(comps, inElement, inQuoteNames);
         dims := getComponentitemsDimension(comps);
         final_str := boolString(inElement.finalPrefix);
         repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
@@ -2466,9 +2466,21 @@ public function prefixTypename
     list(stringAppendList({inType, ", ", c}) for c in inComponents);
 end prefixTypename;
 
+public function getConstrainingClassComment
+  input Option<Absyn.ConstrainClass> constrainingClass;
+  output String comment;
+algorithm
+  comment := match constrainingClass
+    case SOME(Absyn.ConstrainClass.CONSTRAINCLASS(
+      comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment))))) then comment;
+    else "";
+  end match;
+end getConstrainingClassComment;
+
 public function getComponentItemsNameAndComment
 " separated list of all component names and comments (if any)."
   input list<Absyn.ComponentItem> inComponents;
+  input Absyn.Element inElement;
   input Boolean inQuoteNames "Adds quotes around the component names if true.";
   output list<String> outStrings = {};
 protected
@@ -2478,7 +2490,15 @@ algorithm
     _ := match comp
       case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name))
         algorithm
-          cmt_str := getClassCommentInCommentOpt(comp.comment);
+          // The Modelica syntax allows a comment on both the element and the
+          // constraining clause, but the specification recommends putting it on
+          // the constraining clause. So check the constraining clause first.
+          cmt_str := getConstrainingClassComment(AbsynUtil.getElementConstrainingClass(inElement));
+
+          if stringEmpty(cmt_str) then
+            cmt_str := getClassCommentInCommentOpt(comp.comment);
+          end if;
+
           outStrings := (if inQuoteNames then
             stringAppendList({"\"", name, "\", \"", cmt_str, "\""}) else
             stringAppendList({name, ", \"", cmt_str, "\""})) :: outStrings;

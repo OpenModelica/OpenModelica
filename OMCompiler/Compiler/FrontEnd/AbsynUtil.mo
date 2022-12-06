@@ -5989,5 +5989,15 @@ algorithm
   end match;
 end mapSubscriptExp;
 
+function getElementConstrainingClass
+  input Absyn.Element element;
+  output Option<Absyn.ConstrainClass> cc;
+algorithm
+  cc := match element
+    case Absyn.Element.ELEMENT() then element.constrainClass;
+    else NONE();
+  end match;
+end getElementConstrainingClass;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
