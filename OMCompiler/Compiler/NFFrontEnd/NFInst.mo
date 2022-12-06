@@ -217,6 +217,10 @@ algorithm
 
   flatModel := InstUtil.combineSubscripts(flatModel);
 
+  // propagate hide result attribute
+  // ticket #4346
+  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, var) for var in flatModel.variables);
+
   if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
      Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
     flatModel := FlatModel.obfuscate(flatModel);
