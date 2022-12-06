@@ -653,6 +653,28 @@ namespace FlatModelica
       std::vector<Expression> _elements;
   };
 
+  class Range : public ExpressionBase
+  {
+    public:
+      Range(Expression start, Expression step, Expression stop)
+        : _start(std::move(start)), _step(std::move(step)), _stop(std::move(stop)) {}
+
+      Range(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Range>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+      bool isLiteral() const override;
+
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      Expression _start;
+      Expression _step;
+      Expression _stop;
+  };
+
   class Call : public ExpressionBase
   {
     public:
@@ -680,6 +702,46 @@ namespace FlatModelica
       std::string _name;
       std::vector<Expression> _args;
       bool _is_record;
+  };
+
+  class Iterator
+  {
+    public:
+      Iterator(std::string name, Expression range)
+        : _name(std::move(name)), _range(std::move(range)) {}
+
+      Iterator(const QJsonValue &value);
+
+      const std::string& name() const { return _name; }
+      const Expression& range() const { return _range; }
+
+      QJsonValue serialize() const;
+
+    private:
+      std::string _name;
+      Expression _range;
+  };
+
+  class IteratorCall : public ExpressionBase
+  {
+    public:
+      IteratorCall(std::string name, Expression exp, std::vector<Iterator> iterators)
+        : _name(std::move(name)), _exp(std::move(exp)), _iterators(std::move(iterators)) {}
+
+      IteratorCall(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IteratorCall>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+      bool isLiteral() const override { return false; }
+
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      std::string _name;
+      Expression _exp;
+      std::vector<Iterator> _iterators;
   };
 
   class Binary : public ExpressionBase
@@ -1157,22 +1219,17 @@ namespace FlatModelica
     if (kind.isString()) {
       switch (djb2_qHash(kind.toString().data())) {
         case djb2_hash("enum"):              return std::make_unique<Enum>(value);
-        //case djb2_hash("clock"):             return std::make_unique<Clock>(value);
+        case djb2_hash("clock"):             return std::make_unique<Cref>(value);
         case djb2_hash("cref"):              return std::make_unique<Cref>(value);
-        //case djb2_hash("typename"):          return std::make_unique<Typename>(value);
-        //case djb2_hash("range"):             return std::make_unique<Range>(value);
+        case djb2_hash("typename"):          return std::make_unique<Cref>(value);
+        case djb2_hash("range"):             return std::make_unique<Range>(value);
         //case djb2_hash("tuple"):             return std::make_unique<Tuple>(value);
         case djb2_hash("record"):            return std::make_unique<Call>(value, true);
         case djb2_hash("call"):              return std::make_unique<Call>(value, false);
-        //case djb2_hash("array_constructor"): return std::make_unique<ArrayConstructor>(value);
-        //case djb2_hash("reduction"):         return std::make_unique<Reduction>(value);
-        //case djb2_hash("size"):              return std::make_unique<Size>(value);
+        case djb2_hash("iterator_call"):     return std::make_unique<IteratorCall>(value);
         case djb2_hash("binary_op"):         return std::make_unique<Binary>(value);
         case djb2_hash("unary_op"):          return std::make_unique<Unary>(value);
         case djb2_hash("if"):                return std::make_unique<IfExp>(value);
-        //case djb2_hash("cast"):              return std::make_unique<Cast>(value);
-        //case djb2_hash("box"):               return std::make_unique<Box>(value);
-        //case djb2_hash("unbox"):             return std::make_unique<Unbox>(value);
         //case djb2_hash("sub"):               return std::make_unique<Subscripted>(value);
         //case djb2_hash("tuple_element"):     return std::make_unique<TupleElement>(value);
         //case djb2_hash("record_element"):    return std::make_unique<RecordElement>(value);
@@ -1466,6 +1523,69 @@ namespace FlatModelica
     return Expression(std::move(elems));
   }
 
+  Range::Range(const QJsonObject &value)
+  {
+    auto start = value.find("start");
+
+    if (start == value.end()) {
+      throw json_error("Expression: missing range start in ", value);
+    }
+
+    _start.deserialize(*start);
+
+    auto stop = value.find("stop");
+
+    if (stop == value.end()) {
+      throw json_error("Expression: missing range stop in ", value);
+    }
+
+    _stop.deserialize(*stop);
+
+    auto step = value.find("step");
+
+    if (step != value.end()) {
+      _step.deserialize(*step);
+    }
+  }
+
+  Expression Range::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    auto start = _start.evaluate(var_eval);
+    auto stop = _stop.evaluate(var_eval);
+    auto step = _step.isNull() ? Expression() : _step.evaluate(var_eval);
+    return Expression(std::make_unique<Range>(std::move(start), std::move(step), std::move(stop)));
+  }
+
+  bool Range::isLiteral() const
+  {
+    return _start.isLiteral() && _step.isLiteral() && _stop.isLiteral();
+  }
+
+  void Range::print(std::ostream &os) const
+  {
+    os << _start << ':';
+
+    if (!_step.isNull()) {
+      os << _step << ':';
+    }
+
+    os << _stop;
+  }
+
+  QJsonValue Range::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("$kind", "range");
+    obj.insert("start", _start.serialize());
+
+    if (!_step.isNull()) {
+      obj.insert("step", _step.serialize());
+    }
+
+    obj.insert("stop", _stop.serialize());
+    return obj;
+  }
+
   Call::Call(const QJsonObject &value, bool isRecord)
     : _is_record(isRecord)
   {
@@ -1613,6 +1733,107 @@ namespace FlatModelica
     tokenizer.popToken();
 
     return Expression(std::make_unique<Call>(name, std::move(args)));
+  }
+
+  Iterator::Iterator(const QJsonValue &value)
+  {
+    if (!value.isObject()) {
+      throw json_error("Expression: invalid iterator expression: ", value);
+    }
+
+    auto obj = value.toObject();
+    auto name = obj["name"];
+
+    if (!name.isString()) {
+      throw json_error("Expression: invalid iterator name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+
+    auto range = obj.find("range");
+
+    if (range == obj.end()) {
+      throw json_error("Expression: missing iterator range in ", value);
+    }
+
+    _range.deserialize(*range);
+  }
+
+  QJsonValue Iterator::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("name", _name.c_str());
+    obj.insert("range", _range.serialize());
+    return obj;
+  }
+
+  std::ostream& operator<< (std::ostream &os, const Iterator &i)
+  {
+    os << i.name() << " in " << i.range();
+    return os;
+  }
+
+  IteratorCall::IteratorCall(const QJsonObject &value)
+  {
+    auto name = value["name"];
+
+    if (!name.isString()) {
+      throw json_error("Expression: invalid JSON iterator call name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+    _exp.deserialize(value["exp"]);
+
+    auto iters = value["iterators"];
+
+    if (!iters.isArray()) {
+      throw json_error("Expression: invalid JSON iterator call iterators: ", iters);
+    }
+
+    for (const auto &i: iters.toArray()) {
+      _iterators.emplace_back(i);
+    }
+  }
+
+  Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    return Expression(std::make_unique<IteratorCall>(*this));
+  }
+
+  void IteratorCall::print(std::ostream &os) const
+  {
+    bool is_array = _name == "$array";
+
+    if (is_array) {
+      os << '{';
+    } else {
+      os << _name << '(';
+    }
+
+    os << _exp << " for ";
+
+    for (auto it = _iterators.begin(); it != _iterators.end(); ++it) {
+      if (it != _iterators.begin()) os << ", ";
+      os << *it;
+    }
+
+    os << (is_array ? '}' : ')');
+  }
+
+  QJsonValue IteratorCall::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("$kind", "iterator_call");
+    obj.insert("name", _name.c_str());
+    obj.insert("exp", _exp.serialize());
+
+    QJsonArray iters;
+    for (auto &i: _iterators) {
+      iters.push_back(i.serialize());
+    }
+    obj.insert("iterators", std::move(iters));
+
+    return obj;
   }
 
   Binary::Binary(const QJsonObject &value)
