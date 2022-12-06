@@ -49,7 +49,7 @@ import Flatten = NFFlatten;
 import NFFlatten.Prefix;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
-import NFModifier.{Modifier, ModifierScope};
+import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
 import Expression = NFExpression;
@@ -1112,34 +1112,29 @@ uniontype InstNode
     input InstNode node;
     output Option<SCode.SubMod> mod = NONE();
   algorithm
-    mod := match node
-      local
-        Pointer<Component> component;
-        list<SCode.SubMod> subModLst;
-        Boolean done = false;
 
-      case COMPONENT_NODE(component = component)
-      then match Pointer.access(component)
-        case Component.TYPED_COMPONENT(
-          comment = SOME(SCode.COMMENT(
-          annotation_ = SOME(SCode.ANNOTATION(
-          modification = SCode.MOD(subModLst = subModLst))))))
+    if InstNode.isComponent(node) then
+      mod := match Component.comment(InstNode.component(node))
+        local
+          list<SCode.SubMod> subModLst;
+          Boolean done = false;
+
+        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification = SCode.MOD(subModLst = subModLst)))))
         algorithm
           for sm in subModLst loop
             if sm.ident == name then
               mod := SOME(sm);
               done := true;
+              break;
             end if;
           end for;
-        if not done then
-          mod := getAnnotation(name, node.parent);
-        end if;
+          if not done then
+            mod := getAnnotation(name, parent(node));
+          end if;
         then mod;
-        case Component.TYPED_COMPONENT() then getAnnotation(name, node.parent);
-        else NONE();
+        else getAnnotation(name, parent(node));
       end match;
-      else NONE();
-    end match;
+    end if;
   end getAnnotation;
 
   type ScopeType = enumeration(

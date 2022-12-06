@@ -3472,10 +3472,38 @@ algorithm
   end match;
 end isInlineTypeSubMod;
 
+public function appendAnnotationToCommentOption
+  input SCode.Annotation inAnnotation;
+  input Option<SCode.Comment> inComment;
+  input Boolean check_replace = false;
+  output Option<SCode.Comment> outComment;
+algorithm
+  outComment := match inComment
+    local
+      SCode.Comment comment;
+    case SOME(comment) then SOME(appendAnnotationToComment(inAnnotation, comment, check_replace));
+    else SOME(SCode.COMMENT(SOME(inAnnotation), NONE()));
+  end match;
+end appendAnnotationToCommentOption;
+
 public function appendAnnotationToComment
   input SCode.Annotation inAnnotation;
   input SCode.Comment inComment;
+  input Boolean check_replace = false;
   output SCode.Comment outComment;
+protected
+  function isNotElem
+    input SCode.SubMod mod;
+    input list<SCode.SubMod> mods;
+    output Boolean b = true;
+  algorithm
+    for m in mods loop
+      if (mod.ident == m.ident) then
+        b := false;
+        return;
+      end if;
+    end for;
+  end isNotElem;
 algorithm
   outComment := match(inAnnotation, inComment)
     local
@@ -3491,8 +3519,12 @@ algorithm
 
     case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = mods1)),
           SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt))
-      equation
-        mods2 = listAppend(mods1, mods2);
+      algorithm
+        if not check_replace then
+          mods2 := listAppend(mods1, mods2);
+        else
+          mods2 := listAppend(mods1, List.filterOnTrue(mods2, function isNotElem(mods = mods1)));
+        end if;
       then
         SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt);
 
