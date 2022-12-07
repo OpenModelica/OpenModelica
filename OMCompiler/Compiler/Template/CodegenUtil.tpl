@@ -173,8 +173,7 @@ template crefCComment(SimVar v)
 ::=
   match v
   case SIMVAR(isProtected = true, source = SOURCE(info = SOURCEINFO(fileName = fileName))) then
-    if not boolOr(boolOr(stringEq(getConfigString(OBFUSCATE), "protected"), stringEq(getConfigString(OBFUSCATE), "full")),
-                  boolAnd(stringEq(getConfigString(OBFUSCATE), "encrypted"), Util.endsWith(fileName, ".moc")))
+    if not boolOr(boolOr(stringEq(getConfigString(OBFUSCATE), "protected"), stringEq(getConfigString(OBFUSCATE), "full")), stringEq(getConfigString(OBFUSCATE), "encrypted"))
     then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
   case SIMVAR(__) then
     if not stringEq(getConfigString(OBFUSCATE), "full")
