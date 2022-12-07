@@ -7794,7 +7794,7 @@ end isNegativeOrZero;
 function isGreaterOrEqual
   input DAE.Exp exp1;
   input DAE.Exp exp2;
-  output Boolean isGreaterOrEqual = isPositiveOrZero(expSub(exp1, exp2));
+  output Boolean isGreaterOrEqual = isPositiveOrZero(ExpressionSimplify.simplify(expSub(exp1, exp2)));
 end isGreaterOrEqual;
 
 public function isHalf
