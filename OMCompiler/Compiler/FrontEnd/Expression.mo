@@ -7791,6 +7791,12 @@ algorithm
   end match;
 end isNegativeOrZero;
 
+function isGreaterOrEqual
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  output Boolean isGreaterOrEqual = isPositiveOrZero(expSub(exp1, exp2));
+end isGreaterOrEqual;
+
 public function isHalf
 "Returns true if an expression is 0.5"
   input DAE.Exp inExp;

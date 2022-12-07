@@ -133,7 +133,6 @@ algorithm
   _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, simplifyInStreamWork, vars);
 end simplifyInStream;
 
-
 protected function simplifyInStreamWork
   input DAE.Exp inExp;
   input list<BackendDAE.Variables> inVars;
@@ -157,7 +156,7 @@ protected function simplifyInStreamWork2
   output DAE.Exp outExp;
   output list<BackendDAE.Variables> outVars = inVars;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       DAE.Type tp;
       DAE.ComponentRef cr;
@@ -165,72 +164,44 @@ algorithm
       Option<DAE.Exp> eMin, eMax;
 
     // positiveMax(cref, eps) = 0 if variable(cref).max <= 0
-    // positiveMax(cref, eps) = cref if variable(cref).min >= 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.CREF(componentRef=cr), expr})
-    algorithm
-      (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      if simplifyInStreamWorkSimplify(eMax, true) then  // var.max <= 0.0
-        tp := ComponentReference.crefTypeFull(cr);
-        ret := Expression.createZeroExpression(tp);
-      elseif simplifyInStreamWorkSimplify(eMin, false) then // var.min >= 0.0
-        ret := e;
-      else
-        tp := ComponentReference.crefTypeFull(cr);
-        ret := Expression.makePureBuiltinCall("max", {e, expr}, tp);
-      end if;
-    then
-       ret;
+    // positiveMax(cref, eps) = cref if variable(cref).min >= eps
+    case DAE.CALL(path = Absyn.IDENT("$OMC$PositiveMax"), expLst = {e as DAE.CREF(componentRef = cr), expr}) algorithm
+      (eMin, eMax) := simplifyInStreamGetMinMaxAttributes(cr, outVars);
+      tp := ComponentReference.crefTypeFull(cr);
+      ret := if Util.applyOptionOrDefault(eMax, Expression.isNegativeOrZero, false) then Expression.createZeroExpression(tp)
+        elseif Util.applyOptionOrDefault(eMin, function Expression.isGreaterOrEqual(exp2 = expr), false) then e
+        else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+    then ret;
 
-    //positiveMax(-cref, eps) = 0 if variable(cref).min >= 0
-    //positiveMax(-cref, eps) = -cref if variable(cref).max <= 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr})
-    algorithm
-      (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      if simplifyInStreamWorkSimplify(eMin, false) then // var.min >= 0.0
-        ret := Expression.createZeroExpression(tp);
-      elseif simplifyInStreamWorkSimplify(eMax, true) then  // var.max <= 0.0
-        ret := e;
-      else
-        ret := Expression.makePureBuiltinCall("max", {e, expr}, tp);
-      end if;
-    then
-       ret;
+    // positiveMax(-cref, eps) = 0 if variable(cref).min >= 0
+    // positiveMax(-cref, eps) = -cref if variable(cref).max <= -eps
+    case DAE.CALL(path = Absyn.IDENT("$OMC$PositiveMax"), expLst = {e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef = cr)), expr}) algorithm
+      (eMin, eMax) := simplifyInStreamGetMinMaxAttributes(cr, outVars);
+      ret := if Util.applyOptionOrDefault(eMin, Expression.isPositiveOrZero, false) then Expression.createZeroExpression(tp)
+        elseif Util.applyOptionOrDefault(eMax, function Expression.isGreaterOrEqual(exp1 = expr), false) then e
+        else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+    then ret;
 
-    //positiveMax(cref, eps) = cref where cref >= 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, _}) guard Expression.isPositiveOrZero(e)
-    then e;
+    // positiveMax(cref, eps) = max(cref,eps) in the general case
+    case DAE.CALL(path = Absyn.IDENT("$OMC$PositiveMax"), expLst = {e, expr})
+    then Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
 
-    // e.g. positiveMax(cref, eps) = max(cref,eps) = eps where cref < 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr})
-      //print("\nsimplifyInStreamWork: ");
-      //print(ExpressionDump.printExpStr(inExp));
-      //print(" <-> ");
-      //print(ExpressionDump.printExpStr(e));
-    then
-      Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
-
-    case DAE.CALL(path=Absyn.IDENT("$OMC$inStreamDiv"),expLst={e, expr})
-      algorithm
-          e := ExpressionSimplify.simplify(e);
-          ret := match(e)
-                  local
-                    DAE.Exp a,b;
-
-                  case DAE.BINARY(a, DAE.DIV(), b)
-                  guard Expression.isZero(a) and Expression.isZero(b)
-                  then expr;
-
-                  else e;
-
-                 end match;
-      then
-         ret;
+    case DAE.CALL(path = Absyn.IDENT("$OMC$inStreamDiv"), expLst = {e, expr}) algorithm
+      e := ExpressionSimplify.simplify(e);
+      ret := match e
+        local
+          DAE.Exp a,b;
+        case DAE.BINARY(a, DAE.DIV(), b) guard Expression.isZero(a) and Expression.isZero(b)
+        then expr;
+        else e;
+      end match;
+    then ret;
 
     else inExp;
   end match;
 end simplifyInStreamWork2;
 
-protected function simplifyInStreamWorkExpresion
+protected function simplifyInStreamGetMinMaxAttributes
   input DAE.ComponentRef cr;
   input list<BackendDAE.Variables> inVars;
   output Option<DAE.Exp> outMin = NONE();
@@ -247,38 +218,7 @@ algorithm
       // search
     end try;
   end for;
-end simplifyInStreamWorkExpresion;
-
-protected function simplifyInStreamWorkSimplify
-  input Option<DAE.Exp> bound;
-  input Boolean neg;
-  output Boolean isZero;
-algorithm
-  isZero := match bound
-    local
-      Real r;
-      Boolean b;
-      DAE.Exp expr;
-
-    case SOME(DAE.RCONST(r))
-      then if neg then r<= 0.0 else r >= 0.0;
-
-    case SOME(expr)
-      //guard Expression.isConst(expr)
-      algorithm
-       expr := ExpressionSimplify.simplify(expr);
-       b := match expr
-            case DAE.RCONST(r)
-              then if neg then r<= 0.0 else r >= 0.0;
-            else
-              false;
-            end match;
-      then
-        b;
-
-    else false;
-  end match;
-end simplifyInStreamWorkSimplify;
+end simplifyInStreamGetMinMaxAttributes;
 
 // =============================================================================
 // simplify time independent function calls
