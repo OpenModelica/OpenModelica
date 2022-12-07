@@ -252,6 +252,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   const int INDEX_JAC_B;
   const int INDEX_JAC_C;
   const int INDEX_JAC_D;
+  /* Matrix F and H are generated for DataReconciliation*/
   const int INDEX_JAC_F;
   const int INDEX_JAC_H;
 
