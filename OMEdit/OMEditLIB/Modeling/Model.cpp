@@ -651,7 +651,14 @@ namespace ModelInstance
       }
 
       if (prefixes.contains("replaceable")) {
-        mReplaceable = prefixes.value("replaceable").toBool();
+        auto replaceable = prefixes.value("replaceble");
+
+        if (replaceable.isObject()) {
+          mReplaceable = true;
+          // constrainedby stuff goes here
+        } else {
+          mReplaceable = replaceable.toBool();
+        }
       }
 
       if (prefixes.contains("redeclare")) {
@@ -1254,7 +1261,14 @@ namespace ModelInstance
       }
 
       if (prefixes.contains("replaceable")) {
-        mReplaceable = prefixes.value("replaceable").toBool();
+        auto replaceable = prefixes.value("replaceble");
+
+        if (replaceable.isObject()) {
+          mReplaceable = true;
+          // constrainedby stuff goes here
+        } else {
+          mReplaceable = replaceable.toBool();
+        }
       }
 
       if (prefixes.contains("redeclare")) {
