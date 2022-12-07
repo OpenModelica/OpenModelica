@@ -1158,7 +1158,7 @@ algorithm
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
         //end if;
 
-        is_constant := comp.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
+        is_constant := comp.attributes.variability <= Variability.PARAMETER;
 
         if Binding.isBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
