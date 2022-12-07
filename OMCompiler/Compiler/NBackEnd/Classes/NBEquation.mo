@@ -372,7 +372,7 @@ public
       end match;
     end createSingleReplacements;
 
-    function fromExp
+    function extract
       "takes an expression and maps it to find all occuring iterators.
       returns an iterator if all iterators are equal, fails otherwise.
       also replaces all array constructors with indexed expressions."
@@ -408,7 +408,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the extracted iterators do not match: "
           + Expression.toString(exp)});
       end try;
-    end fromExp;
+    end extract;
 
     function toString
       input Iterator iter;
@@ -1512,13 +1512,14 @@ public
       end if;
 
       // simplify rhs and get potential iterators
-      (iter, rhs) := Iterator.fromExp(rhs);
+      (iter, rhs) := Iterator.extract(rhs);
       rhs := SimplifyExp.simplifyDump(rhs, getInstanceName());
 
       if Iterator.isEmpty(iter) then
         lhs := Expression.fromCref(var.name);
         eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
       else
+        rhs := Expression.map(rhs, Expression.repairOperator);
         (sub_crefs, _) := Iterator.getFrames(iter);
         subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
         lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name));

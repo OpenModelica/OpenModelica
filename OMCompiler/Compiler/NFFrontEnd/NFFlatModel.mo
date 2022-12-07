@@ -84,7 +84,7 @@ public
       input output Expression exp;
     end MapFn;
   algorithm
-    flatModel.variables := list(Variable.mapExp(v, fn) for v in flatModel.variables);
+    flatModel.variables := list(Variable.mapExpShallow(v, fn) for v in flatModel.variables);
     flatModel.equations := Equation.mapExpList(flatModel.equations, fn);
     flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, fn);
     flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, fn);
@@ -741,7 +741,7 @@ public
   algorithm
     var.name := obfuscateCref(var.name, obfuscationMap);
     var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name), obfuscationMap);
-    var := Variable.mapExp(var, function obfuscateExp(obfuscationMap = obfuscationMap));
+    var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;
 
   function obfuscateCref

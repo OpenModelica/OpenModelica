@@ -52,6 +52,7 @@ protected
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -474,8 +475,7 @@ protected
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
     variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
     knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
-    variables       := VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
-
+    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
     /* lower the records to add children */
     records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
 
@@ -580,21 +580,6 @@ protected
       else ();
     end match;
   end collectVariableBindingIterators;
-
-  function lowerVariableBinding
-    input output Variable var;
-    input VariablePointers variables;
-  algorithm
-    var := match var
-      local
-        Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-        binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
-        var.binding := binding;
-      then var;
-      else var;
-    end match;
-  end lowerVariableBinding;
 
   function lowerRecordChildren
     input output Variable var;
@@ -1123,7 +1108,12 @@ protected
       local
         Type ty;
         ComponentRef cref;
+        Call call;
       case Expression.CREF(ty = ty, cref = cref) then Expression.CREF(ty, lowerComponentReference(cref, variables));
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        exp.call := call;
+      then exp;
       else exp;
     end match;
   end lowerComponentReferenceExp;
@@ -1138,6 +1128,7 @@ protected
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
       cref := lowerComponentReferenceInstNode(cref, var);
+      cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables)));
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -1161,6 +1152,17 @@ protected
       else ();
     end match;
   end collectBindingIterators;
+
+  function lowerInstNode
+    input output InstNode node;
+    input VariablePointers variables;
+  protected
+    ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+    Pointer<Variable> var;
+  algorithm
+    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+    node := InstNode.VAR_NODE(InstNode.name(node), var);
+  end lowerInstNode;
 
 public
   function lowerComponentReferenceInstNode

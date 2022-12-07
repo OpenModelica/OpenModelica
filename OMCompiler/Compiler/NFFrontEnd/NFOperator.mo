@@ -135,6 +135,76 @@ public
     end match;
   end invert;
 
+  function typeRestriction
+    input Type ty;
+    output Integer i;
+  algorithm
+    if Type.isScalar(ty) then
+      i := 0;
+    elseif Type.isVector(ty) then
+      i := 1;
+    elseif Type.isMatrix(ty) then
+      i := 2;
+    elseif Type.isArray(ty) then
+      i := 3;
+    else
+      i := 4;
+    end if;
+  end typeRestriction;
+
+  function repairMultary
+    input output Operator operator;
+    input list<Type> types;
+  protected
+    MathClassification mc = getMathClassification(operator);
+    SizeClassification sc;
+    list<Integer> lst;
+    Integer i2;
+    Type ty;
+  algorithm
+    lst := list(typeRestriction(i) for i in types);
+    i2 := List.first(lst);
+    if List.all(lst, function intEq(i2=i2)) then
+      ty := List.first(types);
+      sc := match i2
+        case 0 then SizeClassification.SCALAR;
+        case 1 then SizeClassification.ELEMENT_WISE;
+        else getSizeClassification(operator);
+      end match;
+    else
+      Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
+       + List.toString(types, Type.toString), sourceInfo());
+      fail();
+    end if;
+    operator := fromClassification((mc, sc), ty);
+  end repairMultary;
+
+  function repairBinary
+    input output Operator operator;
+    input Type ty1;
+    input Type ty2;
+  protected
+    MathClassification mc = getMathClassification(operator);
+    SizeClassification sc;
+    Type ty;
+  algorithm
+    (sc, ty) := match (typeRestriction(ty1), typeRestriction(ty2))
+      local
+        Integer i1, i2;
+      case (0, 0)                 then (SizeClassification.SCALAR, ty1);
+      case (0, i2) guard(i2>0)    then (SizeClassification.SCALAR_ARRAY, ty2);
+      case (i1, 0) guard(i1>0)    then (SizeClassification.ARRAY_SCALAR, ty1);
+      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty2);
+      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty1);
+      case (i1, i2) guard(i1==i2) then (getSizeClassification(operator), ty1);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
+          + Type.toString(ty1) + ", " + Type.toString(ty2), sourceInfo());
+      then fail();
+    end match;
+    operator := fromClassification((mc, sc), ty);
+  end repairBinary;
+
   function isLogical
     input Operator operator;
     output Boolean b;
@@ -696,6 +766,13 @@ public
   algorithm
     (mcl, _) := classify(op);
   end getMathClassification;
+
+  function getSizeClassification
+    input Operator op;
+    output SizeClassification scl;
+  algorithm
+    (_, scl) := classify(op);
+  end getSizeClassification;
 
   function isDashClassification
     input MathClassification mcl;
