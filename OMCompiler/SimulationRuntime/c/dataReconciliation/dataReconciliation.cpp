@@ -2644,9 +2644,10 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   printMatrixWithHeaders(newX, xdiag.rows, xdiag.column, csvinputs.headers, "IndividualTests_Value- (recon_x-x)/sqrt(Sx_diag)", logfile);
 
   // copy the outputs for state Estimation
-  datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
-  boundaryConditionData boundaryconditiondata;
+  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+    datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
 
+  boundaryConditionData boundaryconditiondata;
   // create HTML Report for D.1
   if (omc_flag[FLAG_DATA_RECONCILE])
   {
@@ -2825,7 +2826,8 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
     createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag);
 
   // copy the results for state estimation
-  boundaryconditiondata = {boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag};
+  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+    boundaryconditiondata = {boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag};
 
   // free the memory
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
