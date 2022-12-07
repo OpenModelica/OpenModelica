@@ -172,8 +172,8 @@ template crefCComment(SimVar v)
 "write the C comment for a cref, if it is not to be obfuscated"
 ::=
   match v
-  case SIMVAR(isProtected = true, source = SOURCE(info = SOURCEINFO(fileName = fileName))) then
-    if not boolOr(boolOr(stringEq(getConfigString(OBFUSCATE), "protected"), stringEq(getConfigString(OBFUSCATE), "full")), stringEq(getConfigString(OBFUSCATE), "encrypted"))
+  case SIMVAR(isProtected = true) then
+    if stringEq(getConfigString(OBFUSCATE), "none")
     then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
   case SIMVAR(__) then
     if not stringEq(getConfigString(OBFUSCATE), "full")
