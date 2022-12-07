@@ -1791,7 +1791,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {
     pLibraryTreeItem->setPixmap(QPixmap());
-    pLibraryTreeItem->setDragPixmap(QPixmap());
+    pLibraryTreeItem->setDragPixmap(pLibraryTreeItem->getLibraryTreeItemIcon().pixmap(QSize(50, 50)));
   }
 }
 
