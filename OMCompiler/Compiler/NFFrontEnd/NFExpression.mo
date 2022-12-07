@@ -5944,11 +5944,14 @@ public
       case Expression.SIZE()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("size"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
+          json := JSON.addPair("name", JSON.makeString("size"), json);
 
           if isSome(exp.dimIndex) then
-            json := JSON.addPair("index", toJSON(Util.getOption(exp.dimIndex)), json);
+            JSON.addPair("arguments",
+              JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
+          else
+            JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
         then
           json;
@@ -6011,30 +6014,9 @@ public
         then
           json;
 
-      case Expression.CAST()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("cast"), json);
-          json := JSON.addPair("type", JSON.makeString(Type.toString(exp.ty)), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
-
-      case Expression.BOX()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("box"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
-
-      case Expression.UNBOX()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("unbox"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
+      case Expression.CAST() then toJSON(exp.exp);
+      case Expression.BOX() then toJSON(exp.exp);
+      case Expression.UNBOX() then toJSON(exp.exp);
 
       case Expression.SUBSCRIPTED_EXP()
         algorithm

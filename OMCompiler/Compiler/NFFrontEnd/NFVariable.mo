@@ -290,6 +290,41 @@ public
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
 
+  function propagateAnnotation
+    input String name;
+    input Boolean overwrite;
+    input output Variable var;
+  protected
+    InstNode node;
+    Option<SCode.SubMod> mod;
+  protected
+    SCode.Annotation anno;
+  algorithm
+    if ComponentRef.isCref(var.name) then
+      node := ComponentRef.node(var.name);
+      // InstNode.getAnnotation is recursive and returns the first annotation found.
+      // if the original is supposed to be overwritten, skip the node itself and look at the parent
+      if overwrite then
+        mod := match node
+          case InstNode.COMPONENT_NODE() then InstNode.getAnnotation(name, node.parent);
+          else NONE();
+        end match;
+      else
+        mod := InstNode.getAnnotation(name, node);
+      end if;
+
+      if isSome(mod) then
+        anno := SCode.ANNOTATION(modification = SCode.MOD(
+          finalPrefix = SCode.NOT_FINAL(),
+          eachPrefix  = SCode.NOT_EACH(),
+          subModLst   = {Util.getOption(mod)},
+          binding     = NONE(),
+          info        = sourceInfo()));
+        var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
+      end if;
+    end if;
+  end propagateAnnotation;
+
   function mapExp
     input output Variable var;
     input MapFn fn;

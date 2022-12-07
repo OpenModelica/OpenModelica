@@ -497,7 +497,7 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   /* set the text color */
   QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(pSimulationMessage->mType));
+  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(pSimulationMessage->mType));
   mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
   /* append the output */
   /* write the error message */

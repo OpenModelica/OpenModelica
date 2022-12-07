@@ -161,7 +161,7 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
         variant = toolTip;
         break;
       case Qt::ForegroundRole:
-        variant = StringHandler::getSimulationMessageTypeColor(pSimulationMessage->mType);
+        variant = OptionsDialog::instance()->getMessagesPage()->getColor(pSimulationMessage->mType);
         break;
       case Qt::TextAlignmentRole:
         variant = QVariant(Qt::AlignLeft | Qt::AlignTop);

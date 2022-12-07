@@ -1101,6 +1101,36 @@ uniontype InstNode
     end match;
   end scopeListClass;
 
+  function getAnnotation
+    input String name;
+    input InstNode node;
+    output Option<SCode.SubMod> mod = NONE();
+  algorithm
+
+    if InstNode.isComponent(node) then
+      mod := match Component.comment(InstNode.component(node))
+        local
+          list<SCode.SubMod> subModLst;
+          Boolean done = false;
+
+        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification = SCode.MOD(subModLst = subModLst)))))
+        algorithm
+          for sm in subModLst loop
+            if sm.ident == name then
+              mod := SOME(sm);
+              done := true;
+              break;
+            end if;
+          end for;
+          if not done then
+            mod := getAnnotation(name, parent(node));
+          end if;
+        then mod;
+        else getAnnotation(name, parent(node));
+      end match;
+    end if;
+  end getAnnotation;
+
   type ScopeType = enumeration(
     RELATIVE       "Stops at a root class and doesn't include the root",
     INCLUDING_ROOT "Stops at a root class and includes the root",

@@ -4438,6 +4438,7 @@ protected function getElementType
    date  : 2005-11-11
    helperfunction to getElementInfo"
   input Absyn.ElementSpec inElementSpec;
+  input Absyn.Element inElement;
   output String outString;
 algorithm
   outString:=
@@ -4465,7 +4466,7 @@ algorithm
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation
         typename = Dump.unparseTypeSpec(typeSpec);
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst,false);
+        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
         flowPrefixstr = InteractiveUtil.attrFlowStr(attr);
         streamPrefixstr = InteractiveUtil.attrStreamStr(attr);
         variability_str = InteractiveUtil.attrVariabilityStr(attr);
@@ -4496,6 +4497,8 @@ algorithm
       Integer sline,scol,eline,ecol;
       Absyn.ElementSpec elementSpec;
       SourceInfo info;
+      Absyn.Element el;
+
     case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,restriction = restr,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))))) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
@@ -4519,13 +4522,13 @@ algorithm
           ", replaceable=",repl,", inout=",inout_str,", ",element_str});
       then
         str;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
         inout_str = InteractiveUtil.innerOuterStr(inout);
-        element_str = getElementType(elementSpec);
+        element_str = getElementType(elementSpec, el);
         sline_str = intString(sline);
         scol_str = intString(scol);
         eline_str = intString(eline);
@@ -12921,14 +12924,14 @@ algorithm
       list<String> names, dims;
       Option<Absyn.Path> oenv_path;
       String tp_name, typename, final_str, repl_str, io_str;
-      String flow_str, stream_str, var_str, dir_str, dim_str, str;
+      String flow_str, stream_str, var_str, dir_str, dim_str, str, cc_cmt;
 
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
       algorithm
         typename := AbsynUtil.pathString(InteractiveUtil.qualifyPath(inEnv, p));
 
-        names := InteractiveUtil.getComponentItemsNameAndComment(comps, inQuoteNames);
+        names := InteractiveUtil.getComponentItemsNameAndComment(comps, inElement, inQuoteNames);
         dims := InteractiveUtil.getComponentitemsDimension(comps);
         final_str := boolString(inElement.finalPrefix);
         repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
@@ -13068,7 +13071,7 @@ algorithm
           env)
       equation
         typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst,false);
+        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
         strList = InteractiveUtil.prefixTypename(typename, names);
       then
         strList;
@@ -13078,7 +13081,7 @@ algorithm
           env)
       equation
         typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst,false);
+        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
         strList = InteractiveUtil.prefixTypename(typename, names);
       then
         strList;
@@ -14881,6 +14884,7 @@ end parseFile;
 protected function getElementName
 "returns the element name"
   input Absyn.ElementSpec inElementSpec;
+  input Absyn.Element inElement;
   output String outString;
 algorithm
   outString := match (inElementSpec)
@@ -14893,7 +14897,7 @@ algorithm
 
     case (Absyn.COMPONENTS(components = lst))
       equation
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst,false);
+        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
         str = stringDelimitList(names, ", ");
         //print("names: " + str + "\n");
       then
@@ -14956,7 +14960,7 @@ algorithm
         Absyn.COMPONENTS() = elementSpec;
 //        Absyn.CLASSDEF(class_ = cl) = elementSpec;
         //comps = getComponentsInClass(cl);
-        desc = getElementName(elementSpec);
+        desc = getElementName(elementSpec, el);
         desc = desc + ":" + getElementTypeName(elementSpec);//getElementInfo(elitem);
       then
         desc;
@@ -15028,13 +15032,15 @@ algorithm
       Absyn.ElementSpec elementSpec;
       list<String> tmp;
       Absyn.Program prog;
+      Absyn.Element el;
+
     case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS()))),_) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       then
        "";
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elementSpec)),prog) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(specification = elementSpec)),prog) /* if is not a classdef, just follow the normal stuff */
       equation
         typename_str = getElementTypeName(elementSpec);
-        varname_str = getElementName(elementSpec);
+        varname_str = getElementName(elementSpec, el);
         (_::_) = Util.stringSplitAtChar(varname_str, ",");
         str = getDescIfVis(typename_str, inElementItem,prog);
       then
