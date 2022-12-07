@@ -979,7 +979,7 @@ algorithm
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
   json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
 
-  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def), json);
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
@@ -1137,7 +1137,7 @@ algorithm
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := dumpJSONSCodeMod(elem.modifications, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
-        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
         json := dumpJSONCommentOpt(SOME(elem.comment), InstNode.parent(node), json);
       then
         ();
@@ -1168,7 +1168,7 @@ algorithm
           json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
         end if;
 
-        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
         json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
       then
         ();
@@ -1346,11 +1346,12 @@ end dumpJSONDims;
 function dumpJSONAttributes
   input SCode.Attributes attrs;
   input SCode.Prefixes prefs;
+  input InstNode scope;
   output JSON json;
 protected
   String s;
 algorithm
-  json := dumpJSONSCodePrefixes(prefs);
+  json := dumpJSONSCodePrefixes(prefs, scope);
 
   s := SCodeDump.connectorTypeStr(attrs.connectorType);
   if not stringEmpty(s) then
@@ -1371,6 +1372,7 @@ end dumpJSONAttributes;
 
 function dumpJSONSCodePrefixes
   input SCode.Prefixes prefixes;
+  input InstNode scope;
   output JSON json = JSON.makeNull();
 algorithm
   if not SCodeUtil.visibilityBool(prefixes.visibility) then
@@ -1389,9 +1391,8 @@ algorithm
     json := JSON.addPair("outer", JSON.makeBoolean(true), json);
   end if;
 
-  if SCodeUtil.replaceableBool(prefixes.replaceablePrefix) then
-    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
-  end if;
+  json := JSON.addPairNotNull("replaceable",
+    dumpJSONReplaceable(prefixes.replaceablePrefix, scope), json);
 
   if SCodeUtil.redeclareBool(prefixes.redeclarePrefix) then
     json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
@@ -1400,6 +1401,7 @@ end dumpJSONSCodePrefixes;
 
 function dumpJSONClassPrefixes
   input SCode.Element element;
+  input InstNode scope;
   output JSON json;
 protected
   SCode.Prefixes prefs;
@@ -1409,8 +1411,8 @@ algorithm
     case SCode.CLASS(classDef = cdef, prefixes = prefs)
       algorithm
         json := match cdef
-          case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes);
-          else dumpJSONSCodePrefixes(element.prefixes);
+          case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes, scope);
+          else dumpJSONSCodePrefixes(element.prefixes, scope);
         end match;
 
         if SCodeUtil.partialBool(element.partialPrefix) then
@@ -1426,6 +1428,28 @@ algorithm
     else JSON.makeNull();
   end match;
 end dumpJSONClassPrefixes;
+
+function dumpJSONReplaceable
+  input SCode.Replaceable repl;
+  input InstNode scope;
+  output JSON json;
+protected
+  SCode.ConstrainClass cc;
+algorithm
+  json := match repl
+    case SCode.Replaceable.REPLACEABLE(cc = SOME(cc))
+      algorithm
+        json := JSON.emptyObject();
+        json := JSON.addPair("constrainedby", dumpJSONPath(cc.constrainingClass), json);
+        json := dumpJSONSCodeMod(cc.modifier, json);
+        json := dumpJSONCommentOpt(SOME(cc.comment), scope, json);
+      then
+        json;
+
+    case SCode.Replaceable.REPLACEABLE() then JSON.makeBoolean(true);
+    else JSON.makeNull();
+  end match;
+end dumpJSONReplaceable;
 
 function dumpJSONCommentOpt
   input Option<SCode.Comment> cmtOpt;

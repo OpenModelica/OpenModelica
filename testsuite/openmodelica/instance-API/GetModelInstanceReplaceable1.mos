@@ -1,4 +1,4 @@
-// name: GetModelInstanceAttributes1
+// name: GetModelInstanceReplaceable1
 // keywords:
 // status: correct
 // cflags: -d=newInst

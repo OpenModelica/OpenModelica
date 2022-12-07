@@ -30,6 +30,7 @@ GetModelInstanceInnerOuter3.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceReplaceable1.mos \
+GetModelInstanceReplaceable2.mos \
 GetModelInstanceStateMachine1.mos \
 
 
