@@ -231,7 +231,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   dasslData->info[2] = 1;
 
 
-  /* define maximum step size, which is dassl is allowed to go */
+  /* define maximum step size dassl is allowed to go */
   if (omc_flag[FLAG_MAX_STEP_SIZE])
   {
     double maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
@@ -1070,16 +1070,10 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
     delta_hhh = *h * yprime[i];
     delta_hh = delta_h * fmax(fmax(fabs(y[i]),fabs(delta_hhh)),fabs(1. / wt[i]));
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
-    delta_hh = y[i] + delta_hh - y[i];
+    delta_hh = y[i] + delta_hh - y[i];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
     deltaInv = 1. / delta_hh;
     ysave = y[i];
     y[i] += delta_hh;
-
-    /* internal dassl numerical jacobian is
-     * calculated by adding cj to yprime.
-     * This lead to numerical cancellations.
-     */
-    /*yprime[i] += *cj * delta_hh;*/
 
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
 
@@ -1136,7 +1130,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
         delta_hhh = *h * yprime[ii];
         delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)),fabs(1./wt[ii]));
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];
+        delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 
         ysave[ii] = y[ii];
         y[ii] += delta_hh[ii];
