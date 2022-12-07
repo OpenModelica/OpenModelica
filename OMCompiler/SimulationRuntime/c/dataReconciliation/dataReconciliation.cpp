@@ -2135,6 +2135,8 @@ inputData getInputData(csvData Sx_result, ofstream & logfile)
 /*
  * Function which reads the input data from csvData.xdata
  * and stores the input values in double array
+ * Note: this function takes the output.csv file from data reconciliation
+ * as input and get the reconciled_X values from third column
  */
 inputData getReconciledX(csvData Sx_result, ofstream & logfile)
 {
