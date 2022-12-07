@@ -556,8 +556,14 @@ QString& Utilities::tempDirectory()
     tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
 #endif
     tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath))
-      QDir().mkpath(tmpPath);
+    if (!QDir().exists(tmpPath)) {
+      if (!QDir().mkpath(tmpPath)) {
+        qDebug() << "Failed to create the tempDirectory" << tmpPath
+                 << "will use" << QDir::tempPath() << "instead.";
+        tmpPath = QDir::tempPath();
+        tmpPath.remove("\"");
+      }
+    }
   }
   return tmpPath;
 }
