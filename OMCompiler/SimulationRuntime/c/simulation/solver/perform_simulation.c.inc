@@ -81,6 +81,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   }
   data->callback->output_function(data, threadData);
   data->callback->setc_function(data, threadData);
+  data->callback->setb_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);

@@ -633,8 +633,16 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   {
     infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
     infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
-    retVal = reconcileBoundaryConditions(data, threadData, retVal);
+    retVal = boundaryConditions(data, threadData, retVal);
     infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
+  }
+
+  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+  {
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Starting!");
+    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    retVal = dataReconciliation(data, threadData, retVal);
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {

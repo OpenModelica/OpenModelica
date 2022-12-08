@@ -285,9 +285,12 @@ protected
   BackendDAE.Var dtVar;
   HashTableSimCodeEqCache.HashTable eqCache;
   BackendDAE.Jacobian dataReconJac;
-  BackendDAE.Variables setcVars,datareconinputvars;
-  list<SimCodeVar.SimVar> tmpsetcVars,tmpdatareconinputvars;
-  SimCode.JacobianMatrix dataReconSimJac;
+  Option<BackendDAE.Jacobian> dataReconJacH;
+  BackendDAE.Variables setcVars, datareconinputvars;
+  Option<BackendDAE.Variables> setBVars;
+  list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
+  SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
+  Integer numRelatedBoundaryConditions;
   String fullPathPrefix;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
@@ -556,9 +559,15 @@ algorithm
 
     // Generate jacobian code for DataReconciliation
     if Util.isSome(shared.dataReconciliationData) then
-      BackendDAE.DATA_RECON(dataReconJac,setcVars,datareconinputvars) := Util.getOption(shared.dataReconciliationData);
+      BackendDAE.DATA_RECON(dataReconJac, setcVars, datareconinputvars, setBVars, dataReconJacH, numRelatedBoundaryConditions) := Util.getOption(shared.dataReconciliationData);
       (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
-      (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
+      // check for jacobian H for state estimation, if exist generate Matrix H
+      if (Util.isSome(dataReconJacH)) then
+        (SOME(dataReconSimJacH), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(Util.getOption(dataReconJacH), uniqueEqIndex, tempvars);
+        (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac, dataReconSimJacH}, modelInfo);
+      else
+        (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
+      end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
     end if;
@@ -662,10 +671,23 @@ algorithm
         tmpSimVars.dataReconinputVars := tmpdatareconinputvars;
         modelInfo.vars := tmpSimVars;
 
+        // set setBVars
+        if Util.isSome(setBVars) then
+          ((tmpsetBVars, _)) :=  BackendVariable.traverseBackendDAEVars(Util.getOption(setBVars), traversingdlowvarToSimvar, ({}, emptyVars));
+          tmpsetBVars := rewriteIndex(tmpsetBVars, 0);
+          tmpSimVars.dataReconSetBVars := tmpsetBVars;
+          modelInfo.vars := tmpSimVars;
+          // set varInfo nsetbvars
+          varInfo := modelInfo.varInfo;
+          varInfo.numSetbVars := listLength(tmpsetBVars);
+          modelInfo.varInfo := varInfo;
+        end if;
+
         // set varInfo nsetcvars
         varInfo := modelInfo.varInfo;
         varInfo.numSetcVars := listLength(tmpsetcVars);
         varInfo.numDataReconVars := listLength(tmpdatareconinputvars);
+        varInfo.numRelatedBoundaryConditions := numRelatedBoundaryConditions;
         modelInfo.varInfo := varInfo;
         //print("\n simcode gen setc:*****"+anyString(tmpsetcVars) + "\n lenght of vars :" +anyString(listLength(tmpsetcVars)));
     end if;
@@ -4884,6 +4906,7 @@ algorithm
       SimCode.HashTableCrefToSimVar crefSimVarHT;
       SimCode.JacobianMatrix tmpJac;
       list<String> matrixnames;
+      Option<BackendDAE.Jacobian> jacH;
     case (_, _, _)
       algorithm
         // b := FlagsUtil.disableDebug(Flags.EXEC_STAT);
@@ -4894,10 +4917,16 @@ algorithm
         // This is used to set the matrixnames for Linearization and DataReconciliation procedure
         // For dataReconciliation F is set in earlier order which cause index problem for linearization matrix and hence identify if
         // dataReconciliation is involved and pass the matrix names
+        // for stateEstimation problem two jacobinas are needed F and H
         if Util.isSome(shared.dataReconciliationData) then
-           matrixnames := {"A", "B", "C", "D"};
+          BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
+          if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
+            matrixnames := {"A", "B", "C", "D"};
+          else
+            matrixnames := {"A", "B", "C", "D", "H"};
+          end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F"};
+           matrixnames := {"A", "B", "C", "D", "F", "H"};
         end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
@@ -7694,7 +7723,7 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0, 0);
 end createVarInfo;
 
 protected function getNumberOfRealInputs
@@ -8170,6 +8199,7 @@ protected type SimVarsIndex = enumeration(
   sensitivity,
   setcvars,
   datareconinputvars,
+  setBVars,
   jacobian,
   seed
 );
@@ -8312,7 +8342,8 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setBVars))
   );
   GCExt.free(simVars);
 end createVars;

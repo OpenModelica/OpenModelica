@@ -800,6 +800,18 @@ algorithm
   end match;
 end varHasUncertainValueRefine;
 
+public function varHasUncertainValuePropagate
+  "Returns true if the specified variable has the attribute uncertain and the
+  value of it is Uncertainty.propagate, false otherwise."
+  input BackendDAE.Var var;
+  output Boolean b;
+algorithm
+  b := match (var)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(uncertainOption=SOME(DAE.PROPAGATE()))))) then true;
+    else false;
+  end match;
+end varHasUncertainValuePropagate;
+
 public function varDistribution "author: Peter Aronsson, 2012-05
   Returns Distribution record of a variable."
   input BackendDAE.Var var;

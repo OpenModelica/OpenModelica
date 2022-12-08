@@ -8337,6 +8337,7 @@ public function allPreOptimizationModules
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),
+    (DataReconciliation.stateEstimation, "dataReconciliationStateEstimation"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),

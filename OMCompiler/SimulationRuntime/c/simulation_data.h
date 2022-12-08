@@ -577,6 +577,8 @@ typedef struct MODEL_DATA
   long nSensitivityParamVars;
   long nSetcVars;
   long ndataReconVars;
+  long nSetbVars;
+  long nRelatedBoundaryConditions;
 } MODEL_DATA;
 
 /**
@@ -743,6 +745,7 @@ typedef struct SIMULATION_INFO
   modelica_real* outputVars;
   modelica_real* setcVars;
   modelica_real* datainputVars;
+  modelica_real* setbVars;
 
   EXTERNAL_INPUT external_input;
 

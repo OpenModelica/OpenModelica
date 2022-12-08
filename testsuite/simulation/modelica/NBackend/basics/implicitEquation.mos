@@ -62,6 +62,10 @@ simulate(implicitEquation); getErrorString();
 // [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
 // ========================================
 //
+// ========================================
+// [EMPTY] SimCode Jacobian H(idx = 5, partition = 0)
+// ========================================
+//
 //
 //
 // *********************
@@ -149,6 +153,8 @@ simulate(implicitEquation); getErrorString();
 // 	Jacobian idx: 3
 //
 // 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
 //
 //
 // modelInfo:
