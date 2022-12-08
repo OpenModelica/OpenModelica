@@ -82,9 +82,6 @@ Once XCode and macports are installed, you need to install the dependencies for 
 
 Optionally, You can also install `gfortran` if you plan to use OpenModelica for dynamic optimization purposes.
 > **Note**
-> `gfortran` is not available for M1 macs through macports.
-
-> **Note**
 > If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++` (instead of `clang` and `clang++`).
 
 If you cannot or do not want to use `gfortran`, then you should disable Fortran support by adding  ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
@@ -204,7 +201,6 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 `OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization support with Ipopt. Enabling this requires having a working Fortran compiler.
 
 ### 4.1.3. OpenModelica/OMEdit Options
-OM_OMEDIT_ENABLE_TESTS
 `OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
 
 `OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the required runtime DLLs for MSYS/MinGW builds.
