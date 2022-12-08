@@ -15474,14 +15474,19 @@ algorithm
   parametersAndValues := match(odae)
     case SOME(DAE.DAE(els))
       algorithm
-       params := DAEUtil.getParameters(els, {});
-       for p in params loop
-         DAE.VAR(binding=oe) := p;
-         s := DAEUtil.varName(p) + DAEDump.dumpVarBindingStr(oe);
-         strs := s::strs;
-       end for;
-     then
-       listReverse(strs);
+        params := DAEUtil.getParameters(els, {});
+
+        for p in params loop
+          strs := match p
+            case DAE.VAR(componentRef = DAE.CREF_IDENT(s))
+              then (s + DAEDump.dumpVarBindingStr(p.binding)) :: strs;
+
+            else strs;
+          end match;
+        end for;
+      then
+        Dangerous.listReverseInPlace(strs);
+
     else strs;
   end match;
 end getInstantiatedParametersAndValues;

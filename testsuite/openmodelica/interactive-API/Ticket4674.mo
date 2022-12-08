@@ -15,6 +15,7 @@ package Ticket4674
     c = 8.1);
     extends Ticket4674.Base2(d = 16.1);
     parameter Real e = 32.1;
+    Base2 base2;
 
     annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(coordinateSystem(
             preserveAspectRatio=false)));
