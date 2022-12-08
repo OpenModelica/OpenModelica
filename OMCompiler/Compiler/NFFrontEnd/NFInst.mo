@@ -125,6 +125,7 @@ function instClassInProgram
   input Absyn.Path classPath;
   input SCode.Program program;
   input SCode.Program annotationProgram;
+  input Boolean relaxedFrontend = false;
   input Boolean dumpFlat = false;
   output FlatModel flatModel;
   output FunctionTree functions;
@@ -136,7 +137,7 @@ protected
   Integer var_count, eq_count;
 algorithm
   resetGlobalFlags();
-  context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
+  context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
 
   // Create a top scope from the given top-level classes.
