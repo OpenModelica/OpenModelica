@@ -3262,7 +3262,7 @@ public function getVarSingle
   The indexes is enumerated from 1..n
   Normally a variable has only one index, but in case of an array variable
   it may have several indexes and several scalar variables,
-  therefore a list of variables and a list of  indexes is returned.
+  therefore a list of variables and a list of indexes is returned.
 
   This function fails if there are more than a single returned value"
   input DAE.ComponentRef cr;
