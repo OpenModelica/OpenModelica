@@ -3281,7 +3281,7 @@ algorithm
   (cache,env,dae) := matchcontinue (graph_inst, nf_inst)
     case (false, true)
       algorithm
-        (flat_model, nf_funcs, flatString) := runFrontEndWorkNF(className, dumpFlat);
+        (flat_model, nf_funcs, flatString) := runFrontEndWorkNF(className, relaxedFrontEnd, dumpFlat);
         (dae, funcs) := NFConvertDAE.convert(flat_model, nf_funcs);
 
         cache := FCore.emptyCache();
@@ -3325,6 +3325,7 @@ end runFrontEndWork;
 
 public function runFrontEndWorkNF
   input Absyn.Path className;
+  input Boolean relaxedFrontend = false;
   input Boolean dumpFlat = false;
   output NFFlatModel flatModel;
   output NFFlatten.FunctionTree functions;
@@ -3364,7 +3365,7 @@ algorithm
 
   try
     (flatModel, functions, flatString) :=
-      NFInst.instClassInProgram(cls_name, scode_p, annotation_p, dumpFlat);
+      NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
     inst_failed := true;
   end try;
