@@ -69,6 +69,7 @@
 #include <QPrintDialog>
 #include <QDesktopServices>
 #include <QClipboard>
+#include <QStringBuilder>
 
 ModelInfo::ModelInfo()
 {
@@ -5241,7 +5242,7 @@ void WelcomePageWidget::addLatestNewsListItems()
   mpLatestNewsListWidget->clear();
   /* if show latest news settings is not set then don't fetch the latest news items. */
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
-    QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=23&format=feed&amp;type=rss");
+    QUrl newsUrl("http://hugo.openmodelica.org/tags/news/index.xml");
     mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
   }
 }
@@ -5257,31 +5258,31 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
     QXmlStreamReader xml(response);
     int count = 0;
     QString title, link;
+    QDateTime pubDateTime;
     while (!xml.atEnd()) {
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement) {
         if (xml.name() == "item") {
-          while (!xml.atEnd()) {
-            xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement) {
-              if (xml.name() == "title") {
-                title = xml.readElementText();
-              }
-              if (xml.name() == "link") {
-                link = xml.readElementText();
-                if (count >= maxNewsSize) {
-                  break;
-                }
-                count++;
-                QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
-                listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
-                listItem->setText(title);
-                listItem->setData(Qt::UserRole, link);
-                break;
-              }
-            }
+          // read everything inside item
+          xml.readNext();
+          if (xml.name() == "title") {
+            title = xml.readElementText();
           }
+          xml.readNext();
+          if (xml.name() == "link") {
+            link = xml.readElementText();
+          }
+          xml.readNext();
+          if (xml.name() == "pubDate") {
+            pubDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
+          }
+          // add the item to the list view
+          QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
+          listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
+          listItem->setText(QLocale::c().toString(pubDateTime, "MMMM dd, yyyy") % ": " % title);
+          listItem->setData(Qt::UserRole, link);
+          count++;
         }
       }
       if (count >= maxNewsSize) {
