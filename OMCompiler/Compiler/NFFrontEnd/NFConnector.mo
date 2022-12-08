@@ -37,6 +37,7 @@ encapsulated uniontype NFConnector
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Variability;
   import DAE;
+  import Subscript = NFSubscript;
 
 protected
   import Origin = NFComponentRef.Origin;
@@ -142,6 +143,13 @@ public
                              conn1.face == conn2.face;
   end isEqual;
 
+  function isEqualNoSubs
+    input Connector conn1;
+    input Connector conn2;
+    output Boolean isEqual = ComponentRef.isEqualStrip(conn1.name, conn2.name) and
+                             conn1.face == conn2.face;
+  end isEqualNoSubs;
+
   function isPrefix
     input Connector conn1;
     input Connector conn2;
@@ -217,6 +225,14 @@ public
     output Integer hash = ComponentRef.hash(conn.name, mod);
   end hash;
 
+  function hashNoSubs
+    input Connector conn;
+    input Integer mod;
+    output Integer hash;
+  algorithm
+    hash := ComponentRef.hashStrip(conn.name, mod);
+  end hashNoSubs;
+
   function split
     "Splits a connector into its primitive components, while keeping arrays as
      they are.
@@ -281,6 +297,14 @@ public
 
     connl := listReverseInPlace(connl);
   end scalarizePrefix;
+
+  function addSubscripts
+    input list<Subscript> subscripts;
+    input output Connector conn;
+  algorithm
+    conn.name := ComponentRef.mergeSubscripts(subscripts, conn.name, true);
+    conn.ty := Type.subscript(conn.ty, subscripts);
+  end addSubscripts;
 
 protected
   function crefFace

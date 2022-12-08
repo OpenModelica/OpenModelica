@@ -991,7 +991,21 @@ public
     "strips the subscripts before comparing. Used for non expandend variables"
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Boolean b = isEqual(stripSubscriptsAll(cref1), stripSubscriptsAll(cref2));
+    output Boolean b;
+  algorithm
+    if referenceEq(cref1, cref2) then
+      b := true;
+      return;
+    end if;
+
+    b := match (cref1, cref2)
+      case (CREF(), CREF()) algorithm
+        then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
+          isEqualStrip(cref1.restCref, cref2.restCref);
+      case (EMPTY(), EMPTY()) then true;
+      case (WILD(), WILD()) then true;
+      else false;
+    end match;
   end isEqualStrip;
 
   function isLess

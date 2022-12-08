@@ -71,6 +71,8 @@ import Ceval = NFCeval;
 import MetaModelica.Dangerous.listReverseInPlace;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
+import Flatten = NFFlatten;
+import Subscript = NFSubscript;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -325,9 +327,19 @@ protected
   list<Connector> c_rest;
   DAE.ElementSource src;
   Expression sum;
+  list<InstNode> iterators = {};
+  list<Expression> ranges = {};
+  list<Subscript> subs = {};
+  Equation eq;
 algorithm
   c :: c_rest := elements;
   src := c.source;
+
+  if Connector.isArray(c) then
+    (iterators, ranges, subs) := Flatten.makeIterators(c.name, Type.arrayDims(c.ty));
+    subs := listReverseInPlace(subs);
+    c :: c_rest := list(Connector.addSubscripts(subs, e) for e in elements);
+  end if;
 
   if listEmpty(c_rest) then
     sum := Expression.fromCref(c.name);
@@ -340,7 +352,13 @@ algorithm
     end for;
   end if;
 
-  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), c.ty, InstNode.EMPTY_NODE(), src)};
+  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), InstNode.EMPTY_NODE(), src)};
+
+  while not listEmpty(iterators) loop
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), src)};
+    iterators := listRest(iterators);
+    ranges := listRest(ranges);
+  end while;
 end generateFlowEquations;
 
 function makeFlowExp
