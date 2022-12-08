@@ -413,6 +413,7 @@ end makeRecordType;
 function typeComponent
   input InstNode component;
   input InstContext.Type context;
+  input Boolean typeChildren = true;
   output Type ty;
 protected
   InstNode node = InstNode.resolveOuter(component);
@@ -442,17 +443,19 @@ algorithm
           is_deleted := false;
         end if;
 
-        c_typed := Component.setType(ty, c);
-        InstNode.updateComponent(c_typed, node);
+        if typeChildren then
+          c_typed := Component.setType(ty, c);
+          InstNode.updateComponent(c_typed, node);
 
-        if not is_deleted then
-          // Check that flow/stream variables are Real.
-          checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
+          if not is_deleted then
+            // Check that flow/stream variables are Real.
+            checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
 
-          // Type the component's children.
-          typeComponents(c.classInst, context);
+            // Type the component's children.
+            typeComponents(c.classInst, context);
 
-          checkConnectorTypeBalance(node);
+            checkConnectorTypeBalance(node);
+          end if;
         end if;
       then
         ty;
@@ -840,7 +843,7 @@ algorithm
       (binding, parentDims) := getRecordElementBinding(parent);
     else
       // Otherwise type the binding, so we can safely look up the field name.
-      binding := typeBinding(parent_binding, NFInstContext.CLASS);
+      binding := typeBinding(parent_binding, InstContext.set(NFInstContext.CLASS, NFInstContext.DIMENSION));
 
       // If the binding wasn't typed before, update the parent component with it
       // so we don't have to type it again.
@@ -1001,6 +1004,8 @@ algorithm
         InstNode.updateComponent(c, node);
       then
         ();
+
+    case Component.UNTYPED_COMPONENT() then ();
 
     case Component.ENUM_LITERAL() then ();
     case Component.TYPE_ATTRIBUTE(modifier = Modifier.NOMOD()) then ();
@@ -1904,7 +1909,7 @@ algorithm
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_ty := typeComponent(cref.node, crefContext(cref.node));
+        node_ty := typeComponent(cref.node, crefContext(cref.node), typeChildren = firstPart or not InstContext.inDimension(context));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
