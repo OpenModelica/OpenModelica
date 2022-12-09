@@ -325,19 +325,29 @@ public
     end if;
   end propagateAnnotation;
 
-  function mapExp
-    input output Variable var;
-    input MapFn fn;
-
     partial function MapFn
       input output Expression exp;
     end MapFn;
+
+  function mapExp
+    input output Variable var;
+    input MapFn fn;
+  algorithm
+    var.binding := Binding.mapExp(var.binding, fn);
+    var.typeAttributes := list(
+      (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
+    var.children := list(mapExp(v, fn) for v in var.children);
+  end mapExp;
+
+  function mapExpShallow
+    input output Variable var;
+    input MapFn fn;
   algorithm
     var.binding := Binding.mapExpShallow(var.binding, fn);
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), fn)) for a in var.typeAttributes);
-    var.children := list(mapExp(v, fn) for v in var.children);
-  end mapExp;
+    var.children := list(mapExpShallow(v, fn) for v in var.children);
+  end mapExpShallow;
 
   function toString
     input Variable var;

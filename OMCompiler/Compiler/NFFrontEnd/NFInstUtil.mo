@@ -196,7 +196,7 @@ public
       return;
     end if;
 
-    flatModel.variables := list(Variable.mapExp(v, expandSlicedCrefsExp) for v in flatModel.variables);
+    flatModel.variables := list(Variable.mapExpShallow(v, expandSlicedCrefsExp) for v in flatModel.variables);
     flatModel := FlatModel.mapEquations(flatModel, expandSlicedCrefsEq);
     flatModel := FlatModel.mapAlgorithms(flatModel, expandSlicedCrefsAlg);
     functions := FunctionTree.map(functions, expandSlicedCrefsFunction);

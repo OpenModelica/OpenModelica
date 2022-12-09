@@ -6070,5 +6070,37 @@ public
     end match;
   end tupleElements;
 
+  function wrapCall
+    "wrapper function to apply a Call function"
+    input output Expression exp;
+    input callFun fun;
+    partial function callFun
+      input output Call call;
+    end callFun;
+  algorithm
+    exp := match exp
+      case CALL() algorithm
+        exp.call := fun(exp.call);
+      then exp;
+      else exp;
+    end match;
+  end wrapCall;
+
+  function repairOperator
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case BINARY() algorithm
+        exp.operator := Operator.repairBinary(exp.operator, typeOf(exp.exp1), typeOf(exp.exp2));
+      then exp;
+
+      case MULTARY() algorithm
+        exp.operator := Operator.repairMultary(exp.operator, list(typeOf(e) for e in listAppend(exp.arguments, exp.inv_arguments)));
+      then exp;
+
+      else exp;
+    end match;
+  end repairOperator;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

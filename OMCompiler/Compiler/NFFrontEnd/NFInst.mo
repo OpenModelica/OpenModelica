@@ -204,10 +204,14 @@ algorithm
   flatModel := InstUtil.replaceEmptyArrays(flatModel);
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
-  // Combine the binaries to multaries. For now only on new backend
-  // since the old frontend and backend do not support it
+
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // Combine the binaries to multaries. For now only on new backend
+    // since the old frontend and backend do not support it
     flatModel := SimplifyModel.combineBinaries(flatModel);
+    // try to replace calls with array constructors for the new backend
+    flatModel.equations := Equation.mapExpList(flatModel.equations, function Expression.wrapCall(fun = Call.toArrayConstructor));
+    flatModel.variables := list(Variable.mapExp(var, function Expression.wrapCall(fun = Call.toArrayConstructor)) for var in flatModel.variables);
   end if;
 
   VerifyModel.verify(flatModel);

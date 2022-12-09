@@ -2033,6 +2033,31 @@ public
     end if;
   end updateExternalRecordArgsInType;
 
+  function toArrayConstructor
+    "tries to make an array constructor from any call"
+    input Call iCall;
+    output Call oCall;
+  algorithm
+    oCall := match iCall
+      local
+        InstNode iter_name;
+        Expression start, stop, body, iter_range;
+        Option<Expression> step;
+
+      case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
+        case "fill" algorithm
+          {body, stop}  := iCall.arguments;
+          start         := Expression.INTEGER(1);
+          step          := NONE();
+          iter_name     := InstNode.newIterator("i", Type.INTEGER(), sourceInfo());
+          iter_range    := Expression.RANGE(Type.INTEGER(), start, step, stop);
+        then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, {(iter_name, iter_range)});
+        else iCall;
+      end match;
+      else iCall;
+    end match;
+  end toArrayConstructor;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;
