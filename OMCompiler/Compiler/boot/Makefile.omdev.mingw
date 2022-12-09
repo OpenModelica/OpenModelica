@@ -32,7 +32,7 @@ endif
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
-OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool
+OMENCRYPTIONLIBS=../../../OMEncryption/3rdParty/SEMLA/build/libtool.a
 else
 OMENCRYPTIONLIBS=
 endif

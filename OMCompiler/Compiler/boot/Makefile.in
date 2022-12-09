@@ -15,7 +15,7 @@ OM_ENABLE_ENCRYPTION=@OM_ENABLE_ENCRYPTION@
 LIB_OMC=lib/@host_short@/omc
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
-OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto
+OMENCRYPTIONLIBS=../../../OMEncryption/3rdParty/SEMLA/build/libtool.a ../../../OMEncryption/3rdParty/SEMLA/build/openssl/lib/libcrypto.a ../../../OMEncryption/3rdParty/SEMLA/build/openssl/lib/libssl.a
 else
 OMENCRYPTIONLIBS=
 endif

@@ -73,18 +73,24 @@ ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
-	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DLICENSE_MANAGER:String=testingdummy -DDECRYPTOR:String=default -DOBFUSCATOR:String=dummy -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
+	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || \
+	  $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF \
+	   -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DLICENSE_MANAGER:String=testingdummy \
+	   -DDECRYPTOR:String=default \
+	   -DOBFUSCATOR:String=dummy \
+	   -DCMAKE_INSTALL_PREFIX="$(top_builddir)" \
+	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin)" \
+	   ../src -G $(CMAKE_TARGET))
+
 	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
-	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libtool.a $(builddir_lib)/omc/SEMLA
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libcrypto.a $(builddir_lib)/omc/SEMLA/libcrypto_semla.a
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libssl.a $(builddir_lib)/omc/SEMLA/libssl_semla.a
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
 	rm -rf ../OMEncryption/3rdParty/SEMLA/install
-	rm -rf $(builddir_lib)/omc/SEMLA
+	rm -rf $(builddir_bin)/omc-semla
 endif # end of OM_ENABLE_ENCRYPTION
 
 release: omc
