@@ -23,6 +23,7 @@ mkbuilddirs:
 install: build
 	cp -p ../bin/tests/*$(EXE) $(builddir_bin)
 	cp -p RunOMEditTestsuite.sh $(builddir_bin)
+	cp -p RunOMEditTest.sh $(builddir_bin)
 
 build: Makefile
 	$(MAKE) -f Makefile
