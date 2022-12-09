@@ -327,8 +327,7 @@ algorithm
   execStat(getInstanceName());
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
-  if settings.arrayConnect and
-     FlatModel.hasArrayConnections(flatModel, Flags.getConfigInt(Flags.ARRAY_CONNECT_MIN_SIZE)) then
+  if settings.arrayConnect then
     flatModel := resolveArrayConnections(flatModel);
   else
     flatModel := resolveConnections(flatModel, deleted_vars, settings);
