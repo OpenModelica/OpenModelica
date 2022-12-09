@@ -60,7 +60,6 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -83,10 +82,9 @@ end FuncExpStr;
 protected function hashFunc
 "Calculates a hash value for Key"
   input Key tpl;
-  input Integer mod;
   output Integer res;
 algorithm
-  res := intMod(intAbs(ComponentReference.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl)),mod);
+  res := ComponentReference.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl);
 end hashFunc;
 
 protected function keyEqual

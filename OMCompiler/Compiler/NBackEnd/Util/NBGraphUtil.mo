@@ -68,8 +68,7 @@ public
 
     function hash
       input SetVertex v;
-      input Integer mod;
-      output Integer i = Variable.hash(Pointer.access(v.name), mod);
+      output Integer i = Variable.hash(Pointer.access(v.name));
     end hash;
 
     function isEqual
@@ -149,8 +148,7 @@ public
 
     function hash
       input SetEdge e;
-      input Integer mod;
-      output Integer i = stringHashDjb2Mod(e.name, mod);
+      output Integer i = stringHashDjb2(e.name);
     end hash;
 
     function isEqual

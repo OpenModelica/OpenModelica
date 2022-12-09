@@ -78,7 +78,6 @@ public
 
   function hash
     input Tearing tearing;
-    input Integer mod;
     output Integer i = -1;
   algorithm
     // ToDo!

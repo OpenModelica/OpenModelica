@@ -105,8 +105,7 @@ public
 
   function hash
     input Variable var;
-    input Integer mod;
-    output Integer i = ComponentRef.hash(var.name, mod);
+    output Integer i = ComponentRef.hash(var.name);
   end hash;
 
   function equalName

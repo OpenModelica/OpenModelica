@@ -221,16 +221,14 @@ public
 
   function hash
     input Connector conn;
-    input Integer mod;
-    output Integer hash = ComponentRef.hash(conn.name, mod);
+    output Integer hash = ComponentRef.hash(conn.name);
   end hash;
 
   function hashNoSubs
     input Connector conn;
-    input Integer mod;
     output Integer hash;
   algorithm
-    hash := ComponentRef.hashStrip(conn.name, mod);
+    hash := ComponentRef.hashStrip(conn.name);
   end hashNoSubs;
 
   function split

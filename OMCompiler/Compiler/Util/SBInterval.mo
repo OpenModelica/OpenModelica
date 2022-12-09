@@ -313,8 +313,7 @@ public
 
   function hash
     input SBInterval int;
-    input Integer mod;
-    output Integer hash = intMod(int.lo, mod);
+    output Integer hash = int.lo;
   end hash;
 
   function toString

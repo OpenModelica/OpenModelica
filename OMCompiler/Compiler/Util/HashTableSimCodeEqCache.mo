@@ -63,7 +63,6 @@ type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -101,7 +100,7 @@ function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(SimCodeUtil.hashEqSystemMod,SimCodeUtil.compareEqSystemsEquality,SimCodeUtil.simEqSystemString,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(SimCodeUtil.hashEqSystem,SimCodeUtil.compareEqSystemsEquality,SimCodeUtil.simEqSystemString,intString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="backend");

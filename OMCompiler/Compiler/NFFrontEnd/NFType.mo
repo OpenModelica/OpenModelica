@@ -1217,7 +1217,7 @@ public
         array<Record.Field> fields = listArray(field_lst);
 
       case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node)) algorithm
-        indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
+        indexMap := UnorderedMap.new<Integer>(stringHashDjb2, stringEq, arrayLength(fields));
         updateRecordFieldsIndexMap(fields, indexMap);
       then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields, indexMap));
 

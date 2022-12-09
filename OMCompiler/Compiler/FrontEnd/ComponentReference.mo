@@ -63,25 +63,6 @@ protected import Util;
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
 
-public function hashComponentRefMod "
-  author: PA
-
-  Calculates a hash value for DAE.ComponentRef, by hashing each individual part separately and summing the values, and then apply
-  intMod to it, to return a value in range [0,mod-1].
-  Also hashes subscripts in a clever way avoiding [1,2] and [2,1] to hash to the same value. This is done by investigating array type
-  to find dimension of array.
-"
-  input DAE.ComponentRef cr;
-  input Integer mod;
-  output Integer res;
-protected
-  Integer h;
-algorithm
-   // hash might overflow => force positive
-   h := intAbs(hashComponentRef(cr));
-   res := intMod(h,mod);
-end hashComponentRefMod;
-
 public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
   input DAE.ComponentRef cr;
   output Integer hash;

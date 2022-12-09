@@ -556,13 +556,12 @@ protected
     "returns the hash value of an edge tpl
      (a, b) == (b, a) -> same hash!"
     input EdgeTpl tpl;
-    input Integer mod;
     output Integer hash;
   protected
     Integer l, r;
   algorithm
     (l, r) := tpl;
-    hash := intMod(intBitXor(l,r), mod);
+    hash := intBitXor(l,r);
   end hashEdgeTpl;
 
   function eqEdgeTpl

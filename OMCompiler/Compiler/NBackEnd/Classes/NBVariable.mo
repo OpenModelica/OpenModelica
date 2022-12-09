@@ -118,8 +118,7 @@ public
 
   function hash
     input Pointer<Variable> var_ptr;
-    input Integer mod;
-    output Integer i = Variable.hash(Pointer.access(var_ptr), mod);
+    output Integer i = Variable.hash(Pointer.access(var_ptr));
   end hash;
 
   function equalName

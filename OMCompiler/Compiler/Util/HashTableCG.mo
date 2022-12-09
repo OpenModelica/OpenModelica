@@ -58,7 +58,6 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -96,7 +95,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ComponentReference.printComponentRefStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

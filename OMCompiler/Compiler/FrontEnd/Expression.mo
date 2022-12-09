@@ -11069,16 +11069,6 @@ algorithm
   end match;
 end promoteExp3;
 
-public function hashExpMod "
-author: PA
-hash expression to value in range [0,mod-1]"
-  input DAE.Exp e;
-  input Integer mod;
-  output Integer hash;
-algorithm
-  hash := intMod(intAbs(hashExp(e)),mod);
-end hashExpMod;
-
 public function hashExp "help function to hashExpMod"
   input DAE.Exp e;
   output Integer hash;

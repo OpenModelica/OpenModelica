@@ -47,7 +47,6 @@ protected
 public
   partial function Hash
     input K key;
-    input Integer mod;
     output Integer hash;
   end Hash;
 
@@ -178,7 +177,7 @@ public
     Hash hashfn = map.hashFn;
     Integer hash;
   algorithm
-    hash := hashfn(key, Vector.size(map.buckets));
+    hash := intMod(hashfn(key), Vector.size(map.buckets));
     addEntry(key, value, hash, map);
   end addNew;
 
@@ -645,7 +644,7 @@ public
 
     // Rehash all the keys and refill the buckets.
     for i in 1:Vector.size(map.keys) loop
-      bucket_id := hashfn(Vector.get(keys, i), bucket_count) + 1;
+      bucket_id := intMod(hashfn(Vector.get(keys, i)), bucket_count) + 1;
       Vector.updateNoBounds(buckets, bucket_id, i :: Vector.getNoBounds(buckets, bucket_id));
     end for;
   end rehash;
@@ -738,7 +737,7 @@ protected
     list<Integer> bucket;
   algorithm
     if Vector.size(map.buckets) > 0 then
-      hash := hashfn(key, Vector.size(map.buckets));
+      hash := intMod(hashfn(key), Vector.size(map.buckets));
 
       bucket := Vector.get(map.buckets, hash + 1);
       for i in bucket loop
@@ -760,8 +759,6 @@ protected
     input UnorderedMap<K, V> map;
   protected
     Vector<list<Integer>> buckets = map.buckets;
-    Integer h;
-    Hash hashfn;
   algorithm
     // Add the key/value to the key/value arrays.
     Vector.push(map.keys, key);

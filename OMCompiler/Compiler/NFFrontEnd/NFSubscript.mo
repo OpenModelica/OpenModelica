@@ -1282,13 +1282,12 @@ public
 
   function hash
     input Subscript sub;
-    input Integer mod;
     output Integer hash;
   algorithm
     hash := match sub
-      case SPLIT_PROXY() then intMod(InstNode.hash(sub.origin, 1) + InstNode.hash(sub.parent, 1), mod);
-      case SPLIT_INDEX() then intMod(InstNode.hash(sub.node, 1) + sub.dimIndex, mod);
-      else stringHashDjb2Mod(toString(sub), mod);
+      case SPLIT_PROXY() then InstNode.hash(sub.origin) + InstNode.hash(sub.parent);
+      case SPLIT_INDEX() then InstNode.hash(sub.node) + sub.dimIndex;
+      else stringHashDjb2(toString(sub));
     end match;
   end hash;
 

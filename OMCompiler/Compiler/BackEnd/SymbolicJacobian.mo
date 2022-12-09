@@ -4429,7 +4429,7 @@ uniontype LinearJacobian
 
     /* Loop over all equations and create residual expression. */
     for loopEq in loopEqs loop
-      row := UnorderedMap.new<Real>(intMod, intEq);
+      row := UnorderedMap.new<Real>(Util.id, intEq);
       (eqn, index) := loopEq;
       res := BackendEquation.createResidualExp(eqn);
       /* Loop over all variables and differentiate residual expression for each. */
