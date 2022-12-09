@@ -235,7 +235,10 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     mLineColor.parse(list.at(11));
   }
   // 13th item of the list contains the font name.
-  mFontName.parse(list.at(12));
+  const QString fontName = StringHandler::removeFirstLastQuotes(list.at(12));
+  if (!fontName.isEmpty()) {
+    mFontName.parse(fontName);
+  }
   // 14th item of the list contains the text styles.
   QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(13))));
   foreach (QString textStyle, textStyles) {
