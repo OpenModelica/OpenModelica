@@ -62,7 +62,7 @@ all: omc testsuite-depends
 
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
-	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omc-diff:
 	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
