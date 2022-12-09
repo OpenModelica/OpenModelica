@@ -181,6 +181,7 @@ The main ones (with their default values) are
 ```cmake
 OM_USE_CCACHE=ON
 OM_ENABLE_GUI_CLIENTS=ON
+OM_ENABLE_ENCRYPTION=OFF
 OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_IPOPT=ON
@@ -192,6 +193,8 @@ OM_OMSHELL_ENABLE_TERMINAL=ON
 `OM_USE_CCACHE` option is for enabling/disabling ccache support as explained in [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
 
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser, OMPlot, OMShell. You will need to install and make available the necessary packages (and their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
+
+`OM_ENABLE_ENCRYPTION` allows you to enable/disable building OpenModelica with library encryption support. Note that, for this to work, you need an additional module which is not distributed in the default OpenModelcia source repository. Contact the OpenModelica team if you need encryption support.
 
 ### 4.1.2. OpenModelica/OMCompiler Options
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This requires multiple Boost library components (file_system, program_options, ...)
