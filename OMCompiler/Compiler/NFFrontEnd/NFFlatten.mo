@@ -2005,10 +2005,7 @@ algorithm
   conns := Connections.addBroken(broken, conns);
   // build the sets, check the broken connects
   conns := Connections.split(conns);
-
-  if settings.scalarize or settings.newBackend then
-    conns := Connections.scalarize(conns);
-  end if;
+  conns := Connections.scalarize(conns, keepSingleConnectedArrays = not settings.scalarize);
 
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);

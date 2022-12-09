@@ -208,6 +208,22 @@ algorithm
         (_, size, _, _) = List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
       then (varSize, eqnSize+size, eqns, hs);
 
+    case DAE.INITIAL_FOR_EQUATION()
+      equation
+        (varSize, eqnSize, eqns, hs) = inArg;
+        (_, size, _, _) = List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
+        size = size * Expression.sizeOf(Expression.typeof(element.range));
+      then
+        (varSize, eqnSize+size, eqns, hs);
+
+    case DAE.FOR_EQUATION()
+      equation
+        (varSize, eqnSize, eqns, hs) = inArg;
+        (_, size, _, _) = List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
+        size = size * Expression.sizeOf(Expression.typeof(element.range));
+      then
+        (varSize, eqnSize+size, eqns, hs);
+
     // if equation with condition false and no else
     case DAE.IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})
        then inArg;
