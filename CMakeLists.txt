@@ -44,6 +44,9 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 ## OPTIONS #################################################################################################
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+
+omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
+
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
 ## This is usefull, for example, in cases where you change branches often or need to clean
@@ -140,6 +143,11 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
 
 ## Subdirectories ##########################################################################################
+# If asked for encryption support, add and configure the OMEncryption directory.
+if(OM_ENABLE_ENCRYPTION)
+  omc_add_subdirectory(OMEncryption)
+endif()
+
 omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
