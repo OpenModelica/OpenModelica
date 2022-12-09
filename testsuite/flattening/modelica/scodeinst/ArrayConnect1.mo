@@ -1,7 +1,7 @@
 // name: ArrayConnect1
 // keywords:
 // status: correct
-// cflags: -d=newInst,arrayConnect,-nfScalarize --arrayConnectMinSize=10
+// cflags: -d=newInst,arrayConnect,-nfScalarize
 //
 
 connector C

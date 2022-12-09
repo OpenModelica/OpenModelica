@@ -240,7 +240,6 @@ function resetGlobalFlags
 algorithm
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
     FlagsUtil.set(Flags.NF_SCALARIZE, false);
-    FlagsUtil.set(Flags.ARRAY_CONNECT, true);
   end if;
 
   // gather here all the flags to disable expansion
