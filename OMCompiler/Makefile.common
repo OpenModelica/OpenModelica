@@ -69,7 +69,7 @@ endif
 
 .PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
-ifeq ($(OMENCRYPTION),yes)
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
@@ -85,7 +85,7 @@ semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
 	rm -rf ../OMEncryption/3rdParty/SEMLA/install
 	rm -rf $(builddir_lib)/omc/SEMLA
-endif # end of OMENCRYPTION
+endif # end of OM_ENABLE_ENCRYPTION
 
 release: omc
 
@@ -95,7 +95,7 @@ bootstrap-dependencies-post-compiler-runtime:
 bootstrap-dependencies-post-compiler-builtin:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
 bootstrap-dependencies-post-parser: $(SEMLA_LIB)
-	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION)
 
 bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) cppzmq interactive-short
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post

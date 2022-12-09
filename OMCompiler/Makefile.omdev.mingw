@@ -112,7 +112,7 @@ SUITESPARSE_LIBS=
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 
-ifeq ($(OMENCRYPTION),yes)
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
