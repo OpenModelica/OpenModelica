@@ -78,7 +78,7 @@ end POP_INDENT;
 function emptyObject
   output JSON obj;
 algorithm
-  obj := OBJECT(UnorderedMap.new<JSON>(stringHashDjb2Mod, stringEq));
+  obj := OBJECT(UnorderedMap.new<JSON>(stringHashDjb2, stringEq));
 end emptyObject;
 
 function fromPair
@@ -616,7 +616,7 @@ protected
   String key;
   Boolean cont;
 algorithm
-  values := UnorderedMap.new<JSON>(stringHashDjb2Mod, stringEq);
+  values := UnorderedMap.new<JSON>(stringHashDjb2, stringEq);
   tokens := parse_expected_token(tokens, TokenId.OBJECTBEGIN);
   cont := peek_id(tokens) <> TokenId.ARRAYEND;
   while cont loop

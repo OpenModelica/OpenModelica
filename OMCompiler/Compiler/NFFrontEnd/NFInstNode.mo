@@ -1932,8 +1932,7 @@ uniontype InstNode
   function hash
     "Returns the hash of an InstNode's name."
     input InstNode node;
-    input Integer mod;
-    output Integer hash = stringHashDjb2Mod(name(node), mod);
+    output Integer hash = stringHashDjb2(name(node));
   end hash;
 
   function dimensionCount

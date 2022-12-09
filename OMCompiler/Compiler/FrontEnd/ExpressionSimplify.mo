@@ -3179,7 +3179,7 @@ algorithm
 
     // general case, this is O(n) but has a small overhead
     else algorithm
-      coeff_map := UnorderedMap.new<Real>(Expression.hashExpMod, Expression.expEqual, listLength(inTplExpRealLst));
+      coeff_map := UnorderedMap.new<Real>(Expression.hashExp, Expression.expEqual, listLength(inTplExpRealLst));
       for tpl in inTplExpRealLst loop
         (exp1, coeff1) := tpl;
         // set the coefficient of exp1 to coeff1, add the previous coefficient if exp1 is already in the map

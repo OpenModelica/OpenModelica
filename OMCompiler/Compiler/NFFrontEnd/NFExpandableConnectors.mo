@@ -485,10 +485,9 @@ end updatePotentiallyPresentVariable;
 
 function hashConnector
   input Connector conn;
-  input Integer mod;
   output Integer res;
 algorithm
-  res := stringHashDjb2Mod(ComponentRef.firstName(conn.name), mod);
+  res := stringHashDjb2(ComponentRef.firstName(conn.name));
 end hashConnector;
 
 annotation(__OpenModelica_Interface="frontend");

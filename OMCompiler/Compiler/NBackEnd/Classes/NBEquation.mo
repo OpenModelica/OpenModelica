@@ -620,8 +620,7 @@ public
     function hash
       "only hashes the name"
       input Pointer<Equation> eqn;
-      input Integer mod;
-      output Integer i = Variable.hash(Pointer.access(getResidualVar(eqn)), mod);
+      output Integer i = Variable.hash(Pointer.access(getResidualVar(eqn)));
     end hash;
 
     function equalName

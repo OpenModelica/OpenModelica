@@ -68,11 +68,10 @@ public
 
     function hash
       input PseudoBucketKey key   "the key to hash";
-      input Integer modulo        "modulo value";
       input Integer shift         "has to be statically provided while creating the PseudoBucket.";
       output Integer val          "the hash value";
     algorithm
-      val := mod(key.mode*shift*shift + key.eqn_arr_idx*shift + key.eqn_start_idx, modulo);
+      val := key.mode*shift*shift + key.eqn_arr_idx*shift + key.eqn_start_idx;
     end hash;
 
     function equal
@@ -377,7 +376,7 @@ public
       PseudoBucketValue val;
       Integer index, shift;
       list<Integer> var_lst;
-      UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(intMod, intEq) "the set of indices appearing in algebraic loops";
+      UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
       phase2_adj := match (phase2_adj, phase2_matching)
         case (Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm

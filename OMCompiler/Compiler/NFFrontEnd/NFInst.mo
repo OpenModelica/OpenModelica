@@ -321,7 +321,7 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
-  generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq);
+  generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2, stringEq);
   node_ty := InstNodeType.TOP_SCOPE(InstNode.EMPTY_NODE(), generated_inners);
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
@@ -2173,7 +2173,7 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq);
+  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));

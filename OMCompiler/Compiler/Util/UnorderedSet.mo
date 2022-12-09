@@ -46,7 +46,6 @@ protected
 public
   partial function Hash
     input T key;
-    input Integer mod;
     output Integer hash;
   end Hash;
 
@@ -133,7 +132,7 @@ public
     Hash hashfn = set.hashFn;
     Integer hash, pos;
   algorithm
-    hash := hashfn(key, arrayLength(Mutable.access(set.buckets)));
+    hash := intMod(hashfn(key), arrayLength(Mutable.access(set.buckets)));
     addKey(key, hash, set);
   end addNew;
 
@@ -167,7 +166,7 @@ public
     list<T> bucket;
     Option<T> okey;
   algorithm
-    hash := hashfn(key, arrayLength(buckets));
+    hash := intMod(hashfn(key), arrayLength(buckets));
     bucket := arrayGet(buckets, hash + 1);
 
     (bucket, okey) := List.deleteMemberOnTrue(key, bucket, eqfn);
@@ -357,7 +356,7 @@ public
       for k in b loop
         // Apply the function to the key
         newKey := fn(k);
-        hash := hashfn(newKey, bucket_count);
+        hash := intMod(hashfn(newKey), bucket_count);
         bucket := arrayGet(new_buckets, hash + 1);
 
         // check if we have a duplicate
@@ -511,7 +510,7 @@ public
     // Rehash all the keys in the old buckets and add them to the new.
     for b in old_buckets loop
       for k in b loop
-        hash := hashfn(k, bucket_count);
+        hash := intMod(hashfn(k), bucket_count);
         arrayUpdate(new_buckets, hash + 1, k :: arrayGet(new_buckets, hash + 1));
       end for;
     end for;
@@ -562,7 +561,7 @@ protected
     array<list<T>> buckets = Mutable.access(set.buckets);
     list<T> bucket;
   algorithm
-    hash := hashfn(key, arrayLength(buckets));
+    hash := intMod(hashfn(key), arrayLength(buckets));
     bucket := arrayGet(buckets, hash + 1);
 
     for k in bucket loop
@@ -590,7 +589,7 @@ protected
       buckets := Mutable.access(set.buckets);
       // The bucket count has changed so we need to rehash the key we're going
       // to add too.
-      h := hashfn(key, arrayLength(buckets));
+      h := intMod(hashfn(key), arrayLength(buckets));
     else
       buckets := Mutable.access(set.buckets);
       h := hash;

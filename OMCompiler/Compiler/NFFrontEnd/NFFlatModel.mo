@@ -284,7 +284,7 @@ public
   protected
     TypeMap types;
   algorithm
-    types := UnorderedMap.new<Type>(AbsynUtil.pathHashMod, AbsynUtil.pathEqual);
+    types := UnorderedMap.new<Type>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
     List.map1_0(flatModel.variables, collectVariableFlatTypes, types);
     List.map1_0(flatModel.equations, collectEquationFlatTypes, types);
     List.map1_0(flatModel.initialEquations, collectEquationFlatTypes, types);

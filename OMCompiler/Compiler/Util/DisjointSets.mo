@@ -42,7 +42,6 @@ replaceable type Entry = Integer;
 
 replaceable partial function EntryHash
   input Entry entry;
-  input Integer mod;
   output Integer hash;
 end EntryHash;
 

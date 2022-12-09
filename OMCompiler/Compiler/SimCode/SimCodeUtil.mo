@@ -147,25 +147,24 @@ algorithm
   // ((i, ht, literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i, ht, literals));
 end simulationFindLiterals;
 
-public function hashEqSystemMod
+public function hashEqSystem
   input SimCode.SimEqSystem eq;
-  input Integer mod;
   output Integer hash;
 algorithm
   hash := match eq
     local
       DAE.Statement stmt;
-    case SimCode.SES_RESIDUAL() then Expression.hashExpMod(eq.exp, mod);
-    case SimCode.SES_FOR_RESIDUAL() then Expression.hashExpMod(eq.exp, mod); // also hash the indices?
-    case SimCode.SES_GENERIC_RESIDUAL() then Expression.hashExpMod(eq.exp, mod); // also hash the indices?
-    case SimCode.SES_SIMPLE_ASSIGN() then intMod(ComponentReference.hashComponentRefMod(eq.cref,mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then intMod(ComponentReference.hashComponentRefMod(eq.cref,mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
-    case SimCode.SES_ARRAY_CALL_ASSIGN() then intMod(Expression.hashExpMod(eq.lhs, mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
-    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then intMod(Expression.hashExpMod(stmt.cond, mod)+7*Expression.hashExpMod(stmt.msg, mod)+49*Expression.hashExpMod(stmt.level, mod), mod);
+    case SimCode.SES_RESIDUAL() then Expression.hashExp(eq.exp);
+    case SimCode.SES_FOR_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
+    case SimCode.SES_GENERIC_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
+    case SimCode.SES_SIMPLE_ASSIGN() then ComponentReference.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then ComponentReference.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then Expression.hashExp(eq.lhs)+7*Expression.hashExp(eq.exp);
+    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then Expression.hashExp(stmt.cond)+7*Expression.hashExp(stmt.msg)+49*Expression.hashExp(stmt.level);
     // Whatever; we're not caching these values anyway
-    else intMod(valueConstructor(eq), mod);
+    else valueConstructor(eq);
   end match;
-end hashEqSystemMod;
+end hashEqSystem;
 
 public function compareEqSystemsEquality "Is true if the equations are the same except the index. If false they might still be the same."
   input SimCode.SimEqSystem eq1;

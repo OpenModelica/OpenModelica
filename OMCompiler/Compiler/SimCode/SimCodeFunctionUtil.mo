@@ -485,7 +485,7 @@ protected
   list<tuple<SimCodeFunction.RecordDeclaration,list<SimCodeFunction.RecordDeclaration>>> g;
   UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
-  recDeclsMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2Mod, stringEq);
+  recDeclsMap := UnorderedMap.new<SimCodeFunction.RecordDeclaration>(stringHashDjb2, stringEq);
   (functions, outIncludes, includeDirs, libs, libpaths) := elaborateFunctions2(program, daeElements, {}, includes, {}, {}, {}, recDeclsMap);
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);

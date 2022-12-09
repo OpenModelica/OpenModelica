@@ -47,7 +47,7 @@ package ConnectionSets
 
   redeclare function extends EntryHash
   algorithm
-    hash := Connector.hash(entry, mod);
+    hash := Connector.hash(entry);
   end EntryHash;
 
   redeclare function extends EntryEqual

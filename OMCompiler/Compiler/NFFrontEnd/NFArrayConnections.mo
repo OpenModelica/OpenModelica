@@ -133,7 +133,7 @@ public
     (flatModel, conns) := collect(flatModel);
 
     graph := IncidenceList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
-    nmv_table := UnorderedMap.new<SBMultiInterval>(stringHashDjb2Mod, stringEq);
+    nmv_table := UnorderedMap.new<SBMultiInterval>(stringHashDjb2, stringEq);
     createGraph(flatModel.variables, conns, graph, v_count, e_count, nmv_table);
 
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then

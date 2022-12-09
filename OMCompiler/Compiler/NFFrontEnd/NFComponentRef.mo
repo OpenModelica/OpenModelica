@@ -1265,15 +1265,13 @@ public
 
   function hash
     input ComponentRef cref;
-    input Integer mod;
-    output Integer hash = stringHashDjb2Mod(toString(cref), mod);
+    output Integer hash = stringHashDjb2(toString(cref));
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    input Integer mod;
-    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsAll(cref)), mod);
+    output Integer hash = stringHashDjb2(toString(stripSubscriptsAll(cref)));
   end hashStrip;
 
   function toPath

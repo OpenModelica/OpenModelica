@@ -757,7 +757,7 @@ public
         // interface map. If the map contains a variable it has a zero derivative
         // if the value is "true" it has to be stripped from the interface
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
-        UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2Mod, stringEqual);
+        UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm

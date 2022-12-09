@@ -231,14 +231,14 @@ algorithm
   // 1. Collect all possible record types from equations and globalKnownVars
   // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
   // I don't like it but thats how it is).
-  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
   collectRecordTypesVarLst(map, globalKnownVarLst);
   eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
 
   // 2. Collect bindings from variables and update in types
-  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
 
   _ := List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
   _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));

@@ -69,7 +69,6 @@ public type HashTable = tuple<
 
 partial function FuncHashKey
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashKey;
 
@@ -114,7 +113,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(FUnit.hashUnitMod,FUnit.unitEqual,FUnit.unit2string,id));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(FUnit.hashUnit,FUnit.unitEqual,FUnit.unit2string,id));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

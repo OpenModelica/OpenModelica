@@ -1245,19 +1245,14 @@ algorithm
   end match;
 end pathCompareNoQual;
 
-public function pathHashMod "Hashes a path."
+public function pathHash "Hashes a path."
   input Absyn.Path path;
-  input Integer mod;
   output Integer hash;
 algorithm
-// hash := valueHashMod(path,mod);
-// print(pathString(path) + " => " + intString(hash) + "\n");
-// hash := stringHashDjb2Mod(pathString(path),mod);
-// TODO: stringHashDjb2 is missing a default value for the seed; add this once we bootstrapped omc so we can use that function instead of our own hack
-  hash := intAbs(intMod(pathHashModWork(path,5381),mod));
-end pathHashMod;
+  hash := pathHashWork(path,5381);
+end pathHash;
 
-public function pathHashModWork "Hashes a path."
+public function pathHashWork "Hashes a path."
   input Absyn.Path path;
   input Integer acc;
   output Integer hash;
@@ -1267,11 +1262,11 @@ algorithm
       Absyn.Path p;
       String s;
       Integer i,i2;
-    case (Absyn.FULLYQUALIFIED(p),_) then pathHashModWork(p, acc*31 + 46 /* '.' */);
-    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashModWork(p, i2*31 + i);
+    case (Absyn.FULLYQUALIFIED(p),_) then pathHashWork(p, acc*31 + 46 /* '.' */);
+    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashWork(p, i2*31 + i);
     case (Absyn.IDENT(s),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then i2*31 + i;
   end match;
-end pathHashModWork;
+end pathHashWork;
 
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Absyn.Path> inPathOption;
