@@ -2045,7 +2045,7 @@ public
         Option<Expression> step;
 
       case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
-        case "fill" algorithm
+        case "fill" guard listLength(iCall.arguments) == 2 algorithm
           {body, stop}  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
