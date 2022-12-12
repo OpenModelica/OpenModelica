@@ -49,6 +49,7 @@ protected
   import NFFlatten.FunctionTreeImpl;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
+  import Subscript = NFSubscript;
   import Variable = NFVariable;
 
   // OB
@@ -148,6 +149,7 @@ public
 
     function create
       input Bucket bucket;
+      input VariablePointers variables;
       input Pointer<Integer> idx;
       output EventInfo eventInfo;
       output list<Pointer<Variable>> auxiliary_vars = {};
@@ -157,6 +159,7 @@ public
       list<TimeEvent> timeEvents = TimeEventSet.listKeys(bucket.timeEventSet);
       list<StateEvent> stateEvents = StateEventTree.toEventList(bucket.stateEventTree);
       list<tuple<Expression, Pointer<Variable>>> full_time_event_list = TimeEventTree.toList(bucket.timeEventTree);
+      ComponentRef lhs_cref;
       Expression rhs;
       Iterator iterator;
       list<ComponentRef> iter;
@@ -176,7 +179,9 @@ public
       for stateEvent in stateEvents loop
         STATE_EVENT(auxiliary = aux_var, relation = rhs, iterator = iterator) := stateEvent;
         (iter, range) := Equation.Iterator.getFrames(iterator);
-        aux_eqn := Equation.makeAssignment(BVariable.getVarName(aux_var), rhs, idx, context, List.zip(iter, range), NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+        // lower the subscripts (containing iterators)
+        lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
+        aux_eqn := Equation.makeAssignment(lhs_cref, rhs, idx, context, List.zip(iter, range), NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
         auxiliary_vars := aux_var :: auxiliary_vars;
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end for;
@@ -827,7 +832,7 @@ protected
         EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr));
         bucket := Pointer.access(bucket_ptr);
 
-        (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, eqData.uniqueIndex);
+        (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
 
         // add auxiliary variables
         varData.variables := VariablePointers.addList(auxiliary_vars, varData.variables);

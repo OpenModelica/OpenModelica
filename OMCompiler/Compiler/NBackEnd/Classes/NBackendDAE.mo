@@ -1100,7 +1100,7 @@ protected
     equations := EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
   end lowerComponentReferences;
 
-  function lowerComponentReferenceExp
+  public function lowerComponentReferenceExp
     input output Expression exp;
     input VariablePointers variables;
   algorithm
@@ -1114,11 +1114,15 @@ protected
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
-      else exp;
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        exp.call := call;
+      then exp;
+    else exp;
     end match;
   end lowerComponentReferenceExp;
 
-  function lowerComponentReference
+  protected function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
   protected
@@ -1146,12 +1150,41 @@ protected
     _ := match exp
       local
         ComponentRef cref;
+        Call call;
+
       case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
         Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
       then ();
       else ();
     end match;
   end collectBindingIterators;
+
+  function collectIterator
+    "collects all iterators in bindings and creates variables for them.
+    in bindings they are only known locally but they still need a respective variable"
+    input InstNode iterator;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  protected
+    ComponentRef cref;
+  algorithm
+    cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    if not VariablePointers.containsCref(cref, variables) then
+      Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+    end if;
+  end collectIterator;
 
   function lowerInstNode
     input output InstNode node;
