@@ -390,21 +390,21 @@ getErrorString();
 //  Set_S has 2 equations and 2 variables
 //
 //
-// Start of extraction procedure for boundary conditions
-// Set of boundary conditions equations that failed the extraction of set S: (3)
+// Start of extraction procedure for unmeasured variables of interest
+// Set of equations that failed the extraction of set S and that contain an unmeasured variable of interest: (3)
 // ==========================================================================
-// 1: P3 = P03
+// 1: P1 - P = k1 * Q1 * abs(Q1)
 // 2: P2 = P02
-// 3: P1 - P = k1 * Q1 * abs(Q1)
+// 3: P3 = P03
 //
-// Boundary conditions to be computed (3)
+// umeasured variables to be computed (3)
 // ========================================
-// 1: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+// 1: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
 // 2: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
-// 3: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 3: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
 //
 //
-// E-BLT: equations that compute the unMeasured variables of interest:(1)
+// E-BLT: equations in the BLT that compute the unmeasured variables of interest:(1)
 // ============================================================
 //
 // 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
@@ -413,7 +413,8 @@ getErrorString();
 // Extract set-S' to compute the boundary conditions
 // Procedure is applied on each equation in the failed boundary conditions
 // ==========================================================================
-// >>>P3 = P03
+// >>>P1 - P = k1 * Q1 * abs(Q1)
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
 // Procedure success
 //
 // >>>P2 = P02
@@ -421,15 +422,14 @@ getErrorString();
 // 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
 // Procedure success
 //
-// >>>P1 - P = k1 * Q1 * abs(Q1)
-// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// >>>P3 = P03
 // Procedure success
 //
 // SET_B (3, 3)
 // ========================================
-// 1/1 (1): P3 = P03   [dynamic |0|0|0|0|]
+// 1/1 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
 // 2/2 (1): P2 = P02   [dynamic |0|0|0|0|]
-// 3/3 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 3/3 (1): P3 = P03   [dynamic |0|0|0|0|]
 //
 //
 // SET_SPrime (1, 1)
@@ -446,9 +446,9 @@ getErrorString();
 // Final DAE with set-c, set-S and set-SPrime combined (9, 9)
 // ========================================
 // 1/1 (1): P2 - P = k2 * Q2 * abs(Q2)   [dynamic |0|0|0|0|]
-// 2/2 (1): P3 = P03   [dynamic |0|0|0|0|]
+// 2/2 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
 // 3/3 (1): P2 = P02   [dynamic |0|0|0|0|]
-// 4/4 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 4/4 (1): P3 = P03   [dynamic |0|0|0|0|]
 // 5/5 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
 // 6/6 (1): $res_F_1 := 0.5 * rho * V - P   [dynamic |0|0|0|0|]
 // 7/7 (1): $res_F_2 := P01 - P1   [dynamic |0|0|0|0|]

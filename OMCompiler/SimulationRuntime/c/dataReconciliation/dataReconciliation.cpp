@@ -371,7 +371,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   // Intermediate Conditions
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_IntermediateEquations.html" << " target=_blank> Intermediate equations for measured variables </a> </h3>\n";
 
-  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+  if (data->modelData->nSetbVars > 0)
   {
     // Boundary Conditions
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
@@ -379,7 +379,8 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations for unmeasured variables </a> </h3>\n";
   }
 
-  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.txt" << " target=_blank> Related boundary conditions </a> </h3>\n";
+  if (data->modelData->nRelatedBoundaryConditions > 0)
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.txt" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
@@ -2871,17 +2872,18 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
   //printMatrixWithHeaders(datareconciliationdata.copyreconSx_diag.data, datareconciliationdata.copyreconSx_diag.rows, datareconciliationdata.copyreconSx_diag.column, csvinputs.headers, "ARRRRRRreconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
   //printMatrixWithHeaders(datareconciliationdata.reconciled_SX.data, datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, csvinputs.headers, "NovakreconciledS_X ===> (x - (Sx*Ft*fstar))", logfile);
 
-  // Compute Boundary conditions
+  // Compute Boundary conditions only if unmeasured variables exist
   boundaryConditionData boundaryconditiondata;
-  // pepare data to compute boundary condition
-  inputData reconciled_x = {datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, datareconciliationdata.reconciled_X.data, {}};
-  matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
+  if (data->modelData->nSetbVars > 0)
+  {
+    // pepare data to compute boundary condition
+    inputData reconciled_x = {datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, datareconciliationdata.reconciled_X.data, {}};
+    matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
 
-  logfile << "\n\nCalculation of Boundary condition \n" << "====================================\n";
-
-  reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
-
-  //printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Copied", logfile);
+    logfile << "\n\nCalculation of Boundary condition \n" << "====================================\n";
+    reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
+    // printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Copied", logfile);
+  }
 
   createHtmlReportFordataReconciliation(data, datareconciliationdata.csvinputs, datareconciliationdata.xdiag, datareconciliationdata.reconciled_X, datareconciliationdata.copyreconSx_diag, datareconciliationdata.newX, eps, datareconciliationdata.iterationcount, datareconciliationdata.value, datareconciliationdata.J, warningCorrelationData, boundaryconditiondata);
 
@@ -2892,8 +2894,11 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
   free(datareconciliationdata.newX);
 
   // free boundaryCondition data
-  free(boundaryconditiondata.boundaryConditionVarsResults);
-  free(boundaryconditiondata.reconSt_diag);
+  if (data->modelData->nSetbVars > 0)
+  {
+    free(boundaryconditiondata.boundaryConditionVarsResults);
+    free(boundaryconditiondata.reconSt_diag);
+  }
 
   return 0;
 }
