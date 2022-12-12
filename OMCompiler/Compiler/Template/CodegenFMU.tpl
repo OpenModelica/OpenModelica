@@ -2134,7 +2134,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanDependentParametersVRs, "") then "{"+booleanDependentParametersNames+"} = fmi2Functions.fmi2GetBoolean(fmi2me, {"+booleanDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(stringDependentParametersVRs, "") then "{"+stringDependentParametersNames+"} = fmi2Functions.fmi2GetString(fmi2me, {"+stringDependentParametersVRs+"}, flowInitialized);"%>
   algorithm
-    flowTime := fmi2Functions.fmi2SetTime(fmi2me, time, flowInitialized);
+    flowTime := if not initial() then fmi2Functions.fmi2SetTime(fmi2me, time, flowInitialized) else time;
     /* algorithm section ensures that inputs to fmi (if any) are set directly after the new time is set */
     <%if not stringEq(realInputVariablesVRs, "") then "realInputVariables := fmi2Functions.fmi2SetReal(fmi2me, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
     <%if not stringEq(integerInputVariablesVRs, "") then "integerInputVariables := fmi2Functions.fmi2SetInteger(fmi2me, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
