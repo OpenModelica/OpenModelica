@@ -1606,7 +1606,11 @@ algorithm
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
-              cond := Ceval.evalExp(cond, target);
+              // Skip evaluation if the condition contains iterators, which can
+              // happen if scalarization is turned off and for-loops aren't unrolled.
+              if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
+                cond := Ceval.evalExp(cond, target);
+              end if;
             end if;
 
             // Conditions in an if-equation that contains connects must be possible to evaluate.
