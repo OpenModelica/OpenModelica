@@ -360,13 +360,16 @@ uniontype InstNode
   function isUserdefinedClass
     input InstNode node;
     output Boolean isUserdefined;
+  protected
+    InstNodeType ty;
   algorithm
     isUserdefined := match node
-      case CLASS_NODE()
-        then match node.nodeType
+      case CLASS_NODE(nodeType = ty)
+        then match ty
           case InstNodeType.NORMAL_CLASS() then true;
           case InstNodeType.BASE_CLASS() then true;
           case InstNodeType.DERIVED_CLASS() then true;
+          case InstNodeType.REDECLARED_CLASS() then isUserdefinedClass(ty.parent);
           else false;
         end match;
       else false;
