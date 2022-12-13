@@ -1381,11 +1381,14 @@ public
     end isInitial;
 
     function isWhenEquation
-      input Pointer<Equation> eqn;
+      input Pointer<Equation> eqn_ptr;
       output Boolean b;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
-      b := match Pointer.access(eqn)
+      b := match eqn
         case Equation.WHEN_EQUATION() then true;
+        case Equation.FOR_EQUATION() then List.any(list(Pointer.create(e) for e in eqn.body), isWhenEquation);
         else false;
       end match;
     end isWhenEquation;
@@ -1715,6 +1718,7 @@ public
           // trivial slices replace the original equation entirely
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
+          // kabdelhak: ToDo: check ordering of locations and sizes
           locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
           locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
           frames                                          := listReverse(getForFrames(eqn));
