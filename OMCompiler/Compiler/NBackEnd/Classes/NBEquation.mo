@@ -1839,8 +1839,11 @@ public
     algorithm
       stmt := match eqn
         local
+          list<ComponentRef> iter_lst;
+          list<Expression> range_lst;
           ComponentRef iter;
           Expression range;
+          list<Statement> body;
 
         case SCALAR_EQUATION()
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
@@ -1852,16 +1855,22 @@ public
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
 
         case FOR_EQUATION() algorithm
-          ({iter},{range}) := Equation.Iterator.getFrames(eqn.iter);
-        then Statement.FOR(
-          iterator  = ComponentRef.node(iter),
-          range     = SOME(range),
-          body      = list(toStatement(body_eqn) for body_eqn in eqn.body),
-          forType   = Statement.ForType.NORMAL(),
-          source    = eqn.source
-        );
+          (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
+          body := list(toStatement(body_eqn) for body_eqn in eqn.body);
+          for tpl in listReverse(List.zip(iter_lst, range_lst)) loop
+            (iter, range) := tpl;
+            body := {Statement.FOR(
+              iterator  = ComponentRef.node(iter),
+              range     = SOME(range),
+              body      = body,
+              forType   = Statement.ForType.NORMAL(),
+              source    = eqn.source)};
+          end for;
+        then List.first(body);
 
         case IF_EQUATION() then Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source);
+
+        case WHEN_EQUATION() then Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
@@ -2025,6 +2034,20 @@ public
       end match;
     end getBodyAttributes;
 
+    function toStatement
+      input WhenEquationBody body;
+      output list<tuple<Expression, list<Statement>>> stmts;
+    protected
+      tuple<Expression, list<Statement>> stmt;
+    algorithm
+      stmt := (body.condition, list(WhenStatement.toStatement(st) for st in body.when_stmts));
+      if Util.isSome(body.else_when) then
+        stmts := stmt :: toStatement(Util.getOption(body.else_when));
+      else
+        stmts := {stmt};
+      end if;
+    end toStatement;
+
     function map
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
@@ -2114,6 +2137,22 @@ public
                                                                               else str + getInstanceName() + " failed.";
       end match;
     end toString;
+
+    function toStatement
+      input WhenStatement wstmt;
+      output Statement stmt;
+    algorithm
+      stmt := match wstmt
+        case ASSIGN()     then Statement.ASSIGNMENT(wstmt.lhs, wstmt.rhs, Expression.typeOf(wstmt.lhs), wstmt.source);
+        case REINIT()     then Statement.REINIT(Expression.fromCref(wstmt.stateVar), wstmt.value, wstmt.source);
+        case ASSERT()     then Statement.ASSERT(wstmt.condition, wstmt.message, wstmt.level, wstmt.source);
+        case TERMINATE()  then Statement.TERMINATE(wstmt.message, wstmt.source);
+        case NORETCALL()  then Statement.NORETCALL(wstmt.exp, wstmt.source);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unrecognized statement: " + toString(wstmt)});
+        then fail();
+      end match;
+    end toStatement;
 
     function size
       input WhenStatement stmt;

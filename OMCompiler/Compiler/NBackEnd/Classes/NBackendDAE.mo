@@ -560,7 +560,7 @@ protected
 
     // make adjustments to attributes based on variable kind
     attributes := match varKind
-      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixedIfNone(attributes);
+      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixed(attributes, ty, true, false);
       else attributes;
     end match;
   end lowerVariableKind;

@@ -1077,7 +1077,7 @@ public
         Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, b);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty, b);
         var.backendinfo := binfo;
       then var;
 
@@ -1104,7 +1104,7 @@ public
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty);
         var.backendinfo := binfo;
       then var;
 
