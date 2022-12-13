@@ -674,12 +674,10 @@ public
         list<Subscript> subs;
 
       case CREF(subscripts = {}) guard(not backendCref(cref)) algorithm
-        sizes_ := sizes(cref);
+        sizes_ := sizes_local(cref);
         subs := {};
         for size in listReverse(sizes_) loop
-          if size == 1 then
-            subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
-          else
+          if size <> 1 then
             subs := Subscript.SLICE(Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
           end if;
         end for;
@@ -1554,12 +1552,24 @@ public
         list<Integer> local_lst = {};
       case EMPTY() then listReverse(s_lst);
       case CREF() algorithm
-        local_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
-        local_lst := if listEmpty(local_lst) then {1} else local_lst;
+        local_lst := sizes_local(cref);
         s_lst := listAppend(local_lst, s_lst);
       then sizes(cref.restCref, s_lst);
     end match;
   end sizes;
+
+  function sizes_local
+    input ComponentRef cref;
+    output list<Integer> s_lst = {};
+  algorithm
+    s_lst := match cref
+      case EMPTY() then {};
+      case CREF() algorithm
+        s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
+        s_lst := if listEmpty(s_lst) then {1} else s_lst;
+      then s_lst;
+    end match;
+  end sizes_local;
 
   function subscriptsToInteger
     input ComponentRef cref;

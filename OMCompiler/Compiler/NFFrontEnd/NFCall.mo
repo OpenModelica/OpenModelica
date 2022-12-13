@@ -2041,17 +2041,24 @@ public
     oCall := match iCall
       local
         InstNode iter_name;
-        Expression start, stop, body, iter_range;
+        Expression start, body, iter_range;
         Option<Expression> step;
+        list<Expression> rest;
+        list<tuple<InstNode, Expression>> iterators = {};
+        Integer index = 1;
 
       case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
-        case "fill" guard listLength(iCall.arguments) == 2 algorithm
-          {body, stop}  := iCall.arguments;
+        case "fill" algorithm
+          body :: rest  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
-          iter_name     := InstNode.newIterator("i", Type.INTEGER(), sourceInfo());
-          iter_range    := Expression.RANGE(Type.INTEGER(), start, step, stop);
-        then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, {(iter_name, iter_range)});
+          for stop in rest loop
+            iter_name   := InstNode.newIndexedIterator(index);
+            iter_range  := Expression.RANGE(Type.INTEGER(), start, step, stop);
+            iterators   := (iter_name, iter_range) :: iterators;
+            index       := index + 1;
+          end for;
+        then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, listReverse(iterators));
         else iCall;
       end match;
       else iCall;
