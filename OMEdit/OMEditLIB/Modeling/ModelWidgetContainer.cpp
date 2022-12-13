@@ -5108,7 +5108,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
     mpLatestNewsFrame->setVisible(false);
   }
   // latest news
-  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News"));
+  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
   mpNoLatestNewsLabel = new Label;
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
@@ -5258,12 +5258,16 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
     QXmlStreamReader xml(response);
     int count = 0;
     QString title, link;
-    QDateTime pubDateTime;
+    QDateTime pubDateTime, endDateTime;
     while (!xml.atEnd()) {
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement) {
         if (xml.name() == "item") {
+          title = "";
+          link = "";
+          pubDateTime = QDateTime();
+          endDateTime = QDateTime();
           // read everything inside item
           xml.readNext();
           if (xml.name() == "title") {
@@ -5277,16 +5281,32 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
           if (xml.name() == "pubDate") {
             pubDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
+          xml.readNext();
+          if (xml.name() == "endDate") {
+            endDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
+          }
+        }
+      } else if (xml.tokenType() == QXmlStreamReader::EndElement) {
+        if (xml.name() == "item") {
           // add the item to the list view
           QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
           listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
-          listItem->setText(QLocale::c().toString(pubDateTime, "MMMM dd, yyyy") % ": " % title);
+          QString itemTitle;
+          if (pubDateTime.isValid() && endDateTime.isValid()) {
+            itemTitle = QLocale::c().toString(pubDateTime, "yyyy-MM-dd") % " - " % QLocale::c().toString(endDateTime, "yyyy-MM-dd") % " " % title;
+          } else if (pubDateTime.isValid()) {
+            itemTitle = QLocale::c().toString(pubDateTime, "yyyy-MM-dd") % " " % title;
+          } else {
+            itemTitle = title;
+          }
+          listItem->setText(itemTitle);
           listItem->setData(Qt::UserRole, link);
           count++;
+          // if reached max news size
+          if (count >= maxNewsSize) {
+            break;
+          }
         }
-      }
-      if (count >= maxNewsSize) {
-        break;
       }
     }
   } else {
