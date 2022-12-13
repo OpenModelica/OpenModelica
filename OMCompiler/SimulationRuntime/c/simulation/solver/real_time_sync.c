@@ -30,7 +30,7 @@
 
 #include "real_time_sync.h"
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 #include <sys/mman.h>
 #include <errno.h>
 #endif
@@ -45,7 +45,7 @@ void omc_real_time_sync_init(threadData_t *threadData, DATA *data)
     return;
   }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
     warningStreamPrint(LOG_RT, 0, __FILE__ ": mlockall failed (recommended to run as root to lock memory into RAM while doing real-time simulation): %s\n", strerror(errno));
   }
