@@ -4045,14 +4045,14 @@ template crefToOMSICStr(ComponentRef cref, HashTableCrefSimVar.HashTable hashTab
       case v as SIMVAR(index=-2) then
         match cref2simvar(componentRef, getSimCode())
           case v as SIMVAR(__) then
-            let c_comment = CodegenUtil.crefCComment(v)
+            let c_comment = CodegenUtil.crefCCommentWithVariability(v)
             let index = getValueReference(v, getSimCode(), false)
             <<
-            this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%> /* TODO: Check why pre variable  <%CodegenUtil.escapeCComments(CodegenUtil.crefStrNoUnderscore(v.name))%> is not in local hash table! */
+            this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%> /* TODO: Check why pre variable <%CodegenUtil.crefCComment(v, CodegenUtil.crefStrNoUnderscore(v.name))%> is not in local hash table! */
             >>
         end match
       case v as SIMVAR(__) then
-        let c_comment = CodegenUtil.crefCComment(v)
+        let c_comment = CodegenUtil.crefCCommentWithVariability(v)
         let index = getValueReference(v, getSimCode(), false)
         <<
         this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>
@@ -4066,7 +4066,7 @@ template crefToOMSICStr(ComponentRef cref, HashTableCrefSimVar.HashTable hashTab
         match cref2simvar(cref, getSimCode())
           case v as SIMVAR(__) then
           let index = getValueReference(v, getSimCode(), false)
-          let c_comment = CodegenUtil.crefCComment(v)
+          let c_comment = CodegenUtil.crefCCommentWithVariability(v)
            <<
            model_vars_and_params-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>
            >>
@@ -4076,13 +4076,13 @@ template crefToOMSICStr(ComponentRef cref, HashTableCrefSimVar.HashTable hashTab
       case v as SIMVAR(varKind=JAC_VAR(__))
       case v as SIMVAR(varKind=JAC_DIFF_VAR(__))
       case v as SIMVAR(varKind=SEED_VAR(__)) then
-        let c_comment = CodegenUtil.crefCComment(v)
+        let c_comment = CodegenUtil.crefCCommentWithVariability(v)
         <<
         this_function->local_vars-><%crefTypeOMSIC(name)%>[<%v.index%>]<%c_comment%>
         >>
 
       case v as SIMVAR(__) then
-        let c_comment = CodegenUtil.crefCComment(v)
+        let c_comment = CodegenUtil.crefCCommentWithVariability(v)
         let index = getValueReference(v, getSimCode(), false)
         <<
         this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>
@@ -4750,9 +4750,9 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix)
  match context
    case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
      match simVarFromHT(cr, jacHT)
-     case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'jacobian->resultVars[<%index%>]<%crefCComment(v)%>'
-     case v as SIMVAR(varKind=BackendDAE.JAC_DIFF_VAR()) then 'jacobian->tmpVars[<%index%>]<%crefCComment(v)%>'
-     case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'jacobian->seedVars[<%index%>]<%crefCComment(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.JAC_DIFF_VAR()) then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then crefOld(cr, ix)
 end jacCrefs;
 
@@ -4866,11 +4866,11 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar=ALIAS(varName=varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind=JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCComment(v)%>'
-    case v as SIMVAR(varKind=JAC_DIFF_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCComment(v)%>'
-    case v as SIMVAR(varKind=SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCComment(v)%>'
-    case v as SIMVAR(varKind=DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCComment(v)%>'
-    case v as SIMVAR(varKind=DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCComment(v)%>'
+    case v as SIMVAR(varKind=JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind=JAC_DIFF_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind=SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind=DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind=DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index=-2) then
       (let s = (if isPre then crefNonSimVar(crefPrefixPre(cr)) else crefNonSimVar(cr))
       if intEq(ix,0) then s
@@ -7854,7 +7854,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
         case SIMVAR(varKind=EXTOBJ()) then
           "ERROR: Not implemented in varArrayNameValues"
         case SIMVAR(__) then
-          let c_comment = CodegenUtil.crefCComment(var)
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           <<
           <%if isStart then '<%varAttributes(var, &sub)%>.start'
             else if isPre then '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
@@ -7866,11 +7866,11 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
       match var
         case SIMVAR(varKind=PARAM())
         case SIMVAR(varKind=OPT_TGRID()) then
-          '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]<%crefCComment(var)%>)<%&sub%>'
+          '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]<%crefCCommentWithVariability(var)%>)<%&sub%>'
         case SIMVAR(varKind=EXTOBJ()) then
           '(<%arr%>data->simulationInfo->extObjs[<%index%>])<%&sub%>'
         case SIMVAR(__) then
-          let c_comment = CodegenUtil.crefCComment(var)
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           '<%if isStart then '<%varAttributes(var, &sub)%>.start'
              else if isPre then '(<%arr%>data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
              else '(<%arr%>data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>]<%c_comment%>)<%sub%>'%>'
@@ -7889,7 +7889,7 @@ template crefVarInfo(ComponentRef cr)
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
 end crefVarInfo;
 
 template varAttributes(SimVar var, Text &sub)
@@ -7898,7 +7898,7 @@ template varAttributes(SimVar var, Text &sub)
   match var
   case SIMVAR(index=-1) then crefAttributes(name) // input variable? pass subs!!!
   case SIMVAR(__) then
-  '(<%arr%>data->modelData-><%varArrayName(var)%>Data[<%index%>]<%crefCComment(var)%>)<%sub%>.attribute '
+  '(<%arr%>data->modelData-><%varArrayName(var)%>Data[<%index%>]<%crefCCommentWithVariability(var)%>)<%sub%>.attribute '
 end varAttributes;
 
 template crefAttributes(ComponentRef cr)
@@ -7907,7 +7907,7 @@ template crefAttributes(ComponentRef cr)
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'varAttributes got negative index=<%index%> for <%crefStr(name)%>') else
-    'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
+    'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
 end crefAttributes;
 
 template typeCastContext(Context context, Type ty)

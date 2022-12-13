@@ -112,6 +112,11 @@ template equationIndexAlternativeTearing(SimEqSystem eq)
 end equationIndexAlternativeTearing;
 
 template dumpEqs(list<SimEqSystem> eqs)
+::= match getConfigString(OBFUSCATE)
+  case "none" then dumpEqsWork(eqs)
+end dumpEqs;
+
+template dumpEqsWork(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_RESIDUAL(__) then
@@ -275,10 +280,10 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       unknown equation
       >>
-end dumpEqs;
+end dumpEqsWork;
 
 
-template dumpAlgSystemOps (Option<DerivativeMatrix> derivativeMatrix)
+template dumpAlgSystemOps(Option<DerivativeMatrix> derivativeMatrix)
 "dumps description of eqations of algebraic system.
  Helper function for dumpEqs."
 ::=
@@ -298,7 +303,7 @@ template dumpAlgSystemOps (Option<DerivativeMatrix> derivativeMatrix)
   >>
 end dumpAlgSystemOps;
 
-template dumpAlgSystemColumn (OMSIFunction column ,Text &columnBuffer, Text &varsBuffer)
+template dumpAlgSystemColumn(OMSIFunction column ,Text &columnBuffer, Text &varsBuffer)
 "dumps equation description for one OMSIFunction"
 ::=
 
@@ -363,6 +368,11 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
 end dumpWhenOps;
 
 template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
+::= match getConfigString(OBFUSCATE)
+  case "none" then dumpEqsAlternativeTearingWork(eqs)
+end dumpEqsAlternativeTearing;
+
+template dumpEqsAlternativeTearingWork(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_LINEAR(alternativeTearing=SOME(at as LINEARSYSTEM(__))) then
@@ -416,7 +426,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
       <<
       unknown equation
       >>
-end dumpEqsAlternativeTearing;
+end dumpEqsAlternativeTearingWork;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenUtilSimulation;
