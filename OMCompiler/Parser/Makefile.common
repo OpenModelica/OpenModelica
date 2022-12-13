@@ -74,7 +74,7 @@ ModelicaParser.boot.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h 
 	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -DOMC_BOOTSTRAPPING -I../Compiler/boot/tarball-include
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
-CPPFLAGS+=-DOMENCRYPTION -I../../OMEncryption/3rdParty/SEMLA/install/include
+CPPFLAGS+=-DOM_ENABLE_ENCRYPTION -I../../OMEncryption/3rdParty/SEMLA/build/include
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c ../../OMEncryption/Parser/parseEncryption.c
 else
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
