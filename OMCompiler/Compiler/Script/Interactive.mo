@@ -14865,6 +14865,7 @@ algorithm
   if filename == "package.moc" then
     (lveStarted, lveInstance) := Parser.startLibraryVendorExecutable(dir);
     if not lveStarted then
+      Error.addMessage(Error.INTERNAL_ERROR, {"Unable to start library vendor executable."});
       topClassNamesQualified := {};
       return;
     end if;

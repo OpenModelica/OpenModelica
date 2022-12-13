@@ -240,6 +240,7 @@ algorithm
         if encrypted then
           (lveStarted, lveInstance) = Parser.startLibraryVendorExecutable(path + pd + name);
           if not lveStarted then
+            Error.addMessage(Error.INTERNAL_ERROR, {"Unable to start library vendor executable."});
             fail();
           end if;
         end if;
