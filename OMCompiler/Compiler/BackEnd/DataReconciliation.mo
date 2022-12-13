@@ -534,7 +534,7 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(outOtherEqns, "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(outOtherEqns)) + ", " + intString(BackendEquation.equationArraySize(outOtherEqns)) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
-  VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqns, shared);
+  VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqns, shared, listLength(ebltEqsLst), listLength(setBFailedBoundaryConditionEquations), false);
 
   if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
@@ -802,11 +802,11 @@ algorithm
   unMeasuredVariables := List.map1r(listReverse(unMeasuredVariablesOfInterest), BackendVariable.getVarAt, currentSystem.orderedVars);
 
   // prepare unmeasured equation list, along with boundary condition equations that failed the extraction of set-C and set-S
-  (setBFailedBoundaryConditionEquations, failedboundaryConditionEquationIndex) := prepareUnmeasuredVariablesEquations(unMeasuredEqsLst, sBltAdjacencyMatrix, knowns, solvedEqsAndVarsInfo, currentSystem.orderedEqs, mapIncRowEqn, setBFailedBoundaryConditionEquations);
+  (setBFailedBoundaryConditionEquations, failedboundaryConditionEquationIndex) := prepareUnmeasuredVariablesEquations(unMeasuredEqsLst, sBltAdjacencyMatrix, knowns, solvedEqsAndVarsInfo, currentSystem.orderedEqs, currentSystem.orderedVars, mapIncRowEqn, setBFailedBoundaryConditionEquations);
 
-  dumpFailedBoundaryConditionEquationAndVars(setBFailedBoundaryConditionEquations, currentSystem.orderedVars);
+  dumpFailedBoundaryConditionEquationAndVars(setBFailedBoundaryConditionEquations, currentSystem.orderedVars, true);
 
-  dumpSetSVarsSolvedInfo(unMeasuredEqsLst, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "E-BLT: equations that compute the unMeasured variables of interest");
+  dumpSetSVarsSolvedInfo(unMeasuredEqsLst, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "E-BLT: equations in the BLT that compute the unmeasured variables of interest");
 
   (_, setSPrime, failedboundaryConditionEquations, failedboundaryConditionVars, status) := ExtractSetSPrime(currentSystem, setBFailedBoundaryConditionEquations, sBltAdjacencyMatrix, knowns, boundaryConditionVars, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, solvedEqsAndVarsInfo, bindingEquations, debug);
 
@@ -869,7 +869,7 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(outOtherEqns, "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(outOtherEqns)) + ", " + intString(BackendEquation.equationArraySize(outOtherEqns)) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
-  VerifySetSPrime(outBoundaryConditionVars, outOtherVarsSetSPrime, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqnsSetSPrime, shared);
+  VerifySetSPrime(outBoundaryConditionVars, outOtherVarsSetSPrime, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqnsSetSPrime, shared, listLength(setC), numRelatedBoundaryConditions, true);
 
   // Data Reconciliation jacobian
   if debug then
@@ -988,13 +988,19 @@ end isBoundaryConditionVars;
 protected function dumpFailedBoundaryConditionEquationAndVars
   input list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
   input BackendDAE.Variables orderedVars;
+  input Boolean stateEstimation = false;
 protected
   BackendDAE.Equation failedboundaryConditionEquation;
   Integer count, varIndex;
   BackendDAE.Var var;
   list<BackendDAE.Var> varlist;
 algorithm
-  print("\nStart of extraction procedure for boundary conditions\nSet of boundary conditions equations that failed the extraction of set S: ("+ intString(listLength(setBFailedBoundaryConditionEquations)) + ")\n" + UNDERLINE);
+  if stateEstimation then
+    print("\nStart of extraction procedure for unmeasured variables of interest\nSet of equations that failed the extraction of set S and that contain an unmeasured variable of interest: ("+ intString(listLength(setBFailedBoundaryConditionEquations)) + ")\n" + UNDERLINE);
+  else
+    print("\nStart of extraction procedure for boundary conditions\nSet of boundary conditions equations that failed the extraction of set S: ("+ intString(listLength(setBFailedBoundaryConditionEquations)) + ")\n" + UNDERLINE);
+  end if;
+
   count := 1;
   varlist := {};
   for item in listReverse(setBFailedBoundaryConditionEquations) loop
@@ -1005,7 +1011,11 @@ algorithm
     count := count + 1;
   end for;
   print("\n");
-  BackendDump.dumpVarList(listReverse(varlist), "Boundary conditions to be computed");
+  if stateEstimation then
+    BackendDump.dumpVarList(listReverse(varlist), "umeasured variables to be computed");
+  else
+    BackendDump.dumpVarList(listReverse(varlist), "Boundary conditions to be computed");
+  end if;
 end dumpFailedBoundaryConditionEquationAndVars;
 
 protected function prepareUnmeasuredVariablesEquations
@@ -1014,8 +1024,8 @@ protected function prepareUnmeasuredVariablesEquations
   input list<Integer> knownVars;
   input list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
   // input list<Integer> boundaryConditionVars;
-  // input BackendDAE.Variables orderedVars;
   input BackendDAE.EquationArray orderedEqs;
+  input BackendDAE.Variables orderedVars;
   input array<Integer> mapIncRowEqn;
   input output list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations = {};
   output list<Integer> failedboundaryConditionEquationIndex = {};
@@ -1023,6 +1033,7 @@ protected
   Integer varIndex, eqIndex;
   list<Integer> intermediateVars;
   BackendDAE.Equation unmeasuredEq;
+  list<tuple<Integer, BackendDAE.Equation, list<Integer>>> unMeasuredVariablesAndEquations;
 algorithm
   for eq in unMeasuredEqsLst loop
     (_, varIndex) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
@@ -1032,7 +1043,15 @@ algorithm
     unmeasuredEq := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), eq));
     setBFailedBoundaryConditionEquations := (varIndex, unmeasuredEq, intermediateVars) :: setBFailedBoundaryConditionEquations;
   end for;
-  setBFailedBoundaryConditionEquations := List.unique(setBFailedBoundaryConditionEquations);
+  unMeasuredVariablesAndEquations := {};
+  // filter only unmeasured variables of interest and equation
+  for item in setBFailedBoundaryConditionEquations loop
+    (varIndex, _, _) := item;
+    if BackendVariable.varHasUncertainValuePropagate(BackendVariable.getVarAt(orderedVars, varIndex)) then
+      unMeasuredVariablesAndEquations := item :: unMeasuredVariablesAndEquations;
+    end if;
+  end for;
+  setBFailedBoundaryConditionEquations := List.unique(unMeasuredVariablesAndEquations);
 end prepareUnmeasuredVariablesEquations;
 
 
@@ -3163,6 +3182,9 @@ protected function VerifySetSPrime
   input BackendDAE.EquationArray boundaryConditionsEquations;
   input BackendDAE.EquationArray intermediateEquations;
   input BackendDAE.Shared shared;
+  input Integer auxillaryEquations;
+  input Integer numRelatedBoundaryConditions;
+  input Boolean stateEstimation;
 protected
   Integer eqSize, varSize, count, extraVarLength;
   String condition5, msg;
@@ -3187,7 +3209,11 @@ algorithm
       count := count + 1;
     end for;
     Error.addMessage(Error.INTERNAL_ERROR, {": " + msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only."});
-    generateCompileTimeHtmlReport(shared, "", intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only.", boundaryCondition = true);
+    if stateEstimation then
+      generateCompileTimeHtmlReport(shared, "", intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of unmeasured variables of interest from the variables of interest only.", boundaryCondition = false, stateEstimation = true, setC= auxillaryEquations, numRelatedBoundaryConditions = numRelatedBoundaryConditions);
+    else
+      generateCompileTimeHtmlReport(shared, "", intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only.", boundaryCondition = true, stateEstimation = false, setC= auxillaryEquations, numRelatedBoundaryConditions = numRelatedBoundaryConditions);
+    end if;
     fail();
   end if;
 end VerifySetSPrime;
@@ -3354,15 +3380,18 @@ protected function generateCompileTimeHtmlReport
   input tuple<String, list<BackendDAE.Var>> condition4 = ("", {});
   input String condition5 = "";
   input Boolean boundaryCondition = false;
+  input Boolean stateEstimation = false;
+  input Integer setC = 0;
+  input Integer numRelatedBoundaryConditions = 0;
 protected
   String data, condition1_msg, condition2_msg, condition4_msg;
   list<BackendDAE.Equation> condition1_eqs;
   list<BackendDAE.Var> condition2_vars, condition4_vars;
 algorithm
-    if not boundaryCondition then
-      data := "<html> \n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
-    else
+    if boundaryCondition then
       data := "<html> \n <head> <h1> Boundary Condition Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
+    else
+      data := "<html> \n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
     end if;
     data := data + "<table> \n <tr> \n <th align=right> Model file: </th> \n";
     data := data + "<td>"+ shared.info.fileNamePrefix + ".mo" + "</td>\n</tr>\n";
@@ -3371,18 +3400,29 @@ algorithm
     data := data + "<tr> \n <th align=right> Generated: </th>\n";
     data := data + "<td>" + System.getCurrentTimeStr() + "<b> by OpenModelica " + Settings.getVersionNr() + "</b>" + "</td>\n</tr>\n <table>\n";
     data := data + "<h2> Analysis: </h2>\n<table>";
-    if not boundaryCondition then
-      data := data + "<tr>\n <th align=right> Number of auxiliary conditions: </th> \n <td>" + auxilliaryConditions + "</td>\n</tr>\n";
-    else
+    if boundaryCondition then
       data := data + "<tr>\n <th align=right> Number of boundary conditions: </th> \n <td>" + auxilliaryConditions + "</td>\n</tr>\n";
-    end if;
-    data := data + "<tr>\n <th align=right> Number of variables to be reconciled: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n</table>";
-    if not boundaryCondition then
-      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
-      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations </a> </h3>";
+      data := data + "<tr>\n <th align=right> Number of measured variables: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n</table>";
+    elseif stateEstimation then
+      data := data + "<tr>\n <th align=right> Number of auxiliary conditions: </th> \n <td>" + intString(setC) + "</td>\n</tr>\n";
+      data := data + "<tr>\n <th align=right> Number of measured variables: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n";
+      data := data + "<tr>\n <th align=right> Number of related boundary conditions: </th> \n <td>" + intString(numRelatedBoundaryConditions) + "</td>\n</tr>\n</table>";
     else
+      data := data + "<tr>\n <th align=right> Number of auxiliary conditions: </th> \n <td>" + auxilliaryConditions + "</td>\n</tr>\n";
+      data := data + "<tr>\n <th align=right> Number of measured variables: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n</table>";
+    end if;
+
+    if boundaryCondition then
       data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionsEquations.html target=_blank> Boundary conditions </a> </h3>";
       data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionIntermediateEquations.html target=_blank> Intermediate equations </a> </h3>";
+    elseif stateEstimation then
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations for measured variables </a> </h3>";
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionsEquations.html target=_blank> Boundary conditions </a> </h3>";
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionIntermediateEquations.html target=_blank> Intermediate equations for unmeasured variables </a> </h3>";
+    else
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
+      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations for measured variables </a> </h3>";
     end if;
     data := data + "<h3> Errors: </h3> " + "\n <p>" + conditions + "</p>" + "\n";
 
@@ -3427,10 +3467,10 @@ algorithm
     end if;
 
     data := data + "\n</html>";
-    if not boundaryCondition then
-      System.writeFile(shared.info.fileNamePrefix + ".html", data);
-    else
+    if boundaryCondition then
       System.writeFile(shared.info.fileNamePrefix + "_BoundaryConditions.html", data);
+    else
+      System.writeFile(shared.info.fileNamePrefix + ".html", data);
     end if;
 end generateCompileTimeHtmlReport;
 
