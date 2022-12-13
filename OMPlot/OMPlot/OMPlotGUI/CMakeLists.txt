@@ -36,7 +36,7 @@ target_include_directories(OMPlotLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(OMPlotLib PUBLIC Qt5::Widgets)
 target_link_libraries(OMPlotLib PUBLIC Qt5::PrintSupport)
-target_link_libraries(OMPlotLib PUBLIC qwt)
+target_link_libraries(OMPlotLib PUBLIC omqwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
 
