@@ -6701,7 +6701,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   boundary1.ports[1].p = boundary1.medium.p;
 //   boundary1.ports[1].h_outflow = boundary1.medium.h;
 //   boundary1.ports[1].Xi_outflow[1] = boundary1.medium.Xi[1];
-//   pipe1.fluidVolumes = array(pipe1.crossAreas[i] * {10.0, 10.0, 10.0, 10.0, 10.0}[i] for i in 1:5) * pipe1.nParallel;
+//   pipe1.fluidVolumes = array(pipe1.crossAreas[i] * 10.0 for i in 1:5) * pipe1.nParallel;
 //   assert(pipe1.mediums[1].T >= 190.0 and pipe1.mediums[1].T <= 647.0, \"
 //   Temperature T is not in the allowed range
 //   190.0 K <= (T =\" + String(pipe1.mediums[1].T, 6, 0, true) + \" K) <= 647.0 K
@@ -6915,7 +6915,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   pipe1.Qb_flows[3] = pipe1.heatTransfer.Q_flows[3];
 //   pipe1.Qb_flows[4] = pipe1.heatTransfer.Q_flows[4];
 //   pipe1.Qb_flows[5] = pipe1.heatTransfer.Q_flows[5];
-//   pipe1.Wb_flows[2:4] = array(pipe1.vs[i] * pipe1.crossAreas[i] * ((pipe1.mediums[i + 1].p - pipe1.mediums[i - 1].p) / 2.0 + (pipe1.flowModel.dps_fg[i] + pipe1.flowModel.dps_fg[i + 1]) / 2.0 - system.g * {10.0, 10.0, 10.0, 10.0, 10.0}[i] * pipe1.mediums[i].d) for i in 2:4) * pipe1.nParallel;
+//   pipe1.Wb_flows[2:4] = array(pipe1.vs[i] * pipe1.crossAreas[i] * ((pipe1.mediums[i + 1].p - pipe1.mediums[i - 1].p) / 2.0 + (pipe1.flowModel.dps_fg[i] + pipe1.flowModel.dps_fg[i + 1]) / 2.0 - system.g * 10.0 * pipe1.mediums[i].d) for i in 2:4) * pipe1.nParallel;
 //   pipe1.Wb_flows[1] = pipe1.vs[1] * pipe1.crossAreas[1] * ((pipe1.mediums[2].p - pipe1.port_a.p) / 1.5 + pipe1.flowModel.dps_fg[1] + pipe1.flowModel.dps_fg[2] / 2.0 - system.g * 10.0 * pipe1.mediums[1].d) * pipe1.nParallel;
 //   pipe1.Wb_flows[5] = pipe1.vs[5] * pipe1.crossAreas[5] * ((pipe1.port_b.p - pipe1.mediums[4].p) / 1.5 + pipe1.flowModel.dps_fg[5] / 2.0 + pipe1.flowModel.dps_fg[6] - system.g * 10.0 * pipe1.mediums[5].d) * pipe1.nParallel;
 //   pipe1.$n30[1] = 5.0;
@@ -7036,7 +7036,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   der(pipe1.mXis[3,1]) = pipe1.mbXi_flows[3,1];
 //   der(pipe1.mXis[4,1]) = pipe1.mbXi_flows[4,1];
 //   der(pipe1.mXis[5,1]) = pipe1.mbXi_flows[5,1];
-//   pipe2.fluidVolumes = array(pipe2.crossAreas[i] * {10.0, 10.0, 10.0, 10.0, 10.0}[i] for i in 1:5) * pipe2.nParallel;
+//   pipe2.fluidVolumes = array(pipe2.crossAreas[i] * 10.0 for i in 1:5) * pipe2.nParallel;
 //   assert(pipe2.mediums[1].T >= 190.0 and pipe2.mediums[1].T <= 647.0, \"
 //   Temperature T is not in the allowed range
 //   190.0 K <= (T =\" + String(pipe2.mediums[1].T, 6, 0, true) + \" K) <= 647.0 K
@@ -7267,7 +7267,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   pipe2.Qb_flows[3] = pipe2.heatTransfer.Q_flows[3];
 //   pipe2.Qb_flows[4] = pipe2.heatTransfer.Q_flows[4];
 //   pipe2.Qb_flows[5] = pipe2.heatTransfer.Q_flows[5];
-//   pipe2.Wb_flows[2:4] = array(pipe2.vs[i] * pipe2.crossAreas[i] * ((pipe2.mediums[i + 1].p - pipe2.mediums[i - 1].p) / 2.0 + (pipe2.flowModel.dps_fg[i - 1] + pipe2.flowModel.dps_fg[i]) / 2.0 - system.g * {5.0, 5.0, 5.0, 5.0, 5.0}[i] * pipe2.mediums[i].d) for i in 2:4) * pipe2.nParallel;
+//   pipe2.Wb_flows[2:4] = array(pipe2.vs[i] * pipe2.crossAreas[i] * ((pipe2.mediums[i + 1].p - pipe2.mediums[i - 1].p) / 2.0 + (pipe2.flowModel.dps_fg[i - 1] + pipe2.flowModel.dps_fg[i]) / 2.0 - system.g * 5.0 * pipe2.mediums[i].d) for i in 2:4) * pipe2.nParallel;
 //   pipe2.Wb_flows[1] = pipe2.vs[1] * pipe2.crossAreas[1] * ((pipe2.mediums[2].p - pipe2.mediums[1].p) / 2.0 + pipe2.flowModel.dps_fg[1] / 2.0 - system.g * 5.0 * pipe2.mediums[1].d) * pipe2.nParallel;
 //   pipe2.Wb_flows[5] = pipe2.vs[5] * pipe2.crossAreas[5] * ((pipe2.mediums[5].p - pipe2.mediums[4].p) / 2.0 + pipe2.flowModel.dps_fg[4] / 2.0 - system.g * 5.0 * pipe2.mediums[5].d) * pipe2.nParallel;
 //   pipe2.$n55[1] = 15.0;
@@ -7374,7 +7374,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   der(pipe2.mXis[3,1]) = pipe2.mbXi_flows[3,1];
 //   der(pipe2.mXis[4,1]) = pipe2.mbXi_flows[4,1];
 //   der(pipe2.mXis[5,1]) = pipe2.mbXi_flows[5,1];
-//   pipe3.fluidVolumes = array(pipe3.crossAreas[i] * {5.0, 5.0, 5.0, 5.0, 5.0}[i] for i in 1:5) * pipe3.nParallel;
+//   pipe3.fluidVolumes = array(pipe3.crossAreas[i] * 5.0 for i in 1:5) * pipe3.nParallel;
 //   assert(pipe3.mediums[1].T >= 190.0 and pipe3.mediums[1].T <= 647.0, \"
 //   Temperature T is not in the allowed range
 //   190.0 K <= (T =\" + String(pipe3.mediums[1].T, 6, 0, true) + \" K) <= 647.0 K
@@ -7588,7 +7588,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   pipe3.Qb_flows[3] = pipe3.heatTransfer.Q_flows[3];
 //   pipe3.Qb_flows[4] = pipe3.heatTransfer.Q_flows[4];
 //   pipe3.Qb_flows[5] = pipe3.heatTransfer.Q_flows[5];
-//   pipe3.Wb_flows[2:4] = array(pipe3.vs[i] * pipe3.crossAreas[i] * ((pipe3.mediums[i + 1].p - pipe3.mediums[i - 1].p) / 2.0 + (pipe3.flowModel.dps_fg[i] + pipe3.flowModel.dps_fg[i + 1]) / 2.0 - system.g * {5.0, 5.0, 5.0, 5.0, 5.0}[i] * pipe3.mediums[i].d) for i in 2:4) * pipe3.nParallel;
+//   pipe3.Wb_flows[2:4] = array(pipe3.vs[i] * pipe3.crossAreas[i] * ((pipe3.mediums[i + 1].p - pipe3.mediums[i - 1].p) / 2.0 + (pipe3.flowModel.dps_fg[i] + pipe3.flowModel.dps_fg[i + 1]) / 2.0 - system.g * 5.0 * pipe3.mediums[i].d) for i in 2:4) * pipe3.nParallel;
 //   pipe3.Wb_flows[1] = pipe3.vs[1] * pipe3.crossAreas[1] * ((pipe3.mediums[2].p - pipe3.port_a.p) / 1.5 + pipe3.flowModel.dps_fg[1] + pipe3.flowModel.dps_fg[2] / 2.0 - system.g * 5.0 * pipe3.mediums[1].d) * pipe3.nParallel;
 //   pipe3.Wb_flows[5] = pipe3.vs[5] * pipe3.crossAreas[5] * ((pipe3.port_b.p - pipe3.mediums[4].p) / 1.5 + pipe3.flowModel.dps_fg[5] / 2.0 + pipe3.flowModel.dps_fg[6] - system.g * 5.0 * pipe3.mediums[5].d) * pipe3.nParallel;
 //   pipe3.$n85[1] = 2.5;
@@ -7709,7 +7709,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   der(pipe3.mXis[3,1]) = pipe3.mbXi_flows[3,1];
 //   der(pipe3.mXis[4,1]) = pipe3.mbXi_flows[4,1];
 //   der(pipe3.mXis[5,1]) = pipe3.mbXi_flows[5,1];
-//   pipe4.fluidVolumes = array(pipe4.crossAreas[i] * {10.0, 10.0, 10.0, 10.0, 10.0}[i] for i in 1:5) * pipe4.nParallel;
+//   pipe4.fluidVolumes = array(pipe4.crossAreas[i] * 10.0 for i in 1:5) * pipe4.nParallel;
 //   assert(pipe4.mediums[1].T >= 190.0 and pipe4.mediums[1].T <= 647.0, \"
 //   Temperature T is not in the allowed range
 //   190.0 K <= (T =\" + String(pipe4.mediums[1].T, 6, 0, true) + \" K) <= 647.0 K
@@ -7923,7 +7923,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   pipe4.Qb_flows[3] = pipe4.heatTransfer.Q_flows[3];
 //   pipe4.Qb_flows[4] = pipe4.heatTransfer.Q_flows[4];
 //   pipe4.Qb_flows[5] = pipe4.heatTransfer.Q_flows[5];
-//   pipe4.Wb_flows[2:4] = array(pipe4.vs[i] * pipe4.crossAreas[i] * ((pipe4.mediums[i + 1].p - pipe4.mediums[i - 1].p) / 2.0 + (pipe4.flowModel.dps_fg[i] + pipe4.flowModel.dps_fg[i + 1]) / 2.0 - system.g * {10.0, 10.0, 10.0, 10.0, 10.0}[i] * pipe4.mediums[i].d) for i in 2:4) * pipe4.nParallel;
+//   pipe4.Wb_flows[2:4] = array(pipe4.vs[i] * pipe4.crossAreas[i] * ((pipe4.mediums[i + 1].p - pipe4.mediums[i - 1].p) / 2.0 + (pipe4.flowModel.dps_fg[i] + pipe4.flowModel.dps_fg[i + 1]) / 2.0 - system.g * 10.0 * pipe4.mediums[i].d) for i in 2:4) * pipe4.nParallel;
 //   pipe4.Wb_flows[1] = pipe4.vs[1] * pipe4.crossAreas[1] * ((pipe4.mediums[2].p - pipe4.port_a.p) / 1.5 + pipe4.flowModel.dps_fg[1] + pipe4.flowModel.dps_fg[2] / 2.0 - system.g * 10.0 * pipe4.mediums[1].d) * pipe4.nParallel;
 //   pipe4.Wb_flows[5] = pipe4.vs[5] * pipe4.crossAreas[5] * ((pipe4.port_b.p - pipe4.mediums[4].p) / 1.5 + pipe4.flowModel.dps_fg[5] / 2.0 + pipe4.flowModel.dps_fg[6] - system.g * 10.0 * pipe4.mediums[5].d) * pipe4.nParallel;
 //   pipe4.$n110[1] = 5.0;

@@ -973,6 +973,30 @@ algorithm
   end for;
 end isEqualOnTrue;
 
+function allEqual<T>
+  input array<T> arr;
+  input PredFunc pred;
+  output Boolean equal = true;
+
+  partial function PredFunc
+    input T e1;
+    input T e2;
+    output Boolean equal;
+  end PredFunc;
+algorithm
+  if arrayEmpty(arr) then
+    return;
+  end if;
+
+  for i in 2:arrayLength(arr) loop
+    if not pred(arrayGetNoBoundsChecking(arr, 1),
+                arrayGetNoBoundsChecking(arr, i)) then
+      equal := false;
+      return;
+    end if;
+  end for;
+end allEqual;
+
 function isLess<T1, T2>
   "Returns true if arr1 is less than arr2 using a lexicographical comparison."
   input array<T1> arr1;
