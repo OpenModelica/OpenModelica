@@ -157,25 +157,22 @@ public
   algorithm
     _ := match Pointer.access(state)
       local
-        BackendExtension.VariableAttributes attributes;
         ComponentRef name, start_name;
         Pointer<Variable> var_ptr, start_var;
         Pointer<BEquation.Equation> start_eq;
 
       // if it is an array create for equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-        guard BackendExtension.VariableAttributes.isFixed(attributes) and BVariable.isArray(state) algorithm
-          createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
+      case Variable.VARIABLE() guard BVariable.isFixed(state) and BVariable.isArray(state) algorithm
+        createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
       then ();
 
       // create scalar equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-        guard BackendExtension.VariableAttributes.isFixed(attributes) algorithm
-          name := BVariable.getVarName(state);
-          (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
-          start_eq := BEquation.Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-          Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+      case Variable.VARIABLE() guard BVariable.isFixed(state) algorithm
+        name := BVariable.getVarName(state);
+        (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
+        start_eq := BEquation.Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
+        Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+        Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
       else ();
     end match;
@@ -256,6 +253,7 @@ public
     ComponentRef name, start_name;
     list<Dimension> dims;
     list<InstNode> iterators;
+    list<ComponentRef> iter_crefs;
     list<Expression> ranges;
     list<Subscript> subscripts;
     list<tuple<ComponentRef, Expression>> frames;
@@ -265,7 +263,10 @@ public
     name    := BVariable.getVarName(var_ptr);
     dims    := Type.arrayDims(ComponentRef.nodeType(name));
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    iter_crefs := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
+    iter_crefs := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
+    subscripts := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+    frames  := List.zip(iter_crefs, ranges);
     (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
     start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
     if not listEmpty(state.indices) then

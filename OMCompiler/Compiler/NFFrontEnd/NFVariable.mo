@@ -336,6 +336,7 @@ public
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
+    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
   end mapExp;
 
   function mapExpShallow

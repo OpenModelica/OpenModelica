@@ -78,6 +78,16 @@ public
       str := VariableKind.toString(backendInfo.varKind) + (if str == "" then "" else " " + str);
     end toString;
 
+    function map
+      input output BackendInfo binfo;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      binfo.attributes := VariableAttributes.map(binfo.attributes, func);
+    end map;
+
     function getVarKind
       input BackendInfo binfo;
       output VariableKind varKind = binfo.varKind;
@@ -386,6 +396,71 @@ public
         then fail();
       end match;
     end create;
+
+    function map
+      input output VariableAttributes attributes;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      attributes := match attributes
+        case VAR_ATTR_REAL() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.unit         := Util.applyOption(attributes.unit, function Expression.map(func = func));
+          attributes.displayUnit  := Util.applyOption(attributes.displayUnit, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.nominal      := Util.applyOption(attributes.nominal, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_STRING() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_RECORD() algorithm
+          attributes.childrenAttr := listArray(list(map(attr, func) for attr in attributes.childrenAttr));
+        then attributes;
+
+        else attributes;
+      end match;
+    end map;
 
     function setFixed
       input output VariableAttributes attributes;

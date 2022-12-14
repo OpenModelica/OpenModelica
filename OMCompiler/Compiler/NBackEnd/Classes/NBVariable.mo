@@ -1676,6 +1676,7 @@ public
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
+      VariablePointers artificials        "artificial variables to have pointers on crefs";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
@@ -1779,8 +1780,9 @@ public
               VariablePointers.toString(varData.discretes, "Discrete", false) +
               VariablePointers.toString(varData.previous, "Previous", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
-              VariablePointers.toString(varData.constants, "Constant", false);
-              VariablePointers.toString(varData.records, "Records", false);
+              VariablePointers.toString(varData.constants, "Constant", false) +
+              VariablePointers.toString(varData.records, "Records", false) +
+              VariablePointers.toString(varData.artificials, "Artificials", false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);
