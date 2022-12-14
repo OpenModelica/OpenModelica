@@ -448,11 +448,11 @@ public
     b := match Pointer.access(var)
       local
         Expression fixed;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isAllTrue(fixed);
       else false;
     end match;
   end isFixed;

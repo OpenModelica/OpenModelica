@@ -359,8 +359,11 @@ public
     output Boolean isTrue;
   algorithm
     isTrue := match exp
+      local
+        Expression e;
       case BOOLEAN(true) then true;
       case ARRAY() then Array.all(exp.elements, isAllTrue);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then Expression.isAllTrue(e);
       else false;
     end match;
   end isAllTrue;
