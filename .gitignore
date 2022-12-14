@@ -5,12 +5,15 @@
 /.vscode/
 /autom4te.cache/
 /build/
+/build_cmake/
 /config.guess
 /config.log
 /config.status
 /config.sub
 /configure
 /install-sh
+/install_cmake/
+/install/
 /issues/
 /Makefile
 /OMCompiler/SimulationRuntime/ModelicaExternalC/build/
