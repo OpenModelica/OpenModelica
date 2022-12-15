@@ -1600,7 +1600,7 @@ public
         rhs := Expression.map(rhs, Expression.repairOperator);
         (sub_crefs, _) := Iterator.getFrames(iter);
         subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
-        lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name));
+        lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
         eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
         eqn := Pointer.create(Equation.FOR_EQUATION(
           ty = ComponentRef.getSubscriptedType(var.name),

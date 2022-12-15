@@ -436,7 +436,7 @@ public
     stripped := ComponentRef.stripSubscriptsAll(row_cref);
     for new_subs_single in new_row_cref_subs loop
       evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_row_crefs;
+      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_row_crefs;
     end for;
 
     // get the scalar crefs for each column cref

@@ -195,17 +195,17 @@ public
   algorithm
     if BVariable.isDiscreteState(var_ptr) then
       // for discrete states change the lhs cref to the $PRE cref
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       name := BVariable.getPreCref(name);
-      name := ComponentRef.mergeSubscripts(subscripts, name);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       var_ptr := BVariable.getVarPointer(name);
     elseif BVariable.isPrevious(var_ptr) then
       // for previous change the rhs to the start value of the discrete state
       merged_name := BVariable.getDiscreteStateCref(name);
-      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
     else
       // just apply subscripts and make start var
-      name := ComponentRef.mergeSubscripts(subscripts, name);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
@@ -319,8 +319,8 @@ public
     frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
 
     pre_name := BVariable.getPreCref(name);
-    pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name);
-    name := ComponentRef.mergeSubscripts(subscripts, name);
+    pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);
+    name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
     pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
 
