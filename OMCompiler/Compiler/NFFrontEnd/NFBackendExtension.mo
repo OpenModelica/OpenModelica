@@ -50,12 +50,12 @@ protected
   import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import ExpressionIterator = NFExpressionIterator;
   import NFFunction.Function;
-  import NFPrefixes.Direction;
+  import NFPrefixes.{Direction, Variability};
   import NFInstNode.InstNode;
-  import NFPrefixes.Variability;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -77,6 +77,16 @@ public
       str := VariableAttributes.toString(backendInfo.attributes);
       str := VariableKind.toString(backendInfo.varKind) + (if str == "" then "" else " " + str);
     end toString;
+
+    function map
+      input output BackendInfo binfo;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      binfo.attributes := VariableAttributes.map(binfo.attributes, func);
+    end map;
 
     function getVarKind
       input BackendInfo binfo;
@@ -387,63 +397,122 @@ public
       end match;
     end create;
 
-    function setFixed
+    function map
       input output VariableAttributes attributes;
-      input Boolean b = true;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
     algorithm
       attributes := match attributes
         case VAR_ATTR_REAL() algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.unit         := Util.applyOption(attributes.unit, function Expression.map(func = func));
+          attributes.displayUnit  := Util.applyOption(attributes.displayUnit, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.nominal      := Util.applyOption(attributes.nominal, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
         then attributes;
 
         case VAR_ATTR_INT() algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
         then attributes;
 
-        case VAR_ATTR_BOOL() algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        case VAR_ATTR_INT() algorithm
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
         then attributes;
 
         case VAR_ATTR_STRING() algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
         then attributes;
 
         case VAR_ATTR_ENUMERATION() algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
+          attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
+          attributes.min          := Util.applyOption(attributes.min, function Expression.map(func = func));
+          attributes.max          := Util.applyOption(attributes.max, function Expression.map(func = func));
+          attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
+          attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
+          attributes.binding      := Util.applyOption(attributes.binding, function Expression.map(func = func));
+          attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
+        then attributes;
+
+        case VAR_ATTR_RECORD() algorithm
+          attributes.childrenAttr := listArray(list(map(attr, func) for attr in attributes.childrenAttr));
+        then attributes;
+
+        else attributes;
+      end match;
+    end map;
+
+    function setFixed
+      input output VariableAttributes attributes;
+      input Type ty;
+      input Boolean b = true;
+      input Boolean overwrite = false;
+    protected
+      list<Integer> sizes;
+      Expression start, iter_range, binding = Expression.BOOLEAN(b);
+      Option<Expression> step;
+      InstNode iter_name;
+      list<tuple<InstNode, Expression>> iterators = {};
+      Integer index = 1;
+    algorithm
+      // make array constructor if it is an array
+      if Type.isArray(ty) then
+        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+        start         := Expression.INTEGER(1);
+        step          := NONE();
+        for stop in sizes loop
+          iter_name   := InstNode.newIndexedIterator(index);
+          iter_range  := Expression.RANGE(Type.INTEGER(), start, step, Expression.INTEGER(stop));
+          iterators   := (iter_name, iter_range) :: iterators;
+          index       := index + 1;
+        end for;
+        binding := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(binding), NFPrefixes.Purity.PURE, binding, listReverse(iterators)));
+      end if;
+
+      attributes := match attributes
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
+          attributes.fixed := SOME(binding);
+        then attributes;
+
+        case VAR_ATTR_INT() guard(overwrite or isNone(attributes.fixed)) algorithm
+          attributes.fixed := SOME(binding);
+        then attributes;
+
+        case VAR_ATTR_BOOL() guard(overwrite or isNone(attributes.fixed)) algorithm
+          attributes.fixed := SOME(binding);
+        then attributes;
+
+        case VAR_ATTR_STRING() guard(overwrite or isNone(attributes.fixed)) algorithm
+          attributes.fixed := SOME(binding);
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.fixed)) algorithm
+          attributes.fixed := SOME(binding);
         then attributes;
 
         else attributes;
       end match;
     end setFixed;
-
-    function setFixedIfNone
-      input output VariableAttributes attributes;
-      input Boolean b = true;
-    algorithm
-      attributes := match attributes
-        case VAR_ATTR_REAL(fixed = NONE()) algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
-        then attributes;
-
-        case VAR_ATTR_INT(fixed = NONE()) algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
-        then attributes;
-
-        case VAR_ATTR_BOOL(fixed = NONE()) algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
-        then attributes;
-
-        case VAR_ATTR_STRING(fixed = NONE()) algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
-        then attributes;
-
-        case VAR_ATTR_ENUMERATION(fixed = NONE()) algorithm
-          attributes.fixed := SOME(Expression.BOOLEAN(b));
-        then attributes;
-
-        else attributes;
-      end match;
-    end setFixedIfNone;
 
     function isFixed
       input VariableAttributes attributes;

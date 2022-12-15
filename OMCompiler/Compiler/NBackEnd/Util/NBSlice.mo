@@ -294,6 +294,7 @@ public
     array<Integer> mode_to_var_row;
     list<Subscript> subs;
     list<Dimension> dims;
+    Type ty;
   algorithm
     (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     indices := arrayCreate(eqn_size, {});
@@ -308,7 +309,8 @@ public
 
       // build range in reverse, it will be flipped anyway
       subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
-      dims := Type.arrayDims(ComponentRef.getSubscriptedType(stripped));
+      ty := ComponentRef.getSubscriptedType(stripped, true);
+      dims := Type.arrayDims(ty);
       scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, subs, dims, true);
 
       if intMod(eqn_size, listLength(scal_lst)) <> 0 then
@@ -456,7 +458,7 @@ public
         stripped := ComponentRef.stripSubscriptsAll(cref);
         for new_subs_single in new_subs loop
           evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_dep_crefs;
+          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_dep_crefs;
         end for;
         scalar_dependenciesT := new_dep_crefs :: scalar_dependenciesT;
       end for;
@@ -493,19 +495,13 @@ public
     input list<Integer> sizes;
     output list<Integer> vals = {};
   protected
-    Integer iterator = index, v, ss;
+    Integer iterator = index;
     Integer divisor = product(s for s in sizes);
   algorithm
-
     for size in sizes loop
       divisor   := intDiv(divisor, size);
       vals      := intDiv(iterator, divisor) :: vals;
       iterator  := mod(iterator, divisor);
-    end for;
-    vals := listReverse(vals);
-
-    for tpl in List.zip(sizes, vals) loop
-      (ss, v) := tpl;
     end for;
   end indexToLocation;
 

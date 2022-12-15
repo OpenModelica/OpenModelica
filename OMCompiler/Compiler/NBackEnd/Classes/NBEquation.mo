@@ -343,7 +343,7 @@ public
       end for;
     end size;
 
-    function createSingleReplacements
+    function createLocationReplacements
       "adds replacements rules for a single frame location"
       input Iterator iter                                         "iterator to replace";
       input array<Integer> location                               "zero based location";
@@ -370,7 +370,77 @@ public
             + List.toString(arrayList(location), intString) + " and iterator: " + toString(iter) + "\n"});
         then fail();
       end match;
-    end createSingleReplacements;
+    end createLocationReplacements;
+
+    function createReplacement
+      "adds a replacement rule for one iterator to another.
+      fails if they do not have the same depth or range size."
+      input Iterator replacor "replaces";
+      input Iterator replacee "gets replaced";
+      input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
+    protected
+      Boolean failed = false;
+    algorithm
+      failed := match (replacor, replacee)
+        case (SINGLE(), SINGLE()) algorithm
+          failed := createSingleReplacement(replacor.name, replacor.range, replacee.name, replacee.range, replacements);
+        then failed;
+
+        case (NESTED(), NESTED()) algorithm
+          if arrayLength(replacor.names) == arrayLength(replacee.names) then
+            for i in 1:arrayLength(replacor.names) loop
+              failed := createSingleReplacement(replacor.names[i], replacor.ranges[i], replacee.names[i], replacee.ranges[i], replacements);
+              if failed then break; end if;
+            end for;
+          else
+            failed := true;
+          end if;
+        then failed;
+
+        else true;
+      end match;
+
+      if failed then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not create replacements for replacor: "
+          + toString(replacor) + " and replacee: " + toString(replacee) + "\n"});
+        fail();
+      end if;
+    end createReplacement;
+
+    function createSingleReplacement
+      "helper function for createReplacement()"
+      input ComponentRef replacor_cref;
+      input Expression replacor_range;
+      input ComponentRef replacee_cref;
+      input Expression replacee_range;
+      input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
+      output Boolean failed = false;
+    protected
+      Integer or_start, or_step, or_stop, ee_start, ee_step, ee_stop;
+      Expression exp;
+    algorithm
+      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range);
+      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range);
+      // check if same size
+      if (or_stop-or_start+1)/or_step == (ee_stop-ee_start+1)/ee_step then
+        // replacee = ee_start + (ee_step/or_step) * (replacor-or_start)
+        exp := Expression.MULTARY(
+          arguments     = {Expression.REAL(intReal(ee_start)),
+            Expression.MULTARY(
+              arguments     = {Expression.REAL(intReal(ee_step)/intReal(or_step)),
+                Expression.MULTARY(
+                arguments     = {Expression.fromCref(replacor_cref)},
+                inv_arguments = {Expression.REAL(intReal(or_start))},
+                operator      = Operator.makeAdd(Type.REAL()))},
+              inv_arguments = {},
+              operator      = Operator.makeMul(Type.REAL()))},
+          inv_arguments = {},
+          operator      = Operator.makeAdd(Type.REAL()));
+        UnorderedMap.add(replacee_cref, exp, replacements);
+      else
+        failed := true;
+      end if;
+    end createSingleReplacement;
 
     function extract
       "takes an expression and maps it to find all occuring iterators.
@@ -378,37 +448,43 @@ public
       also replaces all array constructors with indexed expressions."
       output Iterator iter;
       input output Expression exp;
-      function extractIterator
-        input output Expression exp;
-        input output Iterator iter;
-      algorithm
-        (exp, iter) := match exp
-          local
-            Call call;
-            list<Frame> frames = {};
-            InstNode node;
-            Expression range;
-            Iterator tmp;
-
-          case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
-            for tpl in listReverse(call.iters) loop
-              (node, range) := tpl;
-              frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range) :: frames;
-            end for;
-            tmp := fromFrames(frames);
-            if not (isEmpty(iter) or isEqual(iter, tmp)) then fail(); end if;
-          then (call.exp, tmp);
-          else (exp, iter);
-        end match;
-      end extractIterator;
+    protected
+      UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      try
-        (exp, iter) := Expression.mapFold(exp, extractIterator, EMPTY());
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the extracted iterators do not match: "
-          + Expression.toString(exp)});
-      end try;
+      (exp, iter) := Expression.mapFold(exp, function extractFromCall(replacements = replacements), EMPTY());
+      exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
     end extract;
+
+    function extractFromCall
+      "helper function for extract()"
+      input output Expression exp;
+      input output Iterator iter;
+      input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
+    algorithm
+      (exp, iter) := match exp
+        local
+          Call call;
+          list<Frame> frames = {};
+          InstNode node;
+          Expression range;
+          Iterator tmp;
+
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+          for tpl in listReverse(call.iters) loop
+            (node, range) := tpl;
+            frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range) :: frames;
+          end for;
+          tmp := fromFrames(frames);
+          if not isEmpty(iter) then
+            createReplacement(iter, tmp, replacements);
+          else
+            iter := tmp;
+          end if;
+        then (call.exp, iter);
+
+        else (exp, iter);
+      end match;
+    end extractFromCall;
 
     function toString
       input Iterator iter;
@@ -1381,11 +1457,14 @@ public
     end isInitial;
 
     function isWhenEquation
-      input Pointer<Equation> eqn;
+      input Pointer<Equation> eqn_ptr;
       output Boolean b;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
-      b := match Pointer.access(eqn)
+      b := match eqn
         case Equation.WHEN_EQUATION() then true;
+        case Equation.FOR_EQUATION() then List.any(list(Pointer.create(e) for e in eqn.body), isWhenEquation);
         else false;
       end match;
     end isWhenEquation;
@@ -1715,6 +1794,7 @@ public
           // trivial slices replace the original equation entirely
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
+          // kabdelhak: ToDo: check ordering of locations and sizes
           locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
           locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
           frames                                          := listReverse(getForFrames(eqn));
@@ -1801,7 +1881,7 @@ public
           // get the frame location indices from single index
           location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
-          Iterator.createSingleReplacements(eqn.iter, listArray(location), replacements);
+          Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators
           sliced_eqn := map(sliced_eqn, function Replacements.applySimpleExp(replacements = replacements));
         then sliced_eqn;
@@ -1835,8 +1915,11 @@ public
     algorithm
       stmt := match eqn
         local
+          list<ComponentRef> iter_lst;
+          list<Expression> range_lst;
           ComponentRef iter;
           Expression range;
+          list<Statement> body;
 
         case SCALAR_EQUATION()
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
@@ -1848,16 +1931,22 @@ public
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
 
         case FOR_EQUATION() algorithm
-          ({iter},{range}) := Equation.Iterator.getFrames(eqn.iter);
-        then Statement.FOR(
-          iterator  = ComponentRef.node(iter),
-          range     = SOME(range),
-          body      = list(toStatement(body_eqn) for body_eqn in eqn.body),
-          forType   = Statement.ForType.NORMAL(),
-          source    = eqn.source
-        );
+          (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
+          body := list(toStatement(body_eqn) for body_eqn in eqn.body);
+          for tpl in listReverse(List.zip(iter_lst, range_lst)) loop
+            (iter, range) := tpl;
+            body := {Statement.FOR(
+              iterator  = ComponentRef.node(iter),
+              range     = SOME(range),
+              body      = body,
+              forType   = Statement.ForType.NORMAL(),
+              source    = eqn.source)};
+          end for;
+        then List.first(body);
 
         case IF_EQUATION() then Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source);
+
+        case WHEN_EQUATION() then Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
@@ -2021,6 +2110,20 @@ public
       end match;
     end getBodyAttributes;
 
+    function toStatement
+      input WhenEquationBody body;
+      output list<tuple<Expression, list<Statement>>> stmts;
+    protected
+      tuple<Expression, list<Statement>> stmt;
+    algorithm
+      stmt := (body.condition, list(WhenStatement.toStatement(st) for st in body.when_stmts));
+      if Util.isSome(body.else_when) then
+        stmts := stmt :: toStatement(Util.getOption(body.else_when));
+      else
+        stmts := {stmt};
+      end if;
+    end toStatement;
+
     function map
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
@@ -2110,6 +2213,22 @@ public
                                                                               else str + getInstanceName() + " failed.";
       end match;
     end toString;
+
+    function toStatement
+      input WhenStatement wstmt;
+      output Statement stmt;
+    algorithm
+      stmt := match wstmt
+        case ASSIGN()     then Statement.ASSIGNMENT(wstmt.lhs, wstmt.rhs, Expression.typeOf(wstmt.lhs), wstmt.source);
+        case REINIT()     then Statement.REINIT(Expression.fromCref(wstmt.stateVar), wstmt.value, wstmt.source);
+        case ASSERT()     then Statement.ASSERT(wstmt.condition, wstmt.message, wstmt.level, wstmt.source);
+        case TERMINATE()  then Statement.TERMINATE(wstmt.message, wstmt.source);
+        case NORETCALL()  then Statement.NORETCALL(wstmt.exp, wstmt.source);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unrecognized statement: " + toString(wstmt)});
+        then fail();
+      end match;
+    end toStatement;
 
     function size
       input WhenStatement stmt;

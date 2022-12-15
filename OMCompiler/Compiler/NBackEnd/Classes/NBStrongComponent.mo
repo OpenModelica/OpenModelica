@@ -675,7 +675,7 @@ public
         if size > 1 then
           // case 1: create the scalar variable and make sliced equation
           Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-          sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+          sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
           vals := Slice.indexToLocation(var_scal_idx-var_start_idx, sizes);
           cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, false, true);
           comp := SLICED_COMPONENT(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
@@ -695,8 +695,17 @@ public
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
           local
+            Slice<VariablePointer> var_slice;
             Slice<EquationPointer> eqn_slice;
-          // if equations that are not algebraic loops are caught earlier! Any for equation
+
+          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
+          then SINGLE_COMPONENT(
+            var     = Slice.getT(var_slice),
+            eqn     = Slice.getT(eqn_slice),
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          // for equations that are not algebraic loops are caught earlier! Any for equation
           // getting to this point is an actual algebraic loop
           case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
           then MULTI_COMPONENT(
@@ -704,6 +713,7 @@ public
             eqn     = Slice.getT(eqn_slice),
             status  = NBSolve.Status.UNPROCESSED
           );
+
           else algorithm
             tearingSet := Tearing.TEARING_SET(
               iteration_vars  = comp_vars,

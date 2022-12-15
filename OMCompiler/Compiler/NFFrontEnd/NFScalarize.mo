@@ -183,11 +183,12 @@ protected
   BackendInfo binfo;
   list<BackendInfo> backend_attributes;
 algorithm
+  try
   crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name));
   elem_ty             := Type.arrayElementType(var.ty);
   backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
   if Binding.isBound(var.binding) then
-    binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding));
+    binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true);
     bind_var          := Binding.variability(var.binding);
     bind_src          := Binding.source(var.binding);
     for cr in crefs loop
@@ -207,6 +208,9 @@ algorithm
   if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
     vars := List.keepPositions(vars, indices);
   end if;
+  else
+    Error.assertion(false, getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
+  end try;
 end scalarizeBackendVariable;
 
 function scalarizeComplexVariable

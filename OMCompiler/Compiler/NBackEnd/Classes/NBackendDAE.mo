@@ -364,10 +364,10 @@ protected
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {};
+    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
-    VariablePointers parameters, constants, records;
+    VariablePointers parameters, constants, records, artificials;
     Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
@@ -382,6 +382,7 @@ protected
     time_ptr := BVariable.createTimeVar();
     variables := VariablePointers.add(dummy_ptr, variables);
     variables := VariablePointers.add(time_ptr, variables);
+    artificials_lst := {dummy_ptr, time_ptr};
 
     // routine to prepare the lists for pointer arrays
     for var in listReverse(vars) loop
@@ -470,18 +471,21 @@ protected
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
+    artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
     variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
     knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
+    artificials     := VariablePointers.addList(Pointer.access(binding_iter_lst), artificials);
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
+
     /* lower the records to add children */
     records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, previous, states, parameters, constants, records);
+                    derivatives, algebraics, discretes, previous, states, parameters, constants, records, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -513,11 +517,6 @@ protected
       fail();
     end try;
   end lowerVariable;
-
-  function lowerIterator
-    input ComponentRef iterator;
-    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
-  end lowerIterator;
 
   function lowerVariableKind
     "ToDo: Merge this part from old backend conversion:
@@ -560,7 +559,7 @@ protected
 
     // make adjustments to attributes based on variable kind
     attributes := match varKind
-      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixedIfNone(attributes);
+      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixed(attributes, ty, true, false);
       else attributes;
     end match;
   end lowerVariableKind;
@@ -570,14 +569,17 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
   algorithm
-    _ := match var
+    var := match var
       local
         Binding binding;
       case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
         // collect all iterators (only locally known) so that they have a respective variable
+        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
         Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then ();
-      else ();
+      then var;
+      else algorithm
+        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+      then var;
     end match;
   end collectVariableBindingIterators;
 
@@ -1100,7 +1102,7 @@ protected
     equations := EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
   end lowerComponentReferences;
 
-  function lowerComponentReferenceExp
+  public function lowerComponentReferenceExp
     input output Expression exp;
     input VariablePointers variables;
   algorithm
@@ -1114,11 +1116,15 @@ protected
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
-      else exp;
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        exp.call := call;
+      then exp;
+    else exp;
     end match;
   end lowerComponentReferenceExp;
 
-  function lowerComponentReference
+  protected function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
   protected
@@ -1146,12 +1152,41 @@ protected
     _ := match exp
       local
         ComponentRef cref;
+        Call call;
+
       case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
         Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
       then ();
       else ();
     end match;
   end collectBindingIterators;
+
+  function collectIterator
+    "collects all iterators in bindings and creates variables for them.
+    in bindings they are only known locally but they still need a respective variable"
+    input InstNode iterator;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  protected
+    ComponentRef cref;
+  algorithm
+    cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    if not VariablePointers.containsCref(cref, variables) then
+      Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+    end if;
+  end collectIterator;
 
   function lowerInstNode
     input output InstNode node;
@@ -1185,5 +1220,26 @@ public
     end match;
   end lowerComponentReferenceInstNode;
 
+  function lowerIterator
+    input ComponentRef iterator;
+    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
+  end lowerIterator;
+
+  function lowerIteratorCref
+    input output ComponentRef iterator;
+  algorithm
+    iterator := BVariable.getVarName(lowerIterator(iterator));
+  end lowerIteratorCref;
+
+  function lowerIteratorExp
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() algorithm
+        exp.cref := lowerIteratorCref(exp.cref);
+      then exp;
+      else exp;
+    end match;
+  end lowerIteratorExp;
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

@@ -448,11 +448,11 @@ public
     b := match Pointer.access(var)
       local
         Expression fixed;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isAllTrue(fixed);
       else false;
     end match;
   end isFixed;
@@ -994,8 +994,8 @@ public
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
-    var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable
     var := fromCref(var_cref);
     // update the variable to be discrete and pass the pointer to the original variable
@@ -1020,7 +1020,7 @@ public
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
@@ -1077,7 +1077,7 @@ public
         Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, b);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty, b);
         var.backendinfo := binfo;
       then var;
 
@@ -1104,7 +1104,7 @@ public
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty);
         var.backendinfo := binfo;
       then var;
 
@@ -1676,6 +1676,7 @@ public
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
+      VariablePointers artificials        "artificial variables to have pointers on crefs";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
@@ -1779,8 +1780,9 @@ public
               VariablePointers.toString(varData.discretes, "Discrete", false) +
               VariablePointers.toString(varData.previous, "Previous", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
-              VariablePointers.toString(varData.constants, "Constant", false);
-              VariablePointers.toString(varData.records, "Records", false);
+              VariablePointers.toString(varData.constants, "Constant", false) +
+              VariablePointers.toString(varData.records, "Records", false) +
+              VariablePointers.toString(varData.artificials, "Artificials", false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);
