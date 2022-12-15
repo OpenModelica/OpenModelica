@@ -803,6 +803,21 @@ static int continue_DASSL(int* idid, double* atol)
   return retValue;
 }
 
+/**
+ * @brief
+ *
+ * Compute difference between
+ *
+ * @param t
+ * @param y
+ * @param yd      Backup of state derivatives, ...
+ * @param cj      Unused
+ * @param delta   Output: state derivatives - yd
+ * @param ires
+ * @param rpar
+ * @param ipar
+ * @return int
+ */
 int functionODE_residual(double *t, double *y, double *yd, double* cj,
                          double *delta, int *ires, double *rpar, int *ipar)
 {
@@ -839,13 +854,13 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
 
   /* read input vars */
   externalInputUpdate(data);
+  /* eval input vars */
   data->callback->input_function(data, threadData);
 
-  /* eval input vars */
+  /* Compute state derivatives */
   data->callback->functionODE(data, threadData);
 
-  /* get the difference between the temp_xd(=localData->statesDerivatives)
-     and xd(=statesDerivativesBackup) */
+  /* Difference between old and currend state derivatives */
   for(i=0; i < data->modelData->nStates; i++)
   {
     delta[i] = data->localData[0]->realVars[data->modelData->nStates + i] - yd[i];
@@ -1047,6 +1062,22 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
  * This function calculates a jacobian matrix by
  * numerical with forward finite differences.
  */
+
+/**
+ * @brief
+ *
+ * @param t
+ * @param y         State
+ * @param yprime    State derivatives
+ * @param delta
+ * @param matrixA
+ * @param cj
+ * @param h
+ * @param wt
+ * @param rpar
+ * @param ipar
+ * @return int
+ */
 int jacA_num(double *t, double *y, double *yprime, double *delta,
              double *matrixA, double *cj, double *h, double *wt, double *rpar,
              int *ipar)
@@ -1081,6 +1112,8 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
 
     for(j = dasslData->N-1; j >= 0 ; j--)
     {
+      // j row // state dericatives
+      // i column // states
       matrixA[i*dasslData->N+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
     }
     y[i] = ysave;
@@ -1182,6 +1215,20 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
+
+  if (TRUE) {
+    int flag = jacA_sym(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar);
+    if(flag != 0) {
+      throwStreamPrint(threadData, "AHeu: Can't compute symbolic Jacobian!");
+      TRACE_POP
+      return 1;
+    }
+      if (ACTIVE_STREAM(LOG_JAC)){
+        _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
+        _omc_printMatrix(dumpJac, "DASSL-Solver: Symbolic Matrix A", LOG_JAC);
+        _omc_destroyMatrix(dumpJac);
+      }
+  }
 
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
