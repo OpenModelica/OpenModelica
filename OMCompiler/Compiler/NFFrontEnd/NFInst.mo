@@ -209,9 +209,11 @@ algorithm
     // Combine the binaries to multaries. For now only on new backend
     // since the old frontend and backend do not support it
     flatModel := SimplifyModel.combineBinaries(flatModel);
+    execStat("combineBinaries");
     // try to replace calls with array constructors for the new backend
     flatModel.equations := Equation.mapExpList(flatModel.equations, function Expression.wrapCall(fun = Call.toArrayConstructor));
     flatModel.variables := list(Variable.mapExp(var, function Expression.wrapCall(fun = Call.toArrayConstructor)) for var in flatModel.variables);
+    execStat("replaceArrayConstructors");
   end if;
 
   VerifyModel.verify(flatModel);
