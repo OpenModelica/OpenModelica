@@ -40,11 +40,13 @@ public
 
 protected
   // NB import
-  import NBEquation.{Equation, Iterator, IfEquationBody};
+  import NBEquation.{Equation, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
 
   // NF import
-  import Expression = NFExpression;
   import ComponentRef = NFComponentRef;
+  import ConvertDAE = NFConvertDAE;
+  import Expression = NFExpression;
+  import Statement = NFStatement;
 
   // old backend import
   import OldSimCode = SimCode;
@@ -64,15 +66,24 @@ public
     list<SimBranch> branches;
   end IF_GENERIC_CALL;
 
+  record WHEN_GENERIC_CALL
+    Integer index;
+    list<SimIterator> iters;
+    list<SimBranch> branches;
+  end WHEN_GENERIC_CALL;
+
   function toString
     input SimGenericCall call;
     output String str;
   algorithm
     str := match call
-      case SINGLE_GENERIC_CALL() then "single generic call [index " + intString(call.index)  + "]: "
+      case SINGLE_GENERIC_CALL() then "(" + intString(call.index) + ") [SNGL]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
         + Expression.toString(call.lhs) + " = " + Expression.toString(call.rhs);
-      case IF_GENERIC_CALL() then "if generic call [index " + intString(call.index) + "]: "
+      case IF_GENERIC_CALL() then "(" + intString(call.index) + ") [-IF-]: "
+        + List.toString(call.iters, SimIterator.toString) + "\n\t"
+        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
+      case WHEN_GENERIC_CALL() then "(" + intString(call.index) + ") [WHEN]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
         + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
       else "CALL_NOT_SUPPORTED";
@@ -95,8 +106,13 @@ public
       then IF_GENERIC_CALL(
           index = index,
           iters = SimIterator.fromIterator(eqn.iter),
-          branches = SimBranch.fromIfBody(body.body)
-        );
+          branches = SimBranch.fromIfBody(body.body));
+
+      case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()})
+      then WHEN_GENERIC_CALL(
+          index = index,
+          iters = SimIterator.fromIterator(eqn.iter),
+          branches = SimBranch.fromWhenBody(body.body));
 
       case Equation.FOR_EQUATION(body = {body})
       then SINGLE_GENERIC_CALL(
@@ -121,6 +137,10 @@ public
         lhs   = Expression.toDAE(call.lhs),
         rhs   = Expression.toDAE(call.rhs));
       case IF_GENERIC_CALL() then OldSimCode.IF_GENERIC_CALL(
+        index     = call.index,
+        iters     = list(SimIterator.convert(iter) for iter in call.iters),
+        branches  = list(SimBranch.convert(branch) for branch in call.branches));
+      case WHEN_GENERIC_CALL() then OldSimCode.WHEN_GENERIC_CALL(
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
         branches  = list(SimBranch.convert(branch) for branch in call.branches));
@@ -178,17 +198,31 @@ public
       list<tuple<Expression, Expression>> body;
     end SIM_BRANCH;
 
+    record SIM_BRANCH_STMT
+      Expression condition;
+      list<Statement> body;
+    end SIM_BRANCH_STMT;
+
     function toString
       input SimBranch branch;
       output String str;
     protected
       Expression lhs, rhs;
     algorithm
-      str := if Expression.isEnd(branch.condition) then "\n" else "if " + Expression.toString(branch.condition) + " then\n";
-      for tpl in branch.body loop
-        (lhs, rhs) := tpl;
-        str := str + "\t  " + Expression.toString(lhs) + " = " + Expression.toString(rhs) + "\n";
-      end for;
+      str := match branch
+        case SIM_BRANCH() algorithm
+          str := if Expression.isEnd(branch.condition) then "\n" else "if " + Expression.toString(branch.condition) + " then\n";
+          for tpl in branch.body loop
+            (lhs, rhs) := tpl;
+            str := str + "\t  " + Expression.toString(lhs) + " = " + Expression.toString(rhs) + "\n";
+          end for;
+        then str;
+        case SIM_BRANCH_STMT() algorithm
+          str := if Expression.isEnd(branch.condition) then "\n" else "when " + Expression.toString(branch.condition) + " then\n";
+          str := str + List.toString(branch.body, function Statement.toString(indent = ""), "\t  ", "\t  ", "\n", "");
+        then str;
+        else "SIM BRANCH NOT KNOWN";
+      end match;
     end toString;
 
     function fromIfBody
@@ -210,6 +244,20 @@ public
       end if;
     end fromIfBody;
 
+    function fromWhenBody
+      input WhenEquationBody when_body;
+      output list<SimBranch> branches;
+    protected
+      SimBranch branch;
+    algorithm
+      branch := SIM_BRANCH_STMT(when_body.condition, list(WhenStatement.toStatement(stmt) for stmt in when_body.when_stmts));
+      if Util.isSome(when_body.else_when) then
+        branches := branch :: fromWhenBody(Util.getOption(when_body.else_when));
+      else
+        branches := {branch};
+      end if;
+    end fromWhenBody;
+
     function convert
       input SimBranch branch;
       output OldSimCode.SimBranch old_branch;
@@ -218,20 +266,34 @@ public
       list<tuple<DAE.Exp, DAE.Exp>> old_body = {};
       Expression lhs, rhs;
     algorithm
-      old_condition := match branch.condition
-        case Expression.END() then NONE();
-        else SOME(Expression.toDAE(branch.condition));
+      old_branch := match branch
+        case SIM_BRANCH() algorithm
+          old_condition := match branch.condition
+            case Expression.END() then NONE();
+            else SOME(Expression.toDAE(branch.condition));
+          end match;
+
+          for tpl in listReverse(branch.body) loop
+            (lhs, rhs)  := tpl;
+            old_body    := (Expression.toDAE(lhs), Expression.toDAE(rhs)) :: old_body;
+          end for;
+
+        then OldSimCode.SIM_BRANCH(
+          condition = old_condition,
+          body      = old_body);
+
+        case SIM_BRANCH_STMT() algorithm
+          old_condition := match branch.condition
+            case Expression.END() then NONE();
+            else SOME(Expression.toDAE(branch.condition));
+          end match;
+
+        then OldSimCode.SIM_BRANCH_STMT(
+          condition = old_condition,
+          body      = ConvertDAE.convertStatements(branch.body));
+
+        else fail();
       end match;
-
-      for tpl in listReverse(branch.body) loop
-        (lhs, rhs)  := tpl;
-        old_body    := (Expression.toDAE(lhs), Expression.toDAE(rhs)) :: old_body;
-      end for;
-
-      old_branch := OldSimCode.SIM_BRANCH(
-        condition = old_condition,
-        body      = old_body
-      );
     end convert;
   end SimBranch;
 

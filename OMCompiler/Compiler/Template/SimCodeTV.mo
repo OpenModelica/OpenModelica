@@ -857,6 +857,12 @@ package SimCode
       list<BackendDAE.SimIterator> iters;
       list<SimBranch> branches;
     end IF_GENERIC_CALL;
+
+    record WHEN_GENERIC_CALL
+      Integer index;
+      list<BackendDAE.SimIterator> iters;
+      list<SimBranch> branches;
+    end WHEN_GENERIC_CALL;
   end SimGenericCall;
 
   uniontype SimBranch
@@ -864,6 +870,11 @@ package SimCode
       Option<DAE.Exp> condition;
       list<tuple<DAE.Exp, DAE.Exp>> body;
     end SIM_BRANCH;
+
+    record SIM_BRANCH_STMT
+      Option<DAE.Exp> condition;
+      list<DAE.Statement> body;
+    end SIM_BRANCH_STMT;
   end SimBranch;
 
   uniontype DaeModeConfig
