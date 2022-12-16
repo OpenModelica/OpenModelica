@@ -81,7 +81,7 @@ algorithm
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
-        exp.ty := ComponentRef.getSubscriptedType(exp.cref);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref, true);
       then
         exp;
 
