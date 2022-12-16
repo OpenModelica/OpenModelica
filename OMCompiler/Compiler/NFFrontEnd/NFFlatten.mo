@@ -1062,16 +1062,21 @@ algorithm
   for eq in eql loop
     equations := match eq
       local
+        Type ty;
         InstNode iter, scope;
         list<InstNode> iters;
-        Expression range;
+        Expression lhs, rhs, range;
         list<Expression> ranges;
         list<Subscript> subs;
         DAE.ElementSource src;
 
       // convert simple equality of crefs to array equality
-      case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
-        then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, Type.liftArrayLeftList(eq.ty, dimensions), eq.scope, eq.source) :: equations;
+      case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
+        algorithm
+          ty := Type.liftArrayLeftList(eq.ty, dimensions);
+          lhs := Expression.CREF(ty, lhs.cref);
+          rhs := Expression.CREF(ty, rhs.cref);
+        then Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, eq.source) :: equations;
 
       // wrap general equation into for loop
       else
