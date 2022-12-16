@@ -510,13 +510,27 @@ public
       "Traverses all expressions of the iterator range and applies a function to it."
       input output Iterator iter;
       input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
       input MapFuncExpWrapper mapFunc;
+    protected
+      MapFuncCref funcCref;
     algorithm
       iter := match iter
         case SINGLE() algorithm
+          if Util.isSome(funcCrefOpt) then
+            funcCref := Util.getOption(funcCrefOpt);
+            iter.name := funcCref(iter.name);
+          end if;
           iter.range := mapFunc(iter.range, funcExp);
         then iter;
+
         case NESTED() algorithm
+          if Util.isSome(funcCrefOpt) then
+            funcCref := Util.getOption(funcCrefOpt);
+            for i in 1:arrayLength(iter.names) loop
+              iter.names[i] := funcCref(iter.names[i]);
+            end for;
+          end if;
           for i in 1:arrayLength(iter.ranges) loop
             iter.ranges[i] := mapFunc(iter.ranges[i], funcExp);
           end for;
@@ -923,7 +937,8 @@ public
         then eq;
 
         case ALGORITHM() algorithm
-          alg := Algorithm.mapExp(eq.alg, funcExp); //ToDo: this has to use mapping func
+          // pass mapFunc because the function itself does not map
+          alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
           if isSome(funcCrefOpt) then
             SOME(funcCref) := funcCrefOpt;
             // ToDo referenceEq for lists?
@@ -941,7 +956,7 @@ public
         then eq;
 
         case FOR_EQUATION() algorithm
-          iter := Iterator.map(eq.iter, funcExp, mapFunc);
+          iter := Iterator.map(eq.iter, funcExp, funcCrefOpt, mapFunc);
           if not referenceEq(iter, eq.iter) then
             eq.iter := iter;
           end if;

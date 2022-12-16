@@ -479,7 +479,6 @@ public
 
       case ASSIGNMENT()
         algorithm
-          // kabdelhak: shouldn't this map?
           e1 := func(stmt.lhs);
           e2 := func(stmt.rhs);
         then

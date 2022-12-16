@@ -7175,8 +7175,19 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%iter_%>
         <%branches_%>
       }
-      >>;
-  separator="\n\n")
+      >>
+    case WHEN_GENERIC_CALL() then
+      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
+      <<
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      {
+        int tmp = idx;
+        <%iter_%>
+        <%branches_%>
+      }
+      >>
+  ; separator="\n\n")
 end genericCallBodies;
 
 template genericBranch(SimBranch branch, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
@@ -7188,6 +7199,16 @@ template genericBranch(SimBranch branch, Context context, Text &preExp, Text &va
     let body_ = (body |> (lhs, rhs) =>
       <<<%daeExp(lhs, context, &preExp, &varDecls, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &auxFunction)%>;>>
       ; separator="\n")
+    <<
+    <%condition_%>{
+      <%body_%>
+    }
+    >>
+  case SIM_BRANCH_STMT() then
+    let condition_ = match condition
+      case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &auxFunction)%>)>>
+      else ""
+    let body_ = (body |> stmt => algStatement(stmt, context, &varDecls, &auxFunction); separator="\n")
     <<
     <%condition_%>{
       <%body_%>
