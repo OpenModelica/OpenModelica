@@ -1574,8 +1574,11 @@ public
       rhs := match var.binding
         local
           Binding qual;
+          Option<Expression> start;
         case qual as Binding.TYPED_BINDING()  then qual.bindingExp;
-        case qual as Binding.UNBOUND()        then Expression.makeZero(ComponentRef.getSubscriptedType(var.name));
+        case qual as Binding.UNBOUND() algorithm
+          start := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+        then Util.getOptionOrDefault(start, Expression.makeZero(ComponentRef.getSubscriptedType(var.name, true)));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
