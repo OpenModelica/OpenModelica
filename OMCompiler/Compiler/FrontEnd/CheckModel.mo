@@ -110,7 +110,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) = inArg;
         b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         ce = Expression.crefExp(cr);
-        size = if b then 0 else 1;
+        size = if b then 0 else Expression.sizeOf(element.ty);
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize+size, eqns, hs);
@@ -121,7 +121,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) = inArg;
         b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         ce = Expression.crefExp(cr);
-        size = if b then 0 else 1;
+        size = if b then 0 else Expression.sizeOf(element.ty);
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize+size, eqns, hs);
@@ -131,7 +131,7 @@ algorithm
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
         b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        size = if b then 0 else 1;
+        size = if b then 0 else Expression.sizeOf(element.ty);
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
 
@@ -140,7 +140,7 @@ algorithm
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
         b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        size = if b then 0 else 1;
+        size = if b then 0 else Expression.sizeOf(element.ty);
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
 
