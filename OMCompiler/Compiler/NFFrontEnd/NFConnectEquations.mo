@@ -1023,6 +1023,10 @@ algorithm
   ovar := UnorderedMap.get(varName, variables);
 
   if isNone(ovar) then
+    ovar := UnorderedMap.get(ComponentRef.stripSubscriptsAll(varName), variables);
+  end if;
+
+  if isNone(ovar) then
     Error.addInternalError(getInstanceName() + " could not find the variable " +
       ComponentRef.toString(varName) + "\n", sourceInfo());
   end if;
