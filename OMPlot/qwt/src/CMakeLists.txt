@@ -216,12 +216,13 @@ endif ()
 
 add_library(omqwt STATIC ${QWT_HEADERS} ${QWT_SOURCES})
 
-target_compile_definitions(omqwt
-	PUBLIC
-		$<$<BOOL:MSVC>:QWT_DLL>
-	PRIVATE
-		$<$<BOOL:MSVC>:QWT_MAKEDLL>
-)
+## We build it as a static library now. Disable dllimport/export attributes.
+# target_compile_definitions(omqwt
+# 	PUBLIC
+# 		$<$<BOOL:MSVC>:QWT_DLL>
+# 	PRIVATE
+# 		$<$<BOOL:MSVC>:QWT_MAKEDLL>
+# )
 
 target_include_directories(omqwt
   PUBLIC
