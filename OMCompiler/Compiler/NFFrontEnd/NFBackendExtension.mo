@@ -557,6 +557,20 @@ public
       end match;
     end setStartAttribute;
 
+    function getStartAttribute
+      input VariableAttributes attributes;
+      output Option<Expression> start;
+    algorithm
+      start := match attributes
+        case VAR_ATTR_REAL()          then attributes.start;
+        case VAR_ATTR_INT()           then attributes.start;
+        case VAR_ATTR_BOOL()          then attributes.start;
+        case VAR_ATTR_STRING()        then attributes.start;
+        case VAR_ATTR_ENUMERATION()   then attributes.start;
+        else NONE();
+      end match;
+    end getStartAttribute;
+
     function getStateSelect
       input VariableAttributes attributes;
       output StateSelect stateSelect;
