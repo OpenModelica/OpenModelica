@@ -224,7 +224,7 @@ public
   algorithm
     for var in BVariable.VariablePointers.toList(parameters) loop
       // only consider non constant parameter bindings
-      if (BVariable.getBindingVariability(var) <> NFPrefixes.Variability.CONSTANT) then
+      if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
         // generate equation only if variable is fixed
