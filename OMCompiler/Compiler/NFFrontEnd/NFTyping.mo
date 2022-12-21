@@ -2728,6 +2728,7 @@ algorithm
     else
       algorithm
         (outArg, ty, var) := typeExp(arg, NFInstContext.FUNCTION, info);
+        Call.updateExternalRecordArgsInType(ty);
       then
         match arg
           // All kinds of crefs are allowed.
