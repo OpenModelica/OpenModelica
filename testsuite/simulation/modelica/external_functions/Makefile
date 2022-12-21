@@ -5,6 +5,7 @@ MDD_test.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
+ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalRHSFlag.mos \
 ImplicitArray.mos \
@@ -28,6 +29,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+ExternalCFuncInputOnly.c \
+ExternalCFuncInputOnly.h \
 ExternalFunc1_ext.h \
 ExternalFunc1.c \
 ExternalFunc2.c \
