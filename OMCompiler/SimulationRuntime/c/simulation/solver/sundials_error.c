@@ -967,7 +967,7 @@ void kinsolErrorHandlerFunction(int errorCode, const char* module,
  */
 void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data) {
-  UNUSED(user_data);  /* DIsables compiler warning */
+  UNUSED(user_data);  /* Disables compiler warning */
 
   if (ACTIVE_STREAM(LOG_NLS_V)) {
     warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);

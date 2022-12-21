@@ -38,6 +38,7 @@
 #include "simulation_data.h"
 #include "util/simulation_options.h"
 #include "sundials_error.h"
+#include "sundials_util.h"
 #include "simulation/solver/solver_main.h"
 #include "omc_config.h" /* for WITH_SUNDIALS */
 
@@ -128,7 +129,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
                        SOLVER_INFO* solverInfo, IDA_SOLVER *idaData);
 
 /* deinitialize main ida Data */
-int ida_solver_deinitial(IDA_SOLVER *idaData);
+void ida_solver_deinitial(IDA_SOLVER *idaData);
 
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);

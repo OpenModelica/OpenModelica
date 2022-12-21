@@ -38,6 +38,7 @@
 #include "omc_math.h"
 #include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
+#include "sundials_util.h"
 #include "util/omc_error.h"
 
 #ifdef WITH_SUNDIALS
@@ -396,31 +397,6 @@ static int nlsDenseJac(long int N,
 }
 
 /**
- * @brief Set element of jacobian saved in CSC SUNMatrix.
- *
- * @param row
- * @param col
- * @param value
- * @param nth
- * @param A
- */
-static void setJacElementKluSparse(int row, int col, double value, int nth,
-                                   SUNMatrix A) {
-  /* TODO: Remove this check for performance reasons? */
-  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "KINSOL: In function setJacElementKluSparse: Wrong sparse format "
-                     "of SUNMatrix A.");
-  }
-
-  if (col > 0 && SM_INDEXPTRS_S(A)[col] == 0) {
-    SM_INDEXPTRS_S(A)[col] = nth;
-  }
-  SM_INDEXVALS_S(A)[nth] = row;
-  SM_DATA_S(A)[nth] = value;
-}
-
-/**
  * @brief Finish sparse matrix by fixing colprts.
  *
  * Last value of indexptrs should always be nnz.
@@ -537,12 +513,9 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
         while (nth < sparsePattern->leadindex[ii + 1]) {
           j = sparsePattern->index[nth];
           if (kinsolData->nominalJac) {
-            setJacElementKluSparse(
-                j, ii, (fRes[j] - fx[j]) * delta_hh[ii] / xScaling[ii], nth,
-                Jac);
+            setJacElementSundialsSparse(j, ii, nth, (fRes[j] - fx[j]) * delta_hh[ii] / xScaling[ii], Jac, SM_CONTENT_S(Jac)->M);
           } else {
-            setJacElementKluSparse(j, ii, (fRes[j] - fx[j]) * delta_hh[ii], nth,
-                                   Jac);
+            setJacElementSundialsSparse(j, ii, nth, (fRes[j] - fx[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
         }
@@ -644,12 +617,9 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
         while (nth < sparsePattern->leadindex[ii + 1]) {
           j = sparsePattern->index[nth];
           if (kinsolData->nominalJac) {
-            setJacElementKluSparse(
-                j, ii, analyticJacobian->resultVars[j] / xScaling[ii], nth,
-                Jac);
+            setJacElementSundialsSparse(j, ii, nth, analyticJacobian->resultVars[j] / xScaling[ii], Jac, SM_CONTENT_S(Jac)->M);
           } else {
-            setJacElementKluSparse(j, ii, analyticJacobian->resultVars[j], nth,
-                                   Jac);
+            setJacElementSundialsSparse(j, ii, nth, analyticJacobian->resultVars[j], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
         }

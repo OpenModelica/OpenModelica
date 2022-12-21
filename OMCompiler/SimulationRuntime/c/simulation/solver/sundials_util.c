@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,17 +28,23 @@
  *
  */
 
- /*! \file jacobianSymbolical.h
+/** \file sundials_util.c
  */
 
-#ifndef OMC_JACOBIAN_SYMBOLICAL_H
-#define OMC_JACOBIAN_SYMBOLICAL_H
+#include "util/omc_error.h"
 
-#include "../../simulation_data.h"
-#include "util/parallel_helper.h"
+#include "sundials_util.h"
+#include <sundials/sundials_matrix.h>
+#include <sunmatrix/sunmatrix_sparse.h>
+#include <nvector/nvector_serial.h>
+
+
+#ifdef WITH_SUNDIALS
+
+#define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /**
- * @brief Set element of Jacobian matrix.
+ * @brief Set element of sparse Sundials matrix.
  *
  * Jac(row, column) = val.
  *
@@ -46,19 +52,27 @@
  * @param column    Column of matrix element.
  * @param nth       Sparsity pattern lead index.
  * @param value     Value to set in position (i,j).
- * @param Jac       Pointer to data structure storing matrix.
+ * @param Jac       Pointer to double array storing matrix.
  * @param nRows     Number of rows of Jacobian matrix, unused.
  */
-typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
+void setJacElementSundialsSparse(int row, int column, int nth, double value, void* Jac, int nRows)
+{
+  UNUSED(nRows);   /* Disables compiler warning */
 
-void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns);
+  SUNMatrix A = (SUNMatrix) Jac;
+  /* TODO: Remove this check for performance reasons? */
+  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KLU: In function setJacElementKluSparse: Wrong sparse format "
+                     "of SUNMatrix A.");
+  }
 
-void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, ANALYTIC_JACOBIAN* jacColumns,
-                                              DATA* data,
-                                              threadData_t* threadData,
-                                              setJacElementFunc);
+  if (column > 0 && SM_INDEXPTRS_S(A)[column] == 0) {
+    SM_INDEXPTRS_S(A)[column] = nth;
+  }
+  SM_INDEXVALS_S(A)[nth] = row;
+  SM_DATA_S(A)[nth] = value;
+}
 
-void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns);
+#endif /* WITH_SUNDIALS */
 
-#endif

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,37 +28,28 @@
  *
  */
 
- /*! \file jacobianSymbolical.h
+/*! \file sundials_util.h
  */
 
-#ifndef OMC_JACOBIAN_SYMBOLICAL_H
-#define OMC_JACOBIAN_SYMBOLICAL_H
+#ifndef _SUNDIALS_URIL_H
+#define _SUNDIALS_URIL_H
 
-#include "../../simulation_data.h"
-#include "util/parallel_helper.h"
-
-/**
- * @brief Set element of Jacobian matrix.
- *
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index.
- * @param value     Value to set in position (i,j).
- * @param Jac       Pointer to data structure storing matrix.
- * @param nRows     Number of rows of Jacobian matrix, unused.
- */
-typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
-
-void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns);
-
-void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, ANALYTIC_JACOBIAN* jacColumns,
-                                              DATA* data,
-                                              threadData_t* threadData,
-                                              setJacElementFunc);
-
-void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns);
-
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+#ifndef OMC_FMI_RUNTIME
+  #include "omc_config.h"
+#endif
+
+#ifdef WITH_SUNDIALS
+
+void setJacElementSundialsSparse(int row, int column, int nth, double value, void* Jac, int nRows);
+
+#endif /* WITH_SUNDIALS */
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif /* _SUNDIALS_URIL_H */

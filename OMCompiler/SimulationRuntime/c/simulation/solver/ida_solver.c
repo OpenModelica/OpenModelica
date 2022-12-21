@@ -52,6 +52,8 @@
 
 #include "ida_solver.h"
 
+#include "sundials_util.h"
+
 #include "dae_mode.h"
 #include "dassl.h"
 #include "epsilon.h"
@@ -616,8 +618,12 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   return 0;
 }
 
-/* deinitialize ida data */
-int ida_solver_deinitial(IDA_SOLVER *idaData)
+/**
+ * @brief Deinitialize IDA data.
+ *
+ * @param idaData   Pointer to IDA solver data struct.
+ */
+void ida_solver_deinitial(IDA_SOLVER *idaData)
 {
   TRACE_PUSH
 
@@ -658,7 +664,6 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
   IDAFree(&idaData->ida_mem);
 
   TRACE_POP
-  return 0;
 }
 
 
@@ -1599,28 +1604,6 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   return retVal;
 }
 
-/* Element function for sparse matrix set */
-/* TODO: Unify with setJacElementKluSparse from kinsolSolver.c */
-static void setJacElementKluSparse(int row, int col, int nth, double value, void* spJac, int rows)
-{
-  SUNMatrix A = (SUNMatrix)spJac;
-
-  /* TODO: Remove this check for performance reasons? */
-  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "In function setJacElementKluSparse: Wrong sparse format "
-                     "of SUNMatrix A.");
-  }
-
-  (void) rows; // Unused, needed to match genericColoredSymbolicJacobianEvaluation
-
-  if (col > 0 && SM_INDEXPTRS_S(A)[col] == 0) {
-    SM_INDEXPTRS_S(A)[col] = nth;
-  }
-  SM_INDEXVALS_S(A)[nth] = row;
-  SM_DATA_S(A)[nth] = value;
-}
-
 /* finish sparse matrix, by fixing colprts */
 /* TODO: Unify with finishSparseColPtr from kinsolSolver.c */
 static void finishSparseColPtr(SUNMatrix A, int nnz)
@@ -1751,9 +1734,9 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
           j  =  sparsePattern->index[nth];
           /* use row scaling for jacobian elements */
           if (idaData->disableScaling == 1 || !omc_flag[FLAG_IDA_SCALING]){
-            setJacElementKluSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, -1);
+            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
           }else{
-            setJacElementKluSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, -1);
+            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
         };
@@ -1823,7 +1806,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   }
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, t_jac,
-                                           data, threadData, &setJacElementKluSparse);
+                                           data, threadData, &setJacElementSundialsSparse);
 
   finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
   unsetContext(data);

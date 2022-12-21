@@ -58,6 +58,8 @@
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
 
+#define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -937,14 +939,24 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   return 0;
 }
 
-/*
- * Sets element (l,j) in matrixA to given value val.
+/**
+ * @brief Set element of dense Jacobian matrix.
+ *
+ * Jac(row, column) = val.
+ *
+ * @param row       Row of matrix element.
+ * @param column    Column of matrix element.
+ * @param nth       Sparsity pattern lead index, unused.
+ * @param value     Value to set in position (i,j)
+ * @param Jac       Pointer to double array storing matrix.
+ * @param nRows     Number of rows of Jacobian matrix
  */
-void setJacElementDasslSparse(int l, int j, int nth, double val, void* matrixA,
-                              int rows)
+void setJacElementDasslSparse(int row, int column, int nth, double value, void* Jac, int nRows)
 {
-  int k  = j*rows + l;
-  ((double*) matrixA)[k]=val;
+  UNUSED(nth);  /* Disables compiler warning */
+
+  double* A = (double*) Jac;
+  A[column*nRows + row] = value;
 }
 
 /* \fn jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,

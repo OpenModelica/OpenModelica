@@ -107,7 +107,7 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
                                               void* matrixA, ANALYTIC_JACOBIAN* jacColumns, DATA* data,
                                               threadData_t* threadData,
-                                              void (*setJacElement)(int, int, int, double, void*, int))
+                                              void (*setJacElement)(int row, int column, int nth, double value, void* Jac, int nRows))
 {
 
 #ifdef USE_PARJAC
