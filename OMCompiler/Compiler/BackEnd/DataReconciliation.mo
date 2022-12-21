@@ -864,9 +864,9 @@ algorithm
   auxillaryEquations := dumpExtractedEquationsToHTML(outBoundaryConditionEquations, "Boundary conditions" + " (" + intString(BackendEquation.getNumberOfEquations(outBoundaryConditionEquations)) + ", " + intString(BackendEquation.equationArraySize(outBoundaryConditionEquations)) + ")");
   System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
 
-  // write set-S' equation to HTML file
+  // write set-S' combine set-B and Set-S' equation to HTML file
   intermediateEquationsFilename := shared.info.fileNamePrefix + "_BoundaryConditionIntermediateEquations.html";
-  intermediateEquations := dumpExtractedEquationsToHTML(outOtherEqns, "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(outOtherEqns)) + ", " + intString(BackendEquation.equationArraySize(outOtherEqns)) + ")");
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(listAppend(failedboundaryConditionEquations, setSPrime_Eq)), "Intermediate equations for unmeasured variables " + " (" + intString(listLength(failedboundaryConditionEquations)+listLength(setSPrime_Eq)) + ", " + intString(listLength(failedboundaryConditionEquations)+listLength(setSPrime_Eq)) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
   VerifySetSPrime(outBoundaryConditionVars, outOtherVarsSetSPrime, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqnsSetSPrime, shared, listLength(setC), numRelatedBoundaryConditions, true);
@@ -3421,7 +3421,7 @@ algorithm
       data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionIntermediateEquations.html target=_blank> Intermediate equations </a> </h3>";
     else
       // stateEstimation and data Reconciliation
-      data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
+      //data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
       data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations for measured variables </a> </h3>";
       if (numRelatedBoundaryConditions > 0) then
         data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_BoundaryConditionsEquations.html target=_blank> Boundary conditions </a> </h3>";
