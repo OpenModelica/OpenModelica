@@ -71,7 +71,7 @@
 /* Extern function prototypes */
 int IDADlsSetDenseJacFn(void* ida_mem, void*);
 
-/* Function prototypes */
+/* Private function prototypes */
 static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
@@ -81,8 +81,8 @@ static int callSparseJacobian(realtype currentTime, realtype cj,
                               N_Vector yy, N_Vector yp, N_Vector rr, SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
-static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
-int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData);
+static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* user_data);
+static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData);
 
 static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix scaleMatrix);
 
@@ -98,31 +98,43 @@ int ida_event_update(DATA* data, threadData_t *threadData);
 static IDA_SOLVER *idaDataGlobal;
 
 
-/* TODO: Move to sundials_Error.c or remove */
-int checkIDAflag(int flag)
-{
-  TRACE_PUSH
-  int retVal;
-  switch(flag)
-  {
+/**
+ * @brief Return true if IDA flag signals success.
+ *
+ * @param flag                Return value of IDA routine.
+ * @return modelica_boolean   TRUE if flag is signalling success.
+ */
+static modelica_boolean IDAisSuccess(int flag) {
+  switch (flag) {
   case IDA_SUCCESS:
   case IDA_TSTOP_RETURN:
-    retVal = 0;
-    break;
+  case IDA_ROOT_RETURN:
+    return TRUE;
   default:
-    retVal = 1;
-    break;
+    return FALSE;
   }
-  TRACE_POP
-  return retVal;
 }
 
-/* TODO: Move to sundials_Error.c or remove */
+/**
+ * @brief Error handler function.
+ *
+ * Print IDA errors to `LOG_SOLVER` stream.
+ * Function has to be of type IDAErrHandlerFn and is set with IDASetErrHandlerFn.
+ *
+ * TODO: Move to sundials_Error.c or remove.
+ *
+ * @param error_code    IDA error code.
+ * @param module        Name of IDA module reporting the error.
+ * @param function      Name of IDA function in which error occurred.
+ * @param msg           Error message.
+ * @param userData      Pointer to user data, set by IDASetErrHandlerFn. Is of type IDA_SOLVER*.
+ */
 void errOutputIDA(int error_code, const char *module, const char *function,
                   char *msg, void *userData)
 {
   TRACE_PUSH
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->data);
+  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
+  DATA* data = idaData->userData->data;
   infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
   infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", error_code, module, function);
   infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
@@ -135,14 +147,14 @@ void errOutputIDA(int error_code, const char *module, const char *function,
  *
  * Allocate memory for IDA_SOLVER struct and initialize IDA solver.
  *
- * @param data
- * @param threadData
- * @param solverInfo
- * @param idaData
- * @return int
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling
+ * @param solverInfo  Information about main solver. Unused at the moment.
+ * @param idaData     IDA solver data.
+ * @return int        Returns 0 on success, aborts with throw on failure.
  */
 int ida_solver_initial(DATA* data, threadData_t *threadData,
-                       SOLVER_INFO* solverInfo, IDA_SOLVER *idaData)
+                       SOLVER_INFO* solverInfo, IDA_SOLVER* idaData)
 {
   /* Variables */
   int flag;
@@ -317,9 +329,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]) {
       idaData->stepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
       flag = IDASetMaxStep(idaData->ida_mem, idaData->stepsTime);
-      if (checkIDAflag(flag)) {
-        throwStreamPrint(threadData, "##IDA## Setting max steps of the IDA solver!");
-      }
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetMaxStep");
       infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
     } else {
       idaData->stepsFreq = 1;
@@ -505,9 +515,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxErrorTestFails = atoi(omc_flagValue[FLAG_IDA_MAXERRORTESTFAIL]);
     flag = IDASetMaxErrTestFails(idaData->ida_mem, maxErrorTestFails);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetMaxErrTestFails failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetMaxErrTestFails");
   }
 
   /* set maximum number of nonlinear solver iterations at one step */
@@ -515,9 +523,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxNonlinIters = atoi(omc_flagValue[FLAG_IDA_MAXNONLINITERS]);
     flag = IDASetMaxNonlinIters(idaData->ida_mem, maxNonlinIters);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetMaxNonlinIters failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetMaxNonlinIters");
   }
 
   /* maximum number of nonlinear solver convergence failures at one step */
@@ -525,9 +531,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxConvFails = atoi(omc_flagValue[FLAG_IDA_MAXCONVFAILS]);
     flag = IDASetMaxConvFails(idaData->ida_mem, maxConvFails);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetMaxConvFails failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetMaxConvFails");
   }
 
   /* safety factor in the nonlinear convergence test */
@@ -535,27 +539,21 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     double nonlinConvCoef = atof(omc_flagValue[FLAG_IDA_NONLINCONVCOEF]);
     flag = IDASetNonlinConvCoef(idaData->ida_mem, nonlinConvCoef);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetNonlinConvCoef failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetNonlinConvCoef");
   }
 
   /* configure algebraic variables as such */
   if (idaData->daeMode) {
     if (omc_flag[FLAG_NO_SUPPRESS_ALG]) {
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
-      if (checkIDAflag(flag)) {
-        throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
-      }
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSuppressAlg");
     }
     for (i=0; i<idaData->N; ++i) {
       tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
     }
 
     flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-    if (checkIDAflag(flag)) {
-      throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetId");
   }
 
   /* define initial step size */
@@ -565,9 +563,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     assertStreamPrint(threadData, initialStepSize >= DASSL_STEP_EPS, "Selected initial step size %e is too small.", initialStepSize);
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
-    if (checkIDAflag(flag)) {
-      throwStreamPrint(threadData, "##IDA## Set initial step size failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
     infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
@@ -590,24 +586,15 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensInit");
 
     flag = IDASetSensParams(idaData->ida_mem, data->simulationInfo->realParameter, NULL, data->simulationInfo->sensitivityParList);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetSensParams failed!");
-    }
-
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSensParams");
     flag = IDASetSensDQMethod(idaData->ida_mem, IDA_FORWARD, 0);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASetSensDQMethod failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSensDQMethod");
 
     flag = IDASensEEtolerances(idaData->ida_mem);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensEEtolerances");
 /*
     flag = IDASetSensErrCon(idaData->ida_mem, TRUE);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSensErrCon");
 */
     /* allocate result workspace */
     idaData->ySResult = N_VCloneVectorArrayEmpty_Serial(idaData->Ns, idaData->y);
@@ -676,14 +663,14 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
 
 
 /**
- * @brief EventHandle for DAE mode
+ * @brief EventHandle for DAE mode.
  *
  * Handles events by reinitialize main IDA solver, initializing next step and
  * evaluate DAE residual equations.
  *
- * @param data
- * @param threadData
- * @return int
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @return int        Return 0.
  */
 int ida_event_update(DATA* data, threadData_t *threadData)
 {
@@ -742,15 +729,13 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
   /* try again without line search if first try fails */
-  if (checkIDAflag(flag)){
+  if (!IDAisSuccess(flag)){
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
     IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
     flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
     IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvIters");
   }
   /* obtain consistent values of y_algebraic and y_prime */
   IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
@@ -771,7 +756,16 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   return 0;
 }
 
-/* main ida function to make a step */
+/**
+ * @brief Main IDA solver step.
+ *
+ * Call IDASolve to make solver steps.
+ *
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @param solverInfo  Main ODE/DAE solver info.
+ * @return int        Return 0 on success or IDA flag on failure.
+ */
 int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
@@ -834,10 +828,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         solverInfo->currentTime,
         idaData->y,
         idaData->yp);
-
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Something goes wrong while reinit IDA solver after event!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAReInit");
 
     /* calculate matrix for residual scaling */
     if (omc_flag[FLAG_IDA_SCALING])
@@ -858,9 +849,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         }
       }
       flag = IDASensReInit(idaData->ida_mem, IDA_SIMULTANEOUS, idaData->yS, idaData->ySp);
-      if (checkIDAflag(flag)){
-        throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
-      }
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensReInit");
     }
     idaData->setInitialSolution = 1;
   }
@@ -911,9 +900,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
     stepsMode = IDA_ONE_STEP;
     flag = IDASetStopTime(idaData->ida_mem, tout);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Something goes wrong while set stopTime!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetStopTime");
   }
   else
   {
@@ -949,42 +936,40 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
 
-    /* error handling */
-    if ( !checkIDAflag(flag) && solverInfo->currentTime >= tout)
+    /* Error handling */
+    if ((flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN) && solverInfo->currentTime >= tout)
     {
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
     }
+    else if (flag == IDA_ROOT_RETURN)
+    {
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
+      finished = 1 /* TRUE */;
+    }
+    else if (flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN)
+    {
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
+    }
+    else if (flag == IDA_TOO_MUCH_WORK)
+    {
+      warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+    }
+    else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail)
+    {
+      flag = IDAReInit(idaData->ida_mem,
+          solverInfo->currentTime,
+          idaData->y,
+          idaData->yp);
+      restartAfterLSFail = 1;
+      warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
+    }
     else
     {
-      if (!checkIDAflag(flag))
-      {
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
-      }
-      else if (flag == IDA_ROOT_RETURN)
-      {
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
-        finished = 1 /* TRUE */;
-      }
-      else if (flag == IDA_TOO_MUCH_WORK)
-      {
-        warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
-      }
-      else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail )
-      {
-        flag = IDAReInit(idaData->ida_mem,
-            solverInfo->currentTime,
-            idaData->y,
-            idaData->yp);
-        restartAfterLSFail = 1;
-        warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
-      }
-      else
-      {
-        infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
-        finished = 1 /* TRUE */;
-        retVal = flag;
-      }
+      infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+      //checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASolve");  // Will throw and jump to next MMC_CATCH_INTERNAL
+      finished = 1 /* TRUE */;
+      retVal = flag;
     }
 
     /* closing new step message */
@@ -1041,9 +1026,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   if (idaData->idaSmode)
   {
     flag = IDAGetSens(idaData->ida_mem, &solverInfo->currentTime, idaData->ySResult);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain results for parameter sensitivities!");
-    }
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetSens");
   }
 
   /* save stats */
@@ -1109,12 +1092,25 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   return retVal;
 }
 
-int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData)
+/**
+ * @brief Compute residual F(t, y, y').
+ *
+ * This function has to be of type IDAResFn.
+ * See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation.
+ *
+ * @param time        Value of the independent variable (time).
+ * @param yy          Vector of state variables y.
+ * @param yp          Vector of derivatives y'.
+ * @param rr          Output residual vector F(t, y, y').
+ * @param user_data   Pointer to user data of type IDA_SOLVER*, set with IDASetUserDat.
+ * @return int        Return 0 on success, positive value on recoverable error and negative value otherwise.
+ */
+static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data)
 {
   TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->data);
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->threadData);
+  IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
+  DATA* data = idaData->userData->data;
+  threadData_t* threadData = idaData->userData->threadData;
 
   double timeBackup;
   long int i;
@@ -1122,7 +1118,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   int success = 0, retVal = 0;
   double *states = N_VGetArrayPointer_Serial(yy);
   double *statesDer = N_VGetArrayPointer_Serial(yp);
-  double *delta  = N_VGetArrayPointer_Serial(res);
+  double *delta  = N_VGetArrayPointer_Serial(rr);
 
   infoStreamPrint(LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
   /* rescale idaData->y and idaData->yp */
@@ -1186,8 +1182,8 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     /* get residual variables */
     for(i=0; i < idaData->N; i++)
     {
-      NV_Ith_S(res, i) = data->simulationInfo->daeModeData->residualVars[i];
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
+      NV_Ith_S(rr, i) = data->simulationInfo->daeModeData->residualVars[i];
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
     }
   }
   else
@@ -1198,16 +1194,16 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
     for(i=0; i < idaData->N; i++)
     {
-      NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
+      NV_Ith_S(rr, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
     }
   }
 
-  /* scale res */
+  /* scale ressidual rr */
   if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "scale residuals");
-    idaScaleVector(res, idaData->resScale, idaData->N);
+    idaScaleVector(rr, idaData->resScale, idaData->N);
     messageClose(LOG_SOLVER_V);
     idaScaleData(idaData);
   }
@@ -1219,7 +1215,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
 #endif
 
   if (!success) {
-    retVal = -1;
+    retVal = -1;  /* Non-recoverable error */
   }
 
   threadData->currentErrorStage = saveJumpState;
@@ -1234,12 +1230,25 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   return retVal;
 }
 
-int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData)
+/**
+ * @brief Evaluate zero crossings for IDA root finding.
+ *
+ * Set by IDARootInit, has be of type IDARootFn.
+ * See section 4.5.6 Rootfinding initialization function of SUNDIALS v5.4.0 IDA documentation.
+ *
+ * @param time        Independent variable (time).
+ * @param yy          Vector of state variables y.
+ * @param yp          Vector of state derivatives y'.
+ * @param gout        Output array: ZeroCrossings g(t, y, y').
+ * @param user_data   Pointer to user data of type `IDA_SOLVER*`.
+ * @return int        Return 0 on success and otherwise error.
+ */
+static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* user_data)
 {
   TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
-  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->threadData);
+  IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
+  DATA* data = idaData->userData->data;
+  threadData_t* threadData = idaData->userData->threadData;
   double *states = N_VGetArrayPointer_Serial(yy);
   double *statesDer = N_VGetArrayPointer_Serial(yp);
 
@@ -1252,7 +1261,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
     setContext(data, time, CONTEXT_EVENTS);
   }
 
-  /* re-scale idaData->y and idaData->yp to evaluate the equations*/
+  /* re-scale idaData->y and idaData->yp to evaluate the equations */
   if (omc_flag[FLAG_IDA_SCALING])
   {
     idaReScaleData(idaData);
@@ -1270,22 +1279,22 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
 
   data->localData[0]->timeValue = time;
 
-  /* read input vars */
+  /* Exlude zero-crossings eval from sim timer */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+
+  /* Update inputs and evaluate zero crossings */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
-  /* eval needed equations*/
   if (idaData->daeMode){
-   data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
   }
   else
   {
     data->callback->function_ZeroCrossingsEquations(data, threadData);
   }
-
   data->callback->function_ZeroCrossings(data, threadData, gout);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
   threadData->currentErrorStage = saveJumpState;
 
   /* scale data again */
@@ -1298,24 +1307,32 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
     unsetContext(data);
   }
   messageClose(LOG_SOLVER_V);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);   // TODO: Why do we have two rt_tick calls? Keep only this one?
 
   TRACE_POP
   return 0;
 }
 
-/*
- *  function calculates a jacobian matrix by
- *  numerical method finite differences with coloring
- *  into a dense DlsMat matrix
- */
-static
-int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
-                             N_Vector rr, SUNMatrix Jac, double cj, void *userData)
+/**
+ * @brief Compute colored numeric Jacobian.
+ *
+ * Calculate Jacobian matrix using finite differences method
+ * with coloring from sparsity pattern.
+ *
+ * @param currentTime   Independent variable (time).
+ * @param cj            Scalar in the system Jacobian, proportional to the inverse of the step size.
+ * @param yy            Vector of state variables y.
+ * @param yp            Vector of derivatives y'.
+ * @param rr            Vector of residual vector F(y,y').
+ * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y'). ????
+ * @param idaData       Pointer to IDA user data.
+ * @return int          Return 0 on success, positive value on recoverable error and negative value otherwise.
+*/
+static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, N_Vector yp,
+                                    N_Vector rr, SUNMatrix Jac, IDA_SOLVER *idaData)
 {
   TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
-  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
+  DATA* data = idaData->userData->data;
   void* ida_mem = idaData->ida_mem;
   const int index = data->callback->INDEX_JAC_A;
 
@@ -1330,7 +1347,7 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = numericalDifferentiationDeltaXsolver;
+  double delta_h = numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
   double delta_hhh;
   long int i,j,l,ii;
 
@@ -1378,7 +1395,7 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
       }
     }
 
-    (*idaData->residualFunction)(currentTime, yy, yp, idaData->newdelta, userData);
+    idaData->residualFunction(currentTime, yy, yp, idaData->newdelta, (void*) idaData);   /* Points to residualFunctionIDA */
 
     increaseJacContext(data);
 
@@ -1407,18 +1424,28 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
   return 0;
 }
 
-/*
- *  function calculates the Jacobian matrix symbolically with considering also
- *  the coloring and pass it in a dense DlsMat matrix.
+/**
+ * @brief Compute colored symbolic Jacobian.
+ *
+ * Calculate Jacobian matrix using analytic Jacobian column function
+ * with coloring from sparsity pattern.
+ *
+ * @param currentTime   Independent variable (time).
+ * @param cj            Scalar in the system Jacobian, proportional to the inverse of the step size.
+ * @param yy            Vector of state variables y.
+ * @param yp            Vector of derivatives y'.
+ * @param rr            Vector of residual vector F(y,y').
+ * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y'). ????
+ * @param idaData       Pointer to IDA user data.
+ * @return int          Return 0 on success, positive value on recoverable error and negative value otherwise.
  */
-static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
+static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
                                      N_Vector yp, N_Vector rr, SUNMatrix Jac,
-                                     double cj, void *userData)
+                                     IDA_SOLVER *idaData)
 {
   TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
-  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
+  DATA* data = idaData->userData->data;
+  threadData_t* threadData = idaData->userData->threadData;
   void* ida_mem = idaData->ida_mem;
   long int N = idaData->N;
   const int index = data->callback->INDEX_JAC_A;
@@ -1501,16 +1528,34 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   return 0;
 }
 
-/*
- * wrapper function to call dense Jacobian
+/**
+ * @brief Compute Jacobian matrix of ODE/DAE system.
+ *
+ * Available methods:
+ *   - Colored Numeric Jacobian  --> jacColoredNumericalDense
+ *   - Colored Symbolic Jacobian --> jacColoredSymbolicalDense
+ *
+ * See Section 4.6.5 in IDA documentation of SUNDIALS v5.4.0 for more details.
+ *
+ * @param tt          Independent variable (time).
+ * @param cj          Scalar in the system Jacobian, proportional to the inverse of the step size.
+ * @param yy          Vector of state variables y.
+ * @param yp          Vector of state derivatives y'.
+ * @param rr          Vector of residual vector F(y,y').
+ * @param Jac         Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y').
+ * @param user_data   Pointer to user data of type `IDA_SOLVER*`.
+ * @param tmp1        Work array that can be used by, currently unused.
+ * @param tmp2        Work array that can be used by, currently unused.
+ * @param tmp3        Work array that can be used by, currently unused.
+ * @return int        Return 0 on success, positive value on recoverable error and negative value otherwise.
  */
 static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
                              N_Vector tmp3) {
   TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
+  IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
+  threadData_t* threadData = idaData->userData->threadData;
   int retVal;
 
   /* profiling */
@@ -1519,15 +1564,15 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
 
   if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
   {
-    retVal = jacColoredNumericalDense(tt, yy, yp, rr, Jac, cj, user_data);
+    retVal = jacColoredNumericalDense(tt, cj, yy, yp, rr, Jac, idaData);
   }
   else if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
-    retVal = jacColoredSymbolicalDense(tt, yy, yp, rr, Jac, cj, user_data);
+    retVal = jacColoredSymbolicalDense(tt, cj, yy, yp, rr, Jac, idaData);
   }
   else
   {
-    throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain jacobian matrix!");
+    throwStreamPrint(threadData, "##IDA## Something went wrong while obtain Jacobian matrix.");
   }
 
   /* debug */
@@ -1540,10 +1585,9 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   /* add cj to diagonal elements and store in Jac */
   if (!idaData->daeMode)
   {
-    long int i;
-    for(i = 0; i < SM_COLUMNS_D(Jac); i++)
+    for(int i = 0; i < SM_COLUMNS_D(Jac); i++)
     {
-      SM_ELEMENT_D(Jac, i, i) -= (double) cj;
+      SM_ELEMENT_D(Jac, i, i) -= (double) cj; // TODO AHeu: Why subtract cj?
     }
   }
 
@@ -1692,7 +1736,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       }
     }
     idaData->disableScaling = 1;
-    (*idaData->residualFunction)(currentTime, yy, yp, idaData->newdelta, userData);
+    idaData->residualFunction(currentTime, yy, yp, idaData->newdelta, userData);  /* Points to residualFunctionIDA */
     idaData->disableScaling = disBackup;
 
     increaseJacContext(data);
@@ -1849,7 +1893,7 @@ static int callSparseJacobian(double currentTime, double cj,
 }
 
 /* TODO: Unify with nlsKinsolFScaling from kinsolSolver.c? */
-static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleMatrix)
+static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleMatrix)
 {
   int i;
 
@@ -1866,20 +1910,21 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
   SUNMatrix scaleMatrix;
   SUNMatrix denseMatrix;
 
-  if (inScaleMatrix == NULL){
-
+  if (inScaleMatrix == NULL)
+  {
     infoStreamPrint(LOG_SOLVER_V, 1, "##IDA## get new scaling matrix.");
 
     /* use y scale to scale jacobian, but y and yp are not scaled */
     idaData->disableScaling = 1;
 
     /* eval residual function first */
-    residualFunctionIDA(data->localData[0]->timeValue, idaData->y, idaData->yp, rres, (void*) idaData);
+    idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, rres, (void*) idaData);   /* Points to residualFunctionIDA */
 
     /*  choose the jacobian sparse vs. dense */
     if (idaData->linearSolverMethod == IDA_LS_KLU)
     {
-      if (idaData->NNZ < 0) {
+      if (idaData->NNZ < 0)
+      {
         throwStreamPrint(NULL, "##IDA## idaData->NNZ not set.");
       }
       scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
@@ -1893,7 +1938,8 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
                         idaData->yp, rres, denseMatrix, idaData, tmp1, tmp2,
                         tmp3);
       scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, CSC_MAT);
-      if (scaleMatrix == NULL) {
+      if (scaleMatrix == NULL)
+      {
         errorStreamPrint(
             LOG_STDOUT, 0,
             "##IDA## In function SUNSparseFromDenseMatrix: Requirements are "
@@ -1912,8 +1958,10 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
 
   /* set resScale factors */
   _omc_fillVector(_omc_createVector(idaData->N,idaData->resScale), MINIMAL_SCALE_FACTOR);
-  for(i=0; i<SM_NNZ_S(scaleMatrix); ++i){
-    if (idaData->resScale[SM_INDEXVALS_S(scaleMatrix)[i]] < fabs(SM_DATA_S(scaleMatrix)[i])) {
+  for(i=0; i<SM_NNZ_S(scaleMatrix); ++i)
+  {
+    if (idaData->resScale[SM_INDEXVALS_S(scaleMatrix)[i]] < fabs(SM_DATA_S(scaleMatrix)[i]))
+    {
         idaData->resScale[SM_INDEXVALS_S(scaleMatrix)[i]] = fabs(SM_DATA_S(scaleMatrix)[i]);
       }
   }

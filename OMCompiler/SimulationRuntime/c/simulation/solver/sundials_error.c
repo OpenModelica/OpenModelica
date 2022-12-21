@@ -411,16 +411,20 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName) {
 }
 
 /**
- * @brief Checks given IDA flag and reports potential error.
+ * @brief Checks given IDA/IDAS flag and reports potential error.
  *
- * @param flag          Return value of Kinsol routine.
+ * Throws on errors.
+ *
+ * TODO: Make it optionla to throw error and only report error instead.
+ *
+ * @param flag          Return value of IDA routine.
  * @param functionName  Name of IDA function that returned the flag.
  */
 static void checkReturnFlag_IDA(int flag, const char *functionName) {
   switch (flag) {
-  case IDA_SUCCESS:
-  case IDA_TSTOP_RETURN:
-  case IDA_ROOT_RETURN:
+  case IDA_SUCCESS:       /* Successful function return. */
+  case IDA_TSTOP_RETURN:  /* IDASolve succeeded by reaching the specified stopping point. */
+  case IDA_ROOT_RETURN:   /* IDASolve succeeded and found one or more roots. */
     break;
   case IDA_WARNING:
     warningStreamPrint(LOG_STDOUT, 0,
@@ -486,7 +490,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
     break;
   case IDA_RTFUNC_FAIL:
     throwStreamPrint(NULL,
-                     "##IDA## In function %s: The rootnding function failed "
+                     "##IDA## In function %s: The rootfindin function failed "
                      "in an unrecoverable manner.",
                      functionName);
     break;
@@ -499,7 +503,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_FIRST_RES_FAIL:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: The user-provided residual "
-                     "function failed recoverably on the rst call.",
+                     "function failed recoverably on the first call.",
                      functionName);
     break;
   case IDA_LINESEARCH_FAIL:
@@ -568,6 +572,75 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_BAD_DKY:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: The vector argument where derivative should be stored is NULL.",
+                     functionName);
+    break;
+  case IDA_NO_QUAD:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Quadratures were not initialized.",
+                     functionName);
+    break;
+  case IDA_QRHS_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side function for quadratures "
+                     "failed in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_FIRST_QRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side function for quadratures "
+                     "failed in an unrecoverable manner on the first call.",
+                     functionName);
+    break;
+  case IDA_REP_QRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side repeatedly returned "
+                     "a recoverable error flag, but the solver was unable to recover.",
+                     functionName);
+    break;
+  case IDA_NO_SENS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Sensitivities were not initialized.",
+                     functionName);
+    break;
+  case IDA_SRES_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity residual function failed "
+                     "in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_REP_SRES_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity residual function repeatedly "
+                     "returned a recoverable error flag, but the solver was unable to recover.",
+                     functionName);
+    break;
+  case IDA_BAD_IS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The sensitivity identifier is not valid.",
+                     functionName);
+    break;
+  case IDA_NO_QUADSENS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Sensitivity-dependent quadratures were not initialized.",
+                     functionName);
+    break;
+  case IDA_QSRHS_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side function failed in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_FIRST_QSRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side function failed in an unrecoverable manner on the first call.",
+                     functionName);
+    break;
+  case IDA_REP_QSRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side repeatedly returned a recoverable error flag, but the solver "
+                     "was unable to recover.",
                      functionName);
     break;
   default:

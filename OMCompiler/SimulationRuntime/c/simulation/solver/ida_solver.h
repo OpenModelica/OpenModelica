@@ -72,13 +72,13 @@ typedef struct IDA_SOLVER
   double stepsTime;                     /* value specifies the time increment when output happens. Used in internal steps mode. */
 
   /* ### work arrays ### */
-  N_Vector y;                   /* State vector */
-  N_Vector yp;                  /* State derivative vector */
+  N_Vector y;                   /* State vector y */
+  N_Vector yp;                  /* State derivative vector y' */
 
   /* ### scaling data ### */
-  double *yScale;
-  double *ypScale;
-  double *resScale;
+  double *yScale;               /* Scaling array for states y */
+  double *ypScale;              /* Scaling array fpr derivatives y' */
+  double *resScale;             /* Scaling for residual F(t,y,y') */
   int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
 
   /* ### work array used in jacobian calculation ### */
@@ -91,8 +91,9 @@ typedef struct IDA_SOLVER
 
   /* ### ida internal data ### */
   void* ida_mem;
-  int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
-  IDA_USERDATA* userData;
+  IDAResFn residualFunction;      /* Residual function forwarded to IDA */
+                                  /* See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation */
+  IDA_USERDATA* userData;         /* */
   SUNMatrix tmpJac;
   SUNMatrix denseJac;
 

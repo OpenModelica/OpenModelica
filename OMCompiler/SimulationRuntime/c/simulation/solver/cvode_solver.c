@@ -517,7 +517,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
  * @param solverInfo        Information about main solver. Unused at the moment.
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Return 0 on success.
  */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
@@ -579,7 +579,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetUserData");
 
-  /* Set linear solver useb by CVODE */
+  /* Set linear solver used by CVODE */
   cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
   switch (cvodeData->config.jacobianMethod)
   {
@@ -845,11 +845,11 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
 /**
  * @brief Main CVODE function to make a step.
  *
- * Integrates on current time intervall.
+ * Integrates on current time interval.
  *
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Returns 0 on success and return flag from CVode else.
  */
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
