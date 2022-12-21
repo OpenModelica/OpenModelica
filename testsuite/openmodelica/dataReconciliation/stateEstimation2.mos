@@ -908,16 +908,16 @@ getErrorString();
 // Start of extraction procedure for unmeasured variables of interest
 // Set of equations that failed the extraction of set S and that contain an unmeasured variable of interest: (4)
 // ==========================================================================
-// 1: T2_Q2 = Q02
-// 2: T3_Q2 = Q03
-// 3: T1_h = h01
-// 4: T1_P1 = P01
+// 1: T1_P1 = P01
+// 2: T1_h = h01
+// 3: T3_Q2 = Q03
+// 4: T2_Q2 = Q02
 //
 // umeasured variables to be computed (4)
 // ========================================
-// 1: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 1: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 // 2: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
-// 3: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 3: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 // 4: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 //
 //
