@@ -237,7 +237,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   if (data->modelData->nSetbVars > 0)
   {
     // Boundary Conditions
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+    //myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
     // Intermediate Conditions
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations for unmeasured variables </a> </h3>\n";
   }
@@ -386,7 +386,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   if (data->modelData->nSetbVars > 0)
   {
     // Boundary Conditions
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+    //myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
     // Intermediate Conditions
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations for unmeasured variables </a> </h3>\n";
   }
@@ -430,10 +430,10 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
   myfile << "<table border=2>\n";
-  myfile << "<tr>\n" << "<th> Variables to be Estimated </th>\n" << "<th> Unit </th>\n" << "<th> Description </th>\n" << "<th> Initial Measured Value </th>\n" << "<th> Estimated Value </th>\n" << "<th> Initial Uncertainty </th>\n" <<"<th> Estimated Uncertainty </th>\n";
-  csvfile << "Variables to be Estimated ," << "Unit ," << "Description ," << "Initial Measured Value ," << "Estimated Value ," << "Initial Uncertainty ," << "Estimated Uncertainty,";
-  myfile << "<th> Results of Local Test </th>\n" << "<th> Local Quality  </th>\n" << "<th> comment </th>\n" << "</tr>\n";
-  csvfile << "Results of Local Test ," << "Local Quality  ," << "comment ," << "\n";
+  myfile << "<tr>\n" << "<th> Variable to be Estimated </th>\n" << "<th> Unit </th>\n" << "<th> Description </th>\n" << "<th> Initial Measured Value </th>\n" << "<th> Estimated Value </th>\n" << "<th> Initial Uncertainty </th>\n" <<"<th> Estimated Uncertainty </th>\n";
+  csvfile << "Variable to be Estimated ," << "Unit ," << "Description ," << "Initial Measured Value ," << "Estimated Value ," << "Initial Uncertainty ," << "Estimated Uncertainty,";
+  myfile << "<th> Result of Local Test </th>\n" << "<th> Local Quality  </th>\n" << "<th> Comment </th>\n" << "</tr>\n";
+  csvfile << "Result of Local Test ," << "Local Quality  ," << "Comment ," << "\n";
 
   // collect units and description
 
@@ -516,13 +516,13 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
       csvfile << "FALSE" << ",";
     }
 
-    // // Values of Local Tests
-    // myfile << "<td>" << newX[r] << "</td>\n";
-    // csvfile << newX[r] << ",";
+    // Values of Local Tests
+    myfile << "<td>" << newX[r]/1.96 << "</td>\n";
+    csvfile << newX[r]/1.96 << ",";
 
-    // Margin to Correctness(distance from 1.96)
-    myfile << "<td>" << (1.96 - newX[r]) << "</td>\n";
-    csvfile << (1.96 - newX[r]) << ",";
+    // // Margin to Correctness(distance from 1.96)
+    // myfile << "<td>" << (1.96 - newX[r]) << "</td>\n";
+    // csvfile << (1.96 - newX[r]) << ",";
 
     // comments
     if (reconciled)
@@ -2458,17 +2458,6 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     t++;
     //cout << "array_setc_vars:=>" << t << ":" << data->simulationInfo->setcVars[i-1] << "\n";
   }
-
-  // allocate data for boundaryconditions vars simulation results
-  // double *boundaryConditionVarsResults = (double *)calloc(data->modelData->nSetbVars, sizeof(double));
-  // int t1 = 0;
-  // for (int i = 3; i > 0; i--)
-  // {
-  //   boundaryConditionVarsResults[t] = data->simulationInfo->setbVars[i - 1];
-  //   t1++;
-  //   cout << "setB_results:=>" << t1 << ":" << data->simulationInfo->setbVars[i-1] << "\n";
-  // }
-
 
   int nsetcvars = data->modelData->nSetcVars;
   matrixData vector_c = {nsetcvars, 1, tmpsetc};
