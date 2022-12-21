@@ -391,11 +391,10 @@ getErrorString();
 //
 //
 // Start of extraction procedure for unmeasured variables of interest
-// Set of equations that failed the extraction of set S and that contain an unmeasured variable of interest: (3)
+// Set of equations that failed the extraction of set S and that contain an unmeasured variable of interest: (2)
 // ==========================================================================
-// 1: P1 - P = k1 * Q1 * abs(Q1)
+// 1: P3 = P03
 // 2: P2 = P02
-// 3: P3 = P03
 //
 // umeasured variables to be computed (3)
 // ========================================
