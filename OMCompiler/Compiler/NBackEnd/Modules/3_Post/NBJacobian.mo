@@ -368,7 +368,7 @@ public
             // only create rows for derivatives
             if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
-                tmp := List.unique_set(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
+                tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
                 for dep in tmp loop
                   // also add inverse dependency (indep var) --> (res/tmp) :: rest
@@ -380,7 +380,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in seed_vars loop
-            tmp := List.unique_set(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
+            tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
             cols := (cref, tmp) :: cols;
           end for;
 

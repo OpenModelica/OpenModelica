@@ -547,6 +547,22 @@ public
     print("\n");
   end dump;
 
+  public function unique_list<T>
+    "Takes a list of elements and returns a list with duplicates removed, so that
+     each element in the new list is unique."
+    input list<T> inList;
+    input UnorderedSet.Hash hashFunc;
+    input UnorderedSet.KeyEq keyEqFunc;
+    output list<T> outList;
+  protected
+    UnorderedSet<T> unique_set = UnorderedSet.new<T>(hashFunc, keyEqFunc);
+  algorithm
+    for elem in inList loop
+      UnorderedSet.add(elem, unique_set);
+    end for;
+    outList := UnorderedSet.toList(unique_set);
+  end unique_list;
+
 protected
   function find
     "Tries to find a key in the set, returning the key as an option, and the

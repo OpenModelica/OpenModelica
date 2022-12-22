@@ -97,7 +97,6 @@ encapsulated package List
 
 protected
 import Array;
-import UnorderedSet;
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
 import DoubleEnded;
@@ -1111,22 +1110,6 @@ algorithm
   end for;
   GCExt.free(a1);
 end countingSort;
-
-public function unique_set<T>
-  "Takes a list of elements and returns a list with duplicates removed, so that
-   each element in the new list is unique."
-  input list<T> inList;
-  input UnorderedSet.Hash hashFunc;
-  input UnorderedSet.KeyEq keyEqFunc;
-  output list<T> outList;
-protected
-  UnorderedSet<T> unique_set = UnorderedSet.new<T>(hashFunc, keyEqFunc);
-algorithm
-  for elem in inList loop
-    UnorderedSet.add(elem, unique_set);
-  end for;
-  outList := UnorderedSet.toList(unique_set);
-end unique_set;
 
 public function unique<T>
   "Takes a list of elements and returns a list with duplicates removed, so that
