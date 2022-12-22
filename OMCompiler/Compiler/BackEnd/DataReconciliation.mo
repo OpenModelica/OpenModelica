@@ -78,7 +78,7 @@ protected
   Integer varCount, eqCount;
   list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, residualVars;
+  list<BackendDAE.Var> paramVars, setSVars, residualVars, unMeasuredVariables;
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
@@ -225,6 +225,8 @@ algorithm
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
 
+  // get unmeasured variables
+  unMeasuredVariables := List.map1r(listReverse(unMeasuredVariablesOfInterest), BackendVariable.getVarAt, currentSystem.orderedVars);
 
   // prepare outdiff vars (i.e) variables of interest
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
@@ -278,7 +280,7 @@ algorithm
   (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outResidualEqns, outResidualVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
 
   // put the jacobian also into shared object
-  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars, setBVars=NONE(), symbolicJacobianH=NONE(), relatedBoundaryConditions = listLength(setBFailedBoundaryConditionEquations)));
+  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars, setBVars=SOME(BackendVariable.listVar(unMeasuredVariables)), symbolicJacobianH=NONE(), relatedBoundaryConditions = listLength(setBFailedBoundaryConditionEquations)));
 
   // Prepare the final DAE System with Set-C equations as residual equations
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outResidualVars, outOtherVars));
@@ -356,7 +358,7 @@ protected
   Integer varCount, eqCount;
   list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime;
+  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
@@ -510,6 +512,8 @@ algorithm
   BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
   //BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
 
+  // get unmeasured variables
+  unMeasuredVariables := List.map1r(listReverse(unMeasuredVariablesOfInterest), BackendVariable.getVarAt, currentSystem.orderedVars);
 
   // prepare outdiff vars (i.e) variables of interest
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
@@ -555,7 +559,7 @@ algorithm
   (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outBoundaryConditionEquations, outBoundaryConditionVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
 
   // put the jacobian also into shared object
-  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outBoundaryConditionVars, datareconinputs=outDiffVars, setBVars=NONE(), symbolicJacobianH=NONE(), relatedBoundaryConditions = listLength(setBFailedBoundaryConditionEquations)));
+  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outBoundaryConditionVars, datareconinputs=outDiffVars, setBVars=SOME(BackendVariable.listVar(unMeasuredVariables)), symbolicJacobianH=NONE(), relatedBoundaryConditions = listLength(setBFailedBoundaryConditionEquations)));
 
   // Prepare the final DAE System with Set-B and Set-S' equations
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outBoundaryConditionEquations, outOtherEqns));
