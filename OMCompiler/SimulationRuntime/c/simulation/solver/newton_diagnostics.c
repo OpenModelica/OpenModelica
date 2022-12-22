@@ -67,74 +67,13 @@ extern int dgetrf_(int *n, int *nrhs, double *a, int *lda,
 extern int dgetri_(int *n, double *a, int *lda,
                    int *ipiv, double *work, int *lwork, int *info);
 
-/*unsigned var_id( idx)
-{
-   // DC circuit case
-
-   //  1: id=1000, name=     $cse2, value=1301631377994.751953
-   //  2: id=1001, name=         i, value=  0.900000
-   //  3: id=1002, name=         v, value=  9.630000
-   //  4: id=1003, name=     v_[1], value=  0.900000
-   //  5: id=1004, name=     v_[2], value=  0.900000
-   //  6: id=1005, name=     v_[3], value=  0.900000
-   //  7: id=1006, name=     v_[4], value=  0.900000
-   //  8: id=1007, name=     v_[5], value=  0.900000
-   //  9: id=1008, name=     v_[6], value=  0.900000
-   // 10: id=1009, name=     v_[7], value=  0.900000
-   // 11: id=1010, name=     v_[8], value=  0.900000
-   // 12: id=1011, name=     v_[9], value=  0.900000
-   // 13: id=1012, name=    v_[10], value=  0.900000
-   // 14: id=1013, name=       v_d, value=  0.630000
-
-   // 0 1 2 3 4 5 6 7 8 9 10 11 12 13
-   // 0 4 2 1 5 6 7 8 9 10 11 12 3 13
-
-   unsigned id;
-   if (idx == 0)
-      id = 3;
-   else if (idx == 1)
-      id = 4;
-   else if (idx == 2)
-      id = 1;
-   else if (idx == 3)
-      id = 13;
-   else if (idx == 4)
-      id = 2;
-   else
-      id = idx;
-   return id;
-}*/
-
-/*unsigned var_id( idx)
-{
-   // Thermo-hydraulic case
-
-   // idx = 0 --> id = 2: gamma
-   // idx = 1 --> id = 0:   T_o
-   // idx = 2 --> id = 1:     f
-   // idx = 3 --> id = 4:   p_i
-   // idx = 4 --> id = 5:   p_o
-   // idx = 5 --> id = 3:   k_v
-
-   unsigned id;
-   if (idx == 0)
-      id = 2;
-   else if (idx == 1)
-      id = 0;
-   else if (idx == 2)
-      id = 1;
-   else if (idx == 3)
-      id = 4;
-   else if (idx == 4)
-      id = 5;
-   else if (idx == 5)
-      id = 3;
-   return id;
-}*/
 // --------------------------------------------------------------------------------------------------------------------------------
 
 unsigned var_id( unsigned idx, DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
 {
+   // Returns index of "modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[idx])"
+   // in "data->modelData->realVarsData[i]"
+
    unsigned id = -1;
    for( unsigned int i = 0; i < data->modelData->nVariablesReal; ++i)
    {
@@ -209,22 +148,22 @@ void getFirstNewtonStep( unsigned m, double f[m], double fx[m][m], double dx[m])
    int ipiv[N];
    int info;
 
-   double a[N][N];
-   double b[NRHS][N];
+   double a[LDA*N];
+   double b[LDB*NRHS];
 
    unsigned i, j;
 
    // Store Jacobian values J(x0) in a
    for( i = 0; i < m; i++)
       for( j = 0; j < m; j++)
-         a[i][j] = fx[j][i];
+         a[m*i+j] = fx[j][i];
 
    // Store function values f(x0) in b
    for( i = 0; i < m; i++)
-      b[0][i] = f[i];
+      b[i] = f[i];
 
-   // Call Lapack function dgesv; after return b contains the Newton steps
-   dgesv_(&N, &NRHS, &a[0][0], &LDA, ipiv, &b[0][0], &LDB, &info);
+   // Call Lapack function dgesv; after return, b contains the Newton steps
+   dgesv_(&N, &NRHS, a, &LDA, ipiv, b, &LDB, &info);
 
    if (info > 0)
       printf( "The solution could not be computed, as the first Newton step could not be compunted; the info satus is : %d\n", info);
@@ -232,7 +171,7 @@ void getFirstNewtonStep( unsigned m, double f[m], double fx[m][m], double dx[m])
    {
       // Store Newton steps in dx
       for( j = 0; j < m; j++)
-         dx[j] = -b[0][j];
+         dx[j] = -b[j];
    }
 }
 
@@ -280,12 +219,12 @@ void getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsig
    double fxMin[m][m];
 
    // ----------------------------------------------- Debug -------------------------------------------------
-   printf( "\n");
+   /*printf( "\n");
    for( k = 0; k < m; k++)
    {
       unsigned id = var_id(k, data, systemData);
       printf( "               k = %d: id = %d (%s)\n", k, id, data->modelData->realVarsData[id].info.name);
-   }
+   }*/
    // -------------------------------------------- end of Debug ---------------------------------------------
 
    for( k = 0; k < m; k++)
@@ -544,64 +483,348 @@ void calcSigma( unsigned m, unsigned q, unsigned w_idx[q], double dx[m],
 // --------------------------------------------------------------------------------------------------------------------------------
 
 void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsigned q, unsigned n_idx[p], unsigned w_idx[q],
-                   double x0[m], double lambda, double alpha[p], double Gamma_ijk[p][q][q], double Sigma_ij[q][q])
+                   double x0[m], double alpha[p], double Gamma_ijk[p][q][q], double Sigma_ij[q][q])
 {
-   unsigned i, j, k;
-
-   printf("\n\n   ===============");
-   printf("  \n    Final results ");
-   printf("  \n   ===============\n\n");
+   printf("  \n   ========================================================");
+   printf("  \n   Final results ");
+   printf("  \n   ========================================================\n\n");
 
    NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
 
+   unsigned i, j, k;
+   double eps = 1e-2;
+
+   // ----------------------------------------------- Debug -------------------------------------------------
+   /*printf("      Equations\n");
    for( i = 0; i < p; i++)
-      printf("      eq_%d : %s\n", n_idx[i]+1, "???"); //, modelInfoGetFunction(&data->modelData->modelDataXml, i).name);
-   printf("\n");
+      printf("\n      i =%2d: %s", n_idx[i]+1, "???"); //, modelInfoGetFunction(&data->modelData->modelDataXml, i).name);
+   printf("\n\n");
 
+   printf("      Variables, initial guesses\n");
    for( j = 0; j < q; j++)
-      printf("      var_%d: %8s = %10.8g\n", w_idx[j]+1, data->modelData->realVarsData[var_id(w_idx[j], data, systemData)].info.name, x0[w_idx[j]]);
-   printf("\n");
+      printf("\n      j =%2d: %8s = %10.8g", w_idx[j]+1, data->modelData->realVarsData[var_id(w_idx[j], data, systemData)].info.name, x0[w_idx[j]]);
+   printf("\n\n");*/
+   // ------------------------------------------- end of Debug ----------------------------------------------
 
-   printf("      lambda    = %8.3g\n\n", lambda);
+   // Print alpha, Gamma, and Sigma if value > eps
+   // --------------------------------------------
 
+   printf("      alpha_i > %4.0e\n", eps);
+   printf("      ------------------------");
    for( i = 0; i < p; ++i)
    {
-      if (alpha[i] > 1.e-6)
+      if (alpha[i] > eps)
       {
          if (alpha[i] < 1.e5)
-            printf("      alpha_%d   = %8.3f\n", n_idx[i]+1, alpha[i]);
+            printf("\n      alpha_%d =  %8.3f", n_idx[i]+1, alpha[i]);
          else
-            printf("      alpha_%d   = %8.2e\n", n_idx[i]+1, alpha[i]);
+            printf("\n      alpha_%d =  %8.2e", n_idx[i]+1, alpha[i]);
       }
    }
-   printf("\n");
+   printf("\n\n");
+
+   printf("      Gamma_ijk > %4.0e\n", eps);
+   printf("      ------------------------");
 
    for( i = 0; i < p; i++)
    {
       for( j = 0; j < q; j++)
           for( k = j; k < q; k++)
-             if (Gamma_ijk[i][j][k] > 1.e-6)
-                printf("      Gamma_%d%d%d = %8.3f\n", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
+             if (Gamma_ijk[i][j][k] > eps)
+                printf("\n      Gamma_%1d_%1d_%1d =  %8.3f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
    }
-   printf("\n");
+   printf("\n\n");
 
-   printf("      Sigma_ij\n           ");
-   for( j = 0; j < q; j++)
-      printf("      j=%2d", w_idx[j]+1);
+   printf("      |Sigma_jj| > %4.0e\n", eps);
+   printf("      ------------------------");
    for( i = 0; i < q; i++)
    {
-      printf("\n      i=%2d ", w_idx[i]+1);
-      for( j = 0; j < q; j++)
-         printf("%10.3f", Sigma_ij[i][j]);
+      if (fabs(Sigma_ij[i][i]) > eps)
+         printf("\n      Sigma_%d_%d =  %8.3f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
    }
-   printf("\n\n\n");
+   printf("\n\n");
+
+   // Select values of Gamma and Sigma > eps and store them in descending order
+   // -------------------------------------------------------------------------
+
+   double   val_largest_alpha, val_largest_Sigma, val_largest_Gamma;
+
+   unsigned idx_largest_alpha, idx_largest_Sigma,
+            idx_largest_G_i, idx_largest_G_j, idx_largest_G_k,
+            alpha_checked[p], Sigma_checked[q], Gamma_checked[p][q][q],
+            index_alpha[p * q * q + m], index_Sigma[p * q * q + m],
+            index_Gamma_i[p * q * q + m], index_Gamma_j[p * q * q + m], index_Gamma_k[p * q * q + m];
+
+   unsigned l, n_gt_eps = 0;
+
+   // Initialize tmp arrays for sorting
+   for( i = 0; i < p; i++)
+   {
+      for( j = 0; j < q; j++)
+         for( k = 0; k < q; k++)
+            Gamma_checked[i][j][k] = 0;
+   }
+   for( j = 0; j < q; j++)
+      Sigma_checked[j] = 0;
+
+   for( l = 0; l < p * q * q + m; l++)
+   {
+      // Select largest Gamma variable and its value
+      val_largest_Gamma = Gamma_ijk[0][0][0];
+      idx_largest_G_i = 0;
+      idx_largest_G_j = 0;
+      idx_largest_G_k = 0;
+      for( i = 0; i < p; i++)
+         for( j = 0; j < q; j++)
+            for( k = j; k < q; k++)
+               if ( Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k])
+               {
+                  val_largest_Gamma = Gamma_ijk[i][j][k];
+                  idx_largest_G_i = i;
+                  idx_largest_G_j = j;
+                  idx_largest_G_k = k;
+               }
+
+      // Select largest Sigma variable and its value
+      val_largest_Sigma = fabs(Sigma_ij[0][0]);
+      idx_largest_Sigma = 0;
+      for( i = 1; i < p; i++)
+         if ( fabs(Sigma_ij[i][i]) > val_largest_Sigma && !Sigma_checked[i])
+         {
+            val_largest_Sigma = fabs(Sigma_ij[i][i]);
+            idx_largest_Sigma = i;
+         }
+
+      // Values < 0 , i.e. less than eps are not considered
+      if (val_largest_Gamma < eps && val_largest_Sigma < eps) break;
+
+      // Checkmark and store indices of largest value
+      if (val_largest_Gamma > val_largest_Sigma)
+      {
+         index_Gamma_i[n_gt_eps] = idx_largest_G_i;
+         index_Gamma_j[n_gt_eps] = idx_largest_G_j;
+         index_Gamma_k[n_gt_eps] = idx_largest_G_k;
+         index_Sigma[n_gt_eps] = -1;
+         Gamma_checked[idx_largest_G_i][idx_largest_G_j][idx_largest_G_k] = 1;
+
+         // -------------------------------------------- Debug ----------------------------------------------
+         //printf("\n      Gamma_%d_%d_%d =  %8.3f", n_idx[idx_largest_G_i]+1, w_idx[idx_largest_G_j]+1,
+         //                                          w_idx[idx_largest_G_k]+1, val_largest_Gamma);
+         // ---------------------------------------- end of Debug -------------------------------------------
+      }
+      else
+      {
+         index_Sigma[n_gt_eps] = idx_largest_Sigma;
+         index_Gamma_i[n_gt_eps] = -1;
+         index_Gamma_j[n_gt_eps] = -1;
+         index_Gamma_k[n_gt_eps] = -1;
+         Sigma_checked[idx_largest_Sigma] = 1;
+
+         // -------------------------------------------- Debug ---------------------------------------------
+         //printf("\n      Sigma_%d_%d    =  %8.3f", w_idx[idx_largest_Sigma]+1, w_idx[idx_largest_Sigma]+1,
+         //                                          fabs(Sigma_ij[idx_largest_Sigma][idx_largest_Sigma]));
+         // ---------------------------------------- end of Debug -------------------------------------------
+      }
+
+      // Increment number of values found
+      n_gt_eps++;
+   }
+   //printf("\n\n");
+
+   // Print variables referenced by Sigma and Gamma values > eps and concerned Sigma or Gamma value
+   // ---------------------------------------------------------------------------------------------
+
+   unsigned printedIdx[2*n_gt_eps];
+   unsigned nPrinted = 0;
+   printf("      Variables    Initial guess         |max(Gamma,Sigma)|\n");
+   printf("      ---------    ------------------    ------------------");
+   for( l = 0; l < n_gt_eps; l++)
+   {
+      printedIdx[nPrinted] = -1;
+      if (0 <= index_Sigma[l] && index_Sigma[l] < q)
+      {
+         // Check if variable l referenced by Sigma has already been printed for Gamma
+         unsigned alreadyPrinted = 0;
+         for( unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
+            alreadyPrinted = index_Sigma[l] == printedIdx[nP];
+
+         if (!alreadyPrinted)
+         {
+            // Print variable referenced l by Sigma, its init value and the value of Sigma_ll
+            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+                   w_idx[index_Sigma[l]]+1,
+                   data->modelData->realVarsData[var_id(w_idx[index_Sigma[l]], data, systemData)].info.name,
+                   x0[w_idx[index_Sigma[l]]],
+                   fabs(Sigma_ij[index_Sigma[l]][index_Sigma[l]]));
+            printedIdx[nPrinted++] = index_Sigma[l];
+         }
+      }
+      else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
+               0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
+               0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
+      {
+         // Check if variable l referenced by Gamma has already been printed for Sigma
+         unsigned alreadyPrinted_j = 0;
+         unsigned alreadyPrinted_k = 0;
+         for( unsigned nP = 0; nP < nPrinted; nP++)
+         {
+            alreadyPrinted_j = alreadyPrinted_j || index_Gamma_j[l] == printedIdx[nP];
+            alreadyPrinted_k = alreadyPrinted_k || index_Gamma_k[l] == printedIdx[nP];
+         }
+
+         if  (!alreadyPrinted_j)
+         {
+            // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
+            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+                   w_idx[index_Gamma_j[l]]+1,
+                   data->modelData->realVarsData[var_id(w_idx[index_Gamma_j[l]], data, systemData)].info.name,
+                   x0[w_idx[index_Gamma_j[l]]],
+                   Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
+            printedIdx[nPrinted++] = index_Gamma_j[l];
+         }
+         if  (!alreadyPrinted_k)
+         {
+            // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
+            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+                   w_idx[index_Gamma_k[l]]+1,
+                   data->modelData->realVarsData[var_id(w_idx[index_Gamma_k[l]], data, systemData)].info.name,
+                   x0[w_idx[index_Gamma_k[l]]],
+                   Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
+            printedIdx[nPrinted++] = index_Gamma_k[l];
+         }
+      }
+   }
+   printf("\n\n");
+
+   // Select values of alpha and Gamma > eps and store them in descending order
+   // -------------------------------------------------------------------------
+
+   n_gt_eps = 0;
+
+   // Initialize tmp arrays for sorting
+   for( i = 0; i < p; i++)
+   {
+      for( j = 0; j < q; j++)
+         for( k = 0; k < q; k++)
+            Gamma_checked[i][j][k] = 0;
+      alpha_checked[i] = 0;
+   }
+
+   for( l = 0; l < p * q * q + m; l++)
+   {
+      // Select largest Gamma variable and its value
+      val_largest_Gamma = Gamma_ijk[0][0][0];
+      idx_largest_G_i = 0;
+      idx_largest_G_j = 0;
+      idx_largest_G_k = 0;
+      for( i = 0; i < p; i++)
+         for( j = 0; j < q; j++)
+            for( k = j; k < q; k++)
+               if ( Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k])
+               {
+                  val_largest_Gamma = Gamma_ijk[i][j][k];
+                  idx_largest_G_i = i;
+                  idx_largest_G_j = j;
+                  idx_largest_G_k = k;
+               }
+
+      // Select largest alpha variable and its value
+      val_largest_alpha = alpha[0];
+      idx_largest_alpha = 0;
+      for( i = 1; i < p; i++)
+         if ( alpha[i] > val_largest_alpha && !alpha_checked[i])
+         {
+            val_largest_alpha = alpha[i];
+            idx_largest_alpha = i;
+         }
+
+      // Values < 0 , i.e. less than eps, are not considered
+      if (val_largest_Gamma < eps && val_largest_alpha < eps) break;
+
+      // Checkmark and store indices of largest value
+      if (val_largest_Gamma > val_largest_alpha)
+      {
+         index_Gamma_i[n_gt_eps] = idx_largest_G_i;
+         index_Gamma_j[n_gt_eps] = idx_largest_G_j;
+         index_Gamma_k[n_gt_eps] = idx_largest_G_k;
+         index_alpha[n_gt_eps] = -1;
+         Gamma_checked[idx_largest_G_i][idx_largest_G_j][idx_largest_G_k] = 1;
+
+         // -------------------------------------------- Debug ----------------------------------------------
+         //printf("\n      Gamma_%d_%d_%d =  %8.3f", n_idx[idx_largest_G_i]+1, w_idx[idx_largest_G_j]+1,
+         //                                          w_idx[idx_largest_G_k]+1, val_largest_Gamma);
+         // ---------------------------------------- end of Debug -------------------------------------------
+      }
+      else
+      {
+         index_alpha[n_gt_eps] = idx_largest_alpha;
+         index_Gamma_i[n_gt_eps] = -1;
+         index_Gamma_j[n_gt_eps] = -1;
+         index_Gamma_k[n_gt_eps] = -1;
+         alpha_checked[idx_largest_alpha] = 1;
+
+         // -------------------------------------------- Debug ---------------------------------------------
+         //printf("\n      alpha_%d     =  %8.3f", w_idx[idx_largest_alpha]+1, alpha[idx_largest_alpha]);
+         // ---------------------------------------- end of Debug -------------------------------------------
+      }
+
+      // Increment number of values found
+      n_gt_eps++;
+   }
+   //printf("\n\n");
+
+   // Print equations referenced by alpha and Gamma values > eps and concerned alpha or Gamma value
+   // ---------------------------------------------------------------------------------------------
+
+   unsigned printedIdx2[n_gt_eps];
+   nPrinted = 0;
+   printf("      Equations    max(alpha,Gamma)\n");
+   printf("      ---------    ------------------");
+   for( l = 0; l < n_gt_eps; l++)
+   {
+      printedIdx2[nPrinted] = -1;
+      if (0 <= index_alpha[l] && index_alpha[l] < p)
+      {
+         // Check if equation l referenced by alpha has already been printed for Gamma
+         unsigned alreadyPrinted = 0;
+         for( unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
+            alreadyPrinted = index_alpha[l] == printedIdx2[nP];
+
+         if (!alreadyPrinted)
+         {
+            // Print equation l referenced by alpha and the value of alpha_i
+            printf("\n      eqn_%d     %8.3f", n_idx[index_alpha[l]]+1, alpha[index_alpha[l]]);
+            printedIdx2[nPrinted++] = index_alpha[l];
+         }
+      }
+      else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
+               0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
+               0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
+      {
+         // Check if equation l referenced by Gamma has already been printed for alpha
+         unsigned alreadyPrinted = 0;
+         for( unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
+            alreadyPrinted = index_Gamma_i[l] == printedIdx2[nP];
+
+         if  (!alreadyPrinted)
+         {
+            // Print equation l referenced by Gamma and the value of Gamma_ljk
+            printf("\n      eqn_%d     %8.3f", n_idx[index_Gamma_i[l]]+1,
+                   Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
+            printedIdx2[nPrinted++] = index_Gamma_i[l];
+         }
+      }
+   }
+   printf("\n\n");
+
+   printf("   ========================================================\n\n\n");
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-   infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Hello newton diagnostics (version Teus)....");
+   infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Hello newton diagnostics (version Teus 22-12-2022)....");
 
    printf("\n   ****** Model name: %s\n", data->modelData->modelName);
    printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
@@ -631,189 +854,31 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
                                                                    (data->modelData->realVarsData[i].info.name),
                                                                    (data->modelData->realVarsData[i].attribute.start));
 
-   printf("   ****** Number of equations             : %ld\n", data->modelData->modelDataXml.nEquations);
-   printf("   ****** Number of functions             : %ld\n", data->modelData->modelDataXml.nFunctions);
-   printf("   ****** Number of relations             : %ld\n", data->modelData->nRelations);
-   printf("   ****** Number of Jacobians             : %ld\n", data->modelData->nJacobians);
-   printf("   ****** Number of sensitivity params    : %ld\n", data->modelData->nSensitivityVars);
-   printf("   ****** Number of input variables       : %ld\n", data->modelData->nInputVars);
-   printf("   ****** Number of output variables      : %ld\n", data->modelData->nOutputVars);
-   printf("   ****** Number of linear systems        : %ld\n", data->modelData->nLinearSystems);
-   printf("   ****** Number of nonlinear systems     : %ld\n", data->modelData->nNonLinearSystems);
-   printf("   ****** Current index linear equation   : %d\n", data->simulationInfo->currentLinearSystemIndex);
-
-   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-   //printf("   Nonlinear equation: %d\n", sysNumber);
-   //printf("   equationIndex     : %ld\n", systemData->equationIndex);
-   //printf("   size              : %ld\n", systemData->size);
-
-   // --------------------------------------------------------------------------------------------------------------------------------
+ // --------------------------------------------------------------------------------------------------------------------------------
 
    // m: total number of equations f(x)
    // p: number of non-linear equations n(x)
-   // q: number of variables which non-linear equations n(x) just depend on
+   // q: number of variables on which non-linear equations n(x) just depend
 
+   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
    unsigned m = systemData->size;
    unsigned i;
 
    // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-   /*unsigned p = systemData->nonlinearPattern->numberOfNonlinear;
-   //unsigned q = ;
-   double w0[p];
-   unsigned w_idx[p];
-
-   // w_idx are the indices of the independent variables in vector x0 (sorted)
-   unsigned checked[p];
-   for( i = 0; i < p; i++)
-      checked[i] = 0;
-   for( i = 0; i < p; i++)
-   {
-      unsigned smallest = 9999;
-      unsigned idx_sml = 0;
-      for( unsigned j = 0; j < p; j++)
-      {
-         if ( systemData->nonlinearPattern->columns[j] < smallest && !checked[j])
-         {
-            smallest = systemData->nonlinearPattern->columns[j];
-            idx_sml = j;
-         }
-      }
-      w_idx[i] = smallest;
-      checked[idx_sml] = 1;
-   }
-
-   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-   /*double n[p];
-   unsigned n_idx[p];
-
-   // n_idx are the indices of the non-linear functions (sorted) in vector f, fx, fxx, etc
-   for( i = 0; i < p; i++)
-      checked[i] = 0;
-   for( i = 0; i < p; i++)
-   {
-      unsigned smallest = 9999;
-      unsigned idx_sml = 0;
-      for( unsigned j = 0; j < p; j++)
-      {
-         if ( systemData->nonlinearPattern->rows[j] < smallest && !checked[j])
-         {
-            smallest = systemData->nonlinearPattern->rows[j];
-            idx_sml = j;
-         }
-      }
-      n_idx[i] = smallest;
-      checked[idx_sml] = 1;
-   }*/
-
- // --------------------------------------------------------------------------------------------------------------------------------
-
-   // NONLINEAR_PATTERN* nonlinearPattern is part of NONLINEAR_SYSTEM_DATA
-   // non-linear dependents: unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
-   // non-linear functions : unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
-   // NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-   //unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, int var_idx);
-   //unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, int eqn_idx);
-
-   /*printf("\n\n   Non-linear variables of all equations ....\n");
-   if (!systemData->nonlinearPattern)
-      printf("      systemData->nonlinearPattern empty ....\n");
-   else
-   {
-      printf("      systemData->nonlinearPattern exists ....\n");
-      printf("      number of equations          = %d\n", systemData->nonlinearPattern->numberOfEqns);
-      printf("      number of variables          = %d\n", systemData->nonlinearPattern->numberOfVars);
-      printf("      number of non-linear entries = %d\n", systemData->nonlinearPattern->numberOfNonlinear);
-
-      for ( unsigned int i = 0; i < systemData->nonlinearPattern->numberOfNonlinear; i++)
-      {
-         // row contains index of the non-linear function i in
-	 unsigned int* row = getNonlinearPatternRow(systemData->nonlinearPattern, i);
-         printf("f_%d, func: %d, ", i, *row);
-         printf("\n");
-      }
-      for ( unsigned int j = 0; j < systemData->nonlinearPattern->numberOfNonlinear; j++)
-      {
-         unsigned int* col = getNonlinearPatternCol(systemData->nonlinearPattern, j);
-         printf("v_%d: var: %d, ", j, *col);
-         printf("\n");
-      }
-   }*/
-
-
-  // --------------------------------------------------------------------------------------------------------------------------------
-  //  Thermo hydraulic case
-  // --------------------------------------------------------------------------------------------------------------------------------
-
-  // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-  unsigned p = m;
-  unsigned q = m;
-  double w0[q];
-  unsigned w_idx[q];
-  w_idx[0] = 0;
-  w_idx[1] = 1;
-  w_idx[2] = 2;
-  w_idx[3] = 3;
-  w_idx[4] = 4;
-  w_idx[5] = 5;
-
-  // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-  double n[p];
-  unsigned n_idx[p];
-  n_idx[0] = 0;
-  n_idx[1] = 1;
-  n_idx[2] = 2;
-  n_idx[3] = 3;
-  n_idx[4] = 4;
-  n_idx[5] = 5;
-
-   // --------------------------------------------------------------------------------------------------------------------------------
-   //  DC circuit case
-   // --------------------------------------------------------------------------------------------------------------------------------
-
-   // Obtain vector w0: initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
-   /*unsigned q;
-   //double* w0;
-   //unsigned* w_idx;
-
-   q = 3;
+   // For the moment all vars are considered to be non-linear, i.e. w = x, therefore w_idx[i] = i;
+   unsigned p = m;
+   unsigned q = m;
    double w0[q];
    unsigned w_idx[q];
-
-   //w0 = (double*)malloc(p);
-   //w_idx = (unsigned*)malloc(p);
-
-   w_idx[0] = 2;  // var^3
-   w_idx[1] = 3;  // var^4
-   w_idx[2] = 4;  // var^5
-
-   printf("\n   .....");
    for( i = 0; i < q; i++)
-      printf("\n   .....w_idx[%d] = %d", i, w_idx[i]);
-   printf("\n");
+      w_idx[i] = i;
 
    // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-   unsigned p;
-   //double* n;
-   //unsigned* n_idx;
-
-   p = 2;
+   // For the moment all functions are considered to be non-linear, i.e. n = f, therefore n_idx[i] = i;
    double n[p];
    unsigned n_idx[p];
-
-   //n = (double*)malloc(p);
-   //n_idx = (unsigned*)malloc(p);
-
-   //n_idx[0] = 1;  // f^2
-   //n_idx[1] = 3;  // f^4
-   //n_idx[2] = 4;  // f^5
-
-   n_idx[0] = 3;  // f^4
-   n_idx[1] = 4;  // f^5
-
-   printf("\n   .....");
    for( i = 0; i < p; i++)
-      printf("\n   .....n_idx[%d] = %d", i, n_idx[i]);
-   printf("\n");*/
+      n_idx[i] = i;
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -848,7 +913,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
    double x0[m], f[m];
 
-   // Store all all dependents in x0 and function values as function of x0 in f
+   // Store all dependents in x0 and function values as function of x0 in f
    for( i = 0; i < m; i++)
    {
       x0[i] = systemData->nlsx[i];
@@ -879,10 +944,13 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    printf("\n");
 
    // Prints vector z0
-   printf("\n   Vector z0: linear dependents ....\n");
-   for( i = 0; i < m-q; i++)
-      printf("\n               z0[%d] = %14.10f  (%s)", i, x0[z_idx[i]], data->modelData->realVarsData[var_id(z_idx[i], data, systemData)].info.name);
-   printf("\n");
+   if (m != q)
+   {
+      printf("\n   Vector z0: linear dependents ....\n");
+      for( i = 0; i < m-q; i++)
+         printf("\n               z0[%d] = %14.10f  (%s)", i, x0[z_idx[i]], data->modelData->realVarsData[var_id(z_idx[i], data, systemData)].info.name);
+      printf("\n");
+   }
 
    // Prints function values "f", i.e. residuals as function of x0
    printf("\n   Function values of all equations f(x0) ....\n");
@@ -896,11 +964,15 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       printf("\n               n^%d = %14.10f", i+1, f[n_idx[i]]);
    printf("\n");
 
+   double lambda = 1.0; // 0.49; //
+   printf("\n   Damping factor lambda = %6.3g\n", lambda);
+
 // --------------------------------------------------------------------------------------------------------------------------------
 
    double fx[m][m];
    getJacobian( data, threadData, sysNumber, m, fx);
 
+   //double dx[m];
    double dx[m];
    getFirstNewtonStep( m, f, fx, dx);
 
@@ -909,27 +981,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    double fxx[m][m][m];
    getHessian( data, threadData, sysNumber, m, fxx);
 
-   /*double Gam[m][m][m];
-   for( i = 0; i < p; i++)
-      for( unsigned j = 0; j < q; j++)
-         for( unsigned k = 0; k < q; k++)
-         {
-            Gam[n_idx[i]][w_idx[j]][w_idx[k]] = fabs(0.5 * fxx[n_idx[i]][w_idx[j]][w_idx[k]] * (dx[w_idx[j]] * dx[w_idx[k]]) / maxRes);
-            if (fabs(fxx[n_idx[i]][w_idx[j]][w_idx[k]]) > 1.e-6)
-            {
-               printf( "               ijk=%d%d%d ==> n_idx[i]=%d, w_idx[j]=%d, w_idx[k]=%d", i,j,k,n_idx[i]+1,w_idx[j]+1,w_idx[k]+1);
-               printf( ", fxx_%d%d%d= %7.3f",n_idx[i]+1,w_idx[j]+1,w_idx[k]+1,fxx[n_idx[i]][w_idx[j]][w_idx[k]]);
-               printf( ", Gamma_%d%d%d= %7.3f",n_idx[i]+1,w_idx[j]+1,w_idx[k]+1,Gam[n_idx[i]][w_idx[j]][w_idx[k]]);
-               printf( ", dx[w_idx[%d]]=dx[%d]=%7.3f"  ,j,w_idx[j]+1,dx[w_idx[j]]);
-               printf( ", dx[w_idx[%d]]=dx[%d]=%7.3f",k,w_idx[k]+1,dx[w_idx[k]]);
-               printf( ", maxRes=%7.3f\n", maxRes);
-            }
-         }
-    printf("\n\n");
-    return;*/
 // --------------------------------------------------------------------------------------------------------------------------------
-
-   double lambda = 1.0; // 0.49; //
 
    double alpha[p];
    calcAlpha( data, threadData, sysNumber, m, p, q, n_idx, w_idx, x0, dx, f, fxx, lambda, maxRes, alpha);
@@ -940,9 +992,9 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    double Sigma[q][q];
    calcSigma( m, q, w_idx, dx, fx, fxx, Sigma);
 
-   PrintResults( data, sysNumber, m, p, q, n_idx, w_idx, x0, lambda, alpha, Gamma_ijk, Sigma);
+   PrintResults( data, sysNumber, m, p, q, n_idx, w_idx, x0, alpha, Gamma_ijk, Sigma);
 
-   infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Newton diagnostics (version Teus) finished!!");
+   infoStreamPrint(LOG_NLS_NEWTON_DIAG, 0, "Newton diagnostics (version Teus 22-12-2022) finished!!");
 
    return;
 }
