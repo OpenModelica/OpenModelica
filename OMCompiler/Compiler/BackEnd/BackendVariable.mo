@@ -2020,17 +2020,7 @@ public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
   check if the list-length is 1"
   input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  match(inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.ConnectorType ct;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
-      then DAEUtil.topLevelOutput(cr, dir, ct);
-  end match;
+  output Boolean outBoolean = DAEUtil.topLevelOutput(inVar.varName, inVar.varDirection, inVar.connectorType);
 end isVarOnTopLevelAndOutput;
 
 public function isVarOnTopLevelAndInput "and has the DAE.VarDirection = INPUT
@@ -2044,8 +2034,6 @@ public function isVarOnTopLevelAndInputNoDerInput
     input BackendDAE.Var inVar;
     output Boolean outBoolean = isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar);
 end isVarOnTopLevelAndInputNoDerInput;
-
-
 
 public function isFinalVar "Returns true if the variable is final."
   input BackendDAE.Var inVar;
@@ -3944,50 +3932,25 @@ algorithm
   end if;
 end traversingisStateCount;
 
-public function getAllStateDerVarIndexFromVariables
+public function getAllVarIndicesFromVariables
   input BackendDAE.Variables inVariables;
+  input FindFunc isFunc;
   output list<BackendDAE.Var> v_lst;
   output list<Integer> i_lst;
+  partial function FindFunc
+    input BackendDAE.Var inElement;
+    output Boolean result;
+  end FindFunc;
 protected
   array<list<BackendDAE.Var>> v_a;
   array<list<Integer>> i_a;
 algorithm
   v_a := arrayCreate(1,{});
   i_a := arrayCreate(1,{});
-  _ := traverseBackendDAEVars(inVariables,function traversingisXXXFinder(v_lst=v_a,i_lst=i_a,isFunc=isStateDerVar), arrayCreate(1,1));
+  _ := traverseBackendDAEVars(inVariables,function traversingisXXXFinder(v_lst=v_a,i_lst=i_a,isFunc=isFunc), arrayCreate(1,1));
   v_lst := v_a[1];
   i_lst := i_a[1];
-end getAllStateDerVarIndexFromVariables;
-
-public function getAllStateVarIndexFromVariables
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> v_lst;
-  output list<Integer> i_lst;
-protected
-  array<list<BackendDAE.Var>> v_a;
-  array<list<Integer>> i_a;
-algorithm
-  v_a := arrayCreate(1,{});
-  i_a := arrayCreate(1,{});
-  _ := traverseBackendDAEVars(inVariables,function traversingisXXXFinder(v_lst=v_a,i_lst=i_a,isFunc=isStateVar), arrayCreate(1,1));
-  v_lst := v_a[1];
-  i_lst := i_a[1];
-end getAllStateVarIndexFromVariables;
-
-public function getAllAlgStateVarIndexFromVariables
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> v_lst;
-  output list<Integer> i_lst;
-protected
-  array<list<BackendDAE.Var>> v_a;
-  array<list<Integer>> i_a;
-algorithm
-  v_a := arrayCreate(1,{});
-  i_a := arrayCreate(1,{});
-  _ := traverseBackendDAEVars(inVariables,function traversingisXXXFinder(v_lst=v_a,i_lst=i_a,isFunc=isAlgState), arrayCreate(1,1));
-  v_lst := v_a[1];
-  i_lst := i_a[1];
-end getAllAlgStateVarIndexFromVariables;
+end getAllVarIndicesFromVariables;
 
 protected function traversingisXXXFinder
 "author: hkiel 2016-04"

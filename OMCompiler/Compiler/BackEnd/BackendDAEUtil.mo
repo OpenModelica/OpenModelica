@@ -1229,9 +1229,9 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
   if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
   else
-    (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
   end if;
   eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in statevarindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
@@ -1745,9 +1745,9 @@ algorithm
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
         if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-          (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
         else
-          (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
         end if;
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
