@@ -3494,7 +3494,7 @@ end removeConstantsFinder;
 
 
 // =============================================================================
-// reaplace edge and change with (b and not pre(b)) and (v <> pre(v)
+// reaplace edge and change with (b and not pre(b)) and (v <> pre(v))
 //
 // =============================================================================
 
@@ -5775,6 +5775,8 @@ protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   Integer systemNumber=0, numberOfSystems;
+
+  constant Boolean debug = false;
 algorithm
   daeOut := daeIn;
 
@@ -5798,7 +5800,7 @@ algorithm
     //get output variables
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
     varLst := BackendVariable.varList(vars);
-    varLst := List.filterOnTrue(varLst,BackendVariable.isOutputVar);
+    varLst := List.filterOnTrue(varLst,BackendVariable.isVarOnTopLevelAndOutput);
 
     if not listEmpty(varLst) then
 
@@ -5806,13 +5808,13 @@ algorithm
       //-------------------------------------
       outputVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
       outputTasks := List.map(List.map1(outputVarIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
-        //print("outputTasks "+stringDelimitList(List.map(outputTasks,intString),", ")+"\n");
+      if debug then print("outputTasks "+stringDelimitList(List.map(outputTasks,intString),", ")+"\n"); end if;
 
       //get all necessary components to calculate the outputs
       predecessors := HpcOmTaskGraph.getAllSuccessors(outputTasks,taskGraphT);
       predecessors := List.sort(predecessors,intGt);
       compsNew := List.map1(listAppend(outputTasks,predecessors),List.getIndexFirst,comps);
-         //print("predecessors of outputs "+stringDelimitList(List.map(predecessors,intString),", ")+"\n");
+      if debug then print("predecessors of outputs "+stringDelimitList(List.map(predecessors,intString),", ")+"\n"); end if;
 
       //get equations from the new reduced set of comps
       eqLstNew := BackendDAEUtil.getStrongComponentEquations(compsNew,eqs,vars);
@@ -5823,13 +5825,13 @@ algorithm
       varVisited := arrayCreate(BackendVariable.varsSize(vars),-1);
       while not listEmpty(eqLstNew) loop
         eq::eqLstNew := eqLstNew;
-          //print("eq: "+BackendDump.equationString(eq)+"\n");
+        if debug then print("eq: "+BackendDump.equationString(eq)+"\n"); end if;
         crefs := BackendEquation.equationCrefs(eq);
         crefs := List.filter1OnTrue(crefs,BackendVariable.isState,vars);
         (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars);
         (stateIndxs,states) := List.filter1OnTrueSync(stateIndxs,stateVarIsNotVisited,varVisited,states);//not yet visited
         if not listEmpty(stateIndxs) then
-            //print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
+          if debug then print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n"); end if;
           List.map2_0(stateIndxs,Array.updateIndexFirst,1,varVisited);
           //add the new tasks which are necessary for the states
           stateTasks1 := List.map(List.map1(stateIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
@@ -5845,10 +5847,10 @@ algorithm
       //get all necessary components to calculate the outputs and the state derivatives
       predecessors := HpcOmTaskGraph.getAllSuccessors(listAppend(outputTasks,stateTasks),taskGraphT);
       tasks := List.sort(listAppend(predecessors,listAppend(outputTasks,stateTasks)),intGt);
-        //print("predecessors of outputs and states "+stringDelimitList(List.map(tasks,intString),", ")+"\n");
+      if debug then print("predecessors of outputs and states "+stringDelimitList(List.map(tasks,intString),", ")+"\n"); end if;
       compsNew := List.map1(tasks,List.getIndexFirst,comps);
       compsNew := List.unique(compsNew);
-        print("There have been "+intString(listLength(comps))+" SCCs and now there are "+intString(listLength(compsNew))+" SCCs.\n");
+      if debug then print("There have been "+intString(listLength(comps))+" SCCs and now there are "+intString(listLength(compsNew))+" SCCs.\n"); end if;
 
       //get vars and equations from the new reduced set of comps and make a equationIdxMap
       eqLstNew := {};
@@ -5863,8 +5865,8 @@ algorithm
       syst.orderedVars := BackendVariable.listVar1(listReverse(varLstNew));
       syst.orderedEqs := BackendEquation.listEquation(listReverse(eqLstNew));
 
-      syst.m :=NONE();
-      syst.mT :=NONE();
+      syst.m := NONE();
+      syst.mT := NONE();
       syst.matching := BackendDAE.NO_MATCHING();
       (m,mT) := BackendDAEUtil.adjacencyMatrix(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
       syst.m := SOME(m);
@@ -5882,16 +5884,16 @@ algorithm
       (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree), BackendDAEUtil.isInitializationDAE(shared));
       syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
       syst.removedEqs := BackendEquation.emptyEqns();
-    else
-      Error.addCompilerNotification("No output variables in this system ("+String(systemNumber)+"/"+String(numberOfSystems)+")");
-    end if;
 
-    systsNew := syst::systsNew;
+      systsNew := syst::systsNew;
+    else
+      if debug then print("No output variables in this system ("+intString(systemNumber)+"/"+intString(numberOfSystems)+")\n"); end if;
+    end if;
   end for;
 
-   //alias vars are not necessary anymore
-   shared.aliasVars := BackendVariable.emptyVars();
-   daeOut := BackendDAE.DAE(systsNew,shared);
+  // alias vars are not necessary anymore
+  shared.aliasVars := BackendVariable.emptyVars();
+  daeOut := BackendDAE.DAE(systsNew,shared);
 end evaluateOutputsOnly;
 
 protected function stateVarIsNotVisited"checks if the indexed entry in the array is less than 0"
