@@ -830,7 +830,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
               i++;
             }
-          } else if (simulationFlag.compare("reconcile") == 0)  {
+          } else if (simulationFlag.compare("reconcileState") == 0)  {
             //do not set the data Reconciliation algorithm from __OpenModelica_simulationFlags, as the users can choose different algorithm from ComboBox
             //mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliation");
           } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
@@ -1103,7 +1103,12 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
 #endif
   if (mpLibraryTreeItem->mSimulationOptions.getEnableDataReconciliation()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm()));
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0) {
+      MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationBoundaryConditions"));
+    } else {
+      // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
+      MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
+    }
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
@@ -1329,7 +1334,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // setup data reconciliation
   if (simulationOptions.getEnableDataReconciliation()) {
     if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-      simulationFlags.append("-reconcile");
+      simulationFlags.append("-reconcileState");
       if (!simulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()) {
         simulationFlags.append(QString("-sx=%1").arg(simulationOptions.getDataReconciliationMeasurementInputFile()));
       }
@@ -1583,7 +1588,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     }
   }
   if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-    simulationFlags.insert("reconcile", "()");
+    simulationFlags.insert("reconcileState", "()");
   }else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0 ) {
     simulationFlags.insert("reconcileBoundaryConditions", "()");
   }
@@ -2321,7 +2326,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
       QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags");
       foreach (QString simulationFlag, simulationFlags) {
         QString value = MainWindow::instance()->getOMCProxy()->getAnnotationModifierValue(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags", simulationFlag);
-        if (simulationFlag.compare("reconcile") == 0) {
+        if (simulationFlag.compare("reconcileState") == 0) {
           mpDataReconciliationAlgorithmComboBox->setCurrentIndex(0);
         } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
           mpDataReconciliationAlgorithmComboBox->setCurrentIndex(1);
