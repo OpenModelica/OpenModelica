@@ -491,7 +491,7 @@ algorithm
     // create inline equations if present
     if isSome(inInlineData) then
       SOME(inlineData) := inInlineData;
-      (uniqueEqIndex, inlineEquationsTemp, _, _, , _, tempvars, _, _, _, _) :=
+      (uniqueEqIndex, inlineEquationsTemp, _, _, _, _, tempvars, _, _, _, _) :=
             createEquationsForSystems(inlineData.inlineSystems,
                                       shared, uniqueEqIndex, {}, tempvars, uniqueEqIndex,
                                       SimCode.NO_MAPPING(), false);
@@ -1550,7 +1550,7 @@ algorithm
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
     ((ouniqueEqIndex, olocalKnownVars)) := BackendVariable.traverseBackendDAEVars(shared.localKnownVars, traverseKnVarsToSimEqSystem, (ouniqueEqIndex, {}));
   else
-    Error.addInternalError("createEquationsForSystems failed", sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
     fail();
   end try;
 end createEquationsForSystems;

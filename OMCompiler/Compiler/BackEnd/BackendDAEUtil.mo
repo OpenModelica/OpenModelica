@@ -7627,7 +7627,6 @@ algorithm
   end if;
 
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
-    // prepare the equations
     dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
   end if;
 
