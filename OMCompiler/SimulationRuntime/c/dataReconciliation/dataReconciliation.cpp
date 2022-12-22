@@ -154,12 +154,12 @@ void copyReferenceFile(DATA * data, const std::string & filename)
 int getRelatedBoundaryConditions(DATA * data)
 {
   // check for _relatedBoundaryConditionsEquations.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
-  std::string relatedBoundaryConditionsFilename = string(data->modelData->modelFilePrefix) +  "_relatedBoundaryConditionsEquations.txt";
+  std::string relatedBoundaryConditionsFilename = string(data->modelData->modelFilePrefix) +  "_relatedBoundaryConditionsEquations.html";
 
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
     relatedBoundaryConditionsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + relatedBoundaryConditionsFilename;
-    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.txt");
+    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.html");
   }
 
   ifstream relatedBoundaryConditionsFilenameip(relatedBoundaryConditionsFilename);
@@ -243,7 +243,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   }
 
   if (data->modelData->nRelatedBoundaryConditions > 0)
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.txt" << " target=_blank> Related boundary conditions </a> </h3>\n";
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Error log
   myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << ".log" << " target=_blank> Errors </a> </h2>\n";
@@ -392,7 +392,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   }
 
   if (data->modelData->nRelatedBoundaryConditions > 0)
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.txt" << " target=_blank> Related boundary conditions </a> </h3>\n";
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
@@ -2934,7 +2934,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   {
     copyReferenceFile(data, "_AuxiliaryConditions.html");
     copyReferenceFile(data, "_IntermediateEquations.html");
-    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.txt");
+    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.html");
   }
 
   // report run time initialization and non linear convergence error to html
