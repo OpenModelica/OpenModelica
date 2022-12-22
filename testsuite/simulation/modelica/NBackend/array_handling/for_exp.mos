@@ -28,27 +28,11 @@ simulate(binding_array); getErrorString();
 // true
 // ""
 // true
-// Created Parameter Binding Equations:
-// ****************************************
-// 	[FOR-] (5) ($RES_BND_1)
-// [----] for i in 1:5 loop
-// [----]   [SCAL] (1) Cu[i] = 10000000.0 * (1.0 + 0.337 * CAST(Real, (-1) + i)) ($RES_BND_2)
-// [----] end for;
-//
 // ################################################################################
 //
 // 	Balance Initialization
 //
 // ################################################################################
-//
-// Not underdetermined.
-// Not overdetermined.
-// (0) Unmatched variables:
-// ****************************************
-//
-//
-// (0) Unmatched equations:
-// ****************************************
 //
 // record SimulationResult
 //     resultFile = "binding_array_res.mat",

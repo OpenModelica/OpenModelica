@@ -557,7 +557,7 @@ public
       input output Integer new_idx;
     algorithm
       // merge all rows to one row
-      arrayUpdate(m, new_idx, List.unique(List.flatten(list(m[idx] for idx in rows_to_merge))));
+      arrayUpdate(m, new_idx, UnorderedSet.unique_list(List.flatten(list(m[idx] for idx in rows_to_merge)), Util.id, intEq));
       // remove the original rows
       for idx in rows_to_merge loop
         arrayUpdate(m, idx, {});
