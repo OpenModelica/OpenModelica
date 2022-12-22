@@ -431,9 +431,9 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<h2> Results: </h2>\n";
   myfile << "<table border=2>\n";
   myfile << "<tr>\n" << "<th> Variable to be Estimated </th>\n" << "<th> Unit </th>\n" << "<th> Description </th>\n" << "<th> Initial Measured Value </th>\n" << "<th> Estimated Value </th>\n" << "<th> Initial Uncertainty </th>\n" <<"<th> Estimated Uncertainty </th>\n";
-  csvfile << "Variable to be Estimated ," << "Unit ," << "Description ," << "Initial Measured Value ," << "Estimated Value ," << "Initial Uncertainty ," << "Estimated Uncertainty,";
+  csvfile << "Variable to be Estimated ," << "Initial Measured Value ," << "Estimated Value ," << "Initial Uncertainty ," << "Estimated Uncertainty,";
   myfile << "<th> Result of Local Test </th>\n" << "<th> Local Quality  </th>\n" << "<th> Comment </th>\n" << "</tr>\n";
-  csvfile << "Result of Local Test ," << "Local Quality  ," << "Comment ," << "\n";
+  csvfile << "Result of Local Test ," << "Local Quality  ," << "\n";
 
   // collect units and description
 
@@ -482,11 +482,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
 
     // Unit
     myfile << "<td>" << unitString[r] << "</td>\n";
-    csvfile << unitString[r] << ",";
+    //csvfile << unitString[r] << ",";
 
     // description
     myfile << "<td>" << description[r] << "</td>\n";
-    csvfile << description[r] << ",";
+    //csvfile << description[r] << ",";
 
     // Initial Measured Values
     myfile << "<td>" << xdiag.data[r] << "</td>\n";
@@ -518,7 +518,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
 
     // Values of Local Tests
     myfile << "<td>" << newX[r]/1.96 << "</td>\n";
-    csvfile << newX[r]/1.96 << ",";
+    csvfile << newX[r]/1.96 << ",\n";
 
     // // Margin to Correctness(distance from 1.96)
     // myfile << "<td>" << (1.96 - newX[r]) << "</td>\n";
@@ -528,12 +528,12 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     if (reconciled)
     {
       myfile << "<td>" << "" << "</td>\n";
-      csvfile << "" << ",\n";
+      //csvfile << "" << ",\n";
     }
     else
     {
       myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",\n";
+      //csvfile << "Not reconciled" << ",\n";
     }
     myfile << "</tr>\n";
   }
@@ -549,11 +549,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
 
       // unit
       myfile << "<td>" << unitStringUnMeasuredVariables[i] << "</td>\n";
-      csvfile << unitStringUnMeasuredVariables[i] << ",";
+      //csvfile << unitStringUnMeasuredVariables[i] << ",";
 
       // description
       myfile << "<td>"<< descriptionUnMeasuredVariables[i] << "</td>\n";
-      csvfile << descriptionUnMeasuredVariables[i] << ",";
+      //csvfile << descriptionUnMeasuredVariables[i] << ",";
 
       myfile << "<td> </td>\n";
       csvfile << "" << ",";
@@ -573,10 +573,10 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
       csvfile << "" << ",";
 
       myfile << "<td>" << "" << "</td>\n";
-      csvfile << "" << ",";
+      csvfile << "" << ",\n";
 
       myfile << "<td>" << "" << "</td>\n";
-      csvfile << "" << ",\n";
+      //csvfile << "" << ",\n";
       myfile << "</tr>\n";
     }
   }
