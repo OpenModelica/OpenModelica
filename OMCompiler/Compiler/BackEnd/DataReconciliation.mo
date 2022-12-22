@@ -258,7 +258,7 @@ algorithm
   // write set-S equation to HTML file
   intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
 
-  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations for measured variables" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
   // write relatedBoundaryConditions equations to a file
@@ -325,12 +325,19 @@ protected
 algorithm
   count := 1;
   str :="";
-  for i in setBFailedBoundaryConditionEquations loop
-    (_, eq, _) := i;
-    str := str + intString(count) + ": "  + BackendDump.equationString(eq) + "\n";
-    count := count + 1;
-  end for;
-  System.writeFile(fileNamePrefix + "_relatedBoundaryConditionsEquations.txt", str);
+  str := "<html>\n<body>\n<h2> Related boundary conditions" + " (" + intString(listLength(setBFailedBoundaryConditionEquations)) + ") " +"</h2>\n<ol>";
+  if listEmpty(setBFailedBoundaryConditionEquations) then
+    str := "The set of Related boundary conditions are empty.";
+  else
+    for i in setBFailedBoundaryConditionEquations loop
+      (_, eq, _) := i;
+      //str := str + intString(count) + ": "  + BackendDump.equationString(eq) + "\n";
+      str := str + "\n" + "  <li>" + "(" +  intString(BackendEquation.equationSize(eq)) + "): " + BackendDump.equationString(eq) + " </li>";
+      //count := count + 1;
+    end for;
+    str := str + "\n</ol>\n</body>\n</html>";
+  end if;
+  System.writeFile(fileNamePrefix + "_relatedBoundaryConditionsEquations.html", str);
 end dumpRelatedBoundaryConditionsEquations;
 
 public function extractBoundaryCondition
@@ -777,7 +784,7 @@ algorithm
   // write set-S equation to HTML file
   intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
 
-  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations for measured variables" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
   // write relatedBoundaryConditions equations to a file
@@ -866,7 +873,7 @@ algorithm
 
   // write set-S' combine set-B and Set-S' equation to HTML file
   intermediateEquationsFilename := shared.info.fileNamePrefix + "_BoundaryConditionIntermediateEquations.html";
-  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(listAppend(failedboundaryConditionEquations, setSPrime_Eq)), "Intermediate equations for unmeasured variables " + " (" + intString(listLength(failedboundaryConditionEquations)+listLength(setSPrime_Eq)) + ", " + intString(listLength(failedboundaryConditionEquations)+listLength(setSPrime_Eq)) + ")");
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(listAppend(failedboundaryConditionEquations, setSPrime_Eq)), "Intermediate equations for unmeasured variables " + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(listAppend(failedboundaryConditionEquations, setSPrime_Eq)))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(listAppend(failedboundaryConditionEquations, setSPrime_Eq)))) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
   VerifySetSPrime(outBoundaryConditionVars, outOtherVarsSetSPrime, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqnsSetSPrime, shared, listLength(setC), numRelatedBoundaryConditions, true);
