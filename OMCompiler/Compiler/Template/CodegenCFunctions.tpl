@@ -729,7 +729,13 @@ case var as VARIABLE(__) then
 
   match ty
     case ty as T_ARRAY(__) then
-      let &varCopies += 'assert("0, Copying of array record members to/from external functions is not yet supported.");<%\n%>'
+      let &varCopies += 'omc_assert(NULL, omc_dummyFileInfo, "Copying of array record members to/from external functions is not yet supported.");<%\n%>'
+      ""
+    case ty as T_STRING(__) then
+      let &varCopies += if copy_to then
+                          '<%dstName%> = MMC_STRINGDATA(<%srcName%>);<%\n%>'
+                        else
+                          'omc_assert(NULL, omc_dummyFileInfo, "Copying of string record members from external functions is not yet supported.");<%\n%>'
       ""
     case ty as T_COMPLEX(complexClassType=RECORD(__)) then
       let recType = expTypeShort(ty)

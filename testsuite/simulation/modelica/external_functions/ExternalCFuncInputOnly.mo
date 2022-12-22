@@ -1,12 +1,13 @@
 encapsulated package ExternalCFuncInputOnly
   model Component
-    parameter Data data(value=true);
+    parameter Data data(value=true,name= "Component");
   initial equation
     WriteData(data=data);
   end Component;
 
   record Data
     parameter Boolean value = false;
+    parameter String name = "unknown";
   end Data;
 
   function WriteData
