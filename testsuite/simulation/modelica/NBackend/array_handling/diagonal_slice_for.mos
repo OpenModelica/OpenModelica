@@ -300,7 +300,7 @@ val(y[3],1);
 // 	[ALGB] (10) Real[10] x
 // 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
 // 	[ALGB] (10) Real[10] y
-// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// 	 slice: {4, 1, 2, 3, 5, 6, 7, 8, 9};
 // ### Residual Equations:
 // 	[SCAL] (1) y[5] = x[4] ($RES_SIM_4)
 // 	 slice: {};
@@ -309,14 +309,14 @@ val(y[3],1);
 // [----]   [SCAL] (1) x[j] = y[j - 1] * sin(time) ($RES_SIM_6)
 // [----] end for;
 // 	 slice: {};
-// 	[FOR-] (5) ($RES_SIM_0)
-// [----] for i in 6:10 loop
-// [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_1)
-// [----] end for;
-// 	 slice: {};
 // 	[FOR-] (3) ($RES_SIM_2)
 // [----] for i in 2:4 loop
 // [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_3)
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (5) ($RES_SIM_0)
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_1)
 // [----] end for;
 // 	 slice: {};
 // ### Inner Equations:
@@ -355,7 +355,7 @@ val(y[3],1);
 // 	[ALGB] (10) Real[10] x
 // 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
 // 	[ALGB] (10) Real[10] y
-// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// 	 slice: {4, 1, 2, 3, 5, 6, 7, 8, 9};
 // ### Residual Equations:
 // 	[SCAL] (1) y[5] = x[4] ($RES_SIM_4)
 // 	 slice: {};
@@ -364,14 +364,14 @@ val(y[3],1);
 // [----]   [SCAL] (1) x[j] = y[j - 1] * sin(time) ($RES_SIM_6)
 // [----] end for;
 // 	 slice: {};
-// 	[FOR-] (5) ($RES_SIM_0)
-// [----] for i in 6:10 loop
-// [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_1)
-// [----] end for;
-// 	 slice: {};
 // 	[FOR-] (3) ($RES_SIM_2)
 // [----] for i in 2:4 loop
 // [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_3)
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (5) ($RES_SIM_0)
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) y[i] = x[i - 1] ($RES_SIM_1)
 // [----] end for;
 // 	 slice: {};
 // ### Inner Equations:
@@ -467,7 +467,7 @@ val(y[3],1);
 // 	[ALGB] (10) Real[10] x
 // 	 slice: {1, 2, 3, 4, 5, 6, 7, 8, 9};
 // 	[ALGB] (10) Real[10] y
-// 	 slice: {4, 5, 6, 7, 8, 9, 1, 2, 3};
+// 	 slice: {4, 1, 2, 3, 5, 6, 7, 8, 9};
 // ### Residual Equations:
 // 	[SCAL] (1) $RES_SIM_4 = x[4] - y[5] ($RES_SIM_4)
 // 	 slice: {};
@@ -476,14 +476,14 @@ val(y[3],1);
 // [----]   [SCAL] (1) $RES_SIM_5[j] = y[(-1) + j] * sin(time) - x[j] ($RES_SIM_6)
 // [----] end for;
 // 	 slice: {};
-// 	[FOR-] (5) ($RES_SIM_0)
-// [----] for i in 6:10 loop
-// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i] ($RES_SIM_1)
-// [----] end for;
-// 	 slice: {};
 // 	[FOR-] (3) ($RES_SIM_2)
 // [----] for i in 2:4 loop
 // [----]   [SCAL] (1) $RES_SIM_2[i] = x[(-1) + i] - y[i] ($RES_SIM_3)
+// [----] end for;
+// 	 slice: {};
+// 	[FOR-] (5) ($RES_SIM_0)
+// [----] for i in 6:10 loop
+// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i] ($RES_SIM_1)
 // [----] end for;
 // 	 slice: {};
 // ### Inner Equations:
@@ -498,8 +498,8 @@ val(y[3],1);
 // ****************************************
 // (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_4
 // (2)       [JACV] (9) Real[9] $pDER_ODE_NLS_JAC_1.$RES_SIM_5
-// (3)       [JACV] (5) Real[5] $pDER_ODE_NLS_JAC_1.$RES_SIM_0
-// (4)       [JACV] (3) Real[3] $pDER_ODE_NLS_JAC_1.$RES_SIM_2
+// (3)       [JACV] (3) Real[3] $pDER_ODE_NLS_JAC_1.$RES_SIM_2
+// (4)       [JACV] (5) Real[5] $pDER_ODE_NLS_JAC_1.$RES_SIM_0
 //
 // Seed Variables (2/20)
 // ****************************************
@@ -529,9 +529,9 @@ val(y[3],1);
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (5) ($RES_ODE_NLS_JAC_1_3)
-// 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_4)
+// 	[FOR-] (3) ($RES_ODE_NLS_JAC_1_3)
+// 	[----] for i in 2:4 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_2[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_4)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -540,9 +540,9 @@ val(y[3],1);
 // ### Variable:
 //
 // ### Equation:
-// 	[FOR-] (3) ($RES_ODE_NLS_JAC_1_5)
-// 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_2[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_6)
+// 	[FOR-] (5) ($RES_ODE_NLS_JAC_1_5)
+// 	[----] for i in 6:10 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_6)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -575,14 +575,14 @@ val(y[3],1);
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_2[3])	 depends on:	{}
-// ($RES_SIM_2[2])	 depends on:	{}
-// ($RES_SIM_2[1])	 depends on:	{}
 // ($RES_SIM_0[5])	 depends on:	{}
 // ($RES_SIM_0[4])	 depends on:	{}
 // ($RES_SIM_0[3])	 depends on:	{}
 // ($RES_SIM_0[2])	 depends on:	{}
 // ($RES_SIM_0[1])	 depends on:	{}
+// ($RES_SIM_2[3])	 depends on:	{}
+// ($RES_SIM_2[2])	 depends on:	{}
+// ($RES_SIM_2[1])	 depends on:	{}
 // ($RES_SIM_5[9])	 depends on:	{}
 // ($RES_SIM_5[8])	 depends on:	{}
 // ($RES_SIM_5[7])	 depends on:	{}
@@ -592,7 +592,7 @@ val(y[3],1);
 // ($RES_SIM_5[3])	 depends on:	{}
 // ($RES_SIM_5[2])	 depends on:	{}
 // ($RES_SIM_5[1])	 depends on:	{}
-// ($RES_SIM_4)	 depends on:	{y[5],x[4]}
+// ($RES_SIM_4)	 depends on:	{x[4],y[5]}
 //
 // ========================================
 // Sparsity Coloring
@@ -765,7 +765,7 @@ val(y[3],1);
 // ($RES_SIM_5[3])	 depends on:	{}
 // ($RES_SIM_5[2])	 depends on:	{}
 // ($RES_SIM_5[1])	 depends on:	{}
-// ($RES_SIM_4)	 depends on:	{y[5],x[4]}
+// ($RES_SIM_4)	 depends on:	{x[4],y[5]}
 //
 // ========================================
 // Sparsity Coloring
