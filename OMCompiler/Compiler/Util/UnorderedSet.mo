@@ -553,14 +553,7 @@ public
     input list<T> inList;
     input UnorderedSet.Hash hashFunc;
     input UnorderedSet.KeyEq keyEqFunc;
-    output list<T> outList;
-  protected
-    UnorderedSet<T> unique_set = UnorderedSet.new<T>(hashFunc, keyEqFunc);
-  algorithm
-    for elem in inList loop
-      UnorderedSet.add(elem, unique_set);
-    end for;
-    outList := UnorderedSet.toList(unique_set);
+    output list<T> outList = toList(fromList(inList, hashFunc, keyEqFunc));
   end unique_list;
 
 protected
