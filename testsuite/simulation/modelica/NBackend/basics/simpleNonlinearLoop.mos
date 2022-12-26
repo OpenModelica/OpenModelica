@@ -163,8 +163,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,x}
-// ($RES_SIM_1)	 depends on:	{y,x}
+// ($RES_SIM_0)	 depends on:	{x,y}
+// ($RES_SIM_1)	 depends on:	{x,y}
 //
 // ========================================
 // Sparsity Coloring
@@ -245,8 +245,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_1)	 depends on:	{y,x}
-// ($RES_SIM_0)	 depends on:	{y,x}
+// ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_SIM_0)	 depends on:	{x,y}
 //
 // ========================================
 // Sparsity Coloring

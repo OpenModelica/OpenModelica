@@ -592,7 +592,7 @@ val(y[3],1);
 // ($RES_SIM_5[3])	 depends on:	{}
 // ($RES_SIM_5[2])	 depends on:	{}
 // ($RES_SIM_5[1])	 depends on:	{}
-// ($RES_SIM_4)	 depends on:	{x[4],y[5]}
+// ($RES_SIM_4)	 depends on:	{y[5],x[4]}
 //
 // ========================================
 // Sparsity Coloring
@@ -765,7 +765,7 @@ val(y[3],1);
 // ($RES_SIM_5[3])	 depends on:	{}
 // ($RES_SIM_5[2])	 depends on:	{}
 // ($RES_SIM_5[1])	 depends on:	{}
-// ($RES_SIM_4)	 depends on:	{x[4],y[5]}
+// ($RES_SIM_4)	 depends on:	{y[5],x[4]}
 //
 // ========================================
 // Sparsity Coloring
