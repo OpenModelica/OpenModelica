@@ -1329,7 +1329,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
  * @param yy            Vector of state variables y.
  * @param yp            Vector of derivatives y'.
  * @param rr            Vector of residual vector F(y,y').
- * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y'). ????
+ * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y').
  * @param idaData       Pointer to IDA user data.
  * @return int          Return 0 on success, positive value on recoverable error and negative value otherwise.
 */
@@ -1440,7 +1440,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
  * @param yy            Vector of state variables y.
  * @param yp            Vector of derivatives y'.
  * @param rr            Vector of residual vector F(y,y').
- * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y'). ????
+ * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y').
  * @param idaData       Pointer to IDA user data.
  * @return int          Return 0 on success, positive value on recoverable error and negative value otherwise.
  */

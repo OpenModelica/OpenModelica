@@ -57,7 +57,7 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
                                               void* matrixA, ANALYTIC_JACOBIAN* jacColumns,
                                               DATA* data,
                                               threadData_t* threadData,
-                                              setJacElementFunc);
+                                              setJacElementFunc setJacElement);
 
 void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns);
 

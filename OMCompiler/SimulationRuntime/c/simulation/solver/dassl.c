@@ -806,24 +806,28 @@ static int continue_DASSL(int* idid, double* atol)
 }
 
 /**
- * @brief
+ * @brief ODE residual function.
  *
- * Compute difference between
+ * Compute difference between old and new state derivatives.
  *
- * @param t
- * @param y
- * @param yd      Backup of state derivatives, ...
- * @param cj      Unused
+ * @param t       Independent variable (time).
+ * @param y       Array with state variables, size dasslData->N.
+ * @param yd      Array with old state derivatives.
+ * @param cj      Unused, specified by DDASKR interface.
  * @param delta   Output: state derivatives - yd
- * @param ires
- * @param rpar
- * @param ipar
- * @return int
+ * @param ires    If not successfull set to -1 on exit.
+ * @param rpar    Struct storing user data.
+ *                Type {DATA*, DASSL_DATA*, threadData_t*}
+ *                TODO: Why is this of type double* and not void*? I guess DDASKR needs it in this specific format...
+ * @param ipar    Unused, specified by DDASKR interface.
+ * @return int    Return 0.
  */
 int functionODE_residual(double *t, double *y, double *yd, double* cj,
                          double *delta, int *ires, double *rpar, int *ipar)
 {
   TRACE_PUSH
+  UNUSED(cj); UNUSED(ipar); /* Silence compíler warnings */
+
   DATA* data = (DATA*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)((double**)rpar)[2];
@@ -860,6 +864,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
   data->callback->input_function(data, threadData);
 
   /* Compute state derivatives */
+  // TODO: Why is y not used to update states in data->localData[0]->realVars before computing state derivatives?
   data->callback->functionODE(data, threadData);
 
   /* Difference between old and currend state derivatives */
@@ -1057,7 +1062,9 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
     data->callback->functionJacA_column(data, threadData, t_jac, NULL);
 
     for(j = 0; j < rows; j++)
+    {
       matrixA[i*columns+j] = t_jac->resultVars[j];
+    }
 
     t_jac->seedVars[i] = 0.0;
   } // for loop
@@ -1067,28 +1074,26 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   return 0;
 }
 
-/* \fn jacA_num(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar)
- *
- *
- * This function calculates a jacobian matrix by
- * numerical with forward finite differences.
- */
-
 /**
- * @brief
+ * @brief Calculate Jacobian matrix numericaly.
  *
- * @param t
- * @param y         State
- * @param yprime    State derivatives
- * @param delta
- * @param matrixA
- * @param cj
+ * Calculate Jacobian matrix using forward finite differences.
+ *
+ * TODO: This function is not given to DASSL, remove unused variables.
+ *
+ * @param t         Independent variable (time).
+ * @param y         Array with state variables, size dasslData->N.
+ * @param yprime    Array with state derivatives, size dasslData->N.
+ * @param delta     Array of size dasslData->N.
+ * @param matrixA   On output contains values of Jacobian matrix.
+ *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
+ * @param cj        Specified by library interface. Given to residualFunction, which ignores it.
  * @param h
  * @param wt
- * @param rpar
- * @param ipar
- * @return int
+ * @param rpar      Struct storing user data.
+ *                  Type: {DATA*, DASSL_DATA*, threadData_t*}
+ * @param ipar      Specified by library interface. Given to residualFunction, which ignores it.
+ * @return int      Return 0.
  */
 int jacA_num(double *t, double *y, double *yprime, double *delta,
              double *matrixA, double *cj, double *h, double *wt, double *rpar,
@@ -1097,38 +1102,37 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+  threadData_t* threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
   int ires;
-  int i,j;
+  int col, row;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
   setContext(data, *t, CONTEXT_JACOBIAN);
 
-  for(i=dasslData->N-1; i >= 0; i--)
+  for(col=dasslData->N-1; col >= 0; col--)
   {
-    delta_hhh = *h * yprime[i];
-    delta_hh = delta_h * fmax(fmax(fabs(y[i]),fabs(delta_hhh)),fabs(1. / wt[i]));
+    delta_hhh = *h * yprime[col];
+    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)),fabs(1. / wt[col]));
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
-    delta_hh = y[i] + delta_hh - y[i];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
+    delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
     deltaInv = 1. / delta_hh;
-    ysave = y[i];
-    y[i] += delta_hh;
+    ysave = y[col];
+    y[col] += delta_hh;
 
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
+    // TODO: What if residualFunction failed (ires=-1)?
 
     increaseJacContext(data);
 
-    for(j = dasslData->N-1; j >= 0 ; j--)
+    for(row = dasslData->N-1; row >= 0 ; row--)
     {
-      // j row // state dericatives
-      // i column // states
-      matrixA[i*dasslData->N+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
+      matrixA[col*dasslData->N + row] = (dasslData->newdelta[row] - delta[row]) * deltaInv;
     }
-    y[i] = ysave;
+    y[col] = ysave;
   }
 
   TRACE_POP
@@ -1227,20 +1231,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
-
-  if (TRUE) {
-    int flag = jacA_sym(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar);
-    if(flag != 0) {
-      throwStreamPrint(threadData, "AHeu: Can't compute symbolic Jacobian!");
-      TRACE_POP
-      return 1;
-    }
-      if (ACTIVE_STREAM(LOG_JAC)){
-        _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
-        _omc_printMatrix(dumpJac, "DASSL-Solver: Symbolic Matrix A", LOG_JAC);
-        _omc_destroyMatrix(dumpJac);
-      }
-  }
 
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
