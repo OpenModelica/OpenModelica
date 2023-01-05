@@ -1003,11 +1003,15 @@ uniontype InstNode
   function getType
     input InstNode node;
     output Type ty;
+  protected
+    Variable var;
   algorithm
     ty := match node
       case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
-      case VAR_NODE()       then Type.ANY();
+      case VAR_NODE() algorithm
+        var := Pointer.access(node.varPointer);
+      then var.ty;
     end match;
   end getType;
 

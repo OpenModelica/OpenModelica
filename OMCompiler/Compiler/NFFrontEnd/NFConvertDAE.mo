@@ -937,7 +937,7 @@ protected
 algorithm
   Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
-  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
+  ty := InstNode.getType(iterator);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()

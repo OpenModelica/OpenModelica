@@ -492,6 +492,16 @@ public
         list<ComponentRef> names;
         list<Expression> ranges;
 
+      // sliced array equations - create all the single entries
+      case SINGLE_COMPONENT() guard(Equation.isArrayEquation(comp.eqn)) algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(BVariable.getVarName(comp.var), dependencies);
+        for tpl in scalarized_dependencies loop
+          (cref, dependencies) := tpl;
+          updateDependencyMap(cref, dependencies, map, jacType);
+        end for;
+      then ();
+
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
         updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
@@ -515,7 +525,18 @@ public
         end for;
       then ();
 
-      // sliced regular equation. ToDo: what if slice is array?
+      // sliced array equations - create all the single entries
+      case SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
+        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
+        for tpl in scalarized_dependencies loop
+          (cref, dependencies) := tpl;
+          updateDependencyMap(cref, dependencies, map, jacType);
+        end for;
+      then ();
+
+      // sliced regular equation.
       case SLICED_COMPONENT() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
@@ -818,7 +839,8 @@ protected
       // update the current value (res/tmp) --> {independent vars}
       UnorderedMap.add(cref, fixed_dependencies, map);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update " + ComponentRef.toString(cref)
+        + " with dependencies " + List.toString(dependencies, ComponentRef.toString) + "."});
     end try;
   end updateDependencyMap;
 
