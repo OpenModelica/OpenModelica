@@ -20,3 +20,5 @@ install(DIRECTORY
 	DrModelica/
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/drmodelica/
     FILES_MATCHING PATTERN "*.onb")
+install(FILES OMNotebookHelp.onb
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)
