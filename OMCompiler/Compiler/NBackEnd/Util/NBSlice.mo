@@ -468,8 +468,35 @@ public
     else
       tpl_lst := list((new_row_cref, {}) for new_row_cref in new_row_crefs);
     end if;
-
   end getDependentCrefsPseudoForCausalized;
+
+
+  function getDependentCrefsPseudoArrayCausalized
+    "[Adjacency.MatrixType.PSEUDO] Array equations.
+    Turns cref dependencies into index lists, used for adjacency."
+    input ComponentRef row_cref                                   "cref representing the current row";
+    input list<ComponentRef> dependencies                         "dependent var crefs";
+    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
+  protected
+    list<ComponentRef> row_cref_scal, dep_scal;
+    list<list<ComponentRef>> dependencies_scal = {};
+    Boolean sliced = not listEmpty(slice);
+  algorithm
+    row_cref_scal := ComponentRef.scalarizeAll(row_cref);
+    if sliced then
+      row_cref_scal := List.keepPositions(row_cref_scal, slice);
+    end if;
+    for dep in listReverse(dependencies) loop
+      dep_scal := ComponentRef.scalarizeAll(dep);
+      if sliced then
+        dep_scal := List.keepPositions(dep_scal, slice);
+      end if;
+      dependencies_scal := dep_scal :: dependencies_scal;
+    end for;
+    dependencies_scal := List.transposeList(dependencies_scal);
+    tpl_lst := List.zip(row_cref_scal, dependencies_scal);
+  end getDependentCrefsPseudoArrayCausalized;
 
   function locationToIndex
     "reverse function to indexToLocation()
