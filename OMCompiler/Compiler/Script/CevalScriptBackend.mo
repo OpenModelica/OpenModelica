@@ -3629,7 +3629,7 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := Autoconf.cmake + " -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
@@ -3638,7 +3638,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  Autoconf.cmake + " --build . && " + Autoconf.make + " install && " +
+                  "cmake --build . &&  make  install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
