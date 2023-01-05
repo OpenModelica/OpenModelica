@@ -191,6 +191,10 @@ public
         stateEvents       = StateEvent.updateIndices(stateEvents),
         numberMathEvents  = 0 // ToDo
       );
+      if Flags.isSet(Flags.DUMP_EVENTS) then
+        print(toString(eventInfo));
+        print(List.toString(auxiliary_eqns, function Equation.pointerToString(str = "  "), StringUtil.headline_4("Event Equations"), "", "\n", "\n\n"));
+      end if;
     end create;
 
     function empty
@@ -348,20 +352,11 @@ public
                 timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
                 bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
               end if;
-              // change expression to sample(index, trigger, maxInt)
-              // ToDo: remove this! it is just a very ugly hack to have single events in current simcode/runtime
-              // but currently there is no way around this
-              new_exp := Expression.CALL(Call.makeTypedCall(
-                fn          = NFBuiltinFuncs.SAMPLE,
-                args        = {Expression.INTEGER(getIndex(timeEvent)), exp.exp2, Expression.REAL(BuiltinSystem.intMaxLit())},
-                variability = NFPrefixes.Variability.PARAMETER,
-                purity      = NFPrefixes.Purity.IMPURE
-              ));
               failed := false;
             else
-              new_exp := exp;
               failed := true;
             end if;
+            new_exp := exp;
         then failed;
 
         case Expression.CALL(call = call) algorithm

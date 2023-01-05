@@ -555,6 +555,8 @@ constant DebugFlag DUMP_SLICE = DEBUG_FLAG(191, "dumpSlice", false,
   Gettext.gettext("Dumps information about the slicing process (pseudo-array causalization)."));
 constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(192, "vectorizeBindings", false,
   Gettext.gettext("Turns on vectorization of bindings when scalarization is turned off."));
+constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
+  Gettext.gettext("Dumps information about the detected event functions."));
 
 public
 // CONFIGURATION FLAGS
