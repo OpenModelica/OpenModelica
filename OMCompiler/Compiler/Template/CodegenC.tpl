@@ -4422,7 +4422,7 @@ match eqlstlst
   let &nrfuncs += "0"
   <<
   /* no <%name%> systems */
-  static void (**function<%name%>_systems)(DATA *) = NULL;
+  static void (**function<%name%>_systems)(DATA *,  threadData_t *) = NULL;
   >>
 
   case eqlstlst as ({eqlst}) then
