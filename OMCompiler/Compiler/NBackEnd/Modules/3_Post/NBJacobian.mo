@@ -66,6 +66,9 @@ protected
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VarData};
 
+  // Old Backend Import (remove once coloring ins ported)
+  import SymbolicJacobian;
+
   // Util imports
   import AvlSetPath;
   import StringUtil;
@@ -326,9 +329,10 @@ public
       output SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring;
     protected
+      VariablePointers seed_scal, partial_scal;
       UnorderedMap<ComponentRef, CrefLst> map;
     algorithm
-      (sparsityPattern, map) := match strongComponents
+      (sparsityPattern, map, seed_scal, partial_scal) := match strongComponents
         local
           array<StrongComponent> comps;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp;
@@ -338,12 +342,14 @@ public
           Integer nnz = 0;
 
         case SOME(comps) guard(arrayEmpty(comps)) algorithm
-        then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
+        then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual), VariablePointers.empty(), VariablePointers.empty());
 
         case SOME(comps) algorithm
           // get all relevant crefs
-          partial_vars      := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
-          seed_vars         := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+          partial_scal      := VariablePointers.scalarize(partialCandidates);
+          seed_scal         := VariablePointers.scalarize(seedCandidates);
+          partial_vars      := VariablePointers.getVarNames(partial_scal);
+          seed_vars         := VariablePointers.getVarNames(seed_scal);
           // unscalarized seed vars are currently needed for sparsity pattern
           seed_vars_array  := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
@@ -389,7 +395,7 @@ public
             (_, tmp) := col;
             nnz := nnz + listLength(tmp);
           end for;
-        then (SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz), map);
+        then (SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz), map, seed_scal, partial_scal);
 
         case NONE() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
@@ -402,10 +408,10 @@ public
       end match;
 
       // create coloring
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlg(sparsityPattern, map);
+      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, seed_scal, partial_scal);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
-        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring));
+        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
       end if;
     end create;
 
@@ -459,6 +465,49 @@ public
       sparsityColoring := SPARSITY_COLORING(cols, rows);
     end lazy;
 
+    function PartialD2ColoringAlgC
+      "author: kabdelhak 2022-03
+      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
+      https://doi.org/10.1137/S0036144504444711
+      A greedy partial distance-2 coloring algorithm implemented in C."
+      input SparsityPattern sparsityPattern;
+      input VariablePointers seeds;
+      input VariablePointers partials;
+      output SparsityColoring sparsityColoring;
+    protected
+      Integer sizeCols, sizeRows;
+      ComponentRef idx_cref;
+      list<ComponentRef> deps;
+      array<list<Integer>> cols, rows, colored_cols;
+      array<SparsityColoringCol> cref_colored_cols;
+    algorithm
+      sizeCols := VariablePointers.size(seeds);
+      sizeRows := VariablePointers.size(partials);
+      cols := arrayCreate(sizeCols, {});
+      rows := arrayCreate(sizeRows, {});
+
+      // prepare index based sparsity pattern for C
+      for tpl in sparsityPattern.col_wise_pattern loop
+        (idx_cref, deps) := tpl;
+        cols[VariablePointers.getVarIndex(seeds, idx_cref)] := list(VariablePointers.getVarIndex(partials, dep) for dep in deps);
+      end for;
+      for tpl in sparsityPattern.row_wise_pattern loop
+        (idx_cref, deps) := tpl;
+        rows[VariablePointers.getVarIndex(partials, idx_cref)] := list(VariablePointers.getVarIndex(seeds, dep) for dep in deps);
+      end for;
+
+      // call C function (old backend - ToDo: port to new backend!)
+      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeCols, sizeRows);
+
+      // get cref based coloring - currently no row coloring
+      cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
+      for i in 1:arrayLength(colored_cols) loop
+        cref_colored_cols[i] := list(BVariable.getVarName(VariablePointers.getVarAt(seeds, idx)) for idx in colored_cols[i]);
+      end for;
+
+      sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
+    end PartialD2ColoringAlgC;
+
     function PartialD2ColoringAlg
       "author: kabdelhak 2022-03
       taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
@@ -500,7 +549,10 @@ public
             end if;
           end for;
         end for;
-        (_, color) := Array.findFirstOnTrueWithIdx(forbidden_colors, function intNe(i2 = i));
+        color := 1;
+        while forbidden_colors[color] == i loop
+          color := color + 1;
+        end while;
         coloring[i] := color;
         // also save all row dependencies of this color
         row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()));
