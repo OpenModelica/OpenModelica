@@ -171,11 +171,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ========================================
 // Color (1)
 //   - Column: {y}
-//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//   - Row:    {}
 //
 // Color (2)
 //   - Column: {x}
-//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//   - Row:    {}
 //
 //
 // ################################################################################
@@ -253,11 +253,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ========================================
 // Color (1)
 //   - Column: {x}
-//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//   - Row:    {}
 //
 // Color (2)
 //   - Column: {y}
-//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//   - Row:    {}
 //
 //
 // record SimulationResult
