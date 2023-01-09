@@ -138,40 +138,36 @@ simulate(simple_der_for); getErrorString();
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {x[11],x[10],x[1]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[10]}
+//   - Column: {x[11],x[10],x[2],x[1]}
+//   - Row:    {}
 //
 // Color (2)
-//   - Column: {x[2]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3]}
+//   - Column: {x[3]}
+//   - Row:    {}
 //
 // Color (3)
-//   - Column: {x[3]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4]}
+//   - Column: {x[4]}
+//   - Row:    {}
 //
 // Color (4)
-//   - Column: {x[4]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5]}
+//   - Column: {x[5]}
+//   - Row:    {}
 //
 // Color (5)
-//   - Column: {x[5]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6]}
+//   - Column: {x[6]}
+//   - Row:    {}
 //
 // Color (6)
-//   - Column: {x[6]}
-//   - Row:    {$DER.x[9],$DER.x[8],$DER.x[7]}
+//   - Column: {x[7]}
+//   - Row:    {}
 //
 // Color (7)
-//   - Column: {x[7]}
-//   - Row:    {$DER.x[9],$DER.x[8]}
+//   - Column: {x[8]}
+//   - Row:    {}
 //
 // Color (8)
-//   - Column: {x[8]}
-//   - Row:    {$DER.x[9]}
-//
-// Color (9)
 //   - Column: {x[9]}
-//   - Row:    {$DER.x[9]}
+//   - Row:    {}
 //
 //
 // record SimulationResult
