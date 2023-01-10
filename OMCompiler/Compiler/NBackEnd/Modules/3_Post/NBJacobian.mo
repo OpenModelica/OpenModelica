@@ -366,12 +366,15 @@ public
           for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
           // traverse all components and save cref dependencies (only column-wise)
+          // get partial vars in correct order from collectCrefs
+          partial_vars := {};
           for i in 1:arrayLength(comps) loop
-            StrongComponent.collectCrefs(comps[i], map, set, not partialCandidates.scalarized, jacType);
+            partial_vars := StrongComponent.collectCrefs(comps[i], map, set, partial_vars, not partialCandidates.scalarized, jacType);
           end for;
+          partial_vars := listReverse(partial_vars);
 
           // create row-wise sparsity pattern
-          for cref in partial_vars loop
+          for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
             if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
@@ -386,7 +389,7 @@ public
           end for;
 
           // create column-wise sparsity pattern
-          for cref in seed_vars loop
+          for cref in listReverse(seed_vars) loop
             tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
             cols := (cref, tmp) :: cols;
           end for;
