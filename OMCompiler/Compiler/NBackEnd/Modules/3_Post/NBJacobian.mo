@@ -305,6 +305,10 @@ public
       Boolean colEmpty = listEmpty(pattern.col_wise_pattern);
       Boolean rowEmpty = listEmpty(pattern.row_wise_pattern);
     algorithm
+      str := str + "\n" + StringUtil.headline_3("### Seeds (col vars) ###");
+      str := str + List.toString(pattern.seed_vars, ComponentRef.toString) + "\n";
+      str := str + "\n" + StringUtil.headline_3("### Partials (row vars) ###");
+      str := str + List.toString(pattern.partial_vars, ComponentRef.toString) + "\n";
       if not colEmpty then
         str := str + "\n" + StringUtil.headline_3("### Columns ###");
         for col in pattern.col_wise_pattern loop
@@ -512,7 +516,7 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeCols, sizeRows);
+      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeRows, sizeCols);
 
       // get cref based coloring - currently no row coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});

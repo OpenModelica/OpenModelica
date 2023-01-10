@@ -327,8 +327,8 @@ public
           Jacobian.SparsityColoring Bcoloring;
 
         case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
-          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, sim_map, false);
-          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, sim_map, true);
+          sparsityT  := createSparsityPattern(Bpattern.col_wise_pattern, sim_map, false);
+          sparsity := createSparsityPattern(Bpattern.row_wise_pattern, sim_map, true);
           coloring  := createSparsityColoring(Bcoloring, sim_map);
         then (sparsity, sparsityT, coloring);
 
