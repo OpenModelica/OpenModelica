@@ -335,6 +335,58 @@ algorithm
   InstUtil.dumpFlatModelDebug("connections", flatModel);
 end flatten;
 
+function flattenConnection
+  input InstNode classInst;
+  input String name;
+  output Connections conns;
+protected
+  Sections sections;
+  list<Variable> vars;
+  list<Equation> eql, ieql;
+  list<Algorithm> alg, ialg;
+  FlatModel flatModel;
+  DAE.ElementSource src;
+  FlattenSettings settings;
+  UnorderedSet<ComponentRef> deleted_vars;
+algorithm
+  settings := FlattenSettings.SETTINGS(
+    Flags.isSet(Flags.NF_SCALARIZE),
+    Flags.isSet(Flags.ARRAY_CONNECT),
+    Flags.isSet(Flags.NF_API),
+    Flags.getConfigBool(Flags.NEW_BACKEND),
+    Flags.isSet(Flags.VECTORIZE_BINDINGS)
+  );
+
+  sections := Sections.EMPTY();
+  src := ElementSource.createElementSource(InstNode.info(classInst));
+  src := ElementSource.addCommentToSource(src,
+    SCodeUtil.getElementComment(InstNode.definition(classInst)));
+
+  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
+  (vars, sections) := flattenClass(InstNode.getClass(classInst), EMPTY_PREFIX,
+    Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
+  vars := listReverseInPlace(vars);
+
+  flatModel := match sections
+    case Sections.SECTIONS()
+      algorithm
+        eql := listReverseInPlace(sections.equations);
+        ieql := listReverseInPlace(sections.initialEquations);
+        alg := listReverseInPlace(sections.algorithms);
+        ialg := listReverseInPlace(sections.initialAlgorithms);
+      then
+        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
+
+      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
+  end match;
+
+  // get the connections from the model
+  (flatModel, conns) := Connections.collect(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
+  // Elaborate expandable connectors.
+  (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+end flattenConnection;
+
 function collectFunctions
   input FlatModel flatModel;
   output FunctionTree funcs;
