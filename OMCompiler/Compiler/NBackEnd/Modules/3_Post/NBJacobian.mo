@@ -52,6 +52,7 @@ protected
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import NBAdjacency.Mapping;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
@@ -337,6 +338,7 @@ public
     algorithm
       (sparsityPattern, map) := match strongComponents
         local
+          Mapping seed_mapping, partial_mapping;
           array<StrongComponent> comps;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp;
           UnorderedSet<ComponentRef> set;
@@ -348,6 +350,10 @@ public
         then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
 
         case SOME(comps) algorithm
+          // create index mapping only for variables
+          seed_mapping := Mapping.create(EquationPointers.empty(), seedCandidates);
+          partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
+
           // get all relevant crefs
           partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
           seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
@@ -369,7 +375,7 @@ public
           // get partial vars in correct order from collectCrefs
           partial_vars := {};
           for i in 1:arrayLength(comps) loop
-            partial_vars := StrongComponent.collectCrefs(comps[i], map, set, partial_vars, not partialCandidates.scalarized, jacType);
+            partial_vars := StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, partial_vars, not partialCandidates.scalarized, jacType);
           end for;
           partial_vars := listReverse(partial_vars);
 
@@ -519,7 +525,8 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeRows, sizeCols);
+      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      //colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
 
       // get cref based coloring - currently no row coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
