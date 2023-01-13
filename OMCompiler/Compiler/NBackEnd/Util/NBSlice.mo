@@ -432,7 +432,7 @@ public
 
     // get row cref lst
     row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
-    row_scal_lst := if listEmpty(slice) then row_scal_lst else List.keepPositions(row_scal_lst, slice);
+    row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
     num_rows := listLength(row_scal_lst);
     row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
 
@@ -440,7 +440,7 @@ public
       for dep in dependencies loop
         if UnorderedMap.contains(dep, var_rep.map) then
           dep_scal_lst := getCrefInFrameIndices(dep, frames, var_rep_mapping, var_rep.map);
-          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.keepPositions(dep_scal_lst, slice);
+          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
 
           if listLength(dep_scal_lst) <> num_rows then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -517,12 +517,12 @@ public
   algorithm
     row_cref_scal := ComponentRef.scalarizeAll(row_cref);
     if sliced then
-      row_cref_scal := List.keepPositions(row_cref_scal, slice);
+      row_cref_scal := List.getAtIndexLst(row_cref_scal, slice, true);
     end if;
     for dep in listReverse(dependencies) loop
       dep_scal := ComponentRef.scalarizeAll(dep);
       if sliced then
-        dep_scal := List.keepPositions(dep_scal, slice);
+        dep_scal := List.getAtIndexLst(dep_scal, slice, true);
       end if;
       dependencies_scal := dep_scal :: dependencies_scal;
     end for;

@@ -179,7 +179,7 @@ public
     VarData varData;
     EqData eqData;
     SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
+    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
 
     if listLength(jacobians) == 1 then
@@ -326,6 +326,36 @@ public
       end if;
     end toString;
 
+    function lazy
+      input VariablePointers seedCandidates;
+      input VariablePointers partialCandidates;
+      input Option<array<StrongComponent>> strongComponents "Strong Components";
+      input JacobianType jacType;
+      output SparsityPattern sparsityPattern;
+      output SparsityColoring sparsityColoring;
+    protected
+      list<ComponentRef> seed_vars, partial_vars;
+      list<SparsityPatternCol> cols = {};
+      list<SparsityPatternRow> rows = {};
+      Integer nnz;
+    algorithm
+      // get all relevant crefs
+      seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+      partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+
+      // assume full dependency
+      for s in listReverse(seed_vars) loop
+        cols := (s, partial_vars) :: cols;
+      end for;
+      for p in listReverse(partial_vars) loop
+        rows := (p, seed_vars) :: rows;
+      end for;
+      nnz := listLength(partial_vars) * listLength(seed_vars);
+
+      sparsityPattern := SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz);
+      sparsityColoring := SparsityColoring.lazy(sparsityPattern);
+    end lazy;
+
     function create
       input VariablePointers seedCandidates;
       input VariablePointers partialCandidates;
@@ -372,12 +402,9 @@ public
           for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
           // traverse all components and save cref dependencies (only column-wise)
-          // get partial vars in correct order from collectCrefs
-          partial_vars := {};
           for i in 1:arrayLength(comps) loop
-            partial_vars := StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, partial_vars, not partialCandidates.scalarized, jacType);
+            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, not partialCandidates.scalarized, jacType);
           end for;
-          partial_vars := listReverse(partial_vars);
 
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
@@ -464,7 +491,6 @@ public
       "creates a lazy coloring that just groups each independent variable individually
       and implies dependence for each row"
       input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, CrefLst> map;
       output SparsityColoring sparsityColoring;
     protected
       array<SparsityColoringCol> cols;
@@ -525,8 +551,8 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
-      //colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
+      //colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
 
       // get cref based coloring - currently no row coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});

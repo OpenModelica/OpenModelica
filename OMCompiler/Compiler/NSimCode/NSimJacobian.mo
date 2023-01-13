@@ -366,7 +366,14 @@ public
           fail();
         end try;
       end for;
+      simPattern := List.sort(simPattern, sparsityTplSortGt);
     end createSparsityPattern;
+
+    function sparsityTplSortGt
+      input tuple<Integer, list<Integer>> col1 "or row1";
+      input tuple<Integer, list<Integer>> col2 "or row2";
+      output Boolean b = Util.tuple21(col1) > Util.tuple21(col2);
+    end sparsityTplSortGt;
 
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;
