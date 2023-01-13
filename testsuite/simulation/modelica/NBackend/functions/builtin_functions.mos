@@ -325,37 +325,37 @@ simulate(builtin_functions); getErrorString();
 //
 // ### Columns ###
 // ----------------------------------------
-// (x[14])	 affects:	{}
-// (x[13])	 affects:	{}
-// (x[12])	 affects:	{}
-// (x[11])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[4])	 affects:	{}
-// (x[3])	 affects:	{}
-// (x[2])	 affects:	{$DER.x[14],$DER.x[9],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[10],$DER.x[5],$DER.x[11],$DER.x[6],$DER.x[12],$DER.x[7],$DER.x[13],$DER.x[8]}
 // (x[1])	 affects:	{$DER.x[14]}
+// (x[2])	 affects:	{$DER.x[9],$DER.x[14],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[5],$DER.x[10],$DER.x[6],$DER.x[11],$DER.x[7],$DER.x[12],$DER.x[8],$DER.x[13]}
+// (x[3])	 affects:	{}
+// (x[4])	 affects:	{}
+// (x[5])	 affects:	{}
+// (x[6])	 affects:	{}
+// (x[7])	 affects:	{}
+// (x[8])	 affects:	{}
+// (x[9])	 affects:	{}
+// (x[10])	 affects:	{}
+// (x[11])	 affects:	{}
+// (x[12])	 affects:	{}
+// (x[13])	 affects:	{}
+// (x[14])	 affects:	{}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($DER.x[14])	 depends on:	{x[2],x[1]}
-// ($DER.x[13])	 depends on:	{x[2]}
-// ($DER.x[12])	 depends on:	{x[2]}
-// ($DER.x[11])	 depends on:	{x[2]}
-// ($DER.x[10])	 depends on:	{x[2]}
-// ($DER.x[9])	 depends on:	{x[2]}
-// ($DER.x[8])	 depends on:	{x[2]}
-// ($DER.x[7])	 depends on:	{x[2]}
-// ($DER.x[6])	 depends on:	{x[2]}
-// ($DER.x[5])	 depends on:	{x[2]}
-// ($DER.x[4])	 depends on:	{x[2]}
-// ($DER.x[3])	 depends on:	{x[2]}
-// ($DER.x[2])	 depends on:	{x[2]}
 // ($DER.x[1])	 depends on:	{x[2]}
+// ($DER.x[2])	 depends on:	{x[2]}
+// ($DER.x[3])	 depends on:	{x[2]}
+// ($DER.x[4])	 depends on:	{x[2]}
+// ($DER.x[5])	 depends on:	{x[2]}
+// ($DER.x[6])	 depends on:	{x[2]}
+// ($DER.x[7])	 depends on:	{x[2]}
+// ($DER.x[8])	 depends on:	{x[2]}
+// ($DER.x[9])	 depends on:	{x[2]}
+// ($DER.x[10])	 depends on:	{x[2]}
+// ($DER.x[11])	 depends on:	{x[2]}
+// ($DER.x[12])	 depends on:	{x[2]}
+// ($DER.x[13])	 depends on:	{x[2]}
+// ($DER.x[14])	 depends on:	{x[2],x[1]}
 //
 // ========================================
 // Sparsity Coloring

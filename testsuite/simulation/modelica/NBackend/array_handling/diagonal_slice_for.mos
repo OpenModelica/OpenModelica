@@ -473,17 +473,17 @@ val(y[3],1);
 // 	 slice: {};
 // 	[FOR-] (9) ($RES_SIM_5)
 // [----] for j in 2:10 loop
-// [----]   [SCAL] (1) $RES_SIM_5[j] = y[(-1) + j] * sin(time) - x[j] ($RES_SIM_6)
+// [----]   [SCAL] (1) $RES_SIM_5[1 + ((-2) + j)] = y[(-1) + j] * sin(time) - x[j] ($RES_SIM_6)
 // [----] end for;
 // 	 slice: {};
 // 	[FOR-] (3) ($RES_SIM_2)
 // [----] for i in 2:4 loop
-// [----]   [SCAL] (1) $RES_SIM_2[i] = x[(-1) + i] - y[i] ($RES_SIM_3)
+// [----]   [SCAL] (1) $RES_SIM_2[1 + ((-2) + i)] = x[(-1) + i] - y[i] ($RES_SIM_3)
 // [----] end for;
 // 	 slice: {};
 // 	[FOR-] (5) ($RES_SIM_0)
 // [----] for i in 6:10 loop
-// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i] ($RES_SIM_1)
+// [----]   [SCAL] (1) $RES_SIM_0[1 + ((-6) + i)] = x[(-1) + i] - y[i] ($RES_SIM_1)
 // [----] end for;
 // 	 slice: {};
 // ### Inner Equations:
@@ -520,7 +520,7 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_ODE_NLS_JAC_1_1)
 // 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_5[j] = $SEED_ODE_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_ODE_NLS_JAC_1.x[j] ($RES_ODE_NLS_JAC_1_2)
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_5[1 + ((-2) + j)] = $SEED_ODE_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_ODE_NLS_JAC_1.x[j] ($RES_ODE_NLS_JAC_1_2)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -531,7 +531,7 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (3) ($RES_ODE_NLS_JAC_1_3)
 // 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_2[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_4)
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_2[1 + ((-2) + i)] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_4)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -542,63 +542,75 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (5) ($RES_ODE_NLS_JAC_1_5)
 // 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0[i] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_6)
+// 	[----]   [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0[1 + ((-6) + i)] = $SEED_ODE_NLS_JAC_1.x[(-1) + i] - $SEED_ODE_NLS_JAC_1.y[i] ($RES_ODE_NLS_JAC_1_6)
 // 	[----] end for;
 // 	 slice: {}
 //
 // ========================================
-// Sparsity Pattern (nnz: 2)
+// Sparsity Pattern (nnz: 36)
 // ========================================
+//
+// ### Seeds (col vars) ###
+// ----------------------------------------
+// {x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9], y[10]}
+//
+// ### Partials (row vars) ###
+// ----------------------------------------
+// {$RES_SIM_4, $RES_SIM_5[1], $RES_SIM_5[2], $RES_SIM_5[3], $RES_SIM_5[4], $RES_SIM_5[5], $RES_SIM_5[6], $RES_SIM_5[7], $RES_SIM_5[8], $RES_SIM_5[9], $RES_SIM_2[1], $RES_SIM_2[2], $RES_SIM_2[3], $RES_SIM_0[1], $RES_SIM_0[2], $RES_SIM_0[3], $RES_SIM_0[4], $RES_SIM_0[5]}
 //
 // ### Columns ###
 // ----------------------------------------
-// (y[10])	 affects:	{}
-// (y[9])	 affects:	{}
-// (y[8])	 affects:	{}
-// (y[7])	 affects:	{}
-// (y[6])	 affects:	{}
-// (y[5])	 affects:	{$RES_SIM_4}
-// (y[4])	 affects:	{}
-// (y[3])	 affects:	{}
-// (y[2])	 affects:	{}
-// (y[1])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[4])	 affects:	{$RES_SIM_4}
-// (x[3])	 affects:	{}
-// (x[2])	 affects:	{}
-// (x[1])	 affects:	{}
+// (x[1])	 affects:	{$RES_SIM_2[1]}
+// (x[2])	 affects:	{$RES_SIM_5[1],$RES_SIM_2[2]}
+// (x[3])	 affects:	{$RES_SIM_5[2],$RES_SIM_2[3]}
+// (x[4])	 affects:	{$RES_SIM_4,$RES_SIM_5[3]}
+// (x[5])	 affects:	{$RES_SIM_5[4],$RES_SIM_0[1]}
+// (x[6])	 affects:	{$RES_SIM_5[5],$RES_SIM_0[2]}
+// (x[7])	 affects:	{$RES_SIM_5[6],$RES_SIM_0[3]}
+// (x[8])	 affects:	{$RES_SIM_5[7],$RES_SIM_0[4]}
+// (x[9])	 affects:	{$RES_SIM_5[8],$RES_SIM_0[5]}
+// (x[10])	 affects:	{$RES_SIM_5[9]}
+// (y[1])	 affects:	{$RES_SIM_5[1]}
+// (y[2])	 affects:	{$RES_SIM_5[2],$RES_SIM_2[1]}
+// (y[3])	 affects:	{$RES_SIM_5[3],$RES_SIM_2[2]}
+// (y[4])	 affects:	{$RES_SIM_5[4],$RES_SIM_2[3]}
+// (y[5])	 affects:	{$RES_SIM_4,$RES_SIM_5[5]}
+// (y[6])	 affects:	{$RES_SIM_5[6],$RES_SIM_0[1]}
+// (y[7])	 affects:	{$RES_SIM_5[7],$RES_SIM_0[2]}
+// (y[8])	 affects:	{$RES_SIM_5[8],$RES_SIM_0[3]}
+// (y[9])	 affects:	{$RES_SIM_5[9],$RES_SIM_0[4]}
+// (y[10])	 affects:	{$RES_SIM_0[5]}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0[5])	 depends on:	{}
-// ($RES_SIM_0[4])	 depends on:	{}
-// ($RES_SIM_0[3])	 depends on:	{}
-// ($RES_SIM_0[2])	 depends on:	{}
-// ($RES_SIM_0[1])	 depends on:	{}
-// ($RES_SIM_2[3])	 depends on:	{}
-// ($RES_SIM_2[2])	 depends on:	{}
-// ($RES_SIM_2[1])	 depends on:	{}
-// ($RES_SIM_5[9])	 depends on:	{}
-// ($RES_SIM_5[8])	 depends on:	{}
-// ($RES_SIM_5[7])	 depends on:	{}
-// ($RES_SIM_5[6])	 depends on:	{}
-// ($RES_SIM_5[5])	 depends on:	{}
-// ($RES_SIM_5[4])	 depends on:	{}
-// ($RES_SIM_5[3])	 depends on:	{}
-// ($RES_SIM_5[2])	 depends on:	{}
-// ($RES_SIM_5[1])	 depends on:	{}
 // ($RES_SIM_4)	 depends on:	{y[5],x[4]}
+// ($RES_SIM_5[1])	 depends on:	{y[1],x[2]}
+// ($RES_SIM_5[2])	 depends on:	{y[2],x[3]}
+// ($RES_SIM_5[3])	 depends on:	{y[3],x[4]}
+// ($RES_SIM_5[4])	 depends on:	{y[4],x[5]}
+// ($RES_SIM_5[5])	 depends on:	{y[5],x[6]}
+// ($RES_SIM_5[6])	 depends on:	{y[6],x[7]}
+// ($RES_SIM_5[7])	 depends on:	{y[7],x[8]}
+// ($RES_SIM_5[8])	 depends on:	{y[8],x[9]}
+// ($RES_SIM_5[9])	 depends on:	{y[9],x[10]}
+// ($RES_SIM_2[1])	 depends on:	{x[1],y[2]}
+// ($RES_SIM_2[2])	 depends on:	{x[2],y[3]}
+// ($RES_SIM_2[3])	 depends on:	{x[3],y[4]}
+// ($RES_SIM_0[1])	 depends on:	{x[5],y[6]}
+// ($RES_SIM_0[2])	 depends on:	{x[6],y[7]}
+// ($RES_SIM_0[3])	 depends on:	{x[7],y[8]}
+// ($RES_SIM_0[4])	 depends on:	{x[8],y[9]}
+// ($RES_SIM_0[5])	 depends on:	{y[10],x[9]}
 //
 // ========================================
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {y[10],y[9],y[8],y[7],y[6],y[5],y[4],y[3],y[2],y[1],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Column: {x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {}
+//
+// Color (2)
+//   - Column: {y[10],y[9],y[8],y[7],y[6],y[5],y[4],y[3],y[2],y[1]}
 //   - Row:    {}
 //
 //
@@ -642,17 +654,17 @@ val(y[3],1);
 // 	 slice: {};
 // 	[FOR-] (9) ($RES_SIM_5)
 // [----] for j in 2:10 loop
-// [----]   [SCAL] (1) $RES_SIM_5[j] = y[(-1) + j] * sin(time) - x[j] ($RES_SIM_6)
+// [----]   [SCAL] (1) $RES_SIM_5[1 + ((-2) + j)] = y[(-1) + j] * sin(time) - x[j] ($RES_SIM_6)
 // [----] end for;
 // 	 slice: {};
 // 	[FOR-] (5) ($RES_SIM_0)
 // [----] for i in 6:10 loop
-// [----]   [SCAL] (1) $RES_SIM_0[i] = x[(-1) + i] - y[i] ($RES_SIM_1)
+// [----]   [SCAL] (1) $RES_SIM_0[1 + ((-6) + i)] = x[(-1) + i] - y[i] ($RES_SIM_1)
 // [----] end for;
 // 	 slice: {};
 // 	[FOR-] (3) ($RES_SIM_2)
 // [----] for i in 2:4 loop
-// [----]   [SCAL] (1) $RES_SIM_2[i] = x[(-1) + i] - y[i] ($RES_SIM_3)
+// [----]   [SCAL] (1) $RES_SIM_2[1 + ((-2) + i)] = x[(-1) + i] - y[i] ($RES_SIM_3)
 // [----] end for;
 // 	 slice: {};
 // ### Inner Equations:
@@ -689,7 +701,7 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_INI_NLS_JAC_1_1)
 // 	[----] for j in 2:10 loop
-// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_5[j] = $SEED_INI_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_INI_NLS_JAC_1.x[j] ($RES_INI_NLS_JAC_1_2)
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_5[1 + ((-2) + j)] = $SEED_INI_NLS_JAC_1.y[(-1) + j] * sin(time) - $SEED_INI_NLS_JAC_1.x[j] ($RES_INI_NLS_JAC_1_2)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -700,7 +712,7 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (5) ($RES_INI_NLS_JAC_1_3)
 // 	[----] for i in 6:10 loop
-// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0[i] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i] ($RES_INI_NLS_JAC_1_4)
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0[1 + ((-6) + i)] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i] ($RES_INI_NLS_JAC_1_4)
 // 	[----] end for;
 // 	 slice: {}
 //
@@ -711,63 +723,75 @@ val(y[3],1);
 // ### Equation:
 // 	[FOR-] (3) ($RES_INI_NLS_JAC_1_5)
 // 	[----] for i in 2:4 loop
-// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_2[i] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i] ($RES_INI_NLS_JAC_1_6)
+// 	[----]   [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_2[1 + ((-2) + i)] = $SEED_INI_NLS_JAC_1.x[(-1) + i] - $SEED_INI_NLS_JAC_1.y[i] ($RES_INI_NLS_JAC_1_6)
 // 	[----] end for;
 // 	 slice: {}
 //
 // ========================================
-// Sparsity Pattern (nnz: 2)
+// Sparsity Pattern (nnz: 36)
 // ========================================
+//
+// ### Seeds (col vars) ###
+// ----------------------------------------
+// {x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9], y[10]}
+//
+// ### Partials (row vars) ###
+// ----------------------------------------
+// {$RES_SIM_4, $RES_SIM_5[1], $RES_SIM_5[2], $RES_SIM_5[3], $RES_SIM_5[4], $RES_SIM_5[5], $RES_SIM_5[6], $RES_SIM_5[7], $RES_SIM_5[8], $RES_SIM_5[9], $RES_SIM_0[1], $RES_SIM_0[2], $RES_SIM_0[3], $RES_SIM_0[4], $RES_SIM_0[5], $RES_SIM_2[1], $RES_SIM_2[2], $RES_SIM_2[3]}
 //
 // ### Columns ###
 // ----------------------------------------
-// (y[10])	 affects:	{}
-// (y[9])	 affects:	{}
-// (y[8])	 affects:	{}
-// (y[7])	 affects:	{}
-// (y[6])	 affects:	{}
-// (y[5])	 affects:	{$RES_SIM_4}
-// (y[4])	 affects:	{}
-// (y[3])	 affects:	{}
-// (y[2])	 affects:	{}
-// (y[1])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[4])	 affects:	{$RES_SIM_4}
-// (x[3])	 affects:	{}
-// (x[2])	 affects:	{}
-// (x[1])	 affects:	{}
+// (x[1])	 affects:	{$RES_SIM_2[1]}
+// (x[2])	 affects:	{$RES_SIM_5[1],$RES_SIM_2[2]}
+// (x[3])	 affects:	{$RES_SIM_5[2],$RES_SIM_2[3]}
+// (x[4])	 affects:	{$RES_SIM_4,$RES_SIM_5[3]}
+// (x[5])	 affects:	{$RES_SIM_5[4],$RES_SIM_0[1]}
+// (x[6])	 affects:	{$RES_SIM_5[5],$RES_SIM_0[2]}
+// (x[7])	 affects:	{$RES_SIM_5[6],$RES_SIM_0[3]}
+// (x[8])	 affects:	{$RES_SIM_5[7],$RES_SIM_0[4]}
+// (x[9])	 affects:	{$RES_SIM_5[8],$RES_SIM_0[5]}
+// (x[10])	 affects:	{$RES_SIM_5[9]}
+// (y[1])	 affects:	{$RES_SIM_5[1]}
+// (y[2])	 affects:	{$RES_SIM_5[2],$RES_SIM_2[1]}
+// (y[3])	 affects:	{$RES_SIM_5[3],$RES_SIM_2[2]}
+// (y[4])	 affects:	{$RES_SIM_5[4],$RES_SIM_2[3]}
+// (y[5])	 affects:	{$RES_SIM_4,$RES_SIM_5[5]}
+// (y[6])	 affects:	{$RES_SIM_5[6],$RES_SIM_0[1]}
+// (y[7])	 affects:	{$RES_SIM_5[7],$RES_SIM_0[2]}
+// (y[8])	 affects:	{$RES_SIM_5[8],$RES_SIM_0[3]}
+// (y[9])	 affects:	{$RES_SIM_5[9],$RES_SIM_0[4]}
+// (y[10])	 affects:	{$RES_SIM_0[5]}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_2[3])	 depends on:	{}
-// ($RES_SIM_2[2])	 depends on:	{}
-// ($RES_SIM_2[1])	 depends on:	{}
-// ($RES_SIM_0[5])	 depends on:	{}
-// ($RES_SIM_0[4])	 depends on:	{}
-// ($RES_SIM_0[3])	 depends on:	{}
-// ($RES_SIM_0[2])	 depends on:	{}
-// ($RES_SIM_0[1])	 depends on:	{}
-// ($RES_SIM_5[9])	 depends on:	{}
-// ($RES_SIM_5[8])	 depends on:	{}
-// ($RES_SIM_5[7])	 depends on:	{}
-// ($RES_SIM_5[6])	 depends on:	{}
-// ($RES_SIM_5[5])	 depends on:	{}
-// ($RES_SIM_5[4])	 depends on:	{}
-// ($RES_SIM_5[3])	 depends on:	{}
-// ($RES_SIM_5[2])	 depends on:	{}
-// ($RES_SIM_5[1])	 depends on:	{}
 // ($RES_SIM_4)	 depends on:	{y[5],x[4]}
+// ($RES_SIM_5[1])	 depends on:	{y[1],x[2]}
+// ($RES_SIM_5[2])	 depends on:	{y[2],x[3]}
+// ($RES_SIM_5[3])	 depends on:	{y[3],x[4]}
+// ($RES_SIM_5[4])	 depends on:	{y[4],x[5]}
+// ($RES_SIM_5[5])	 depends on:	{y[5],x[6]}
+// ($RES_SIM_5[6])	 depends on:	{y[6],x[7]}
+// ($RES_SIM_5[7])	 depends on:	{y[7],x[8]}
+// ($RES_SIM_5[8])	 depends on:	{y[8],x[9]}
+// ($RES_SIM_5[9])	 depends on:	{y[9],x[10]}
+// ($RES_SIM_0[1])	 depends on:	{x[5],y[6]}
+// ($RES_SIM_0[2])	 depends on:	{x[6],y[7]}
+// ($RES_SIM_0[3])	 depends on:	{x[7],y[8]}
+// ($RES_SIM_0[4])	 depends on:	{x[8],y[9]}
+// ($RES_SIM_0[5])	 depends on:	{y[10],x[9]}
+// ($RES_SIM_2[1])	 depends on:	{x[1],y[2]}
+// ($RES_SIM_2[2])	 depends on:	{x[2],y[3]}
+// ($RES_SIM_2[3])	 depends on:	{x[3],y[4]}
 //
 // ========================================
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {y[10],y[9],y[8],y[7],y[6],y[5],y[4],y[3],y[2],y[1],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Column: {x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {}
+//
+// Color (2)
+//   - Column: {y[10],y[9],y[8],y[7],y[6],y[5],y[4],y[3],y[2],y[1]}
 //   - Row:    {}
 //
 //

@@ -156,15 +156,23 @@ simulate(simpleNonlinearLoop); getErrorString();
 // Sparsity Pattern (nnz: 4)
 // ========================================
 //
+// ### Seeds (col vars) ###
+// ----------------------------------------
+// {y, x}
+//
+// ### Partials (row vars) ###
+// ----------------------------------------
+// {$RES_SIM_1, $RES_SIM_0}
+//
 // ### Columns ###
 // ----------------------------------------
-// (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
 // (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+// (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{x,y}
 // ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_SIM_0)	 depends on:	{x,y}
 //
 // ========================================
 // Sparsity Coloring
@@ -238,15 +246,23 @@ simulate(simpleNonlinearLoop); getErrorString();
 // Sparsity Pattern (nnz: 4)
 // ========================================
 //
+// ### Seeds (col vars) ###
+// ----------------------------------------
+// {x, y}
+//
+// ### Partials (row vars) ###
+// ----------------------------------------
+// {$RES_SIM_0, $RES_SIM_1}
+//
 // ### Columns ###
 // ----------------------------------------
-// (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
 // (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+// (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_1)	 depends on:	{x,y}
 // ($RES_SIM_0)	 depends on:	{x,y}
+// ($RES_SIM_1)	 depends on:	{x,y}
 //
 // ========================================
 // Sparsity Coloring
