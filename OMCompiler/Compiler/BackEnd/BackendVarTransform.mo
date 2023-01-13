@@ -2716,12 +2716,11 @@ protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCr
 algorithm
   zcOut := matchcontinue(zcIn,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
-      list<Integer> occurEquLst ;
       DAE.Exp relation_;
-  case(BackendDAE.ZERO_CROSSING(relation_ = relation_, occurEquLst = occurEquLst),_,_)
+  case(BackendDAE.ZERO_CROSSING(relation_ = relation_),_,_)
     equation
       (relation_,_) = replaceExp(relation_,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
-    then BackendDAE.ZERO_CROSSING(relation_, occurEquLst);
+    then BackendDAE.ZERO_CROSSING(zcIn.index, relation_, zcIn.occurEquLst, zcIn.iter);
   else
     then zcIn;
   end matchcontinue;

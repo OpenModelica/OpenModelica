@@ -326,6 +326,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     data->callback->functionAlgebraics(data, threadData);
     data->callback->output_function(data, threadData);
     data->callback->setc_function(data, threadData);
+    data->callback->setb_function(data, threadData);
     data->callback->function_storeDelayed(data, threadData);
     data->callback->function_storeSpatialDistribution(data, threadData);
 

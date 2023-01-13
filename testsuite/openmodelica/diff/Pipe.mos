@@ -1,0 +1,30 @@
+// depends: PipeBefore.mo
+// status: correct
+
+before:=readFile("PipeBefore.mo");getErrorString();
+loadFile("PipeAfter.mo");getErrorString();
+res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain);getErrorString();
+/*
+writeFile("PipeMerged.mo", diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.plain));getErrorString();
+system("diff -u PipeBefore.mo PipeMerged.mo");
+*/
+// Result:
+// "within;
+// model Pipe
+// record k
+//   SI.Units.Length K=0;
+// end k;
+// end Pipe;
+// "
+// ""
+// true
+// ""
+// "within;
+// model Pipe
+// record k
+//   SIunits.Length K=0;
+// end k;
+// end Pipe;
+// "
+// ""
+// endResult

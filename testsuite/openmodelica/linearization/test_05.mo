@@ -19,7 +19,7 @@ end simple_test;
 //   Real a;
 //   Real b;
 // equation
-//   der(a) = 6.0 * a - 2.0 * a ^ 2.0 - a * b;
-//   der(b) = 4.0 * b - a * b - b ^ 2.0;
+//   der(a) = 6.0 * a + (-2.0) * a ^ 2.0 - a * b;
+//   der(b) = (4.0 - a) * b - b ^ 2.0;
 // end simple_test;
 // endResult

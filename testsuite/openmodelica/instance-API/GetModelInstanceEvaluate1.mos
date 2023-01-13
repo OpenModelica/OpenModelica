@@ -1,0 +1,65 @@
+// name: GetModelInstanceEvaluate1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Integer n1 = 1;
+    parameter Integer n2 = n1 annotation(Evaluate = true);
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"n1\",
+//       \"type\": \"Integer\",
+//       \"modifiers\": \"1\",
+//       \"value\": {
+//         \"binding\": 1
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"name\": \"n2\",
+//       \"type\": \"Integer\",
+//       \"modifiers\": \"n1\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"n1\"
+//             }
+//           ]
+//         },
+//         \"value\": 1
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       },
+//       \"annotation\": {
+//         \"Evaluate\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

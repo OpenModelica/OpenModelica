@@ -56,20 +56,20 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
-all: omc testsuite-depends omlibrary-core
+all: omc testsuite-depends
 
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
-	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omc-diff:
 	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 ReferenceFiles:
 	$(MAKE) -C testsuite/ReferenceFiles
 libs-for-testing: omc
-	$(MAKE) -C testsuite/libraries-for-testing/
+	$(MAKE) -C libraries/
 ffi-test-lib: ffi-test-lib.skip
 ffi-test-lib.skip:
 	$(MAKE) -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc
@@ -83,11 +83,8 @@ fast-test: testsuite-depends
 	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
 	cd testsuite/partest && ./runtests.pl -f -with-txt
 
-omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core CC="$(CC)" CXX="$(CXX)"
-
-omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all CC="$(CC)" CXX="$(CXX)"
+omlibrary: omc
+	$(MAKE) -C libraries lib-for-installing
 
 omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -336,9 +333,6 @@ clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
 
-LIBGITDIRS = `ls -f libraries/git`
-
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch
-	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done

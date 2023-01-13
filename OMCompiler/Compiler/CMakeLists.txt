@@ -191,10 +191,32 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
+# output libOpenModelicaCompiler in a directory named 'lib' or 'bin' (on Windows, dll) inside
+# the current binary directory. The reason for this is that omc (using libOpenModelicaCompiler),
+# up on launch, checks where it is located and looks for the things it wants relative to that location.
+# For example it expects ModelicaBuiltin.mo to be in '../lib/omc' relative to the libOpenModelicaCompiler shared
+# library. To achieve this it first checks if libOpenModelicaCompiler is a directory named 'bin' or 'lib'.
+# If it is not it will refuse to run. So output it in a directory named 'lib' or 'bin' and then copy
+# The files it needs in '../lib/omc' relative to it.
+set_target_properties(OpenModelicaCompiler
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+
+# It also wants to have these builtin files in ../lib/ relative to its location.
+add_custom_command (
+    TARGET OpenModelicaCompiler
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/ModelicaBuiltin.mo
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/MetaModelicaBuiltin.mo
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/NFModelicaBuiltin.mo
+    COMMENT "Copying (NF/Meta/Modelica)Builtin.mo files for the omc generated in the build tree (not installed yet).")
+
+
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 # Silence warnings about extra parenthesized equality checks. if((a==b))
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(OpenModelicaCompiler PRIVATE -Wno-parentheses-equality)
 endif()
 
@@ -262,22 +284,22 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 install(TARGETS omc OpenModelicaCompiler
-            COMPONENT compiler)
+            COMPONENT omc)
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
 install(FILES NFFrontEnd/NFModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/ModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 install(FILES FrontEnd/PDEModelicaBuiltin.mo
             DESTINATION lib/omc
-            COMPONENT compiler)
+            COMPONENT omc)
 
 # Install the scripts to 'share' dir.
 install(DIRECTORY scripts

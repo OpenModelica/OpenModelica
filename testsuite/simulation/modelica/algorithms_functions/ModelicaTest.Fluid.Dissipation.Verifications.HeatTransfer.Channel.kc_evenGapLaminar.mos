@@ -19,13 +19,13 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 // "model kc_evenGapLaminar
 //   extends Modelica.Icons.Example;
 //   parameter Integer n = size(cp, 1);
-//   parameter Modelica.SIunits.Diameter d_hyd = 2 * s;
-//   Real[n] abscissa = array((length / d_hyd / (max(Re[i], 0.001) * Pr[i])) ^ 0.5 for i in 1:n);
+//   parameter Modelica.SIunits.Diameter d_hyd = 2*s;
+//   Real[n] abscissa = array((length/d_hyd/(max(Re[i], 0.001)*Pr[i]))^0.5 for i in 1:n);
 //   Modelica.SIunits.Length length = L;
 //   Modelica.SIunits.Length dimlesslength(start = 0.01);
-//   Modelica.SIunits.PrandtlNumber[n] Pr = array(eta[i] * cp[i] / lambda[i] for i in 1:n);
-//   Modelica.SIunits.ReynoldsNumber[n] Re = array(rho[i] * velocity[i] * d_hyd / eta[i] for i in 1:n);
-//   Modelica.SIunits.Velocity[n] velocity = array(m_flow[i] / (rho[i] * h * s) for i in 1:n);
+//   Modelica.SIunits.PrandtlNumber[n] Pr = array(eta[i]*cp[i]/lambda[i] for i in 1:n);
+//   Modelica.SIunits.ReynoldsNumber[n] Re = array(rho[i]*velocity[i]*d_hyd/eta[i] for i in 1:n);
+//   Modelica.SIunits.Velocity[n] velocity = array(m_flow[i]/(rho[i]*h*s) for i in 1:n);
 //   parameter Modelica.SIunits.Length h = 0.1;
 //   parameter Modelica.SIunits.Length s = 0.05;
 //   parameter Modelica.SIunits.Length L = 1;
@@ -46,7 +46,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   Modelica.SIunits.NusseltNumber[n] Nu_3;
 //   Modelica.SIunits.NusseltNumber[n] Nu_4;
 // protected
-//   Modelica.SIunits.MassFlowRate[n] m_flow = array(0.5 * h * lambda[i] * length / (cp[i] * d_hyd * dimlesslength ^ 2) for i in 1:n);
+//   Modelica.SIunits.MassFlowRate[n] m_flow = array(0.5*h*lambda[i]*length/(cp[i]*d_hyd*dimlesslength^2) for i in 1:n);
 // equation
 //   der(dimlesslength) = 1 - 0.01;
 //   for i in 1:n loop

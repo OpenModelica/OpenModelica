@@ -88,37 +88,24 @@ algorithm
       Absyn.Path cPath;
       Interactive.GraphicEnvCache env;
 
-    case (Absyn.CLASS(
-      name = n,
-      partialPrefix = part,
-      finalPrefix = f,
-      encapsulatedPrefix = e,
-      restriction = r,
-      body = d,
-      info = file_info),p,Absyn.IDENT(name = ""))
+    case (outClass as Absyn.CLASS(name = n, body = d),p,Absyn.IDENT(name = ""))
       equation
         //debug_print("Refactoring Class1:", n);
         cPath = Absyn.IDENT(n);
         env = Interactive.getClassEnv(p,cPath);
         resultClassDef = refactorGraphAnnInClassDef(d,p,cPath,env);
+        outClass.body = resultClassDef;
       then
-        Absyn.CLASS(n,part,f,e,r,resultClassDef,file_info);
+        outClass;
 
-    case (Absyn.CLASS(
-      name = n,
-      partialPrefix = part,
-      finalPrefix = f,
-      encapsulatedPrefix = e,
-      restriction = r,
-      body = d,
-      info = file_info),p,cPath)
+    case (outClass as Absyn.CLASS(name = n, body = d),p,cPath)
       equation
        //  debug_print("Refactoring Class:", n);
         cPath = AbsynUtil.joinPaths(cPath,Absyn.IDENT(n));
         env = Interactive.getClassEnv(p,cPath);
         resultClassDef = refactorGraphAnnInClassDef(d,p,cPath,env);
       then
-        Absyn.CLASS(n,part,f,e,r,resultClassDef,file_info);
+        outClass;
 
   end matchcontinue;
 

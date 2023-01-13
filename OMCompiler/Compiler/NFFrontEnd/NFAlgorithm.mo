@@ -53,6 +53,7 @@ public
     list<Statement> statements;
     list<ComponentRef> inputs;
     list<ComponentRef> outputs;
+    InstNode scope;
     DAE.ElementSource source;
   end ALGORITHM;
 
@@ -259,6 +260,7 @@ protected
 
       case Statement.ASSERT() then ();
       case Statement.TERMINATE() then ();
+      case Statement.REINIT() then ();
       case Statement.NORETCALL() then ();
       case Statement.RETURN() then ();
       case Statement.BREAK() then ();

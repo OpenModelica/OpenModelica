@@ -398,9 +398,15 @@ algorithm
       true := InstNode.isInner(innerNode);
       return;
     else
-      // Continue looking in the instance parent's scope.
-      prev_scope := cur_scope;
-      cur_scope := InstNode.instanceParent(cur_scope);
+      if InstNode.isRootClass(cur_scope) then
+        // Stop looking if we reach the root class.
+        prev_scope := InstNode.topScope(cur_scope);
+        cur_scope := InstNode.EMPTY_NODE();
+      else
+        // Otherwise continue looking in the instance parent's scope.
+        prev_scope := cur_scope;
+        cur_scope := InstNode.instanceParent(cur_scope);
+      end if;
     end try;
   end while;
 
@@ -459,9 +465,10 @@ algorithm
             // If we're in an annotation, check in the special scope where
             // annotation classes are defined.
             cur_scope := InstNode.annotationScope(cur_scope);
-          elseif not loaded then
-            // If we haven't already tried, try to load a library with that name
-            // and then try to look it up in the top scope again.
+          elseif not loaded and not require_builtin then
+            // If we haven't already tried and we're not trying to find a
+            // builtin name, try to load a library with that name and then try
+            // to look it up in the top scope again.
             loaded := true;
             loadLibrary(name, cur_scope);
           else
@@ -819,9 +826,10 @@ algorithm
               // If we're in an annotation, check in the special scope where
               // annotation classes are defined.
               foundScope := InstNode.annotationScope(foundScope);
-            elseif not loaded then
-              // If we haven't already tried, try to load a library with that
-              // name and then try to look it up in the top scope again.
+            elseif not loaded and not require_builtin then
+              // If we haven't already tried and we're not trying to find a
+              // builtin name, try to load a library with that name and then try
+              // to look it up in the top scope again.
               loaded := true;
               loadLibrary(name, foundScope);
             else

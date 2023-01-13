@@ -196,7 +196,7 @@ public
       return;
     end if;
 
-    flatModel.variables := list(Variable.mapExp(v, expandSlicedCrefsExp) for v in flatModel.variables);
+    flatModel.variables := list(Variable.mapExpShallow(v, expandSlicedCrefsExp) for v in flatModel.variables);
     flatModel := FlatModel.mapEquations(flatModel, expandSlicedCrefsEq);
     flatModel := FlatModel.mapAlgorithms(flatModel, expandSlicedCrefsAlg);
     functions := FunctionTree.map(functions, expandSlicedCrefsFunction);
@@ -365,7 +365,7 @@ public
   algorithm
     // Find the groups of mergeable component.
     (mergeable, outElements) := makeMergeMap(elements);
-    outNameMap := UnorderedMap.new<Absyn.ComponentRef>(stringHashDjb2Mod, stringEq);
+    outNameMap := UnorderedMap.new<Absyn.ComponentRef>(stringHashDjb2, stringEq);
 
     // Merge each group of mergeable components.
     for el in mergeable loop
@@ -406,7 +406,7 @@ public
       newValue := elem :: newValue;
     end append_merge;
   algorithm
-    merge_map := UnorderedMap.new<ElementList>(stringHashDjb2Mod, stringEq);
+    merge_map := UnorderedMap.new<ElementList>(stringHashDjb2, stringEq);
 
     // Group the components by their signature if they fulfill the requirements
     // for being considered mergeable.
@@ -659,7 +659,7 @@ public
     // Make a name => binding map.
     binding_map := UnorderedMap.fromLists<Absyn.Exp>(names,
       listReverse(Absyn.Exp.ARRAY(b) for b in bindings),
-      AbsynUtil.pathHashMod, AbsynUtil.pathEqual);
+      AbsynUtil.pathHash, AbsynUtil.pathEqual);
 
     // Use one the modifiers as a template and replace the bindings in it with
     // the merged bindings, in order to preserve 'each' and 'final'.

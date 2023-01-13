@@ -558,13 +558,12 @@ algorithm
   zc := match zc
     local
       DAE.Exp e, e_1;
-      list<Integer> ilst1;
       Boolean b;
 
-    case BackendDAE.ZERO_CROSSING(e, ilst1)
+    case BackendDAE.ZERO_CROSSING(relation_ = e)
       equation
         (e_1, _,_, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
-      then if not referenceEq(e,e_1) then BackendDAE.ZERO_CROSSING(e_1, ilst1) else zc;
+      then if not referenceEq(e,e_1) then BackendDAE.ZERO_CROSSING(zc.index, e_1, zc.occurEquLst, zc.iter) else zc;
 
     else zc;
   end match;

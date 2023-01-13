@@ -122,6 +122,29 @@ private slots:
   void addSubModel();
 };
 
+class ReplaceSubModelDialog: public QDialog
+{
+  Q_OBJECT
+public:
+  ReplaceSubModelDialog(GraphicsView *pGraphicsView, QString pName);
+private:
+  GraphicsView *mpGraphicsView;
+  QString mpElementName;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  Label *mpDryRunLabel;
+  QComboBox *mpDryRunComboBox;
+  QPushButton *mpBrowsePathButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browseSubModelPath();
+  void replaceSubModel();
+};
+
 class ShapeAnnotation;
 class AddOrEditIconDialog : public QDialog
 {

@@ -37,7 +37,7 @@ encapsulated uniontype NFConnector
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Variability;
   import DAE;
-  import Flags;
+  import Subscript = NFSubscript;
 
 protected
   import Origin = NFComponentRef.Origin;
@@ -51,6 +51,7 @@ protected
   import ComplexType = NFComplexType;
   import Dimension = NFDimension;
   import MetaModelica.Dangerous.arrayGetNoBoundsChecking;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   type Face = enumeration(INSIDE, OUTSIDE);
@@ -142,6 +143,13 @@ public
                              conn1.face == conn2.face;
   end isEqual;
 
+  function isEqualNoSubs
+    input Connector conn1;
+    input Connector conn2;
+    output Boolean isEqual = ComponentRef.isEqualStrip(conn1.name, conn2.name) and
+                             conn1.face == conn2.face;
+  end isEqualNoSubs;
+
   function isPrefix
     input Connector conn1;
     input Connector conn2;
@@ -191,6 +199,11 @@ public
     output Boolean isExpandable = ConnectorType.isExpandable(conn.cty);
   end isExpandable;
 
+  function isArray
+    input Connector conn;
+    output Boolean isArray = Type.isArray(conn.ty);
+  end isArray;
+
   function name
     input Connector conn;
     output ComponentRef name = conn.name;
@@ -208,25 +221,88 @@ public
 
   function hash
     input Connector conn;
-    input Integer mod;
-    output Integer hash = ComponentRef.hash(conn.name, mod);
+    output Integer hash = ComponentRef.hash(conn.name);
   end hash;
 
-  type ScalarizeSetting = enumeration(
-    NONE    "a[2].b[2] => {a[2].b[2]}",
-    PREFIX  "a[2].b[2] => {a[1].b[2], a[2].b[2]}",
-    ALL     "a[2].b[2] => {a[1].b[1], a[1].b[2], a[2].b[1], a[2].b[2]}"
-  );
+  function hashNoSubs
+    input Connector conn;
+    output Integer hash;
+  algorithm
+    hash := ComponentRef.hashStrip(conn.name);
+  end hashNoSubs;
 
   function split
-    "Splits a connector into its primitive components."
+    "Splits a connector into its primitive components, while keeping arrays as
+     they are.
+       split(c) => {c.e, c.f, c.s}"
     input Connector conn;
-    input ScalarizeSetting scalarize = if Flags.isSet(Flags.NF_SCALARIZE) then
-                                         ScalarizeSetting.ALL else ScalarizeSetting.NONE;
     output list<Connector> connl;
   algorithm
-    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty, scalarize);
+    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty);
+    connl := listReverseInPlace(connl);
   end split;
+
+  function scalarize
+    "Splits a connector into scalar elements.
+      scalarize(a/*Real[2]*/.b/*Real[2]*/) => {a[1].b[1], a[1].b[2], a[2].b[1], a[2].b[2]}"
+    input Connector conn;
+    output list<Connector> connl = {};
+  protected
+    ComponentRef name;
+    Type ty;
+    Face face;
+    DAE.ElementSource source;
+    ConnectorType.Type cty;
+    list<ComponentRef> names;
+  algorithm
+    CONNECTOR(name, ty, face, cty, source) := conn;
+    names := ComponentRef.scalarizeAll(name);
+    ty := Type.arrayElementType(ty);
+
+    for n in names loop
+      connl := CONNECTOR(n, ty, face, cty, source) :: connl;
+    end for;
+  end scalarize;
+
+  function scalarizePrefix
+    "Splits the prefix of a connector into scalar elements.
+       scalarizePrefix(a/*Real[2]*/.b/*Real[2]*/) => {a[1].b, a[2].b}"
+    input Connector conn;
+    output list<Connector> connl = {};
+  protected
+    ComponentRef name, prefix;
+    Type ty;
+    Face face;
+    DAE.ElementSource source;
+    ConnectorType.Type cty;
+    list<ComponentRef> prefixes;
+  algorithm
+    CONNECTOR(name, ty, face, cty, source) := conn;
+    prefix := ComponentRef.rest(name);
+
+    if ComponentRef.isEmpty(prefix) then
+      connl := {conn};
+      return;
+    end if;
+
+    prefixes := ComponentRef.scalarizeAll(prefix);
+    ty := ComponentRef.getSubscriptedType(ComponentRef.first(name));
+
+    for p in prefixes loop
+      name := ComponentRef.prepend(p, name);
+      connl := CONNECTOR(name, ty, face, cty, source) :: connl;
+    end for;
+
+    connl := listReverseInPlace(connl);
+  end scalarizePrefix;
+
+  function addSubscripts
+    input list<Subscript> subscripts;
+    input output Connector conn;
+  algorithm
+    conn.name := ComponentRef.mergeSubscripts(subscripts, conn.name, true);
+    conn.ty := Type.subscript(conn.ty, subscripts);
+  end addSubscripts;
 
 protected
   function crefFace
@@ -251,58 +327,37 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input ConnectorType.Type cty;
-    input ScalarizeSetting scalarize;
+    input list<Dimension> dims = {};
     input output list<Connector> conns = {};
-    input list<Dimension> dims = {} "accumulated dimensions if splitArrays = false";
+  protected
+    ComplexType ct;
+    ClassTree tree;
   algorithm
     conns := match ty
-      local
-        Type ety;
-        ComplexType ct;
-        ClassTree tree;
-
+      // A connector, split into connector elements.
       case Type.COMPLEX(complexTy = ct as ComplexType.CONNECTOR())
         algorithm
-          conns := splitImpl2(name, face, source, ct.potentials, scalarize, conns, dims);
-          conns := splitImpl2(name, face, source, ct.flows, scalarize, conns, dims);
-          conns := splitImpl2(name, face, source, ct.streams, scalarize, conns, dims);
+          conns := splitImpl2(name, face, source, ct.potentials, dims, conns);
+          conns := splitImpl2(name, face, source, ct.flows, dims, conns);
+          conns := splitImpl2(name, face, source, ct.streams, dims, conns);
         then
           conns;
 
+      // An external object, don't split.
       case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         then CONNECTOR(name, Type.liftArrayLeftList(ty, dims), face, cty, source) :: conns;
 
+      // A record, split into record elements.
       case Type.COMPLEX()
         algorithm
           tree := Class.classTree(InstNode.getClass(ty.cls));
-          conns := splitImpl2(name, face, source,
-            arrayList(ClassTree.getComponents(tree)), scalarize, conns, dims);
+          conns := splitImpl2(name, face, source, arrayList(ClassTree.getComponents(tree)), dims, conns);
         then
           conns;
 
-      case Type.ARRAY(elementType = ety as Type.COMPLEX())
-        guard scalarize >= ScalarizeSetting.PREFIX
-        algorithm
-          for c in ComponentRef.scalarize(name) loop
-            conns := splitImpl(c, ety, face, source, cty, scalarize, conns, dims);
-          end for;
-        then
-          conns;
-
-      case Type.ARRAY(elementType = ety)
-        algorithm
-          if scalarize == ScalarizeSetting.ALL then
-            for c in ComponentRef.scalarize(name) loop
-              conns := splitImpl(c, ety, face, source, cty, scalarize, conns, dims);
-            end for;
-          else
-            if not Type.isEmptyArray(ty) then
-              conns := splitImpl(name, ety, face, source, cty, scalarize, conns,
-                                 listAppend(dims, ty.dimensions));
-            end if;
-          end if;
-        then
-          conns;
+      // An array, split according to the element type.
+      case Type.ARRAY()
+        then splitImpl(name, ty.elementType, face, source, cty, listAppend(dims, ty.dimensions), conns);
 
       else CONNECTOR(name, Type.liftArrayLeftList(ty, dims), face, cty, source) :: conns;
     end match;
@@ -313,9 +368,8 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input list<InstNode> comps;
-    input ScalarizeSetting scalarize;
-    input output list<Connector> conns;
     input list<Dimension> dims;
+    input output list<Connector> conns;
   protected
     Component c;
     ComponentRef cref;
@@ -329,7 +383,7 @@ protected
 
       if not ConnectorType.isPotentiallyPresent(cty) then
         cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
-        conns := splitImpl(cref, ty, face, source, cty, scalarize, conns, dims);
+        conns := splitImpl(cref, ty, face, source, cty, dims, conns);
       end if;
     end for;
   end splitImpl2;

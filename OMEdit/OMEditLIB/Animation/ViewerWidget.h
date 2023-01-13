@@ -40,6 +40,8 @@
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 
+#include <OpenThreads/Mutex>
+
 #include <iostream>
 
 #include <QMenu>
@@ -75,9 +77,11 @@ class ViewerWidget : public GLWidget
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   osgViewer::View* getSceneView() {return mpSceneView;}
-  std::string getSelectedVisualizer() {return mSelectedVisualizer;}
-  void setSelectedVisualizer(std::string visualizer) {mSelectedVisualizer = visualizer;}
+  OpenThreads::Mutex* getFrameMutex() {return mpFrameMutex;}
+  AbstractVisualizerObject* getSelectedVisualizer() {return mpSelectedVisualizer;}
+  void setSelectedVisualizer(AbstractVisualizerObject* visualizer) {mpSelectedVisualizer = visualizer;}
   void pickVisualizer(int x, int y);
+  void frame();
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent) override;
   virtual void paintGL() override;
@@ -95,8 +99,9 @@ private:
   osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
   osg::ref_ptr<Viewer> mpViewer;
   osgViewer::View* mpSceneView;
-  std::string mSelectedVisualizer;
-  AbstractAnimationWindow *mpAnimationWidget;
+  OpenThreads::Mutex* mpFrameMutex;
+  AbstractAnimationWindow* mpAnimationWidget;
+  AbstractVisualizerObject* mpSelectedVisualizer;
 public slots:
   void changeVisualizerTransparency();
   void makeVisualizerInvisible();

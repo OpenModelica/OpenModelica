@@ -208,7 +208,7 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
 
 static void omc_assert_fmi_common(threadData_t *threadData, fmi2Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
 {
-  char *str;
+  const char *str;
   ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
   GC_vasprintf(&str, msg, args);
   if (info.lineStart) {
@@ -379,6 +379,39 @@ fmi2Status internalEventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
     status = internalEventUpdate((ModelInstance *)c, eventInfo);
   }
   return status;
+}
+
+/********************************************************************
+ * Private helpers for (modelica_)string array handling             *
+ ********************************************************************/
+
+  /* size of array of strings is not known at compile-time!      */
+  /* figure out total size by repeatedly scanning with strlen(). */
+  /* this code relies on the assumption of 1 char = 1 byte.      */
+
+size_t getStringArraySize(char *stringArray, int elements) {
+    size_t totalSize = 0;
+    char *currStr = stringArray;
+    int currStrLen;
+    for (int j = 0; j < elements; j++) {
+        currStrLen = strlen(currStr) + 1;
+        currStr   += currStrLen;
+        totalSize += currStrLen;
+    }
+    return totalSize;
+}
+
+size_t copyStringArray(char* destination, char *stringArray, int elements) {
+    size_t copiedBytes = 0;
+    char *currStr = stringArray;
+    int currStrLen;
+    for (int j = 0; j < elements; j++) {
+        currStrLen = strlen(currStr) + 1;
+        memcpy(destination, currStr, currStrLen);
+        currStr     += currStrLen;
+        copiedBytes += currStrLen;
+    }
+    return copiedBytes;
 }
 
 /**
@@ -1404,17 +1437,175 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 
 fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, size_t *size)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2SerializedFMUstateSize");
+  /* portable serialization is tricky. for now only x86_64 tested!          */
+  /* TODO: make serialization format architecture- & endianness-independent */
+
+  ModelInstance *comp = (ModelInstance *) c;
+  DATA *fmudata = (DATA *) comp->fmuData;
+  INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
+
+  size_t stateSize = 0;
+
+  /* space for ringbuffer / simulation data contents */
+  stateSize += ringBufferLength(internal_state->simulationData)    /* timeValue */
+                   * sizeof(modelica_real);
+  stateSize += ringBufferLength(internal_state->simulationData)    /* realVars */
+                   * fmudata->modelData->nVariablesReal
+                   * sizeof(modelica_real);
+  stateSize += ringBufferLength(internal_state->simulationData)    /* integerVars */
+                   * fmudata->modelData->nVariablesInteger
+                   * sizeof(modelica_integer);
+  stateSize += ringBufferLength(internal_state->simulationData)    /* booleanVars */
+                   * fmudata->modelData->nVariablesBoolean
+                   * sizeof(modelica_boolean);
+                                                            /* stringVars */
+  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    stateSize += getStringArraySize((char *)(sdata->stringVars),
+                                    fmudata->modelData->nVariablesString);
+  }
+
+  /* space for model parameters */
+  stateSize += fmudata->modelData->nParametersReal * sizeof(modelica_real);
+  stateSize += fmudata->modelData->nParametersInteger * sizeof(modelica_integer);
+  stateSize += fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean);
+  stateSize += getStringArraySize((char *)(internal_state->stringParameter),
+                                  fmudata->modelData->nParametersString);
+
+  *size = stateSize;
+  return fmi2OK;
 }
 
 fmi2Status fmi2SerializeFMUstate(fmi2Component c, fmi2FMUstate FMUstate, fmi2Byte serializedState[], size_t size)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2SerializeFMUstate");
+  /* portable serialization is tricky. for now only x86_64 tested!          */
+  /* TODO: make serialization format architecture- & endianness-independent */
+
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions *functions = (fmi2CallbackFunctions *) comp->functions;
+  DATA *fmudata = (DATA *) comp->fmuData;
+  INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
+
+  /* assumption sizeof(fmi2Byte) == sizeof(char) */
+  /* probably true for most modern platforms     */
+  fmi2Byte *serialVec = serializedState;
+
+  fmi2Byte *currElement = serialVec;
+  char *currStr;
+  int currStrLen;
+  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
+    SIMULATION_DATA *sdata =
+                        (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    memcpy(currElement, &(sdata->timeValue), sizeof(modelica_real));
+    currElement += sizeof(modelica_real);
+    memcpy(currElement, sdata->realVars,
+                        sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
+    currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
+    memcpy(currElement, sdata->integerVars,
+                        sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
+    currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
+    memcpy(currElement, sdata->booleanVars,
+                        sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
+    currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
+
+    currElement += copyStringArray( (char *)currElement, (char *)(sdata->stringVars),
+                                    fmudata->modelData->nVariablesString);
+  }
+  memcpy(currElement, internal_state->realParameter,
+                      sizeof(modelica_real)*fmudata->modelData->nParametersReal);
+  currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
+  memcpy(currElement, internal_state->integerParameter,
+                      sizeof(modelica_integer)*fmudata->modelData->nParametersInteger);
+  currElement += sizeof(modelica_integer)*fmudata->modelData->nParametersInteger;
+  memcpy(currElement, internal_state->booleanParameter,
+                      sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean);
+  currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
+  currElement += copyStringArray( (char *)currElement, (char *)(internal_state->stringParameter),
+                                  fmudata->modelData->nParametersString);
+
+  return fmi2OK;
 }
 
 fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedState[], size_t size, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2DeSerializeFMUstate");
+  /* portable serialization is tricky. for now only x86_64 tested!          */
+  /* TODO: make serialization format architecture- & endianness-independent */
+
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions *) comp->functions;
+  INTERNAL_FMU_STATE *internal_state =
+            (INTERNAL_FMU_STATE *) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
+  internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+  DATA *fmudata = (DATA *) comp->fmuData;
+
+  fmi2Byte *currElement = (fmi2Byte *) serializedState;
+
+  SIMULATION_DATA tmpSimData = {0};
+  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++) {
+
+    /* timeValue */
+    memcpy(&(tmpSimData.timeValue), currElement, sizeof(modelica_real));
+    currElement += sizeof(modelica_real);
+
+    /* realVars */
+    tmpSimData.realVars = (modelica_real *) functions->
+                    allocateMemory(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
+    memcpy(tmpSimData.realVars, currElement,
+                                sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
+    currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
+
+    /* integerVars */
+    tmpSimData.integerVars = (modelica_integer *) functions->
+                    allocateMemory(fmudata->modelData->nVariablesInteger, sizeof(modelica_integer));
+    memcpy(tmpSimData.integerVars, currElement,
+                                   sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
+    currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
+
+    /* booleanVars */
+    tmpSimData.booleanVars = (modelica_boolean *) functions->
+                    allocateMemory(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
+    memcpy(tmpSimData.booleanVars, currElement,
+                                   sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
+    currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
+
+    /* stringVars */
+    size_t strArraySize = getStringArraySize(currElement, fmudata->modelData->nVariablesString);
+    tmpSimData.stringVars = (modelica_string *) functions->allocateMemory(1, strArraySize);
+    memcpy(tmpSimData.stringVars, currElement, strArraySize);
+    currElement += strArraySize;
+
+    appendRingData(internal_state->simulationData, &tmpSimData);
+  }
+
+  /* realParameter */
+  internal_state->realParameter = (modelica_real *) functions->
+                    allocateMemory(fmudata->modelData->nParametersReal, sizeof(modelica_real));
+  memcpy(internal_state->realParameter, currElement,
+                                        sizeof(modelica_real)*fmudata->modelData->nParametersReal);
+  currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
+
+  /* integerParameter */
+  internal_state->integerParameter = (modelica_integer *) functions->
+                  allocateMemory(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
+  memcpy(internal_state->integerParameter, currElement,
+                                   sizeof(modelica_integer)*fmudata->modelData->nParametersInteger);
+  currElement += sizeof(modelica_integer)*fmudata->modelData->nParametersInteger;
+
+  /* booleanParameter */
+  internal_state->booleanParameter = (modelica_boolean *) functions->
+                  allocateMemory(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
+  memcpy(internal_state->booleanParameter, currElement,
+                                   sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean);
+  currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
+
+  /* stringParameter */
+  size_t strArraySize = getStringArraySize(currElement, fmudata->modelData->nParametersString);
+  internal_state->stringParameter = (modelica_string *) functions->allocateMemory(1, strArraySize);
+  memcpy(internal_state->stringParameter, currElement, strArraySize);
+  currElement += strArraySize;
+
+  *FMUstate = (fmi2FMUstate) internal_state;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
@@ -1946,6 +2137,18 @@ fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReferenc
   return fmi2OK;
 }
 
+/**
+ * @brief FMI 2 doStep function.
+ *
+ * Compute time step to next communication point with explicit Euler or CVODE.
+ *
+ * @param c                                   FMU component.
+ * @param currentCommunicationPoint           Current communication point of master algorithm.
+ * @param communicationStepSize               Communication step size.
+ * @param noSetFMUStatePriorToCurrentPoint    Unused.
+ * @return fmi2Status                         Returns fmi2OK if communication point was reached successfully.
+ *                                            Returns fmi2Error if something went wrong.
+ */
 fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint)
 {
   ModelInstance *comp = (ModelInstance *)c;
@@ -1962,7 +2165,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   fmi2Real t = comp->fmuData->localData[0]->timeValue;
   fmi2Real tNext, tEnd;
   fmi2Boolean enterEventMode = fmi2False, terminateSimulation = fmi2False;
-  fmi2Real tCommunication;
 
   fmi2EventInfo eventInfo;
 
@@ -1976,11 +2178,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   eventInfo.nextEventTimeDefined              = fmi2False;
   eventInfo.nextEventTime                     = 0.0;
 
+  comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
   tEnd = currentCommunicationPoint + communicationStepSize;
   if (comp->stopTimeDefined && (tEnd > comp->stopTime))
     status=fmi2Error;
-
-  tCommunication = currentCommunicationPoint;
 
   // copy the input values
   fmi2Real realInputDerivatives[NUMBER_OF_REAL_INPUTS];
@@ -1996,13 +2197,9 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   internalEventIteration(c, &eventInfo);
 
+  /* Integration loop */
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
   {
-    while (tCommunication <= comp->fmuData->localData[0]->timeValue)
-    {
-      tCommunication += communicationStepSize;
-    }
-
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
 
     // set the real Inputs with output_derivative values
@@ -2037,17 +2234,15 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       if (status != fmi2OK) return fmi2Error;
     }
 
-    /* adjust tNext step to get tEnd exactly */
-    if (tCommunication > tEnd - communicationStepSize/1e16)
-      tNext = tEnd;
-    else
-      tNext = tCommunication;
-
     /* adjust for time events */
-    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tNext))
+    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tEnd))
     {
       tNext = eventInfo.nextEventTime;
       time_event = 1;
+    }
+    else
+    {
+      tNext = tEnd;
     }
 
     /* integrate */

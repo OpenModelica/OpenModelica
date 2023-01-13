@@ -197,7 +197,6 @@ protected type HashTable = tuple<
 
 protected partial function FuncHashKey
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashKey;
 
@@ -238,7 +237,7 @@ protected function emptyInstHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(AbsynUtil.pathHashMod,AbsynUtil.pathEqual,AbsynUtil.pathStringDefault,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(AbsynUtil.pathHash,AbsynUtil.pathEqual,AbsynUtil.pathStringDefault,opaqVal));
 end emptyInstHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

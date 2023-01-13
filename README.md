@@ -25,7 +25,6 @@ To get everything running, you will need a few extras:
 - omniORB (optional; CORBA is used by OMOptim)
 - OpenSceneGraph
 - Qt5 or Qt4, Webkit, QtOpenGL
-- [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 - libcurl (libcurl4-gnutls-dev)
 
 ## Compilation
@@ -68,7 +67,7 @@ If you are a developer and want to update your local git repository to the lates
 
 In order to push to the repository, you will push to your own fork of OpenModelica.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
 
-If you do not checkout the repositories for GUI clients (such as OMOptim.git), these directories will be ignored by autoconf and skipped during compilation.
+If you do not checkout the repositories for some GUI clients (such as OMOptim.git), these directories will be ignored by autoconf and skipped during compilation.
 
 To checkout a specific version of OpenModelica, say tag v1.16.2 do:
 ```bash

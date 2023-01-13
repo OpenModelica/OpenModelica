@@ -145,8 +145,7 @@ public
 
   function hash
     input SBAtomicSet set1;
-    input Integer mod;
-    output Integer hash = SBMultiInterval.hash(set1.aset, mod);
+    output Integer hash = SBMultiInterval.hash(set1.aset);
   end hash;
 
   function toString

@@ -46,7 +46,7 @@ $(builddir_inc)/c/fmi1/ \
 $(builddir_inc)/c/fmi2/ \
 $(builddir_inc)/scripting-API \
 $(builddir_java) \
-$(builddir_share)/omc/scripts/OpenTurns/ \
+$(builddir_share)/omc/scripts/ \
 $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
@@ -67,25 +67,31 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
-ifeq ($(OMENCRYPTION),yes)
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
-	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DLICENSE_MANAGER:String=testingdummy -DDECRYPTOR:String=default -DOBFUSCATOR:String=dummy -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
+	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || \
+	  $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF \
+	   -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys \
+	   -DLICENSE_MANAGER:String=testingdummy \
+	   -DDECRYPTOR:String=default \
+	   -DOBFUSCATOR:String=dummy \
+	   -DCMAKE_INSTALL_PREFIX="$(top_builddir)" \
+	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin)" \
+	   ../src -G $(CMAKE_TARGET))
+
 	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
-	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libtool.a $(builddir_lib)/omc/SEMLA
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libcrypto.a $(builddir_lib)/omc/SEMLA/libcrypto_semla.a
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libssl.a $(builddir_lib)/omc/SEMLA/libssl_semla.a
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
 	rm -rf ../OMEncryption/3rdParty/SEMLA/install
-	rm -rf $(builddir_lib)/omc/SEMLA
-endif # end of OMENCRYPTION
+	rm -rf $(builddir_bin)/omc-semla
+endif # end of OM_ENABLE_ENCRYPTION
 
 release: omc
 
@@ -95,7 +101,7 @@ bootstrap-dependencies-post-compiler-runtime:
 bootstrap-dependencies-post-compiler-builtin:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
 bootstrap-dependencies-post-parser: $(SEMLA_LIB)
-	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION)
 
 bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) cppzmq interactive-short
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
@@ -104,9 +110,6 @@ antlr-copy:
 	cp ./3rdParty/antlr/3.2/tool/antlr-3.2.jar ./3rdParty/antlr/3.2/tool/antlr-2.7.7.jar ${builddir_java}/
 
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc parmodauto
-
-install-openturns:
-	(cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
 	mkdir -p $(builddir_share)/omc
@@ -549,7 +552,7 @@ install: install-dirs
 	# Shared data
 	cp -rp ${builddir_share}/omc/*.* ${builddir_share}/omc/runtime ${INSTALL_SHAREDIR}/omc/
 	# Scripts
-	cp -rp ${builddir_share}/omc/scripts/*.* ${builddir_share}/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
+	cp -rp ${builddir_share}/omc/scripts/*.* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
 	cp -p /${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations

@@ -94,6 +94,10 @@ QString Helper::simulationKind = ".OpenModelica.Scripting.ErrorKind.simulation";
 QString Helper::scriptingKind = ".OpenModelica.Scripting.ErrorKind.scripting";
 QString Helper::tabbed = "Tabbed";
 QString Helper::subWindow = "SubWindow";
+QString Helper::iconViewForSettings = "Icon View";
+QString Helper::diagramViewForSettings = "Diagram View";
+QString Helper::textViewForSettings = "Text View";
+QString Helper::documentationViewForSettings = "Documentation View";
 QString Helper::structuredOutput = "Structured";
 QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
@@ -866,10 +870,16 @@ QString GUIMessages::getMessage(int type)
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
     case UNABLE_FIND_COMPONENT_IN_CONNECTION:
       return tr("Unable to find component %1 while parsing connection %2.");
+    case UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW:
+      return tr("Unable to find component %1 while parsing %2 in %3.");
     case UNABLE_FIND_COMPONENT_IN_TRANSITION:
       return tr("Unable to find component %1 while parsing transition(%2).");
+    case UNABLE_FIND_COMPONENT_IN_TRANSITION_NEW:
+      return tr("Unable to find component %1 while parsing %2 in %3.");
     case UNABLE_FIND_COMPONENT_IN_INITIALSTATE:
       return tr("Unable to find component %1 while parsing initialState(%2).");
+    case UNABLE_FIND_COMPONENT_IN_INITIALSTATE_NEW:
+      return tr("Unable to find component %1 while parsing %2 in %3.");
     case SELECT_SIMULATION_OPTION:
       return tr("Select at least one of the following options, <br /><br />* %1<br />* %2<br />* %3<br />* %4")
           .arg(Helper::saveExperimentAnnotation)

@@ -43,6 +43,12 @@ loadString("
       end F;
     end G;
   end F;
+
+  model G
+    replaceable Real x \"definition comment\" constrainedby Real;
+    replaceable Real y constrainedby Real \"constrainedby comment\";
+    replaceable Real z \"definition comment\" constrainedby Real \"constrainedby comment\";
+  end G;
 "); getErrorString();
 
 getComponents(A);
@@ -51,6 +57,7 @@ getComponents(C);
 getComponents(D);
 getComponents(E);
 getComponents(F.G.F.H);
+getComponents(G);
 
 // Result:
 // true
@@ -61,4 +68,5 @@ getComponents(F.G.F.H);
 // {{Real, r1, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}},{Real, r2, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}}}
 // {{Foo, f, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{A, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // {{F.G.F.G.T, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, x, "definition comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}},{Real, y, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}},{Real, z, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}}}
 // endResult

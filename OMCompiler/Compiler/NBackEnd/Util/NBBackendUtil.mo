@@ -89,10 +89,10 @@ public
   algorithm
     if i1 == 0 and i2 == 0 then
       comp := 0;
-    elseif i1 == -i2 then
-      comp := i1 + 2*i2;
+    elseif i1 > i2 then
+      comp := 1;
     else
-      comp := i1 + i2;
+      comp := -1;
     end if;
   end compareCombine;
 

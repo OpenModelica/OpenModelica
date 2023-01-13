@@ -30,6 +30,7 @@
 
 #include "FetchInterfaceDataDialog.h"
 #include "Util/Helper.h"
+#include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
@@ -148,7 +149,7 @@ void FetchInterfaceDataDialog::managerProcessStarted()
 void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
   QTextCharFormat format;
-  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  format.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpOutputTextBox->appendOutput(output, format);
 }
 
@@ -208,8 +209,8 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
   // list of interfaces
   QStringList interfaces;
   if (pConnectionLineAnnotation) {
-    interfaces << pConnectionLineAnnotation->getStartComponentName() + "  ->  " + pConnectionLineAnnotation->getEndComponentName();
-    interfaces << pConnectionLineAnnotation->getEndComponentName() + "  ->  " + pConnectionLineAnnotation->getStartComponentName();
+    interfaces << pConnectionLineAnnotation->getStartElementName() + "  ->  " + pConnectionLineAnnotation->getEndElementName();
+    interfaces << pConnectionLineAnnotation->getEndElementName() + "  ->  " + pConnectionLineAnnotation->getStartElementName();
   } else {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     if (pCompositeModelEditor) {

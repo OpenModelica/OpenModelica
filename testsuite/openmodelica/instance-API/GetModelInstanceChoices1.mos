@@ -1,0 +1,60 @@
+// name: GetModelInstanceChoices1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Boolean b = true
+     annotation(
+       choices(
+         choice = 1.0 \"A\",
+         choice = 2.0 \"B\",
+         choice = 3.0 \"C\",
+         checkBox = true));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"b\",
+//       \"type\": \"Boolean\",
+//       \"modifiers\": \"true\",
+//       \"value\": {
+//         \"binding\": true
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       },
+//       \"annotation\": {
+//         \"choices\": {
+//           \"choice\": [
+//             \"1.0\",
+//             \"2.0\",
+//             \"3.0\"
+//           ],
+//           \"checkBox\": true
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

@@ -1,4 +1,4 @@
-// name: GetModelInstanceAttributes1
+// name: GetModelInstanceReplaceable1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -41,18 +41,22 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": {
 //         \"name\": \"M\",
 //         \"restriction\": \"model\",
+//         \"prefixes\": {
+//           \"replaceable\": true
+//         },
 //         \"components\": [
 //           {
 //             \"name\": \"x\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 5,
+//           \"columnStart\": 17,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 10
+//         }
 //       }
 //     }
 //   ],
@@ -62,6 +66,13 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": \"Real\"
 //     },
 //     \"M\"
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

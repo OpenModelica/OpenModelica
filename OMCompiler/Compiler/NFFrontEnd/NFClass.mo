@@ -279,6 +279,17 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     output Option<Expression> value = Binding.typedExp(lookupAttributeBinding(name, cls));
   end lookupAttributeValue;
 
+  function isOnlyBuiltin
+    input Class cls;
+    output Boolean builtin;
+  algorithm
+    builtin := match cls
+      case PARTIAL_BUILTIN() then true;
+      case INSTANCED_BUILTIN() then true;
+      else false;
+    end match;
+  end isOnlyBuiltin;
+
   function isBuiltin
     input Class cls;
     output Boolean isBuiltin;
@@ -780,7 +791,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     ty as Type.COMPLEX(complexTy = ComplexType.RECORD(ty_node)) := getType(cls, clsNode);
     fields := ClassTree.getComponents(classTree(cls));
     args := list(Binding.getExp(Component.getImplicitBinding(InstNode.component(f))) for f in fields);
-    exp := Expression.makeRecord(InstNode.scopePath(ty_node, includeRoot = true), ty, args);
+    exp := Expression.makeRecord(InstNode.fullPath(ty_node), ty, args);
   end makeRecordExp;
 
   function toFlatStream

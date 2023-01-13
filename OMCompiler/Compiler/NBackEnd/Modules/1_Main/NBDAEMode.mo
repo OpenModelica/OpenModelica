@@ -105,7 +105,7 @@ protected
       // convert all algebraic variables to algebraic states
       // BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
       // convert all residual equations to dae residuals
-      BEquation.EquationPointers.mapPtr(syst.equations, BEquation.Equation.createResidual);
+      BEquation.EquationPointers.mapPtr(syst.equations, function BEquation.Equation.createResidual(new = false));
       syst.unknowns := BEquation.EquationPointers.getResiduals(syst.equations);
       new_systems := syst :: new_systems;
     end for;

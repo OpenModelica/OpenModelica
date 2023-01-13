@@ -130,7 +130,7 @@ void patchConfigStatus() {
   }
 }
 
-void makeLibsAndCache(libs='core') {
+void makeLibsAndCache() {
   if (isWindows())
   {
     // do nothing
@@ -143,11 +143,11 @@ void makeLibsAndCache(libs='core') {
   sh label: 'Create directory for omlibrary cache', script: """
   mkdir -p '${env.LIBRARIES}/om-pkg-cache'
   # Remove the symbolic link, or if it's a directory there... the entire thing
-  rm testsuite/libraries-for-testing/.openmodelica/cache || rm -rf testsuite/libraries-for-testing/.openmodelica/cache
-  mkdir -p testsuite/libraries-for-testing/.openmodelica/
-  test ! -e testsuite/libraries-for-testing/.openmodelica/cache
-  ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache
-  ls -lh testsuite/libraries-for-testing/.openmodelica/cache/
+  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
+  mkdir -p libraries/.openmodelica/
+  test ! -e libraries/.openmodelica/cache
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
   """
   generateTemplates()
   sh "touch omc.skip"
@@ -397,7 +397,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo export MAKETHREADS=-j16
      echo set -e
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
-     echo export "APPDATA=\${PWD}/testsuite/libraries-for-testing"
+     echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
@@ -417,10 +417,13 @@ void buildAndRunOMEditTestsuite(stash) {
     patchConfigStatus()
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  if (stash) {
+    makeLibsAndCache()
+  }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
-  HOME="\$PWD/testsuite/libraries-for-testing"
+  HOME="\$PWD/libraries"
   cd build/bin
   xvfb-run ./RunOMEditTestsuite.sh
   '''
@@ -454,8 +457,8 @@ void compliance() {
   } else {
   standardSetup()
   unstash 'omc-clang'
-  makeLibsAndCache('all')
-  sh 'HOME=$PWD/testsuite/libraries-for-testing/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
+  makeLibsAndCache()
+  sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
@@ -489,15 +492,6 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildOSX() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build OSX")) {
-      return true
-    }
-  }
-  return params.BUILD_OSX
-}
-
 def shouldWeBuildMINGW() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MINGW")) {
@@ -507,22 +501,31 @@ def shouldWeBuildMINGW() {
   return params.BUILD_MINGW
 }
 
-def shouldWeBuildCENTOS7() {
+def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build CentOS")) {
+    if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
       return true
     }
   }
-  return params.BUILD_CENTOS7
+  return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
-def shouldWeSkipCMakeBuild() {
+def shouldWeEnableMinGWCMakeBuild() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Skip CMake Build")) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/MinGW")) {
       return true
     }
   }
-  return params.SKIP_CMAKE_BUILD
+  return params.ENABLE_MINGW_CMAKE_BUILD
+}
+
+def shouldWeEnableMacOSCMakeBuild() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/macOS")) {
+      return true
+    }
+  }
+  return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
 def shouldWeRunTests() {

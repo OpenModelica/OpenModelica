@@ -12,7 +12,7 @@ system("rm -rf CMakeCrossCompile && mkdir CMakeCrossCompile", "CMakeCrossCompile
 cd("CMakeCrossCompile");
 
 // Set CMake FMU without any filters
-if not setCommandLineOptions("--fmuCMakeBuild=true --fmiFilter=none") then
+if not setCommandLineOptions("--fmuCMakeBuild=true --fmuRuntimeDepends=none --fmiFilter=none") then
   print(getErrorString());
   exit(1);
 end if;

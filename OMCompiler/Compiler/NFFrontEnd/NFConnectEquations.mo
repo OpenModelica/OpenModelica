@@ -71,6 +71,8 @@ import Ceval = NFCeval;
 import MetaModelica.Dangerous.listReverseInPlace;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
+import Flatten = NFFlatten;
+import Subscript = NFSubscript;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -261,7 +263,7 @@ protected
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
-  equalityEq := Equation.makeCrefEquality(lhsCref, rhsCref, source);
+  equalityEq := Equation.makeCrefEquality(lhsCref, rhsCref, InstNode.EMPTY_NODE(), source);
 end makeEqualityEquation;
 
 function makeEqualityAssert
@@ -278,9 +280,9 @@ algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
 
-  ty := ComponentRef.getComponentType(lhsCref);
   lhs_exp := Expression.fromCref(lhsCref);
   rhs_exp := Expression.fromCref(rhsCref);
+  ty := Expression.typeOf(lhs_exp);
 
   if Type.isReal(ty) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
@@ -293,7 +295,7 @@ algorithm
     exp := Expression.RELATION(lhs_exp, Operator.makeEqual(ty), rhs_exp);
   end if;
 
-  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, source);
+  equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
 end makeEqualityAssert;
 
 //protected function shouldFlipPotentialEquation
@@ -325,9 +327,19 @@ protected
   list<Connector> c_rest;
   DAE.ElementSource src;
   Expression sum;
+  list<InstNode> iterators = {};
+  list<Expression> ranges = {};
+  list<Subscript> subs = {};
+  Equation eq;
 algorithm
   c :: c_rest := elements;
   src := c.source;
+
+  if Connector.isArray(c) then
+    (iterators, ranges, subs) := Flatten.makeIterators(c.name, Type.arrayDims(c.ty));
+    subs := listReverseInPlace(subs);
+    c :: c_rest := list(Connector.addSubscripts(subs, e) for e in elements);
+  end if;
 
   if listEmpty(c_rest) then
     sum := Expression.fromCref(c.name);
@@ -340,7 +352,13 @@ algorithm
     end for;
   end if;
 
-  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), c.ty, src)};
+  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), InstNode.EMPTY_NODE(), src)};
+
+  while not listEmpty(iterators) loop
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), src)};
+    iterators := listRest(iterators);
+    ranges := listRest(ranges);
+  end while;
 end generateFlowEquations;
 
 function makeFlowExp
@@ -394,8 +412,8 @@ algorithm
         e2 := makeInStreamCall(cref1);
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.EQUALITY(cref1, e1, Type.REAL(), src),
-         Equation.EQUALITY(cref2, e2, Type.REAL(), src)};
+        {Equation.EQUALITY(cref1, e1, Type.REAL(), InstNode.EMPTY_NODE(), src),
+         Equation.EQUALITY(cref2, e2, Type.REAL(), InstNode.EMPTY_NODE(), src)};
 
     // One inside, one outside:
     // cr1 = cr2;
@@ -404,7 +422,7 @@ algorithm
       algorithm
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.makeCrefEquality(cr1, cr2, src)};
+        {Equation.makeCrefEquality(cr1, cr2, InstNode.EMPTY_NODE(), src)};
 
     // The general case with N inside connectors and M outside:
     else
@@ -433,7 +451,7 @@ algorithm
     outside := removeStreamSetElement(e.name, outsideElements);
     res := streamSumEquationExp(outside, insideElements, flowThreshold, variables);
     src := ElementSource.addAdditionalComment(e.source, " equation generated from stream connection");
-    equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), src) :: equations;
+    equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), InstNode.EMPTY_NODE(), src) :: equations;
   end for;
 end streamEquationGeneral;
 
@@ -1003,6 +1021,10 @@ protected
   Binding binding;
 algorithm
   ovar := UnorderedMap.get(varName, variables);
+
+  if isNone(ovar) then
+    ovar := UnorderedMap.get(ComponentRef.stripSubscriptsAll(varName), variables);
+  end if;
 
   if isNone(ovar) then
     Error.addInternalError(getInstanceName() + " could not find the variable " +

@@ -39,6 +39,7 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -88,11 +89,7 @@ public
     String sliceStr;
   algorithm
     str := func(slice.t);
-    if listLength(slice.indices) > maxLength then
-      str := str + "\n\t slice: " + List.toString(List.firstN(slice.indices, maxLength), intString, "", "{", ", ", "") + " ...}";
-    elseif not listEmpty(slice.indices) then
-      str := str + "\n\t slice: " + List.toString(slice.indices, intString);
-    end if;
+      str := str + "\n\t slice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = 10);
   end toString;
 
   function lstToString
@@ -123,7 +120,7 @@ public
     input UnorderedMap<T, IntLst> map;
   algorithm
     if UnorderedMap.contains(t, map) then
-      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map), map);
+      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map, sourceInfo()), map);
     else
       UnorderedMap.addNew(t, {i}, map);
     end if;
@@ -249,7 +246,7 @@ public
     output list<Integer> indices = {};
   algorithm
     for cref in dependencies loop
-      indices := UnorderedMap.getSafe(cref, map) :: indices;
+      indices := UnorderedMap.getSafe(cref, map, sourceInfo()) :: indices;
     end for;
     // remove duplicates and sort
     indices := List.sort(List.unique(indices), intLt);
@@ -269,7 +266,7 @@ public
   algorithm
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped);
       subs := ComponentRef.subscriptsToInteger(cref);
@@ -295,6 +292,9 @@ public
     list<Integer> scal_lst;
     Integer idx;
     array<Integer> mode_to_var_row;
+    list<Subscript> subs;
+    list<Dimension> dims;
+    Type ty;
   algorithm
     (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     indices := arrayCreate(eqn_size, {});
@@ -305,9 +305,13 @@ public
     end for;
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
+
       // build range in reverse, it will be flipped anyway
-      scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, true);
+      subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      ty := ComponentRef.getSubscriptedType(stripped, true);
+      dims := Type.arrayDims(ty);
+      scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, subs, dims, true);
 
       if intMod(eqn_size, listLength(scal_lst)) <> 0 then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -370,10 +374,10 @@ public
     end for;
     for cref in dependencies loop
       stripped        := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx     := UnorderedMap.getSafe(stripped, map);
+      var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _)  := mapping.var_AtS[var_arr_idx];
       sizes           := ComponentRef.sizes(stripped);
-      subs            := ComponentRef.subscriptsToExpression(cref);
+      subs            := ComponentRef.subscriptsToExpression(cref, true);
       scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
 
       if listLength(scal_lst) <> eqn_size then
@@ -407,6 +411,7 @@ public
     input list<ComponentRef> dependencies                         "dependent var crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map      "hash table to check for relevance";
     input Iterator iter                                           "iterator frames";
+    input list<Integer> slice = {}                                "optional slice, empty least means all";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
     ComponentRef stripped;
@@ -423,23 +428,23 @@ public
     frames := List.zip(names, ranges);
 
     // get new subscripts for row cref
-    subs := ComponentRef.subscriptsToExpression(row_cref);
-    //subs := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(row_cref));
+    subs := ComponentRef.subscriptsToExpression(row_cref, false);
     new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+    new_row_cref_subs := if not listEmpty(slice) then List.keepPositions(new_row_cref_subs, slice) else new_row_cref_subs;
 
     // reapply new subscripts for each frame location
     stripped := ComponentRef.stripSubscriptsAll(row_cref);
     for new_subs_single in new_row_cref_subs loop
       evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_row_crefs;
+      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_row_crefs;
     end for;
 
-    // get the scalar crefs for each cref
+    // get the scalar crefs for each column cref
     if not listEmpty(dependencies) then
       for cref in dependencies loop
-        subs := ComponentRef.subscriptsToExpression(cref);
-        //subs     := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref));
+        subs := ComponentRef.subscriptsToExpression(cref, false);
         new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+        new_subs := if not listEmpty(slice) then List.keepPositions(new_subs, slice) else new_row_cref_subs;
 
         if listLength(new_subs) <> listLength(new_row_crefs) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -453,7 +458,7 @@ public
         stripped := ComponentRef.stripSubscriptsAll(cref);
         for new_subs_single in new_subs loop
           evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_dep_crefs;
+          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_dep_crefs;
         end for;
         scalar_dependenciesT := new_dep_crefs :: scalar_dependenciesT;
       end for;
@@ -463,8 +468,35 @@ public
     else
       tpl_lst := list((new_row_cref, {}) for new_row_cref in new_row_crefs);
     end if;
-
   end getDependentCrefsPseudoForCausalized;
+
+
+  function getDependentCrefsPseudoArrayCausalized
+    "[Adjacency.MatrixType.PSEUDO] Array equations.
+    Turns cref dependencies into index lists, used for adjacency."
+    input ComponentRef row_cref                                   "cref representing the current row";
+    input list<ComponentRef> dependencies                         "dependent var crefs";
+    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
+  protected
+    list<ComponentRef> row_cref_scal, dep_scal;
+    list<list<ComponentRef>> dependencies_scal = {};
+    Boolean sliced = not listEmpty(slice);
+  algorithm
+    row_cref_scal := ComponentRef.scalarizeAll(row_cref);
+    if sliced then
+      row_cref_scal := List.keepPositions(row_cref_scal, slice);
+    end if;
+    for dep in listReverse(dependencies) loop
+      dep_scal := ComponentRef.scalarizeAll(dep);
+      if sliced then
+        dep_scal := List.keepPositions(dep_scal, slice);
+      end if;
+      dependencies_scal := dep_scal :: dependencies_scal;
+    end for;
+    dependencies_scal := List.transposeList(dependencies_scal);
+    tpl_lst := List.zip(row_cref_scal, dependencies_scal);
+  end getDependentCrefsPseudoArrayCausalized;
 
   function locationToIndex
     "reverse function to indexToLocation()
@@ -490,19 +522,13 @@ public
     input list<Integer> sizes;
     output list<Integer> vals = {};
   protected
-    Integer iterator = index, v, ss;
+    Integer iterator = index;
     Integer divisor = product(s for s in sizes);
   algorithm
-
     for size in sizes loop
       divisor   := intDiv(divisor, size);
       vals      := intDiv(iterator, divisor) :: vals;
       iterator  := mod(iterator, divisor);
-    end for;
-    vals := listReverse(vals);
-
-    for tpl in List.zip(sizes, vals) loop
-      (ss, v) := tpl;
     end for;
   end indexToLocation;
 

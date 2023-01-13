@@ -36,7 +36,6 @@
 #define OMDUMPXML_H
 
 #include <QFile>
-#include <QXmlDefaultHandler>
 #include <QHash>
 
 #include "diff_match_patch.h"
@@ -189,10 +188,10 @@ struct OMEquation {
   QString toString();
 };
 
-class MyHandler : private QXmlDefaultHandler {
+class MyHandler {
 public:
   bool hasOperationsEnabled;
-  MyHandler(QFile &file, QHash<QString,OMVariable> &variables, QList<OMEquation*> &equations);
+  MyHandler(QFile &file, QHash<QString,OMVariable> &vars, QList<OMEquation*> &eqs);
   ~MyHandler();
 private:
   QHash<QString,OMVariable> &variables;
@@ -210,12 +209,6 @@ private:
   static const QSet<QString> equationPartTags;
   static const QSet<QString> operationTags;
   static const QSet<QString> operationExpTags;
-  bool startDocument();
-  bool endDocument();
-  bool characters( const QString & ch );
-  bool startElement( const QString & namespaceURI, const QString & localName, const QString & qName, const QXmlAttributes & atts);
-  bool endElement( const QString & namespaceURI, const QString & localName, const QString & qName);
-  bool fatalError(const QXmlParseException & exception);
 };
 
 #endif

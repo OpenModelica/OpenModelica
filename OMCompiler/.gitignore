@@ -200,6 +200,8 @@ SimulationRuntime/c/RuntimeSources.mo
 SimulationRuntime/**/test_files/*.jar
 SimulationRuntime/OMSICpp/build_msvc/
 SimulationRuntime/cpp/build_msvc/
+SimulationRuntime/c/libOpenModelicaRuntimeC.dll
+SimulationRuntime/c/libSimulationRuntimeC.dll
 # Visual Studio 2015/2017 cache/options directory
 
 SimulationRuntime/OMSICpp/.vs/
@@ -218,3 +220,4 @@ tags
 *clang_output*
 
 Compiler/Util/Autoconf.mo
+Compiler/boot/bomc/

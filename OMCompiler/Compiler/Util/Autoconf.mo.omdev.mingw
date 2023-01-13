@@ -9,7 +9,11 @@ encapsulated package Autoconf
   constant String linkType = " -Wl,-B$(OMC_LDFLAGS_LINK_TYPE) " "OMC_LDFLAGS_LINK_TYPE is set in the Makefile, can be overrided when calling make";
   constant String configureCommandLine = "Manually created Makefiles for OMDev";
   constant String os = "Windows_NT";
-  constant String make = "make";
+  // For anything that is issued through SystemCall use this mingw32-make (instead of just 'make'
+  // which is the MSYS make.) since the latter is not supposed to be used on Windows shells.
+  // (systemCall uses 'cmd \c' to issue commands.)
+  constant String make = "mingw32-make";
+  constant String cmake = "cmake";
   constant String exeExt = ".exe";
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
@@ -22,7 +26,7 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc " + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
   constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +

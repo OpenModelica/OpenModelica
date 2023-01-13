@@ -98,7 +98,7 @@ public
         then bdae;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create initial system!"});
         then fail();
       end match;
 
@@ -117,7 +117,7 @@ public
         end if;
       end if;
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to apply modules!"});
     end try;
   end main;
 
@@ -157,25 +157,22 @@ public
   algorithm
     _ := match Pointer.access(state)
       local
-        BackendExtension.VariableAttributes attributes;
         ComponentRef name, start_name;
         Pointer<Variable> var_ptr, start_var;
         Pointer<BEquation.Equation> start_eq;
 
       // if it is an array create for equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-        guard BackendExtension.VariableAttributes.isFixed(attributes) and BVariable.isArray(state) algorithm
-          createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
+      case Variable.VARIABLE() guard BVariable.isFixed(state) and BVariable.isArray(state) algorithm
+        createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
       then ();
 
       // create scalar equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-        guard BackendExtension.VariableAttributes.isFixed(attributes) algorithm
-          name := BVariable.getVarName(state);
-          (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
-          start_eq := BEquation.Equation.makeEq(name, start_name, idx, NBEquation.START_STR);
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-          Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+      case Variable.VARIABLE() guard BVariable.isFixed(state) algorithm
+        name := BVariable.getVarName(state);
+        (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
+        start_eq := BEquation.Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
+        Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+        Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
       else ();
     end match;
@@ -198,17 +195,17 @@ public
   algorithm
     if BVariable.isDiscreteState(var_ptr) then
       // for discrete states change the lhs cref to the $PRE cref
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       name := BVariable.getPreCref(name);
-      name := ComponentRef.mergeSubscripts(subscripts, name);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       var_ptr := BVariable.getVarPointer(name);
     elseif BVariable.isPrevious(var_ptr) then
       // for previous change the rhs to the start value of the discrete state
       merged_name := BVariable.getDiscreteStateCref(name);
-      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
     else
       // just apply subscripts and make start var
-      name := ComponentRef.mergeSubscripts(subscripts, name);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
       merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
@@ -227,7 +224,7 @@ public
   algorithm
     for var in BVariable.VariablePointers.toList(parameters) loop
       // only consider non constant parameter bindings
-      if (BVariable.getBindingVariability(var) <> NFPrefixes.Variability.CONSTANT) then
+      if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
         // generate equation only if variable is fixed
@@ -256,6 +253,7 @@ public
     ComponentRef name, start_name;
     list<Dimension> dims;
     list<InstNode> iterators;
+    list<ComponentRef> iter_crefs;
     list<Expression> ranges;
     list<Subscript> subscripts;
     list<tuple<ComponentRef, Expression>> frames;
@@ -265,9 +263,12 @@ public
     name    := BVariable.getVarName(var_ptr);
     dims    := Type.arrayDims(ComponentRef.nodeType(name));
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    iter_crefs := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
+    iter_crefs := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
+    subscripts := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+    frames  := List.zip(iter_crefs, ranges);
     (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
-    start_eq := Equation.makeEq(name, start_name, idx, NBEquation.START_STR, frames);
+    start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
@@ -288,7 +289,7 @@ public
         Pointer<BEquation.Equation> pre_eq;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE_STATE(previous = previous)))
         algorithm
-          pre_eq := BEquation.Equation.makeEq(BVariable.getVarName(disc_state), BVariable.getVarName(previous), idx, NBEquation.PRE_STR);
+          pre_eq := BEquation.Equation.makeAssignment(BVariable.getVarName(disc_state), Expression.fromCref(BVariable.getVarName(previous)), idx, NBEquation.PRE_STR, {}, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
           Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       then ();
       else ();
@@ -318,10 +319,10 @@ public
     frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
 
     pre_name := BVariable.getPreCref(name);
-    pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name);
-    name := ComponentRef.mergeSubscripts(subscripts, name);
+    pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);
+    name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
-    pre_eq := BEquation.Equation.makeEq(name, pre_name, idx, NBEquation.PRE_STR);
+    pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, frames, NBEquation.EQ_ATTR_DEFAULT_INITIAL);
 
     if not listEmpty(disc_state.indices) then
       // empty list indicates full array, slice otherwise

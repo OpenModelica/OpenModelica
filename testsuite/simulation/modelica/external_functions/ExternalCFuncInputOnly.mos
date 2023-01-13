@@ -1,0 +1,32 @@
+// name:     ExternalCFuncInputOnly
+// keywords: ExternalObject
+// status:   correct
+// cflags: -d=newInst
+// setup_command: gcc -c -o ExternalCFuncInputOnly.o ExternalCFuncInputOnly.c
+// teardown_command: rm -rf ExternalCFuncInputOnly_*
+// depends: ExternalCFuncInputOnly.c
+// depends: ExternalCFuncInputOnly.h
+//
+//  Checks that a record passed to external function is marked for the extra conversion code generation.
+//  Checks that a string type record member variable is mapped correctly to an external record.
+//
+
+loadFile("ExternalCFuncInputOnly.mo");
+getErrorString();
+
+simulate(ExternalCFuncInputOnly.Component);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalCFuncInputOnly.Component_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalCFuncInputOnly.Component', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "received name: Component
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

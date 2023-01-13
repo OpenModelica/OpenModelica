@@ -68,14 +68,17 @@ public:
   // Used for icon/diagram inherited shape
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
-  LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView);
   // Used for reading a connection
   LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::Connection *pConnection, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView);
   // Used for reading a transition
   LineAnnotation(QString annotation, QString text, Element *pStartComponent, Element *pEndComponent, QString condition, QString immediate,
                  QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::Transition *pTransition, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView);
   // Used for reading an initial state
   LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::InitialState *pInitialState, Element *pComponent, bool inherited, GraphicsView *pGraphicsView);
   // Used for non-exisiting component
   LineAnnotation(Element *pParent);
   // Used for non-existing class
@@ -99,16 +102,18 @@ public:
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void updateTransitionTextPosition();
+  void setLine(ModelInstance::Line *pLine) {mpLine = pLine;}
+  ModelInstance::Line* getLine() {return mpLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
-  void setStartComponent(Element *pStartComponent) {mpStartComponent = pStartComponent;}
-  Element* getStartComponent() {return mpStartComponent;}
-  void setStartComponentName(QString name) {mStartComponentName = name;}
-  QString getStartComponentName() {return mStartComponentName;}
-  void setEndComponent(Element *pEndComponent) {mpEndComponent = pEndComponent;}
-  Element* getEndComponent() {return mpEndComponent;}
-  void setEndComponentName(QString name) {mEndComponentName = name;}
-  QString getEndComponentName() {return mEndComponentName;}
+  void setStartElement(Element *pStartElement) {mpStartElement = pStartElement;}
+  Element* getStartElement() {return mpStartElement;}
+  void setStartElementName(QString name) {mStartElementName = name;}
+  QString getStartElementName() {return mStartElementName;}
+  void setEndElement(Element *pEndElement) {mpEndElement = pEndElement;}
+  Element* getEndElement() {return mpEndElement;}
+  void setEndElementName(QString name) {mEndElementName = name;}
+  QString getEndElementName() {return mEndElementName;}
   void setCondition(QString condition) {mCondition = condition;}
   QString getCondition() {return mCondition;}
   void setImmediate(bool immediate) {mImmediate = immediate;}
@@ -136,12 +141,14 @@ public:
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable) override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  ModelInstance::Model *getParentModel() const override;
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();
   void showOMSConnection();
   void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
+  void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
 private:
@@ -151,11 +158,11 @@ protected:
 
   private:
   LineType mLineType;
-  Element *mpStartComponent;
-  QString mStartComponentName;
-  Element *mpEndComponent;
-  QString mEndComponentName;
-  bool mStartAndEndComponentsSelected;
+  Element *mpStartElement;
+  QString mStartElementName;
+  Element *mpEndElement;
+  QString mEndElementName;
+  bool mStartAndEndElementsSelected;
   QString mCondition;
   bool mImmediate;
   bool mReset;
@@ -186,7 +193,7 @@ class ExpandableConnectorTreeItem : public QObject
   Q_OBJECT
 public:
   ExpandableConnectorTreeItem();
-  ExpandableConnectorTreeItem(QString name, bool array, QString arrayIndex, StringHandler::ModelicaClasses restriction, bool newVariable,
+  ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable,
                               ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   ~ExpandableConnectorTreeItem();
   bool isRootItem() {return mIsRootItem;}
@@ -195,8 +202,8 @@ public:
   const QString& getName() const {return mName;}
   void setArray(bool array) {mArray = array;}
   bool isArray() {return mArray;}
-  void setArrayIndex(QString arrayIndex) {mArrayIndex = arrayIndex;}
-  const QString& getArrayIndex() const {return mArrayIndex;}
+  void setArrayIndexes(QStringList arrayIndexes) {mArrayIndexes = arrayIndexes;}
+  const QStringList& getArrayIndexes() const {return mArrayIndexes;}
   void setRestriction(StringHandler::ModelicaClasses restriction) {mRestriction = restriction;}
   StringHandler::ModelicaClasses getRestriction() {return mRestriction;}
   void setNewVariable(bool newVariable) {mNewVariable = newVariable;}
@@ -212,7 +219,7 @@ private:
   QList<ExpandableConnectorTreeItem*> mChildren;
   QString mName;
   bool mArray;
-  QString mArrayIndex;
+  QStringList mArrayIndexes;
   StringHandler::ModelicaClasses mRestriction;
   bool mNewVariable;
 };
@@ -243,7 +250,8 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(Element *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
   ExpandableConnectorTreeItem *mpRootExpandableConnectorTreeItem;
@@ -270,10 +278,10 @@ public:
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
-  Element *mpStartComponent;
-  Element *mpStartRootComponent;
-  Element *mpEndComponent;
-  Element *mpEndRootComponent;
+  Element *mpStartElement;
+  Element *mpStartRootElement;
+  Element *mpEndElement;
+  Element *mpEndRootElement;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   ExpandableConnectorTreeModel *mpStartExpandableConnectorTreeModel;
@@ -285,14 +293,14 @@ private:
   ExpandableConnectorTreeView *mpEndExpandableConnectorTreeView;
   QList<ExpandableConnectorTreeItem*> mEndConnectorsList;
   Label *mpIndexesDescriptionLabel;
-  Label *mpStartRootComponentLabel;
-  QSpinBox *mpStartRootComponentSpinBox;
-  Label *mpStartComponentLabel;
-  QSpinBox *mpStartComponentSpinBox;
-  Label *mpEndRootComponentLabel;
-  QSpinBox *mpEndRootComponentSpinBox;
-  Label *mpEndComponentLabel;
-  QSpinBox *mpEndComponentSpinBox;
+  Label *mpStartRootElementLabel;
+  QList<QSpinBox*> mStartRootElementSpinBoxList;
+  Label *mpStartElementLabel;
+  QList<QSpinBox*> mStartElementSpinBoxList;
+  Label *mpEndRootElementLabel;
+  QList<QSpinBox*> mEndRootElementSpinBoxList;
+  Label *mpEndElementLabel;
+  QList<QSpinBox*> mEndElementSpinBoxList;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
@@ -300,11 +308,13 @@ private:
   QHBoxLayout *mpConnectionStartHorizontalLayout;
   QHBoxLayout *mpConnectionEndHorizontalLayout;
 
-  QSpinBox* createSpinBox(QString arrayIndex);
-  static QString createComponentNameFromLayout(QHBoxLayout *pLayout);
-  static QString getComponentConnectionName(GraphicsView *pGraphicsView, ExpandableConnectorTreeView *pExpandableConnectorTreeView, QHBoxLayout *pConnectionHorizontalLayout,
-                                            Element *pComponent1, Element *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
-                                            Element *pComponent2, Element *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2);
+  QList<QSpinBox*> createSpinBoxes(Element *pElement);
+  QList<QSpinBox*> createSpinBoxes(const QStringList &arrayIndexes);
+  QSpinBox* createSpinBox(QString arrayIndex, int position, int length);
+  static QString createElementNameFromLayout(QHBoxLayout *pLayout);
+  static QString getElementConnectionName(GraphicsView *pGraphicsView, ExpandableConnectorTreeView *pExpandableConnectorTreeView, QHBoxLayout *pConnectionHorizontalLayout,
+                                          Element *pElement1, Element *pRootElement1, QList<QSpinBox*> elementSpinBoxList1, QList<QSpinBox*> rootElementSpinBoxList1,
+                                          Element *pElement2, Element *pRootElement2, QList<QSpinBox*> elementSpinBoxList2, QList<QSpinBox*> rootElementSpinBoxList2);
 public slots:
   void startConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
   void endConnectorChanged(const QModelIndex &current, const QModelIndex &previous);

@@ -122,7 +122,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   kinsolData->kinsolMemory = KINCreate();
   if (kinsolData->kinsolMemory == NULL) {
     errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function KINCreate: An error occurred.");
+                     "KINSOL: In function KINCreate: An error occurred.");
   }
 
   /* Set error handler and print level */
@@ -170,29 +170,26 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
       kinsolData->linearSolverMethod == NLS_LS_TOTALPIVOT) {
     kinsolData->linSol = SUNLinSol_Dense(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(
-          LOG_STDOUT, 0,
-          "##KINSOL## In function SUNLinSol_Dense: Input incompatible.");
+      errorStreamPrint(LOG_STDOUT, 0,
+                       "KINSOL: In function SUNLinSol_Dense: Input incompatible.");
     }
   } else if (kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->linSol = SUNLinSol_LapackDense(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(
-          LOG_STDOUT, 0,
-          "##KINSOL## In function SUNLinSol_LapackDense: Input incompatible.");
+      errorStreamPrint(LOG_STDOUT, 0,
+                       "KINSOL: In function SUNLinSol_LapackDense: Input incompatible.");
     }
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     kinsolData->linSol = SUNLinSol_KLU(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(
-          LOG_STDOUT, 0,
-          "##KINSOL## In function SUNLinSol_KLU: Input incompatible.");
+      errorStreamPrint(LOG_STDOUT, 0,
+                       "KINSOL: In function SUNLinSol_KLU: Input incompatible.");
     }
   } else {
-    errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Unknown linear solver method.");
+    errorStreamPrint(LOG_STDOUT, 0, "KINSOL: Unknown linear solver method.");
   }
   /* Log used solver */
-  infoStreamPrint(LOG_NLS, 0, "##KINSOL## Using linear solver method %s", NLS_LS_METHOD[kinsolData->linearSolverMethod]);
+  infoStreamPrint(LOG_NLS, 0, "KINSOL: Using linear solver method %s", NLS_LS_METHOD[kinsolData->linearSolverMethod]);
 
   /* Set linear solver */
   flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,
@@ -385,7 +382,7 @@ static int nlsDenseJac(long int N,
 
   /* debug */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
-    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Dense matrix.");
+    infoStreamPrint(LOG_NLS_JAC, 1, "KINSOL: Dense matrix.");
     SUNDenseMatrix_Print(Jac, stdout); /* TODO: Print in LOG_NLS_JAC */
     nlsKinsolJacSumDense(Jac);
     messageClose(LOG_NLS_JAC);
@@ -412,7 +409,7 @@ static void setJacElementKluSparse(int row, int col, double value, int nth,
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
     errorStreamPrint(LOG_STDOUT, 0,
-                     "In function setJacElementKluSparse: Wrong sparse format "
+                     "KINSOL: In function setJacElementKluSparse: Wrong sparse format "
                      "of SUNMatrix A.");
   }
 
@@ -436,9 +433,8 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
 
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
   }
 
   /* Set last value of indexptrs to nnz */
@@ -448,7 +444,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
     if (SM_INDEXPTRS_S(A)[i] == SM_INDEXPTRS_S(A)[i - 1]) {
       warningStreamPrint(LOG_STDOUT, 0,
-                         "##KINSOL## Jacobian row %d singular. See LOG_NLS for "
+                         "KINSOL: Jacobian row %d singular. See LOG_NLS for "
                          "more information.",
                          i);
       SM_INDEXPTRS_S(A)[i] = SM_INDEXPTRS_S(A)[i - 1];
@@ -559,7 +555,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
-    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Sparse Matrix.");
+    infoStreamPrint(LOG_NLS_JAC, 1, "KINSOL: Sparse Matrix.");
     SUNSparseMatrix_Print(Jac, stdout);
     nlsKinsolJacSumSparse(Jac);
     messageClose(LOG_NLS_JAC);
@@ -667,7 +663,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
-    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Sparse Matrix.");
+    infoStreamPrint(LOG_NLS_JAC, 1, "KINSOL: Sparse Matrix.");
     SUNSparseMatrix_Print(Jac, stdout); /* TODO: Print in LOG_NLS_JAC */
     nlsKinsolJacSumSparse(Jac);
     messageClose(LOG_NLS_JAC);
@@ -701,7 +697,7 @@ static void nlsKinsolJacSumDense(SUNMatrix A) {
 
     if (sum == 0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
       warningStreamPrint(LOG_NLS_V, 0,
-                         "Column %d of Jacobian is zero. Jacobian is singular.",
+                         "KINSOL: Column %d of Jacobian is zero. Jacobian is singular.",
                          i);
     } else {
       infoStreamPrint(LOG_NLS_JAC, 0, "Column %d of Jacobian absolute sum = %g",
@@ -726,7 +722,7 @@ static void nlsKinsolJacSumSparse(SUNMatrix A) {
   /* Check format of A */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
     errorStreamPrint(LOG_STDOUT, 0,
-                     "In function nlsKinsolJacSumSparse: Wrong sparse format "
+                     "KINSOL: In function nlsKinsolJacSumSparse: Wrong sparse format "
                      "of SUNMatrix A.");
   }
 
@@ -739,7 +735,7 @@ static void nlsKinsolJacSumSparse(SUNMatrix A) {
 
     if (sum == 0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
       warningStreamPrint(LOG_NLS_V, 0,
-                         "Column %d of Jacobian is zero. Jacobian is singular.",
+                         "KINSOL: Column %d of Jacobian is zero. Jacobian is singular.",
                          i);
     } else {
       infoStreamPrint(LOG_NLS_JAC, 0, "Column %d of Jacobian absolute sum = %g",
@@ -802,7 +798,7 @@ static void nlsKinsolResetInitial(DATA *data, NLS_KINSOL_DATA *kinsolData,
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0,
-                     "Function nlsKinsolResetInitial: Unknown mode %d.",
+                     "KINSOL: Function nlsKinsolResetInitial: Unknown mode %d.",
                      (int)mode);
   }
 }
@@ -845,12 +841,11 @@ static void nlsKinsolXScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     }
     break;
   case SCALING_JACOBIAN:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "Function nlsKinsolXScaling: Invalid mode SCALING_JACOBIAN.");
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: Function nlsKinsolXScaling: Invalid mode SCALING_JACOBIAN.");
   default:
     errorStreamPrint(LOG_STDOUT, 0,
-                     "Function nlsKinsolXScaling: Unknown mode %d.", (int)mode);
+                     "KINSOL: Function nlsKinsolXScaling: Unknown mode %d.", (int)mode);
   }
 }
 
@@ -905,10 +900,9 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
                   kinsolData->userData, tmp1, tmp2);
       spJac = SUNSparseFromDenseMatrix(denseJac, DBL_MIN, CSC_MAT);
       if (spJac == NULL) {
-        errorStreamPrint(
-            LOG_STDOUT, 0,
-            "##KINSOL## In function SUNSparseFromDenseMatrix: Requirements are "
-            "violated, or matrix storage request cannot be satisfied.");
+        errorStreamPrint(LOG_STDOUT, 0,
+                         "KINSOL: In function SUNSparseFromDenseMatrix: Requirements are "
+                         "violated, or matrix storage request cannot be satisfied.");
       }
       SUNMatDestroy(denseJac);
     }
@@ -938,12 +932,11 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     }
     break;
   case SCALING_NOMINALSTART:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "Function nlsKinsolFScaling: Invalid mode SCALING_NOMINALSTART.");
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: Function nlsKinsolFScaling: Invalid mode SCALING_NOMINALSTART.");
   default:
     errorStreamPrint(LOG_STDOUT, 0,
-                     "Function nlsKinsolFScaling: Unknown mode %d.", (int)mode);
+                     "KINSOL: Function nlsKinsolFScaling: Unknown mode %d.", (int)mode);
   }
 }
 
@@ -1026,7 +1019,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
   case KIN_ILL_INPUT:
   case KIN_NO_MALLOC:
     errorStreamPrint(LOG_NLS_V, 0,
-                     "Kinsol has a serious memory issue ERROR %d\n", errorCode);
+                     "KINSOL: Memory issue ERROR %d\n", errorCode);
     return FALSE;
     break;
   /* Just retry with new initial guess */
@@ -1051,7 +1044,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
   /* Maybe happened because of an out-dated factorization, so just retry */
   case KIN_LSOLVE_FAIL:
     warningStreamPrint(LOG_NLS_V, 0,
-                       "kinsols matrix need new factorization. Try again.\n");
+                       "KINSOL: Matrix need new factorization. Try again.\n");
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
         nlsData->isPatternAvailable) {
       /* Complete symbolic and numeric factorizations */
@@ -1063,9 +1056,8 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     break;
   case KIN_MAXITER_REACHED:
   case KIN_REPTD_SYSFUNC_ERR:
-    warningStreamPrint(
-        LOG_NLS_V, 0,
-        "kinsols runs into issues retry with different configuration.\n");
+    warningStreamPrint(LOG_NLS_V, 0,
+                       "KINSOL: Runs into issues retry with different configuration.\n");
     break;
   case KIN_LINIT_FAIL:
     errorStreamPrint(LOG_STDOUT, 0,
@@ -1077,7 +1069,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
         nlsData->isPatternAvailable &&
         nlsData->analyticalJacobianColumn != NULL) {
       warningStreamPrint(LOG_NLS_V, 0,
-                         "The kinls setup routine (lsetup) encountered an error. "
+                         "KINSOL: The kinls setup routine (lsetup) encountered an error. "
                          "Retry with numerical Jacobian.\n");
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
@@ -1103,13 +1095,13 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
   /* check if the current solution is sufficient anyway */
   KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
   if (fNorm < FTOL_WITH_LESS_ACCURACY) {
-    warningStreamPrint(LOG_NLS_V, 0, "Move forward with a less accurate solution.");
+    warningStreamPrint(LOG_NLS_V, 0, "KINSOL: Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     kinsolData->resetTol = TRUE;
     return TRUE;
   } else {
-    warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
+    warningStreamPrint(LOG_NLS_V, 0, "KINSOL: Current status of fx = %f", fNorm);
   }
 
   /* reconfigure kinsol for another try */
@@ -1175,7 +1167,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
 
-  infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes,
+  infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
                                      "Start Kinsol solver at time %g",
                                      data->localData[0]->timeValue);
 

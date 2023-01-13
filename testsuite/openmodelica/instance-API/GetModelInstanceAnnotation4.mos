@@ -1,0 +1,124 @@
+// name: GetModelInstanceAnnotation4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Real level = 20;
+
+    annotation(Icon(graphics = {
+      Rectangle(extent = DynamicSelect({{0, 0}, {20, 20}}, {{0, 0}, {20, level}}))
+    }));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Rectangle\",
+//           \"elements\": [
+//             true,
+//             [
+//               0,
+//               0
+//             ],
+//             0,
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.None\",
+//               \"index\": 1
+//             },
+//             0.25,
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"BorderPattern.None\",
+//               \"index\": 1
+//             },
+//             {
+//               \"$kind\": \"call\",
+//               \"name\": \"DynamicSelect\",
+//               \"arguments\": [
+//                 [
+//                   [
+//                     0,
+//                     0
+//                   ],
+//                   [
+//                     20,
+//                     20
+//                   ]
+//                 ],
+//                 [
+//                   [
+//                     0,
+//                     0
+//                   ],
+//                   [
+//                     20,
+//                     {
+//                       \"$kind\": \"cref\",
+//                       \"parts\": [
+//                         {
+//                           \"name\": \"level\"
+//                         }
+//                       ]
+//                     }
+//                   ]
+//                 ]
+//               ]
+//             },
+//             0
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"components\": [
+//     {
+//       \"name\": \"level\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"20\",
+//       \"value\": {
+//         \"binding\": 20
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 8,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

@@ -45,6 +45,13 @@ extern "C" {
 
 OMEDITTEST_MAIN(BrowseMSL)
 
+void BrowseMSL::initTestCase()
+{
+  QVector<QPair<QString, QString> > libraries;
+  libraries.append(qMakePair(QString("Modelica"), QString("default")));
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->addModelicaLibraries(libraries);
+}
+
 void BrowseMSL::electricalAnalogBasic()
 {
   if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Basic"))) {
@@ -54,7 +61,6 @@ void BrowseMSL::electricalAnalogBasic()
 
 void BrowseMSL::mediaAir()
 {
-  OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
   if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
     QFAIL("Expanding to Modelica.Media.Air failed.");
   }

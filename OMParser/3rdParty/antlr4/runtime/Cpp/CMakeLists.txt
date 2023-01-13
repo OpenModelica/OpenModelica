@@ -207,16 +207,16 @@ if (ANTLR4_INSTALL)
 
 endif(ANTLR4_INSTALL)
 
-if(EXISTS LICENSE.txt)
-install(FILES LICENSE.txt
-        DESTINATION "share/doc/libantlr4")
-elseif(EXISTS ../../LICENSE.txt)
-install(FILES ../../LICENSE.txt
-    DESTINATION "share/doc/libantlr4")
-endif()
+# if(EXISTS LICENSE.txt)
+# install(FILES LICENSE.txt
+#         DESTINATION "share/doc/libantlr4")
+# elseif(EXISTS ../../LICENSE.txt)
+# install(FILES ../../LICENSE.txt
+#     DESTINATION "share/doc/libantlr4")
+# endif()
 
-install(FILES README.md VERSION
-    DESTINATION "share/doc/libantlr4")
+# install(FILES README.md VERSION
+#     DESTINATION "share/doc/libantlr4")
 
 set(CPACK_PACKAGE_CONTACT "antlr-discussion@googlegroups.com")
 set(CPACK_PACKAGE_VERSION ${ANTLR_VERSION})

@@ -97,7 +97,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // 0
 // ""
 // "{
-//   \"solver\" : \"euler\"
+//   \"s\" : \"euler\"
 // }"
 // ""
 // true

@@ -89,6 +89,7 @@ public
 
   record ENUM_LITERAL
     Expression literal;
+    SCode.Comment comment;
   end ENUM_LITERAL;
 
   record TYPE_ATTRIBUTE
@@ -112,10 +113,11 @@ public
   function newEnum
     input Type enumType;
     input String literalName;
+    input SCode.Comment comment;
     input Integer literalIndex;
     output Component component;
   algorithm
-    component := ENUM_LITERAL(Expression.ENUM_LITERAL(enumType, literalName, literalIndex));
+    component := ENUM_LITERAL(Expression.ENUM_LITERAL(enumType, literalName, literalIndex), comment);
   end newEnum;
 
   function newIterator
@@ -889,6 +891,7 @@ public
       case COMPONENT_DEF() then SCodeUtil.getElementComment(component.definition);
       case UNTYPED_COMPONENT() then component.comment;
       case TYPED_COMPONENT() then component.comment;
+      case ENUM_LITERAL() then SOME(component.comment);
       else NONE();
     end match;
   end comment;

@@ -75,6 +75,14 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
 }
 
+# On older msys the include directory for binutils is in binutils
+# On recent (November 2022) MSYS2 this is no longer needed.
+contains(QT_ARCH, i386) { # 32-bit
+  INCLUDEPATH += $$(OMDEV)/tools/msys/mingw32/include/binutils
+} else { # 64-bit
+  INCLUDEPATH += $$(OMDEV)/tools/msys/mingw64/include/binutils
+}
+
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
 
@@ -141,11 +149,20 @@ SOURCES += Util/Helper.cpp \
   Annotations/BitmapAnnotation.cpp \
   Annotations/DynamicAnnotation.cpp \
   Annotations/BooleanAnnotation.cpp \
-  Annotations/ColorAnnotation.cpp \
-  Annotations/ExtentAnnotation.cpp \
   Annotations/PointAnnotation.cpp \
   Annotations/RealAnnotation.cpp \
+  Annotations/ColorAnnotation.cpp \
+  Annotations/LinePatternAnnotation.cpp \
+  Annotations/FillPatternAnnotation.cpp \
+  Annotations/PointArrayAnnotation.cpp \
+  Annotations/ArrowAnnotation.cpp \
+  Annotations/SmoothAnnotation.cpp \
+  Annotations/ExtentAnnotation.cpp \
+  Annotations/BorderPatternAnnotation.cpp \
+  Annotations/EllipseClosureAnnotation.cpp \
   Annotations/StringAnnotation.cpp \
+  Annotations/TextAlignmentAnnotation.cpp \
+  Annotations/TextStyleAnnotation.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
@@ -221,6 +238,7 @@ HEADERS  += Util/Helper.h \
   Modeling/FunctionArgumentDialog.h \
   Modeling/InstallLibraryDialog.h \
   Search/SearchWidget.h \
+  Options/OptionsDefaults.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
   Editors/ModelicaEditor.h \
@@ -243,11 +261,20 @@ HEADERS  += Util/Helper.h \
   Annotations/BitmapAnnotation.h \
   Annotations/DynamicAnnotation.h \
   Annotations/BooleanAnnotation.h \
-  Annotations/ColorAnnotation.h \
-  Annotations/ExtentAnnotation.h \
   Annotations/PointAnnotation.h \
   Annotations/RealAnnotation.h \
+  Annotations/ColorAnnotation.h \
+  Annotations/LinePatternAnnotation.h \
+  Annotations/FillPatternAnnotation.h \
+  Annotations/PointArrayAnnotation.h \
+  Annotations/ArrowAnnotation.h \
+  Annotations/SmoothAnnotation.h \
+  Annotations/ExtentAnnotation.h \
+  Annotations/BorderPatternAnnotation.h \
+  Annotations/EllipseClosureAnnotation.h \
   Annotations/StringAnnotation.h \
+  Annotations/TextAlignmentAnnotation.h \
+  Annotations/TextStyleAnnotation.h \
   Element/ElementProperties.h \
   Element/Transformation.h \
   Modeling/DocumentationWidget.h \

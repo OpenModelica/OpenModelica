@@ -7,9 +7,11 @@ if(APPLE)
   set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/../OMEditLIB/Resources/icons/omedit.icns")
   set_source_files_properties(${app_icon_macos} PROPERTIES
        MACOSX_PACKAGE_LOCATION "Resources")
+else()
+  set(app_icon_macos "")
 endif()
 
-add_executable(OMEdit WIN32 MACOSX_BUNDLE main.cpp rc_omedit.rc)
+add_executable(OMEdit WIN32 MACOSX_BUNDLE main.cpp rc_omedit.rc ${app_icon_macos})
 target_link_libraries(OMEdit PRIVATE OMEditLib)
 
 if(APPLE)

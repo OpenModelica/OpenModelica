@@ -48,8 +48,10 @@ CONFIG(release, debug|release) { # release
   # win32 vs. win64
   contains(QT_ARCH, i386) { # 32-bit
     LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
+    INCLUDEPATH += $$(OMDEV)/tools/msys/mingw32/include/binutils
   } else { # 64-bit
     LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
+    INCLUDEPATH += $$(OMDEV)/tools/msys/mingw64/include/binutils
   }
   LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 } else { # debug

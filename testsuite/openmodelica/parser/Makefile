@@ -43,6 +43,7 @@ ParseString.mos \
 PureImpure.mo \
 PureImpure2.mo \
 PureImpure3.mo \
+RealLiterals1.mo \
 RealOpLexerModelica.mo \
 Redeclare.mos \
 ReloadClass.mos \

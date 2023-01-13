@@ -53,86 +53,19 @@ CoOrdinateSystem::CoOrdinateSystem()
  */
 CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
 {
-  setLeft(coOrdinateSystem.getLeft());
-  setHasLeft(coOrdinateSystem.hasLeft());
-  setBottom(coOrdinateSystem.getBottom());
-  setHasBottom(coOrdinateSystem.hasBottom());
-  setRight(coOrdinateSystem.getRight());
-  setHasRight(coOrdinateSystem.hasRight());
-  setTop(coOrdinateSystem.getTop());
-  setHasTop(coOrdinateSystem.hasTop());
+  setExtent(coOrdinateSystem.getExtent());
   setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
   setHasPreserveAspectRatio(coOrdinateSystem.hasPreserveAspectRatio());
   setInitialScale(coOrdinateSystem.getInitialScale());
   setHasInitialScale(coOrdinateSystem.hasInitialScale());
-  setHorizontal(coOrdinateSystem.getHorizontal());
-  setHasHorizontal(coOrdinateSystem.hasHorizontal());
-  setVertical(coOrdinateSystem.getVertical());
-  setHasVertical(coOrdinateSystem.hasVertical());
+  setGrid(coOrdinateSystem.getGrid());
+  setHasGrid(coOrdinateSystem.hasGrid());
 }
 
-void CoOrdinateSystem::setLeft(const qreal left)
+void CoOrdinateSystem::setExtent(const QVector<QPointF> extent)
 {
-  mLeft = left;
-  setHasLeft(true);
-}
-
-void CoOrdinateSystem::setLeft(const QString &left)
-{
-  bool ok;
-  if (left.compare(QStringLiteral("0.0")) == 0) {
-    setLeft(0.0);
-  } else if (left.toDouble(&ok) && ok) {
-    setLeft(left.toDouble());
-  }
-}
-
-void CoOrdinateSystem::setBottom(const qreal bottom)
-{
-  mBottom = bottom;
-  setHasBottom(true);
-}
-
-void CoOrdinateSystem::setBottom(const QString &bottom)
-{
-  bool ok;
-  if (bottom.compare(QStringLiteral("0.0")) == 0) {
-    setBottom(0.0);
-  } else if (bottom.toDouble(&ok) && ok) {
-    setBottom(bottom.toDouble());
-  }
-}
-
-void CoOrdinateSystem::setRight(const qreal right)
-{
-  mRight = right;
-  setHasRight(true);
-}
-
-void CoOrdinateSystem::setRight(const QString &right)
-{
-  bool ok;
-  if (right.compare(QStringLiteral("0.0")) == 0) {
-    setRight(0.0);
-  } else if (right.toDouble(&ok) && ok) {
-    setRight(right.toDouble());
-  }
-}
-
-void CoOrdinateSystem::setTop(const qreal top)
-{
-  mTop = top;
-  setHasTop(true);
-}
-
-void CoOrdinateSystem::setTop(const QString &top)
-{
-  bool ok;
-  if (top.compare(QStringLiteral("0.0")) == 0) {
-    setTop(0.0);
-  } else if (top.toDouble(&ok) && ok) {
-    setTop(top.toDouble());
-  }
+  mExtent = extent;
+  setHasExtent(true);
 }
 
 void CoOrdinateSystem::setPreserveAspectRatio(const bool preserveAspectRatio)
@@ -141,27 +74,10 @@ void CoOrdinateSystem::setPreserveAspectRatio(const bool preserveAspectRatio)
   setHasPreserveAspectRatio(true);
 }
 
-void CoOrdinateSystem::setPreserveAspectRatio(const QString &preserveAspectRatio)
-{
-  if (preserveAspectRatio.compare("true") == 0) {
-    setPreserveAspectRatio(true);
-  } else if (preserveAspectRatio.compare("false") == 0) {
-    setPreserveAspectRatio(false);
-  }
-}
-
 void CoOrdinateSystem::setInitialScale(const qreal initialScale)
 {
   mInitialScale = initialScale;
   setHasInitialScale(true);
-}
-
-void CoOrdinateSystem::setInitialScale(const QString &initialScale)
-{
-  bool ok;
-  if (initialScale.toDouble(&ok) && ok) {
-    setInitialScale(initialScale.toDouble());
-  }
 }
 
 /*!
@@ -170,10 +86,10 @@ void CoOrdinateSystem::setInitialScale(const QString &initialScale)
  */
 qreal CoOrdinateSystem::getHorizontalGridStep()
 {
-  if (mHorizontal < 1) {
+  if (mGrid.x() < 1) {
     return 2;
   }
-  return mHorizontal;
+  return mGrid.x();
 }
 
 /*!
@@ -182,70 +98,43 @@ qreal CoOrdinateSystem::getHorizontalGridStep()
  */
 qreal CoOrdinateSystem::getVerticalGridStep()
 {
-  if (mVertical < 1) {
+  if (mGrid.y() < 1) {
     return 2;
   }
-  return mVertical;
+  return mGrid.y();
 }
 
-void CoOrdinateSystem::setHorizontal(const qreal horizontal)
+void CoOrdinateSystem::setGrid(const QPointF grid)
 {
-  mHorizontal = horizontal;
-  setHasHorizontal(true);
-}
-
-void CoOrdinateSystem::setHorizontal(const QString &horizontal)
-{
-  bool ok;
-  if (horizontal.toDouble(&ok) && ok) {
-    setHorizontal(horizontal.toDouble());
-  }
-}
-
-void CoOrdinateSystem::setVertical(qreal vertical)
-{
-  mVertical = vertical;
-  setHasVertical(true);
-}
-
-void CoOrdinateSystem::setVertical(const QString &vertical)
-{
-  bool ok;
-  if (vertical.toDouble(&ok) && ok) {
-    setVertical(vertical.toDouble());
-  }
+  mGrid = grid;
+  setHasGrid(true);
 }
 
 QRectF CoOrdinateSystem::getExtentRectangle() const
 {
-  qreal left = qMin(getLeft(), getRight());
-  qreal bottom = qMin(getBottom(), getTop());
-  qreal right = qMax(getLeft(), getRight());
-  qreal top = qMax(getBottom(), getTop());
+  QPointF extent1 = mExtent.at(0);
+  QPointF extent2 = mExtent.at(1);
+
+  qreal left = qMin(extent1.x(), extent2.x());
+  qreal bottom = qMin(extent1.y(), extent2.y());
+  qreal right = qMax(extent1.x(), extent2.x());
+  qreal top = qMax(extent1.y(), extent2.y());
   return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
 }
 
 void CoOrdinateSystem::reset()
 {
-  setLeft(-100);
-  setHasLeft(false);
-  setBottom(-100);
-  setHasBottom(false);
-  setRight(100);
-  setHasRight(false);
-  setTop(100);
-  setHasTop(false);
-  setPreserveAspectRatio(true);
+  mExtent.clear();
+  setHasExtent(false);
+  mPreserveAspectRatio = true;
   setHasPreserveAspectRatio(false);
-  setInitialScale(0.1);
+  mInitialScale = 0.1;
   setHasInitialScale(false);
-  setHorizontal(2);
-  setHasHorizontal(false);
-  setVertical(2);
-  setHasVertical(false);
+  mGrid = QPointF(2, 2);
+  setHasGrid(false);
 }
 
 bool CoOrdinateSystem::isComplete() const
 {
-  return mHasLeft && mHasBottom && mHasRight && mHasTop && mHasPreserveAspectRatio && mHasInitialScale && mHasHorizontal && mHasVertical;
+  return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasGrid;
 }

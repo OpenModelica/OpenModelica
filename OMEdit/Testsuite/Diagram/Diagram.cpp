@@ -45,6 +45,13 @@ extern "C" {
 
 OMEDITTEST_MAIN(Diagram)
 
+void Diagram::initTestCase()
+{
+  QVector<QPair<QString, QString> > libraries;
+  libraries.append(qMakePair(QString("Modelica"), QString("default")));
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->addModelicaLibraries(libraries);
+}
+
 void Diagram::chuaCircuit()
 {
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");

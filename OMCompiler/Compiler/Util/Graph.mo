@@ -987,7 +987,7 @@ algorithm
       updateForbiddenColorArrayInt(indexes, inColored, forbiddenColor, inNode);
     end for;
   else
-    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
+    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColorsInt failed."}, sourceInfo());
     fail();
   end try;
 end addForbiddenColorsInt;

@@ -22,7 +22,7 @@ end DisturbedResistance4;
 // Error processing file: DisturbedResistance4.mo
 // [flattening/modelica/modification/DisturbedResistance4.mo:17:3-17:31:writable] Notification: From here:
 // [flattening/modelica/modification/DisturbedResistance4.mo:11:3-11:31:writable] Error: Duplicate elements (due to inherited elements) not identical:
-//   first element is:  Real R = 1.0 + 0.1 * sin(time)
+//   first element is:  Real R = 1.0 + 0.1*sin(time)
 //   second element is: final parameter .Real R = 1.0
 // Error: Error occurred while flattening model DisturbedResistance4
 //

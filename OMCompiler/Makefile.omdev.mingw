@@ -112,12 +112,12 @@ SUITESPARSE_LIBS=
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 
-ifeq ($(OMENCRYPTION),yes)
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
-main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls install-openturns copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
 
 include Makefile.common
 include Makefile.omsi.common
@@ -229,7 +229,7 @@ testlogwindows:
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
-omdev_extra_dlls: install-openturns
+omdev_extra_dlls:
 	echo Copying needed .dlls to the $(OMBUILDDIR)/bin directory
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	# build 32 bit libOpenCL.a
@@ -258,8 +258,6 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.la $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.a $(builddir_lib)/omc/)
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll $(builddir_bin)/
 else # mingw64
@@ -289,8 +287,6 @@ else # mingw64
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/lis64/liblis.la $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/lis64/liblis.a $(builddir_lib)/omc/)
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll $(builddir_bin)/
 endif
@@ -573,8 +569,20 @@ omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 
-lis:
+lis: lis-configure
+	@echo Building Lis from sources
+	$(MAKE) -C 3rdParty/lis-1.4.12/src
+	# Copy the library; not headers (as they are not used by the runtime system)
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis.a $(OMBUILDDIR)/$(LIB_OMC)/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis.la $(OMBUILDDIR)/$(LIB_OMC)/
+
+lis-configure:
+	# Configure and build lis
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && autoconf && ./configure --enable-static --disable-shared MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean; fi
 
 lis-clean:
+	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
+	rm -f 3rdParty/lis-1.4.12/Makefile
+
 
 .PRECIOUS: Makefile.omdev.mingw

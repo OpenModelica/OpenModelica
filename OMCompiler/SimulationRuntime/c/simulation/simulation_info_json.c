@@ -417,7 +417,6 @@ static const char* readEquations(const char *str, MODEL_DATA_XML *xml)
 
 static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, const char* fileName)
 {
-  FILE_INFO info = omc_dummyFileInfo;
   size_t len;
   char *name;
   const char *str2;
@@ -430,7 +429,7 @@ static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, cons
   memcpy(name, str2, len-1);
   name[len-1] = '\0';
   xml->name = name;
-  xml->info = info;
+  xml->info = omc_dummyFileInfo;
   return str;
 }
 
@@ -486,21 +485,20 @@ static void readInfoJson(const char *str, MODEL_DATA_XML *xml)
  */
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
-  omc_stat_t buf = {0};
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
-  int fileStatus;
+  int fileExists;
   if (omc_flag[FLAG_INPUT_PATH])
   {
     const char *jsonFile;
     GC_asprintf(&jsonFile, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName);
-    fileStatus = omc_stat(jsonFile, &buf);
+    fileExists = omc_file_exists(jsonFile);
   }
   else
   {
-    fileStatus = omc_stat(xml->fileName, &buf);
+    fileExists = omc_file_exists(xml->fileName);
   }
 
-  if (fileStatus != 0)
+  if (!fileExists)
   {
     xml->fileName = NULL;
     return;
@@ -586,6 +584,17 @@ EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
   return equationInfo;
 }
 
+/**
+ * @brief Get equation info for equation with index `ix`.
+ *
+ * Return dummy equation info if xml->fileName == NULL, e.g. for
+ * --fmiFilter=blackBox and protected.
+ * Return dummy equation info if `ix` is out of range.
+ *
+ * @param xml             Model info XML.
+ * @param ix              Equation index.
+ * @return EQUATION_INFO  Equation info for equation `ix`.
+ */
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
   /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
@@ -599,6 +608,10 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
     modelInfoInit(xml);
   }
   assert(xml->equationInfo);
+  if (ix<0 || ix > xml->nEquations) {
+    errorStreamPrint(LOG_STDOUT, 0, "modelInfoGetEquation failed to get info for equation %zu, out of range.\n", ix);
+    return modelInfoGetDummyEquation(xml);
+  }
   return xml->equationInfo[ix];
 }
 

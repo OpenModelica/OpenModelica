@@ -50,6 +50,12 @@ private:
   QRectF mRectangle;
   QPointF mOldScenePosition;
   int mConnectedPointIndex;
+  bool mIsSystemLibrary;
+  bool mIsInherited;
+  bool mIsOMSConnector;
+  bool mIsVisualizationView;
+
+  void initialize(qreal x, qreal y, int connectedPointIndex);
 public:
   CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent);
   void setConnectedPointIndex(int connectedPointIndex) {mConnectedPointIndex = connectedPointIndex;}

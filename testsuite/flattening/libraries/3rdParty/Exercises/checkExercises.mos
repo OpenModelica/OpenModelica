@@ -29,9 +29,9 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from Aufgabe1_1.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // "Check of Aufgabe1_1 completed successfully.
 // Class Aufgabe1_1 has 52 equation(s) and 52 variable(s).

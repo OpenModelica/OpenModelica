@@ -247,7 +247,9 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_BACKEND_CLOCKS,
   Flags.DUMP_SET_BASED_GRAPHS,
   Flags.MERGE_COMPONENTS,
-  Flags.DUMP_SLICE
+  Flags.DUMP_SLICE,
+  Flags.VECTORIZE_BINDINGS,
+  Flags.DUMP_EVENTS
 };
 
 protected
@@ -370,7 +372,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LABELED_REDUCTION,
   Flags.DISABLE_EXTRA_LABELING,
   Flags.LOAD_MSL_MODEL,
-  Flags.Load_PACKAGE_FILE,
+  Flags.LOAD_PACKAGE_FILE,
   Flags.BUILDING_FMU,
   Flags.BUILDING_MODEL,
   Flags.POST_OPT_MODULES_DAE,
@@ -406,7 +408,9 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_ALWAYS_DERIVATIVES,
   Flags.DUMP_FLAT_MODEL,
   Flags.SIMULATION,
-  Flags.OBFUSCATE
+  Flags.OBFUSCATE,
+  Flags.FMU_RUNTIME_DEPENDS,
+  Flags.FRONTEND_INLINE
 };
 
 public function new

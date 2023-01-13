@@ -399,18 +399,16 @@ public function preprocessingSolve
   output list<DAE.ComponentRef> newVarsCrefs = {};
   output Integer depth = idepth;
 
- protected
+protected
   DAE.Exp res;
   list<DAE.Exp> lhs, rhs;
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x, inlineFun = true;
+  Boolean con, new_x, inlineFun = true;
   Integer iter;
   Integer numSimplifed = 0 ;
-
- algorithm
-
+algorithm
    // split and sort
    (lhsX, lhsY) := preprocessingSolve5(x, inExp3,true);
    (rhsX, rhsY) := preprocessingSolve5(y, inExp3,true);
@@ -480,14 +478,6 @@ public function preprocessingSolve
    end while;
 
    y := ExpressionSimplify.simplify1(y);
-
-/*
-   if not Expression.expEqual(inExp1,x) then
-     print("\nIn: ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
-     print("\nOut: ");print(ExpressionDump.printExpStr(x));print(" = ");print(ExpressionDump.printExpStr(y));
-     print("\t w.r.t ");print(ExpressionDump.printExpStr(inExp3));
-   end if;
-*/
 end preprocessingSolve;
 
 protected function preprocessingSolve2
@@ -832,7 +822,7 @@ protected function expAddX2
 protected
   list<DAE.Exp> f1, f2;
   DAE.Exp e0,e1,e2;
-  DAE.Boolean neg;
+  Boolean neg;
   list<DAE.Exp> factorWithX1, factorWithoutX1,  factorWithX2, factorWithoutX2;
   DAE.Exp pWithX1, pWithoutX1, pWithX2, pWithoutX2;
 
@@ -889,7 +879,7 @@ end expAddX2;
 public function collectX
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp3 "DAE.CREF";
-  input DAE.Boolean expand = true;
+  input Boolean expand = true;
   output DAE.Exp outLhs;
   output DAE.Exp outRhs;
 algorithm
@@ -908,7 +898,7 @@ protected function preprocessingSolve5
 "
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input DAE.Boolean expand;
+  input Boolean expand;
   output DAE.Exp outLhs;
   output DAE.Exp outRhs;
 
@@ -1808,7 +1798,7 @@ Expression.expHasDerCref
 "
   input DAE.Exp inExp1;
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  output DAE.Boolean res;
+  output Boolean res;
 
 algorithm
   res := match(inExp1, inExp3)

@@ -79,11 +79,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
-  QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
-  /* Set the default locale of the application so that QSpinBox etc show values according to the locale.
-   * Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
-   */
+  QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
+  // Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
   QLocale::setDefault(QLocale::c());
 
   QString translationDirectory = installationDirectoryPath + QString("/share/omedit/nls");
@@ -191,7 +188,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       switch (answer) {
         case QMessageBox::AcceptRole:
           OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(false);
-          Utilities::getApplicationSettings()->setValue("simulation/newInst", true);
           OptionsDialog::instance()->saveSimulationSettings();
           break;
         case QMessageBox::RejectRole:

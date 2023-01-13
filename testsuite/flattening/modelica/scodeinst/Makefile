@@ -19,6 +19,8 @@ ArrayBoundsEq1.mo\
 ArrayConnect1.mo \
 ArrayConnect2.mo \
 ArrayConnect3.mo \
+ArrayConnect4.mo \
+ArrayConnect5.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
@@ -343,6 +345,9 @@ DimUnknown6.mo \
 DimUnknown7.mo \
 DimUnknown8.mo \
 DimUnknown9.mo \
+DimUnknown10.mo \
+DimUnknown11.mo \
+DimUnknown12.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -416,6 +421,7 @@ ExpandableConnector5.mo \
 ExpandableConnector6.mo \
 ExpandableConnector7.mo \
 ExpandableConnector8.mo \
+ExpandableConnector9.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \
@@ -662,6 +668,10 @@ FunctionSections3.mo \
 FunctionSections4.mo \
 FunctionSections5.mo \
 FunctionStreamPrefix.mo \
+FunctionUnitialized1.mo \
+FunctionUnitialized2.mo \
+FunctionUnitialized3.mo \
+FunctionUnitialized4.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
@@ -727,6 +737,7 @@ ImportUnqualified3.mo \
 ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \
+Inline3.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \
@@ -754,6 +765,7 @@ InnerOuterMissing5.mo \
 InnerOuterMissing6.mo \
 InnerOuterMissing7.mo \
 InnerOuterMissing8.mo \
+InnerOuterMissing9.mo \
 InnerOuterNotInner1.mo \
 InnerOuterPartialOuter1.mo \
 InnerOuterPartialOuter2.mo \
@@ -990,12 +1002,14 @@ ReductionInvalidTypeMin.mo \
 ReductionInvalidTypeMax.mo \
 Reinit1.mo \
 Reinit2.mo \
+Reinit3.mo \
 ReinitInvalid1.mo \
 ReinitInvalid2.mo \
 ReinitInvalid3.mo \
 ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
+ReinitInvalid7.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \

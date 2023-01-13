@@ -327,6 +327,7 @@ algorithm
       case Absyn.LIST() then elabExp_List;
       case Absyn.MATCHEXP() then Patternm.elabMatchExpression;
       case Absyn.DOT() then elabExp_Dot;
+      case Absyn.EXPRESSIONCOMMENT() then elabExp_Comment;
       else elabExp_BuiltinType;
     end match;
 
@@ -582,6 +583,15 @@ algorithm
   end match;
 end elabExp_Dot;
 
+protected function elabExp_Comment
+  extends PartialElabExpFunc;
+protected
+  Absyn.Exp exp;
+algorithm
+  Absyn.EXPRESSIONCOMMENT(exp=exp) := inExp;
+  (outCache, outExp, outProperties) := elabExp(inCache,inEnv,exp,inImplicit,inDoVect, inPrefix, inInfo);
+end elabExp_Comment;
+
 protected function elabExp_PartEvalFunction
   "turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
   extends PartialElabExpFunc;
@@ -640,6 +650,10 @@ protected
   list<DAE.TupleConst> consts;
 algorithm
   Absyn.TUPLE(expressions = el) := inExp;
+  if listLength(el) == 1 then
+    (outCache, outExp, outProperties) := elabExp(outCache, inEnv, listGet(el,1), inImplicit, inDoVect, inPrefix, inInfo);
+    return;
+  end if;
   (outCache, expl, props) := elabTuple(outCache, inEnv, el, inImplicit,
     inDoVect, inPrefix, inInfo, isLhs);
   (types, consts) := splitProps(props);
@@ -1193,8 +1207,9 @@ algorithm
       then {};
 
       // The syntax n>=0 = true; is also used
-    case Absyn.EQ_EQUALS(left,Absyn.BOOL(true))
+    case Absyn.EQ_EQUALS(left,right)
       equation
+        Absyn.BOOL(true) = AbsynUtil.stripCommentExpressions(right);
         failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
         algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("fail",{}),Absyn.FUNCTIONARGS({},{})),comment,info);
         algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),left),{algItem1},{},{}),comment,info);
@@ -2131,19 +2146,19 @@ algorithm
       then DAE.T_CODE(DAE.C_VARIABLENAME());
 
     case Absyn.C_EQUATIONSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE());
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(), false);
 
     case Absyn.C_ALGORITHMSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE());
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE(), false);
 
     case Absyn.C_ELEMENT()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE());
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(), false);
 
     case Absyn.C_EXPRESSION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE());
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE(), false);
 
     case Absyn.C_MODIFICATION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE());
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(), false);
   end match;
 end elabCodeType;
 
@@ -9411,7 +9426,7 @@ algorithm
   end for;
 
   vars := listReverse(vars);
-  outType := DAE.T_COMPLEX(complexClassType, vars, NONE());
+  outType := DAE.T_COMPLEX(complexClassType, vars, NONE(), false);
 end complexTypeFromSlots;
 
 protected function slotListArgs
@@ -12494,6 +12509,12 @@ algorithm
           case DAE.T_BOOL()
             then DAE.DIM_BOOLEAN();
         end match;
+      then
+        (cache, dim);
+
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.EXPRESSIONCOMMENT(exp=sub)), _)
+      algorithm
+        (cache, dim) := elabArrayDim(inCache, inEnv, inCref, Absyn.SUBSCRIPT(sub), inImpl, inDoVect, inPrefix, inInfo);
       then
         (cache, dim);
 

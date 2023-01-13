@@ -95,9 +95,9 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   Real 'z_r5' = z[7];
 //   Real 'z_r6' = z[8];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
-//   z = Cz * x + Dz * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
+//   z = Cz*x + Dz*u;
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
@@ -146,8 +146,8 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   Real 'y_r5' = y[5];
 //   Real 'y_r6' = y[6];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",

@@ -46,13 +46,13 @@ public:
   VisualizationCSV(const VisualizationCSV& omvm) = delete;
   VisualizationCSV& operator=(const VisualizationCSV& omvm) = delete;
   void initData() override;
-  void initializeVisAttributes(const double time = -1.0) override;
+  void initializeVisAttributes(const double time) override;
   void readCSV(const std::string& modelFile, const std::string& path);
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
-  void updateVisAttributes(const double time) override;
   void updateScene(const double time) override;
-  void updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time);
-  double omcGetVarValue(const char* varName, double time);
+  void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) override;
+  void updateVisualizerAttributeCSV(VisualizerAttribute& attr, const double time);
+  double omcGetVarValue(const char* varName, const double time);
 private:
   csv_data *mpCSVData;
 };

@@ -1365,7 +1365,7 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
         delta_hhh = currentStep * yprime[ii];
         delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]),fabs(delta_hhh)),fabs(1./errwgt[ii]));
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];
+        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];      // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];
         states[ii] += delta_hh[ii];
 
@@ -1679,7 +1679,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
         delta_hhh = currentStep * yprime[ii];
         delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]),fabs(delta_hhh)),fabs(1./errwgt[ii]));
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];
+        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];     // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];
         states[ii] += delta_hh[ii];
 

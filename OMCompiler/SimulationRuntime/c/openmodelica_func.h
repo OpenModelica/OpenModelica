@@ -128,6 +128,8 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /* functions for setc data_reconciliation */
   int (*setc_function)(DATA*, threadData_t*);
 
+  /* functions for setB data_reconciliation_Boundary Condition */
+  int (*setb_function)(DATA*, threadData_t*);
 
   /* function for storing value histories of delayed expressions
   * called from functionDAE_output()
@@ -250,7 +252,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   const int INDEX_JAC_B;
   const int INDEX_JAC_C;
   const int INDEX_JAC_D;
+  /* Matrix F and H are generated for DataReconciliation*/
   const int INDEX_JAC_F;
+  const int INDEX_JAC_H;
 
   /*
   * These functions initialize specific jacobians.
@@ -262,6 +266,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   int (*initialAnalyticJacobianC)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
   int (*initialAnalyticJacobianD)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
   int (*initialAnalyticJacobianF)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianH)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 
   /*
   * These functions calculate specific jacobian column.
@@ -271,6 +276,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   analyticalJacobianColumn_func_ptr functionJacC_column;
   analyticalJacobianColumn_func_ptr functionJacD_column;
   analyticalJacobianColumn_func_ptr functionJacF_column;
+  analyticalJacobianColumn_func_ptr functionJacH_column;
   /*#endif*/
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
@@ -344,6 +350,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * return variables of interest related with dataReconciliation
   */
   int (*dataReconciliationInputNames)(DATA* modelData, char ** names);
+
+ /*
+  * return unmeasured variables of interest related with dataReconciliation state estimation problem
+  */
+  int (*dataReconciliationUnmeasuredVariables)(DATA* modelData, char ** names);
 
   /*
   * FMU's do not need the XML-file; they use this callback instead.

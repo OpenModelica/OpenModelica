@@ -13,6 +13,8 @@ model FuncVectorization2
     input Integer a[4];
     input Integer b;
     output Integer o;
+  algorithm
+    o := b + sum(a);
   end F;
 
 
@@ -28,6 +30,8 @@ end FuncVectorization2;
 //   input Integer[4] a;
 //   input Integer b;
 //   output Integer o;
+// algorithm
+//   o := b + a[1] + a[2] + a[3] + a[4];
 // end FuncVectorization2.F;
 //
 // class FuncVectorization2

@@ -1,6 +1,6 @@
 // name: When7
 // keywords:
-// status: correct
+// status: incorrect
 // cflags:   -d=newInst
 //
 //
@@ -16,13 +16,11 @@ equation
 end When7;
 
 // Result:
-// class When7
-//   Real x;
-// equation
-//   when time > 0.0 then
-//     x = 1.0;
-//   elsewhen time > 1.0 then
-//     reinit(x, 2.0);
-//   end when;
-// end When7;
+// Error processing file: When7.mo
+// [flattening/modelica/scodeinst/When7.mo:11:3-15:11:writable] Error: The same variables must be solved in elsewhen clause as in the when clause.
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult

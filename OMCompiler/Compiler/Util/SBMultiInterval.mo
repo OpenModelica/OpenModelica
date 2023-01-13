@@ -268,10 +268,9 @@ public
 
   function hash
     input SBMultiInterval mi;
-    input Integer mod;
     output Integer res;
   algorithm
-    res := intMod(arrayLength(mi.intervals), mod);
+    res := arrayLength(mi.intervals);
   end hash;
 
   function size

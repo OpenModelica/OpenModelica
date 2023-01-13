@@ -6374,6 +6374,45 @@ algorithm
   outList := append_reverse(outList, rest);
 end deletePositionsSorted;
 
+public function keepPositions<T>
+  "Takes a list and a list of positions, and deletes all other elements from the
+   list. Note that positions are indexed from 0.
+     Example: keepPositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {1, 3, 4}"
+  input list<T> inList;
+  input list<Integer> inPositions;
+  output list<T> outList;
+protected
+  list<Integer> sorted_pos;
+algorithm
+  sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
+  outList := keepPositionsSorted(inList, sorted_pos);
+end keepPositions;
+
+public function keepPositionsSorted<T>
+  "Takes a list and a sorted list of positions (smallest index first), and
+   deletes all other positions from the list. Note that positions are indexed from 0.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {1, 3, 4}"
+  input list<T> inList;
+  input list<Integer> inPositions;
+  output list<T> outList = {};
+protected
+  Integer i = 0;
+  T e;
+  list<T> rest = inList;
+algorithm
+  for pos in inPositions loop
+    while i <> pos loop
+      _ :: rest := rest;
+      i := i + 1;
+    end while;
+
+    e :: rest := rest;
+    outList := e :: outList;
+    i := i + 1;
+  end for;
+  outList := listReverse(outList);
+end keepPositionsSorted;
+
 public function removeMatchesFirst
   "Removes all matching integers that occur first in a list. If the first
    element doesn't match it returns the list."
@@ -6540,21 +6579,30 @@ public function toString<T>
   input String inDelimitStr   = ", "    "The delimiter between list elements.";
   input String inEndStr       = "}"     "The end of the list.";
   input Boolean inPrintEmpty  = true    "If false, don't output begin and end if the list is empty.";
+  input Integer maxLength = 0           "If > 0, only the first maxLength elements are printed";
   output String outString;
 
   partial function FuncType
     input T inElement;
     output String outString;
   end FuncType;
+protected
+  list<T> lst = inList;
+  String endStr = inEndStr;
 algorithm
-  outString := match(inList, inPrintEmpty)
+  if maxLength > 0 and listLength(lst) > maxLength then
+    lst := List.firstN(lst, maxLength);
+    endStr := ", ..." + endStr;
+  end if;
+
+  outString := match(lst, inPrintEmpty)
     local
       String str;
 
     // Empty list and inPrintEmpty true => concatenate the list name, begin
     // string and end string.
     case ({}, true)
-      then stringAppendList({inListNameStr, inBeginStr, inEndStr});
+      then stringAppendList({inListNameStr, inBeginStr, endStr});
 
     // Empty list and inPrintEmpty false => output only list name.
     case ({}, false)
@@ -6562,8 +6610,8 @@ algorithm
 
     else
       equation
-        str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
-        str = stringAppendList({inListNameStr, inBeginStr, str, inEndStr});
+        str = stringDelimitList(map(lst, inPrintFunc), inDelimitStr);
+        str = stringAppendList({inListNameStr, inBeginStr, str, endStr});
       then
         str;
 

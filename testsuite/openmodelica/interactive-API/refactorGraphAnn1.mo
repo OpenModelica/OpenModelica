@@ -84,6 +84,3 @@ fillColor=51,
           rgbfillColor={255,255,85}))));
 
 end complextest;
-
-// class complextest
-// end complextest;

@@ -5545,7 +5545,7 @@ algorithm
     case (_,st,l,NONE(),equalityConstraint,_)
       equation
         failure(ClassInf.META_UNIONTYPE(_) = st);
-      then DAE.T_COMPLEX(st,l,equalityConstraint);
+      then DAE.T_COMPLEX(st,l,equalityConstraint, true);
 
     // extending
     case (_,st,l,SOME(bc),equalityConstraint,_)
@@ -5646,7 +5646,7 @@ algorithm
 
     // not extending basic type!
     case (_,st,l,NONE(),_)
-      then DAE.T_COMPLEX(st,l,NONE()); // adrpo: TODO! check equalityConstraint!
+      then DAE.T_COMPLEX(st,l,NONE(), true); // adrpo: TODO! check equalityConstraint!
 
     case (_,st,l,SOME(bc),_)
       then DAE.T_SUBTYPE_BASIC(st,l,bc,NONE());

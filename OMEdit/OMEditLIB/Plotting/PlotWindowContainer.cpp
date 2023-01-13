@@ -579,7 +579,7 @@ void PlotWindowContainer::exportVariables()
   for (int i = 0 ; i < timeVector.size() ; ++i) {
     QStringList data;
     // write time data
-    data << QString::number(timeVector.at(i));
+    data << StringHandler::number(timeVector.at(i));
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
       double value;
       if (pPlotCurve && pPlotCurve->mYAxisVector.size() > i) { // parameters have just start and stop points in the dataset

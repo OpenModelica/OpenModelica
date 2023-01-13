@@ -214,7 +214,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       case LSS_DEFAULT:
         {
           int indexes[2] = {1, linsys[i].equationIndex};
-          infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
+          infoStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
           linsys[i].useSparseSolver = 0;
           break;
         }
@@ -422,23 +422,19 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     free(linsys[i].min); linsys[i].min = NULL;
     free(linsys[i].max); linsys[i].max = NULL;
 
+    if (linsys[i].parDynamicData != NULL)
+    {
+      for (j=0; j<omc_get_max_threads(); ++j)
+      {
+        free(linsys[i].parDynamicData[j].b);
+      }
+    }
+
     /* ToDo Implement unique function to free a ANALYTIC_JACOBIAN */
     if (1 == linsys[i].method) {
       ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
       freeAnalyticJacobian(jacobian);
       /* Note: The Jacobian of data->simulationInfo itself will be free later. */
-
-    if (linsys[i].parDynamicData == NULL)
-    {
-      break;
-    }
-    else
-    {
-      for (j=0; j<omc_get_max_threads(); ++j)
-      {
-        free(linsys[i].parDynamicData[j].b); linsys[i].parDynamicData[j].b = NULL;
-      }
-    }
 
 #ifdef USE_PARJAC
       for (j=0; j<omc_get_max_threads(); ++j) {
@@ -750,9 +746,9 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       return 1;
     }
 #ifdef USE_PARJAC
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
 #else
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {

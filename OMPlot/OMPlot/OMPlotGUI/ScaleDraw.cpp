@@ -43,6 +43,7 @@ ScaleDraw::ScaleDraw(QwtPlot::Axis axis, Plot *pParent)
   mAxis = axis;
   mpParentPlot = pParent;
   mUnitPrefix = "";
+  mExponent = 0;
 }
 
 void ScaleDraw::invalidateCache()
@@ -60,59 +61,59 @@ void ScaleDraw::invalidateCache()
 QwtText ScaleDraw::label(double value) const
 {
   mUnitPrefix = "";
+  mExponent = 0;
 
   if (mpParentPlot->getParentPlotWindow()->getPrefixUnits() && ((mAxis == QwtPlot::xBottom && mpParentPlot->getParentPlotWindow()->canUseXPrefixUnits())
                                                                 || (mAxis == QwtPlot::yLeft && mpParentPlot->getParentPlotWindow()->canUseYPrefixUnits()))) {
-    int exponent = 0;
     // Use lowerBound if upperBound is zero
     /* Since log(1900) returns 3.278 so we need to round down for positive values to make it 3
      * And log(0.0011) return -2.95 so we also need to round down for negative value to make it -3
      * log(0) is undefined so avoid it
      */
     if (qFuzzyCompare(scaleDiv().upperBound(), 0.0)) {
-      exponent = qFloor(std::log10(fabs(scaleDiv().lowerBound())));
+      mExponent = qFloor(std::log10(fabs(scaleDiv().lowerBound())));
     } else {
-      exponent = qFloor(std::log10(fabs(scaleDiv().upperBound())));
+      mExponent = qFloor(std::log10(fabs(scaleDiv().upperBound())));
     }
 
     // We don't do anything for exponent values between -1 and 2.
-    if ((exponent < -1) || (exponent > 2)) {
-      if (exponent > 2) {
-        if (exponent >= 3 && exponent < 6) {
+    if ((mExponent < -1) || (mExponent > 2)) {
+      if (mExponent > 2) {
+        if (mExponent >= 3 && mExponent < 6) {
           mUnitPrefix = "k";
-          exponent = 3;
-        } else if (exponent >= 6 && exponent < 9) {
+          mExponent = 3;
+        } else if (mExponent >= 6 && mExponent < 9) {
           mUnitPrefix = "M";
-          exponent = 6;
-        } else if (exponent >= 9 && exponent < 12) {
+          mExponent = 6;
+        } else if (mExponent >= 9 && mExponent < 12) {
           mUnitPrefix = "G";
-          exponent = 9;
-        } else if (exponent >= 12 && exponent < 15) {
+          mExponent = 9;
+        } else if (mExponent >= 12 && mExponent < 15) {
           mUnitPrefix = "T";
-          exponent = 12;
+          mExponent = 12;
         } else {
           mUnitPrefix = "P";
-          exponent = 15;
+          mExponent = 15;
         }
-      } else if (exponent < -1) {
-        if (exponent <= -2 && exponent > -6) {
+      } else if (mExponent < -1) {
+        if (mExponent <= -2 && mExponent > -6) {
           mUnitPrefix = "m";
-          exponent = -3;
-        } else if (exponent <= -6 && exponent > -9) {
+          mExponent = -3;
+        } else if (mExponent <= -6 && mExponent > -9) {
           mUnitPrefix = QChar(0x03BC);
-          exponent = -6;
-        } else if (exponent <= -9 && exponent > -12) {
+          mExponent = -6;
+        } else if (mExponent <= -9 && mExponent > -12) {
           mUnitPrefix = "n";
-          exponent = -9;
-        } else if (exponent <= -12 && exponent > -15) {
+          mExponent = -9;
+        } else if (mExponent <= -12 && mExponent > -15) {
           mUnitPrefix = "p";
-          exponent = -12;
+          mExponent = -12;
         } else {
           mUnitPrefix = "f";
-          exponent = -15;
+          mExponent = -15;
         }
       }
-      value = value / qPow(10, exponent);
+      value = value / qPow(10, mExponent);
     }
   }
   return QLocale().toString(value, 'g', 4);

@@ -46,11 +46,11 @@ list(linearized_model);
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer m = 1 \"number of inputs\";
 //   parameter Integer p = 4 \"number of outputs\";
-//   parameter Real x0[n] = {2.801060045691952};
+//   parameter Real x0[n] = {2.801060045691936};
 //   parameter Real u0[m] = {0};
-//   parameter Real A[n, n] = [-0.9425769139614838];
+//   parameter Real A[n, n] = [-0.9425769139614785];
 //   parameter Real B[n, m] = [1];
-//   parameter Real C[p, n] = [0; 0; 0; -1.878100615247814];
+//   parameter Real C[p, n] = [0; 0; 0; -1.878100615247845];
 //   parameter Real D[p, m] = [1; 0; 0; 0];
 //   Real x[n](start = x0);
 //   input Real u[m](start = u0);
@@ -62,7 +62,7 @@ list(linearized_model);
 //   Real 'y_N[2,1]' = y[3];
 //   Real 'y_N[2,2]' = y[4];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // endResult

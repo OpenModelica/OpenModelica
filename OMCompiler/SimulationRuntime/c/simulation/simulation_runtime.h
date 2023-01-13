@@ -76,6 +76,22 @@ extern void printSimulationStepSize(double in_stepSize, double time);
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
 extern void communicateMsg(char id, unsigned int size, const char *data);
 
+/**
+ * @brief Parses the commandline (program options) and sets some
+ * values. See initRuntimeAndSimulation for more info.
+ * This allows generated simulation code to check-on/read options and flags before
+ * it calls the main _main_SimulationRuntime function to do the simulation.
+ *
+ * @param argc
+ * @param argv  This gets overwritten on Windows!!
+ * @param data
+ * @param threadData
+ * @return int    Returns 0 on success. Returns 1 otherwise.
+ *
+ * Note: The function will overwrite argv to its wide character representation. Not sure
+ * if this is a good idea. However, I am leaving it as it was for now.
+ */
+int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData);
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */

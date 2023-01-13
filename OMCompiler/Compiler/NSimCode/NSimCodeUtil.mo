@@ -84,6 +84,7 @@ public
     addListSimCodeMap(simVars.sensitivityVars, simcode_map);
     addListSimCodeMap(simVars.dataReconSetcVars, simcode_map);
     addListSimCodeMap(simVars.dataReconinputVars, simcode_map);
+    addListSimCodeMap(simVars.dataReconSetBVars, simcode_map);
   end createSimCodeMap;
 
   function addListSimCodeMap

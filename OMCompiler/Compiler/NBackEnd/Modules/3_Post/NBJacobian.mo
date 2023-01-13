@@ -66,6 +66,9 @@ protected
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VarData};
 
+  // Old Backend Import (remove once coloring ins ported)
+  import SymbolicJacobian;
+
   // Util imports
   import AvlSetPath;
   import StringUtil;
@@ -342,10 +345,10 @@ public
 
         case SOME(comps) algorithm
           // get all relevant crefs
-          partial_vars      := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
-          seed_vars         := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+          partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+          seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
           // unscalarized seed vars are currently needed for sparsity pattern
-          seed_vars_array  := VariablePointers.getVarNames(seedCandidates);
+          seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
 
           // create a sufficiant big unordered map
@@ -368,11 +371,11 @@ public
             // only create rows for derivatives
             if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
-                tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
+                tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
                 for dep in tmp loop
                   // also add inverse dependency (indep var) --> (res/tmp) :: rest
-                  UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map), map);
+                  UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map, sourceInfo()), map);
                 end for;
               end if;
             end if;
@@ -380,7 +383,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in seed_vars loop
-            tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
+            tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
             cols := (cref, tmp) :: cols;
           end for;
 
@@ -402,10 +405,10 @@ public
       end match;
 
       // create coloring
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlg(sparsityPattern, map);
+      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
-        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring));
+        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
       end if;
     end create;
 
@@ -459,6 +462,67 @@ public
       sparsityColoring := SPARSITY_COLORING(cols, rows);
     end lazy;
 
+    function PartialD2ColoringAlgC
+      "author: kabdelhak 2022-03
+      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
+      https://doi.org/10.1137/S0036144504444711
+      A greedy partial distance-2 coloring algorithm implemented in C."
+      input SparsityPattern sparsityPattern;
+      input JacobianType jacType;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<ComponentRef> seeds, partials;
+      UnorderedMap<ComponentRef, Integer> seed_indices, partial_indices;
+      Integer sizeCols, sizeRows;
+      ComponentRef idx_cref;
+      list<ComponentRef> deps;
+      array<list<Integer>> cols, rows, colored_cols;
+      array<SparsityColoringCol> cref_colored_cols;
+    algorithm
+      // create index -> cref arrays
+      seeds := listArray(sparsityPattern.seed_vars);
+      if jacType == JacobianType.NONLINEAR then
+        partials := listArray(sparsityPattern.partial_vars);
+      else
+        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative)) in sparsityPattern.partial_vars));
+      end if;
+
+      // create cref -> index maps
+      sizeCols := arrayLength(seeds);
+      sizeRows := arrayLength(partials);
+      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      for i in 1:sizeCols loop
+        UnorderedMap.add(seeds[i], i, seed_indices);
+      end for;
+      for i in 1:sizeRows loop
+        UnorderedMap.add(partials[i], i, partial_indices);
+      end for;
+      cols := arrayCreate(sizeCols, {});
+      rows := arrayCreate(sizeRows, {});
+
+      // prepare index based sparsity pattern for C
+      for tpl in sparsityPattern.col_wise_pattern loop
+        (idx_cref, deps) := tpl;
+        cols[UnorderedMap.getSafe(idx_cref, seed_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, partial_indices, sourceInfo()) for dep in deps);
+      end for;
+      for tpl in sparsityPattern.row_wise_pattern loop
+        (idx_cref, deps) := tpl;
+        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, seed_indices, sourceInfo()) for dep in deps);
+      end for;
+
+      // call C function (old backend - ToDo: port to new backend!)
+      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeCols, sizeRows);
+
+      // get cref based coloring - currently no row coloring
+      cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
+      for i in 1:arrayLength(colored_cols) loop
+        cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
+      end for;
+
+      sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
+    end PartialD2ColoringAlgC;
+
     function PartialD2ColoringAlg
       "author: kabdelhak 2022-03
       taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
@@ -492,18 +556,21 @@ public
       row_coloring := arrayCreate(arrayLength(cref_lookup), {});
 
       for i in 1:arrayLength(cref_lookup) loop
-        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map) loop
-          for col_var /* x */ in UnorderedMap.getSafe(row_var, map) loop
-            color := coloring[UnorderedMap.getSafe(col_var, index_lookup)];
+        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()) loop
+          for col_var /* x */ in UnorderedMap.getSafe(row_var, map, sourceInfo()) loop
+            color := coloring[UnorderedMap.getSafe(col_var, index_lookup, sourceInfo())];
             if color > 0 then
               forbidden_colors[color] := i;
             end if;
           end for;
         end for;
-        (_, color) := Array.findFirstOnTrueWithIdx(forbidden_colors, function intNe(i2 = i));
+        color := 1;
+        while forbidden_colors[color] == i loop
+          color := color + 1;
+        end while;
         coloring[i] := color;
         // also save all row dependencies of this color
-        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map));
+        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()));
         color_exists[color] := true;
       end for;
 

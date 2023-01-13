@@ -98,6 +98,12 @@ public
     DAE.ElementSource source;
   end TERMINATE;
 
+  record REINIT
+    Expression cref;
+    Expression reinitExp;
+    DAE.ElementSource source;
+  end REINIT;
+
   record NORETCALL
     Expression exp;
     DAE.ElementSource source;
@@ -133,6 +139,16 @@ public
     annotation(__OpenModelica_EarlyInline=true);
   end makeAssignment;
 
+  function isAssignment
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case ASSIGNMENT() then true;
+      else false;
+    end match;
+  end isAssignment;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;
@@ -154,6 +170,7 @@ public
       case WHEN() then stmt.source;
       case ASSERT() then stmt.source;
       case TERMINATE() then stmt.source;
+      case REINIT() then stmt.source;
       case NORETCALL() then stmt.source;
       case WHILE() then stmt.source;
       case RETURN() then stmt.source;
@@ -161,6 +178,26 @@ public
       case FAILURE() then stmt.source;
     end match;
   end source;
+
+  function setSource
+    input DAE.ElementSource source;
+    input output Statement stmt;
+  algorithm
+    () := match stmt
+      case ASSIGNMENT()          algorithm stmt.source := source; then ();
+      case FUNCTION_ARRAY_INIT() algorithm stmt.source := source; then ();
+      case FOR()                 algorithm stmt.source := source; then ();
+      case IF()                  algorithm stmt.source := source; then ();
+      case WHEN()                algorithm stmt.source := source; then ();
+      case ASSERT()              algorithm stmt.source := source; then ();
+      case TERMINATE()           algorithm stmt.source := source; then ();
+      case NORETCALL()           algorithm stmt.source := source; then ();
+      case WHILE()               algorithm stmt.source := source; then ();
+      case RETURN()              algorithm stmt.source := source; then ();
+      case BREAK()               algorithm stmt.source := source; then ();
+      case FAILURE()             algorithm stmt.source := source; then ();
+    end match;
+  end setSource;
 
   function info
     input Statement stmt;
@@ -393,6 +430,13 @@ public
         then
           ();
 
+      case Statement.REINIT()
+        algorithm
+          func(stmt.cref);
+          func(stmt.reinitExp);
+        then
+          ();
+
       case Statement.NORETCALL()
         algorithm
           func(stmt.exp);
@@ -435,7 +479,6 @@ public
 
       case ASSIGNMENT()
         algorithm
-          // kabdelhak: shouldn't this map?
           e1 := func(stmt.lhs);
           e2 := func(stmt.rhs);
         then
@@ -477,6 +520,14 @@ public
           e1 := func(stmt.message);
         then
           if referenceEq(e1, stmt.message) then stmt else TERMINATE(e1, stmt.source);
+
+      case REINIT()
+        algorithm
+          e1 := func(stmt.cref);
+          e2 := func(stmt.reinitExp);
+        then
+          if referenceEq(e1, stmt.cref) and referenceEq(e2, stmt.reinitExp)
+            then stmt else REINIT(e1, e2, stmt.source);
 
       case NORETCALL()
         algorithm
@@ -545,6 +596,14 @@ public
           e1 := func(stmt.message);
         then
           if referenceEq(e1, stmt.message) then stmt else TERMINATE(e1, stmt.source);
+
+      case REINIT()
+        algorithm
+          e1 := func(stmt.cref);
+          e2 := func(stmt.reinitExp);
+        then
+          if referenceEq(e1, stmt.cref) and referenceEq(e2, stmt.reinitExp) then
+            stmt else REINIT(e1, e2, stmt.source);
 
       case NORETCALL()
         algorithm
@@ -631,6 +690,13 @@ public
       case Statement.TERMINATE()
         algorithm
           arg := func(stmt.message, arg);
+        then
+          ();
+
+      case Statement.REINIT()
+        algorithm
+          arg := func(stmt.cref, arg);
+          arg := func(stmt.reinitExp, arg);
         then
           ();
 
@@ -782,6 +848,16 @@ public
         then
           s;
 
+      case REINIT()
+        algorithm
+          s := IOStream.append(s, "reinit(");
+          s := IOStream.append(s, Expression.toString(stmt.cref));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(stmt.reinitExp));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
       case NORETCALL()
         then IOStream.append(s, Expression.toString(stmt.exp));
 
@@ -921,6 +997,16 @@ public
         algorithm
           s := IOStream.append(s, "terminate(");
           s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case REINIT()
+        algorithm
+          s := IOStream.append(s, "reinit(");
+          s := IOStream.append(s, Expression.toFlatString(stmt.cref));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(stmt.reinitExp));
           s := IOStream.append(s, ")");
         then
           s;

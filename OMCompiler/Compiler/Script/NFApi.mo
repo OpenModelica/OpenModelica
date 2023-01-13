@@ -95,6 +95,8 @@ import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;
 import ElementSource;
+import InstSettings = NFInst.InstSettings;
+import Testsuite;
 
 
 public
@@ -530,7 +532,7 @@ algorithm
       cls := Lookup.lookupClassName(pathToQualify, expanded_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
     end if;
 
-    qualPath := InstNode.scopePath(cls, true);
+    qualPath := InstNode.fullPath(cls);
 
     if not Flags.isSet(Flags.NF_API_NOISE) then
       ErrorExt.rollBack("NFApi.mkFullyQual");
@@ -612,6 +614,7 @@ algorithm
     // if absyn is the same, all fine, reuse
     if referenceEq(absynProgram, Util.tuple21(listHead(cache))) then
       (program, top) := Util.tuple22(listHead(cache));
+      InstNode.clearGeneratedInners(top);
       update := false;
     else
       update := true;
@@ -820,8 +823,8 @@ algorithm
   cls := InstNode.getClass(cls_node);
 
   extendsPaths := match cls
-    case Class.EXPANDED_DERIVED() then {InstNode.scopePath(cls.baseClass, true, true)};
-    else list(InstNode.scopePath(e, true, true) for e in ClassTree.getExtends(Class.classTree(cls)));
+    case Class.EXPANDED_DERIVED() then {InstNode.fullPath(cls.baseClass, true)};
+    else list(InstNode.fullPath(e, true) for e in ClassTree.getExtends(Class.classTree(cls)));
   end match;
 end getInheritedClasses;
 
@@ -854,14 +857,20 @@ protected
   JSON json;
   InstContext.Type context;
   InstanceTree inst_tree;
+  InstSettings inst_settings;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false);
+
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   cls_node := Inst.lookupRootClass(classPath, top, context);
   cls_node := Inst.instantiateRootClass(cls_node, context);
   inst_tree := buildInstanceTree(cls_node);
-  Inst.instExpressions(cls_node, context = context);
+  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
 
+  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
 
@@ -869,8 +878,29 @@ algorithm
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstance;
 
+function getModelInstanceIcon
+  input Absyn.Path classPath;
+  input Boolean prettyPrint;
+  output Values.Value res;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+  JSON json;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := InstNode.resolveInner(cls_node);
+
+  json := dumpJSONInstanceIcon(cls_node);
+  res := Values.STRING(JSON.toString(json, prettyPrint));
+end getModelInstanceIcon;
+
 function buildInstanceTree
   input InstNode node;
+  input Boolean isDerived = false;
   output InstanceTree tree;
 protected
   Class cls;
@@ -880,21 +910,30 @@ protected
 algorithm
   cls := InstNode.getClass(InstNode.resolveInner(node));
 
-  if Class.isBuiltin(cls) then
+  if not isDerived and Class.isOnlyBuiltin(cls) then
     tree := InstanceTree.EMPTY();
     return;
   end if;
 
   cls_tree := Class.classTree(cls);
 
-  tree := match cls_tree
-    case ClassTree.INSTANTIATED_TREE(exts = ext_nodes)
+  tree := match (cls, cls_tree)
+    case (Class.EXPANDED_DERIVED(), _)
+      algorithm
+        exts := {buildInstanceTree(cls.baseClass, isDerived = true)};
+      then
+        InstanceTree.CLASS(node, exts, {});
+
+    case (_, ClassTree.INSTANTIATED_TREE(exts = ext_nodes))
       algorithm
         exts := list(buildInstanceTree(e) for e in ext_nodes);
         components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
                            for i in cls_tree.localComponents);
       then
         InstanceTree.CLASS(node, exts, components);
+
+    case (_, ClassTree.FLAT_TREE())
+      then InstanceTree.CLASS(node, {}, {});
 
     else
       algorithm
@@ -935,12 +974,15 @@ algorithm
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
+  json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
   json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
 
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
+
   if not listEmpty(exts) then
-    json := JSON.addPair("extends", dumpJSONExtends(exts), json);
+    json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
   end if;
 
   json := dumpJSONCommentOpt(cmt, node, json);
@@ -949,19 +991,63 @@ algorithm
     json := JSON.addPair("components", dumpJSONComponents(comps), json);
   end if;
 
-  if root then
-    sections := Class.getSections(InstNode.getClass(node));
-    j := dumpJSONConnections(sections, node);
-    if not JSON.isNull(j) then
-      json := JSON.addPair("connections", j, json);
-    end if;
+  sections := Class.getSections(InstNode.getClass(node));
+  json := dumpJSONEquations(sections, node, json);
 
+  if root then
     j := dumpJSONReplaceableElements(node);
-    if not JSON.isNull(j) then
-      json := JSON.addPair("replaceable", j, json);
-    end if;
+    json := JSON.addPairNotNull("replaceable", j, json);
   end if;
+
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
+
+function dumpJSONInstanceIcon
+  input InstNode node;
+  output JSON json = JSON.emptyObject();
+protected
+  Option<SCode.Comment> cmt;
+  SCode.Annotation ann;
+  array<InstNode> exts;
+  JSON j;
+algorithm
+  Inst.expand(node);
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
+  exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(node)));
+
+  if not arrayEmpty(exts) then
+    j := JSON.emptyArray();
+
+    for ext in exts loop
+      j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
+    end for;
+
+    json := JSON.addPair("extends", j, json);
+  end if;
+
+  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
+
+  cmt := match cmt
+    case SOME(SCode.Comment.COMMENT(annotation_ = SOME(ann as SCode.Annotation.ANNOTATION())))
+      algorithm
+        ann.modification := SCodeUtil.filterSubMods(ann.modification,
+          function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+      then
+        if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
+
+    else NONE();
+  end match;
+
+  json := dumpJSONCommentOpt(cmt, node, json, failOnError = true);
+end dumpJSONInstanceIcon;
+
+function dumpJSONInstanceIconExtends
+  input InstNode ext;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
+end dumpJSONInstanceIconExtends;
 
 function dumpJSONNodePath
   input InstNode node;
@@ -973,25 +1059,34 @@ function dumpJSONPath
   output JSON json = JSON.makeString(AbsynUtil.pathString(path));
 end dumpJSONPath;
 
-function dumpJSONExtends
+function dumpJSONExtendsList
   input list<InstanceTree> exts;
   output JSON json = JSON.emptyArray();
-protected
-  JSON ext_json, j;
-  InstNode node;
-  SCode.Element ext_def;
 algorithm
   for ext in exts loop
-    InstanceTree.CLASS(node = node) := ext;
-    ext_def := InstNode.extendsDefinition(node);
-
-    ext_json := JSON.emptyObject();
-    ext_json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), ext_json);
-    ext_json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, ext_json);
-    ext_json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), ext_json);
-
-    json := JSON.addElement(ext_json, json);
+    json := JSON.addElement(dumpJSONExtends(ext), json);
   end for;
+end dumpJSONExtendsList;
+
+function dumpJSONExtends
+  input InstanceTree ext;
+  output JSON json = JSON.emptyObject();
+protected
+  InstNode node;
+  SCode.Element cls_def, ext_def;
+algorithm
+  InstanceTree.CLASS(node = node) := ext;
+  cls_def := InstNode.definition(node);
+  ext_def := InstNode.extendsDefinition(node);
+
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), json);
+  json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
+
+  if Class.isOnlyBuiltin(InstNode.getClass(node)) then
+    json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
+  else
+    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), json);
+  end if;
 end dumpJSONExtends;
 
 function dumpJSONComponents
@@ -999,16 +1094,21 @@ function dumpJSONComponents
   output JSON json = JSON.emptyArray();
 protected
   InstNode node;
+  JSON j;
 algorithm
   for comp in components loop
     InstanceTree.COMPONENT(node = node) := comp;
-    json := JSON.addElement(dumpJSONComponent(comp), json);
+    j := dumpJSONComponent(comp);
+
+    if not JSON.isNull(j) then
+      json := JSON.addElement(j, json);
+    end if;
   end for;
 end dumpJSONComponents;
 
 function dumpJSONComponent
   input InstanceTree component;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   InstNode node;
   Component comp;
@@ -1021,21 +1121,31 @@ protected
 algorithm
   InstanceTree.COMPONENT(node = node, cls = cls) := component;
   node := InstNode.resolveInner(node);
+
+  // Skip dumping inner elements that were added by the compiler itself.
+  if InstNode.isGeneratedInner(node) then
+    return;
+  end if;
+
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
 
   () := match (comp, elem)
-    case (_, _)
+    case (_, SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
-
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+        json := dumpJSONSCodeMod(elem.modifications, json);
+        json := JSON.addPair("condition", JSON.makeBoolean(false), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
+        json := dumpJSONCommentOpt(SOME(elem.comment), InstNode.parent(node), json);
       then
         ();
 
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
-        json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
 
         if Type.isArray(comp.ty) then
           json := JSON.addPair("dims",
@@ -1048,7 +1158,7 @@ algorithm
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
         //end if;
 
-        is_constant := comp.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
+        is_constant := comp.attributes.variability <= Variability.PARAMETER;
 
         if Binding.isBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
@@ -1058,7 +1168,7 @@ algorithm
           json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
         end if;
 
-        json := JSON.addPair("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
         json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
       then
         ();
@@ -1074,14 +1184,57 @@ end dumpJSONComponent;
 
 function dumpJSONComponentType
   input InstanceTree cls;
+  input InstNode node;
   input Type ty;
   output JSON json;
 algorithm
-  json := match cls
-    case InstanceTree.CLASS() then dumpJSONInstanceTree(cls);
+  json := match (cls, ty)
+    case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
+    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;
+
+function dumpJSONEnumType
+  input InstNode enumNode;
+  output JSON json;
+protected
+  InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
+  SCode.Element def;
+  array<InstNode> comps;
+algorithm
+  def := InstNode.definition(node);
+
+  json := JSON.emptyObject();
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
+  json := JSON.addPair("restriction", JSON.makeString("enumeration"), json);
+  json := dumpJSONCommentOpt(SCodeUtil.getElementComment(def), node, json);
+
+  comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(node)));
+  json := JSON.addPair("components", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
+
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+end dumpJSONEnumType;
+
+function dumpJSONEnumTypeLiterals
+  input array<InstNode> literals;
+  input InstNode scope;
+  output JSON json = JSON.emptyArray();
+algorithm
+  for i in 6:arrayLength(literals) loop
+    json := JSON.addElement(dumpJSONEnumTypeLiteral(literals[i], scope), json);
+  end for;
+end dumpJSONEnumTypeLiterals;
+
+function dumpJSONEnumTypeLiteral
+  input InstNode node;
+  input InstNode scope;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+  json := dumpJSONCommentOpt(Component.comment(InstNode.component(node)), scope, json);
+end dumpJSONEnumTypeLiteral;
 
 function dumpJSONTypeName
   input Type ty;
@@ -1140,10 +1293,33 @@ algorithm
     end match;
   end for;
 
-  if not JSON.isNull(attr_json) then
-    json := JSON.addPair("attributes", attr_json, json);
-  end if;
+  json := JSON.addPairNotNull("attributes", attr_json, json);
 end dumpJSONBuiltinClassComponents;
+
+function dumpJSONClassDims
+  input InstNode node;
+  input SCode.Element element;
+  output JSON json;
+protected
+  Type ty;
+  list<Absyn.Subscript> absyn_dims;
+algorithm
+  ty := InstNode.getType(node);
+
+  if Type.isArray(ty) then
+    absyn_dims := match element
+      case SCode.Element.CLASS(classDef = SCode.ClassDef.DERIVED(typeSpec =
+          Absyn.TypeSpec.TPATH(arrayDim = SOME(absyn_dims))))
+        then absyn_dims;
+
+      else {};
+    end match;
+
+    json := dumpJSONDims(absyn_dims, Type.arrayDims(ty));
+  else
+    json := JSON.makeNull();
+  end if;
+end dumpJSONClassDims;
 
 function dumpJSONDims
   input list<Absyn.Subscript> absynDims;
@@ -1170,33 +1346,12 @@ end dumpJSONDims;
 function dumpJSONAttributes
   input SCode.Attributes attrs;
   input SCode.Prefixes prefs;
-  output JSON json = JSON.emptyObject();
+  input InstNode scope;
+  output JSON json;
 protected
   String s;
 algorithm
-  if not SCodeUtil.visibilityBool(prefs.visibility) then
-    json := JSON.addPair("public", JSON.makeBoolean(false), json);
-  end if;
-
-  if SCodeUtil.finalBool(prefs.finalPrefix) then
-    json := JSON.addPair("final", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isInner(prefs.innerOuter) then
-    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isOuter(prefs.innerOuter) then
-    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
-  end if;
-
-  if SCodeUtil.replaceableBool(prefs.replaceablePrefix) then
-    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
-  end if;
-
-  if SCodeUtil.redeclareBool(prefs.redeclarePrefix) then
-    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
-  end if;
+  json := dumpJSONSCodePrefixes(prefs, scope);
 
   s := SCodeDump.connectorTypeStr(attrs.connectorType);
   if not stringEmpty(s) then
@@ -1215,12 +1370,94 @@ algorithm
   end if;
 end dumpJSONAttributes;
 
+function dumpJSONSCodePrefixes
+  input SCode.Prefixes prefixes;
+  input InstNode scope;
+  output JSON json = JSON.makeNull();
+algorithm
+  if not SCodeUtil.visibilityBool(prefixes.visibility) then
+    json := JSON.addPair("public", JSON.makeBoolean(false), json);
+  end if;
+
+  if SCodeUtil.finalBool(prefixes.finalPrefix) then
+    json := JSON.addPair("final", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isInner(prefixes.innerOuter) then
+    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOuter(prefixes.innerOuter) then
+    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
+  end if;
+
+  json := JSON.addPairNotNull("replaceable",
+    dumpJSONReplaceable(prefixes.replaceablePrefix, scope), json);
+
+  if SCodeUtil.redeclareBool(prefixes.redeclarePrefix) then
+    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSCodePrefixes;
+
+function dumpJSONClassPrefixes
+  input SCode.Element element;
+  input InstNode scope;
+  output JSON json;
+protected
+  SCode.Prefixes prefs;
+  SCode.ClassDef cdef;
+algorithm
+  json := match element
+    case SCode.CLASS(classDef = cdef, prefixes = prefs)
+      algorithm
+        json := match cdef
+          case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes, scope);
+          else dumpJSONSCodePrefixes(element.prefixes, scope);
+        end match;
+
+        if SCodeUtil.partialBool(element.partialPrefix) then
+          json := JSON.addPair("partial", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.encapsulatedBool(element.encapsulatedPrefix) then
+          json := JSON.addPair("encapsulated", JSON.makeBoolean(true), json);
+        end if;
+      then
+        json;
+
+    else JSON.makeNull();
+  end match;
+end dumpJSONClassPrefixes;
+
+function dumpJSONReplaceable
+  input SCode.Replaceable repl;
+  input InstNode scope;
+  output JSON json;
+protected
+  SCode.ConstrainClass cc;
+algorithm
+  json := match repl
+    case SCode.Replaceable.REPLACEABLE(cc = SOME(cc))
+      algorithm
+        json := JSON.emptyObject();
+        json := JSON.addPair("constrainedby", dumpJSONPath(cc.constrainingClass), json);
+        json := dumpJSONSCodeMod(cc.modifier, json);
+        json := dumpJSONCommentOpt(SOME(cc.comment), scope, json);
+      then
+        json;
+
+    case SCode.Replaceable.REPLACEABLE() then JSON.makeBoolean(true);
+    else JSON.makeNull();
+  end match;
+end dumpJSONReplaceable;
+
 function dumpJSONCommentOpt
   input Option<SCode.Comment> cmtOpt;
   input InstNode scope;
   input output JSON json;
   input Boolean dumpComment = true;
   input Boolean dumpAnnotation = true;
+  input Boolean failOnError = false;
 protected
   SCode.Comment cmt;
 algorithm
@@ -1232,7 +1469,7 @@ algorithm
     end if;
 
     if dumpAnnotation then
-      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, json);
+      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, failOnError, json);
     end if;
   end if;
 end dumpJSONCommentOpt;
@@ -1240,24 +1477,26 @@ end dumpJSONCommentOpt;
 function dumpJSONAnnotationOpt
   input Option<SCode.Annotation> annOpt;
   input InstNode scope;
+  input Boolean failOnError;
   input output JSON json;
 protected
   SCode.Annotation ann;
 algorithm
   if isSome(annOpt) then
     SOME(ann) := annOpt;
-    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope), json);
+    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope, failOnError), json);
   end if;
 end dumpJSONAnnotationOpt;
 
 function dumpJSONAnnotationMod
   input SCode.Mod mod;
   input InstNode scope;
+  input Boolean failOnError;
   output JSON json;
 algorithm
   json := match mod
     case SCode.Mod.MOD()
-      then dumpJSONAnnotationSubMods(mod.subModLst, scope);
+      then dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError);
 
     else JSON.makeNull();
   end match;
@@ -1266,16 +1505,18 @@ end dumpJSONAnnotationMod;
 function dumpJSONAnnotationSubMods
   input list<SCode.SubMod> subMods;
   input InstNode scope;
+  input Boolean failOnError;
   output JSON json = JSON.makeNull();
 algorithm
   for m in subMods loop
-    json := dumpJSONAnnotationSubMod(m, scope, json);
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
   end for;
 end dumpJSONAnnotationSubMods;
 
 function dumpJSONAnnotationSubMod
   input SCode.SubMod subMod;
   input InstNode scope;
+  input Boolean failOnError;
   input output JSON json;
 protected
   String name;
@@ -1286,8 +1527,15 @@ protected
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
 
-  () := match mod
-    case SCode.Mod.MOD(binding = SOME(absyn_binding))
+  () := match (name, mod)
+    case ("choices", SCode.Mod.MOD())
+      algorithm
+        j := dumpJSONChoicesAnnotation(mod.subModLst, scope, mod.info, failOnError);
+        json := JSON.addPairNotNull(name, j, json);
+      then
+        ();
+
+    case (_, SCode.Mod.MOD(binding = SOME(absyn_binding)))
       algorithm
         ErrorExt.setCheckpoint(getInstanceName());
 
@@ -1297,6 +1545,10 @@ algorithm
           binding_exp := SimplifyExp.simplify(binding_exp);
           json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
         else
+          if failOnError then
+            fail();
+          end if;
+
           j := JSON.emptyObject();
           j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
           j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
@@ -1307,15 +1559,31 @@ algorithm
       then
         ();
 
-    case SCode.Mod.MOD()
+    case (_, SCode.Mod.MOD())
       algorithm
-        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope), json);
+        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError), json);
       then
         ();
 
     else ();
   end match;
 end dumpJSONAnnotationSubMod;
+
+function dumpJSONSourceInfo
+  input SourceInfo info;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+
+  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
+  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
+  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
+  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
+
+  if info.isReadOnly then
+    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSourceInfo;
 
 function dumpJSONAbsynExpression
   input Absyn.Exp exp;
@@ -1399,24 +1667,82 @@ algorithm
   end match;
 end dumpJSONAbsynFunctionArgs;
 
-function dumpJSONConnections
+function dumpJSONEquations
   input Sections sections;
   input InstNode scope;
-  output JSON json = JSON.makeNull();
+  input output JSON json;
+protected
+  list<Equation> connections, transitions, initial_states;
+  JSON j;
+  InstContext.Type context;
+algorithm
+  (connections, transitions, initial_states) := sortEquations(sections);
+  context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
+  transitions := list(Typing.typeEquation(e, context) for e in transitions);
+  initial_states := list(Typing.typeEquation(e, context) for e in initial_states);
+
+  j := dumpJSONConnections(connections, scope);
+  json := JSON.addPairNotNull("connections", j, json);
+
+  j := dumpJSONStateCalls(initial_states, scope);
+  json := JSON.addPairNotNull("initialStates", j, json);
+
+  j := dumpJSONStateCalls(transitions, scope);
+  json := JSON.addPairNotNull("transitions", j, json);
+end dumpJSONEquations;
+
+function sortEquations
+  input Sections sections;
+  output list<Equation> connections = {};
+  output list<Equation> transitions = {};
+  output list<Equation> initialStates = {};
+  output list<Equation> others = {};
 algorithm
   () := match sections
     case Sections.SECTIONS()
       algorithm
-        for eq in sections.equations loop
-          if Equation.isConnect(eq) then
-            json := JSON.addElement(dumpJSONConnection(eq, scope), json);
-          end if;
+        for eq in listReverse(sections.equations) loop
+          () := match eq
+            case Equation.CONNECT()
+              algorithm
+                connections := eq :: connections;
+              then
+                ();
+
+            case Equation.NORETCALL()
+              algorithm
+                if Expression.isCallNamed(eq.exp, "transition") then
+                  transitions := eq :: transitions;
+                elseif Expression.isCallNamed(eq.exp, "initialState") then
+                  initialStates := eq :: initialStates;
+                else
+                  others := eq :: others;
+                end if;
+              then
+                ();
+
+            else
+              algorithm
+                others := eq :: others;
+              then
+                ();
+          end match;
         end for;
       then
         ();
 
     else ();
   end match;
+end sortEquations;
+
+function dumpJSONConnections
+  input list<Equation> connections;
+  input InstNode scope;
+  output JSON json = JSON.makeNull();
+algorithm
+  for conn in connections loop
+    json := JSON.addElement(dumpJSONConnection(conn, scope), json);
+  end for;
 end dumpJSONConnections;
 
 function dumpJSONConnection
@@ -1432,6 +1758,42 @@ algorithm
   json := JSON.addPair("rhs", Expression.toJSON(rhs), json);
   json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
 end dumpJSONConnection;
+
+function dumpJSONStateCalls
+  input list<Equation> callEqs;
+  input InstNode scope;
+  output JSON json = JSON.makeNull();
+algorithm
+  for eq in callEqs loop
+    json := JSON.addElement(dumpJSONStateCall(eq, scope), json);
+  end for;
+end dumpJSONStateCalls;
+
+function dumpJSONStateCall
+  input Equation callEq;
+  input InstNode scope;
+  output JSON json = JSON.emptyObject();
+protected
+  Call call;
+  list<Expression> args;
+  DAE.ElementSource src;
+  JSON j;
+algorithm
+  () := match callEq
+    case Equation.NORETCALL(exp = Expression.CALL(call = call as Call.TYPED_CALL(arguments = args)), source = src)
+      algorithm
+        j := JSON.emptyArray(listLength(args));
+        for arg in args loop
+          j := JSON.addElement(Expression.toJSON(arg), j);
+        end for;
+        json := JSON.addPair("arguments", j, json);
+        json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONStateCall;
 
 function dumpJSONReplaceableElements
   input InstNode clsNode;
@@ -1465,10 +1827,7 @@ protected
   JSON j;
 algorithm
   j := dumpJSONSCodeMod_impl(mod);
-
-  if not JSON.isNull(j) then
-    json := JSON.addPair("modifiers", j, json);
-  end if;
+  json := JSON.addPairNotNull("modifiers", j, json);
 end dumpJSONSCodeMod;
 
 function dumpJSONSCodeMod_impl
@@ -1484,6 +1843,14 @@ algorithm
           json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod), json);
         end for;
 
+        if SCodeUtil.finalBool(mod.finalPrefix) then
+          json := JSON.addPair("final", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.eachBool(mod.eachPrefix) then
+          json := JSON.addPair("each", JSON.makeBoolean(true), json);
+        end if;
+
         if isSome(mod.binding) then
           binding_json := JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding)));
 
@@ -1496,9 +1863,59 @@ algorithm
       then
         ();
 
+    case SCode.Mod.REDECL()
+      algorithm
+        if SCodeUtil.finalBool(mod.finalPrefix) then
+          json := JSON.addPair("final", JSON.makeBoolean(true), json);
+        end if;
+
+        if SCodeUtil.eachBool(mod.eachPrefix) then
+          json := JSON.addPair("each", JSON.makeBoolean(true), json);
+        end if;
+
+        binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
+        json := JSON.addPair("$value", binding_json, json);
+      then
+        ();
+
     else ();
   end match;
 end dumpJSONSCodeMod_impl;
+
+function dumpJSONChoicesAnnotation
+  input list<SCode.SubMod> mods;
+  input InstNode scope;
+  input SourceInfo info;
+  input Boolean failOnError;
+  output JSON json = JSON.makeNull();
+protected
+  SCode.SubMod smod;
+  list<SCode.SubMod> choices, others;
+  SCode.Mod choices_mod;
+  JSON j;
+algorithm
+  choices := list(m for m guard m.ident == "choice" in mods);
+  others := list(m for m guard m.ident <> "choice" in mods);
+
+  if not listEmpty(choices) then
+    j := JSON.emptyArray(listLength(choices));
+
+    for m in choices loop
+      m := match m.mod
+        case SCode.Mod.MOD(binding = NONE(), subModLst = {smod}) then smod;
+        else m;
+      end match;
+
+      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod), j);
+    end for;
+
+    json := JSON.addPair("choice", j, json);
+  end if;
+
+  for m in others loop
+    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+  end for;
+end dumpJSONChoicesAnnotation;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

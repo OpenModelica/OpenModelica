@@ -154,7 +154,7 @@ algorithm
 
         if not Type.isEmptyArray(ty) then
           rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
-          equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.source) :: equations;
+          equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.scope, eq.source) :: equations;
         end if;
       then
         equations;
@@ -191,7 +191,7 @@ algorithm
         equations;
 
     case Equation.IF()
-      then simplifyIfEqBranches(eq.branches, eq.source, equations);
+      then simplifyIfEqBranches(eq.branches, eq.scope, eq.source, equations);
 
     case Equation.WHEN()
       algorithm
@@ -242,8 +242,9 @@ protected
   Expression lhs, rhs;
   Type ty;
   DAE.ElementSource src;
+  InstNode scope;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) := eq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
   if Type.isEmptyArray(ty) then
@@ -257,9 +258,10 @@ algorithm
 
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
-      then simplifyTupleElement(lhs.elements, rhs.elements, ty, src, Equation.makeEquality, equations);
+      then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
+        function Equation.makeEquality(scope = scope), equations);
 
-    else Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
+    else Equation.EQUALITY(lhs, rhs, ty, scope, src) :: equations;
   end match;
 end simplifyEqualityEquation;
 
@@ -464,6 +466,7 @@ end removeEmptyFunctionArguments;
 
 function simplifyIfEqBranches
   input list<Equation.Branch> branches;
+  input InstNode scope;
   input DAE.ElementSource src;
   input output list<Equation> elements;
 protected
@@ -489,7 +492,7 @@ algorithm
             else
               // Otherwise just discard the rest of the branches.
               accum := Equation.makeBranch(cond, simplifyEquations(body)) :: accum;
-              elements := Equation.makeIf(listReverseInPlace(accum), src) :: elements;
+              elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
               return;
             end if;
           elseif not Expression.isFalse(cond) then
@@ -519,7 +522,7 @@ algorithm
   end for;
 
   if not listEmpty(accum) then
-    elements := Equation.makeIf(listReverseInPlace(accum), src) :: elements;
+    elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
   end if;
 end simplifyIfEqBranches;
 
@@ -619,44 +622,12 @@ function combineBinaries
    --> MULTARY({2, 3, x}, {y^2}, *)"
   input output FlatModel flatModel;
 algorithm
-  flatModel.variables := list(combineBinariesVar(var) for var in flatModel.variables);
+  flatModel.variables := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
   flatModel.equations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
   flatModel.initialEquations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
   flatModel.algorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
   flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
-
-protected function combineBinariesVar
-  input output Variable var;
-algorithm
-  var := match var
-    local
-      Binding binding;
-
-    case Variable.VARIABLE(binding = binding as Binding.UNTYPED_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
-      var.binding := binding;
-    then var;
-
-    case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
-      var.binding := binding;
-    then var;
-
-    case Variable.VARIABLE(binding = binding as Binding.FLAT_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
-      var.binding := binding;
-    then var;
-
-    case Variable.VARIABLE(binding = binding as Binding.CEVAL_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
-      var.binding := binding;
-    then var;
-
-    else var;
-  end match;
-end combineBinariesVar;
-
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyModel;

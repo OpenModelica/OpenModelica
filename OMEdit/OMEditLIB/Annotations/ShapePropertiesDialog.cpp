@@ -95,7 +95,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Extent Group Box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   // Extent1X
-  QList<QPointF> extents = mpShapeAnnotation->getExtents();
+  QVector<QPointF> extents = mpShapeAnnotation->getExtents();
   mpExtent1XLabel = new Label(Helper::extent1X);
   mpExtent1XSpinBox = new DoubleSpinBox;
   mpExtent1XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
@@ -204,7 +204,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFontNameLabel = new Label(Helper::name);
   mpFontNameComboBox = new QFontComboBox;
   mpFontNameComboBox->insertItem(0, "Default");
-  currentIndex = mpFontNameComboBox->findText(mpShapeAnnotation->getFontName(), Qt::MatchExactly);
+  currentIndex = mpFontNameComboBox->findText(StringHandler::removeFirstLastQuotes(mpShapeAnnotation->getFontName()), Qt::MatchExactly);
   if (currentIndex > -1) {
     mpFontNameComboBox->setCurrentIndex(currentIndex);
   } else {
@@ -416,7 +416,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   headerLabels << "X" << "Y";
   mpPointsTableWidget->setHorizontalHeaderLabels(headerLabels);
   // add points to points table widget
-  QList<QPointF> points = mpShapeAnnotation->getPoints();
+  QVector<QPointF> points = mpShapeAnnotation->getPoints();
   mpPointsTableWidget->setRowCount(points.size());
   int rowIndex = 0;
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
@@ -713,8 +713,8 @@ void ShapePropertiesDialog::addPoint()
       mpPointsTableWidget->setCurrentCell(row + 1, 0);
     } else {
       /* get middle of two surronding points */
-      QPointF point1(mpPointsTableWidget->item(row, 0)->text().toFloat(), mpPointsTableWidget->item(row, 1)->text().toFloat());
-      QPointF point2(mpPointsTableWidget->item(row + 1, 0)->text().toFloat(), mpPointsTableWidget->item(row + 1, 1)->text().toFloat());
+      QPointF point1(mpPointsTableWidget->item(row, 0)->text().toDouble(), mpPointsTableWidget->item(row, 1)->text().toDouble());
+      QPointF point2(mpPointsTableWidget->item(row + 1, 0)->text().toDouble(), mpPointsTableWidget->item(row + 1, 1)->text().toDouble());
       QPointF point3 = (point1 + point2) / 2;
       /* insert new row */
       mpPointsTableWidget->insertRow(row + 1);
@@ -730,8 +730,8 @@ void ShapePropertiesDialog::addPoint()
              (mpLineAnnotation->getLineType() == LineAnnotation::ConnectionType ||
               mpLineAnnotation->getLineType() == LineAnnotation::TransitionType)) {
     /* get middle of two surronding points */
-    QPointF point1(mpPointsTableWidget->item(0, 0)->text().toFloat(), mpPointsTableWidget->item(0, 1)->text().toFloat());
-    QPointF point2(mpPointsTableWidget->item(1, 0)->text().toFloat(), mpPointsTableWidget->item(1, 1)->text().toFloat());
+    QPointF point1(mpPointsTableWidget->item(0, 0)->text().toDouble(), mpPointsTableWidget->item(0, 1)->text().toDouble());
+    QPointF point2(mpPointsTableWidget->item(1, 0)->text().toDouble(), mpPointsTableWidget->item(1, 1)->text().toDouble());
     QPointF point3 = (point1 + point2) / 2;
     /* insert new row */
     mpPointsTableWidget->insertRow(1);
@@ -778,7 +778,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++) {
     QTableWidgetItem *pTableWidgetItem = mpPointsTableWidget->item(i, 0); /* point X value */
     bool Ok;
-    pTableWidgetItem->text().toFloat(&Ok);
+    pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
@@ -786,7 +786,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       return false;
     }
     pTableWidgetItem = mpPointsTableWidget->item(i, 1); /* point Y value */
-    pTableWidgetItem->text().toFloat(&Ok);
+    pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
@@ -816,7 +816,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   mpShapeAnnotation->setOrigin(QPointF(mpOriginXSpinBox->value(), mpOriginYSpinBox->value()));
   mpShapeAnnotation->setRotationAngle(mpRotationSpinBox->value());
   if (!mpLineAnnotation && !mpPolygonAnnotation) {
-    QList<QPointF> extents;
+    QVector<QPointF> extents;
     QPointF p1(mpExtent1XSpinBox->value(), mpExtent1YSpinBox->value());
     QPointF p2(mpExtent2XSpinBox->value(), mpExtent2YSpinBox->value());
     extents << p1 << p2;
@@ -839,7 +839,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     qreal fontSize = 0;
     fontSize = mpFontSizeComboBox->lineEdit()->text().toDouble();
     mpShapeAnnotation->setFontSize(fontSize);
-    QList<StringHandler::TextStyle> textStyles;
+    QVector<StringHandler::TextStyle> textStyles;
     if (mpTextBoldCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleBold);
     if (mpTextItalicCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleItalic);
     if (mpTextUnderlineCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleUnderLine);
@@ -860,9 +860,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
   }
   /* save points */
   mpShapeAnnotation->clearPoints();
-  QList<QPointF> points;
+  QVector<QPointF> points;
   for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++) {
-    points.append(QPointF(mpPointsTableWidget->item(i, 0)->text().toFloat(), mpPointsTableWidget->item(i, 1)->text().toFloat()));
+    points.append(QPointF(mpPointsTableWidget->item(i, 0)->text().toDouble(), mpPointsTableWidget->item(i, 1)->text().toDouble()));
   }
   mpShapeAnnotation->setPoints(points);
   /* save bitmap file name and image source */
@@ -947,8 +947,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   } else {
     // create a UpdateShapeCommand object and push it to the undo stack.
-    UpdateShapeCommand *pUpdateShapeCommand;
-    pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
+    UpdateShapeCommand *pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateShapeCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateClassAnnotationIfNeeded();
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();

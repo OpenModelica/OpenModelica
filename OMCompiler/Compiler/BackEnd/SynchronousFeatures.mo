@@ -725,7 +725,7 @@ algorithm
     //part1,subClk1 is the output of the sub partition interface function calls, this is used for ordering
     (infered,part1,var1,subClk1,part2,var2,subClk2) := getConnectedSubPartitions(BackendEquation.get(eqs,subPartEq),varPartMap,vars);
     //for adjacency relations, check only concrete sub partition interfaces not infered ones
-    if not intEq(part1,0) and not intEq(part2,0) then
+    if part1 <> 0 and part2 <> 0 then
       addPartAdjacencyEdge(part1,subClk1,part2,subClk2,partAdjacency);
     end if;
     //reset previously obtained opposite parent relation if it interfaces clock-variables
@@ -735,21 +735,10 @@ algorithm
     end if;
     partitionInterfacesClockVars[part1] := not (clockedVarsMask[var1] and clockedVarsMask[var2]);
     //avoid mutually dependent parents that would result in stack overflow later on
-    if not intEq(partitionParents[part2], part1) then
+    if partitionParents[part2] <> part1 then
       partitionParents[part1] := part2;
     end if;
   end for;
-  /*
-  for i in 1:numPartitions loop
-    for j in arrayGet(partAdjacency,i) loop
-      print("partition "+intString(i)+" is connected to partition "+intString(Util.tuple21(j))+" with subCLock "+BackendDump.subClockString(Util.tuple22(j))+"\n");
-    end for;
-  end for;
-
-  for i in 1:numPartitions loop
-      print("partition "+intString(i)+" has parent "+intString(partitionParents[i])+"\n");
-  end for;
-  */
 
   //get the order
   partLst := List.intRange(numPartitions);
@@ -759,19 +748,18 @@ algorithm
     part::partLst := partLst;
     if not partitionParentsVisited[part] then
       //partition without parent, not yet visited
-      if intEq(partitionParents[part],-1) then
+      if partitionParents[part] == -1 or partitionParents[part] == part then
+        orderLst := part::orderLst;
+        partitionParentsVisited[part] := true;
+      //partition with parents, parent visited
+      elseif partitionParentsVisited[partitionParents[part]] then
         orderLst := part::orderLst;
         partitionParentsVisited[part] := true;
       //partition with parents, parent not yet visited
-      elseif intNe(partitionParents[part],-1)  and intNe(partitionParents[part],part)and not partitionParentsVisited[partitionParents[part]] then
+      else
         partLst := part::partLst;
         partLst := partitionParents[part]::partLst;
-      //partition with parents, parent visited
-      elseif intNe(partitionParents[part],-1) and partitionParentsVisited[partitionParents[part]] then
-        orderLst := part::orderLst;
-        partitionParentsVisited[part] := true;
       end if;
-
     end if;
   end while;
   order := listArray(listReverse(orderLst));

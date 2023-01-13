@@ -1,0 +1,83 @@
+// name: UnitCheck21
+// keywords: initialization
+// status: correct
+// cflags: -d=newInst --unitChecking -d=dumpUnits
+
+loadString("
+  model UnitCheck21
+    type MassFlowRate = Real(unit = \"kg/s\");
+    type Volume = Real(unit = \"m3\");
+    type Density = Real(unit = \"kg/m3\");
+
+    parameter Integer N = 2;
+    MassFlowRate w[N];
+    Volume V[N];
+    Density rho[N];
+    Volume V1;
+    MassFlowRate w1;
+    Density rho1;
+  equation
+    rho1*der(V1) = w1;       // Correct equation
+    der(V1) = w1;            // Dimensionally inconsistent
+    rho[1]*der(V[1]) = w[1]; // Correct equation
+    der(V[1]) = w[1];        // Dimensionally inconsistent
+    der(V) = w;              // Dimensionally inconsistent
+    for i in 1:N loop
+      der(V[i]) = w[i];      // Dimensionally inconsistent
+    end for;
+  end UnitCheck21;
+"); getErrorString();
+
+instantiateModel(UnitCheck21); getErrorString();
+
+// Result:
+// true
+// ""
+// (N, MASTER(N))
+// (w, 1000.0 * s^(-1) * g^(1))
+// (V, 1.0 * m^(3))
+// (rho, 1000.0 * m^(-3) * g^(1))
+// (V1, 1.0 * m^(3))
+// (w1, 1000.0 * s^(-1) * g^(1))
+// (rho1, 1000.0 * m^(-3) * g^(1))
+// ######## UnitCheck COMPLETED ########
+// "class UnitCheck21
+//   final parameter Integer N = 2;
+//   Real w[1](unit = \"kg/s\");
+//   Real w[2](unit = \"kg/s\");
+//   Real V[1](unit = \"m3\");
+//   Real V[2](unit = \"m3\");
+//   Real rho[1](unit = \"kg/m3\");
+//   Real rho[2](unit = \"kg/m3\");
+//   Real V1(unit = \"m3\");
+//   Real w1(unit = \"kg/s\");
+//   Real rho1(unit = \"kg/m3\");
+// equation
+//   rho1 * der(V1) = w1;
+//   der(V1) = w1;
+//   rho[1] * der(V[1]) = w[1];
+//   der(V[1]) = w[1];
+//   der(V[1]) = w[1];
+//   der(V[2]) = w[2];
+//   der(V[1]) = w[1];
+//   der(V[2]) = w[2];
+// end UnitCheck21;
+// "
+// "[<interactive>:16:5-16:17:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(V1) = w1
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"w1\" has unit \"kg/s\"
+// - sub-expression \"der(V1)\" has unit \"m3.s-1\"
+// [<interactive>:18:5-18:21:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(V[1]) = w[1]
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"w[1]\" has unit \"kg/s\"
+// - sub-expression \"der(V[1])\" has unit \"m3.s-1\"
+// [<interactive>:21:7-21:23:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(V[1]) = w[1]
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"w[1]\" has unit \"kg/s\"
+// - sub-expression \"der(V[1])\" has unit \"m3.s-1\"
+// [<interactive>:21:7-21:23:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(V[2]) = w[2]
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"w[2]\" has unit \"kg/s\"
+// - sub-expression \"der(V[2])\" has unit \"m3.s-1\"
+// "
+// endResult

@@ -525,6 +525,7 @@ match uncertainty
   case GIVEN(__) then 'Uncertainty.given'
   case SOUGHT(__) then 'Uncertainty.sought'
   case REFINE(__) then 'Uncertainty.refine'
+  case PROPAGATE(__) then 'Uncertainty.propagate'
 end dumpUncertainty;
 
 template dumpDistributionAttrOpt(Option<Distribution> distribution)

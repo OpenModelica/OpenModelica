@@ -47,59 +47,50 @@
 #include "simulation/solver/model_help.h"
 #include "simulation/options.h"
 
-static inline void externalInputallocate1(DATA* data, FILE * pFile);
-static inline void externalInputallocate2(DATA* data, char *filename);
+static inline void externalInputallocate2(DATA* data, const char *filename);
 
 int externalInputallocate(DATA* data)
 {
-  FILE * pFile = NULL;
-  int i,j;
-  short useLibCsvH = 1;
-  char * cflags = NULL;
+  int i, j;
+  const char * csv_input_file_opt = NULL;
+  const char * csv_input_file = NULL;
 
-
-  cflags = (char*)omc_flagValue[FLAG_INPUT_CSV];
-  if(!cflags){
-    cflags = (char*)omc_flagValue[FLAG_INPUT_FILE];
-    useLibCsvH = 0;
-    if(cflags){
-      pFile = omc_fopen(cflags,"r");
-      if(pFile == NULL)
-        warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
-    }else{
-      pFile = omc_fopen("externalInput.csv","r");
-    }
+  csv_input_file_opt = (char*)omc_flagValue[FLAG_INPUT_CSV];
+  if(!csv_input_file_opt) {
+    data->simulationInfo->external_input.active = 0;
+    return 0;
   }
 
-  data->simulationInfo->external_input.active = (modelica_boolean) (pFile != NULL);
-  if(data->simulationInfo->external_input.active || useLibCsvH){
-    if(useLibCsvH){
-      externalInputallocate2(data, cflags);
-    }else
-      externalInputallocate1(data, pFile);
+  // If '-inputPath' is specified, prefix the csv input file name with that path.
+  if (omc_flag[FLAG_INPUT_PATH]) {
+    GC_asprintf(&csv_input_file, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], csv_input_file_opt);
+  }
+  else {
+    csv_input_file = csv_input_file_opt;
+  }
 
-    if(ACTIVE_STREAM(LOG_SIMULATION))
-    {
-      printf("\nExternal Input");
-      printf("\n========================================================");
-      for(i = 0; i < data->simulationInfo->external_input.n; ++i){
-        printf("\nInput: t=%f   \t", data->simulationInfo->external_input.t[i]);
-        for(j = 0; j < data->modelData->nInputVars; ++j){
-          printf("u%d(t)= %f \t",j+1,data->simulationInfo->external_input.u[i][j]);
-        }
+  externalInputallocate2(data, csv_input_file);
+
+  if(ACTIVE_STREAM(LOG_SIMULATION))
+  {
+    printf("\nExternal Input");
+    printf("\n========================================================");
+    for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+      printf("\nInput: t=%f   \t", data->simulationInfo->external_input.t[i]);
+      for(j = 0; j < data->modelData->nInputVars; ++j){
+        printf("u%d(t)= %f \t",j+1,data->simulationInfo->external_input.u[i][j]);
       }
-      printf("\n========================================================\n");
     }
-
-    data->simulationInfo->external_input.i = 0;
+    printf("\n========================================================\n");
   }
 
+  data->simulationInfo->external_input.i = 0;
   return 0;
 }
 
 
 
-void externalInputallocate2(DATA* data, char *filename){
+void externalInputallocate2(DATA* data, const char *filename){
   int i, j, k;
   struct csv_data *res = read_csv(filename);
   char ** names;
@@ -131,7 +122,7 @@ void externalInputallocate2(DATA* data, char *filename){
   indx = (int*)malloc(nu*sizeof(int));
   for(i = 0; i < nu; ++i){
     indx[i] = -1;
-    for(j = 0; j < (res->numvars - 1); ++j){
+    for(j = 0; j < res->numvars; ++j){
       if(strcmp(names[i], res->variables[j]) == 0){
         indx[i] = j;
         break;
@@ -155,50 +146,6 @@ void externalInputallocate2(DATA* data, char *filename){
   free(names);
   free(indx);
   data->simulationInfo->external_input.active = data->simulationInfo->external_input.n > 0;
-}
-
-static inline void externalInputallocate1(DATA* data, FILE * pFile){
-  int n,m,c;
-  int i,j;
-  n = 0;
-
-  while(1) {
-    c = fgetc(pFile);
-    if (c==EOF) break;
-    if (c=='\n') ++n;
-  }
-  // check if csv file is empty!
-  if (n == 0)
-  {
-    fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
-    EXIT(1);
-  }
-
-  --n;
-  data->simulationInfo->external_input.n = n;
-  data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
-  rewind(pFile);
-
-  do{
-    c = fgetc(pFile);
-    if (c==EOF) break;
-  }while(c!='\n');
-
-  m = data->modelData->nInputVars;
-  data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
-  for(i = 0; i<data->simulationInfo->external_input.n; ++i)
-    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
-  data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
-
-  for(i = 0; i < data->simulationInfo->external_input.n; ++i){
-    c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
-    for(j = 0; j < m; ++j){
-    c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
-    }
-    if(c<0)
-    data->simulationInfo->external_input.n = i;
-  }
-  fclose(pFile);
 }
 
 int externalInputFree(DATA* data)

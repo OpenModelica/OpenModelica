@@ -30,7 +30,7 @@
 
 /* Stack overflow handling */
 
-#if defined(__linux__) && !defined(_GNU_SOURCE)
+#if (defined(__linux__) || defined(__FreeBSD__)) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
 /* for pthread_getattr_np */
 #endif
@@ -57,7 +57,7 @@ int mmc_hasStacktraceMessages(threadData_t *threadData)
 
 pthread_key_t mmc_stack_overflow_jumper;
 
-#if defined(__linux__) || defined(__APPLE_CC__)
+#if defined(__linux__) || defined(__APPLE_CC__) || defined(__FreeBSD__)
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>

@@ -13,6 +13,8 @@ package unitCheckTests
     function f1
       input Real V(unit = \"m/s\");
       output Real O(unit = \"m\");
+    algorithm
+      O := V;
     end f1;
     Real S(unit = \"m\") = if time > 0.5 then V else X2;
     Real V(unit = \"m/s\");
@@ -63,6 +65,8 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 // "function unitCheckTests.UnitCheck1.f1
 //   input Real V(unit = \"m/s\");
 //   output Real O(unit = \"m\");
+// algorithm
+//   O := V;
 // end unitCheckTests.UnitCheck1.f1;
 //
 // class unitCheckTests.UnitCheck1
@@ -88,15 +92,15 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 //   der(V) = A;
 // end unitCheckTests.UnitCheck1;
 // "
-// "[<interactive>:12:5-12:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information: S = if time > 0.5 then V else X2
+// "[<interactive>:14:5-14:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information: S = if time > 0.5 then V else X2
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"V\" has unit \"m/s\"
 // - sub-expression \"X2\" has unit \"m\"
-// [<interactive>:28:5-28:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information: H = G
+// [<interactive>:30:5-30:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information: H = G
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"G\" has unit \"m/s\"
 // - sub-expression \"H\" has unit \"m\"
-// [<interactive>:30:5-30:14:writable] Warning: The following equation is INCONSISTENT due to specified unit information: V = S + C
+// [<interactive>:32:5-32:14:writable] Warning: The following equation is INCONSISTENT due to specified unit information: V = S + C
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"S\" has unit \"m\"
 // - sub-expression \"C\" has unit \"m/s\"
