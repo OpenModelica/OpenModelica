@@ -52,6 +52,7 @@ protected
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import NBAdjacency.Mapping;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
@@ -178,7 +179,7 @@ public
     VarData varData;
     EqData eqData;
     SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
+    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
 
     if listLength(jacobians) == 1 then
@@ -305,6 +306,10 @@ public
       Boolean colEmpty = listEmpty(pattern.col_wise_pattern);
       Boolean rowEmpty = listEmpty(pattern.row_wise_pattern);
     algorithm
+      str := str + "\n" + StringUtil.headline_3("### Seeds (col vars) ###");
+      str := str + List.toString(pattern.seed_vars, ComponentRef.toString) + "\n";
+      str := str + "\n" + StringUtil.headline_3("### Partials (row vars) ###");
+      str := str + List.toString(pattern.partial_vars, ComponentRef.toString) + "\n";
       if not colEmpty then
         str := str + "\n" + StringUtil.headline_3("### Columns ###");
         for col in pattern.col_wise_pattern loop
@@ -321,6 +326,36 @@ public
       end if;
     end toString;
 
+    function lazy
+      input VariablePointers seedCandidates;
+      input VariablePointers partialCandidates;
+      input Option<array<StrongComponent>> strongComponents "Strong Components";
+      input JacobianType jacType;
+      output SparsityPattern sparsityPattern;
+      output SparsityColoring sparsityColoring;
+    protected
+      list<ComponentRef> seed_vars, partial_vars;
+      list<SparsityPatternCol> cols = {};
+      list<SparsityPatternRow> rows = {};
+      Integer nnz;
+    algorithm
+      // get all relevant crefs
+      seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+      partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+
+      // assume full dependency
+      for s in listReverse(seed_vars) loop
+        cols := (s, partial_vars) :: cols;
+      end for;
+      for p in listReverse(partial_vars) loop
+        rows := (p, seed_vars) :: rows;
+      end for;
+      nnz := listLength(partial_vars) * listLength(seed_vars);
+
+      sparsityPattern := SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz);
+      sparsityColoring := SparsityColoring.lazy(sparsityPattern);
+    end lazy;
+
     function create
       input VariablePointers seedCandidates;
       input VariablePointers partialCandidates;
@@ -333,6 +368,7 @@ public
     algorithm
       (sparsityPattern, map) := match strongComponents
         local
+          Mapping seed_mapping, partial_mapping;
           array<StrongComponent> comps;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp;
           UnorderedSet<ComponentRef> set;
@@ -344,6 +380,10 @@ public
         then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
 
         case SOME(comps) algorithm
+          // create index mapping only for variables
+          seed_mapping := Mapping.create(EquationPointers.empty(), seedCandidates);
+          partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
+
           // get all relevant crefs
           partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
           seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
@@ -363,11 +403,11 @@ public
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.collectCrefs(comps[i], map, set, not partialCandidates.scalarized, jacType);
+            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, not partialCandidates.scalarized, jacType);
           end for;
 
           // create row-wise sparsity pattern
-          for cref in partial_vars loop
+          for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
             if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
@@ -382,7 +422,7 @@ public
           end for;
 
           // create column-wise sparsity pattern
-          for cref in seed_vars loop
+          for cref in listReverse(seed_vars) loop
             tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
             cols := (cref, tmp) :: cols;
           end for;
@@ -451,7 +491,6 @@ public
       "creates a lazy coloring that just groups each independent variable individually
       and implies dependence for each row"
       input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, CrefLst> map;
       output SparsityColoring sparsityColoring;
     protected
       array<SparsityColoringCol> cols;
@@ -512,7 +551,8 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeCols, sizeRows);
+      //colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
 
       // get cref based coloring - currently no row coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});

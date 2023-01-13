@@ -476,8 +476,12 @@ public
     "Collects dependent crefs in current comp and saves them in the
      unordered map. Saves both directions."
     input StrongComponent comp                                "strong component to be analyzed";
+    input VariablePointers var_rep                            "scalarized variable representatives";
+    input VariablePointers eqn_rep                            "scalarized equation representatives";
+    input Mapping var_rep_mapping                             "index mapping for variable representatives";
+    input Mapping eqn_rep_mapping                             "index mapping for equation representatives";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
-    input UnorderedSet<ComponentRef> set                      "unordered set of array crefs to check for relevance";
+    input UnorderedSet<ComponentRef> set                      "unordered set of array crefs to check for relevance (index lookup)";
     input Boolean pseudo                                      "true if arrays are unscalarized";
     input JacobianType jacType                                "sets the context";
   algorithm
@@ -487,7 +491,7 @@ public
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
         list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
         Tearing strict;
-        Equation eqn;
+        Equation eqn, body;
         Iterator iter;
         list<ComponentRef> names;
         list<Expression> ranges;
@@ -504,7 +508,8 @@ public
 
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
-        updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
+        cref := BVariable.getVarName(comp.var);
+        updateDependencyMap(cref, dependencies, map, jacType);
       then ();
 
       case MULTI_COMPONENT() algorithm
@@ -516,10 +521,15 @@ public
 
       // sliced for equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(comp.var_cref, dependencies, map, iter, comp.eqn.indices);
-        for tpl in scalarized_dependencies loop
+        if ComponentRef.isEmpty(comp.var_cref) then
+          Expression.CREF(cref = cref) := Equation.getLHS(body);
+        else
+          cref := comp.var_cref;
+        end if;
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices);
+        for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
         end for;
@@ -545,10 +555,15 @@ public
 
       // sliced for equations - create all the single entries
       case GENERIC_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(comp.var_cref, dependencies, map, iter, comp.eqn.indices);
-        for tpl in scalarized_dependencies loop
+        if ComponentRef.isEmpty(comp.var_cref) then
+          Expression.CREF(cref = cref) := Equation.getLHS(body);
+        else
+          cref := comp.var_cref;
+        end if;
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices);
+        for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
         end for;
@@ -571,7 +586,7 @@ public
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          collectCrefs(strict.innerEquations[i], map, set, pseudo, jacType);
+          collectCrefs(strict.innerEquations[i], var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, pseudo, jacType);
 
           // collect inner loop variables
           loop_vars := listAppend(list(BVariable.getVarName(var) for var in getVariables(strict.innerEquations[i])), loop_vars);
@@ -584,7 +599,7 @@ public
       then ();
 
       case ALIAS() algorithm
-        collectCrefs(comp.original, map, set, pseudo, jacType);
+        collectCrefs(comp.original, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, pseudo, jacType);
       then ();
 
       /* ToDo add the others and let else case fail! */
@@ -674,9 +689,7 @@ public
   algorithm
     comp := match comp_indices
       local
-        Integer i, var_scal_idx, var_arr_idx, var_start_idx, size;
-        list<Integer> sizes, vals;
-        Type ty;
+        Integer i, var_scal_idx, var_arr_idx, size;
         ComponentRef cref;
         Pointer<Variable> var;
         Pointer<Equation> eqn;
@@ -692,13 +705,10 @@ public
         var_arr_idx := mapping.var_StA[var_scal_idx];
         var := VariablePointers.getVarAt(vars, var_arr_idx);
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
-        (var_start_idx, size) := mapping.var_AtS[var_arr_idx];
+        (_, size) := mapping.var_AtS[var_arr_idx];
         if size > 1 then
           // case 1: create the scalar variable and make sliced equation
-          Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-          sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
-          vals := Slice.indexToLocation(var_scal_idx-var_start_idx, sizes);
-          cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+          cref := VariablePointers.varSlice(vars, var_scal_idx, mapping);
           comp := SLICED_COMPONENT(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
         else
           // case 2: just create a single strong component

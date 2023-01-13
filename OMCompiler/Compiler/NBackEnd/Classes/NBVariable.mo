@@ -60,6 +60,7 @@ public
   import NFBackendExtension.VariableKind;
 
   // Backend Imports
+  import NBAdjacency.Mapping;
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
   import NBEquation.Iterator;
@@ -69,6 +70,7 @@ public
   import Array;
   import BaseHashTable;
   import ExpandableArray;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import Util;
@@ -1625,6 +1627,26 @@ public
         variables := fromList(listReverse(new_vars), true);
       end if;
     end scalarize;
+
+    function varSlice
+      input VariablePointers vars;
+      input Integer scal;
+      input Mapping mapping;
+      output ComponentRef cref;
+    protected
+      Pointer<Variable> var;
+      Integer arr, start, size;
+      Type ty;
+      list<Integer> sizes, vals;
+    algorithm
+      arr := mapping.var_StA[scal];
+      (start, size) := mapping.var_AtS[arr];
+      var := VariablePointers.getVarAt(vars, arr);
+      Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
+      sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
+      vals := Slice.indexToLocation(scal-start, sizes);
+      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+    end varSlice;
 
   protected
     function createSortHashTpl

@@ -486,6 +486,49 @@ public
       end match;
     end extractFromCall;
 
+    function normalizedSubscripts
+      input Iterator iter;
+      output list<Subscript> subs;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+    algorithm
+      (names, ranges) := getFrames(iter);
+      subs := list(normalizedSubscript(frame) for frame in List.zip(names, ranges));
+    end normalizedSubscripts;
+
+    function normalizedSubscript
+      input tuple<ComponentRef, Expression> frame;
+      output Subscript sub;
+    protected
+      ComponentRef iter_name;
+      Expression range, step, sub_exp;
+      Type ty = Type.REAL();
+    algorithm
+      (iter_name, range) := frame;
+      sub := match range
+        case Expression.RANGE() algorithm
+          step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
+          sub_exp := Expression.MULTARY(
+          arguments = {Expression.MULTARY(
+              arguments = {Expression.MULTARY(
+                arguments = {Expression.fromCref(iter_name)},
+                inv_arguments = {range.start},
+                operator = Operator.makeAdd(ty))},
+              inv_arguments = {step},
+              operator = Operator.makeMul(ty)),
+            Expression.INTEGER(1)},
+          inv_arguments = {},
+          operator = Operator.makeAdd(ty));
+          sub_exp := SimplifyExp.simplify(sub_exp);
+        then Subscript.INDEX(sub_exp);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because range is no range: " + Expression.toString(range)});
+        then fail();
+      end match;
+    end normalizedSubscript;
+
     function toString
       input Iterator iter;
       output String str = "";
@@ -1334,11 +1377,11 @@ public
       // get name cref which is the residual
       residualCref:= match eqn
         local
-          list<ComponentRef> iterator_names;
+          list<Subscript> subs;
         case FOR_EQUATION() algorithm
           residualCref := Equation.getEqnName(eqn_ptr);
-          (iterator_names, _) := Iterator.getFrames(eqn.iter);
-          residualCref := ComponentRef.setSubscripts(list(Subscript.INDEX(Expression.fromCref(name)) for name in iterator_names), residualCref);
+          subs := Iterator.normalizedSubscripts(eqn.iter);
+          residualCref := ComponentRef.setSubscripts(subs, residualCref);
         then residualCref;
         else Equation.getEqnName(eqn_ptr);
       end match;
