@@ -762,7 +762,7 @@ public
           else
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
             arg_str := Expression.toFlatString(call.exp);
-            c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+            c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
               Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
             str := stringAppendList({"{", arg_str, " for ", c, "}"});
           end if;
@@ -773,7 +773,7 @@ public
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := Expression.toFlatString(call.exp);
-          c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+          c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
             Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
         then
           if Function.isBuiltin(call.fn) then
