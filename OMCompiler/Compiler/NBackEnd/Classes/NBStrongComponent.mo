@@ -509,6 +509,7 @@ public
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
         cref := BVariable.getVarName(comp.var);
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         updateDependencyMap(cref, dependencies, map, jacType);
       then ();
 
@@ -550,6 +551,7 @@ public
       case SLICED_COMPONENT() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         updateDependencyMap(comp.var_cref, dependencies, map, jacType);
       then ();
 
@@ -591,6 +593,8 @@ public
           // collect inner loop variables
           loop_vars := listAppend(list(BVariable.getVarName(var) for var in getVariables(strict.innerEquations[i])), loop_vars);
         end for;
+
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
 
         // add all dependencies
         for cref in loop_vars loop
