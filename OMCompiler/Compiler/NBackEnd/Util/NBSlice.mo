@@ -90,7 +90,9 @@ public
     String sliceStr;
   algorithm
     str := func(slice.t);
+    if maxLength > 0 then
       str := str + "\n\t slice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = 10);
+    end if;
   end toString;
 
   function lstToString
