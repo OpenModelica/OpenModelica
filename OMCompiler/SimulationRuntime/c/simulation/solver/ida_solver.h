@@ -80,7 +80,7 @@ typedef struct IDA_SOLVER
   double *yScale;               /* Scaling array for states y */
   double *ypScale;              /* Scaling array fpr derivatives y' */
   double *resScale;             /* Scaling for residual F(t,y,y') */
-  int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
+  modelica_boolean useScaling;  /* Enable / disable scaling of y and yp. */
 
   /* ### work array used in jacobian calculation ### */
   double sqrteps;

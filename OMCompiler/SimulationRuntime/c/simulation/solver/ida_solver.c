@@ -88,10 +88,10 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
 
 static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix scaleMatrix);
 
-static int idaScaleData(IDA_SOLVER *idaData);
-static int idaReScaleData(IDA_SOLVER *idaData);
-static int idaScaleVector(N_Vector vec, double* factors, unsigned int size);
-static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
+static void idaScaleData(IDA_SOLVER *idaData);
+static void idaReScaleData(IDA_SOLVER *idaData);
+static void idaScaleVector(N_Vector vec, double* factors, unsigned int size);
+static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 int ida_event_update(DATA* data, threadData_t *threadData);
 
@@ -291,7 +291,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->resScale = NULL;
   }
   /* initialize */
-  idaData->disableScaling = 0;
+  idaData->useScaling = TRUE;
 
   /* Set root functions unless flag FLAG_NO_ROOTFINDING is set */
   if (!omc_flag[FLAG_NO_ROOTFINDING]) {
@@ -1104,8 +1104,8 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
  * See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation.
  *
  * @param time        Value of the independent variable (time).
- * @param yy          Vector of state variables y.
- * @param yp          Vector of derivatives y'.
+ * @param yy          Vector of state variables y(t).
+ * @param yp          Vector of derivatives y'(t).
  * @param rr          Output residual vector F(t, y, y').
  * @param user_data   Pointer to user data of type IDA_SOLVER*, set with IDASetUserDat.
  * @return int        Return 0 on success, positive value on recoverable error and negative value otherwise.
@@ -1127,7 +1127,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 
   infoStreamPrint(LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
   /* rescale idaData->y and idaData->yp */
-  if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
+  if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
   {
     idaReScaleData(idaData);
   }
@@ -1205,7 +1205,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   }
 
   /* scale ressidual rr */
-  if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
+  if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "scale residuals");
     idaScaleVector(rr, idaData->resScale, idaData->N);
@@ -1352,7 +1352,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
+  double delta_h = 1e-5; //numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
   double delta_hhh;
   long int i,j,l,ii;
 
@@ -1360,7 +1360,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
 
   /* set values */
   IDAGetCurrentStep(ida_mem, &currentStep);
-  if (!idaData->disableScaling){
+  if (idaData->useScaling){
     IDAGetErrWeights(ida_mem, idaData->errwgt);
   }
 
@@ -1534,7 +1534,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
 }
 
 /**
- * @brief Compute Jacobian matrix of ODE/DAE system.
+ * @brief Compute colored Jacobian matrix of ODE/DAE system.
  *
  * Available methods:
  *   - Colored Numeric Jacobian  --> jacColoredNumericalDense
@@ -1654,21 +1654,21 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = numericalDifferentiationDeltaXsolver;
+  double delta_h = 1e-5; //numericalDifferentiationDeltaXsolver;
   double *delta_hh = idaData->delta_hh;
   double delta_hhh;
   double deltaInv;
 
   long int i,j,ii;
   int nth = 0;
-  int disBackup = idaData->disableScaling;
+  int disBackup = idaData->useScaling;
 
   double currentStep;
 
   infoStreamPrint(LOG_SOLVER_V, 1, "### eval jacobianSparseNumIDA ###");
   /* set values */
   IDAGetCurrentStep(ida_mem, &currentStep);
-  if (!idaData->disableScaling){
+  if (idaData->useScaling){
     IDAGetErrWeights(ida_mem, idaData->errwgt);
   }
 
@@ -1691,7 +1691,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
    * the evaluation of the  residual function
    * needs to be performed on unscaled values
    */
-  if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
+  if (omc_flag[FLAG_IDA_SCALING] && idaData->useScaling)
   {
     idaReScaleVector(rr, idaData->resScale, idaData->N);
     idaReScaleData(idaData);
@@ -1718,9 +1718,9 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
         delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
-    idaData->disableScaling = 1;
+    idaData->useScaling = FALSE;
     idaData->residualFunction(currentTime, yy, yp, idaData->newdelta, userData);  /* Points to residualFunctionIDA */
-    idaData->disableScaling = disBackup;
+    idaData->useScaling = disBackup;
 
     increaseJacContext(data);
 
@@ -1733,9 +1733,9 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
         {
           j  =  sparsePattern->index[nth];
           /* use row scaling for jacobian elements */
-          if (idaData->disableScaling == 1 || !omc_flag[FLAG_IDA_SCALING]){
+          if (!idaData->useScaling || !omc_flag[FLAG_IDA_SCALING]){
             setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
-          }else{
+          } else {
             setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
@@ -1751,7 +1751,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
 
   /* scale idaData->y and idaData->yp again */
-  if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
+  if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
   {
     idaScaleVector(rr, idaData->resScale, idaData->N);
     idaScaleData(idaData);
@@ -1898,7 +1898,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
     infoStreamPrint(LOG_SOLVER_V, 1, "##IDA## get new scaling matrix.");
 
     /* use y scale to scale jacobian, but y and yp are not scaled */
-    idaData->disableScaling = 1;
+    idaData->useScaling = FALSE;
 
     /* eval residual function first */
     idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, rres, (void*) idaData);   /* Points to residualFunctionIDA */
@@ -1931,7 +1931,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
       SUNMatDestroy(denseMatrix);
     }
     /* enable scaled jacobian again */
-    idaData->disableScaling = 0;
+    idaData->useScaling = TRUE;
   }
   else
   {
@@ -1963,20 +1963,54 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
   return 0;
 }
 
-static int idaScaleVector(N_Vector vec, double* factors, unsigned int size)
+/**
+ * @brief Scale NVector by factors.
+ *
+ * @param vec       Vector to scale.
+ * @param factors   Array with scaling factors.
+ * @param size      Length of array factors and vector vec.
+ */
+static void idaScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
   int i;
   double *data = N_VGetArrayPointer_Serial(vec);
   printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
   for(i=0; i < size; ++i)
   {
+    // TODO AHeu: Make sure scaling is not 0
+    if (fabs(factors[i]) < 1e-8) {
+      throwStreamPrint(NULL, "In function idaScaleVector: Rescaling with factor %e.", factors[i]);
+    }
+
     data[i] = data[i] / factors[i];
   }
   printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
-  return 0;
 }
 
-static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
+/**
+ * @brief Scale state and state derivate vector.
+ *
+ * @param idaData   Containing state vector y(t) and state derivate vector y'(t)
+ *                  as well as scaling arrays yScale and ypScale.
+ */
+static void idaScaleData(IDA_SOLVER *idaData)
+{
+  infoStreamPrint(LOG_SOLVER_V, 1, "Scale y");
+  idaScaleVector(idaData->y, idaData->yScale, idaData->N);
+  messageClose(LOG_SOLVER_V);
+  infoStreamPrint(LOG_SOLVER_V, 1, "Scale yp");
+  idaScaleVector(idaData->yp, idaData->ypScale, idaData->N);
+  messageClose(LOG_SOLVER_V);
+}
+
+/**
+ * @brief Rescale NVector by factors.
+ *
+ * @param vec       Vector to rescale.
+ * @param factors   Array with scaling factors.
+ * @param size      Length of array factors and vector vec.
+ */
+static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
   int i;
   double *data = N_VGetArrayPointer_Serial(vec);
@@ -1987,22 +2021,16 @@ static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
     data[i] = data[i] * factors[i];
   }
   printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
-  return 0;
 }
 
-static int idaScaleData(IDA_SOLVER *idaData)
-{
-  infoStreamPrint(LOG_SOLVER_V, 1, "Scale y");
-  idaScaleVector(idaData->y, idaData->yScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
-  infoStreamPrint(LOG_SOLVER_V, 1, "Scale yp");
-  idaScaleVector(idaData->yp, idaData->ypScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
-
-  return 0;
-}
-
-static int idaReScaleData(IDA_SOLVER *idaData)
+/**
+ * @brief Rescale state and state derivate vector.
+ * Undo scaling of function idaScaleData.
+ *
+ * @param idaData   Containing state vector y(t) and state derivate vector y'(t)
+ *                  as well as scaling arrays yScale and ypScale.
+ */
+static void idaReScaleData(IDA_SOLVER *idaData)
 {
   infoStreamPrint(LOG_SOLVER_V, 1, "Re-Scale y");
   idaReScaleVector(idaData->y, idaData->yScale, idaData->N);
@@ -2010,9 +2038,6 @@ static int idaReScaleData(IDA_SOLVER *idaData)
   infoStreamPrint(LOG_SOLVER_V, 1, "Re-Scale yp");
   idaReScaleVector(idaData->yp, idaData->ypScale, idaData->N);
   messageClose(LOG_SOLVER_V);
-
-  return 0;
 }
-
 
 #endif /* #ifdef WITH_SUNDIALS */
