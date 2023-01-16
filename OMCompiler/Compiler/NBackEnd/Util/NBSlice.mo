@@ -458,49 +458,6 @@ public
     end if;
 
     tpl_lst := List.zip(row_crefs, accum_dep_lst);
-/*
-    // get new subscripts for row cref
-    subs := ComponentRef.subscriptsToExpression(row_cref, false);
-    new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
-    new_row_cref_subs := if not listEmpty(slice) then List.keepPositions(new_row_cref_subs, slice) else new_row_cref_subs;
-
-    // reapply new subscripts for each frame location
-    stripped := ComponentRef.stripSubscriptsAll(row_cref);
-    for new_subs_single in new_row_cref_subs loop
-      evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_row_crefs;
-    end for;
-
-    // get the scalar crefs for each column cref
-    if not listEmpty(dependencies) then
-      for cref in dependencies loop
-        subs := ComponentRef.subscriptsToExpression(cref, false);
-        new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
-        new_subs := if not listEmpty(slice) then List.keepPositions(new_subs, slice) else new_row_cref_subs;
-
-        if listLength(new_subs) <> listLength(new_row_crefs) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because number of flattened indices " + intString(listLength(new_subs))
-            + " differ from equation size " + intString(listLength(new_row_cref_subs)) + "."});
-          fail();
-        end if;
-
-        // apply all subscript lists for scalarization to create scalar crefs
-        new_dep_crefs := {};
-        stripped := ComponentRef.stripSubscriptsAll(cref);
-        for new_subs_single in new_subs loop
-          evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_dep_crefs;
-        end for;
-        scalar_dependenciesT := new_dep_crefs :: scalar_dependenciesT;
-      end for;
-
-      // transpose scalar_dependenciesT and merge with new_row_crefs
-      tpl_lst := List.zip(new_row_crefs, List.transposeList(scalar_dependenciesT));
-    else
-      tpl_lst := list((new_row_cref, {}) for new_row_cref in new_row_crefs);
-    end if;
-    */
   end getDependentCrefsPseudoForCausalized;
 
   function getDependentCrefsPseudoArrayCausalized
@@ -896,59 +853,10 @@ public
   // ############################################################
 
 protected
-  function combineFrames2Exp
-    "Iterates over all elements in nested iterators represented by frames.
-    On each single location of a frame it saves all iterator cref -> integer
-    replacements in a map and applies these replacements on the subscripts."
-    input list<Expression> subs                               "list of cref subscripts";
-    input list<tuple<ComponentRef, Expression>> frames        "list of frame tuples containing iterator name and range";
-    input UnorderedMap<ComponentRef, Expression> replacements "replacement rules iterator cref -> integer (may have to be simplified)";
-    input output list<list<Expression>> new_subs = {}         "list of replaced subscript expressions";
-  algorithm
-    new_subs := match frames
-      local
-        list<tuple<ComponentRef, Expression>> rest;
-        ComponentRef iterator;
-        Expression range;
-        Integer start, step, stop;
-        list<Expression> local_subs;
-
-      // only occurs for non-for-loop equations (no frames to replace)
-      case {} then {subs};
-
-      // extract numeric information about the range
-      case (iterator, range) :: rest algorithm
-        (start, step, stop) := Expression.getIntegerRange(range);
-        // traverse every index in the range
-        for index in start:step:stop loop
-          UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
-          if listEmpty(rest) then
-            // bottom line, resolve current configuration and create index for it
-            local_subs := list(SimplifyExp.simplify(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements))) for sub in subs);
-            new_subs := listReverse(local_subs) :: new_subs;
-          else
-            // not last frame, go deeper
-            new_subs := combineFrames2Exp(subs, rest, replacements, new_subs);
-          end if;
-        end for;
-      then new_subs;
-
-      case (iterator, range) :: _ algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because uniontype records are wrong: "
-          + ComponentRef.toString(iterator) + " in " + Expression.toString(range)});
-      then fail();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
-      then fail();
-
-    end match;
-  end combineFrames2Exp;
-
   function combineFrames2Indices
-    "Does the same es combineFrames2Exp but converts each of the now integer
-    subscript lists (in combination with subscript sizes) to a single scalar
-    index of the subscripted cref."
+    "Iterates over all elements in nested iterators represented by frames.
+    Converts each of the now integer subscript lists (in combination with
+    subscript sizes) to a single scalar index of the subscripted cref."
     input Integer first                                       "index of first variable. start counting from here";
     input list<Integer> sizes                                 "list of variables sizes";
     input list<Expression> subs                               "list of cref subscripts";
