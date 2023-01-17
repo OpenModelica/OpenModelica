@@ -753,9 +753,10 @@ algorithm
 end stringRepresOfExpr;
 
 protected function evaluateExprToStr
-" This function is similar to evaluateExpr, with the difference that it returns a string
-   and that it never fails. If the expression contain errors, an empty string will be returned
-   and the errors will be stated using Error.mo
+  "This function is similar to evaluateExpr, with the difference that it returns
+   a string and that it never fails. If the expression contain errors, a string
+   indicating failure will be returned and the errors will be stated using
+   Error.mo
 
    Input:  Absyn.Exp - Expression to be evaluated
    Output: string - The resulting value represented as a string"
@@ -776,7 +777,7 @@ algorithm
         str = ValuesUtil.valString(value);
       then str;
 
-    else "";
+    else ValuesUtil.valString(Values.META_FAIL());
 
   end matchcontinue;
 end evaluateExprToStr;
