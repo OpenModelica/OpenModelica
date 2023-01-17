@@ -1085,15 +1085,15 @@ void LineAnnotation::updateStartPoint(QPointF point)
   }
   /* update the 1st point */
   if (mPoints.size() > 0) {
-    mPoints[0] = point;
+    mPoints.setPoint(0, point);
     updateCornerItem(0);
   }
   /* update the 2nd point */
   if (mPoints.size() > 1) {
     if (mGeometries[0] == ShapeAnnotation::HorizontalLine) {
-      mPoints[1] = QPointF(mPoints[1].x(), mPoints[1].y() + dy);
+      mPoints.setPoint(1, QPointF(mPoints[1].x(), mPoints[1].y() + dy));
     } else if (mGeometries[0] == ShapeAnnotation::VerticalLine) {
-      mPoints[1] = QPointF(mPoints[1].x() + dx, mPoints[1].y());
+      mPoints.setPoint(1, QPointF(mPoints[1].x() + dx, mPoints[1].y()));
     }
     updateCornerItem(1);
   }
@@ -1134,14 +1134,14 @@ void LineAnnotation::updateEndPoint(QPointF point)
     }
     /* update the last point */
     if (mPoints.size() > 1) {
-      mPoints.last() = point;
+      mPoints.setPoint(mPoints.size() - 1, point);
       updateCornerItem(lastIndex);
       /* update the 2nd point */
       if (secondLastIndex < mGeometries.size()) {
         if (mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine) {
-          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
+          mPoints.setPoint(secondLastIndex, QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy));
         } else if (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine) {
-          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
+          mPoints.setPoint(secondLastIndex, QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y()));
         }
         updateCornerItem(secondLastIndex);
       }
@@ -1150,7 +1150,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       removeRedundantPointsGeometriesAndCornerItems();
     }
   } else {
-    mPoints.last() = point;
+    mPoints.setPoint(mPoints.size() - 1, point);
   }
 }
 
@@ -1167,9 +1167,9 @@ void LineAnnotation::updateTransitionTextPosition()
   if (mpTextAnnotation) {
     if (mPoints.size() > 0) {
       if (mImmediate) {
-        mpTextAnnotation->setPos(mPoints.last());
+        mpTextAnnotation->setPos(mPoints.at(mPoints.size() - 1));
       } else {
-        mpTextAnnotation->setPos(mPoints.first());
+        mpTextAnnotation->setPos(mPoints.at(0));
       }
     }
   }
@@ -1370,7 +1370,7 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
     if (mpStartElement) {
       QPointF offset = mpStartElement->mapToScene(mpStartElement->boundingRect().center()) - mPoints[0];
       for (int i = 0 ; i < mPoints.size() ; i++) {
-        mPoints[i] = QPointF(mPoints[i].x() + offset.x(), mPoints[i].y() + offset.y());
+        mPoints.setPoint(i, QPointF(mPoints[i].x() + offset.x(), mPoints[i].y() + offset.y()));
         updateCornerItem(i);
       }
     }

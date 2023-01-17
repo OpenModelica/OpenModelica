@@ -47,7 +47,8 @@ class PointArrayAnnotation : public DynamicAnnotation
 
     operator const QVector<QPointF>&() const { return mValue; }
     PointArrayAnnotation& operator= (const QVector<QPointF> &value);
-    QPointF& operator[] (int i);
+    const QPointF& operator[] (int i) const;
+    void setPoint(int i, const QPointF &value);
     bool operator== (const PointArrayAnnotation &pointArray) const;
 
     void append(const QPointF &value) { mValue.append(value); setExp(); }
@@ -57,8 +58,6 @@ class PointArrayAnnotation : public DynamicAnnotation
     int size() const { return mValue.size(); }
     void replace(int i, const QPointF &value) { mValue.replace(i, value); setExp(); }
 
-    QPointF& first()       { return mValue.first(); }
-    QPointF& last()       { return mValue.last(); }
     auto begin()       { return mValue.begin(); }
     auto begin() const { return mValue.begin(); }
     auto end()         { return mValue.end(); }

@@ -822,7 +822,7 @@ void UpdateConnectionCommand::undo()
 
 void UpdateConnectionCommand::redrawConnectionWithAnnotation(QString const& annotation)
 {
-  auto updateFunction = std::bind(&LineAnnotation::updateConnectionAnnotation ,mpConnectionLineAnnotation);
+  auto updateFunction = std::bind(&LineAnnotation::updateConnectionAnnotation, mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->redraw(annotation, updateFunction);
 }
 
