@@ -150,9 +150,9 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
    */
   if (pLineAnnotation->getPoints().size() > 0) {
     if (pLineAnnotation->getImmediate()) {
-      setPos(pLineAnnotation->getPoints().last());
+      setPos(pLineAnnotation->getPoints().at(mPoints.size() - 1));
     } else {
-      setPos(pLineAnnotation->getPoints().first());
+      setPos(pLineAnnotation->getPoints().at(0));
     }
   }
 }
@@ -175,9 +175,9 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLine
    */
   if (pLineAnnotation->getPoints().size() > 0) {
     if (pLineAnnotation->getImmediate()) {
-      setPos(pLineAnnotation->getPoints().last());
+      setPos(pLineAnnotation->getPoints().at(mPoints.size() - 1));
     } else {
-      setPos(pLineAnnotation->getPoints().first());
+      setPos(pLineAnnotation->getPoints().at(0));
     }
   }
 }

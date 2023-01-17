@@ -125,14 +125,14 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   mPoints.parse(list.at(8));
   /* The polygon is automatically closed, if the first and the last points are not identical. */
   if (mPoints.size() == 1) {
-    mPoints.append(mPoints.first());
-    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.at(0));
+    mPoints.append(mPoints.at(0));
   } else if (mPoints.size() == 2) {
-    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.at(0));
   }
   if (mPoints.size() > 0) {
-    if (mPoints.first() != mPoints.last()) {
-      mPoints.append(mPoints.first());
+    if (mPoints.at(0) != mPoints.at(mPoints.size() - 1)) {
+      mPoints.append(mPoints.at(0));
     }
   }
   // 10th item of the list is smooth.
@@ -147,14 +147,14 @@ void PolygonAnnotation::parseShapeAnnotation()
   mPoints = mpPolygon->getPoints();
   /* The polygon is automatically closed, if the first and the last points are not identical. */
   if (mPoints.size() == 1) {
-    mPoints.append(mPoints.first());
-    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.at(0));
+    mPoints.append(mPoints.at(0));
   } else if (mPoints.size() == 2) {
-    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.at(0));
   }
   if (mPoints.size() > 0) {
-    if (mPoints.first() != mPoints.last()) {
-      mPoints.append(mPoints.first());
+    if (mPoints.at(0) != mPoints.at(mPoints.size() - 1)) {
+      mPoints.append(mPoints.at(0));
     }
   }
   mPoints.evaluate(mpPolygon->getParentModel());
@@ -287,7 +287,7 @@ void PolygonAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
   mPoints.append(point);
-  mPoints.last() = mPoints.first();
+  mPoints.setPoint(mPoints.size() - 1, mPoints.at(0));
 }
 
 void PolygonAnnotation::removePoint(int index)
