@@ -520,7 +520,7 @@ public
             Expression.INTEGER(1)},
           inv_arguments = {},
           operator = Operator.makeAdd(ty));
-          sub_exp := SimplifyExp.simplify(sub_exp);
+          sub_exp := SimplifyExp.simplify(sub_exp, true);
         then Subscript.INDEX(sub_exp);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -1212,16 +1212,16 @@ public
       end if;
       eq := match eq
         case SCALAR_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
         then eq;
         case ARRAY_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
         then eq;
         case RECORD_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
         then eq;
         // ToDo: implement the following correctly:
         case ALGORITHM()       then eq;
@@ -1438,7 +1438,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
       end match;
-      exp := SimplifyExp.simplify(exp);
+      exp := SimplifyExp.simplify(exp, true);
     end getResidualExp;
 
     function getType
@@ -1652,7 +1652,7 @@ public
 
       // simplify rhs and get potential iterators
       (iter, rhs) := Iterator.extract(rhs);
-      rhs := SimplifyExp.simplifyDump(rhs, getInstanceName());
+      rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
 
       if Iterator.isEmpty(iter) then
         lhs := Expression.fromCref(var.name);
@@ -1965,7 +1965,7 @@ public
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
         operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
-        exp2      = SimplifyExp.simplify(exp)
+        exp2      = SimplifyExp.simplify(exp, true)
       );
     end makeInequality;
 
