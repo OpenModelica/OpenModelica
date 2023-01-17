@@ -7162,6 +7162,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%lhs_%> = <%rhs_%>;
       }
       >>
@@ -7173,6 +7176,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%branches_%>
       }
       >>
@@ -7184,6 +7190,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%branches_%>
       }
       >>

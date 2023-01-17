@@ -103,6 +103,11 @@ public
     output String str = List.toString(lst, function toString(func = func, maxLength = maxLength), "", "\t", ";\n\t", ";", false);
   end lstToString;
 
+  function isFull
+    input Slice<T> slice;
+    output Boolean b = listEmpty(slice.indices);
+  end isFull;
+
   function simplify
     "only to be used for unordered purposes!
     lists of all indices are meaningful if they are not in the natural ascending order

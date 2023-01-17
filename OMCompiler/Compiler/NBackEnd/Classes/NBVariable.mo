@@ -1803,8 +1803,8 @@ public
               VariablePointers.toString(varData.previous, "Previous", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
               VariablePointers.toString(varData.constants, "Constant", false) +
-              VariablePointers.toString(varData.records, "Records", false) +
-              VariablePointers.toString(varData.artificials, "Artificials", false);
+              VariablePointers.toString(varData.records, "Record", false) +
+              VariablePointers.toString(varData.artificials, "Artificial", false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);

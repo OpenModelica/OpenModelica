@@ -733,12 +733,20 @@ public
             Slice<VariablePointer> var_slice;
             Slice<EquationPointer> eqn_slice;
 
-          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
-          then SINGLE_COMPONENT(
-            var     = Slice.getT(var_slice),
-            eqn     = Slice.getT(eqn_slice),
-            status  = NBSolve.Status.UNPROCESSED
-          );
+          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+            if Slice.isFull(var_slice) then
+              comp := SINGLE_COMPONENT(
+                var       = Slice.getT(var_slice),
+                eqn       = Slice.getT(eqn_slice),
+                status    = NBSolve.Status.UNPROCESSED);
+            else
+              comp := SLICED_COMPONENT(
+                var_cref  = BVariable.getVarName(Slice.getT(var_slice)),
+                var       = var_slice,
+                eqn       = eqn_slice,
+                status    = NBSolve.Status.UNPROCESSED);
+            end if;
+          then comp;
 
           // for equations that are not algebraic loops are caught earlier! Any for equation
           // getting to this point is an actual algebraic loop
