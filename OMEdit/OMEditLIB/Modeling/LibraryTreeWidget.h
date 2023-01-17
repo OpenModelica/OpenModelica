@@ -483,7 +483,7 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false,
                 bool loadExternalModel = false);
-  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false);
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
@@ -526,7 +526,7 @@ private slots:
   void handleAutoLoadedLibrary();
 public slots:
   void loadSystemLibrary();
-  void loadSystemLibrary(const QString &library, QString version = QString("default"));
+  void loadSystemLibrary(const QString &library, QString version = QString("default"), bool secondAttempt = false);
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };

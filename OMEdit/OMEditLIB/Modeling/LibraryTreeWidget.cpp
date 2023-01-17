@@ -4172,8 +4172,9 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  * \param fileName
  * \param encoding
  * \param showProgress
+ * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  */
-void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress)
+void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -4212,9 +4213,9 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
       // load the file in OMC
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
-        if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+        if (MainWindow::instance()->getOMCProxy()->isLoadModelError() && !secondAttempt) {
           if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
-            openModelicaFile(fileName, encoding, showProgress);
+            openModelicaFile(fileName, encoding, showProgress, true);
           }
         } else {
           // create library tree nodes for loaded models
@@ -5351,8 +5352,9 @@ void LibraryWidget::loadSystemLibrary()
  * Loads a system library.
  * \param library
  * \param version
+ * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  */
-void LibraryWidget::loadSystemLibrary(const QString &library, QString version)
+void LibraryWidget::loadSystemLibrary(const QString &library, QString version, bool secondAttempt)
 {
   /* check if library is already loaded. */
   if (mpLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
@@ -5377,9 +5379,9 @@ void LibraryWidget::loadSystemLibrary(const QString &library, QString version)
     setLoadingLibraries(true);
     QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
     if (MainWindow::instance()->getOMCProxy()->loadModel(library, version)) {
-      if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+      if (MainWindow::instance()->getOMCProxy()->isLoadModelError() && !secondAttempt) {
         if (resolveConflictWithLoadedLibraries(library, classes)) {
-          loadSystemLibrary(library, version);
+          loadSystemLibrary(library, version, true);
         }
       } else {
         mpLibraryTreeModel->createLibraryTreeItem(library, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
