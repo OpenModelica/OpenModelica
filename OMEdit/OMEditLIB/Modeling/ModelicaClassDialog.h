@@ -384,10 +384,11 @@ class ComponentNameDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentNameDialog(QString name, GraphicsView *pGraphicsView, QWidget *pParent = 0);
+  ComponentNameDialog(const QString &nameStructure, QString name, GraphicsView *pGraphicsView, QWidget *pParent = 0);
   QString getComponentName() {return mpNameTextBox->text();}
 private:
   GraphicsView *mpGraphicsView;
+  QString mNameStructure;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   QCheckBox *mpDontShowThisMessageAgainCheckBox;

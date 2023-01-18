@@ -2206,7 +2206,7 @@ void ElementAttributes::updateElementAttributes()
   ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
   /* Check the same element name problem before setting any attributes. */
   if (mpElement->getName().compare(mpNameTextBox->text()) != 0) {
-    if (!mpElement->getGraphicsView()->checkElementName(mpNameTextBox->text())) {
+    if (!mpElement->getGraphicsView()->checkElementName(mpElement->getClassName(), mpNameTextBox->text())) {
       QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
       return;

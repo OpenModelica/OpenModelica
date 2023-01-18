@@ -858,7 +858,7 @@ bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeIte
   *name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), *name, &defaultName);
   // Allow user to change the component name if always ask for component name settings is true.
   if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
-    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(*name, this, pMainWindow);
+    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(pLibraryTreeItem->getNameStructure(), *name, this, pMainWindow);
     if (pComponentNameDialog->exec()) {
       *name = pComponentNameDialog->getComponentName();
       pComponentNameDialog->deleteLater();
@@ -902,7 +902,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       if (isClassDroppedOnItself(pLibraryTreeItem)) {
         return false;
       }
-      QString name = getUniqueElementName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
+      QString name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       ElementInfo *pComponentInfo = new ElementInfo;
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       // create StartCommand depending on the external model file extension.
@@ -1257,9 +1257,9 @@ QString GraphicsView::getUniqueElementName(const QString &nameStructure, const Q
   *defaultName = MainWindow::instance()->getOMCProxy()->getDefaultComponentName(nameStructure);
   QString newName;
   if (!defaultName->isEmpty()) {
-    newName = getUniqueElementName(StringHandler::toCamelCase(*defaultName));
+    newName = getUniqueElementName(nameStructure, StringHandler::toCamelCase(*defaultName));
   } else {
-    newName = getUniqueElementName(StringHandler::toCamelCase(name));
+    newName = getUniqueElementName(nameStructure, StringHandler::toCamelCase(name));
   }
   return newName;
 }
@@ -1267,19 +1267,20 @@ QString GraphicsView::getUniqueElementName(const QString &nameStructure, const Q
 /*!
  * \brief GraphicsView::getUniqueElementName
  * Creates a unique element name.
- * \param componentName
+ * \param nameStructure
+ * \param elementName
  * \param number
  * \return
  */
-QString GraphicsView::getUniqueElementName(QString elementName, int number)
+QString GraphicsView::getUniqueElementName(const QString &nameStructure, QString elementName, int number)
 {
   QString name = elementName;
   if (number > 0) {
     name = QString("%1%2").arg(elementName).arg(number);
   }
 
-  if (!checkElementName(name)) {
-    name = getUniqueElementName(elementName, ++number);
+  if (!checkElementName(nameStructure, name)) {
+    name = getUniqueElementName(nameStructure, elementName, ++number);
   }
   return name;
 }
@@ -1287,19 +1288,25 @@ QString GraphicsView::getUniqueElementName(QString elementName, int number)
 /*!
  * \brief GraphicsView::checkElementName
  * Checks the element name against the Modelica keywords as well.
+ * Checks if the element name is same as class name.
  * Checks if the element with the same name already exists or not.
+ * \param nameStructure
  * \param elementName
  * \return
  */
-bool GraphicsView::checkElementName(QString elementName)
+bool GraphicsView::checkElementName(const QString &nameStructure, QString elementName)
 {
-  // if component name is any keyword of Modelica
+  // if element name is any keyword of Modelica
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     if (ModelicaHighlighter::getKeywords().contains(elementName)) {
       return false;
     }
   }
-  // if component with same name exists
+  // if element name is same as class name
+  if (nameStructure.compare(elementName) == 0) {
+    return false;
+  }
+  // if element with same name exists
   foreach (Element *pElement, mElementsList) {
     if (pElement->getName().compare(elementName, Qt::CaseSensitive) == 0) {
       return false;
@@ -3813,8 +3820,8 @@ void GraphicsView::pasteItems()
       // paste the components
       foreach (Element *pComponent, pMimeData->getComponents()) {
         QString name = pComponent->getName();
-        if (!checkElementName(name)) {
-          name = getUniqueElementName(StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
+        if (!checkElementName(pComponent->getLibraryTreeItem()->getNameStructure(), name)) {
+          name = getUniqueElementName(pComponent->getLibraryTreeItem()->getNameStructure(), StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
           renamedComponents.insert(pComponent, name);
         }
         ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
