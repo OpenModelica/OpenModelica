@@ -22,6 +22,7 @@ GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
+GetModelInstanceExtends3.mos \
 GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceInnerOuter1.mos \

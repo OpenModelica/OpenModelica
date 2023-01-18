@@ -1,0 +1,56 @@
+// name: GetModelInstanceExtends3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type MyReal
+    extends Real;
+  end MyReal;
+
+  model M
+    MyReal x;
+  end M;
+");
+getErrorString();
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// ""
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": {
+//         \"name\": \"MyReal\",
+//         \"restriction\": \"type\",
+//         \"extends\": [
+//           {
+//             \"baseClass\": \"Real\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 13
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 8,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
