@@ -259,8 +259,8 @@ public:
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
-  QString getUniqueElementName(QString elementName, int number = 0);
-  bool checkElementName(QString elementName);
+  QString getUniqueElementName(const QString &nameStructure, QString elementName, int number = 0);
+  bool checkElementName(const QString &nameStructure, QString elementName);
   QList<Element*> getElementsList() {return mElementsList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}

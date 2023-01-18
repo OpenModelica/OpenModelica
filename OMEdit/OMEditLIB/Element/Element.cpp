@@ -3564,7 +3564,7 @@ void Element::duplicate()
       return;
     }
   } else {
-    name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
+    name = mpGraphicsView->getUniqueElementName(getClassName(), StringHandler::toCamelCase(getName()));
   }
   QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
