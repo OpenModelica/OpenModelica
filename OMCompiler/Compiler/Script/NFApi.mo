@@ -926,7 +926,7 @@ algorithm
 
     case (_, ClassTree.INSTANTIATED_TREE(exts = ext_nodes))
       algorithm
-        exts := list(buildInstanceTree(e) for e in ext_nodes);
+        exts := list(buildInstanceTree(e, isDerived = true) for e in ext_nodes);
         components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
                            for i in cls_tree.localComponents);
       then
