@@ -596,11 +596,10 @@ bool OMCProxy::printMessagesStringInternal()
     const int errorId = getErrorId();
     if (errorId == 371 || errorId == 372 || errorId == 373) {
       mLoadModelError = true;
-    } else {
-      MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
-                              getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-      MessagesWidget::instance()->addGUIMessage(messageItem);
     }
+    MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+                            getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
+    MessagesWidget::instance()->addGUIMessage(messageItem);
   }
   return returnValue;
 }
