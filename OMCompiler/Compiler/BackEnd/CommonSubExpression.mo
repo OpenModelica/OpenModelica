@@ -1645,23 +1645,33 @@ public function isCSECref
 "Returns true if the cref is prefixed with '$cse'"
   input DAE.ComponentRef cr;
   output Boolean b;
+protected
+  String s;
 algorithm
-  b := match cr
-    case DAE.CREF_IDENT() then substring(cr.ident, 1, 4) == "$cse";
-    case DAE.CREF_QUAL()  then substring(cr.ident, 1, 4) == "$cse";
+  b := matchcontinue(cr)
+    case(DAE.CREF_IDENT(ident=s))
+     then (substring(s, 1, 4) == "$cse");
+    case(DAE.CREF_QUAL(ident=s))
+     then (substring(s, 1, 4) == "$cse");
     else false;
-  end match;
+  end matchcontinue;
 end isCSECref;
 
 public function isCSEExp
 "Returns true if the exp is prefixed with '$cse'"
   input DAE.Exp inExp;
   output Boolean b;
+protected
+  DAE.ComponentRef cr;
+  String s;
 algorithm
-  b := match inExp
-    case DAE.CREF() then isCSECref(inExp.componentRef);
-    else false;
-  end match;
+  try
+    cr := Expression.expCref(inExp);
+    DAE.CREF_IDENT(ident=s) := cr;
+    b := substring(s, 1, 4) == "$cse";
+  else
+    b := false;
+  end try;
 end isCSEExp;
 
 public function cseBinary "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)
