@@ -522,6 +522,7 @@ private:
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
+  static void cancelLoadingLibraries(const QStringList classes);
 private slots:
   void handleAutoLoadedLibrary();
 public slots:

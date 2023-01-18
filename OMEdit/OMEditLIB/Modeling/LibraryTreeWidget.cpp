@@ -4213,9 +4213,19 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
       // load the file in OMC
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
-        if (MainWindow::instance()->getOMCProxy()->isLoadModelError() && !secondAttempt) {
-          if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
-            openModelicaFile(fileName, encoding, showProgress, true);
+        if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+          if (secondAttempt) {
+            // clear loadModelCallback classes
+            mAutoLoadedLibrariesList.clear();
+            // cancel loading the library
+            LibraryWidget::cancelLoadingLibraries(classes);
+            // show error message
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to load %1. See messages above for more details.").arg(classesList.join(",")), Helper::scriptingKind,
+                                                                  Helper::errorLevel));
+          } else {
+            if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
+              openModelicaFile(fileName, encoding, showProgress, true);
+            }
           }
         } else {
           // create library tree nodes for loaded models
@@ -4628,8 +4638,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
         .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
              .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                          Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }
@@ -5278,8 +5287,6 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
    * If the library required is already loaded with some other version.
    * Then allow the user to cancel the operation or unload everything and reload the class again.
    */
-  QStringList classes1;
-  LibraryTreeItem *pLibraryTreeItem = 0;
   // clear loadModelCallback classes
   mAutoLoadedLibrariesList.clear();
 
@@ -5297,24 +5304,34 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
   switch (answer) {
     case 0: // cancel operation
     default:
-      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
-      if (classes1.size() > classes.size()) {
-        foreach (QString loadedClass, classes1) {
-          if (!classes.contains(loadedClass)) {
-            pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
-            if (pLibraryTreeItem) {
-              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
-            } else {
-              MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
-            }
-          }
-        }
-      }
+      LibraryWidget::cancelLoadingLibraries(classes);
       return false;
     case 1: // unload all and reload
       MainWindow::instance()->unloadAll(true);
       // Just return true and the calling function will load the library.
       return true;
+  }
+}
+
+/*!
+ * \brief LibraryWidget::cancelLoadingLibraries
+ * \param classes
+ */
+void LibraryWidget::cancelLoadingLibraries(const QStringList classes)
+{
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  QStringList classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
+  if (classes1.size() > classes.size()) {
+    foreach (QString loadedClass, classes1) {
+      if (!classes.contains(loadedClass)) {
+        pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
+        if (pLibraryTreeItem) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
+        } else {
+          MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
+        }
+      }
+    }
   }
 }
 
@@ -5379,9 +5396,19 @@ void LibraryWidget::loadSystemLibrary(const QString &library, QString version, b
     setLoadingLibraries(true);
     QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
     if (MainWindow::instance()->getOMCProxy()->loadModel(library, version)) {
-      if (MainWindow::instance()->getOMCProxy()->isLoadModelError() && !secondAttempt) {
-        if (resolveConflictWithLoadedLibraries(library, classes)) {
-          loadSystemLibrary(library, version, true);
+      if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+        if (secondAttempt) {
+          // clear loadModelCallback classes
+          mAutoLoadedLibrariesList.clear();
+          // cancel loading the library
+          LibraryWidget::cancelLoadingLibraries(classes);
+          // show error message
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to load %1. See messages above for more details.").arg(library), Helper::scriptingKind,
+                                                                Helper::errorLevel));
+        } else {
+          if (resolveConflictWithLoadedLibraries(library, classes)) {
+            loadSystemLibrary(library, version, true);
+          }
         }
       } else {
         mpLibraryTreeModel->createLibraryTreeItem(library, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
