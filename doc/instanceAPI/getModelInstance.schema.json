@@ -33,35 +33,7 @@
           "type": "boolean"
         },
         "replaceable": {
-          "oneOf": [
-            {
-              "description": "A replaceable prefix without a constrainedby clause",
-              "type": "boolean"
-            },
-            {
-              "description": "A replaceable prefix with a constrainedby clause",
-              "type": "object",
-              "properties": {
-                "constrainedby": {
-                  "description": "The name of the constraining class",
-                  "type": "string"
-                },
-                "modifiers": {
-                  "description": "The modifiers on the constrainedby clause",
-                  "type": "#/definitions/scodeModifier"
-                },
-                "comment": {
-                  "description": "The comment on the constrainedby clause",
-                  "$ref": "#/definitions/comment"
-                },
-                "annotation": {
-                  "description": "The annotation on the constrainedby clause",
-                  "$ref": "#/definitions/annotation"
-                }
-              },
-              "required": ["constrainedby"]
-            }
-          ]
+          "$ref": "#/definitions/replaceablePrefix"
         },
         "redeclare": {
           "type": "boolean"
@@ -329,7 +301,7 @@
                   "type": "boolean"
                 },
                 "replaceable": {
-                  "type": "boolean"
+                  "$ref": "#/definitions/replaceablePrefix"
                 },
                 "redeclare": {
                   "type": "boolean"
@@ -358,6 +330,37 @@
             }
           },
           "required": ["name"]
+        }
+      ]
+    },
+    "replaceablePrefix": {
+      "oneOf": [
+        {
+          "description": "A replaceable prefix without a constrainedby clause",
+          "type": "boolean"
+        },
+        {
+          "description": "A replaceable prefix with a constrainedby clause",
+          "type": "object",
+          "properties": {
+            "constrainedby": {
+              "description": "The name of the constraining class",
+              "type": "string"
+            },
+            "modifiers": {
+              "description": "The modifiers on the constrainedby clause",
+              "type": "#/definitions/scodeModifier"
+            },
+            "comment": {
+              "description": "The comment on the constrainedby clause",
+              "$ref": "#/definitions/comment"
+            },
+            "annotation": {
+              "description": "The annotation on the constrainedby clause",
+              "$ref": "#/definitions/annotation"
+            }
+          },
+          "required": ["constrainedby"]
         }
       ]
     },
