@@ -6174,5 +6174,37 @@ function isNonEmptyAlgorithm
   output Boolean res = not listEmpty(alg.statements);
 end isNonEmptyAlgorithm;
 
+function onlyLiteralsInMod
+  "Checks if the bindings in a modifier only contains literal expressions."
+  input SCode.Mod mod;
+  output Boolean onlyLiterals;
+protected
+  list<Absyn.Exp> lst;
+algorithm
+  onlyLiterals := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        if isSome(mod.binding) then
+          onlyLiterals := AbsynUtil.onlyLiteralsInExp(Util.getOption(mod.binding));
+        else
+          onlyLiterals := true;
+        end if;
+
+        if onlyLiterals then
+          for m in mod.subModLst loop
+            onlyLiterals := onlyLiteralsInMod(m.mod);
+
+            if not onlyLiterals then
+              break;
+            end if;
+          end for;
+        end if;
+      then
+        onlyLiterals;
+
+    else true;
+  end match;
+end onlyLiteralsInMod;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
