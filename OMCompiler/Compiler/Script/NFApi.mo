@@ -1010,6 +1010,9 @@ protected
   SCode.Annotation ann;
   array<InstNode> exts;
   JSON j;
+  InstNode scope = node;
+  InstContext.Type context;
+  Boolean annotation_is_literal = true;
 algorithm
   Inst.expand(node);
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
@@ -1033,13 +1036,29 @@ algorithm
       algorithm
         ann.modification := SCodeUtil.filterSubMods(ann.modification,
           function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+        annotation_is_literal := SCodeUtil.onlyLiteralsInMod(ann.modification);
       then
         if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
 
     else NONE();
   end match;
 
-  json := dumpJSONCommentOpt(cmt, node, json, failOnError = true);
+  // Instantiate the scope if the annotation contains component references that
+  // we need to be able to look up.
+  if not annotation_is_literal then
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
+      scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
+      scope := Inst.instantiate(scope, InstNode.parent(scope), context, true);
+      Inst.insertGeneratedInners(scope, InstNode.topScope(scope), context);
+      Inst.instExpressions(scope, context = context);
+    else
+    end try;
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+
+  json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
 end dumpJSONInstanceIcon;
 
 function dumpJSONInstanceIconExtends
