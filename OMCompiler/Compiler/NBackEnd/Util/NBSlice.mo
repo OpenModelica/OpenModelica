@@ -461,7 +461,11 @@ public
       end for;
       accum_dep_lst := List.transposeList(accum_dep_lst);
     else
-      accum_dep_lst := List.repeat({}, num_rows);
+      accum_dep_lst := {};
+    end if;
+
+    if listEmpty(accum_dep_lst) then
+      accum_dep_lst := List.fill({}, num_rows);
     end if;
 
     tpl_lst := List.zip(row_crefs, accum_dep_lst);
