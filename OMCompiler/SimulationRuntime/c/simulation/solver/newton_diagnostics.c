@@ -48,7 +48,7 @@
  *    Applied Mathematics and Computation 398 (2021) 125991
  *
  * By Teus van der Stelt, Asimptote bv, the Netherlands
- * Carried out on behalf of the Delft University of Technology, autumn 2021
+ * Carried out on behalf of the Delft University of Technology, 2023
  *
  * @param data          Pointer to all simulation data.
  * @param threadData    Pointer to thread data for error handling mainly.
