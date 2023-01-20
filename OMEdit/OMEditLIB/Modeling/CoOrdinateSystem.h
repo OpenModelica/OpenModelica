@@ -37,76 +37,49 @@
 #include <QString>
 #include <QRectF>
 
+#include "Annotations/ExtentAnnotation.h"
+#include "Annotations/BooleanAnnotation.h"
+#include "Annotations/RealAnnotation.h"
+#include "Annotations/PointAnnotation.h"
+
 class CoOrdinateSystem
 {
 public:
   CoOrdinateSystem();
   CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem);
-  void setLeft(const qreal left);
-  void setLeft(const QString &left);
-  qreal getLeft() const {return mLeft;}
-  bool hasLeft() const {return mHasLeft;}
-  void setHasLeft(const bool hasLeft) {mHasLeft = hasLeft;}
-  void setBottom(const qreal bottom);
-  void setBottom(const QString &bottom);
-  qreal getBottom() const {return mBottom;}
-  bool hasBottom() const {return mHasBottom;}
-  void setHasBottom(const bool hasBottom) {mHasBottom = hasBottom;}
-  void setRight(const qreal right);
-  void setRight(const QString &right);
-  qreal getRight() const {return mRight;}
-  bool hasRight() const {return mHasRight;}
-  void setHasRight(const bool hasRight) {mHasRight = hasRight;}
-  void setTop(const qreal top);
-  void setTop(const QString &top);
-  qreal getTop() const {return mTop;}
-  bool hasTop() const {return mHasTop;}
-  void setHasTop(const bool hasTop) {mHasTop = hasTop;}
+  void setExtent(const QVector<QPointF> extent);
+  ExtentAnnotation getExtent() const {return mExtent;}
+  bool hasExtent() const {return mHasExtent;}
+  void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
   void setPreserveAspectRatio(const bool preserveAspectRatio);
-  void setPreserveAspectRatio(const QString &preserveAspectRatio);
-  bool getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+  BooleanAnnotation getPreserveAspectRatio() const {return mPreserveAspectRatio;}
   bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
   void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
   void setInitialScale(const qreal initialScale);
-  void setInitialScale(const QString &initialScale);
-  qreal getInitialScale() const {return mInitialScale;}
+  RealAnnotation getInitialScale() const {return mInitialScale;}
   bool hasInitialScale() const {return mHasInitialScale;}
   void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
   qreal getHorizontalGridStep();
   qreal getVerticalGridStep();
-  void setHorizontal(const qreal horizontal);
-  void setHorizontal(const QString &horizontal);
-  qreal getHorizontal() const {return mHorizontal;}
-  bool hasHorizontal() const {return mHasHorizontal;}
-  void setHasHorizontal(const bool hasHorizontal) {mHasHorizontal = hasHorizontal;}
-  void setVertical(const qreal vertical);
-  void setVertical(const QString &vertical);
-  qreal getVertical() const {return mVertical;}
-  bool hasVertical() const {return mHasVertical;}
-  void setHasVertical(const bool hasVertical) {mHasVertical = hasVertical;}
+  void setGrid(const QPointF grid);
+  PointAnnotation getGrid() const {return mGrid;}
+  void setHasGrid(const bool hasGrid) {mHasGrid = hasGrid;}
+  bool hasGrid() const {return mHasGrid;}
 
   QRectF getExtentRectangle() const;
   void reset();
   bool isComplete() const;
 
-  CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) noexcept = default;
+  CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) = default;
 private:
-  qreal mLeft;
-  bool mHasLeft;
-  qreal mBottom;
-  bool mHasBottom;
-  qreal mRight;
-  bool mHasRight;
-  qreal mTop;
-  bool mHasTop;
-  bool mPreserveAspectRatio;
+  ExtentAnnotation mExtent;
+  bool mHasExtent;
+  BooleanAnnotation mPreserveAspectRatio;
   bool mHasPreserveAspectRatio;
-  qreal mInitialScale;
+  RealAnnotation mInitialScale;
   bool mHasInitialScale;
-  qreal mHorizontal;
-  bool mHasHorizontal;
-  qreal mVertical;
-  bool mHasVertical;
+  PointAnnotation mGrid;
+  bool mHasGrid;
 };
 
 #endif // COORDINATESYSTEM_H

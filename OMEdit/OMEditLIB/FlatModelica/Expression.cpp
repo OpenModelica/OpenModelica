@@ -1,10 +1,44 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <sstream>
 #include <stdexcept>
+#include <array>
 #include <vector>
+
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 #include "ExpressionFuncs.h"
 #include "Expression.h"
@@ -17,6 +51,17 @@ namespace FlatModelica
 
     while (auto c = *str++) {
       hash = hash*31 + c;
+    }
+
+    return hash;
+  }
+
+  constexpr uint64_t djb2_qHash(const QChar *str)
+  {
+    uint64_t hash = 5381;
+
+    for (auto c = *str; !c.isNull(); c = *++str) {
+      hash = hash*31 + c.unicode();
     }
 
     return hash;
@@ -381,26 +426,67 @@ namespace FlatModelica
       Token _token;
   };
 
+  class Operator
+  {
+    public:
+      enum OpType
+      {
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Pow,
+        AddEW,
+        SubEW,
+        MulEW,
+        DivEW,
+        PowEW,
+        And,
+        Or,
+        Equal,
+        NotEqual,
+        Less,
+        LessEq,
+        Greater,
+        GreaterEq,
+        Not,
+        Unknown
+      };
+
+      Operator();
+      Operator(const std::string &str);
+      Operator(Token::token_t t);
+      Operator(OpType op);
+
+      OpType type() const { return _op; }
+      const std::string& toString() const;
+
+      void deserialize(const QJsonValue &value);
+      QJsonValue serialize() const;
+
+    private:
+      OpType parse(const std::string &str);
+      OpType parse(Token::token_t t);
+
+    private:
+      OpType _op;
+  };
+
   class ExpressionBase
   {
     public:
-      enum class value_t
-      {
-        integer,
-        real,
-        boolean,
-        string,
-        cref,
-        array,
-        call,
-        binary,
-        unary,
-        if_exp
-      };
-
-    public:
       virtual ~ExpressionBase() = default;
-      virtual value_t type() const = 0;
+
+      static std::unique_ptr<ExpressionBase> deserialize(const QJsonValue &value);
+      virtual QJsonValue serialize() const = 0;
+
+      virtual bool isInteger()    const { return false; }
+      virtual bool isReal()       const { return false; }
+      virtual bool isBoolean()    const { return false; }
+      virtual bool isBooleanish() const { return false; }
+      virtual bool isString()     const { return false; }
+      virtual bool isArray()      const { return false; }
+      virtual bool isCall()       const { return false; }
       virtual bool isLiteral() const = 0;
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
@@ -416,13 +502,15 @@ namespace FlatModelica
         : _value(value) {}
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Integer>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); };
+      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::integer; }
+      bool isInteger() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       int64_t value() const { return _value; }
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
@@ -439,11 +527,13 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Real>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::real; }
+      bool isReal() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       double value() const { return _value; }
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
@@ -460,11 +550,13 @@ namespace FlatModelica
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Boolean>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::boolean; }
+      bool isBoolean() const override { return true; }
+      bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       bool value() const { return _value; }
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
     private:
       bool _value;
@@ -476,19 +568,44 @@ namespace FlatModelica
       String(std::string value)
         : _value(std::move(value)) {}
 
+      String(const QJsonValue &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<String>(*this); }
       Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
 
-      value_t type() const override { return value_t::string; }
+      bool isString() const override { return true; }
       bool isLiteral() const override { return true; }
       const std::string& value() const { return _value; }
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
     private:
       std::string _value;
+  };
+
+  class Enum : public ExpressionBase
+  {
+  public:
+    Enum(std::string name, int index)
+      : _name(std::move(name)), _index(index) {}
+
+    Enum(const QJsonObject &value);
+
+    std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Enum>(*this); }
+    Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+    bool isInteger() const override { return true; }
+    bool isLiteral() const override { return true; }
+    const std::string& value() const { return _name; }
+    void print(std::ostream &os) const override;
+    QJsonValue serialize() const override;
+
+  private:
+    std::string _name;
+    int _index;
   };
 
   class Cref : public ExpressionBase
@@ -497,12 +614,14 @@ namespace FlatModelica
       Cref(std::string name)
         : _name(std::move(name)) {}
 
+      Cref(const QJsonObject &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Cref>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::cref; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(std::string first_ident, Tokenizer &tokenizer);
 
@@ -516,14 +635,17 @@ namespace FlatModelica
       Array(std::vector<Expression> elements)
         : _elements(std::move(elements)) {}
 
+      Array(const QJsonArray &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Array>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::array; }
+      bool isArray() const override { return true; }
       bool isLiteral() const override;
       const std::vector<Expression>& elements() const { return _elements; }
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
@@ -531,16 +653,40 @@ namespace FlatModelica
       std::vector<Expression> _elements;
   };
 
+  class Range : public ExpressionBase
+  {
+    public:
+      Range(Expression start, Expression step, Expression stop)
+        : _start(std::move(start)), _step(std::move(step)), _stop(std::move(stop)) {}
+
+      Range(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Range>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+      bool isLiteral() const override;
+
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      Expression _start;
+      Expression _step;
+      Expression _stop;
+  };
+
   class Call : public ExpressionBase
   {
     public:
       Call(std::string name, std::vector<Expression> args)
-        : _name(std::move(name)), _args(std::move(args)) {}
+        : _name(std::move(name)), _args(std::move(args)), _is_record(false) {}
+
+      Call(const QJsonObject &value, bool isRecord);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Call>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::call; }
+      bool isCall() const override { return true; }
       bool isLiteral() const override { return false; }
       const std::string& name() const { return _name; }
       bool isNamed(const std::string &name) const { return _name == name; }
@@ -548,82 +694,98 @@ namespace FlatModelica
       void setArg(size_t index, const Expression &e);
 
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(std::string name, Tokenizer &tokenizer);
 
     private:
       std::string _name;
       std::vector<Expression> _args;
+      bool _is_record;
+  };
+
+  class Iterator
+  {
+    public:
+      Iterator(std::string name, Expression range)
+        : _name(std::move(name)), _range(std::move(range)) {}
+
+      Iterator(const QJsonValue &value);
+
+      const std::string& name() const { return _name; }
+      const Expression& range() const { return _range; }
+
+      QJsonValue serialize() const;
+
+    private:
+      std::string _name;
+      Expression _range;
+  };
+
+  class IteratorCall : public ExpressionBase
+  {
+    public:
+      IteratorCall(std::string name, Expression exp, std::vector<Iterator> iterators)
+        : _name(std::move(name)), _exp(std::move(exp)), _iterators(std::move(iterators)) {}
+
+      IteratorCall(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IteratorCall>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+
+      bool isLiteral() const override { return false; }
+
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      std::string _name;
+      Expression _exp;
+      std::vector<Iterator> _iterators;
   };
 
   class Binary : public ExpressionBase
   {
     public:
-      enum operation
-      {
-        add,
-        sub,
-        mul,
-        div,
-        pow,
-        add_ew,
-        sub_ew,
-        mul_ew,
-        div_ew,
-        pow_ew,
-        logic_and,
-        logic_or,
-        equal,
-        nequal,
-        less,
-        lesseq,
-        greater,
-        greatereq
-      };
-
-    public:
-      Binary(Expression e1, operation op, Expression e2)
+      Binary(Expression e1, Operator op, Expression e2)
         : _e1(std::move(e1)), _op(op), _e2(std::move(e2)) {}
+
+      Binary(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Binary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::binary; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Expression e1, Tokenizer &tokenizer);
 
     private:
       Expression _e1;
-      operation _op;
+      Operator _op;
       Expression _e2;
   };
 
   class Unary : public ExpressionBase
   {
     public:
-      enum operation
-      {
-        minus,
-        logic_not,
-      };
-
-    public:
-      Unary(operation op, Expression e)
+      Unary(Operator op, Expression e)
         : _op(op), _e(std::move(e)) {}
+
+      Unary(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Unary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::unary; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
     private:
-      operation _op;
+      Operator _op;
       Expression _e;
   };
 
@@ -634,12 +796,14 @@ namespace FlatModelica
         : _condition(std::move(condition)), _true_e(std::move(true_e)),
           _false_e(std::move(false_e)) {}
 
+      IfExp(const QJsonObject &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IfExp>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-      value_t type() const override { return value_t::if_exp; }
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
 
       static Expression parse(Tokenizer &tokenizer);
 
@@ -648,6 +812,130 @@ namespace FlatModelica
       Expression _true_e;
       Expression _false_e;
   };
+
+  Operator::Operator()
+    : _op(Unknown)
+  {
+  }
+
+  Operator::Operator(const std::string &str)
+    : _op(parse(str))
+  {
+  }
+
+  Operator::Operator(Token::token_t t)
+    : _op(parse(t))
+  {
+  }
+
+  Operator::Operator(OpType op)
+    : _op(op)
+  {
+  }
+
+  Operator::OpType Operator::parse(const std::string &str)
+  {
+    switch (str.size()) {
+      case 1:
+        switch (str[0]) {
+          case '+': return Add;
+          case '-': return Sub;
+          case '*': return Mul;
+          case '/': return Div;
+          case '^': return Pow;
+          case '<': return Less;
+          case '>': return Greater;
+        }
+        break;
+
+      case 2:
+        if (str[0] == '.') {
+          switch (str[1]) {
+            case '+': return AddEW;
+            case '-': return SubEW;
+            case '*': return MulEW;
+            case '/': return DivEW;
+            case '^': return PowEW;
+          }
+        } else if (str[1] == '=') {
+          switch (str[0]) {
+            case '<': return LessEq;
+            case '>': return GreaterEq;
+            case '=': return Equal;
+          }
+        } else if (str == "<>") {
+          return NotEqual;
+        } else if (str == "or") {
+          return Or;
+        }
+        break;
+
+      case 3:
+        if (str == "and") {
+          return And;
+        } else if (str == "not") {
+          return Not;
+        }
+        break;
+    }
+
+    throw std::runtime_error("Operator::parse got invalid operator " + str);
+  }
+
+  Operator::OpType Operator::parse(Token::token_t t)
+  {
+    switch (t) {
+      case Token::ADD: return Add;
+      case Token::SUB: return Sub;
+      case Token::MUL: return Mul;
+      case Token::DIV: return Div;
+      case Token::POW: return Pow;
+      case Token::ADD_EW: return AddEW;
+      case Token::SUB_EW: return SubEW;
+      case Token::MUL_EW: return MulEW;
+      case Token::DIV_EW: return DivEW;
+      case Token::POW_EW: return PowEW;
+      case Token::AND: return And;
+      case Token::OR: return Or;
+      case Token::EQUAL: return Equal;
+      case Token::NEQUAL: return NotEqual;
+      case Token::LESS: return Less;
+      case Token::LESSEQ: return LessEq;
+      case Token::GREATER: return Greater;
+      case Token::GREATEREQ: return GreaterEq;
+      default:
+        throw std::runtime_error("Operator::parse got invalid token type");
+    }
+  }
+
+  const std::string& Operator::toString() const
+  {
+    static const std::array<std::string, 20> symbols = {
+      "+", "-", "*", "/", "^", ".+", ".-", ".*", "./", ".^", "and", "or", "==", "<>", "<", "<=", ">", ">=", "not", "?"
+    };
+
+    return symbols[static_cast<int>(_op)];
+  }
+
+  void Operator::deserialize(const QJsonValue &value)
+  {
+    if (!value.isString()) {
+      throw std::runtime_error("Expression: invalid JSON binary operator: " + value.toString().toStdString());
+    }
+
+    _op = parse(value.toString().toStdString());
+  }
+
+  QJsonValue Operator::serialize() const
+  {
+    return toString().data();
+  }
+
+  std::ostream& operator<< (std::ostream &os, Operator op)
+  {
+    os << op.toString();
+    return os;
+  }
 
   Expression parseParentheses(Tokenizer &tokenizer);
   Expression parseIdentifierExp(Tokenizer &tokenizer);
@@ -675,53 +963,6 @@ namespace FlatModelica
     return parseExp_1(tokenizer, parsePrimary(tokenizer), 0);
   }
 
-  Binary::operation parseOp(std::string str)
-  {
-    switch (str.size()) {
-      case 1:
-        switch (str[0]) {
-          case '+': return Binary::add;
-          case '-': return Binary::sub;
-          case '*': return Binary::mul;
-          case '/': return Binary::div;
-          case '^': return Binary::pow;
-          case '<': return Binary::less;
-          case '>': return Binary::greater;
-        }
-        break;
-
-      case 2:
-        if (str[0] == '.') {
-          switch (str[1]) {
-            case '+': return Binary::add_ew;
-            case '-': return Binary::sub_ew;
-            case '*': return Binary::mul_ew;
-            case '/': return Binary::div_ew;
-            case '^': return Binary::pow_ew;
-          }
-        } else if (str[1] == '=') {
-          switch (str[0]) {
-            case '<': return Binary::lesseq;
-            case '>': return Binary::greatereq;
-            case '=': return Binary::equal;
-          }
-        } else if (str == "<>") {
-          return Binary::nequal;
-        } else if (str == "or") {
-          return Binary::logic_or;
-        }
-        break;
-
-      case 3:
-        if (str == "and") {
-          return Binary::logic_and;
-        }
-        break;
-    }
-
-    throw std::runtime_error("parseOp got invalid operator " + str);
-  }
-
   int opPriority(Token::token_t op)
   {
     switch (op) {
@@ -741,32 +982,6 @@ namespace FlatModelica
     }
   }
 
-  Binary::operation binaryOpFromToken(Token::token_t t)
-  {
-    switch (t) {
-      case Token::ADD: return Binary::add;
-      case Token::SUB: return Binary::sub;
-      case Token::MUL: return Binary::mul;
-      case Token::DIV: return Binary::div;
-      case Token::POW: return Binary::pow;
-      case Token::ADD_EW: return Binary::add_ew;
-      case Token::SUB_EW: return Binary::sub_ew;
-      case Token::MUL_EW: return Binary::mul_ew;
-      case Token::DIV_EW: return Binary::div_ew;
-      case Token::POW_EW: return Binary::pow_ew;
-      case Token::AND: return Binary::logic_and;
-      case Token::OR: return Binary::logic_or;
-      case Token::EQUAL: return Binary::equal;
-      case Token::NEQUAL: return Binary::nequal;
-      case Token::LESS: return Binary::less;
-      case Token::LESSEQ: return Binary::lesseq;
-      case Token::GREATER: return Binary::greater;
-      case Token::GREATEREQ: return Binary::greatereq;
-      default:
-        throw std::runtime_error("binaryOpFromToken got invalid token type");
-    }
-  }
-
   Expression parseExp_1(Tokenizer &tokenizer, Expression lhs, int min_priority)
   {
     while (tokenizer.peekToken().isOperator() &&
@@ -781,7 +996,7 @@ namespace FlatModelica
         rhs = parseExp_1(tokenizer, std::move(rhs), opPriority(op) + 1);
       }
 
-      lhs = Expression(std::make_unique<Binary>(std::move(lhs), binaryOpFromToken(op), std::move(rhs)));
+      lhs = Expression(std::make_unique<Binary>(std::move(lhs), op, std::move(rhs)));
     }
 
     return lhs;
@@ -940,9 +1155,114 @@ namespace FlatModelica
     }
   }
 
+  class json_error : public std::exception
+  {
+    public:
+      json_error(const QString &msg, const QJsonValue &value)
+      {
+        QString err = msg;
+
+        switch (value.type()) {
+          case QJsonValue::Null:
+            err += "null";
+            break;
+
+          case QJsonValue::Bool:
+            err += value.toBool() ? "true" : "false";
+            break;
+
+          case QJsonValue::Double:
+            err += QString::number(value.toDouble());
+            break;
+
+          case QJsonValue::String:
+            err += value.toString();
+            break;
+
+          case QJsonValue::Array:
+            err += QJsonDocument(value.toArray()).toJson();
+            break;
+
+          case QJsonValue::Object:
+            err += QJsonDocument(value.toObject()).toJson();
+            break;
+
+          case QJsonValue::Undefined:
+            err += "undefined";
+            break;
+        }
+
+        _error = err.toStdString();
+      }
+
+      const char* what() const noexcept override { return _error.c_str(); }
+
+    private:
+      std::string _error;
+  };
+
+  std::unique_ptr<ExpressionBase> parseJsonNumber(const QJsonValue &value)
+  {
+    auto val = value.toDouble();
+
+    if (val == std::trunc(val)) {
+      return std::make_unique<Integer>(static_cast<int64_t>(val));
+    }
+
+    return std::make_unique<Real>(val);
+  }
+
+  std::unique_ptr<ExpressionBase> parseJsonObject(const QJsonObject &value)
+  {
+    auto kind = value["$kind"];
+
+    if (kind.isString()) {
+      switch (djb2_qHash(kind.toString().data())) {
+        case djb2_hash("enum"):              return std::make_unique<Enum>(value);
+        case djb2_hash("clock"):             return std::make_unique<Cref>(value);
+        case djb2_hash("cref"):              return std::make_unique<Cref>(value);
+        case djb2_hash("typename"):          return std::make_unique<Cref>(value);
+        case djb2_hash("range"):             return std::make_unique<Range>(value);
+        //case djb2_hash("tuple"):             return std::make_unique<Tuple>(value);
+        case djb2_hash("record"):            return std::make_unique<Call>(value, true);
+        case djb2_hash("call"):              return std::make_unique<Call>(value, false);
+        case djb2_hash("iterator_call"):     return std::make_unique<IteratorCall>(value);
+        case djb2_hash("binary_op"):         return std::make_unique<Binary>(value);
+        case djb2_hash("unary_op"):          return std::make_unique<Unary>(value);
+        case djb2_hash("if"):                return std::make_unique<IfExp>(value);
+        //case djb2_hash("sub"):               return std::make_unique<Subscripted>(value);
+        //case djb2_hash("tuple_element"):     return std::make_unique<TupleElement>(value);
+        //case djb2_hash("record_element"):    return std::make_unique<RecordElement>(value);
+        //case djb2_hash("function"):          return std::make_unique<Function>(value);
+      }
+    }
+
+    throw json_error("Expression: invalid JSON object ", value);
+    return nullptr;
+  }
+
+  std::unique_ptr<ExpressionBase> ExpressionBase::deserialize(const QJsonValue &value)
+  {
+    switch (value.type()) {
+      case QJsonValue::Bool:   return std::make_unique<Boolean>(value.toBool());
+      case QJsonValue::Double: return parseJsonNumber(value);
+      case QJsonValue::String: return std::make_unique<String>(value);
+      case QJsonValue::Array:  return std::make_unique<Array>(value.toArray());
+      case QJsonValue::Object: return parseJsonObject(value.toObject());
+      default: break;
+    }
+
+    throw json_error("Expression: invalid JSON value ", value);
+  }
+
   void Integer::print(std::ostream &os) const
   {
     os << _value;
+  }
+
+  QJsonValue Integer::serialize() const
+  {
+    return {static_cast<qint64>(_value)};
   }
 
   Expression Integer::parse(Tokenizer &tokenizer)
@@ -960,6 +1280,11 @@ namespace FlatModelica
     os << _value;
   }
 
+  QJsonValue Real::serialize() const
+  {
+    return {_value};
+  }
+
   Expression Real::parse(Tokenizer &tokenizer)
   {
     double d;
@@ -970,9 +1295,20 @@ namespace FlatModelica
     return Expression(d);
   }
 
+  QJsonValue Boolean::serialize() const
+  {
+    return _value;
+  }
+
   void Boolean::print(std::ostream &os) const
   {
     os << (_value ? "true" : "false");
+  }
+
+  String::String(const QJsonValue &value)
+    : String(value.toString().toStdString())
+  {
+
   }
 
   void String::print(std::ostream &os) const
@@ -980,11 +1316,90 @@ namespace FlatModelica
     os << '"' << _value << '"';
   }
 
+  QJsonValue String::serialize() const
+  {
+    return _value.data();
+  }
+
   Expression String::parse(Tokenizer &tokenizer)
   {
     auto tok = tokenizer.peekToken();
     tokenizer.popToken();
     return Expression(tok.data);
+  }
+
+  Enum::Enum(const QJsonObject &value)
+  {
+    _name = value["name"].toString().toStdString();
+    _index = value["index"].toInt();
+  }
+
+  Expression Enum::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    Q_UNUSED(var_eval);
+    return Expression(_name, _index);
+  }
+
+  void Enum::print(std::ostream &os) const
+  {
+    os << _name;
+  }
+
+  QJsonValue Enum::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "enum"},
+      { "name", QString::fromStdString(_name)},
+      {"index", _index}
+    };
+  }
+
+  Cref::Cref(const QJsonObject &value)
+  {
+    auto const parts = value["parts"];
+
+    if (!parts.isArray()) {
+      throw json_error("Expression: invalid JSON component reference: ", value);
+    }
+
+    auto const parts_array = parts.toArray();
+
+    for (const auto &part: parts_array) {
+      auto part_obj = part.toObject();
+      auto name = part_obj["name"];
+
+      if (!name.isString()) {
+        throw json_error("Expression: invalid JSON component reference part: ", part);
+      }
+
+      if (!_name.empty()) {
+        _name += '.';
+      }
+
+      _name += name.toString().toStdString();
+
+      auto const subs = part_obj["subscripts"].toArray();
+
+      if (!subs.empty()) {
+        std::string subs_str;
+
+        for (const auto& sub: subs) {
+          if (!subs_str.empty()) {
+            subs_str += ",";
+          }
+
+          if (sub.isString()) {
+            subs_str += sub.toString().toStdString();
+          } else {
+            Expression sub_exp;
+            sub_exp.deserialize(sub);
+            subs_str += sub_exp.toString();
+          }
+        }
+
+        _name += '[' + subs_str + ']';
+      }
+    }
   }
 
   Expression Cref::eval(const Expression::VariableEvaluator &var_eval) const
@@ -995,6 +1410,14 @@ namespace FlatModelica
   void Cref::print(std::ostream &os) const
   {
     os << _name;
+  }
+
+  QJsonValue Cref::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "cref"},
+      {"parts", QJsonArray{{QJsonObject{{"name", _name.data()}}}}}
+    };
   }
 
   Expression Cref::parse(std::string first_ident, Tokenizer &tokenizer)
@@ -1035,6 +1458,13 @@ namespace FlatModelica
     return Expression(std::make_unique<Cref>(ss.str()));
   }
 
+  Array::Array(const QJsonArray &value)
+  {
+    for (const auto &e: value) {
+      _elements.emplace_back(ExpressionBase::deserialize(e));
+    }
+  }
+
   Expression Array::eval(const Expression::VariableEvaluator &var_eval) const
   {
     std::vector<Expression> elems;
@@ -1063,6 +1493,17 @@ namespace FlatModelica
     os << '}';
   }
 
+  QJsonValue Array::serialize() const
+  {
+    QJsonArray arr;
+
+    for (auto &e: _elements) {
+      arr.push_back(e.serialize());
+    }
+
+    return {std::move(arr)};
+  }
+
   Expression Array::parse(Tokenizer &tokenizer)
   {
     auto tok = tokenizer.peekToken();
@@ -1080,6 +1521,91 @@ namespace FlatModelica
     tokenizer.popToken();
 
     return Expression(std::move(elems));
+  }
+
+  Range::Range(const QJsonObject &value)
+  {
+    auto start = value.find("start");
+
+    if (start == value.end()) {
+      throw json_error("Expression: missing range start in ", value);
+    }
+
+    _start.deserialize(*start);
+
+    auto stop = value.find("stop");
+
+    if (stop == value.end()) {
+      throw json_error("Expression: missing range stop in ", value);
+    }
+
+    _stop.deserialize(*stop);
+
+    auto step = value.find("step");
+
+    if (step != value.end()) {
+      _step.deserialize(*step);
+    }
+  }
+
+  Expression Range::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    auto start = _start.evaluate(var_eval);
+    auto stop = _stop.evaluate(var_eval);
+    auto step = _step.isNull() ? Expression() : _step.evaluate(var_eval);
+    return Expression(std::make_unique<Range>(std::move(start), std::move(step), std::move(stop)));
+  }
+
+  bool Range::isLiteral() const
+  {
+    return _start.isLiteral() && _step.isLiteral() && _stop.isLiteral();
+  }
+
+  void Range::print(std::ostream &os) const
+  {
+    os << _start << ':';
+
+    if (!_step.isNull()) {
+      os << _step << ':';
+    }
+
+    os << _stop;
+  }
+
+  QJsonValue Range::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("$kind", "range");
+    obj.insert("start", _start.serialize());
+
+    if (!_step.isNull()) {
+      obj.insert("step", _step.serialize());
+    }
+
+    obj.insert("stop", _stop.serialize());
+    return obj;
+  }
+
+  Call::Call(const QJsonObject &value, bool isRecord)
+    : _is_record(isRecord)
+  {
+    auto name = value["name"];
+
+    if (!name.isString()) {
+      throw json_error("Expression: invalid JSON function call name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+
+    auto args = value[isRecord ? "elements" : "arguments"];
+
+    if (!args.isArray()) {
+      throw json_error("Expression: invalid JSON function call arguments: ", args);
+    }
+
+    for (const auto &e: args.toArray()) {
+      _args.emplace_back(ExpressionBase::deserialize(e));
+    }
   }
 
   Expression Call::eval(const Expression::VariableEvaluator &var_eval) const
@@ -1169,6 +1695,27 @@ namespace FlatModelica
     os << ')';
   }
 
+  QJsonValue Call::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("name", QString::fromStdString(_name));
+
+    QJsonArray args;
+    for (auto &e: _args) {
+      args.push_back(e.serialize());
+    }
+
+    if (_is_record) {
+      obj.insert("$kind", "record");
+      obj.insert("elements", std::move(args));
+    } else {
+      obj.insert("$kind", "call");
+      obj.insert("arguments", std::move(args));
+    }
+
+    return obj;
+  }
+
   Expression Call::parse(std::string name, Tokenizer &tokenizer)
   {
     auto tok = tokenizer.peekToken();
@@ -1188,32 +1735,141 @@ namespace FlatModelica
     return Expression(std::make_unique<Call>(name, std::move(args)));
   }
 
+  Iterator::Iterator(const QJsonValue &value)
+  {
+    if (!value.isObject()) {
+      throw json_error("Expression: invalid iterator expression: ", value);
+    }
+
+    auto obj = value.toObject();
+    auto name = obj["name"];
+
+    if (!name.isString()) {
+      throw json_error("Expression: invalid iterator name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+
+    auto range = obj.find("range");
+
+    if (range == obj.end()) {
+      throw json_error("Expression: missing iterator range in ", value);
+    }
+
+    _range.deserialize(*range);
+  }
+
+  QJsonValue Iterator::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("name", _name.c_str());
+    obj.insert("range", _range.serialize());
+    return obj;
+  }
+
+  std::ostream& operator<< (std::ostream &os, const Iterator &i)
+  {
+    os << i.name() << " in " << i.range();
+    return os;
+  }
+
+  IteratorCall::IteratorCall(const QJsonObject &value)
+  {
+    auto name = value["name"];
+
+    if (!name.isString()) {
+      throw json_error("Expression: invalid JSON iterator call name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+    _exp.deserialize(value["exp"]);
+
+    auto iters = value["iterators"];
+
+    if (!iters.isArray()) {
+      throw json_error("Expression: invalid JSON iterator call iterators: ", iters);
+    }
+
+    for (const auto &i: iters.toArray()) {
+      _iterators.emplace_back(i);
+    }
+  }
+
+  Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval) const
+  {
+    return Expression(std::make_unique<IteratorCall>(*this));
+  }
+
+  void IteratorCall::print(std::ostream &os) const
+  {
+    bool is_array = _name == "$array";
+
+    if (is_array) {
+      os << '{';
+    } else {
+      os << _name << '(';
+    }
+
+    os << _exp << " for ";
+
+    for (auto it = _iterators.begin(); it != _iterators.end(); ++it) {
+      if (it != _iterators.begin()) os << ", ";
+      os << *it;
+    }
+
+    os << (is_array ? '}' : ')');
+  }
+
+  QJsonValue IteratorCall::serialize() const
+  {
+    QJsonObject obj;
+    obj.insert("$kind", "iterator_call");
+    obj.insert("name", _name.c_str());
+    obj.insert("exp", _exp.serialize());
+
+    QJsonArray iters;
+    for (auto &i: _iterators) {
+      iters.push_back(i.serialize());
+    }
+    obj.insert("iterators", std::move(iters));
+
+    return obj;
+  }
+
+  Binary::Binary(const QJsonObject &value)
+  {
+    _e1.deserialize(value["lhs"]);
+    _op.deserialize(value["op"]);
+    _e2.deserialize(value["rhs"]);
+  }
+
   Expression Binary::eval(const Expression::VariableEvaluator &var_eval) const
   {
-    switch (_op) {
-      case add:       return _e1.evaluate(var_eval) + _e2.evaluate(var_eval);
-      case sub:       return _e1.evaluate(var_eval) - _e2.evaluate(var_eval);
-      case mul:       return _e1.evaluate(var_eval) * _e2.evaluate(var_eval);
-      case div:       return _e1.evaluate(var_eval) / _e2.evaluate(var_eval);
-      case pow:       return _e1.evaluate(var_eval) ^ _e2.evaluate(var_eval);
-      case add_ew:    return Expression::addEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case sub_ew:    return Expression::subEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case mul_ew:    return Expression::mulEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case div_ew:    return Expression::divEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case pow_ew:    return Expression::powEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+    switch (_op.type()) {
+      case Operator::Add:       return _e1.evaluate(var_eval) + _e2.evaluate(var_eval);
+      case Operator::Sub:       return _e1.evaluate(var_eval) - _e2.evaluate(var_eval);
+      case Operator::Mul:       return _e1.evaluate(var_eval) * _e2.evaluate(var_eval);
+      case Operator::Div:       return _e1.evaluate(var_eval) / _e2.evaluate(var_eval);
+      case Operator::Pow:       return _e1.evaluate(var_eval) ^ _e2.evaluate(var_eval);
+      case Operator::AddEW:     return Expression::addEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+      case Operator::SubEW:     return Expression::subEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+      case Operator::MulEW:     return Expression::mulEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+      case Operator::DivEW:     return Expression::divEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+      case Operator::PowEW:     return Expression::powEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
       // Special handling of 'and' and 'or' to avoid evaluating both sides unless it's necessary.
-      case logic_and: return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
+      case Operator::And: return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
                                return e1.evaluate(var_eval) && e2.evaluate(var_eval);
                              }, "and");
-      case logic_or:  return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
+      case Operator::Or:  return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
                                return e1.evaluate(var_eval) || e2.evaluate(var_eval);
                              }, "or");
-      case equal:     return Expression(_e1.evaluate(var_eval) == _e2.evaluate(var_eval));
-      case nequal:    return Expression(_e1.evaluate(var_eval) != _e2.evaluate(var_eval));
-      case less:      return Expression(_e1.evaluate(var_eval) < _e2.evaluate(var_eval));
-      case lesseq:    return Expression(_e1.evaluate(var_eval) <= _e2.evaluate(var_eval));
-      case greater:   return Expression(_e1.evaluate(var_eval) > _e2.evaluate(var_eval));
-      case greatereq: return Expression(_e1.evaluate(var_eval) >= _e2.evaluate(var_eval));
+      case Operator::Equal:     return Expression(_e1.evaluate(var_eval) == _e2.evaluate(var_eval));
+      case Operator::NotEqual:  return Expression(_e1.evaluate(var_eval) != _e2.evaluate(var_eval));
+      case Operator::Less:      return Expression(_e1.evaluate(var_eval) < _e2.evaluate(var_eval));
+      case Operator::LessEq:    return Expression(_e1.evaluate(var_eval) <= _e2.evaluate(var_eval));
+      case Operator::Greater:   return Expression(_e1.evaluate(var_eval) > _e2.evaluate(var_eval));
+      case Operator::GreaterEq: return Expression(_e1.evaluate(var_eval) >= _e2.evaluate(var_eval));
+      default: break;
     }
 
     throw std::runtime_error("Binary::eval unknown operator");
@@ -1223,30 +1879,19 @@ namespace FlatModelica
   {
     os << "(";
     os << _e1;
-
-    switch (_op) {
-      case add: os << " + "; break;
-      case sub: os << " - "; break;
-      case mul: os << " * "; break;
-      case div: os << " / "; break;
-      case pow: os << " ^ "; break;
-      case add_ew: os << " .+ "; break;
-      case sub_ew: os << " .- "; break;
-      case mul_ew: os << " .* "; break;
-      case div_ew: os << " ./ "; break;
-      case pow_ew: os << " .^ "; break;
-      case logic_and: os << " and "; break;
-      case logic_or: os << " or "; break;
-      case equal: os << " == "; break;
-      case nequal: os << " <> "; break;
-      case less: os << " < "; break;
-      case lesseq: os << " <= "; break;
-      case greater: os << " > "; break;
-      case greatereq: os << " >= "; break;
-    }
-
+    os << " " << _op << " ";
     os << _e2;
     os << ")";
+  }
+
+  QJsonValue Binary::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "binary_op"},
+      {  "lhs", _e1.serialize()},
+      {   "op", _op.serialize()},
+      {  "rhs", _e2.serialize()}
+    };
   }
 
   Expression Binary::parse(Expression e1, Tokenizer &tokenizer)
@@ -1257,30 +1902,46 @@ namespace FlatModelica
     }
     tokenizer.popToken();
 
-    auto op = parseOp(tok.data);
+    auto op = Operator(tok.data);
     auto e2 = parseExp(tokenizer);
 
     return Expression(std::make_unique<Binary>(std::move(e1), op, std::move(e2)));
   }
 
+  Unary::Unary(const QJsonObject &value)
+  {
+    _e.deserialize(value["exp"]);
+    _op.deserialize(value["op"]);
+  }
+
   Expression Unary::eval(const Expression::VariableEvaluator &var_eval) const
   {
-    switch (_op) {
-      case minus: return -_e.evaluate(var_eval);
-      case logic_not: return !_e.evaluate(var_eval);
+    switch (_op.type()) {
+      case Operator::Sub: return -_e.evaluate(var_eval);
+      case Operator::Not: return !_e.evaluate(var_eval);
+      default: break;
     }
 
-    throw std::runtime_error("Binary::eval unknown operator");
+    throw std::runtime_error("Unary::eval unknown operator");
   }
 
   void Unary::print(std::ostream &os) const
   {
-    switch (_op) {
-      case minus: os << "-"; break;
-      case logic_not: os << "not "; break;
+    os << _op;
+    // add space for not operator
+    if (_op.type() == Operator::Not) {
+      os << " ";
     }
-
     os << _e;
+  }
+
+  QJsonValue Unary::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "unary_op"},
+      {   "op", _op.serialize()},
+      {  "exp", _e.serialize()}
+    };
   }
 
   Expression Unary::parse(Tokenizer &tokenizer)
@@ -1294,7 +1955,7 @@ namespace FlatModelica
       if (e.isNumber()) {
         return e.isInteger() ? Expression(-e.intValue()) : Expression(-e.realValue());
       } else {
-        return Expression(std::make_unique<Unary>(Unary::minus, std::move(e)));
+        return Expression(std::make_unique<Unary>(Operator::Sub, std::move(e)));
       }
     } else if (tok.type == Token::NOT) {
       tokenizer.popToken();
@@ -1303,11 +1964,18 @@ namespace FlatModelica
       if (e.isBoolean()) {
         return Expression(!e.boolValue());
       } else {
-        return Expression(std::make_unique<Unary>(Unary::logic_not, std::move(e)));
+        return Expression(std::make_unique<Unary>(Operator::Not, std::move(e)));
       }
     }
 
     throw std::runtime_error("Unary::parse got invalid operator " + tok.string());
+  }
+
+  IfExp::IfExp(const QJsonObject &value)
+  {
+    _condition.deserialize(value["condition"]);
+    _true_e.deserialize(value["true"]);
+    _false_e.deserialize(value["false"]);
   }
 
   Expression IfExp::eval(const Expression::VariableEvaluator &var_eval) const
@@ -1319,6 +1987,16 @@ namespace FlatModelica
   void IfExp::print(std::ostream &os) const
   {
     os << "if " << _condition << " then " << _true_e << " else " << _false_e;
+  }
+
+  QJsonValue IfExp::serialize() const
+  {
+    return QJsonObject{
+      {    "$kind", "if"},
+      {"condition", _condition.serialize()},
+      {     "true", _true_e.serialize()},
+      {    "false", _false_e.serialize()}
+    };
   }
 
   Expression IfExp::parse(Tokenizer &tokenizer)
@@ -1406,7 +2084,7 @@ namespace FlatModelica
    * \param value
    */
   Expression::Expression(const char *value)
-    : _value(std::make_unique<String>(value))
+    : Expression(std::string(value))
   {
   }
 
@@ -1416,7 +2094,7 @@ namespace FlatModelica
    * \param value
    */
   Expression::Expression(const QString &value)
-    : _value(std::make_unique<String>(value.toStdString()))
+    : Expression(value.toStdString())
   {
   }
 
@@ -1428,6 +2106,17 @@ namespace FlatModelica
   Expression::Expression(std::vector<Expression> elements)
     : _value(std::make_unique<Array>(std::move(elements)))
   {
+  }
+
+  /*!
+   * \brief Expression::Expression
+   * Constructs an Enum expression.
+   * \param elements
+   */
+  Expression::Expression(std::string value, int index)
+    : _value(std::make_unique<Enum>(std::move(value), index))
+  {
+
   }
 
   /*!
@@ -1470,6 +2159,21 @@ namespace FlatModelica
   Expression Expression::parse(const QString &str)
   {
     return parse(str.toStdString());
+  }
+
+  /*!
+   * \brief Expression::deserialize
+   * Deserializes the Expression from a Json value.
+   * \param value
+   */
+  void Expression::deserialize(const QJsonValue &value)
+  {
+    _value = ExpressionBase::deserialize(value);
+  }
+
+  QJsonValue Expression::serialize() const
+  {
+    return _value ? _value->serialize() : QJsonValue();
   }
 
   /*!
@@ -1553,7 +2257,7 @@ namespace FlatModelica
    */
   bool Expression::isInteger() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::integer;
+    return _value && _value->isInteger();
   }
 
   /*!
@@ -1563,7 +2267,7 @@ namespace FlatModelica
    */
   bool Expression::isReal() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::real;
+    return _value && _value->isReal();
   }
 
   /*!
@@ -1583,7 +2287,7 @@ namespace FlatModelica
    */
   bool Expression::isBoolean() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::boolean;
+    return _value && _value->isBoolean();
   }
 
   /*!
@@ -1594,17 +2298,7 @@ namespace FlatModelica
    */
   bool Expression::isBooleanish() const
   {
-    if (!_value) return false;
-
-    switch (_value->type()) {
-      case ExpressionBase::value_t::boolean:
-      case ExpressionBase::value_t::integer:
-      case ExpressionBase::value_t::real:
-        return true;
-
-      default:
-        return false;
-    }
+    return _value && _value->isBooleanish();
   }
 
   /*!
@@ -1614,7 +2308,7 @@ namespace FlatModelica
    */
   bool Expression::isString() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::string;
+    return _value && _value->isString();
   }
 
   /*!
@@ -1624,7 +2318,7 @@ namespace FlatModelica
    */
   bool Expression::isArray() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::array;
+    return _value && _value->isArray();
   }
 
   /*!
@@ -1634,7 +2328,7 @@ namespace FlatModelica
    */
   bool Expression::isCall() const
   {
-    return _value && _value->type() == ExpressionBase::value_t::call;
+    return _value && _value->isCall();
   }
 
   /*!
@@ -1644,9 +2338,7 @@ namespace FlatModelica
    */
   bool Expression::isCall(const std::string &name) const
   {
-    return _value &&
-           _value->type() == ExpressionBase::value_t::call &&
-           dynamic_cast<const Call&>(*_value).isNamed(name);
+    return isCall() && dynamic_cast<const Call&>(*_value).isNamed(name);
   }
 
   /*!
@@ -1736,13 +2428,12 @@ namespace FlatModelica
    */
   bool Expression::boolValue() const
   {
-    switch (_value->type()) {
-      case ExpressionBase::value_t::integer:
-        return dynamic_cast<const Integer&>(*_value).value();
-      case ExpressionBase::value_t::real:
-        return dynamic_cast<const Real&>(*_value).value() != 0.0;
-      default:
-        return dynamic_cast<const Boolean&>(*_value).value();
+    if (isInteger()) {
+      return dynamic_cast<const Integer&>(*_value).value();
+    } else if (isReal()) {
+      return dynamic_cast<const Real&>(*_value).value() != 0.0;
+    } else {
+      return dynamic_cast<const Boolean&>(*_value).value();
     }
   }
 
@@ -1755,6 +2446,17 @@ namespace FlatModelica
   std::string Expression::stringValue() const
   {
     return dynamic_cast<const String&>(*_value).value();
+  }
+
+  /*!
+   * \brief Expression::enumValue
+   * Returns the index value of the Expression if it's an Enum, or throws an
+   * error if the Expression is not an Enum.
+   * \return
+   */
+  std::string Expression::enumValue() const
+  {
+    return dynamic_cast<const Enum&>(*_value).value();
   }
 
   /*!
@@ -1776,7 +2478,7 @@ namespace FlatModelica
    */
   QString Expression::functionName() const
   {
-    if (_value && _value->type() == ExpressionBase::value_t::call) {
+    if (isCall()) {
       return QString::fromStdString(dynamic_cast<const Call&>(*_value).name());
     }
     return QString("");

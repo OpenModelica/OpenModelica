@@ -43,6 +43,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import FunctionTree = NFFlatten.FunctionTree;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -173,15 +174,62 @@ public
     function getVarScalIndices
       input Integer arr_idx;
       input Mapping mapping;
+      input list<Subscript> subs;
+      input list<Dimension> dims;
       input Boolean reverse = false;
       output list<Integer> scal_indices;
     protected
       Integer start, length;
+      function subscriptedIndices
+        input Integer start;
+        input Integer length;
+        input list<Integer> slice;
+        output list<Integer> scal_indices;
+      algorithm
+        scal_indices := List.intRange2(start, start + length - 1);
+        if not listEmpty(slice) then
+          scal_indices := List.keepPositions(scal_indices, slice);
+        end if;
+      end subscriptedIndices;
     algorithm
       (start, length) := mapping.var_AtS[arr_idx];
-      scal_indices := if reverse then
-        List.intRange2(start + length - 1, start) else
-        List.intRange2(start, start + length - 1);
+
+      scal_indices := match subs
+        local
+          Subscript sub;
+          list<list<Subscript>> subs_lst;
+          list<Integer> slice = {}, dim_sizes, values;
+          list<tuple<Integer, Integer>> ranges;
+
+        // no subscripts -> create full index list
+        case {} then subscriptedIndices(start, length, {});
+
+        // all subscripts are whole -> create full index list
+        case _ guard(List.all(subs, Subscript.isWhole)) then subscriptedIndices(start, length, {});
+
+        // only one subscript -> apply simple rule
+        case {sub} algorithm
+          slice := Subscript.toIndexList(sub, length);
+        then subscriptedIndices(start, length, slice);
+
+        // multiple subscripts -> apply location to index mapping rules
+        case _ algorithm
+          subs_lst  := Subscript.scalarizeList(subs, dims);
+          subs_lst  := List.combination(subs_lst);
+          dim_sizes := list(Dimension.size(dim) for dim in dims);
+          for sub_lst in listReverse(subs_lst) loop
+            values  := list(Subscript.toInteger(s) for s in sub_lst);
+            ranges  := List.zip(dim_sizes, values);
+            slice   := Slice.locationToIndex(ranges, start) :: slice;
+          end for;
+        then slice;
+
+        else fail();
+      end match;
+
+      if reverse then
+        scal_indices := listReverse(scal_indices);
+      end if;
     end getVarScalIndices;
 
   protected
@@ -521,7 +569,7 @@ public
       // copy the index for all new variables into the sub map
       for var_ptr in new_vars loop
         var := Pointer.access(var_ptr);
-        UnorderedMap.add(var.name, UnorderedMap.getSafe(var.name, vars.map), sub_map);
+        UnorderedMap.add(var.name, UnorderedMap.getSafe(var.name, vars.map, sourceInfo()), sub_map);
       end for;
 
       // update the equation rows using only the sub_map
@@ -615,6 +663,41 @@ public
       end match;
     end nonZeroCount;
 
+    function expandMatrix
+      input output array<list<Integer>> m;
+      input Integer shift;
+    algorithm
+      m := Array.expandToSize(arrayLength(m) + shift, m, {});
+    end expandMatrix;
+
+    function transposeScalar
+      input array<list<Integer>> m      "original matrix";
+      input Integer size                "size of the transposed matrix (does not have to be square!)";
+      output array<list<Integer>> mT    "transposed matrix";
+    algorithm
+      mT := arrayCreate(size, {});
+      // loop over all elements and store them in reverse
+      for row in 1:arrayLength(m) loop
+        for idx in m[row] loop
+          try
+            if idx > 0 then
+              mT[idx] := row :: mT[idx];
+            else
+              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
+            end if;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
+              The variables have to be dense (without empty spaces) for this to work!"});
+          end try;
+        end for;
+      end for;
+      // sort the transposed matrix
+      // bigger to lower such that negative entries are at the and
+      for row in 1:arrayLength(mT) loop
+        mT[row] := List.sort(mT[row], intLt);
+      end for;
+    end transposeScalar;
+
   protected
     function toStringSingle
       input array<list<Integer>> m;
@@ -671,7 +754,12 @@ public
 
         eqn_idx_arr := 1;
         for eqn_ptr in EquationPointers.toList(eqns) loop
-          updateRow(eqn_ptr, diffArgs_ptr, st, vars.map, m, mapping_opt, modes, eqn_idx_arr, true, funcTree);
+          try
+            updateRow(eqn_ptr, diffArgs_ptr, st, vars.map, m, mapping_opt, modes, eqn_idx_arr, true, funcTree);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Equation.pointerToString(eqn_ptr)});
+            fail();
+          end try;
           eqn_idx_arr := eqn_idx_arr + 1;
         end for;
 
@@ -753,6 +841,7 @@ public
       eqn := Pointer.access(eqn_ptr);
       // possibly adapt for algorithms
       dependencies := BEquation.Equation.collectCrefs(eqn, function Slice.getDependentCref(map = map, pseudo = pseudo));
+      dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
 
       if (st < MatrixStrictness.FULL) then
         // SOLVABLE & LINEAR
@@ -895,13 +984,6 @@ public
       end match;
     end fillMatrix;
 
-    function expandMatrix
-      input output array<list<Integer>> m;
-      input Integer shift;
-    algorithm
-      m := Array.expandToSize(arrayLength(m) + shift, m, {});
-    end expandMatrix;
-
     function cleanMatrix
       input array<list<Integer>> m;
       input Option<Mapping> mapping_opt;
@@ -928,34 +1010,6 @@ public
         then ();
       end match;
     end cleanMatrix;
-
-    function transposeScalar
-      input array<list<Integer>> m      "original matrix";
-      input Integer size                "size of the transposed matrix (does not have to be square!)";
-      output array<list<Integer>> mT    "transposed matrix";
-    algorithm
-      mT := arrayCreate(size, {});
-      // loop over all elements and store them in reverse
-      for row in 1:arrayLength(m) loop
-        for idx in m[row] loop
-          try
-            if idx > 0 then
-              mT[idx] := row :: mT[idx];
-            else
-              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
-            end if;
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
-              The variables have to be dense (without empty spaces) for this to work!"});
-          end try;
-        end for;
-      end for;
-      // sort the transposed matrix
-      // bigger to lower such that negative entries are at the and
-      for row in 1:arrayLength(mT) loop
-        mT[row] := List.sort(mT[row], intLt);
-      end for;
-    end transposeScalar;
 
     function createArray
       input VariablePointers vars;
@@ -1026,7 +1080,6 @@ public
         arrayUpdate(m, eqn_scal_idx+(i-1), listAppend(m_part[i], m[eqn_scal_idx+(i-1)]));
       end for;
     end expandRows;
-
   end Matrix;
 
   annotation(__OpenModelica_Interface="backend");

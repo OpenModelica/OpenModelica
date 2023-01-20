@@ -57,7 +57,13 @@ val(der(y[8]), stopTime);
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'impeuler', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'impeuler' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'impl_euler' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=impl_euler -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=impl_euler -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

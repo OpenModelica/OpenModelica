@@ -69,19 +69,19 @@ template generateEquationsCode (SimCode simCode, String FileNamePrefix)
 
     /* generate file for algebraic systems in simulation problem */
 
-   
-    let modelNamePrefix =   modelNameOMSIC
-    
 
-   
+    let modelNamePrefix =   modelNameOMSIC
+
+
+
     let content = generateOmsiFunctionCode(simulation, modelNamePrefix,"","sim_eqns")
     let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_sim_eqns.c")
-    
+
 
 
     let content = generateOmsiFunctionCode(initialization, modelNamePrefix,"", "init_eqns")
     let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_init_eqns.c")
-    
+
 
   <<>>
 end generateEquationsCode;
@@ -103,14 +103,14 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 
   // generate header file
   let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* simulation, omsi_values* model_vars_and_params, void* data);<%\n%>'
-   
+
 
   let headerFileName =     '<%fileNamePrefix%>_<%omsiName%>'
-    
-  
+
+
   let headerFileContent = generateCodeHeader(FileNamePrefix, &includes, headerFileName, &functionPrototypes)
   let () = textFile(headerFileContent, fullPathPrefix+"/"+headerFileName+".h")
-     
+
 
 
   match omsiFunction
@@ -132,7 +132,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 
     /* Equations evaluation */
     omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){
-    
+
 
       /* Variables */
       omsi_status status, new_status;
@@ -581,27 +581,24 @@ template generateOmsiIndexTypeInitialization (list<SimVar> variables, String Str
         "OMSI_TYPE_UNKNOWN"
     )
 
-    let &stringName = buffer""
+    let &stringName = buffer ""
     let &stringIndex = buffer ""
-    let &stringVarKind = buffer ""
     let _ = (match variable
       case var as SIMVAR(varKind=JAC_VAR(__))
       case var as SIMVAR(varKind=JAC_DIFF_VAR(__))
       case var as SIMVAR(varKind=SEED_VAR(__)) then
-      let &stringName += '<%CodegenUtil.escapeCComments(CodegenUtil.crefStrNoUnderscore(var.name))%>'
+      let &stringName += '<%CodegenUtil.crefCCommentWithVariability(var)%>'
       let &stringIndex += var.index
-      let &stringVarKind += CodegenUtil.variabilityString(var.varKind)
       <<>>
       case var as SIMVAR(__) then
-      let &stringName += '<%CodegenUtil.escapeCComments(CodegenUtil.crefStrNoUnderscore(var.name))%>'
+      let &stringName += '<%CodegenUtil.crefCCommentWithVariability(var)%>'
       let &stringIndex += getValueReference(var, getSimCode(), false)
-      let &stringVarKind += CodegenUtil.variabilityString(var.varKind)
       <<>>
     )
 
     <<
     <%omsiFuncName%>[<%i0%>].type  = <%stringType%>;
-    <%omsiFuncName%>[<%i0%>].index = <%stringIndex%>;    /* <%stringName%> <%stringVarKind%> */
+    <%omsiFuncName%>[<%i0%>].index = <%stringIndex%>;   <%stringName%>
     >>
   ;separator="\n")
 
@@ -637,10 +634,10 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
 
     <<
 
-   
+
     omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (omsi_function_t* omsi_function) {
-    
-   
+
+
 
       filtered_base_logger(global_logCategories, log_all, omsi_ok,
           "fmi2Instantiate: Instantiate omsi_function <%functionName%>.");

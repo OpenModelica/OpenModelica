@@ -29,11 +29,10 @@
  #/
 
 include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
 TARGET = Expression
 
-SOURCES += ../Common/Util.cpp \
-  ExpressionTest.cpp
+SOURCES += ExpressionTest.cpp
 
-HEADERS += ../Common/Util.h \
-  ExpressionTest.h
+HEADERS += ExpressionTest.h

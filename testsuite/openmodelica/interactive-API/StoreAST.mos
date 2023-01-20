@@ -1,0 +1,70 @@
+// name: StoreAST
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the storeAST/restoreAST API.
+//
+
+loadString("
+  model A
+  end A;
+");
+
+list();
+id1 := storeAST();
+
+loadString("
+  model B
+  end B;
+");
+
+list();
+id2 := storeAST();
+
+loadString("
+  model C
+  end C;
+");
+
+list();
+restoreAST(id2);
+list();
+restoreAST(id1);
+list();
+restoreAST(99);
+restoreAST(-17);
+
+// Result:
+// true
+// "model A
+// end A;"
+// 1
+// true
+// "model B
+// end B;
+//
+// model A
+// end A;"
+// 2
+// true
+// "model C
+// end C;
+//
+// model B
+// end B;
+//
+// model A
+// end A;"
+// true
+// "model B
+// end B;
+//
+// model A
+// end A;"
+// true
+// "model A
+// end A;"
+// false
+// false
+// endResult

@@ -525,6 +525,7 @@ algorithm
     case "given" then DAE.Uncertainty.GIVEN();
     case "sought" then DAE.Uncertainty.SOUGHT();
     case "refine" then DAE.Uncertainty.REFINE();
+    case "propagate" then DAE.Uncertainty.PROPAGATE();
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
@@ -837,6 +838,13 @@ algorithm
     case Statement.TERMINATE()
       then DAE.Statement.STMT_TERMINATE(Expression.toDAE(stmt.message), stmt.source);
 
+    case Statement.REINIT()
+      algorithm
+        e1 := Expression.toDAE(stmt.cref);
+        e2 := Expression.toDAE(stmt.reinitExp);
+      then
+        DAE.Statement.STMT_REINIT(e1, e2, stmt.source);
+
     case Statement.NORETCALL()
       then DAE.Statement.STMT_NORETCALL(Expression.toDAE(stmt.exp), stmt.source);
 
@@ -929,7 +937,7 @@ protected
 algorithm
   Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
-  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
+  ty := InstNode.getType(iterator);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()
@@ -1281,7 +1289,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
-  binding := Flatten.flattenBinding(binding, ComponentRef.EMPTY());
+  binding := Flatten.flattenBinding(binding, NFFlatten.EMPTY_PREFIX);
   bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);

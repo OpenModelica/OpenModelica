@@ -71,8 +71,8 @@ getErrorString();
 //   Real 'x_x[1]' = x[1];
 //   Real 'x_x[2]' = x[2];
 // equation
-//   der(x) = A * x + B * u;
-//   y = C * x + D * u;
+//   der(x) = A*x + B*u;
+//   y = C*x + D*u;
 // end linearized_model;"
 // ""
 // endResult

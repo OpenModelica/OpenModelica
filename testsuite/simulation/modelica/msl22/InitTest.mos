@@ -19,9 +19,9 @@ val(slidingMass1.s,3.9540);
 // record SimulationResult
 //     resultFile = "Inittest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Inittest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | springDamper1.s_rel >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= springDamper1.s_rel, has value: -0.005
+//     messages = "assert            | warning | [Modelica 2.2.2+maint.om/Mechanics/Translational.mo:1364:7-1364:72:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((springDamper1.s_rel >= 0.0)) --> \"Variable violating min constraint: 0.0 <= springDamper1.s_rel, has value: -0.005\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

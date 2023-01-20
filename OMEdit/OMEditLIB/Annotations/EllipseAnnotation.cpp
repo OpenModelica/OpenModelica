@@ -110,7 +110,7 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item is the extent points
-  mExtents.parse(list.at(8));
+  mExtent.parse(list.at(8));
   // 10th item of the list contains the start angle.
   mStartAngle.parse(list.at(9));
   // 11th item of the list contains the end angle.
@@ -124,16 +124,14 @@ void EllipseAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpEllipse);
   FilledShape::parseShapeAnnotation(mpEllipse);
 
-  QList<QPointF> extents;
-  ModelInstance::Extent extent = mpEllipse->getExtent();
-  ModelInstance::Point extent1 = extent.getExtent1();
-  ModelInstance::Point extent2 = extent.getExtent2();
-  extents.append(QPointF(extent1.x(), extent1.y()));
-  extents.append(QPointF(extent2.x(), extent2.y()));
-  mExtents = extents;
+  mExtent = mpEllipse->getExtent();
+  mExtent.evaluate(mpEllipse->getParentModel());
   mStartAngle = mpEllipse->getStartAngle();
+  mStartAngle.evaluate(mpEllipse->getParentModel());
   mEndAngle = mpEllipse->getEndAngle();
-  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
+  mEndAngle.evaluate(mpEllipse->getParentModel());
+  mClosure = mpEllipse->getClosure();
+  mClosure.evaluate(mpEllipse->getParentModel());
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -192,13 +190,13 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the extents
-  annotationString.append(mExtents.toQString());
+  annotationString.append(mExtent.toQString());
   // get the start angle
   annotationString.append(mStartAngle.toQString());
   // get the end angle
   annotationString.append(mEndAngle.toQString());
   // get the closure
-  annotationString.append(StringHandler::getClosureString(mClosure));
+  annotationString.append(mClosure.toQString());
   return annotationString.join(",");
 }
 
@@ -223,21 +221,21 @@ QString EllipseAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
-    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
+  if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the start angle
-  if (mStartAngle.isDynamicSelectExpression() || mStartAngle != 0) {
+  if (mStartAngle.isDynamicSelectExpression() || mStartAngle.toQString().compare(QStringLiteral("0")) != 0) {
     annotationString.append(QString("startAngle=%1").arg(mStartAngle.toQString()));
   }
   // get the end angle
-  if (mEndAngle.isDynamicSelectExpression() || mEndAngle != 360) {
+  if (mEndAngle.isDynamicSelectExpression() || mEndAngle.toQString().compare(QStringLiteral("360")) != 0) {
     annotationString.append(QString("endAngle=%1").arg(mEndAngle.toQString()));
   }
   // get the closure
-  if (!((mStartAngle == 0 && mEndAngle == 360 && mClosure == StringHandler::ClosureChord)
-        || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure == StringHandler::ClosureRadial))) {
-    annotationString.append(QString("closure=").append(StringHandler::getClosureString(mClosure)));
+  if (mClosure.isDynamicSelectExpression() || !((mStartAngle == 0 && mEndAngle == 360 && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Chord")) == 0)
+                                                || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Radial")) == 0))) {
+    annotationString.append(QString("closure=%1").append(mClosure.toQString()));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
@@ -248,6 +246,14 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   GraphicItem::setDefaults(pShapeAnnotation);
   FilledShape::setDefaults(pShapeAnnotation);
   ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+ModelInstance::Model *EllipseAnnotation::getParentModel() const
+{
+  if (mpEllipse) {
+    return mpEllipse->getParentModel();
+  }
+  return 0;
 }
 
 /*!

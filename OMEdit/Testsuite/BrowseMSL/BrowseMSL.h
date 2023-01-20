@@ -46,6 +46,7 @@ class BrowseMSL: public QObject
   Q_OBJECT
 
 private slots:
+  void initTestCase();
   /*!
    * \brief electricalAnalogBasic
    * Browses the Modelica.Electrical.Analog.Basic

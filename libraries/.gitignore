@@ -1,0 +1,14 @@
+build
+debian-build
+Makefile.numjobs
+config.done
+nightly-library-files
+nightly-library-sources
+.remote
+svn
+git
+/macports
+macports-build
+get-version.*.mos
+get-name*.mos
+get-name*.name

@@ -1696,7 +1696,7 @@ algorithm
   BackendDAE.ZERO_CROSSING(relation_=e2, occurEquLst=eq2) := inZeroCrossing2;
   res := getMinZeroCrossings(e1, e2);
   eq := List.union(eq1, eq2);
-  outZeroCrossing := BackendDAE.ZERO_CROSSING(res, eq);
+  outZeroCrossing := BackendDAE.ZERO_CROSSING(0, res, eq, NONE());
 end mergeZeroCrossing;
 
 protected function getMinZeroCrossings "
@@ -1931,9 +1931,9 @@ protected function createZeroCrossing
 algorithm
   outZeroCrossing := match(inOccurEquLst)
     case ({-1})
-    then BackendDAE.ZERO_CROSSING(inRelation, {});
+    then BackendDAE.ZERO_CROSSING(0, inRelation, {}, NONE());
 
-    else BackendDAE.ZERO_CROSSING(inRelation, inOccurEquLst);
+    else BackendDAE.ZERO_CROSSING(0, inRelation, inOccurEquLst, NONE());
   end match;
 end createZeroCrossing;
 

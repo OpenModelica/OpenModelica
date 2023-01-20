@@ -1,0 +1,56 @@
+// name: GetModelInstanceInnerOuter2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    model M
+      outer Real x;
+    end M;
+
+    type RealInput = input Real;
+  end P;
+");
+
+getModelInstance(P.M, prettyPrint=true);
+getModelInstance(P.RealInput, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P.M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 3,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 10
+//   }
+// }"
+// "{
+//   \"name\": \"P.RealInput\",
+//   \"restriction\": \"type\",
+//   \"prefixes\": {
+//     \"direction\": \"input\"
+//   },
+//   \"extends\": [
+//     {
+//       \"baseClass\": \"Real\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 32
+//   }
+// }"
+// endResult

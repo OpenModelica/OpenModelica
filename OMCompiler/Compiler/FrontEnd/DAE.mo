@@ -565,6 +565,7 @@ public uniontype Uncertainty
   record GIVEN end GIVEN;
   record SOUGHT end SOUGHT;
   record REFINE end REFINE;
+  record PROPAGATE end PROPAGATE;
 end Uncertainty;
 
 public uniontype Distribution
@@ -894,8 +895,8 @@ constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE());
 constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN();
 constant Type T_NORETCALL_DEFAULT   = T_NORETCALL();
 constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT);
-constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()) "default complex with unknown CiState";
-constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE()) "default complex with record CiState";
+constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false) "default complex with unknown CiState";
+constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), false) "default complex with record CiState";
 
 constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), Absyn.IDENT("SourceInfo"), {}, 1, {
     TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), false, NONE()),
@@ -964,6 +965,7 @@ public uniontype Type "models the different front-end and back-end types"
     ClassInf.State complexClassType "The type of a class";
     list<Var> varLst "The variables of a complex type";
     EqualityConstraint equalityConstraint;
+    Boolean usedExternally "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
   end T_COMPLEX;
 
   record T_SUBTYPE_BASIC

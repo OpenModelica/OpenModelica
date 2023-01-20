@@ -1,0 +1,15 @@
+// status: correct
+
+loadString("model M
+  import A=B \"C\";
+end M;
+");getErrorString();
+list();
+
+// Result:
+// true
+// ""
+// "model M
+//   import A = B \"C\";
+// end M;"
+// endResult

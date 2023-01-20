@@ -57,11 +57,20 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Annotations/BitmapAnnotation.cpp
                       Annotations/DynamicAnnotation.cpp
                       Annotations/BooleanAnnotation.cpp
-                      Annotations/ColorAnnotation.cpp
-                      Annotations/ExtentAnnotation.cpp
                       Annotations/PointAnnotation.cpp
                       Annotations/RealAnnotation.cpp
+                      Annotations/ColorAnnotation.cpp
+                      Annotations/LinePatternAnnotation.cpp
+                      Annotations/FillPatternAnnotation.cpp
+                      Annotations/PointArrayAnnotation.cpp
+                      Annotations/ArrowAnnotation.cpp
+                      Annotations/SmoothAnnotation.cpp
+                      Annotations/ExtentAnnotation.cpp
+                      Annotations/BorderPatternAnnotation.cpp
+                      Annotations/EllipseClosureAnnotation.cpp
                       Annotations/StringAnnotation.cpp
+                      Annotations/TextAlignmentAnnotation.cpp
+                      Annotations/TextStyleAnnotation.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
@@ -153,6 +162,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Modeling/FunctionArgumentDialog.h
                       Modeling/InstallLibraryDialog.h
                       Search/SearchWidget.h
+                      Options/OptionsDefaults.h
                       Options/OptionsDialog.h
                       Editors/BaseEditor.h
                       Editors/ModelicaEditor.h
@@ -175,11 +185,20 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Annotations/BitmapAnnotation.h
                       Annotations/DynamicAnnotation.h
                       Annotations/BooleanAnnotation.h
-                      Annotations/ColorAnnotation.h
-                      Annotations/ExtentAnnotation.h
                       Annotations/PointAnnotation.h
                       Annotations/RealAnnotation.h
+                      Annotations/ColorAnnotation.h
+                      Annotations/LinePatternAnnotation.h
+                      Annotations/FillPatternAnnotation.h
+                      Annotations/PointArrayAnnotation.h
+                      Annotations/ArrowAnnotation.h
+                      Annotations/SmoothAnnotation.h
+                      Annotations/ExtentAnnotation.h
+                      Annotations/BorderPatternAnnotation.h
+                      Annotations/EllipseClosureAnnotation.h
                       Annotations/StringAnnotation.h
+                      Annotations/TextAlignmentAnnotation.h
+                      Annotations/TextStyleAnnotation.h
                       Element/ElementProperties.h
                       Element/Transformation.h
                       Modeling/DocumentationWidget.h
@@ -276,7 +295,7 @@ target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
 if(WIN32)
-  target_compile_definitions(OMEditLib PRIVATE -DUNICODE)
+  target_compile_definitions(OMEditLib PRIVATE UNICODE)
 endif()
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
@@ -295,11 +314,16 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
+
+# Silence OpenGL deprecation warnings on macOS
+if(APPLE)
+  target_compile_definitions(OMEditLib PRIVATE GL_SILENCE_DEPRECATION)
+endif()
 
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
   target_link_libraries(OMEditLib PUBLIC zlib)
 endif()
 
-target_include_directories(OMEditLib PRIVATE
-  ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)

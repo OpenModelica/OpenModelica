@@ -8,12 +8,12 @@ s2 := readFile("SimilarNamesAnnotationFixedOrder.mo");
 
 answer := "package MM
   model A
-    extends B;
+  extends B;
     annotation();
   end A;
 
   model C
-    extends D;
+  extends D;
     annotation();
   end C;
 end MM;

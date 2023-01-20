@@ -57,18 +57,18 @@ getModelInstance(M, prettyPrint = true);
 //               \"inner\": true
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 17,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 17,
+//           \"columnEnd\": 14
+//         }
 //       }
 //     }
 //   ],
 //   \"components\": [
-//     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"outer\": true
-//       }
-//     },
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
@@ -107,10 +107,7 @@ getModelInstance(M, prettyPrint = true);
 //         \"components\": [
 //           {
 //             \"name\": \"e\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           },
 //           {
 //             \"name\": \"f\",
@@ -126,7 +123,14 @@ getModelInstance(M, prettyPrint = true);
 //               \"connector\": \"stream\"
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 8
+//         }
 //       },
 //       \"prefixes\": {
 //         \"public\": false,
@@ -139,6 +143,13 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"w\",
 //       \"type\": \"Real\"
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 13,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 21,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

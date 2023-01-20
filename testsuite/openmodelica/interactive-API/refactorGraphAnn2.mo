@@ -26,6 +26,3 @@ equation
       rgbcolor={0,0,255},
       thickness=4));
 end connecttest;
-
-// class complextest
-// end complextest;

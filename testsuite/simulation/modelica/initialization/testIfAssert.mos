@@ -35,9 +35,10 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: A
-// assert            | warning | The following assertion has been violated during initialization at time 0.000000
-// |                 | |       | if x < lb then $DER.x < 49.0 else true
-// assert            | error   | Call lb assert
+// assert            | error   | [<interactive>:11:5-11:42:writable]
+// |                 | |       | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | ((if x < lb then $DER.x < 49.0 else true)) --> \"Call lb assert
+// |                 | |       | \"
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;

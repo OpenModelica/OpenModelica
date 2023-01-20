@@ -10,6 +10,7 @@ model FuncBuiltinDelay
   Real x = time;
   Real y = delay(x, 1.0);
   Real z = delay(x, 2.0, 3.0);
+  Real w = delay(x, 0.0);
 end FuncBuiltinDelay;
 
 // Result:
@@ -17,5 +18,6 @@ end FuncBuiltinDelay;
 //   Real x = time;
 //   Real y = delay(x, 1.0, 1.0);
 //   Real z = delay(x, 2.0, 3.0);
+//   Real w = x;
 // end FuncBuiltinDelay;
 // endResult

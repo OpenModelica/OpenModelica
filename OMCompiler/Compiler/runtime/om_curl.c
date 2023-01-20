@@ -12,7 +12,9 @@
 
 typedef struct {
   const char *url;
-  const char *filename;
+  void *filename;
+  void *tmpFilename;
+  void *nextTry;
   FILE *fout;
 } pair;
 
@@ -21,7 +23,7 @@ static size_t writeDataCallback(char *data, size_t n, size_t l, void *fout)
   return fwrite(data, n, l, (FILE*) fout);
 }
 
-static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
+static void* addTransfer(CURLM *cm, void *urlPathList, int *result, int n)
 {
   if (listEmpty(urlPathList)) {
     return urlPathList;
@@ -29,8 +31,9 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
   CURL *eh = curl_easy_init();
   void *first = MMC_CAR(urlPathList);
   void *rest = MMC_CDR(urlPathList);
-  const char *url = MMC_STRINGDATA(MMC_CAR(first));
-  const char *file = MMC_STRINGDATA(MMC_CDR(first));
+  const char *url = MMC_STRINGDATA(MMC_CAR(MMC_CAR(first)));
+  void *tmpFilename = stringAppend(MMC_CDR(first), stringAppend(mmc_mk_scon(".tmp"), intString(n)));
+  const char *file = MMC_STRINGDATA(tmpFilename);
   FILE *fout = omc_fopen(file, "wb");
 
   if (fout == NULL) {
@@ -41,9 +44,10 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
 
   pair *p = (pair*) malloc(sizeof(pair));
   p->url = url;
+  p->nextTry = MMC_CDR(MMC_CAR(first));
   p->fout = fout;
-  p->filename = file;
-
+  p->filename = MMC_CDR(first);
+  p->tmpFilename = tmpFilename;
 #if defined(__MINGW32__)
   {
     /* mingw/windows horror, let's find the curl CA bundle! */
@@ -92,13 +96,14 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
   int msgs_left = -1;
   int still_alive = 1;
   int result = 1;
+  int transferNumber = 1;
   curl_global_init(CURL_GLOBAL_ALL);
   cm = curl_multi_init();
 
   curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, maxParallel);
 
   for (transfers = 0; transfers < maxParallel; transfers++) {
-    urlPathList = addTransfer(cm, urlPathList, &result);
+    urlPathList = addTransfer(cm, urlPathList, &result, transferNumber++);
   }
 
   do {
@@ -112,13 +117,26 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
       const char *url = p->url;
 
       if (msg->msg == CURLMSG_DONE) {
-        fclose(fout);
-        urlPathList = addTransfer(cm, urlPathList, &result);
         if (msg->data.result != CURLE_OK) {
+          fclose(fout);
           const char *msgs[2] = {curl_easy_strerror(msg->data.result), url};
-          c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Curl error for URL %s: %s", msgs, 2);
-          omc_unlink(p->filename);
-          result = 0;
+          omc_unlink(MMC_STRINGDATA(p->tmpFilename));
+          if (listEmpty(p->nextTry)) {
+            c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Curl error for URL %s: %s", msgs, 2);
+            result = 0;
+            urlPathList = addTransfer(cm, urlPathList, &result, transferNumber++);
+          } else {
+            c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Will try another mirror due to curl error for URL %s: %s", msgs, 2);
+            urlPathList = addTransfer(cm, mmc_mk_cons(mmc_mk_cons(p->nextTry, p->filename), urlPathList), &result, transferNumber++);
+            still_alive = 1;
+          }
+        } else {
+          fclose(fout);
+          if (omc_rename(MMC_STRINGDATA(p->tmpFilename), MMC_STRINGDATA(p->filename))) {
+            const char *msgs[3] = {strerror(errno), MMC_STRINGDATA(p->filename), MMC_STRINGDATA(p->tmpFilename)};
+            c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Failed to rename file after downloading with curl %s %s: %s", msgs, 3);
+          }
+          urlPathList = addTransfer(cm, urlPathList, &result, transferNumber++);
         }
         curl_multi_remove_handle(cm, e);
         curl_easy_cleanup(e);

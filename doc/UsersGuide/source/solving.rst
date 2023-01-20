@@ -102,6 +102,70 @@ CVODE has the following solver specific flags:
 :ref:`cvodeNonlinearSolverIteration <simflag-cvodeNonlinearSolverIteration>`,
 :ref:`cvodeLinearMultistepMethod <simflag-cvodeLinearMultistepMethod>`.
 
+GBODE
+~~~~~
+
+GBODE stands for Generic Bi-rate ordinary differential equation (ODE) solver
+and is a generic implementation for any Runge-Kutta (RK) scheme
+:cite:`Hairer2000`. In GBODE there are already many different implicit and
+explicit RK methods (e.g. SDIRK, ESDIRK, Gauss, Radau, Lobatto, Fehlberg,
+DOPRI45, Merson) with different approximation order configurable and ready to
+use. New RK schemes can easily be added, if the corresponding Butcher tableau
+is available. By default the solver runs in single-rate mode using the
+embedded RK scheme ESDIRK4 :cite:`KENNEDY2019221` with variable-step-size
+control and efficient event handling.
+
+The bi-rate mode can be utilized using the simulation flag
+:ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
+states with respect to all states. These states will then be automatically
+detected during integration based on the estimated approximation error and
+afterwards refined using an appropriate inner step-size control and
+interpolated values of the slow states.
+
+The solver utilizes by default the sparsity pattern of the ODE Jacobian and
+solves the corresponding non-linear system in case of an implicit chosen RK
+scheme using KINSOL.
+
+GBODE is highly configurable and the following simulation flags can be used to
+adjust the behavior of the solver for specific simulation problems:
+:ref:`gbratio <simflag-gbratio>`,
+:ref:`gbm <simflag-gbm>`,
+:ref:`gbctrl <simflag-gbctrl>`,
+:ref:`gbnls <simflag-gbnls>`,
+:ref:`gbint <simflag-gbint>`,
+:ref:`gberr <simflag-gberr>`,
+:ref:`gbfm <simflag-gbm>`,
+:ref:`gbfctrl <simflag-gbctrl>`,
+:ref:`gbfnls <simflag-gbnls>`,
+:ref:`gbfint <simflag-gbint>`,
+:ref:`gbferr <simflag-gberr>`.
+
+This solver will replace obsolete and no longer maintained solvers providing a
+lot more using the following simulation flags:
+
+.. code-block::
+
+  old: -s=euler
+  new: -s=gbode -gbm=expl_euler -gbctrl=const
+
+  old: -s=heun
+  new: -s=gbode -gbm=heun -gbctrl=const
+
+  old: -s=impeuler
+  new: -s=gbode -gbm=impl_euler -gbctrl=const
+
+  old: -s=trapezoid
+  new: -s=gbode -gbm=trapezoid -gbctrl=const
+
+  old: -s=imprungekutta
+  new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
+
+  old: -s=irksco
+  new: -s=gbode -gbm=trapezoid
+
+  old: -s=rungekuttaSsc
+  new: -s=gbode -gbm=rungekuttaSsc
+
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -262,6 +326,110 @@ system.
   :caption: Vertical movement of mass body2.
 
   body2.frame_a.r_0[1]
+
+Importing initial values from previous simulations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In many use cases it is useful to import initial values from previous simulations, possibly obtained with
+another Modelica tool, which are saved in a .mat file. There are two different options to do that.
+
+The first option is to solve the initial equations specified by the Modelica model, using the previous simulation results to
+obtain good initial guesses for the iterative solvers. This can be very helpful in case the initialization problem involves the
+solution of large nonlinear systems of equations by means of iterative algorithms, whose convergence is sensitive to the selected
+initial guess. Importing a previously found solution allows the OpenModelica solver to pick very good initial guesses for the
+unknowns of the iterative solvers, thus achieving convergence with a few iterations at most. Since the initial equations
+are solved anyway, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
+are re-computed and fully consistent with the selected initial conditions, even in case the previously saved simulation results
+refer to a slightly different model configuration. Note that parameters with `fixed = true` will also get their values from the
+imported .mat file, so if you want to change them you need to edit the .mat file accordingly.
+
+This option is activated by selecting the simulation result file name in the OMEdit
+*Simulation Setup | Simulation Flag | Equation System Initialization File* input field, or by setting the additional simulation flag
+:ref:`-iif=resultfile.mat <simflag-iif>`. By activating the checkbox *Save simulation flags inside the model i.e., __OpenModelica_simulationFlags annotation*,
+a custom annotation *__OpenModelica_simulationFlags(iif="filename.mat")* is added to the model, so this setting is saved with the model and is reused
+when loading the model again later on. It is also possible to specify at which point in time of the saved simulation results the initial values
+should be picked, by means of the *Simulation Setup | Simulation Flags | Equation System Initialization Time* input field, or by setting
+the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`.
+
+The second option is to skip the solution of the initial equations entirely, and to directly start the simulation
+using the imported start values. In this case, the initial equations of the model are ignored, and the initial values of
+all parameters and state variables are set to the values loaded from the .mat file. This option is useful in particular
+to restart a simulation from the final state of a previous one, without bothering about changing the initial conditions
+manually in the Modelica model. Note that the algebraic variables will be recomputed starting from the imported initial
+state and parameter values; the values of algebraic variables in the imported file will be used to initialize iteration
+variables in nonlinear implicit equations of the simulation model, or otherwise ignored.
+
+To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
+or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox *Save simulation
+flags inside model, i.e. __OpenModelica_simulationFlags annotation* saves this option in an
+*__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for future simulations of the same model.
+
+The following minimal working example demonstrates the use of the initial value import feature. You can create a new package
+`ImportInitialValues` in OMEdit, copy and paste its code from here, and then run the different models in it.
+
+.. code-block:: modelica
+
+  package ImportInitialValues "Test cases for importing initial values in OpenModelica"
+    partial model Base "The mother of all models"
+      Real v1, v2, x;
+      parameter Real p1;
+      parameter Real p2 = 2*p1;
+      final Real p3 = 3*p1;
+    end Base;
+
+    model ResultFileGenerator "Dummy model for generating the initial.mat file"
+      extends Base(p1 = 7, p2 = 10);
+    equation
+      v1 = 2.8;
+      v2 = 10;
+      der(x) = 0;
+    initial equation
+      x = 4;
+    annotation(
+      experiment(StopTime = 1),
+      __OpenModelica_simulationFlags(r = "initial.mat"));
+    end ResultFileGenerator;
+
+    model M "Relies on Modelica code only for initialization"
+      extends Base(
+        v1(start = 14),
+        p1 = 1, p2 = 1);
+    equation
+      (v1 - 3)*(v1 + 10)*(v1 - 15) = 0;
+      v2 = time;
+      der(x) = -x;
+    initial equation
+      x = 6;
+    end M;
+
+    model M2 "Imports parameters and initial guesses only, solve initial equations"
+      extends M;
+    annotation(__OpenModelica_simulationFlags(iif = "initial.mat"));
+    end M2;
+
+    model M3 "import parameters, initial guesses and initial states, skip initial equations"
+      extends M;
+    annotation(__OpenModelica_simulationFlags(iim = "none", iif = "initial.mat"));
+    end M3;
+  end ImportInitialValues;
+
+Running the `ResultFileGenerator` model creates a .mat file with some initial values in the working directory:
+`p1 = 7`, `p2 = 10`, `p3 = 21`, `v1 = 2.8`, `v2 = 10`, `x = 4`, `der(x) = 0`.
+
+When running model `M`, the simulation process only relies on the initial and guess values provided by the Modelica source code. Regarding the
+parameter values, `p1 = 1, `p2 = 1`, `p3 = 3*p1 = 3`; regarding `v1`, the implicit cubic equation is solved iteratively using the start value
+14 as an initial guess, thus converging to the nearest solution `v1 = 15`. The other variable `v2` can be computed explicitly, so there is no
+need of any guess value for it. Finally, the initial value of the state variable is set to `x = 6` by the initial equations.
+
+When running model `M2`, the values of the .mat file are imported to provide values for non-final parameters and guess values for the initial
+equations, which are solved starting from there. Hence, the imported parameter values p1 = 7 and p2 = 10 override the model's binding equations,
+that would set both to 1; on the other hand, the final parameter p3 is computed based on the final binding equation to `p3 = p1*3 = 21`. Regarding
+`v1`, the iterative solver converges to the solution closest to the imported start value of 2.8, i.e. `v1 = 3`, while `v2` is computed explicitly,
+so it doesn't depend on the imported start value. The initial value of the state `x = 6` is obtained by solving the initial equation, which is
+explicit and thus ignores the imported guess value `x = 4`.
+
+Finally, when running model `M3`, parameters are handled like in the previous case, as well as the algebraic variables `v1` and `v2`. However,
+in this case the initial equations are skipped, so the state variable gets its initial value `x = 4` straight from the imported .mat file.
+
 
 Homotopy Method
 ~~~~~~~~~~~~~~~

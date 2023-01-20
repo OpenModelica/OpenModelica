@@ -140,9 +140,13 @@ end dumpVecExp;
 template dumpExp (DAE.Exp expIn)
 ::=
     match expIn
+        case expIn as ENUM_LITERAL(__) then
+            <<
+            <enum><%intString(index)%></enum>
+            >>
         case expIn as BCONST(__) then
             <<
-            <bexp><%ExpressionDump.printExpStr(expIn)%></bexp>
+            <bconst><%ExpressionDump.printExpStr(expIn)%></bconst>
             >>
         case expIn as CREF(__) then
             <<

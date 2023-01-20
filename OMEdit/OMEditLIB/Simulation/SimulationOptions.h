@@ -77,6 +77,7 @@ public:
     setNLSanalyticJacobian(true);
     setParmodauto(false);
     setOldInstantiation(false);
+    setEnableFMUImport(false);
     setAdditionalTranslationFlags("");
     // Simulation
     setModelSetupFile("");
@@ -181,6 +182,8 @@ public:
   bool getParmodauto() const {return mParmodauto;}
   void setOldInstantiation(bool oldInstantiation) {mOldInstantiation = oldInstantiation;}
   bool getOldInstantiation() const {return mOldInstantiation;}
+  void setEnableFMUImport(bool enableFMUImport) {mEnableFMUImport = enableFMUImport;}
+  bool getEnableFMUImport() const {return mEnableFMUImport;}
   void setAdditionalTranslationFlags(const QString &additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
   QString getAdditionalTranslationFlags() const {return mAdditionalTranslationFlags;}
 
@@ -297,6 +300,7 @@ private:
   bool mNLSanalyticJacobian;
   bool mParmodauto;
   bool mOldInstantiation;
+  bool mEnableFMUImport;
   QString mAdditionalTranslationFlags;
   // simulation flags
   QString mModelSetupFile;

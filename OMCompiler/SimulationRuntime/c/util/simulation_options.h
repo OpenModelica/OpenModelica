@@ -99,7 +99,6 @@ enum _FLAG
   FLAG_IMPRK_LS,
   FLAG_INITIAL_STEP_SIZE,
   FLAG_INPUT_CSV,
-  FLAG_INPUT_FILE,
   FLAG_INPUT_FILE_STATES,
   FLAG_INPUT_PATH,
   FLAG_IPOPT_HESSE,
@@ -154,6 +153,7 @@ enum _FLAG
   FLAG_R,
   FLAG_DATA_RECONCILE,
   FLAG_DATA_RECONCILE_BOUNDARY,
+  FLAG_DATA_RECONCILE_STATE,
   FLAG_SR,
   FLAG_SR_CTRL,
   FLAG_SR_ERR,
@@ -174,6 +174,7 @@ enum _FLAG
   FLAG_DATA_RECONCILE_Sx,
   FLAG_UP_HESSIAN,
   FLAG_W,
+  FLAG_PARMODNUMTHREADS,
 
   FLAG_MAX
 };
@@ -231,14 +232,20 @@ enum GB_METHOD {
   RK_GAUSS5,          /* gauss5*/
   RK_GAUSS6,          /* gauss6*/
   RK_MERSON,          /* merson*/
+  RK_MERSONSSC1,      /* mersonSsc1*/
+  RK_MERSONSSC2,      /* mersonSsc2*/
   RK_HEUN,            /* heun */
   RK_FEHLBERG12,      /* fehlberg12*/
   RK_FEHLBERG45,      /* fehlberg45*/
   RK_FEHLBERG78,      /* fehlberg78*/
+  RK_FEHLBERGSSC1,    /* fehlbergSsc1*/
+  RK_FEHLBERGSSC2,    /* fehlbergSsc2*/
   RK_RK810,           /* rk810*/
   RK_RK1012,          /* rk1012*/
   RK_RK1214,          /* rk1214*/
-  RK_DOPRI45,         /* dopri4*/
+  RK_DOPRI45,         /* dopri45*/
+  RK_DOPRISSC1,       /* dopriSsc1*/
+  RK_DOPRISSC2,       /* dopriSsc2*/
   RK_RKSSC,           /* rungekuttaSsc */
 
 
@@ -259,6 +266,37 @@ enum GB_NLS_METHOD {
 
 extern const char *GB_NLS_METHOD_NAME[GB_NLS_MAX];
 extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
+
+/**
+ * @brief Step size controller method
+ */
+enum GB_CTRL_METHOD {
+  GB_CTRL_UNKNOWN = 0,  /* Unknown controller */
+  GB_CTRL_I = 1,        /* I controller */
+  GB_CTRL_PI = 2,       /* PI controller */
+  GB_CTRL_CNST = 3,     /* Constant step size */
+
+  GB_CTRL_MAX
+};
+
+extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
+extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
+
+enum GB_INTERPOL_METHOD {
+  GB_INTERPOL_UNKNOWN = 0,      /* Unknown interpolation method */
+  GB_INTERPOL_LIN,              /* Linear interpolation */
+  GB_INTERPOL_HERMITE,          /* Hermite interpolation */
+  GB_INTERPOL_HERMITE_a,        /* Hermite interpolation (only for left hand side)*/
+  GB_INTERPOL_HERMITE_b,        /* Hermite interpolation (only for right hand side)*/
+  GB_INTERPOL_HERMITE_ERRCTRL,  /* Hermite interpolation with error control */
+  GB_DENSE_OUTPUT,              /* Dense output, if available else hermite */
+  GB_DENSE_OUTPUT_ERRCTRL,      /* Dense output, if available else hermite with error control */
+
+  GB_INTERPOL_MAX
+};
+
+extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
+extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
 
 enum SOLVER_METHOD
 {

@@ -47,7 +47,7 @@ package ConnectionSets
 
   redeclare function extends EntryHash
   algorithm
-    hash := Connector.hash(entry, mod);
+    hash := Connector.hash(entry);
   end EntryHash;
 
   redeclare function extends EntryEqual
@@ -70,19 +70,12 @@ package ConnectionSets
       listLength(connections.connections) + listLength(connections.flows));
 
     // Add flow variable to the sets, unless disabled by flag.
-    // Do this here if NF_SCALARIZE to use fast addList for scalarized flows.
-    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) and Flags.isSet(Flags.NF_SCALARIZE) then
-      sets := List.fold(connections.flows, addConnector, sets);
+    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) then
+      sets := List.fold(connections.flows, addSingleConnector, sets);
     end if;
 
     // Add the connections.
     sets := List.fold1(connections.connections, addConnection, connections.broken, sets);
-
-    // Add remaining flow variables to the sets, unless disabled by flag.
-    // Do this after addConnection if not NF_SCALARIZE to get array dims right.
-    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) and not Flags.isSet(Flags.NF_SCALARIZE) then
-      sets := List.fold(connections.flows, addSingleConnector, sets);
-    end if;
   end fromConnections;
 
   function addScalarConnector
@@ -97,7 +90,7 @@ package ConnectionSets
     input Connector conn;
     input output ConnectionSets.Sets sets;
   algorithm
-    sets := addList(Connector.split(conn), sets);
+    sets := addList(Connector.scalarize(conn), sets);
   end addConnector;
 
   function addSingleConnector
@@ -105,9 +98,7 @@ package ConnectionSets
     input Connector conn;
     input output ConnectionSets.Sets sets;
   algorithm
-    for c in Connector.split(conn) loop
-      sets := find(c, sets);
-    end for;
+    sets := find(conn, sets);
   end addSingleConnector;
 
   function addConnection
@@ -119,17 +110,13 @@ package ConnectionSets
   protected
     list<Connection> conns;
   algorithm
-    conns := Connection.split(connection);
-
-    if not listEmpty(broken) then
-      conns := list(c for c guard not isBroken(c.lhs, c.rhs, broken) in conns);
+    if not listEmpty(broken) and isBroken(connection.lhs, connection.rhs, broken) then
+      return;
     end if;
 
     // TODO: Check variability of connectors. It's an error if either
     //       connector is constant/parameter while the other isn't.
-    for conn in conns loop
-      sets := merge(conn.lhs, conn.rhs, sets);
-    end for;
+    sets := merge(connection.lhs, connection.rhs, sets);
   end addConnection;
 
   function isBroken

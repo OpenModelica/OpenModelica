@@ -29,11 +29,11 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Per Östlund <per.ostlund@liu.se>
  */
 
-#ifndef DIAGRAM_H
-#define DIAGRAM_H
+#ifndef EXPRESSIONTEST_H
+#define EXPRESSIONTEST_H
 
 #include <QObject>
 
@@ -52,7 +52,9 @@ private slots:
   void operators_data();
   void functions();
   void functions_data();
+  void parseJSON();
+  void parseJSON_data();
   void cleanupTestCase();
 };
 
-#endif // DIAGRAM_H
+#endif // EXPRESSIONTEST_H

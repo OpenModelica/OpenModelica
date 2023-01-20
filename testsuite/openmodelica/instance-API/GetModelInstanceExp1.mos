@@ -31,9 +31,6 @@ getModelInstance(M, prettyPrint = true);
 //       \"modifiers\": \"2.0\",
 //       \"value\": {
 //         \"binding\": 2
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     },
 //     {
@@ -60,15 +57,16 @@ getModelInstance(M, prettyPrint = true);
 //                 2,
 //                 3
 //               ]
-//             },
-//             \"prefixes\": {
-//
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 8
+//         }
 //       }
 //     },
 //     {
@@ -90,11 +88,15 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           ]
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

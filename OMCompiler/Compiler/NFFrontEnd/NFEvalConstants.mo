@@ -110,7 +110,7 @@ algorithm
         eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
       end if;
 
-      eexp := Flatten.flattenExp(eexp, prefix);
+      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(prefix));
     else
       info := Binding.getInfo(binding);
       eexp := evaluateExp(exp, info);
@@ -183,7 +183,7 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Flatten.flattenExp(outExp, cref);
+          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(cref));
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);
@@ -200,16 +200,6 @@ algorithm
       then (exp, false);
 
     case Expression.IF() then evaluateIfExp(exp, info);
-
-    // TODO: The return type of calls can have dimensions that reference
-    //       function parameters, and thus can't be evaluated. This should be
-    //       fixed so that the return type reference the input arguments instead.
-    case Expression.CALL()
-      algorithm
-        (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(info = info), false);
-      then
-        (outExp, outChanged);
 
     // Only evaluate the index for size expressions.
     case Expression.SIZE()
@@ -385,14 +375,14 @@ algorithm
         e1 := evaluateExp(eq.lhs, info);
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.source);
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source);
 
     case Equation.ARRAY_EQUALITY()
       algorithm
         ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.source);
+        Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.scope, eq.source);
 
     case Equation.FOR()
       algorithm
@@ -420,7 +410,7 @@ algorithm
         e2 := evaluateExp(eq.message, info);
         e3 := evaluateExp(eq.level, info);
       then
-        Equation.ASSERT(e1, e2, e3, eq.source);
+        Equation.ASSERT(e1, e2, e3, eq.scope, eq.source);
 
     case Equation.TERMINATE()
       algorithm
@@ -530,6 +520,12 @@ algorithm
     case Statement.TERMINATE()
       algorithm
         stmt.message := evaluateExp(stmt.message, info);
+      then
+        stmt;
+
+    case Statement.REINIT()
+      algorithm
+        stmt.reinitExp := evaluateExp(stmt.reinitExp, info);
       then
         stmt;
 

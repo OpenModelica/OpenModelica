@@ -46,10 +46,7 @@ getModelInstance(M, prettyPrint = true);
 //               \"components\": [
 //                 {
 //                   \"name\": \"e\",
-//                   \"type\": \"Real\",
-//                   \"prefixes\": {
-//
-//                   }
+//                   \"type\": \"Real\"
 //                 },
 //                 {
 //                   \"name\": \"f\",
@@ -58,10 +55,14 @@ getModelInstance(M, prettyPrint = true);
 //                     \"connector\": \"flow\"
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 5,
+//                 \"columnEnd\": 8
+//               }
 //             }
 //           },
 //           {
@@ -72,10 +73,7 @@ getModelInstance(M, prettyPrint = true);
 //               \"components\": [
 //                 {
 //                   \"name\": \"e\",
-//                   \"type\": \"Real\",
-//                   \"prefixes\": {
-//
-//                   }
+//                   \"type\": \"Real\"
 //                 },
 //                 {
 //                   \"name\": \"f\",
@@ -84,13 +82,44 @@ getModelInstance(M, prettyPrint = true);
 //                     \"connector\": \"flow\"
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 5,
+//                 \"columnEnd\": 8
+//               }
 //             }
 //           }
-//         ]
+//         ],
+//         \"connections\": [
+//           {
+//             \"lhs\": {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"c1\"
+//                 }
+//               ]
+//             },
+//             \"rhs\": {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"c2\"
+//                 }
+//               ]
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 14,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 14,
+//           \"columnEnd\": 14
+//         }
 //       }
 //     }
 //   ],
@@ -103,10 +132,7 @@ getModelInstance(M, prettyPrint = true);
 //         \"components\": [
 //           {
 //             \"name\": \"e\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           },
 //           {
 //             \"name\": \"f\",
@@ -115,10 +141,14 @@ getModelInstance(M, prettyPrint = true);
 //               \"connector\": \"flow\"
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
 //       }
 //     }
 //   ],
@@ -162,25 +192,14 @@ getModelInstance(M, prettyPrint = true);
 //           ]
 //         }
 //       }
-//     },
-//     {
-//       \"lhs\": {
-//         \"$kind\": \"cref\",
-//         \"parts\": [
-//           {
-//             \"name\": \"c1\"
-//           }
-//         ]
-//       },
-//       \"rhs\": {
-//         \"$kind\": \"cref\",
-//         \"parts\": [
-//           {
-//             \"name\": \"c2\"
-//           }
-//         ]
-//       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 13,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 18,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

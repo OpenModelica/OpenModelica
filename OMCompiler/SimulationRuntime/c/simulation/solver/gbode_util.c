@@ -651,7 +651,7 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, 
  *                    -1  <= step is preliminary accepted but needs refinement
  */
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
-  char fastStates_row[4096];
+  char fastStates_row[40960];
   unsigned int bufSize = 40960;
   unsigned int ct;
   int i, ii;
@@ -752,4 +752,80 @@ void resetSolverStats(SOLVERSTATS* stats) {
   stats->nCallsJacobian = 0;
   stats->nErrorTestFailures = 0;
   stats->nConvergenveTestFailures = 0;
+}
+
+/**
+ * @brief Info message for GBODE replacement.
+ *
+ * Dumps simulation flags to use to LOG_STDOUT.
+ *
+ * @param gbMethod  GBODE method to use.
+ * @param constant  If true use constant step size.
+ */
+void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant) {
+  if (constant) {
+    infoStreamPrint(LOG_STDOUT, 1, "Use integration method GBODE with method '%s' and constant step size instead:", GB_METHOD_NAME[gbMethod]);
+    infoStreamPrint(LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s -%s=%s' in Simulation Setup->Simulation Flags.",
+                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
+    infoStreamPrint(LOG_STDOUT, 0, "or");
+    infoStreamPrint(LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s -%s=%s'.",
+                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
+  } else {
+    infoStreamPrint(LOG_STDOUT, 1, "Use integration method GBODE with method '%s' instead:", GB_METHOD_NAME[gbMethod]);
+    infoStreamPrint(LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s' in Simulation Setup->Simulation Flags.",
+                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
+    infoStreamPrint(LOG_STDOUT, 0, "or");
+    infoStreamPrint(LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s'.",
+                    SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
+  }
+  messageClose(LOG_STDOUT);
+}
+
+/**
+ * @brief Display deprecation warning for integration methods replaced by GBODE.
+ *
+ * Deprecated methods: heun, impeuler, trapezoid, imprungekutta, irksco, rungekuttaSsc
+ *
+ * @param solverMethod  Integration method.
+ */
+void deprecationWarningGBODE(enum SOLVER_METHOD method) {
+  switch (method) {
+    case S_HEUN:
+    case S_IMPEULER:
+    case S_TRAPEZOID:
+    case S_IMPRUNGEKUTTA:
+    case S_IRKSCO:
+    case S_ERKSSC:
+      break;
+    default:
+      return;
+  }
+
+  warningStreamPrint(LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
+  switch (method) {
+    case S_HEUN:
+      replacementString(RK_HEUN, TRUE);
+      break;
+    case S_IMPEULER:
+      replacementString(RK_IMPL_EULER, TRUE);
+      break;
+    case S_TRAPEZOID:
+      replacementString(RK_TRAPEZOID, TRUE);
+      break;
+    case S_IMPRUNGEKUTTA:
+      replacementString(RK_RADAU_IA_2, TRUE);
+      break;
+    case S_IRKSCO:
+      replacementString(RK_TRAPEZOID, FALSE);
+      break;
+    case S_ERKSSC:
+      replacementString(RK_RKSSC, FALSE);
+      break;
+    default:
+      throwStreamPrint(NULL, "Not reachable state");
+  }
+
+  infoStreamPrint(LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
+  messageClose(LOG_STDOUT);
+  return;
 }

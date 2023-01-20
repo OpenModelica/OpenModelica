@@ -376,6 +376,7 @@ static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
 static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attribute)
 {
   const char *unit = NULL;
+  const char *displayUnit = NULL;
   read_value_real(findHashStringStringEmpty(v,"start"), &(attribute->start), 0.0);
   read_value_bool(findHashStringString(v,"fixed"), (modelica_boolean*)&(attribute->fixed));
   read_value_bool(findHashStringString(v,"useNominal"), (modelica_boolean*)&(attribute->useNominal));
@@ -385,6 +386,10 @@ static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attri
   read_value_string(findHashStringStringEmpty(v,"unit"), &unit);
   attribute->unit = mmc_mk_scon_persist(unit); /* this function returns a copy, so unit can be freed */
   free((char*)unit);
+  // read displayUnit
+  read_value_string(findHashStringStringEmpty(v,"displayUnit"), &displayUnit);
+  attribute->displayUnit = mmc_mk_scon_persist(displayUnit); /* this function returns a copy, so unit can be freed */
+  free((char*)displayUnit);
 
   infoStreamPrint(LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }

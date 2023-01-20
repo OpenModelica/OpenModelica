@@ -92,13 +92,12 @@ uniontype JacobianMatrix
     Integer maxColorCols;
     Integer jacobianIndex;
     Integer partitionIndex;
+    list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
   end JAC_MATRIX;
 end JacobianMatrix;
 
-//TS,org//constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0, NONE());
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, 0, -1, 0, NONE());
-
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE());
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -110,6 +109,7 @@ uniontype SimCode
     list<DAE.Exp> literals "shared literals";
     list<SimCodeFunction.RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
+    list<SimGenericCall> generic_loop_calls;
     list<SimEqSystem> localKnownVars "state and input dependent variables, that are not inserted into any partion";
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
@@ -329,6 +329,8 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numSetcVars;
     Integer numDataReconVars;
     Integer numRealInputVars "for fmi cs to interpolate inputs";
+    Integer numSetbVars "for data reconciliation setB vars";
+    Integer numRelatedBoundaryConditions "for data reconciliation count number of boundary conditions which failed the extraction algorithm";
   end VARINFO;
 end VarInfo;
 
@@ -384,10 +386,31 @@ uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."
   record SES_RESIDUAL
     Integer index;
+    Integer res_index;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
   end SES_RESIDUAL;
+
+  record SES_FOR_RESIDUAL
+    Integer index;
+    Integer res_index;
+    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_FOR_RESIDUAL;
+
+  record SES_GENERIC_RESIDUAL
+    "a generic residual calling a for loop body function with an index list."
+    Integer index;
+    Integer res_index;
+    list<Integer> scal_indices;
+    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_GENERIC_RESIDUAL;
 
   record SES_SIMPLE_ASSIGN
     Integer index;
@@ -414,6 +437,24 @@ uniontype SimEqSystem
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
   end SES_ARRAY_CALL_ASSIGN;
+
+  record SES_GENERIC_ASSIGN
+    "a generic assignment calling a for loop body function with an index list."
+    Integer index;
+    Integer call_index;
+    list<Integer> scal_indices;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_GENERIC_ASSIGN;
+
+  record SES_ENTWINED_ASSIGN
+    "entwined generic assignments calling for loop body functions with an index list and a call order."
+    Integer index;
+    list<Integer> call_order;
+    list<SimEqSystem> single_calls;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_ENTWINED_ASSIGN;
 
   record SES_IFEQUATION
     Integer index;
@@ -511,6 +552,38 @@ uniontype SimEqSystem
 
 end SimEqSystem;
 
+public uniontype SimGenericCall
+  record SINGLE_GENERIC_CALL
+    Integer index;
+    list<BackendDAE.SimIterator> iters;
+    DAE.Exp lhs;
+    DAE.Exp rhs;
+  end SINGLE_GENERIC_CALL;
+
+  record IF_GENERIC_CALL
+    Integer index;
+    list<BackendDAE.SimIterator> iters;
+    list<SimBranch> branches;
+  end IF_GENERIC_CALL;
+
+  record WHEN_GENERIC_CALL
+    Integer index;
+    list<BackendDAE.SimIterator> iters;
+    list<SimBranch> branches;
+  end WHEN_GENERIC_CALL;
+end SimGenericCall;
+
+public uniontype SimBranch
+  record SIM_BRANCH
+    Option<DAE.Exp> condition;
+    list<tuple<DAE.Exp, DAE.Exp>> body;
+  end SIM_BRANCH;
+
+  record SIM_BRANCH_STMT
+    Option<DAE.Exp> condition;
+    list<DAE.Statement> body;
+  end SIM_BRANCH_STMT;
+end SimBranch;
 
 public
 uniontype DerivativeMatrix
@@ -661,7 +734,7 @@ public uniontype FmiSimulationFlags
   end FMI_SIMULATION_FLAGS_FILE;
 end FmiSimulationFlags;
 
-constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("solver","euler")});
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","euler")});
 
 annotation(__OpenModelica_Interface="backend");
 end SimCode;

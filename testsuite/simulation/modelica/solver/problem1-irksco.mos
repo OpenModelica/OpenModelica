@@ -49,7 +49,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 500, tolerance = 1e-06, method = 'irksco', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Integration method 'irksco' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'trapezoid' instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=trapezoid' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=trapezoid'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

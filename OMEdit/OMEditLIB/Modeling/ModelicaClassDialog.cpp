@@ -1545,27 +1545,23 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
   mpLeftTextBox = new QLineEdit;
-  mpLeftTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getLeft()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasLeft()) {
-    mpLeftTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getLeft()));
-  }
+  ExtentAnnotation defaultExtent = coOrdinateSystem.getExtent();
+  mpLeftTextBox->setPlaceholderText(QString::number(defaultExtent.at(0).x()));
   mpBottomLabel = new Label(Helper::bottom);
   mpBottomTextBox = new QLineEdit;
-  mpBottomTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getBottom()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasBottom()) {
-    mpBottomTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getBottom()));
-  }
+  mpBottomTextBox->setPlaceholderText(QString::number(defaultExtent.at(0).y()));
   mpRightLabel = new Label(QString(Helper::right).append(":"));
   mpRightTextBox = new QLineEdit;
-  mpRightTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getRight()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasRight()) {
-    mpRightTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getRight()));
-  }
+  mpRightTextBox->setPlaceholderText(QString::number(defaultExtent.at(1).x()));
   mpTopLabel = new Label(Helper::top);
   mpTopTextBox = new QLineEdit;
-  mpTopTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getTop()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasTop()) {
-    mpTopTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getTop()));
+  mpTopTextBox->setPlaceholderText(QString::number(defaultExtent.at(1).y()));
+  if (mpGraphicsView->getCoOrdinateSystem().hasExtent()) {
+    ExtentAnnotation extent = mpGraphicsView->getCoOrdinateSystem().getExtent();
+    mpLeftTextBox->setText(QString::number(extent.at(0).x()));
+    mpBottomTextBox->setText(QString::number(extent.at(0).y()));
+    mpRightTextBox->setText(QString::number(extent.at(1).x()));
+    mpTopTextBox->setText(QString::number(extent.at(1).y()));
   }
   // set the extent group box layout
   QGridLayout *pExtentLayout = new QGridLayout;
@@ -1584,15 +1580,15 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpGridGroupBox = new QGroupBox(Helper::grid);
   mpHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpHorizontalTextBox = new QLineEdit;
-  mpHorizontalTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getHorizontal()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasHorizontal()) {
-    mpHorizontalTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getHorizontal()));
-  }
+  PointAnnotation defaultGrid = coOrdinateSystem.getGrid();
+  mpHorizontalTextBox->setPlaceholderText(QString::number(defaultGrid.x()));
   mpVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpVerticalTextBox = new QLineEdit;
-  mpVerticalTextBox->setPlaceholderText(QString::number(coOrdinateSystem.getVertical()));
-  if (mpGraphicsView->getCoOrdinateSystem().hasVertical()) {
-    mpVerticalTextBox->setText(QString::number(mpGraphicsView->getCoOrdinateSystem().getVertical()));
+  mpVerticalTextBox->setPlaceholderText(QString::number(defaultGrid.y()));
+  if (mpGraphicsView->getCoOrdinateSystem().hasGrid()) {
+    PointAnnotation grid = mpGraphicsView->getCoOrdinateSystem().getGrid();
+    mpHorizontalTextBox->setText(QString::number(grid.x()));
+    mpVerticalTextBox->setText(QString::number(grid.y()));
   }
   // set the grid group box layout
   QGridLayout *pGridLayout = new QGridLayout;
@@ -1873,20 +1869,19 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     QString bottom = mpBottomTextBox->text().isEmpty() ? mpBottomTextBox->placeholderText() : mpBottomTextBox->text();
     QString right = mpRightTextBox->text().isEmpty() ? mpRightTextBox->placeholderText() : mpRightTextBox->text();
     QString top = mpTopTextBox->text().isEmpty() ? mpTopTextBox->placeholderText() : mpTopTextBox->text();
-    newCoOrdinateSystem.setLeft(qMin(left.toDouble(), right.toDouble()));
-    newCoOrdinateSystem.setBottom(qMin(bottom.toDouble(), top.toDouble()));
-    newCoOrdinateSystem.setRight(qMax(left.toDouble(), right.toDouble()));
-    newCoOrdinateSystem.setTop(qMax(bottom.toDouble(), top.toDouble()));
+    QVector<QPointF> extent;
+    extent.append(QPointF(qMin(left.toDouble(), right.toDouble()), qMin(bottom.toDouble(), top.toDouble())));
+    extent.append(QPointF(qMax(left.toDouble(), right.toDouble()), qMax(bottom.toDouble(), top.toDouble())));
+    newCoOrdinateSystem.setExtent(extent);
   }
   if (!mpPreserveAspectRatioComboBox->lineEdit()->text().isEmpty()) {
-    newCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioComboBox->currentText());
+    newCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioComboBox->currentText().compare(QStringLiteral("true")) == 0);
   }
   if (!mpScaleFactorTextBox->text().isEmpty()) {
-    newCoOrdinateSystem.setInitialScale(mpScaleFactorTextBox->text());
+    newCoOrdinateSystem.setInitialScale(mpScaleFactorTextBox->text().toDouble());
   }
   if (!mpHorizontalTextBox->text().isEmpty() || !mpVersionTextBox->text().isEmpty()) {
-    newCoOrdinateSystem.setHorizontal(mpHorizontalTextBox->text());
-    newCoOrdinateSystem.setVertical(mpVerticalTextBox->text());
+    newCoOrdinateSystem.setGrid(QPointF(mpHorizontalTextBox->text().toDouble(), mpVerticalTextBox->text().toDouble()));
   }
   // save old version
   QString oldVersion = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version;

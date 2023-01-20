@@ -44,7 +44,7 @@ encapsulated package NFCardinalityTable
     input Integer size;
     output Table table;
   algorithm
-    table := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, size);
+    table := UnorderedMap.new<Integer>(stringHashDjb2, stringEq, size);
   end emptyCardinalityTable;
 
   function fromConnections

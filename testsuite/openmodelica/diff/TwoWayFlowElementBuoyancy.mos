@@ -1,0 +1,54 @@
+// depends: TwoWayFlowElementBuoyancyBefore.mo
+// status: correct
+
+before:=readFile("TwoWayFlowElementBuoyancyBefore.mo");
+loadFile("TwoWayFlowElementBuoyancyAfter.mo");
+after:=list();
+getErrorString();
+merged:=diffModelicaFileListings(
+  before,
+  after,
+  OpenModelica.Scripting.DiffFormat.plain);
+getErrorString();
+/*
+writeFile("TwoWayFlowElementBuoyancyMerged.mo", merged);
+system("rm -f TwoWayFlowElementBuoyancy.diff");
+0 <> system("diff -u TwoWayFlowElementBuoyancyBefore.mo TwoWayFlowElementBuoyancyMerged.mo", outputFile="TwoWayFlowElementBuoyancy.diff");
+readFile("TwoWayFlowElementBuoyancy.diff");getErrorString();
+*/
+
+// Result:
+// "within;
+// partial model A
+//   extends B;
+//
+//   parameter SIunits x
+//     annotation ();
+//   parameter SIunits y
+//     annotation ();
+//
+//   annotation ();
+// end A;
+// "
+// true
+// "partial model A
+//   extends B;
+//   parameter Units.SI x annotation();
+//   parameter Units.SI y annotation();
+//   annotation();
+// end A;"
+// ""
+// "within;
+// partial model A
+//   extends B;
+//
+//   parameter Units.SI x
+//     annotation ();
+//   parameter Units.SI y
+//     annotation ();
+//
+//   annotation ();
+// end A;
+// "
+// ""
+// endResult

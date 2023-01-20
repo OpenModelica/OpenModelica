@@ -9,6 +9,8 @@ set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_LIBDIR})
 # CPP headers are installed in include/omc/cpp for now.
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/cpp)
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
+
 
 
 # Boost and a threading library are required for the CPP-runtime.

@@ -90,7 +90,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   return path &&*path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_NO_OPENMODELICAHOME";
 }
 #else
-#if (defined(__linux__) || defined(__APPLE_CC__))
+#if (defined(__linux__) || defined(__APPLE_CC__) || defined(__FreeBSD__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
@@ -112,7 +112,7 @@ static void stripbinpath(char *omhome)
 #endif
 
 /* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
-#if defined(__linux__) || defined(__APPLE_CC__)
+#if defined(__linux__) || defined(__APPLE_CC__)  || defined(__FreeBSD__)
 #include <dlfcn.h>
 
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
@@ -235,25 +235,11 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     }
     else
     {
-      /* get the install directory */
-      const char *omhome = SettingsImpl__getInstallationDirectoryPath();
-      if (omhome == NULL)
-        return NULL;
-      int lenOmhome = strlen(omhome);
       const char *homePath = Settings_getHomeDir(0);
-      assert(homePath != NULL || !runningTestsuite);
-      if (runningTestsuite) {
-        int lenHome = strlen(homePath);
-        omc_modelicaPath = (char*)malloc(lenHome+26);
-        snprintf(omc_modelicaPath, lenHome+26,"%s/.openmodelica/libraries/", homePath);
-      } else if (homePath == NULL) {
-        omc_modelicaPath = (char*)malloc(lenOmhome+15);
-        snprintf(omc_modelicaPath, lenOmhome+15,"%s/lib/omlibrary", omhome);
-      } else {
-        int lenHome = strlen(homePath);
-        omc_modelicaPath = (char*)omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
-        snprintf(omc_modelicaPath, lenHome+lenOmhome+41,"%s/.openmodelica/libraries/%s%s/lib/omlibrary", homePath, OMC_GROUP_DELIMITER, omhome);
-      }
+      assert(homePath != NULL);
+      int lenHome = strlen(homePath);
+      omc_modelicaPath = (char*)malloc(lenHome+26);
+      snprintf(omc_modelicaPath, lenHome+26,"%s/.openmodelica/libraries/", homePath);
     }
 
     omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);

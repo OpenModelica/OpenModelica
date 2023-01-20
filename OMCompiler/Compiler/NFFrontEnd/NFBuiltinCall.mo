@@ -1843,7 +1843,7 @@ protected
     InstNode scope;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    result := Expression.STRING(AbsynUtil.pathString(InstNode.scopePath(scope, includeRoot = true)));
+    result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
   end typeGetInstanceName;
 
   function typeClockCall

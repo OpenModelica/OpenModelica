@@ -1,9 +1,9 @@
 // name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy
 // keywords: initialization, over-determined
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
 setCommandLineOptions("-d=initialization"); getErrorString();
@@ -29,7 +29,7 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyState
 //
 // {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy_init.xml"}
 // "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
-// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          $DER.E1 = 0.0.
 // "
 // endResult

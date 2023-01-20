@@ -9,9 +9,9 @@ simulate(Aufgabe1_1); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from Aufgabe1_1.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // record SimulationResult
 //     resultFile = "Aufgabe1_1_res.mat",

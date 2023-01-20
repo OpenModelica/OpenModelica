@@ -47,7 +47,6 @@ protected
 public
   partial function Hash
     input K key;
-    input Integer mod;
     output Integer hash;
   end Hash;
 
@@ -178,7 +177,7 @@ public
     Hash hashfn = map.hashFn;
     Integer hash;
   algorithm
-    hash := hashfn(key, Vector.size(map.buckets));
+    hash := intMod(hashfn(key), Vector.size(map.buckets));
     addEntry(key, value, hash, map);
   end addNew;
 
@@ -320,12 +319,13 @@ public
      otherwise fails."
     input K key;
     input UnorderedMap<K, V> map;
+    input SourceInfo info;
     output V value;
   algorithm
     if contains(key, map) then
       SOME(value) := get(key, map);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the key did not exist."});
+      Error.addInternalError(getInstanceName() + " failed because the key did not exist.", info);
       fail();
     end if;
   end getSafe;
@@ -644,7 +644,7 @@ public
 
     // Rehash all the keys and refill the buckets.
     for i in 1:Vector.size(map.keys) loop
-      bucket_id := hashfn(Vector.get(keys, i), bucket_count) + 1;
+      bucket_id := intMod(hashfn(Vector.get(keys, i)), bucket_count) + 1;
       Vector.updateNoBounds(buckets, bucket_id, i :: Vector.getNoBounds(buckets, bucket_id));
     end for;
   end rehash;
@@ -736,8 +736,9 @@ protected
     KeyEq eqfn = map.eqFn;
     list<Integer> bucket;
   algorithm
-    hash := hashfn(key, Vector.size(map.buckets));
     if Vector.size(map.buckets) > 0 then
+      hash := intMod(hashfn(key), Vector.size(map.buckets));
+
       bucket := Vector.get(map.buckets, hash + 1);
       for i in bucket loop
         if eqfn(key, Vector.getNoBounds(map.keys, i)) then
@@ -745,6 +746,8 @@ protected
           break;
         end if;
       end for;
+    else
+      hash := 0;
     end if;
   end find;
 
@@ -756,8 +759,6 @@ protected
     input UnorderedMap<K, V> map;
   protected
     Vector<list<Integer>> buckets = map.buckets;
-    Integer h;
-    Hash hashfn;
   algorithm
     // Add the key/value to the key/value arrays.
     Vector.push(map.keys, key);

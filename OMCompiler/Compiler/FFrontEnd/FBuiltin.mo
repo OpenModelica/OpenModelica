@@ -202,6 +202,8 @@ protected constant list<SCode.Element> uncertaintyComps = {
           SCode.COMPONENT("sought",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo),
           SCode.COMPONENT("refine",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo),
+          SCode.COMPONENT("propagate",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo)} "The Uncertainty enumeration" ;
 
 protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),

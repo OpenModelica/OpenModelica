@@ -49,15 +49,15 @@ public:
   void allocateContext(const std::string& modelFile, const std::string& path);
   void loadFMU(const std::string& modelFile, const std::string& path);
   void initData() override;
-  void initializeVisAttributes(const double time = 0.0) override;
-  unsigned int getVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr);
-  int setVarReferencesInVisAttributes();
+  void initializeVisAttributes(const double time) override;
   void simulate(TimeManager& omvm) override;
   double simulateStep(const double time);
   void updateSystem();
-  void updateVisAttributes(const double time) override;
-  void updateScene(const double time = 0.0) override;
+  void updateScene(const double time) override;
+  void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) override;
   void updateVisualizerAttributeFMU(VisualizerAttribute& attr);
+  unsigned int getFmuVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr) override;
+  unsigned int getFmuVariableReferenceForVisualizerAttributeFMU(VisualizerAttribute& attr);
   void setSimulationSettings(double stepsize, Solver solver, bool iterateEvents);
   FMUWrapperAbstract* getFMU();
 private:

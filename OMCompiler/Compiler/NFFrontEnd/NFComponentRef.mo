@@ -298,6 +298,20 @@ public
     end match;
   end firstName;
 
+  function first
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          cref.restCref := EMPTY();
+        then
+          ();
+
+      else ();
+    end match;
+  end first;
+
   function rest
     input ComponentRef cref;
     output ComponentRef restCref;
@@ -660,12 +674,10 @@ public
         list<Subscript> subs;
 
       case CREF(subscripts = {}) guard(not backendCref(cref)) algorithm
-        sizes_ := sizes(cref);
+        sizes_ := sizes_local(cref);
         subs := {};
         for size in listReverse(sizes_) loop
-          if size == 1 then
-            subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
-          else
+          if size <> 1 then
             subs := Subscript.SLICE(Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
           end if;
         end for;
@@ -977,7 +989,21 @@ public
     "strips the subscripts before comparing. Used for non expandend variables"
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Boolean b = isEqual(stripSubscriptsAll(cref1), stripSubscriptsAll(cref2));
+    output Boolean b;
+  algorithm
+    if referenceEq(cref1, cref2) then
+      b := true;
+      return;
+    end if;
+
+    b := match (cref1, cref2)
+      case (CREF(), CREF()) algorithm
+        then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
+          isEqualStrip(cref1.restCref, cref2.restCref);
+      case (EMPTY(), EMPTY()) then true;
+      case (WILD(), WILD()) then true;
+      else false;
+    end match;
   end isEqualStrip;
 
   function isLess
@@ -1237,15 +1263,13 @@ public
 
   function hash
     input ComponentRef cref;
-    input Integer mod;
-    output Integer hash = stringHashDjb2Mod(toString(cref), mod);
+    output Integer hash = stringHashDjb2(toString(cref));
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    input Integer mod;
-    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsAll(cref)), mod);
+    output Integer hash = stringHashDjb2(toString(stripSubscriptsAll(cref)));
   end hashStrip;
 
   function toPath
@@ -1528,12 +1552,24 @@ public
         list<Integer> local_lst = {};
       case EMPTY() then listReverse(s_lst);
       case CREF() algorithm
-        local_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
-        local_lst := if listEmpty(local_lst) then {1} else local_lst;
+        local_lst := sizes_local(cref);
         s_lst := listAppend(local_lst, s_lst);
       then sizes(cref.restCref, s_lst);
     end match;
   end sizes;
+
+  function sizes_local
+    input ComponentRef cref;
+    output list<Integer> s_lst = {};
+  algorithm
+    s_lst := match cref
+      case EMPTY() then {};
+      case CREF() algorithm
+        s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
+        s_lst := if listEmpty(s_lst) then {1} else s_lst;
+      then s_lst;
+    end match;
+  end sizes_local;
 
   function subscriptsToInteger
     input ComponentRef cref;
@@ -1544,7 +1580,7 @@ public
         s_lst := 1 :: s_lst;
       else
         for sub in subs_tmp loop
-          s_lst := Expression.integerValue(Subscript.toExp(sub)) :: s_lst;
+          s_lst := Expression.integerValueOrDefault(Subscript.toExp(sub), 1) :: s_lst;
         end for;
       end if;
     end for;
@@ -1552,10 +1588,11 @@ public
 
   function subscriptsToExpression
     input ComponentRef cref;
+    input Boolean addScalar;
     output list<Expression> e_lst = {};
   algorithm
     for subs_tmp in subscriptsAll(cref) loop
-      if listEmpty(subs_tmp) then
+      if addScalar and listEmpty(subs_tmp) then
         e_lst := Expression.INTEGER(1) :: e_lst;
       else
         for sub in subs_tmp loop
@@ -1648,7 +1685,7 @@ public
     end ApplyFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           for s in cref.subscripts loop
             Subscript.applyExp(s, func);
@@ -1671,7 +1708,7 @@ public
     end ApplyFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           for s in cref.subscripts loop
             Subscript.applyExpShallow(s, func);
@@ -1699,7 +1736,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
           rest := mapExp(cref.restCref, func);
@@ -1724,7 +1761,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           subs := list(Subscript.mapShallowExp(s, func) for s in cref.subscripts);
           rest := mapExpShallow(cref.restCref, func);
@@ -1746,7 +1783,7 @@ public
     end FoldFunc;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           arg := List.fold(cref.subscripts, function Subscript.foldExp(func = func), arg);
           arg := foldExp(cref.restCref, func, arg);
@@ -1773,7 +1810,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExp, func, arg);
           (rest, arg) := mapFoldExp(cref.restCref, func, arg);
@@ -1800,7 +1837,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case CREF(origin = Origin.CREF)
+      case CREF()
         algorithm
           (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExpShallow, func, arg);
           (rest, arg) := mapFoldExpShallow(cref.restCref, func, arg);

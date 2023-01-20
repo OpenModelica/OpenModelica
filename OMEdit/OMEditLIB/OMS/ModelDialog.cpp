@@ -441,6 +441,133 @@ void AddSubModelDialog::addSubModel()
 }
 
 /*!
+ * \class ReplaceSubModelDialog
+ * \Creates a dialog to allow users to replace a submodel to OMSimulator model.
+ * \brief ReplaceSubModelDialog::ReplaceSubModelDialog
+ * \param pGraphicsView
+ * \param path
+ * \param name
+ */
+ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QString pName)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg("replaceSubModel"));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
+  mpElementName = pName;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel("replaceSubModel");
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+
+  // path
+  mpPathLabel = new Label(Helper::path);
+  mpPathTextBox = new QLineEdit();
+  mpBrowsePathButton = new QPushButton(Helper::browse);
+  mpBrowsePathButton->setAutoDefault(false);
+  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
+
+  // dryRun
+  mpDryRunLabel = new Label("dryRun:");
+  mpDryRunLabel->setToolTip( tr("dryRun = true will not replace the subModel, you can see the list of warnings and dryRun = false will replace the SubModel"));
+  mpDryRunComboBox = new QComboBox;
+  mpDryRunComboBox->addItem("true");
+  mpDryRunComboBox->addItem("false");
+
+
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(replaceSubModel()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 3);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpPathLabel, 2, 0);
+  pMainLayout->addWidget(mpPathTextBox, 2, 1);
+  pMainLayout->addWidget(mpBrowsePathButton, 2, 2);
+  pMainLayout->addWidget(mpDryRunLabel, 3, 0);
+  pMainLayout->addWidget(mpDryRunComboBox, 3, 1, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief ReplaceSubModelDialog::browseSubModelPath
+ * Allows the user to select the submodel path and returns it.
+ */
+
+void ReplaceSubModelDialog::browseSubModelPath()
+{
+  QString path = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::subModelFileTypes, NULL);
+  if (!path.isEmpty()){
+    mpPathTextBox->setText(path);
+  }
+}
+
+/*!
+ * \brief ReplaceSubModelDialog::replaceSubModel
+ * replaces a submodel to the OMSimulator model, but still retains
+ * the connection and other variables and parameters if they are valid
+ */
+void ReplaceSubModelDialog::replaceSubModel()
+{
+  if (mpPathTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), Helper::ok);
+    return;
+  }
+
+  QFileInfo fileInfo(mpPathTextBox->text());
+  if (!fileInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), Helper::ok);
+    return;
+  }
+
+  LibraryTreeItem *pParentLibraryTreeItem;
+  pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+
+  // add the submodel
+  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpElementName);
+  //qDebug() << "\nnamestructure : " << nameStructure << "==>" <<   mpDryRunComboBox->currentIndex();
+
+  bool dryRun;
+  if (mpDryRunComboBox->currentIndex() == 0){
+    dryRun = true;
+  } else {
+    dryRun = false;
+  }
+
+  bool failed = false;
+  int warningCount;
+
+  if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, &warningCount)) {
+    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
+    mpGraphicsView->getModelWidget()->updateModelText();
+    accept();
+  }  else {
+    failed = true;
+  }
+
+  // TODO remove the dryRun combo box check and always make the first run dryRun = true and warn users in case warnings exist
+
+  if (failed) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)), Helper::ok);
+  }
+}
+
+/*!
  * \class AddOrEditIconDialog
  * \brief Creates a dialog to allow users to add or edit icon for system or component.
  */

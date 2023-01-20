@@ -34,6 +34,7 @@
 #include "../util/simulation_options.h"
 #include "../simulation/solver/cvode_solver.h"
 #include "../util/omc_mmap.h"
+#include "../util/omc_file.h"
 
 /**
  * @ Skips to a given character or end of file
@@ -178,7 +179,8 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   strcat(flags_filename, comp->fmuData->modelData->modelFilePrefix);
   strcat(flags_filename, "_flags.json");
   FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename)
-  if( access( flags_filename, 0 ) != -1 )
+
+  if( omc_file_exists( flags_filename) )
   {
     FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename)
     omc_mmap_read mmap_reader = {0};

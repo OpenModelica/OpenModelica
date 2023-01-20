@@ -155,6 +155,14 @@ public
     output Dimension dim = INTEGER(listLength(expl), Variability.CONSTANT);
   end fromExpList;
 
+  function toRange
+    input Dimension dim;
+    output Expression range;
+  algorithm
+    range := Expression.RANGE(Type.liftArrayLeft(typeOf(dim), dim),
+      lowerBoundExp(dim), NONE(), upperBoundExp(dim));
+  end toRange;
+
   function toDAE
     input Dimension dim;
     output DAE.Dimension daeDim;

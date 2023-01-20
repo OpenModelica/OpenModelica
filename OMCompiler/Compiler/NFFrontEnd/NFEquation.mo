@@ -92,6 +92,16 @@ public
       end match;
     end mapExp;
 
+    function sizeOf
+      input Branch branch;
+      output Integer size;
+    algorithm
+      size := match branch
+        case Branch.BRANCH() then Equation.sizeOfList(branch.body);
+        else 0;
+      end match;
+    end sizeOf;
+
     function toStream
       input Branch branch;
       input String indent;
@@ -149,6 +159,7 @@ public
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
     Type ty;
+    InstNode scope;
     DAE.ElementSource source;
   end EQUALITY;
 
@@ -156,12 +167,14 @@ public
     Expression lhs;
     Expression rhs;
     Type ty;
+    InstNode scope;
     DAE.ElementSource source;
   end ARRAY_EQUALITY;
 
   record CONNECT
     Expression lhs;
     Expression rhs;
+    InstNode scope;
     DAE.ElementSource source;
   end CONNECT;
 
@@ -169,16 +182,19 @@ public
     InstNode iterator;
     Option<Expression> range;
     list<Equation> body   "The body of the for loop.";
+    InstNode scope;
     DAE.ElementSource source;
   end FOR;
 
   record IF
     list<Branch> branches;
+    InstNode scope;
     DAE.ElementSource source;
   end IF;
 
   record WHEN
     list<Branch> branches;
+    InstNode scope;
     DAE.ElementSource source;
   end WHEN;
 
@@ -186,22 +202,26 @@ public
     Expression condition "The assert condition.";
     Expression message "The message to display if the assert fails.";
     Expression level "Error or warning";
+    InstNode scope;
     DAE.ElementSource source;
   end ASSERT;
 
   record TERMINATE
     Expression message "The message to display if the terminate triggers.";
+    InstNode scope;
     DAE.ElementSource source;
   end TERMINATE;
 
   record REINIT
     Expression cref "The variable to reinitialize.";
     Expression reinitExp "The new value of the variable.";
+    InstNode scope;
     DAE.ElementSource source;
   end REINIT;
 
   record NORETCALL
     Expression exp;
+    InstNode scope;
     DAE.ElementSource source;
   end NORETCALL;
 
@@ -209,16 +229,18 @@ public
     input Expression lhs;
     input Expression rhs;
     input Type ty;
+    input InstNode scope;
     input DAE.ElementSource src;
     output Equation eq;
   algorithm
-    eq := EQUALITY(lhs, rhs, ty, src);
+    eq := EQUALITY(lhs, rhs, ty, scope, src);
     annotation(__OpenModelica_EarlyInline=true);
   end makeEquality;
 
   function makeCrefEquality
     input ComponentRef lhsCref;
     input ComponentRef rhsCref;
+    input InstNode scope;
     input DAE.ElementSource src;
     output Equation eq;
   protected
@@ -226,7 +248,7 @@ public
   algorithm
     e1 := Expression.fromCref(lhsCref);
     e2 := Expression.fromCref(rhsCref);
-    eq := makeEquality(e1, e2, Expression.typeOf(e1), src);
+    eq := makeEquality(e1, e2, Expression.typeOf(e1), scope, src);
   end makeCrefEquality;
 
   function makeBranch
@@ -241,10 +263,11 @@ public
 
   function makeIf
     input list<Branch> branches;
+    input InstNode scope;
     input DAE.ElementSource src;
     output Equation eq;
   algorithm
-    eq := IF(branches, src);
+    eq := IF(branches, scope, src);
     annotation(__OpenModelica_EarlyInline=true);
   end makeIf;
 
@@ -265,6 +288,42 @@ public
       case NORETCALL() then eq.source;
     end match;
   end source;
+
+  function setSource
+    input DAE.ElementSource source;
+    input output Equation eq;
+  algorithm
+    () := match eq
+      case EQUALITY()       algorithm eq.source := source; then ();
+      case ARRAY_EQUALITY() algorithm eq.source := source; then ();
+      case CONNECT()        algorithm eq.source := source; then ();
+      case FOR()            algorithm eq.source := source; then ();
+      case IF()             algorithm eq.source := source; then ();
+      case WHEN()           algorithm eq.source := source; then ();
+      case ASSERT()         algorithm eq.source := source; then ();
+      case TERMINATE()      algorithm eq.source := source; then ();
+      case REINIT()         algorithm eq.source := source; then ();
+      case NORETCALL()      algorithm eq.source := source; then ();
+    end match;
+  end setSource;
+
+  function scope
+    input Equation eq;
+    output InstNode scope;
+  algorithm
+    scope := match eq
+      case EQUALITY() then eq.scope;
+      case ARRAY_EQUALITY() then eq.scope;
+      case CONNECT() then eq.scope;
+      case FOR() then eq.scope;
+      case IF() then eq.scope;
+      case WHEN() then eq.scope;
+      case ASSERT() then eq.scope;
+      case TERMINATE() then eq.scope;
+      case REINIT() then eq.scope;
+      case NORETCALL() then eq.scope;
+    end match;
+  end scope;
 
   function info
     input Equation eq;
@@ -532,7 +591,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
       case ARRAY_EQUALITY()
         algorithm
@@ -540,7 +599,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
+            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
       //case CREF_EQUALITY()
       //  algorithm
@@ -555,7 +614,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else CONNECT(e1, e2, eq.source);
+            then eq else CONNECT(e1, e2, eq.scope, eq.source);
 
       case FOR()
         algorithm
@@ -583,13 +642,13 @@ public
           e3 := func(eq.level);
         then
           if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
-            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.source);
+            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.scope, eq.source);
 
       case TERMINATE()
         algorithm
           e1 := func(eq.message);
         then
-          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.source);
+          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.scope, eq.source);
 
       case REINIT()
         algorithm
@@ -597,13 +656,13 @@ public
           e2 := func(eq.reinitExp);
         then
           if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
-            eq else REINIT(e1, e2, eq.source);
+            eq else REINIT(e1, e2, eq.scope, eq.source);
 
       case NORETCALL()
         algorithm
           e1 := func(eq.exp);
         then
-          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.source);
+          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.scope, eq.source);
 
       else eq;
     end match;
@@ -623,7 +682,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
       case ARRAY_EQUALITY()
         algorithm
@@ -631,7 +690,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
+            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
       case CONNECT()
         algorithm
@@ -639,7 +698,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else CONNECT(e1, e2, eq.source);
+            then eq else CONNECT(e1, e2, eq.scope, eq.source);
 
       case FOR()
         algorithm
@@ -666,13 +725,13 @@ public
           e3 := func(eq.level);
         then
           if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
-            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.source);
+            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.scope, eq.source);
 
       case TERMINATE()
         algorithm
           e1 := func(eq.message);
         then
-          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.source);
+          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.scope, eq.source);
 
       case REINIT()
         algorithm
@@ -680,13 +739,13 @@ public
           e2 := func(eq.reinitExp);
         then
           if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
-            eq else REINIT(e1, e2, eq.source);
+            eq else REINIT(e1, e2, eq.scope, eq.source);
 
       case NORETCALL()
         algorithm
           e1 := func(eq.exp);
         then
-          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.source);
+          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.scope, eq.source);
 
       else eq;
     end match;
@@ -1015,6 +1074,35 @@ public
       else false;
     end match;
   end isConnect;
+
+  function sizeOfList
+    input list<Equation> eqs;
+    output Integer size = 0;
+  algorithm
+    for eq in eqs loop
+      size := size + sizeOf(eq);
+    end for;
+  end sizeOfList;
+
+  function sizeOf
+    input Equation eq;
+    output Integer size;
+  algorithm
+    size := matchcontinue eq
+      case EQUALITY() then Type.sizeOf(eq.ty);
+      case ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
+      case CONNECT() then Type.sizeOf(Expression.typeOf(eq.lhs));
+      case FOR()
+        algorithm
+          size := Type.sizeOf(Expression.typeOf(Util.getOption(eq.range)));
+        then
+          size * sizeOfList(eq.body);
+
+      case IF() then Branch.sizeOf(listHead(eq.branches));
+      case WHEN() then Branch.sizeOf(listHead(eq.branches));
+      else 1;
+    end matchcontinue;
+  end sizeOf;
 
   function toString
     input Equation eq;

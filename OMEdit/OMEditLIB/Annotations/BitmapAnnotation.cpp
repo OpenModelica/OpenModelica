@@ -123,7 +123,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphic
   ShapeAnnotation::setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
-  QList<QPointF> extents;
+  QVector<QPointF> extents;
   extents << QPointF(-100, -100) << QPointF(100, 100);
   setExtents(extents);
   setPos(mOrigin);
@@ -147,7 +147,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 4th item is the extent points
-  mExtents.parse(list.at(3));
+  mExtent.parse(list.at(3));
   // 5th item is the fileName
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(4))));
   // 6th item is the imageSource
@@ -167,13 +167,8 @@ void BitmapAnnotation::parseShapeAnnotation()
 {
   GraphicItem::parseShapeAnnotation(mpBitmap);
 
-  QList<QPointF> extents;
-  ModelInstance::Extent extent = mpBitmap->getExtent();
-  ModelInstance::Point extent1 = extent.getExtent1();
-  ModelInstance::Point extent2 = extent.getExtent2();
-  extents.append(QPointF(extent1.x(), extent1.y()));
-  extents.append(QPointF(extent2.x(), extent2.y()));
-  mExtents = extents;
+  mExtent = mpBitmap->getExtent();
+  mExtent.evaluate(mpBitmap->getParentModel());
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
   mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
   if (!mImageSource.isEmpty()) {
@@ -231,7 +226,7 @@ QString BitmapAnnotation::getOMCShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   // get the extents
-  annotationString.append(mExtents.toQString());
+  annotationString.append(mExtent.toQString());
   // get the file name
   annotationString.append(QString("\"").append(mOriginalFileName).append("\""));
   // get the image source
@@ -259,8 +254,8 @@ QString BitmapAnnotation::getShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   // get the extents
-  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
-    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
+  if (mExtent.isDynamicSelectExpression() || mExtent.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtent.toQString()));
   }
   // get the file name
   if (!mOriginalFileName.isEmpty()) {
@@ -279,6 +274,14 @@ void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   GraphicItem::setDefaults(pShapeAnnotation);
   FilledShape::setDefaults(pShapeAnnotation);
   ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+ModelInstance::Model *BitmapAnnotation::getParentModel() const
+{
+  if (mpBitmap) {
+    return mpBitmap->getParentModel();
+  }
+  return 0;
 }
 
 /*!

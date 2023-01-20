@@ -5,7 +5,7 @@
 setCommandLineOptions("+g=Optimica"); getErrorString();
 loadFile("DM.mo"); getErrorString();
 
-optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected", outputFormat="csv"); getErrorString();
+optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -csvInput ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected", outputFormat="csv"); getErrorString();
 optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -csvInput ./diesel_model_res.csv -ipopt_max_iter=-1 -emit_protected", outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_diff.csv",0.05,0.0005,{"u_f","u_wg"}); getErrorString();
@@ -17,7 +17,7 @@ res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","R
 // ""
 // record SimulationResult
 //     resultFile = "diesel_model_res.csv",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -csvInput ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables

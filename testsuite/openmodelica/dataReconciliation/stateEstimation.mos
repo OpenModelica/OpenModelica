@@ -1,0 +1,490 @@
+// name:     MergerDynInit
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.MergerDynInit_Inputs.csv
+
+
+// set command line options to compute state estimation
+setCommandLineOptions("--preOptModules+=dataReconciliationStateEstimation");
+getErrorString();
+
+loadFile("NewDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+simulate(NewDataReconciliationSimpleTests.MergerDynInit, simflags="-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.MergerDynInit_Inputs.csv -lv=LOG_JAC");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "
+//
+// ModelInfo: NewDataReconciliationSimpleTests.MergerDynInit
+// ==========================================================================
+//
+//
+// OrderedVariables (12)
+// ========================================
+// 1: BQ:VARIABLE()  "Mass balance" type: Real
+// 2: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+// 3: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 4: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 5: P2:VARIABLE()  type: Real
+// 6: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 7: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 8: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 9: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 10: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+// 11: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 12: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// OrderedEquation (12, 12)
+// ========================================
+// 1/1 (1): P01 = 3.93397   [binding |0|0|0|0|]
+// 2/2 (1): P02 = 5.73935   [binding |0|0|0|0|]
+// 3/3 (1): P03 = 0.9378339999999999   [binding |0|0|0|0|]
+// 4/4 (1): P1 = P01   [dynamic |0|0|0|0|]
+// 5/5 (1): P2 = P02   [dynamic |0|0|0|0|]
+// 6/6 (1): P3 = P03   [dynamic |0|0|0|0|]
+// 7/7 (1): BQ = Q1 + Q2 - Q3   [dynamic |0|0|0|0|]
+// 8/8 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
+// 9/9 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 10/10 (1): P2 - P = k2 * Q2 * abs(Q2)   [dynamic |0|0|0|0|]
+// 11/11 (1): P - P3 = k3 * Q3 * abs(Q3)   [dynamic |0|0|0|0|]
+// 12/12 (1): P = 0.5 * rho * V   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 12 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 12
+// var 3 is solved in eqn 9
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 4
+// var 7 is solved in eqn 11
+// var 8 is solved in eqn 10
+// var 9 is solved in eqn 7
+// var 10 is solved in eqn 1
+// var 11 is solved in eqn 2
+// var 12 is solved in eqn 3
+//
+// Standard BLT of the original model:(12)
+// ============================================================
+//
+// 12: P03: (3/3): (1): P03 = 0.9378339999999999
+// 11: P02: (2/2): (1): P02 = 5.73935
+// 10: P01: (1/1): (1): P01 = 3.93397
+// 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+// 8: Q2: (10/10): (1): P2 - P = k2 * Q2 * abs(Q2)
+// 7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 6: P1: (4/4): (1): P1 = P01
+// 5: P2: (5/5): (1): P2 = P02
+// 4: P3: (6/6): (1): P3 = P03
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// 2: V: (12/12): (1): P = 0.5 * rho * V
+// 1: BQ: (8/8): (1): rho * der_V = BQ
+//
+//
+// Variables of interest (7)
+// ========================================
+// 1: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+// 2: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 3: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 4: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 5: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 6: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 7: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+//
+//
+// unMeasured Variables of interest (3)
+// ========================================
+// 1: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 2: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 3: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// Boundary conditions (2)
+// ========================================
+// 1: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 2: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// Binding equations:(3)
+// ============================================================
+//
+// 12: P03: (3/3): (1): P03 = 0.9378339999999999
+// 11: P02: (2/2): (1): P02 = 5.73935
+// 10: P01: (1/1): (1): P01 = 3.93397
+//
+//
+// E-BLT: equations that compute the variables of interest:(6)
+// ============================================================
+//
+// 2: V: (12/12): (1): P = 0.5 * rho * V
+// 4: P3: (6/6): (1): P3 = P03
+// 6: P1: (4/4): (1): P1 = P01
+// 7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 8: Q2: (10/10): (1): P2 - P = k2 * Q2 * abs(Q2)
+// 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>2: V: (12/12): (1): P = 0.5 * rho * V
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>4: P3: (6/6): (1): P3 = P03
+// P03 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>6: P1: (4/4): (1): P1 = P01
+// Procedure success
+//
+// >>>7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>8: Q2: (10/10): (1): P2 - P = k2 * Q2 * abs(Q2)
+// 5: P2: (5/5): (1): P2 = P02
+// P02 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+// 1: BQ: (8/8): (1): rho * der_V = BQ
+// Procedure success
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (12)
+// ========================================
+// 1: BQ:VARIABLE()  "Mass balance" type: Real
+// 2: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+// 3: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 4: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 5: P2:VARIABLE()  type: Real
+// 6: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 7: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 8: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 9: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 10: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+// 11: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 12: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// OrderedEquation (12, 12)
+// ========================================
+// 1/1 (1): P3 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Q2 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): P01 = 3.93397   [binding |0|0|0|0|]
+// 4/4 (1): P02 = 5.73935   [binding |0|0|0|0|]
+// 5/5 (1): P03 = 0.9378339999999999   [binding |0|0|0|0|]
+// 6/6 (1): P1 = P01   [dynamic |0|0|0|0|]
+// 7/7 (1): BQ = Q1 + Q2 - Q3   [dynamic |0|0|0|0|]
+// 8/8 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
+// 9/9 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 10/10 (1): P2 - P = k2 * Q2 * abs(Q2)   [dynamic |0|0|0|0|]
+// 11/11 (1): P - P3 = k3 * Q3 * abs(Q3)   [dynamic |0|0|0|0|]
+// 12/12 (1): P = 0.5 * rho * V   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 12 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 12
+// var 3 is solved in eqn 9
+// var 4 is solved in eqn 1
+// var 5 is solved in eqn 10
+// var 6 is solved in eqn 6
+// var 7 is solved in eqn 11
+// var 8 is solved in eqn 2
+// var 9 is solved in eqn 7
+// var 10 is solved in eqn 3
+// var 11 is solved in eqn 4
+// var 12 is solved in eqn 5
+//
+// Standard BLT of the original model:(12)
+// ============================================================
+//
+// 12: P03: (5/5): (1): P03 = 0.9378339999999999
+// 11: P02: (4/4): (1): P02 = 5.73935
+// 10: P01: (3/3): (1): P01 = 3.93397
+// 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+// 8: Q2: (2/2): (1): Q2 = 0.0
+// 7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 6: P1: (6/6): (1): P1 = P01
+// 5: P2: (10/10): (1): P2 - P = k2 * Q2 * abs(Q2)
+// 4: P3: (1/1): (1): P3 = 0.0
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// 2: V: (12/12): (1): P = 0.5 * rho * V
+// 1: BQ: (8/8): (1): rho * der_V = BQ
+//
+//
+// Variables of interest (7)
+// ========================================
+// 1: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+// 2: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 3: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 4: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 5: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 6: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 7: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+//
+//
+// unMeasured Variables of interest (3)
+// ========================================
+// 1: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 2: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 3: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// Boundary conditions (2)
+// ========================================
+// 1: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 2: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// Binding equations:(5)
+// ============================================================
+//
+// 12: P03: (5/5): (1): P03 = 0.9378339999999999
+// 11: P02: (4/4): (1): P02 = 5.73935
+// 10: P01: (3/3): (1): P01 = 3.93397
+// 8: Q2: (2/2): (1): Q2 = 0.0
+// 4: P3: (1/1): (1): P3 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 2: V: (12/12): (1): P = 0.5 * rho * V
+// 6: P1: (6/6): (1): P1 = P01
+// 7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>2: V: (12/12): (1): P = 0.5 * rho * V
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>6: P1: (6/6): (1): P1 = P01
+// Procedure success
+//
+// >>>7: Q3: (11/11): (1): P - P3 = k3 * Q3 * abs(Q3)
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>9: Q1: (7/7): (1): BQ = Q1 + Q2 - Q3
+// 1: BQ: (8/8): (1): rho * der_V = BQ
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {12, 6, 11, 7}
+// SET_S: {9, 8}
+//
+//
+// SET_C (4, 4)
+// ========================================
+// 1/1 (1): P = 0.5 * rho * V   [dynamic |0|0|0|0|]
+// 2/2 (1): P1 = P01   [dynamic |0|0|0|0|]
+// 3/3 (1): P - P3 = k3 * Q3 * abs(Q3)   [dynamic |0|0|0|0|]
+// 4/4 (1): BQ = Q1 + Q2 - Q3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (2, 2)
+// ========================================
+// 1/1 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 2/2 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (2)
+// ========================================
+//
+// 1: P type: Real
+// 2: BQ type: Real
+//
+//
+// Parameters in SET_S (3)
+// ========================================
+// 1: k1:PARAM()  = 1.0  type: Real
+// 2: der_V:PARAM()  = -0.000907595  type: Real
+// 3: rho:PARAM()  = 1.0  type: Real
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{2, 4, 6, 7, 8, 9, 10} (7)
+// ========================================
+// 1: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+// 2: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 3: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 4: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 5: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 6: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 7: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+//
+// -SET_C:{12, 6, 11, 7}
+// -SET_S:{9, 8}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{7, 8, 9, 4, 6, 10, 2} (7)
+// ========================================
+// 1: Q3:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Mass flow at outlet" type: Real
+// 2: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  "Mass flow at inlet 2" type: Real
+// 3: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  "Mass flow at inlet 1" type: Real
+// 4: P3:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  "Pressure at outlet" type: Real
+// 5: P1:VARIABLE(start = 3.1 uncertain=Uncertainty.refine)  "Pressure at inlet 1" type: Real
+// 6: P01:VARIABLE(start = 3.0 uncertain=Uncertainty.refine)  "Pressure bc at inlet 1" type: Real
+// 7: V:VARIABLE(start = 8.0 uncertain=Uncertainty.refine)  "Initial volume" type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:4 equations < 7 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{1, 3} (2)
+// ========================================
+// 1: BQ:VARIABLE()  "Mass balance" type: Real
+// 2: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{1, 3} (2)
+// ========================================
+// 1: BQ:VARIABLE()  "Mass balance" type: Real
+// 2: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square"
+// ==========================================================================
+// -Passed
+//  Set_S has 2 equations and 2 variables
+//
+//
+// Start of extraction procedure for unmeasured variables of interest
+// Set of equations that failed the extraction of set S and that contain an unmeasured variable of interest: (2)
+// ==========================================================================
+// 1: P3 = P03
+// 2: P2 = P02
+//
+// umeasured variables to be computed (3)
+// ========================================
+// 1: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real
+// 2: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real
+// 3: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real
+//
+//
+// E-BLT: equations in the BLT that compute the unmeasured variables of interest:(1)
+// ============================================================
+//
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+//
+//
+// Extract set-S' to compute the boundary conditions
+// Procedure is applied on each equation in the failed boundary conditions
+// ==========================================================================
+// >>>P1 - P = k1 * Q1 * abs(Q1)
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>P2 = P02
+// 5: P2: (10/10): (1): P2 - P = k2 * Q2 * abs(Q2)
+// 3: P: (9/9): (1): P1 - P = k1 * Q1 * abs(Q1)
+// Procedure success
+//
+// >>>P3 = P03
+// Procedure success
+//
+// SET_B (3, 3)
+// ========================================
+// 1/1 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 2/2 (1): P2 = P02   [dynamic |0|0|0|0|]
+// 3/3 (1): P3 = P03   [dynamic |0|0|0|0|]
+//
+//
+// SET_SPrime (1, 1)
+// ========================================
+// 1/1 (1): P2 - P = k2 * Q2 * abs(Q2)   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_SPrime (1)
+// ========================================
+//
+// 1: P2 type: Real
+//
+//
+// Final DAE with set-c, set-S and set-SPrime combined (9, 9)
+// ========================================
+// 1/1 (1): P2 - P = k2 * Q2 * abs(Q2)   [dynamic |0|0|0|0|]
+// 2/2 (1): P1 - P = k1 * Q1 * abs(Q1)   [dynamic |0|0|0|0|]
+// 3/3 (1): P2 = P02   [dynamic |0|0|0|0|]
+// 4/4 (1): P3 = P03   [dynamic |0|0|0|0|]
+// 5/5 (1): rho * der_V = BQ   [dynamic |0|0|0|0|]
+// 6/6 (1): $res_F_1 := 0.5 * rho * V - P   [dynamic |0|0|0|0|]
+// 7/7 (1): $res_F_2 := P01 - P1   [dynamic |0|0|0|0|]
+// 8/8 (1): $res_F_3 := P + (-P3) - k3 * Q3 * abs(Q3)   [dynamic |0|0|0|0|]
+// 9/9 (1): $res_F_4 := Q2 + Q1 - BQ - Q3   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate vars in final DAE updated' (9)
+// ========================================
+// 1: P:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure inside merger" type: Real unreplaceable
+// 2: P02:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at inlet 2" type: Real unreplaceable
+// 3: P03:VARIABLE(uncertain=Uncertainty.propagate)  "Pressure bc at outlet" type: Real unreplaceable
+// 4: P2:VARIABLE()  type: Real
+// 5: BQ:VARIABLE()  "Mass balance" type: Real
+// 6: $res_F_1:VARIABLE()  type: Real
+// 7: $res_F_2:VARIABLE()  type: Real
+// 8: $res_F_3:VARIABLE()  type: Real
+// 9: $res_F_4:VARIABLE()  type: Real
+//
+//
+// parameters in final DAE updated (5)
+// ========================================
+// 1: rho:PARAM()  = 1.0  type: Real
+// 2: der_V:PARAM()  = -0.000907595  type: Real
+// 3: k1:PARAM()  = 1.0  type: Real
+// 4: k2:PARAM()  = 1.0  type: Real
+// 5: k3:PARAM()  = 1.0  type: Real
+//
+// record SimulationResult
+//     resultFile = "econcileState",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.MergerDynInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.MergerDynInit_Inputs.csv -lv=LOG_JAC'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Reconcile State Estimation Starting!
+// stdout            | info    | NewDataReconciliationSimpleTests.MergerDynInit
+// stdout            | info    | Reconcile State Estimation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult
