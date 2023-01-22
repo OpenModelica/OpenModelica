@@ -1071,7 +1071,7 @@ unsigned* getNonlinearVars( unsigned m, double*** fxx, unsigned* q)
    return w_idx;
 }
 
-unsigned* getLinearVars( unsigned m, unsigned q, unsigned w_idx[m])
+unsigned* getLinearVars(unsigned m, unsigned q, unsigned *w_idxm)
 {
    // Linear dependables "z": store the remaining ones (those not being in w_idx) in z_idx
 
