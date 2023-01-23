@@ -428,7 +428,7 @@ template recordDeclaration(RecordDeclaration recDecl)
                       listLength(variables))%>
 
     <%recordConstructorDef(r.name, r.name, r.variables)%>
-    <%recordModelicaCallConstrctor(r.name, r.variables)%>
+    <%recordCreateFromVarsDef(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
     <%if r.usedExternally then recordCopyExternalDefs(r.name, r.variables)%>
@@ -532,7 +532,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
     let copy_to_vars_name_p = '<%copy_to_vars_name%>_p'
     let copy_to_vars_inputs = r.variables |> var as VARIABLE(__) => (", " + varType(var) + "* in_" + crefStr(var.name))
 
-    let modelica_ctor_name = 'omc_<%rec_name%>'
+    let create_from_vars_name = '<%rec_name%>_create_from_vars'
     let modelica_ctor_inputs = r.variables |> var as VARIABLE(__) => (", " + varType(var) + " in_" + crefStr(var.name))
 
       <<
@@ -575,9 +575,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
         #define <%cpy_from_external_macro_name%>(src,dst) <%cpy_from_external_func_name%>(&src, &dst)
         >>
       %>
-      // This function should eventually replace the default 'modelica' record constructor funcition
-      // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
-      // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
+      <%rec_name%> <%create_from_vars_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
 
       // This function is not needed anymore. If you want to know how a record
       // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
@@ -644,25 +642,16 @@ template recordCopyExternalDefs(String rec_name, list<Variable> variables)
   >>
 end recordCopyExternalDefs;
 
-template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
+template recordCreateFromVarsDef(String rec_name, list<Variable> variables)
  "Generates code for creating and initializing a record given values for
-  ALL its members. This is basically what we used to generate before. However
-  that one did not handle arrays and record record members properly. This
-  should replace that function. For now it is commented until I have time to
-  clean out uses of the other one and replace it with this.
+  ALL its members. This is used internally by the generated code to reconstruct
+  records from (the scattered) simulation member variables of the record. We do
+  this when we have to send a record used in equation context to a function.
 
   Note that this is defferent from the constructors we have. This is the function
   to be used when you do R(...). not for cases where you have
 
-  R r1; (uses default constructor, i e., recordDeclarationFullHeader and recordConstructorDef)
-  R r2(a=2); (uses extra constructor, i e., recordDeclarationExtraCtor and  recordConstructorDef)
-  ...
-
-  But for cases like these.
-  a := R() (should use this function)
-
-  The difference is this function creates and returns a NEW record instance. The others
-  accept an instance and initialize it (including any allocations needed by the MEMBERS).
+  This function creates and returns a NEW record instance.
   "
 ::=
   let &varCopies = buffer ""
@@ -674,10 +663,7 @@ template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
                             (", " + varType(var) + " " + src_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction))
                 )
   <<
-  // This function should eventually replace the default 'modelica' record constructor funcition
-  // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
-  /*
-  <%rec_name%> omc_<%rec_name%>(threadData_t *threadData <%inputs%>) {
+  <%rec_name%> <%rec_name%>_create_from_vars(threadData_t *threadData <%inputs%>) {
     <%rec_name%> dst;
     // TODO Improve me. No need to initialize the record members with defaults in <%rec_name%>_construct
     // We should just do the allocs here and then copy the input parameters as default values instead.
@@ -685,9 +671,8 @@ template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
     <%varCopies%>
     return dst;
   }
-  */
   >>
-end recordModelicaCallConstrctor;
+end recordCreateFromVarsDef;
 
 template recordMemberCopy(Variable var, String src_pref, String dst_pref, Text &varCopies, Text &auxFunction)
   "Generates code for copying memembers of a record during a record copy operation.
@@ -5395,7 +5380,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + constVarOrDaeExp(v, cr, context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-    'omc_<%record_type_name%>(threadData<%vars%>)'
+    '<%record_type_name%>_create_from_vars(threadData<%vars%>)'
 
   case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
     let type = expTypeShort(aty)
