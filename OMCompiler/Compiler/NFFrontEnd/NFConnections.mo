@@ -309,7 +309,7 @@ public
     str := stringDelimitList(strl, "\n");
   end toString;
 
-function toStringList
+  function toStringList
     input Connections conns;
     output list<list<String>> strl = {};
   algorithm
