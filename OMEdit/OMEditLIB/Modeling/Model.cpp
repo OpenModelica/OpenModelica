@@ -567,6 +567,23 @@ namespace ModelInstance
     return "";
   }
 
+  Replaceable::Replaceable()
+  {
+    mIsReplaceable = false;
+    mConstrainedby = "";
+  }
+
+  void Replaceable::deserialize(const QJsonValue &jsonValue)
+  {
+    if (jsonValue.isObject()) {
+      mIsReplaceable = true;
+      QJsonObject replaceable = jsonValue.toObject();
+      mConstrainedby = replaceable.value("constrainedby").toString();
+    } else {
+      mIsReplaceable = jsonValue.toBool();
+    }
+  }
+
   Model::Model()
   {
     initialize();
@@ -1138,6 +1155,20 @@ namespace ModelInstance
     if (jsonObject.contains("__Dymola_checkBox")) {
       mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
+
+    if (jsonObject.contains("choice")) {
+      QJsonArray choices = jsonObject.value("choice").toArray();
+      foreach (auto choice, choices) {
+        if (choice.isObject()) {
+          QJsonObject choiceObject = choice.toObject();
+          if (choiceObject.contains("$value")) {
+            mChoice.append(choiceObject.value("$value").toString());
+          }
+        } else {
+          mChoice.append(choice.toString());
+        }
+      }
+    }
   }
 
   Element::Element(Model *pParentModel)
@@ -1170,7 +1201,6 @@ namespace ModelInstance
     mFinal = false;
     mInner = false;
     mOuter = false;
-    mReplaceable = false;
     mRedeclare = false;
     mConnector = "";
     mVariability = "";
@@ -1261,14 +1291,7 @@ namespace ModelInstance
       }
 
       if (prefixes.contains("replaceable")) {
-        auto replaceable = prefixes.value("replaceble");
-
-        if (replaceable.isObject()) {
-          mReplaceable = true;
-          // constrainedby stuff goes here
-        } else {
-          mReplaceable = replaceable.toBool();
-        }
+        mReplaceable.deserialize(prefixes.value("replaceable"));
       }
 
       if (prefixes.contains("redeclare")) {
@@ -1621,7 +1644,6 @@ namespace ModelInstance
       Model::setModelJson(jsonObject.value("baseClass").toObject());
       Model::deserialize();
     }
-
   }
 
 }

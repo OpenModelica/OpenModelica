@@ -301,6 +301,23 @@ private:
     static QString getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName);
   };
 
+  class Replaceable
+  {
+  public:
+    Replaceable();
+    void deserialize(const QJsonValue &jsonValue);
+
+    bool isReplaceable() const {return mIsReplaceable;}
+    void setReplaceable(bool replaceable) {mIsReplaceable = replaceable;}
+    QString getConstrainedby() const {return mConstrainedby;}
+    void setConstrainedby(const QString &constrainedby) {mConstrainedby = constrainedby;}
+  private:
+    bool mIsReplaceable;
+    QString mConstrainedby;
+    Modifier mModifier;
+    QString mComment;
+  };
+
   class Extend;
   class Element;
   class Connection;
@@ -477,11 +494,14 @@ private:
   public:
     Choices();
     void deserialize(const QJsonObject &jsonObject);
+
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
+    QStringList getChoices() const {return mChoice;}
   private:
     BooleanAnnotation mCheckBox;
     BooleanAnnotation mDymolaCheckBox;
+    QStringList mChoice;
   };
 
   class Element
@@ -512,7 +532,8 @@ private:
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
     bool isOuter() const {return mOuter;}
-    bool isReplaceable() const {return mReplaceable;}
+    bool isReplaceable() const {return mReplaceable.isReplaceable();}
+    Replaceable getReplaceable() const {return mReplaceable;}
     bool isRedeclare() const {return mRedeclare;}
     QString getConnector() const {return mConnector;}
     QString getVariability() const {return mVariability;}
@@ -537,7 +558,7 @@ private:
     bool mFinal;
     bool mInner;
     bool mOuter;
-    bool mReplaceable;
+    Replaceable mReplaceable;
     bool mRedeclare;
     QString mConnector;
     QString mVariability;
