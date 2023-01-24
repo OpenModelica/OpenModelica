@@ -188,15 +188,12 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   setFixedState("false", true);
   // set the value type based on element type.
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   if (mpModelInstanceElement->getType().compare(QStringLiteral("Boolean")) == 0) {
     if (mpModelInstanceElement->getChoices().isCheckBox() || mpModelInstanceElement->getChoices().isDymolaCheckBox()) {
       mValueType = Parameter::CheckBox;
     } else {
       mValueType = Parameter::Boolean;
     }
-  } else if (pOMCProxy->isBuiltinType(mpModelInstanceElement->getType())) {
-    mValueType = Parameter::Normal;
   } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
   } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->isReplaceable()) {
@@ -206,6 +203,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
+  } else if (!mpModelInstanceElement->getChoices().getChoices().isEmpty()) {
+    mValueType = Parameter::Choices;
   } else {
     mValueType = Parameter::Normal;
   }
@@ -332,6 +331,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
     case Parameter::Enumeration:
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
+    case Parameter::Choices:
       if (defaultValue) {
         mpValueComboBox->lineEdit()->setPlaceholderText(value);
       } else {
@@ -394,6 +394,7 @@ QWidget* Parameter::getValueWidget()
     case Parameter::Enumeration:
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
+    case Parameter::Choices:
       return mpValueComboBox;
     case Parameter::CheckBox:
       return mpValueCheckBox;
@@ -415,6 +416,7 @@ bool Parameter::isValueModified()
     case Parameter::Enumeration:
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
+    case Parameter::Choices:
       return mpValueComboBox->lineEdit()->isModified();
     case Parameter::CheckBox:
       return mValueCheckBoxModified;
@@ -436,6 +438,7 @@ QString Parameter::getValue()
     case Parameter::Enumeration:
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
+    case Parameter::Choices:
       return mpValueComboBox->lineEdit()->text().trimmed();
     case Parameter::CheckBox:
       return mpValueCheckBox->isChecked() ? "true" : "false";
@@ -471,6 +474,7 @@ void Parameter::setEnabled(bool enable)
     case Parameter::Enumeration:
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
+    case Parameter::Choices:
       mpValueComboBox->setEnabled(enable);
       break;
     case Parameter::CheckBox:
@@ -608,6 +612,16 @@ void Parameter::createValueWidget()
         }
       }
 
+      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      break;
+
+    case Parameter::Choices:
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
+      foreach (QString choice, mpModelInstanceElement->getChoices().getChoices()) {
+        mpValueComboBox->addItem(choice, choice);
+      }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
 
