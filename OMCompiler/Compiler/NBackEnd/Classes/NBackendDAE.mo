@@ -789,8 +789,8 @@ protected
       case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
-      case FEquation.WHEN()   then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
-      case FEquation.ASSERT() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
+      case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
+      case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -923,17 +923,17 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    // ToDo! inherit findEvents or implement own routine to be applied after lowering
     input FEquation frontend_equation;
     input Boolean init;
-    output Equation backend_equation;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equation := match frontend_equation
+    backend_equations := match frontend_equation
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
+        list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
@@ -941,13 +941,14 @@ protected
           // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
-      then BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(whenEqBody), whenEqBody, source, attr);
+          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
           attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
