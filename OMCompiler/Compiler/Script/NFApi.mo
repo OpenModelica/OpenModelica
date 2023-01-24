@@ -1185,7 +1185,7 @@ algorithm
 
         is_constant := comp.attributes.variability <= Variability.PARAMETER;
 
-        if Binding.isBound(comp.binding) then
+        if Binding.isExplicitlyBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
         end if;
 
