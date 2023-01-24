@@ -97,6 +97,7 @@ public:
   QString getShapeAnnotation() override;
   QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point) override;
+  void addGeometry();
   void removePoint(int index);
   void clearPoints() override;
   void updateStartPoint(QPointF point);

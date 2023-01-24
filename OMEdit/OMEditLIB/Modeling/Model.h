@@ -100,7 +100,7 @@ namespace ModelInstance
   class GraphicItem
   {
   public:
-    GraphicItem() {}
+    GraphicItem();
     BooleanAnnotation getVisible() const {return mVisible;}
     PointAnnotation getOrigin() const {return mOrigin;}
     RealAnnotation getRotation() const {return mRotation;}
