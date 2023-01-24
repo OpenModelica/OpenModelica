@@ -612,6 +612,10 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   }
   mPoints.clear();
   mPoints.parse(list.at(3));
+  // add geometries for points
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    addGeometry();
+  }
   // 5th item of list contains the color.
   mLineColor.parse(list.at(4));
   // 6th item of list contains the Line Pattern.
@@ -635,6 +639,10 @@ void LineAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpLine);
 
   mPoints = mpLine->getPoints();
+  // add geometries for points
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    addGeometry();
+  }
   mPoints.evaluate(mpLine->getParentModel());
   mLineColor = mpLine->getColor();
   mLineColor.evaluate(mpLine->getParentModel());
@@ -1017,6 +1025,11 @@ void LineAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
   mPoints.append(point);
+  addGeometry();
+}
+
+void LineAnnotation::addGeometry()
+{
   if (mPoints.size() > 1) {
     if (mGeometries.size() == 0) {
       QPointF currentPoint = mPoints[mPoints.size() - 1];

@@ -35,6 +35,7 @@
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
 #include "MessagesWidget.h"
+#include "Options/OptionsDialog.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -165,6 +166,13 @@ namespace ModelInstance
     }
   }
 
+  GraphicItem::GraphicItem()
+  {
+    mVisible = true;
+    mOrigin = QPointF(0, 0);
+    mRotation = 0;
+  }
+
   void GraphicItem::deserialize(const QJsonArray &jsonArray)
   {
     mVisible.deserialize(jsonArray.at(0));
@@ -189,7 +197,20 @@ namespace ModelInstance
 
   FilledShape::FilledShape()
   {
-    mLineThickness = 0.25;
+    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+    if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
+      mLineColor = pOptionsDialog->getLineStylePage()->getLineColor();
+    } else {
+      mLineColor = QColor(0, 0, 0);
+    }
+    if (pOptionsDialog->getFillStylePage()->getFillColor().isValid()) {
+      mFillColor = pOptionsDialog->getFillStylePage()->getFillColor();
+    } else {
+      mFillColor = QColor(0, 0, 0);
+    }
+    mPattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
+    mFillPattern = StringHandler::getFillPatternType(pOptionsDialog->getFillStylePage()->getFillPattern());
+    mLineThickness = pOptionsDialog->getLineStylePage()->getLineThickness();
   }
 
   void FilledShape::deserialize(const QJsonArray &jsonArray)
@@ -235,8 +256,22 @@ namespace ModelInstance
   Line::Line(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mThickness = 0.25;
-    mArrowSize = 3;
+    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+    if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
+      mColor = pOptionsDialog->getLineStylePage()->getLineColor();
+    } else {
+      mColor = QColor(0, 0, 0);
+    }
+    mPattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
+    mThickness = pOptionsDialog->getLineStylePage()->getLineThickness();
+    mArrow.replace(0, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineStartArrow()));
+    mArrow.replace(1, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineEndArrow()));
+    mArrowSize = pOptionsDialog->getLineStylePage()->getLineArrowSize();
+    if (pOptionsDialog->getLineStylePage()->getLineSmooth()) {
+      mSmooth = StringHandler::SmoothBezier;
+    } else {
+      mSmooth = StringHandler::SmoothNone;
+    }
   }
 
   void Line::deserialize(const QJsonArray &jsonArray)
@@ -295,7 +330,7 @@ namespace ModelInstance
   Polygon::Polygon(Model *pParentModel)
     : Shape(pParentModel)
   {
-
+    mSmooth = StringHandler::SmoothNone;
   }
 
   void Polygon::deserialize(const QJsonArray &jsonArray)
@@ -313,7 +348,9 @@ namespace ModelInstance
   Rectangle::Rectangle(Model *pParentModel)
     : Shape(pParentModel)
   {
+    mBorderPattern = StringHandler::BorderNone;
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mRadius = 0;
   }
 
   void Rectangle::deserialize(const QJsonArray &jsonArray)
@@ -332,6 +369,7 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
       mClosure = StringHandler::ClosureChord;
@@ -357,6 +395,11 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mTextString = "";
+    mFontSize = 0;
+    mFontName = Helper::systemFontInfo.family();
+    mTextColor = QColor(0, 0, 0);
+    mHorizontalAlignment = StringHandler::TextAlignmentCenter;
   }
 
   void Text::deserialize(const QJsonArray &jsonArray)
@@ -1217,7 +1260,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("condition")) {
-      mCondition = jsonObject.value("condition").toBool();
+      mCondition = jsonObject.value("condition").toBool(true);
     }
 
     if (jsonObject.contains("type")) {

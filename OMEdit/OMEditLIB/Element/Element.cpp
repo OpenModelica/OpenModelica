@@ -1156,7 +1156,7 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mTransformation.isValid()) {
-    setVisible(mTransformation.getVisible());
+    setVisible(mTransformation.getVisible() && isCondition());
     if (mpStateElementRectangle) {
       if (isVisible()) {
         if (mHasTransition && mIsInitialState) {
@@ -1219,6 +1219,20 @@ QString Element::getComment() const
     return mpModelElement->getComment();
   } else {
     return mpElementInfo->getComment();
+  }
+}
+
+/*!
+ * \brief Element::isCondition
+ * Returns the element condition.
+ * \return
+ */
+bool Element::isCondition() const
+{
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    return mpModelElement->getCondition();
+  } else {
+    return true;
   }
 }
 
