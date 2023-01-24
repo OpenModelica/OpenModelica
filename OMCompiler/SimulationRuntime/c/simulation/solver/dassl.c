@@ -812,7 +812,7 @@ static int continue_DASSL(int* idid, double* atol)
  *
  * @param t       Independent variable (time).
  * @param y       Array with state variables, size dasslData->N.
- * @param yd      Array with old state derivatives.
+ * @param yd      Array with state derivatives, size dasslData->N.
  * @param cj      Unused, specified by DDASKR interface.
  * @param delta   Output: state derivatives - yd
  * @param ires    If not successfull set to -1 on exit.
@@ -1084,12 +1084,12 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
  * @param t         Independent variable (time).
  * @param y         Array with state variables, size dasslData->N.
  * @param yprime    Array with state derivatives, size dasslData->N.
- * @param delta     Array of size dasslData->N.
+ * @param delta     Previous f(t,y) - dy, Array of size dasslData->N.
  * @param matrixA   On output contains values of Jacobian matrix.
  *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
  * @param cj        Specified by library interface. Given to residualFunction, which ignores it.
- * @param h
- * @param wt
+ * @param h         Step size of DASSL solver.
+ * @param wt        Array with error weights, size dasslData->N.
  * @param rpar      Struct storing user data.
  *                  Type: {DATA*, DASSL_DATA*, threadData_t*}
  * @param ipar      Specified by library interface. Given to residualFunction, which ignores it.

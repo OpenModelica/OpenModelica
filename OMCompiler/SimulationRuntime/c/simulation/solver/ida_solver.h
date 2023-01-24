@@ -87,7 +87,7 @@ typedef struct IDA_SOLVER
   double *ysave;
   double *ypsave;
   double *delta_hh;
-  N_Vector errwgt;
+  N_Vector errwgt;              /* Error weights W[i] = 1 / (rtol * |y[i]| + atol) */
   N_Vector newdelta;
 
   /* ### ida internal data ### */
