@@ -2228,6 +2228,9 @@ public
     end map;
 
     function split
+      "this function splits up when equations while respecting to keep
+      correct branches for assigned discrete states and reinitialized states.
+      it also keeps all no return branches as one."
       input WhenEquationBody body;
       output list<WhenEquationBody> bodies = {};
     protected
@@ -2241,15 +2244,23 @@ public
       Option<WhenStatement> stmt;
       Option<WhenEquationBody> new_body;
     algorithm
+      // collect all discretes and states contained in the when equation body
+      // and also flatten the when equation to a list
       flat_when := collectForSplit(SOME(body), discr_map, state_map);
       discretes := UnorderedSet.toList(discr_map);
       states    := UnorderedSet.toList(state_map);
 
+      // create a when equation for each discrete state
       for disc in discretes loop
         flat_new := {};
         for tpl in flat_when loop
           (condition, stmts) := tpl;
+          // get first assignment - each branch should only have one
+          // assignment per discrete state
           stmt := getFirstAssignment(disc, stmts);
+          // if there is a statement: create the when body and combine with previous
+          // conditions. if there is no statement in this branch, save the condition
+          // negated for the next branch
           if Util.isSome(stmt) then
             condition := combineConditions(acc_condition, condition, false);
             acc_condition := Expression.EMPTY(Type.INTEGER());
@@ -2258,6 +2269,7 @@ public
             acc_condition := combineConditions(acc_condition, condition, true);
           end if;
         end for;
+        // create body from flat list and add to new bodies
         new_body := fromFlatList(flat_new);
         if Util.isSome(new_body) then
           bodies := Util.getOption(new_body) :: bodies;
@@ -2268,11 +2280,17 @@ public
         end if;
       end for;
 
+      // create a when equation for each state
       for state in states loop
         flat_new := {};
         for tpl in flat_when loop
           (condition, stmts) := tpl;
+          // get first reinit - each branch should only have one
+          // reinit per state
           stmt := getFirstReinit(state, stmts);
+          // if there is a statement: create the when body and combine with previous
+          // conditions. if there is no statement in this branch, save the condition
+          // negated for the next branch
           if Util.isSome(stmt) then
             condition := combineConditions(acc_condition, condition, false);
             acc_condition := Expression.EMPTY(Type.INTEGER());
@@ -2281,6 +2299,7 @@ public
             acc_condition := combineConditions(acc_condition, condition, true);
           end if;
         end for;
+        // create body from flat list and add to new bodies
         new_body := fromFlatList(flat_new);
         if Util.isSome(new_body) then
           bodies := Util.getOption(new_body) :: bodies;
@@ -2291,9 +2310,13 @@ public
         end if;
       end for;
 
+      // collect all statements that are not assign or reinit and combine them
       for tpl in flat_when loop
         (condition, stmts) := tpl;
         stmts := list(stmt for stmt guard(not WhenStatement.isAssignOrReinit(stmt)) in stmts);
+        // if there is a statement: create the when body and combine with previous
+        // conditions. if there is no statement in this branch, save the condition
+        // negated for the next branch
         if not listEmpty(stmts) then
           condition := combineConditions(acc_condition, condition, false);
           acc_condition := Expression.EMPTY(Type.INTEGER());
@@ -2308,6 +2331,8 @@ public
 
   protected
     function collectForSplit
+      "collects all discrete states and regular states for splitting up
+      of a when equation. also flattens it to a list"
       input Option<WhenEquationBody> body_opt;
       input UnorderedSet<ComponentRef> discr_map;
       input UnorderedSet<ComponentRef> state_map;
@@ -2341,6 +2366,7 @@ public
     end collectForSplit;
 
     function getFirstAssignment
+      "returns the first assignment in the list that is solved for cref"
       input ComponentRef cref;
       input list<WhenStatement> stmts;
       output Option<WhenStatement> assign = NONE();
@@ -2359,6 +2385,7 @@ public
     end getFirstAssignment;
 
     function getFirstReinit
+      "returns the first reinit in the list that reinitializes cref"
       input ComponentRef cref;
       input list<WhenStatement> stmts;
       output Option<WhenStatement> assign = NONE();
@@ -2375,6 +2402,8 @@ public
     end getFirstReinit;
 
     function combineConditions
+      "combines to conditions with an AND. Ignores first condition if EMPTY.
+      May invert second condition."
       input Expression acc_condition;
       input output Expression condition;
       input Boolean invert;
