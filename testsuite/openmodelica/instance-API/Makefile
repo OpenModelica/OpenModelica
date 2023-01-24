@@ -12,6 +12,7 @@ GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \
 GetModelInstanceConditional1.mos \
+GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
