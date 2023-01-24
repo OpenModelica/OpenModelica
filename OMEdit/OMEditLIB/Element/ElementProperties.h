@@ -50,7 +50,8 @@ public:
     CheckBox,
     Enumeration,
     ReplaceableComponent,
-    ReplaceableClass
+    ReplaceableClass,
+    Choices
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
   Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
