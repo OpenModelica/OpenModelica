@@ -1046,7 +1046,7 @@ algorithm
   // Instantiate the scope if the annotation contains component references that
   // we need to be able to look up.
   if not annotation_is_literal then
-    ErrorExt.setCheckpoint(getInstanceName());
+    //ErrorExt.setCheckpoint(getInstanceName());
     try
       context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
       scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
@@ -1055,7 +1055,7 @@ algorithm
       Inst.instExpressions(scope, context = context);
     else
     end try;
-    ErrorExt.rollBack(getInstanceName());
+    //ErrorExt.rollBack(getInstanceName());
   end if;
 
   json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
