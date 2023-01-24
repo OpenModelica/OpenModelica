@@ -271,7 +271,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     /* set yScale from nominal values */
     for(i=0; i < data->modelData->nStates; ++i) {
       idaData->yScale[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-      idaData->ypScale[i] = 1.0;
+      idaData->ypScale[i] = 1.0; // TODO AHeu: 1 is not a good scaling value. Use something like nominal value / number of intervals
     }
     /* daeMode: set nominal values for algebraic variables */
     if (idaData->daeMode) {
@@ -1329,7 +1329,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
  * @param yy            Vector of state variables y.
  * @param yp            Vector of derivatives y'.
  * @param rr            Vector of residual vector F(y,y').
- * @param Jac           Output Jacobian: J = (∂F)/(∂y) + cj * (∂F)/(∂y').
+ * @param Jac           Output Jacobian: J = (∂F)/(∂y).
  * @param idaData       Pointer to IDA user data.
  * @return int          Return 0 on success, positive value on recoverable error and negative value otherwise.
 */
@@ -1352,7 +1352,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = 1e-5; //numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
+  double delta_h = numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
   double delta_hhh;
   long int i,j,l,ii;
 
@@ -1385,7 +1385,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
       if(sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]),fabs(delta_hhh)),fabs(1./errwgt[ii]));
+        delta_hh[ii] = fmax(delta_h * fmax(fabs(states[ii]),fabs(delta_hhh)), 1./errwgt[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];      // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];
@@ -1395,8 +1395,6 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
           ypsave[ii] = yprime[ii];
           yprime[ii] += cj * delta_hh[ii];
         }
-
-        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
 
@@ -1412,7 +1410,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
         while(j < sparsePattern->leadindex[ii+1])
         {
           l  =  sparsePattern->index[j];
-          SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) * delta_hh[ii];
+          SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) / delta_hh[ii];
           j++;
         };
         states[ii] = ysave[ii];
@@ -1654,7 +1652,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = 1e-5; //numericalDifferentiationDeltaXsolver;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double *delta_hh = idaData->delta_hh;
   double delta_hhh;
   double deltaInv;
@@ -1704,7 +1702,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       if(sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]),fabs(delta_hhh)),fabs(1./errwgt[ii]));
+        delta_hh[ii] = fmax(delta_h * fmax(fabs(states[ii]), fabs(delta_hhh)), 1./errwgt[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];     // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];
@@ -1714,8 +1712,6 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
           ypsave[ii] = yprime[ii];
           yprime[ii] += cj * delta_hh[ii];
         }
-
-        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
     idaData->useScaling = FALSE;
@@ -1734,9 +1730,9 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
           j  =  sparsePattern->index[nth];
           /* use row scaling for jacobian elements */
           if (!idaData->useScaling || !omc_flag[FLAG_IDA_SCALING]){
-            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) / delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
           } else {
-            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) / delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
         };

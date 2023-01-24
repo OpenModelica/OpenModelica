@@ -97,23 +97,23 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
                         double *pd, double *cj, double *h, double *wt,
                         double *rpar, int* ipar);
 
-static int jacA_num(double *t, double *y, double *yprime, double *deltaD,
-                    double *pd, double *cj, double *h, double *wt,
-                    double *rpar, int* ipar);
+int jacA_num(double *t, double *y, double *yprime, double *deltaD,
+             double *pd, double *cj, double *h, double *wt,
+             double *rpar, int* ipar);
 
-static int jacA_numColored(double *t, double *y, double *yprime,
-                           double *deltaD, double *pd, double *cj, double *h,
-                           double *wt, double *rpar, int* ipar);
+int jacA_numColored(double *t, double *y, double *yprime,
+                    double *deltaD, double *pd, double *cj, double *h,
+                    double *wt, double *rpar, int* ipar);
 
-static int jacA_sym(double *t, double *y, double *yprime, double *deltaD,
-                    double *pd, double *cj, double *h, double *wt,
-                    double *rpar, int* ipar);
+int jacA_sym(double *t, double *y, double *yprime, double *deltaD,
+             double *pd, double *cj, double *h, double *wt,
+             double *rpar, int* ipar);
 
-static int jacA_symColored(double *t, double *y, double *yprime,
-                           double *deltaD, double *pd, double *cj, double *h,
-                           double *wt, double *rpar, int* ipar);
+int jacA_symColored(double *t, double *y, double *yprime,
+                   double *deltaD, double *pd, double *cj, double *h,
+                   double *wt, double *rpar, int* ipar);
 
-static void setJacElementDasslSparse(int l, int k, int nth, double val,
+void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
 void  DDASKR(
@@ -143,9 +143,8 @@ void  DDASKR(
 static int continue_DASSL(int* idid, double* tolarence);
 
 /* function for calculating state values on residual form */
-static int functionODE_residual(double *t, double *x, double *xprime,
-                                double *cj, double *delta, int *ires,
-                                double *rpar, int* ipar);
+static int functionODE_residual(double *t, double *y, double *yd, double* cj,
+                                double *delta, int *ires, double *rpar, int *ipar);
 
 /* function for calculating zeroCrossings */
 static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y,
@@ -373,18 +372,18 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   switch (dasslData->dasslJacobian){
     case COLOREDNUMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->maxColors;
-      dasslData->jacobianFunction =  jacA_numColored;
+      dasslData->jacobianFunction = jacA_numColored;
       break;
     case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->maxColors;
-      dasslData->jacobianFunction =  jacA_symColored;
+      dasslData->jacobianFunction = jacA_symColored;
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
       dasslData->allocatedParMem = 1;   /* true */
 #endif
       break;
     case SYMJAC:
-      dasslData->jacobianFunction =  jacA_sym;
+      dasslData->jacobianFunction = jacA_sym;
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
       dasslData->allocatedParMem = 1;   /* true */
@@ -813,7 +812,7 @@ static int continue_DASSL(int* idid, double* atol)
  * @param t       Independent variable (time).
  * @param y       Array with state variables, size dasslData->N.
  * @param yd      Array with state derivatives, size dasslData->N.
- * @param cj      Unused, specified by DDASKR interface.
+ * @param cj      Unused, specified by DDASKR interface but can be ignored.
  * @param delta   Output: state derivatives - yd
  * @param ires    If not successfull set to -1 on exit.
  * @param rpar    Struct storing user data.
@@ -822,8 +821,8 @@ static int continue_DASSL(int* idid, double* atol)
  * @param ipar    Unused, specified by DDASKR interface.
  * @return int    Return 0.
  */
-int functionODE_residual(double *t, double *y, double *yd, double* cj,
-                         double *delta, int *ires, double *rpar, int *ipar)
+static int functionODE_residual(double *t, double *y, double *yd, double* cj,
+                                double *delta, int *ires, double *rpar, int *ipar)
 {
   TRACE_PUSH
   UNUSED(cj); UNUSED(ipar); /* Silence compíler warnings */
@@ -897,8 +896,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
   return 0;
 }
 
-int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
-                                int *ng, double *gout, double *rpar, int* ipar)
+static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
+                                       int *ng, double *gout, double *rpar, int* ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -1079,13 +1078,12 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
  *
  * Calculate Jacobian matrix using forward finite differences.
  *
- * TODO: This function is not given to DASSL, remove unused variables.
- *
  * @param t         Independent variable (time).
  * @param y         Array with state variables, size dasslData->N.
  * @param yprime    Array with state derivatives, size dasslData->N.
  * @param delta     Previous f(t,y) - dy, Array of size dasslData->N.
- * @param matrixA   On output contains values of Jacobian matrix.
+ * @param matrixA   On output contains values of Jacobian matrix
+ *                  J = (∂F)/(∂y).
  *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
  * @param cj        Specified by library interface. Given to residualFunction, which ignores it.
  * @param h         Step size of DASSL solver.
@@ -1105,7 +1103,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   threadData_t* threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   double delta_h = numericalDifferentiationDeltaXsolver;
-  double delta_hh,delta_hhh, deltaInv;
+  double delta_hh, delta_hhh;
   double ysave;
   int ires;
   int col, row;
@@ -1116,10 +1114,9 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   for(col=dasslData->N-1; col >= 0; col--)
   {
     delta_hhh = *h * yprime[col];
-    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)),fabs(1. / wt[col]));
+    delta_hh = fmax(delta_h * fmax(fabs(y[col]),fabs(delta_hhh)), fabs(1. / wt[col]));  // TODO: Can wt[col] be negative?
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
-    deltaInv = 1. / delta_hh;
     ysave = y[col];
     y[col] += delta_hh;
 
@@ -1130,7 +1127,8 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
 
     for(row = dasslData->N-1; row >= 0 ; row--)
     {
-      matrixA[col*dasslData->N + row] = (dasslData->newdelta[row] - delta[row]) * deltaInv;
+      matrixA[col*dasslData->N + row] = (dasslData->newdelta[row] - delta[row]) / delta_hh;
+      // -I*cj will be added in callJacobian()
     }
     y[col] = ysave;
   }
@@ -1139,12 +1137,25 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   return 0;
 }
 
-/* \fn jacA_numColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar)
+/**
+ * @brief Calculate colored Jacobian matrix numericaly.
  *
+ * Calculate Jacobian matrix using forward finite differences and use coloring.
  *
- * This function calculates a jacobian matrix by
- * numerical with forward finite differences and exploiting the coloring.
+ * @param t         Independent variable (time).
+ * @param y         Array with state variables, size dasslData->N.
+ * @param yprime    Array with state derivatives, size dasslData->N.
+ * @param delta     Previous f(t,y) - dy, Array of size dasslData->N.
+ * @param matrixA   On output contains values of Jacobian matrix
+ *                  J = (∂F)/(∂y).
+ *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
+ * @param cj        Specified by library interface. Given to residualFunction, which ignores it.
+ * @param h         Step size of DASSL solver.
+ * @param wt        Array with error weights, size dasslData->N.
+ * @param rpar      Struct storing user data.
+ *                  Type: {DATA*, DASSL_DATA*, threadData_t*}
+ * @param ipar      Specified by library interface. Given to residualFunction, which ignores it.
+ * @return int      Return 0.
  */
 int jacA_numColored(double *t, double *y, double *yprime, double *delta,
                     double *matrixA, double *cj, double *h, double *wt,
@@ -1177,14 +1188,12 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)),fabs(1./wt[ii]));
+        delta_hh[ii] = fmax(delta_h * fmax(fabs(y[ii]),fabs(delta_hhh)), fabs(1./wt[ii]));    // TODO: Can wt[ii] be negative?
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 
         ysave[ii] = y[ii];
         y[ii] += delta_hh[ii];
-
-        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
@@ -1200,7 +1209,8 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
         {
           l  =  jacobian->sparsePattern->index[j];
           k  = l + ii*jacobian->sizeRows;
-          matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
+          matrixA[k] = (dasslData->newdelta[l] - delta[l]) / delta_hh[ii];
+          // -I*cj will be added in callJacobian()
           j++;
         };
         y[ii] = ysave[ii];
@@ -1212,12 +1222,22 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   return 0;
 }
 
-/* \fn callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar)
+/**
+ * @brief Calculate Jacobian.
  *
- *
- * This function is called by dassl to calculate the jacobian matrix.
- *
+ * @param t         Independent variable (time).
+ * @param y         Array with state variables, size dasslData->N.
+ * @param yprime    Array with state derivatives, size dasslData->N.
+ * @param deltaD    Previous f(t,y) - dy, Array of size dasslData->N.
+ * @param pd        On output contains values of Jacobian matrix
+ *                  J = (∂F)/(∂y) + cj * (∂F)/(∂y').
+ *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
+ * @param cj        Coefficient from BDF method, cj =  1/alpha = h_n / alpha_n,0
+ * @param h         Step size of DASSL solver.
+ * @param wt        Array with error weights, size dasslData->N.
+ * @param rpar      Struct storing user data.
+ * @param ipar      Type: {DATA*, DASSL_DATA*, threadData_t*}
+ * @return int      Specified by library interface. Given to residualFunction, which ignores it.
  */
 static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
                         double *pd, double *cj, double *h, double *wt,
@@ -1227,16 +1247,24 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+  int i;
 
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
+  /* Compute J = (∂F)/(∂y) */
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     TRACE_POP
     return 1;
+  }
+
+  /* Compute J -= cj * (∂F)/(∂y') */
+  for(i = 0; i < dasslData->N*dasslData->N; i += dasslData->N + 1)
+  {
+    pd[i] -= *cj;
   }
 
   /* debug */
@@ -1246,12 +1274,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
     _omc_destroyMatrix(dumpJac);
   }
 
-  int i,j = 0;
-  for(i = 0; i < dasslData->N; i++)
-  {
-    pd[j] -= (double) *cj;
-    j += dasslData->N + 1;
-  }
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
 
