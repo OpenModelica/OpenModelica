@@ -2125,6 +2125,23 @@ public
       Option<WhenEquationBody> else_when    "optional elsewhen body";
     end WHEN_EQUATION_BODY;
 
+    function fromFlatList
+      input list<tuple<Expression, list<WhenStatement>>> flat_list;
+      output Option<WhenEquationBody> body;
+    algorithm
+      body := match flat_list
+        local
+          Expression condition;
+          list<WhenStatement> stmts;
+          list<tuple<Expression, list<WhenStatement>>> tail;
+          Option<WhenEquationBody> else_when;
+        case (condition, stmts) :: tail algorithm
+          else_when := fromFlatList(tail);
+        then SOME(WHEN_EQUATION_BODY(condition, stmts, else_when));
+        else NONE();
+      end match;
+    end fromFlatList;
+
     function toString
       input WhenEquationBody body;
       input String indent = "";
@@ -2159,16 +2176,24 @@ public
       output list<ComponentRef> conditions;
       output list<WhenStatement> when_stmts = body.when_stmts;
       output Option<WhenEquationBody> else_when = body.else_when;
+    protected
+      function getConditions
+        input Expression cond;
+        output list<ComponentRef> conditions;
+      algorithm
+        conditions := match cond
+          local
+            ComponentRef cref;
+          case Expression.CREF(cref = cref) then {cref};
+          case Expression.ARRAY() then List.flatten(list(getConditions(elem) for elem in cond.elements));
+          case Expression.CALL() guard(Call.isNamed(cond.call, "initial")) then {};
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          then fail();
+        end match;
+      end getConditions;
     algorithm
-      conditions := match body.condition
-        local
-          ComponentRef cref;
-        case Expression.CREF(cref = cref) then {cref};
-        // ToDo: Array/Tuple etc
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
-        then fail();
-      end match;
+      conditions := getConditions(body.condition);
     end getBodyAttributes;
 
     function toStatement
@@ -2201,27 +2226,196 @@ public
       // ToDo reference eq for lists?
       whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end map;
-/*
-    function convert
+
+    function split
+      "this function splits up when equations while respecting to keep
+      correct branches for assigned discrete states and reinitialized states.
+      it also keeps all no return branches as one."
       input WhenEquationBody body;
-      output OldBackendDAE.WhenEquation oldBody;
+      output list<WhenEquationBody> bodies = {};
     protected
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> stmts;
-      BackendDAE.WhenEquation elseWhen;
+      UnorderedSet<ComponentRef> discr_map = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      UnorderedSet<ComponentRef> state_map = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      list<tuple<Expression, list<WhenStatement>>> flat_when;
+      list<tuple<Expression, list<WhenStatement>>> flat_new;
+      list<ComponentRef> discretes, states;
+      Expression condition, acc_condition = Expression.EMPTY(Type.INTEGER());
+      list<WhenStatement> stmts;
+      Option<WhenStatement> stmt;
+      Option<WhenEquationBody> new_body;
     algorithm
-      // convert the attributes
-      condition := Expression.toDAE(body.condition);
-      stmts     := list(WhenStatement.convert(stmt) for stmt in body.when_stmts);
-      elseWhen  := if Util.isSome(body.else_when) then convert(Util.getOption(body.else_when)) else NONE();
-      // create the when equation body itself
-      oldBody   := OldBackendDAE.WHEN_STMTS(
-        condition     = condition,
-        whenStmtLst   = stmts,
-        elsewhenPart  = elseWhen
-      );
-    end convert;
-*/
+      // collect all discretes and states contained in the when equation body
+      // and also flatten the when equation to a list
+      flat_when := collectForSplit(SOME(body), discr_map, state_map);
+      discretes := UnorderedSet.toList(discr_map);
+      states    := UnorderedSet.toList(state_map);
+
+      // create a when equation for each discrete state
+      for disc in discretes loop
+        flat_new := {};
+        for tpl in flat_when loop
+          (condition, stmts) := tpl;
+          // get first assignment - each branch should only have one
+          // assignment per discrete state
+          stmt := getFirstAssignment(disc, stmts);
+          // if there is a statement: create the when body and combine with previous
+          // conditions. if there is no statement in this branch, save the condition
+          // negated for the next branch
+          if Util.isSome(stmt) then
+            condition := combineConditions(acc_condition, condition, false);
+            acc_condition := Expression.EMPTY(Type.INTEGER());
+            flat_new := (condition, {Util.getOption(stmt)}) :: flat_new;
+          else
+            acc_condition := combineConditions(acc_condition, condition, true);
+          end if;
+        end for;
+        // create body from flat list and add to new bodies
+        new_body := fromFlatList(flat_new);
+        if Util.isSome(new_body) then
+          bodies := Util.getOption(new_body) :: bodies;
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because when partition for: " + ComponentRef.toString(disc)
+            + " could not be recovered."});
+        end if;
+      end for;
+
+      // create a when equation for each state
+      for state in states loop
+        flat_new := {};
+        for tpl in flat_when loop
+          (condition, stmts) := tpl;
+          // get first reinit - each branch should only have one
+          // reinit per state
+          stmt := getFirstReinit(state, stmts);
+          // if there is a statement: create the when body and combine with previous
+          // conditions. if there is no statement in this branch, save the condition
+          // negated for the next branch
+          if Util.isSome(stmt) then
+            condition := combineConditions(acc_condition, condition, false);
+            acc_condition := Expression.EMPTY(Type.INTEGER());
+            flat_new := (condition, {Util.getOption(stmt)}) :: flat_new;
+          else
+            acc_condition := combineConditions(acc_condition, condition, true);
+          end if;
+        end for;
+        // create body from flat list and add to new bodies
+        new_body := fromFlatList(flat_new);
+        if Util.isSome(new_body) then
+          bodies := Util.getOption(new_body) :: bodies;
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because when partition for: " + ComponentRef.toString(state)
+            + " could not be recovered."});
+        end if;
+      end for;
+
+      // collect all statements that are not assign or reinit and combine them
+      for tpl in flat_when loop
+        (condition, stmts) := tpl;
+        stmts := list(stmt for stmt guard(not WhenStatement.isAssignOrReinit(stmt)) in stmts);
+        // if there is a statement: create the when body and combine with previous
+        // conditions. if there is no statement in this branch, save the condition
+        // negated for the next branch
+        if not listEmpty(stmts) then
+          condition := combineConditions(acc_condition, condition, false);
+          acc_condition := Expression.EMPTY(Type.INTEGER());
+          flat_new := (condition, stmts) :: flat_new;
+        else
+          acc_condition := combineConditions(acc_condition, condition, true);
+        end if;
+      end for;
+
+      bodies := listReverse(bodies);
+    end split;
+
+  protected
+    function collectForSplit
+      "collects all discrete states and regular states for splitting up
+      of a when equation. also flattens it to a list"
+      input Option<WhenEquationBody> body_opt;
+      input UnorderedSet<ComponentRef> discr_map;
+      input UnorderedSet<ComponentRef> state_map;
+      output list<tuple<Expression, list<WhenStatement>>> flat_when;
+    protected
+      WhenEquationBody body;
+    algorithm
+      if Util.isSome(body_opt) then
+        body := Util.getOption(body_opt);
+        for stmt in body.when_stmts loop
+          _ := match stmt
+            local
+              ComponentRef cref;
+            case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref)) algorithm
+              UnorderedSet.add(cref, discr_map);
+            then ();
+            case WhenStatement.REINIT(stateVar = cref) algorithm
+              UnorderedSet.add(cref, state_map);
+            then ();
+            case WhenStatement.ASSIGN() algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+                + " failed because lhs of statement is not a cref: " + WhenStatement.toString(stmt)});
+            then fail();
+            else ();
+          end match;
+        end for;
+        flat_when := (body.condition, body.when_stmts) :: collectForSplit(body.else_when, discr_map, state_map);
+      else
+        flat_when := {};
+      end if;
+    end collectForSplit;
+
+    function getFirstAssignment
+      "returns the first assignment in the list that is solved for cref"
+      input ComponentRef cref;
+      input list<WhenStatement> stmts;
+      output Option<WhenStatement> assign = NONE();
+    algorithm
+      for stmt in stmts loop
+        _ := match stmt
+          local
+            ComponentRef lhs;
+          case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs))
+          guard(ComponentRef.isEqual(cref, lhs)) algorithm
+            assign := SOME(stmt); break;
+          then ();
+          else ();
+        end match;
+      end for;
+    end getFirstAssignment;
+
+    function getFirstReinit
+      "returns the first reinit in the list that reinitializes cref"
+      input ComponentRef cref;
+      input list<WhenStatement> stmts;
+      output Option<WhenStatement> assign = NONE();
+    algorithm
+      for stmt in stmts loop
+        _ := match stmt
+          case WhenStatement.REINIT()
+          guard(ComponentRef.isEqual(cref, stmt.stateVar)) algorithm
+            assign := SOME(stmt); break;
+          then ();
+          else ();
+        end match;
+      end for;
+    end getFirstReinit;
+
+    function combineConditions
+      "combines to conditions with an AND. Ignores first condition if EMPTY.
+      May invert second condition."
+      input Expression acc_condition;
+      input output Expression condition;
+      input Boolean invert;
+    algorithm
+      if invert then
+        condition := Expression.logicNegate(condition);
+      end if;
+      if not Expression.isEmpty(acc_condition) then
+        condition := Expression.LBINARY(acc_condition, Operator.makeAnd(Type.BOOLEAN()), condition);
+      end if;
+    end combineConditions;
+
   end WhenEquationBody;
 
   uniontype WhenStatement
@@ -2300,6 +2494,17 @@ public
                       else 0;
       end match;
     end size;
+
+    function isAssignOrReinit
+      input WhenStatement stmt;
+      output Boolean b;
+    algorithm
+      b := match stmt
+        case ASSIGN() then true;
+        case REINIT() then true;
+        else false;
+      end match;
+    end isAssignOrReinit;
 
     function map
       input output WhenStatement stmt;

@@ -891,8 +891,10 @@ public
       array<list<Integer>> m_part;
       array<array<Integer>> mode_to_var_part;
       Integer eqn_scal_idx, eqn_size;
-      list<ComponentRef> unique_dependencies = List.uniqueOnTrue(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies), ComponentRef.isEqual); // ToDo: maybe bottleneck! test this for efficiency
+      list<ComponentRef> unique_dependencies;
     algorithm
+      // ToDo: maybe bottleneck! test this for efficiency
+      unique_dependencies := List.uniqueOnTrue(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies), ComponentRef.isEqual);
       _ := match (eqn, mapping_opt)
         local
           Mapping mapping;
@@ -954,6 +956,14 @@ public
         then ();
 
         case (Equation.IF_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
+          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+          row := Slice.getDependentCrefIndices(unique_dependencies, map); //prb worng
+          // duplicate row to if equation size
+          m_part := arrayCreate(eqn_size, row);
+          expandRows(m, eqn_scal_idx, m_part);
+        then ();
+
+        case (Equation.WHEN_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.getDependentCrefIndices(unique_dependencies, map); //prb worng
           // duplicate row to if equation size

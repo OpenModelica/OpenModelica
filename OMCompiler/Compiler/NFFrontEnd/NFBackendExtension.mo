@@ -391,9 +391,7 @@ public
         case Type.COMPLEX(complexTy = complexTy as ComplexType.RECORD())
         then createRecord(attrs, complexTy.indexMap, children, is_final);
 
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Type.toString(ty) + "."});
-        then fail();
+        else createReal(attrs, is_final, comment);
       end match;
     end create;
 
@@ -1139,7 +1137,6 @@ public
         end try;
       end for;
       attributes := VAR_ATTR_RECORD(indexMap, childrenAttr);
-
     end createRecord;
 
     function createAttribute
