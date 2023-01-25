@@ -1053,7 +1053,7 @@ algorithm
     try
       context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
       scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
-      scope := Inst.instantiate(scope, InstNode.parent(scope), context, true);
+      scope := Inst.instantiate(scope, context = context, instPartial = true);
       Inst.insertGeneratedInners(scope, InstNode.topScope(scope), context);
       Inst.instExpressions(scope, context = context);
     else
