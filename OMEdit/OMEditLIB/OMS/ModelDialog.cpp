@@ -626,7 +626,7 @@ AddOrEditIconDialog::AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, Grap
  */
 void AddOrEditIconDialog::browseImageFile()
 {
-  QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile), NULL, Helper::bitmapFileTypes, NULL);
+  QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile), NULL, Helper::annotationBitmapFileTypes, NULL);
   if (imageFileName.isEmpty()) {
     return;
   }

@@ -67,6 +67,7 @@ public:
   static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
   static QString bitmapFileTypes;
+  static QString annotationBitmapFileTypes;
   static QString fmuFileTypes;
   static QString xmlFileTypes;
   static QString infoXmlFileTypes;

@@ -957,7 +957,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
 
 void ShapePropertiesDialog::browseImageFile()
 {
-  QString imageFileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::bitmapFileTypes, NULL);
+  QString imageFileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::annotationBitmapFileTypes, NULL);
   if (imageFileName.isEmpty()) {
     return;
   }
