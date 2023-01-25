@@ -1395,6 +1395,8 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
           ypsave[ii] = yprime[ii];
           yprime[ii] += cj * delta_hh[ii];
         }
+
+        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
 
@@ -1410,7 +1412,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
         while(j < sparsePattern->leadindex[ii+1])
         {
           l  =  sparsePattern->index[j];
-          SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) / delta_hh[ii];
+          SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) * delta_hh[ii];
           j++;
         };
         states[ii] = ysave[ii];
@@ -1712,6 +1714,8 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
           ypsave[ii] = yprime[ii];
           yprime[ii] += cj * delta_hh[ii];
         }
+
+        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
     idaData->useScaling = FALSE;
@@ -1730,9 +1734,9 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
           j  =  sparsePattern->index[nth];
           /* use row scaling for jacobian elements */
           if (!idaData->useScaling || !omc_flag[FLAG_IDA_SCALING]){
-            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) / delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
           } else {
-            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) / delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
           }
           nth++;
         };

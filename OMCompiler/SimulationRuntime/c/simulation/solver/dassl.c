@@ -1103,7 +1103,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   threadData_t* threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   double delta_h = numericalDifferentiationDeltaXsolver;
-  double delta_hh, delta_hhh;
+  double delta_hh, delta_hhh, deltaInv;
   double ysave;
   int ires;
   int col, row;
@@ -1117,6 +1117,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
     delta_hh = fmax(delta_h * fmax(fabs(y[col]),fabs(delta_hhh)), fabs(1. / wt[col]));  // TODO: Can wt[col] be negative?
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
+    deltaInv = 1. / delta_hh;
     ysave = y[col];
     y[col] += delta_hh;
 
@@ -1127,7 +1128,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
 
     for(row = dasslData->N-1; row >= 0 ; row--)
     {
-      matrixA[col*dasslData->N + row] = (dasslData->newdelta[row] - delta[row]) / delta_hh;
+      matrixA[col*dasslData->N + row] = (dasslData->newdelta[row] - delta[row]) * deltaInv;
       // -I*cj will be added in callJacobian()
     }
     y[col] = ysave;
@@ -1194,6 +1195,8 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
 
         ysave[ii] = y[ii];
         y[ii] += delta_hh[ii];
+
+        delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
@@ -1209,7 +1212,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
         {
           l  =  jacobian->sparsePattern->index[j];
           k  = l + ii*jacobian->sizeRows;
-          matrixA[k] = (dasslData->newdelta[l] - delta[l]) / delta_hh[ii];
+          matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
           // -I*cj will be added in callJacobian()
           j++;
         };
@@ -1228,7 +1231,8 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
  * @param t         Independent variable (time).
  * @param y         Array with state variables, size dasslData->N.
  * @param yprime    Array with state derivatives, size dasslData->N.
- * @param deltaD    Previous f(t,y) - dy, Array of size dasslData->N.
+ * @param deltaD    Previous F(t,y,y') := f(t,y) - y'
+ *                  Array of size dasslData->N.
  * @param pd        On output contains values of Jacobian matrix
  *                  J = (∂F)/(∂y) + cj * (∂F)/(∂y').
  *                  Array of size dasslData->N*dasslData->N, storing matrix in row-major order.
@@ -1261,7 +1265,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
     return 1;
   }
 
-  /* Compute J -= cj * (∂F)/(∂y') */
+  /* Compute J += cj * (∂F)/(∂y') = cj*(-I) */
   for(i = 0; i < dasslData->N*dasslData->N; i += dasslData->N + 1)
   {
     pd[i] -= *cj;
