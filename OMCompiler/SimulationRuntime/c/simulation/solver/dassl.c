@@ -1114,7 +1114,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   for(col=dasslData->N-1; col >= 0; col--)
   {
     delta_hhh = *h * yprime[col];
-    delta_hh = fmax(delta_h * fmax(fabs(y[col]),fabs(delta_hhh)), fabs(1. / wt[col]));  // TODO: Can wt[col] be negative?
+    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)), fabs(1. / wt[col]));  // TODO: Can wt[col] be negative?
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
     deltaInv = 1. / delta_hh;
@@ -1189,7 +1189,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = fmax(delta_h * fmax(fabs(y[ii]),fabs(delta_hhh)), fabs(1./wt[ii]));    // TODO: Can wt[ii] be negative?
+        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)), fabs(1./wt[ii]));    // TODO: Can wt[ii] be negative?
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 
