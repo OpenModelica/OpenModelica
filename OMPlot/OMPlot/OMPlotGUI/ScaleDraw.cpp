@@ -114,6 +114,8 @@ QwtText ScaleDraw::label(double value) const
         }
       }
       value = value / qPow(10, mExponent);
+    } else {
+      mExponent = 0;
     }
   }
   return QLocale().toString(value, 'g', 4);
