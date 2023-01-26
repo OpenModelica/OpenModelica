@@ -2291,7 +2291,6 @@ void SetupDialog::applySetup()
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
   }
   // replot
-  mpPlotWindow->getPlot()->updateLayout();
   mpPlotWindow->getPlot()->replot();
   if (requiresFitInView) {
     mpPlotWindow->fitInView();
