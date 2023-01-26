@@ -35,8 +35,49 @@
 #include "BitmapAnnotation.h"
 #include "Modeling/Commands.h"
 #include "Util/ResourceCache.h"
+#include "Renderers.h"
 
 #include <QMessageBox>
+
+const char* bitmapResourceName = ":/Resources/icons/bitmap-shape.svg";
+
+/*!
+ * \brief A very simple heuristic to clasify the content type.
+ *
+ * Note that it's not super critical if this logic breaks for a weirdly contaminated SVG
+ * file. In a worst-case scenario, we will return `false` and fall back to processing the file
+ * with QImage, which will work and only make the rendering less perfect at larger zoom levels.
+ * Therefore not overinvesting into this here.
+ *
+ * \return true if the given are of an SVG image, false otherwise.
+ */
+bool isSvgImage(const QByteArray &bytes)
+{
+  return bytes.left(1024).toLower().contains("<svg") && bytes.right(256).toLower().contains("</svg>");
+}
+
+/*!
+ * \brief A factory function for a Renderers, based on input binary image data.
+ * \param bytes The binry data bytes representing the image.
+ * \return A pointer to a newly created rendered object.
+ */
+std::unique_ptr<Renderer> makeRenderer(const QByteArray &bytes)
+{
+  if (isSvgImage(bytes)) {
+    return std::make_unique<SvgRenderer>(bytes);
+  }
+  return std::make_unique<BitmapRenderer>(bytes);
+}
+
+/*!
+ * \brief A helper function to get a file content as byte array.
+ */
+QByteArray getFileAsBytes(const QString &fileName)
+{
+  QFile file(fileName);
+  file.open(QIODevice::ReadOnly);
+  return file.readAll();
+}
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
@@ -45,8 +86,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
   mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
+  setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
@@ -61,21 +101,22 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   mpBitmap = pBitmap;
   mClassFileName = classFileName;
   // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
+  setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   setShapeFlags(true);
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
+BitmapAnnotation::BitmapAnnotation(BitmapAnnotation *pBitmapAnnotation, Element *pParent)
+  : ShapeAnnotation(pBitmapAnnotation, pParent)
 {
   mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
+  updateShape(pBitmapAnnotation);
   applyTransformation();
+  setFileName(pBitmapAnnotation->getFileName());
+  setImageSource(pBitmapAnnotation->getImageSource());
+  updateRenderer();
 }
 
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent)
@@ -85,9 +126,7 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   mpBitmap = pBitmap;
   mClassFileName = classFileName;
   // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
+  setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
@@ -119,8 +158,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphic
   mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
+  setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   QVector<QPointF> extents;
@@ -131,10 +169,24 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphic
   setShapeFlags(true);
 
   setFileName(mClassFileName);
-  if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
-    mImage.load(mFileName);
+  setImageSource("");
+  updateRenderer();
+}
+
+// No, we can not put this simply in the declaration and have unique_ptr accepting incomplete type.
+BitmapAnnotation::~BitmapAnnotation() = default;
+
+void BitmapAnnotation::updateRenderer()
+{
+  if (!mImageSource.isEmpty()) {
+    QByteArray bytes = QByteArray::fromBase64(mImageSource.toLatin1());
+    mpRenderer = makeRenderer(bytes);
   } else {
-    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
+    if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
+      mpRenderer = makeRenderer(getFileAsBytes(getFileName()));
+    } else {
+      mpRenderer = std::make_unique<SvgRenderer>(getFileAsBytes(bitmapResourceName));
+    }
   }
 }
 
@@ -152,15 +204,9 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(4))));
   // 6th item is the imageSource
   if (list.size() >= 6) {
-    mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(5)));
+    setImageSource(StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(5))));
   }
-  if (!mImageSource.isEmpty()) {
-    mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
-  } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
-    mImage.load(mFileName);
-  } else {
-    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
-  }
+  updateRenderer();
 }
 
 void BitmapAnnotation::parseShapeAnnotation()
@@ -170,14 +216,8 @@ void BitmapAnnotation::parseShapeAnnotation()
   mExtent = mpBitmap->getExtent();
   mExtent.evaluate(mpBitmap->getParentModel());
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
-  mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
-  if (!mImageSource.isEmpty()) {
-    mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
-  } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
-    mImage.load(mFileName);
-  } else {
-    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
-  }
+  setImageSource(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource())));
+  updateRenderer();
 }
 
 QRectF BitmapAnnotation::boundingRect() const
@@ -209,11 +249,10 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 void BitmapAnnotation::drawBitmapAnnotation(QPainter *painter)
 {
   QRectF rect = getBoundingRect().normalized();
-  QImage image = mImage.scaled(rect.width(), rect.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  QPointF centerPoint = rect.center() - image.rect().center();
-  QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());
 
-  painter->drawImage(target, mImage.mirrored());
+  if (mpRenderer) {
+    mpRenderer->render(painter, rect, true);
+  }
 }
 
 /*!
@@ -271,8 +310,6 @@ QString BitmapAnnotation::getShapeAnnotation()
 void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 {
   // set the default values
-  GraphicItem::setDefaults(pShapeAnnotation);
-  FilledShape::setDefaults(pShapeAnnotation);
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
@@ -303,4 +340,87 @@ void BitmapAnnotation::duplicate()
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
   setSelected(false);
   pBitmapAnnotation->setSelected(true);
+}
+
+/*!
+ * \brief ShapeAnnotation::setFileName
+ * Sets the file name.
+ * \param fileName
+ */
+void BitmapAnnotation::setFileName(QString fileName)
+{
+  if (fileName.isEmpty()) {
+    mOriginalFileName = fileName;
+    mFileName = fileName;
+    return;
+  }
+
+  OMCProxy* pOMCProxy = MainWindow::instance()->getOMCProxy();
+  mOriginalFileName = fileName;
+  QUrl fileUrl(mOriginalFileName);
+  QFileInfo fileInfo(mOriginalFileName);
+  QFileInfo classFileInfo(mClassFileName);
+  /* if its a modelica:// link then make it absolute path */
+  if (fileUrl.scheme().toLower().compare("modelica") == 0) {
+    mFileName = pOMCProxy->uriToFilename(mOriginalFileName);
+  } else if (fileInfo.isRelative()) {
+    mFileName = QString(classFileInfo.absoluteDir().absolutePath()).append("/").append(mOriginalFileName);
+  } else if (fileInfo.isAbsolute()) {
+    mFileName = mOriginalFileName;
+  } else {
+    mFileName = "";
+  }
+}
+
+/*!
+  Returns the file name.
+  \return the file name.
+  */
+QString BitmapAnnotation::getFileName()
+{
+  return mOriginalFileName;
+}
+
+/*!
+  \brief Sets the image source.
+  */
+void BitmapAnnotation::setImageSource(QString imageSource)
+{
+  mImageSource = imageSource;
+}
+
+/*!
+  Returns the base 64 image source.
+  \return the image source.
+  */
+QString BitmapAnnotation::getImageSource()
+{
+  return mImageSource;
+}
+
+/*!
+  Returns the image.
+  \return the image.
+  */
+QImage BitmapAnnotation::getImage()
+{
+  if (mpRenderer)
+  {
+    return mpRenderer->getImage();
+  }
+  return BitmapAnnotation::getPlaceholderImage();
+}
+
+QImage BitmapAnnotation::getPlaceholderImage()
+{
+  return ResourceCache::getImage(bitmapResourceName);
+}
+
+void BitmapAnnotation::setDefaults()
+{
+  ShapeAnnotation::setDefaults();
+
+  mFileName = "";
+  mImageSource = "";
+  updateRenderer();
 }

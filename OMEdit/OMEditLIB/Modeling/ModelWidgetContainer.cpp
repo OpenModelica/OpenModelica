@@ -9965,11 +9965,12 @@ void ModelWidgetContainer::addOrEditIcon()
   if (pModelWidget && pModelWidget->getIconGraphicsView()) {
     if (pModelWidget->getIconGraphicsView()->getShapesList().size() > 0) {
       ShapeAnnotation *pShapeAnnotation = pModelWidget->getIconGraphicsView()->getShapesList().at(0);
-      if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) { // edit case
-        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(pShapeAnnotation, pModelWidget->getIconGraphicsView());
+      BitmapAnnotation* pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(pShapeAnnotation);
+      if (pBitmapAnnotation) { // edit case
+        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(pBitmapAnnotation, pModelWidget->getIconGraphicsView());
         pAddOrEditSubModelIconDialog->exec();
       } else { // add case
-        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(0, pModelWidget->getIconGraphicsView());
+        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(nullptr, pModelWidget->getIconGraphicsView());
         pAddOrEditSubModelIconDialog->exec();
       }
     }

@@ -34,6 +34,7 @@
 #ifndef MODELDIALOG_H
 #define MODELDIALOG_H
 
+#include "Annotations/BitmapAnnotation.h"
 #include <QWidget>
 #include <QLineEdit>
 #include <QComboBox>
@@ -150,9 +151,9 @@ class AddOrEditIconDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
+  AddOrEditIconDialog(BitmapAnnotation *pBitmapAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
 private:
-  ShapeAnnotation *mpShapeAnnotation;
+  BitmapAnnotation *mpBitmapAnnotation;
   GraphicsView *mpGraphicsView;
   Label *mpFileLabel;
   QLineEdit *mpFileTextBox;

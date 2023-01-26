@@ -2697,7 +2697,7 @@ void Element::createClassShapes()
       shapes = mpModel->getIconAnnotation()->getGraphics();
     }
 
-    foreach (auto shape, shapes) {
+    for (auto shape: shapes) {
       if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
         mShapesList.append(new LineAnnotation(pLine, this));
       } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
@@ -2730,7 +2730,8 @@ void Element::createClassShapes()
           mpLibraryTreeItem->getModelWidget()->loadDiagramView();
           pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         }
-        foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
+        for (ShapeAnnotation *pShapeAnnotation: pGraphicsView->getShapesList()) {
+          BitmapAnnotation* pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(pShapeAnnotation);
           if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
             mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
           } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
@@ -2741,19 +2742,20 @@ void Element::createClassShapes()
             mShapesList.append(new EllipseAnnotation(pShapeAnnotation, this));
           } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
             mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
-          } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-            mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+          } else if (pBitmapAnnotation) {
+            mShapesList.append(new BitmapAnnotation(pBitmapAnnotation, this));
           }
         }
       }
     } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+      for (ShapeAnnotation *pShapeAnnotation: mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+        BitmapAnnotation* pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(pShapeAnnotation);
         if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
           mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
         } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
           mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
-        } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-          mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+        } else if (pBitmapAnnotation) {
+          mShapesList.append(new BitmapAnnotation(pBitmapAnnotation, this));
         }
       }
     }

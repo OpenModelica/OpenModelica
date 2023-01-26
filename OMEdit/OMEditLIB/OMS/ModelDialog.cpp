@@ -577,23 +577,23 @@ void ReplaceSubModelDialog::replaceSubModel()
  * \param pGraphicsView
  * \param pParent
  */
-AddOrEditIconDialog::AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent)
+AddOrEditIconDialog::AddOrEditIconDialog(BitmapAnnotation *pBitmapAnnotation, GraphicsView *pGraphicsView, QWidget *pParent)
   : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2 Icon").arg(Helper::applicationName).arg(pShapeAnnotation ? Helper::edit : Helper::add));
+  setWindowTitle(QString("%1 - %2 Icon").arg(Helper::applicationName).arg(pBitmapAnnotation ? Helper::edit : Helper::add));
   setMinimumWidth(400);
-  mpShapeAnnotation = pShapeAnnotation;
+  mpBitmapAnnotation = pBitmapAnnotation;
   mpGraphicsView = pGraphicsView;
   mpFileLabel = new Label(Helper::fileLabel);
-  mpFileTextBox = new QLineEdit(mpShapeAnnotation ? mpShapeAnnotation->getFileName() : "");
+  mpFileTextBox = new QLineEdit(mpBitmapAnnotation ? mpBitmapAnnotation->getFileName() : "");
   mpFileTextBox->setEnabled(false);
   mpBrowseFileButton = new QPushButton(Helper::browse);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
   mpPreviewImageLabel = new Label;
   mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
-  if (mpShapeAnnotation) {
-    mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpShapeAnnotation->getImage()));
+  if (mpBitmapAnnotation) {
+    mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpBitmapAnnotation->getImage()));
   }
   mpPreviewImageScrollArea = new QScrollArea;
   mpPreviewImageScrollArea->setMinimumSize(400, 150);
@@ -643,9 +643,9 @@ void AddOrEditIconDialog::browseImageFile()
  */
 void AddOrEditIconDialog::addOrEditIcon()
 {
-  if (mpShapeAnnotation) { // edit case
-    if (mpShapeAnnotation->getFileName().compare(mpFileTextBox->text()) != 0) {
-      mpShapeAnnotation->getGraphicsView()->getModelWidget()->addUpdateDeleteOMSElementIcon(mpFileTextBox->text());
+  if (mpBitmapAnnotation) { // edit case
+    if (mpBitmapAnnotation->getFileName().compare(mpFileTextBox->text()) != 0) {
+      mpBitmapAnnotation->getGraphicsView()->getModelWidget()->addUpdateDeleteOMSElementIcon(mpFileTextBox->text());
     }
   } else { // add case
     if (mpFileTextBox->text().isEmpty()) {

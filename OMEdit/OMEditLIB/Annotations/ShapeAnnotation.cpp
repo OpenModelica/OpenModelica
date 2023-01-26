@@ -65,7 +65,7 @@ void GraphicItem::setDefaults()
  * Sets the default value from ShapeAnnotation.
  * \param pShapeAnnotation
  */
-void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
+void GraphicItem::setDefaults(GraphicItem* pShapeAnnotation)
 {
   mVisible = pShapeAnnotation->mVisible;
   mOrigin = pShapeAnnotation->mOrigin;
@@ -161,7 +161,7 @@ void FilledShape::setDefaults()
  * Sets the default value from ShapeAnnotation.
  * \param pShapeAnnotation
  */
-void FilledShape::setDefaults(ShapeAnnotation *pShapeAnnotation)
+void FilledShape::setDefaults(FilledShape* pShapeAnnotation)
 {
   mLineColor = pShapeAnnotation->mLineColor;
   mFillColor = pShapeAnnotation->mFillColor;
@@ -355,9 +355,10 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
  */
 void ShapeAnnotation::setDefaults()
 {
-  mLineColor = QColor(0, 0, 0);
-  mLinePattern = StringHandler::LineSolid;
-  mLineThickness = 0.25;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+
   mPoints.clear();
   mGeometries.clear();
   mArrow.clear();
@@ -376,9 +377,6 @@ void ShapeAnnotation::setDefaults()
   mTextStyles.clear();
   mHorizontalAlignment = StringHandler::TextAlignmentCenter;
   mOriginalFileName = "";
-  mFileName = "";
-  mImageSource = "";
-  mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
   mTextExpression = FlatModelica::Expression();
 }
 
@@ -390,9 +388,9 @@ void ShapeAnnotation::setDefaults()
  */
 void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
 {
-  mLineColor = pShapeAnnotation->mLineColor;
-  mLinePattern = pShapeAnnotation->mLinePattern;
-  mLineThickness = pShapeAnnotation->mLineThickness;
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+
   mArrow = pShapeAnnotation->getArrow();
   mArrowSize = pShapeAnnotation->mArrowSize;
   mSmooth = pShapeAnnotation->mSmooth;
@@ -409,10 +407,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mTextStyles = pShapeAnnotation->mTextStyles;
   mHorizontalAlignment = pShapeAnnotation->mHorizontalAlignment;
   mOriginalFileName = pShapeAnnotation->mOriginalFileName;
-  mFileName = pShapeAnnotation->mFileName;
   mClassFileName = pShapeAnnotation->mClassFileName;
-  mImageSource = pShapeAnnotation->mImageSource;
-  mImage = pShapeAnnotation->mImage;
   mTextExpression = pShapeAnnotation->mTextExpression;
 }
 
@@ -846,80 +841,6 @@ void ShapeAnnotation::setTextString(QString textString)
   mTextString = textString;
 }
 
-/*!
- * \brief ShapeAnnotation::setFileName
- * Sets the file name.
- * \param fileName
- */
-void ShapeAnnotation::setFileName(QString fileName)
-{
-  if (fileName.isEmpty()) {
-    mOriginalFileName = fileName;
-    mFileName = fileName;
-    return;
-  }
-
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  mOriginalFileName = fileName;
-  QUrl fileUrl(mOriginalFileName);
-  QFileInfo fileInfo(mOriginalFileName);
-  QFileInfo classFileInfo(mClassFileName);
-  /* if its a modelica:// link then make it absolute path */
-  if (fileUrl.scheme().toLower().compare("modelica") == 0) {
-    mFileName = pOMCProxy->uriToFilename(mOriginalFileName);
-  } else if (fileInfo.isRelative()) {
-    mFileName = QString(classFileInfo.absoluteDir().absolutePath()).append("/").append(mOriginalFileName);
-  } else if (fileInfo.isAbsolute()) {
-    mFileName = mOriginalFileName;
-  } else {
-    mFileName = "";
-  }
-}
-
-/*!
-  Returns the file name.
-  \return the file name.
-  */
-QString ShapeAnnotation::getFileName()
-{
-  return mOriginalFileName;
-}
-
-/*!
-  Sets the image source.
-  \return image - the image source.
-  */
-void ShapeAnnotation::setImageSource(QString imageSource)
-{
-  mImageSource = imageSource;
-}
-
-/*!
-  Returns the base 64 image source.
-  \return the image source.
-  */
-QString ShapeAnnotation::getImageSource()
-{
-  return mImageSource;
-}
-
-/*!
-  Sets the image.
-  \return image - the QImage object.
-  */
-void ShapeAnnotation::setImage(QImage image)
-{
-  mImage = image;
-}
-
-/*!
-  Returns the image.
-  \return the image.
-  */
-QImage ShapeAnnotation::getImage()
-{
-  return mImage;
-}
 
 /*!
  * \brief ShapeAnnotation::applyRotation

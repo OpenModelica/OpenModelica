@@ -61,7 +61,7 @@ class GraphicItem
 public:
   GraphicItem() {}
   void setDefaults();
-  void setDefaults(ShapeAnnotation *pShapeAnnotation);
+  void setDefaults(GraphicItem *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
   void parseShapeAnnotation(ModelInstance::Shape *pShape);
   QStringList getOMCShapeAnnotation();
@@ -81,7 +81,7 @@ class FilledShape
 public:
   FilledShape() {}
   void setDefaults();
-  void setDefaults(ShapeAnnotation *pShapeAnnotation);
+  void setDefaults(FilledShape *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
   void parseShapeAnnotation(ModelInstance::Shape *pShape);
   QStringList getOMCShapeAnnotation();
@@ -197,12 +197,6 @@ public:
   QVector<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
   void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
   StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
-  void setFileName(QString fileName);
-  QString getFileName();
-  void setImageSource(QString imageSource);
-  QString getImageSource();
-  void setImage(QImage image);
-  QImage getImage();
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
@@ -282,10 +276,7 @@ protected:
   TextStyleAnnotation mTextStyles;
   TextAlignmentAnnotation mHorizontalAlignment;
   QString mOriginalFileName;
-  QString mFileName;
   QString mClassFileName; /* Used to find the bitmap relative locations. */
-  QString mImageSource;
-  QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   FlatModelica::Expression mTextExpression;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
