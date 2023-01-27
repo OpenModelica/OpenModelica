@@ -278,6 +278,7 @@ constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(ComponentRef.EMPTY(
 function flatten
   input InstNode classInst;
   input String name;
+  input Boolean getConnectionResolved = true;
   output FlatModel flatModel;
 protected
   Sections sections;
@@ -324,15 +325,17 @@ algorithm
       else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
   end match;
 
-  execStat(getInstanceName());
-  InstUtil.dumpFlatModelDebug("flatten", flatModel);
+  if getConnectionResolved then
+    execStat(getInstanceName());
+    InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
-  if settings.arrayConnect then
-    flatModel := resolveArrayConnections(flatModel);
-  else
-    flatModel := resolveConnections(flatModel, deleted_vars, settings);
+    if settings.arrayConnect then
+      flatModel := resolveArrayConnections(flatModel);
+    else
+      flatModel := resolveConnections(flatModel, deleted_vars, settings);
+    end if;
+    InstUtil.dumpFlatModelDebug("connections", flatModel);
   end if;
-  InstUtil.dumpFlatModelDebug("connections", flatModel);
 end flatten;
 
 function flattenConnection
@@ -340,46 +343,11 @@ function flattenConnection
   input String name;
   output Connections conns;
 protected
-  Sections sections;
-  list<Variable> vars;
-  list<Equation> eql, ieql;
-  list<Algorithm> alg, ialg;
   FlatModel flatModel;
-  DAE.ElementSource src;
-  FlattenSettings settings;
   UnorderedSet<ComponentRef> deleted_vars;
 algorithm
-  settings := FlattenSettings.SETTINGS(
-    Flags.isSet(Flags.NF_SCALARIZE),
-    Flags.isSet(Flags.ARRAY_CONNECT),
-    Flags.isSet(Flags.NF_API),
-    Flags.getConfigBool(Flags.NEW_BACKEND),
-    Flags.isSet(Flags.VECTORIZE_BINDINGS)
-  );
-
-  sections := Sections.EMPTY();
-  src := ElementSource.createElementSource(InstNode.info(classInst));
-  src := ElementSource.addCommentToSource(src,
-    SCodeUtil.getElementComment(InstNode.definition(classInst)));
-
+  flatModel := flatten(classInst, name, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-
-  (vars, sections) := flattenClass(InstNode.getClass(classInst), EMPTY_PREFIX,
-    Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
-  vars := listReverseInPlace(vars);
-
-  flatModel := match sections
-    case Sections.SECTIONS()
-      algorithm
-        eql := listReverseInPlace(sections.equations);
-        ieql := listReverseInPlace(sections.initialEquations);
-        alg := listReverseInPlace(sections.algorithms);
-        ialg := listReverseInPlace(sections.initialAlgorithms);
-      then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
-
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
-  end match;
 
   // get the connections from the model
   (flatModel, conns) := Connections.collect(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
