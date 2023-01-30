@@ -15,7 +15,7 @@ end simple_der_for;
 
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=symjacdump");
+setCommandLineOptions("--newBackend -d=symjacdump");
 
 simulate(simple_der_for); getErrorString();
 
@@ -70,37 +70,11 @@ simulate(simple_der_for); getErrorString();
 //
 // Partial Derivative Variables (1/11)
 // ****************************************
-// (1)       [JACV] (11) Real[11] $pDER_ODE_JAC.$DER.x
+// (1)       [DER-] (11) Real[11] $DER.x
 //
 // Seed Variables (1/11)
 // ****************************************
-// (1)       [SEED] (11) Real[11] $SEED_ODE_JAC.x
-//
-// BLOCK 1: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[3]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[3] = -0.0 ($RES_ODE_JAC_0)
-// 	 slice: {}
-//
-// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Equation:
-// 	[FOR-] (10) ($RES_ODE_JAC_1)
-// 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_JAC.$DER.x[i] = $SEED_ODE_JAC.x[i] + $pDER_ODE_JAC.$DER.x[1 + i] ($RES_ODE_JAC_2)
-// 	[----] end for;
-// 	 slice: {0, 1}
-//
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Equation:
-// 	[FOR-] (10) ($RES_ODE_JAC_3)
-// 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $pDER_ODE_JAC.$DER.x[1 + i] = -($SEED_ODE_JAC.x[i] - $pDER_ODE_JAC.$DER.x[i]) ($RES_ODE_JAC_4)
-// 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
+// (1)       [STAT] (11) Real[11] x (fixed = {true for $i1 in 1:11})
 //
 // ========================================
 // Sparsity Pattern (nnz: 10)
