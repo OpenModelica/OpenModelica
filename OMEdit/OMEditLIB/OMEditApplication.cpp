@@ -110,7 +110,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   bool debug = false;
   bool newApi = false;
   QString fileName = "";
-  QStringList fileNames;
+  QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
@@ -142,7 +142,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
-            printf("Invalid command line argument: %s %s\n", fileName.toUtf8().constData(), absoluteFileName.toUtf8().constData());
+            invalidFlags.append(fileName);
           }
         }
       }
@@ -157,6 +157,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
     exit(1);
+  }
+  // show error of invalid flags
+  if (!invalidFlags.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {
