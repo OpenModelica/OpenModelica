@@ -370,7 +370,7 @@ public
         local
           Mapping seed_mapping, partial_mapping;
           array<StrongComponent> comps;
-          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp;
+          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp, row_vars = {}, col_vars = {};
           UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
@@ -413,6 +413,7 @@ public
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
+                row_vars := cref :: row_vars;
                 for dep in tmp loop
                   // also add inverse dependency (indep var) --> (res/tmp) :: rest
                   UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map, sourceInfo()), map);
@@ -423,8 +424,11 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
-            cols := (cref, tmp) :: cols;
+            if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isState) then
+              tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
+              cols := (cref, tmp) :: cols;
+              col_vars := cref :: col_vars;
+            end if;
           end for;
 
           // find number of nonzero elements
@@ -432,7 +436,7 @@ public
             (_, tmp) := col;
             nnz := nnz + listLength(tmp);
           end for;
-        then (SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz), map);
+        then (SPARSITY_PATTERN(cols, rows, listReverse(col_vars), listReverse(row_vars), nnz), map);
 
         case NONE() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
@@ -726,8 +730,8 @@ protected
     alias_vars    := {};
     depend_vars   := {};
 
-    res_vars      := {};
-    tmp_vars      := {}; // ToDo: add this once system has been torn
+
+    (res_vars, tmp_vars) := List.splitOnTrue(unknown_vars, BVariable.isStateDerivative);
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
@@ -761,8 +765,10 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
   protected
-    Pointer<Integer> idx = Pointer.create(0);
+    list<Pointer<Variable>> res_vars, tmp_vars;
   algorithm
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
+
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
@@ -771,8 +777,8 @@ protected
       aliasVars     = VariablePointers.fromList({}),
       diffVars      = VariablePointers.fromList({}),
       dependencies  = VariablePointers.fromList({}),
-      resultVars    = VariablePointers.fromList({}),
-      tmpVars       = VariablePointers.fromList({}),
+      resultVars    = VariablePointers.fromList(res_vars),
+      tmpVars       = VariablePointers.fromList(tmp_vars),
       seedVars      = seedCandidates
     );
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);

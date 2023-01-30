@@ -211,11 +211,13 @@ public
           UnorderedMap<ComponentRef, SimVar> dummy_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
           SimStrongComponent.Block columnEqn;
           VarData varData;
-          VariablePointers unknowns_scalar, seed_scalar;
+          VariablePointers unknowns_scalar, seed_scalar, res_scalar, tmp_scalar;
           list<SimStrongComponent.Block> columnEqns = {};
           Pointer<list<SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
-          list<SimVar> columnVars, seedVars;
+          Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
+          Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
+          list<SimVar> columnVars, resVars, tmpVars, seedVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring;
@@ -241,12 +243,17 @@ public
           // scalarize variables for sim code
           unknowns_scalar := VariablePointers.scalarize(varData.unknowns);
           seed_scalar := VariablePointers.scalarize(varData.seedVars);
-
+          res_scalar := VariablePointers.scalarize(varData.resultVars);
+          tmp_scalar := VariablePointers.scalarize(varData.tmpVars);
           // use dummy simcode indices to always start at 0 for column and seed vars
           VariablePointers.map(unknowns_scalar, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(res_scalar, function SimVar.traverseCreate(acc = resVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(tmp_scalar, function SimVar.traverseCreate(acc = tmpVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
+          resVars := listReverse(Pointer.access(resVars_ptr));
+          tmpVars := listReverse(Pointer.access(tmpVars_ptr));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(columnVars) + listLength(seedVars));
           SimCodeUtil.addListSimCodeMap(columnVars, jac_map);
@@ -258,10 +265,10 @@ public
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
             partitionIndex      = 0,
-            numberOfResultVars  = listLength(columnVars),
+            numberOfResultVars  = listLength(resVars),
             columnEqns          = listReverse(columnEqns),
             constantEqns        = {},
-            columnVars          = columnVars,
+            columnVars          = tmpVars,
             seedVars            = seedVars,
             sparsity            = sparsity,
             sparsityT           = sparsityT,
