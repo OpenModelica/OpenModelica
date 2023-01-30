@@ -158,11 +158,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ### Seeds (col vars) ###
 // ----------------------------------------
-// {y, x}
+// {x, y}
 //
 // ### Partials (row vars) ###
 // ----------------------------------------
-// {$RES_SIM_1, $RES_SIM_0}
+// {$RES_SIM_0, $RES_SIM_1}
 //
 // ### Columns ###
 // ----------------------------------------
@@ -178,11 +178,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {y}
+//   - Column: {x}
 //   - Row:    {}
 //
 // Color (2)
-//   - Column: {x}
+//   - Column: {y}
 //   - Row:    {}
 //
 //
@@ -248,11 +248,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ### Seeds (col vars) ###
 // ----------------------------------------
-// {x, y}
+// {y, x}
 //
 // ### Partials (row vars) ###
 // ----------------------------------------
-// {$RES_SIM_0, $RES_SIM_1}
+// {$RES_SIM_1, $RES_SIM_0}
 //
 // ### Columns ###
 // ----------------------------------------
@@ -268,11 +268,11 @@ simulate(simpleNonlinearLoop); getErrorString();
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {x}
+//   - Column: {y}
 //   - Row:    {}
 //
 // Color (2)
-//   - Column: {y}
+//   - Column: {x}
 //   - Row:    {}
 //
 //

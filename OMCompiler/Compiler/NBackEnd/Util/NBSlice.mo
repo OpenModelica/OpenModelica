@@ -446,6 +446,7 @@ public
     if not listEmpty(dependencies) then
       for dep in dependencies loop
         if UnorderedMap.contains(dep, var_rep.map) then
+          // case 1: direct dependency as var
           dep_scal_lst := getCrefInFrameIndices(dep, frames, var_rep_mapping, var_rep.map);
           dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
 
@@ -456,6 +457,19 @@ public
             fail();
           else
             accum_dep_lst := list(VariablePointers.varSlice(var_rep, i, var_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
+          end if;
+        elseif UnorderedMap.contains(dep, eqn_rep.map) then
+          // case 2: indirect dependency as eqn
+          dep_scal_lst := getCrefInFrameIndices(dep, frames, eqn_rep_mapping, eqn_rep.map);
+          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
+
+          if listLength(dep_scal_lst) <> num_rows then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
+              + " differ from number of rows size " + intString(num_rows) + "."});
+            fail();
+          else
+            accum_dep_lst := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
           end if;
         end if;
       end for;
