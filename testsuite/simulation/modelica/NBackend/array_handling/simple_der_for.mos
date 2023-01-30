@@ -103,16 +103,16 @@ simulate(simple_der_for); getErrorString();
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
 //
 // ========================================
-// Sparsity Pattern (nnz: 9)
+// Sparsity Pattern (nnz: 10)
 // ========================================
 //
 // ### Seeds (col vars) ###
 // ----------------------------------------
-// {x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]}
+// {x[11], x[10], x[9], x[8], x[7], x[6], x[5], x[4], x[3], x[2], x[1]}
 //
 // ### Partials (row vars) ###
 // ----------------------------------------
-// {$DER.x[1], $DER.x[2], $DER.x[3], $DER.x[4], $DER.x[5], $DER.x[6], $DER.x[7], $DER.x[8], $DER.x[9], $DER.x[10], $DER.x[11]}
+// {$DER.x[11], $DER.x[10], $DER.x[9], $DER.x[8], $DER.x[7], $DER.x[6], $DER.x[5], $DER.x[4], $DER.x[3], $DER.x[2], $DER.x[1]}
 //
 // ### Columns ###
 // ----------------------------------------
@@ -124,7 +124,7 @@ simulate(simple_der_for); getErrorString();
 // (x[6])	 affects:	{$DER.x[7]}
 // (x[7])	 affects:	{$DER.x[8]}
 // (x[8])	 affects:	{$DER.x[9]}
-// (x[9])	 affects:	{}
+// (x[9])	 affects:	{$DER.x[9]}
 // (x[10])	 affects:	{$DER.x[10]}
 // (x[11])	 affects:	{}
 //
@@ -138,7 +138,7 @@ simulate(simple_der_for); getErrorString();
 // ($DER.x[6])	 depends on:	{x[5]}
 // ($DER.x[7])	 depends on:	{x[6]}
 // ($DER.x[8])	 depends on:	{x[7]}
-// ($DER.x[9])	 depends on:	{x[8]}
+// ($DER.x[9])	 depends on:	{x[8],x[9]}
 // ($DER.x[10])	 depends on:	{x[10]}
 // ($DER.x[11])	 depends on:	{}
 //
@@ -146,7 +146,11 @@ simulate(simple_der_for); getErrorString();
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Column: {x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[9],x[10],x[11]}
+//   - Row:    {}
+//
+// Color (2)
+//   - Column: {x[8]}
 //   - Row:    {}
 //
 //
