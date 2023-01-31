@@ -191,6 +191,7 @@ public
 
       case GENERIC_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Generic Component (status = Solve.EXPLICIT)");
+        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
