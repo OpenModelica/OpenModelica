@@ -302,7 +302,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
   setZValue(1000);
-  mpLine = pConnection->getLine();
+  mpLine = pConnection->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -390,7 +390,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
   setZValue(1000);
-  mpLine = pTransition->getLine();
+  mpLine = pTransition->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -422,8 +422,8 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   }
   mPoints = points;
   mOrigin = QPointF(0, 0);
-  if (pTransition->getText()) {
-    mpTextAnnotation = new TextAnnotation(pTransition->getText(), this);
+  if (pTransition->getAnnotation()->getText()) {
+    mpTextAnnotation = new TextAnnotation(pTransition->getAnnotation()->getText(), this);
   } else {
     mpTextAnnotation = 0;
   }
@@ -481,7 +481,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
   setZValue(1000);
-  mpLine = pInitialState->getLine();
+  mpLine = pInitialState->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();

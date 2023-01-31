@@ -655,7 +655,7 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   } else {
-    mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
+    mTransformation.parseTransformation(mpModelElement->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(QStringList());
@@ -745,7 +745,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   mpBusComponent = 0;
   drawInheritedElementsAndShapes();
   mTransformation = Transformation(StringHandler::Icon, this);
-  mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
+  mTransformation.parseTransformation(mpModelElement->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
@@ -1277,12 +1277,12 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel->isConnector()) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     } else {
-      coordinateSystem = mpModel->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
   } else {
-    coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
+    coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
   }
   return coordinateSystem;
 }
@@ -2346,7 +2346,7 @@ void Element::createDefaultElement()
  */
 void Element::createStateElement()
 {
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState())
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState())
       || (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState())) {
     mpStateElementRectangle = new RectangleAnnotation(this);
     mpStateElementRectangle->setVisible(false);
@@ -2692,9 +2692,9 @@ void Element::createClassShapes()
      * Always use the icon annotation when element type is port.
      */
     if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      shapes = mpModel->getDiagramAnnotation()->getGraphics();
+      shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
     } else {
-      shapes = mpModel->getIconAnnotation()->getGraphics();
+      shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
     }
 
     foreach (auto shape, shapes) {
@@ -3915,7 +3915,7 @@ void Element::showElementPropertiesDialog()
 void Element::updateDynamicSelect(double time)
 {
   // state machine debugging
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
@@ -3932,7 +3932,7 @@ void Element::updateDynamicSelect(double time)
 
 void Element::resetDynamicSelect()
 {
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     // no need to do anything for state machines case.
   } else { // DynamicSelect
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
