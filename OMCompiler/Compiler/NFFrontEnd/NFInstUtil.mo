@@ -332,6 +332,7 @@ public
         algorithm
           // Merge components.
           (elems, name_map) := mergeScalars3(cdef.elementLst);
+          elems := list(mergeScalarsElement(e, name_map) for e in elems);
           cdef.elementLst := elems;
           // Replace references to merged components with their new names.
           cdef.normalEquationLst := mergeScalarsEql(cdef.normalEquationLst, name_map);
@@ -546,10 +547,6 @@ public
           has_submods := not listEmpty(mod.subModLst);
 
           if has_binding then
-            if stringEmpty(name) then
-              strl := Dump.printExpStr(Util.getOption(mod.binding)) :: strl;
-            end if;
-
             strl := "=" :: strl;
           end if;
 
@@ -677,7 +674,7 @@ public
       case SCode.Mod.MOD()
         algorithm
           if isSome(mod.binding) then
-            names := AbsynUtil.stringListPathReversed(name) :: names;
+            names := makeModPath(name) :: names;
           end if;
 
           for m in mod.subModLst loop
@@ -689,6 +686,18 @@ public
       else names;
     end match;
   end getModNames;
+
+  function makeModPath
+    input list<String> name;
+    output Absyn.Path path;
+  algorithm
+    if listEmpty(name) then
+      // Use $ to indicate an empty path since paths can't be empty.
+      path := Absyn.Path.IDENT("$");
+    else
+      path := AbsynUtil.stringListPathReversed(name);
+    end if;
+  end makeModPath;
 
   function mergeMods2
     "Helper function to mergeMods, replaces bindings in the given modifier with
@@ -706,7 +715,7 @@ public
           // If the modifier has a binding expression, look up the new binding
           // in the map and replace it.
           if isSome(mod.binding) then
-            new_binding := UnorderedMap.getOrFail(AbsynUtil.stringListPathReversed(name), bindingMap);
+            new_binding := UnorderedMap.getOrFail(makeModPath(name), bindingMap);
             mod.binding := SOME(new_binding);
           end if;
 
@@ -761,7 +770,9 @@ public
   algorithm
     outMod := match name
       case Absyn.Path.IDENT()
-        then SCodeUtil.lookupModInMod(name.name, mod);
+        // $ means an empty path, return the given modifier in that case.
+        // Otherwise look the name up in the modifier.
+        then if name.name == "$" then mod else SCodeUtil.lookupModInMod(name.name, mod);
 
       case Absyn.Path.QUALIFIED()
         algorithm
@@ -770,6 +781,27 @@ public
           lookupMod(name.path, outMod);
     end match;
   end lookupMod;
+
+  function mergeScalarsElement
+    input output SCode.Element element;
+    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+  algorithm
+    () := match element
+      case SCode.Element.EXTENDS()
+        algorithm
+          element.modifications := mergeScalarsMod(element.modifications, nameMap);
+        then
+          ();
+
+      case SCode.Element.COMPONENT()
+        algorithm
+          element.modifications := mergeScalarsMod(element.modifications, nameMap);
+        then
+          ();
+
+      else ();
+    end match;
+  end mergeScalarsElement;
 
   function mergeScalarsEql
     "Updates the names of merged components in a list of equations."
@@ -797,6 +829,29 @@ public
       else ();
     end match;
   end mergeScalarsEq;
+
+  function mergeScalarsMod
+    input output SCode.Mod mod;
+    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+  algorithm
+    () := match mod
+      case SCode.Mod.MOD()
+        algorithm
+          mod.binding := Util.applyOption(mod.binding, function mergeScalarsExps(nameMap = nameMap));
+          mod.subModLst := list(mergeScalarsSubMod(m, nameMap) for m in mod.subModLst);
+        then
+          ();
+
+      else ();
+    end match;
+  end mergeScalarsMod;
+
+  function mergeScalarsSubMod
+    input output SCode.SubMod mod;
+    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+  algorithm
+    mod.mod := mergeScalarsMod(mod.mod, nameMap);
+  end mergeScalarsSubMod;
 
   function mergeScalarsExps
     "Updates the names of merged components in an expression."
