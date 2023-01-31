@@ -21,6 +21,7 @@ checkAllModelsRecursive1.mos \
 choicesAllMatching.mos \
 ConvertUnits.mos \
 ConversionVersions.mos \
+ConnectionList.mos \
 CopyClass.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
