@@ -1170,11 +1170,15 @@ algorithm
   if not split then
     // Select the first element as long as the subscripted expression is an
     // array where all elements are equal.
-    while Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
+    while not listEmpty(subs) and Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
           Array.allEqual(Expression.arrayElements(subscriptedExp), Expression.isEqual) loop
       subs := listRest(subs);
       subscriptedExp := arrayGet(Expression.arrayElements(subscriptedExp), 1);
     end while;
+
+    if listEmpty(subs) then
+      return;
+    end if;
   end if;
 
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
