@@ -164,6 +164,8 @@ val(x[3],1);
 // --- Alias of INI[1 | 2] ---
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[integer(0.5 * CAST(Real, i))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
@@ -174,6 +176,8 @@ val(x[3],1);
 // --- Alias of INI[1 | 3] ---
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1 + integer(0.5 * CAST(Real, i))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
@@ -201,6 +205,8 @@ val(x[3],1);
 //
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[integer(0.5 * CAST(Real, i))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
@@ -210,6 +216,8 @@ val(x[3],1);
 //
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1 + integer(0.5 * CAST(Real, i))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for i in 2:2:18 loop
@@ -225,5 +233,5 @@ val(x[3],1);
 // "
 // end SimulationResult;
 // ""
-// -1.750768411633578
+// 0.681422313928007
 // endResult
