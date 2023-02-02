@@ -6101,7 +6101,7 @@ case eqn as SES_ENTWINED_ASSIGN() then
     {
     <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
       default:
-        throwStreamPrint(NULL, "Call index %i at pos %i unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
+        throwStreamPrint(NULL, "Call index %d at pos %d unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
         break;
     }
   }

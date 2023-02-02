@@ -55,6 +55,7 @@ public
   import SimCodeUtil = NSimCodeUtil;
   import SimCode = NSimCode;
   import SimGenericCall = NSimGenericCall;
+  import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarType};
 
@@ -223,21 +224,21 @@ public
           SparsityColoring coloring;
           Integer numColors;
           SimJacobian jac;
-          UnorderedMap<EquationPointer, Integer> sim_map;
+          UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
           // temporarly safe the generic call map from simcode to recover it afterwards
           // we use a local map to have seperated generic call lists for each jacobian
           sim_map := indices.generic_call_map;
-          indices.generic_call_map := UnorderedMap.new<Integer>(Equation.hash, Equation.equalName);
+          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
           for i in arrayLength(jacobian.comps):-1:1 loop
             (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_map);
             columnEqns := columnEqn :: columnEqns;
           end for;
 
           // extract generic loop calls and put the old generic call map back
-          generic_loop_calls := list(SimGenericCall.fromEquation(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
+          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
 
           // scalarize variables for sim code

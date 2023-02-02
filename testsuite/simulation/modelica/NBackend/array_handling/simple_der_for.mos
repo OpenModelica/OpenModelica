@@ -45,6 +45,8 @@ simulate(simple_der_for); getErrorString();
 // --- Alias of INI[1 | 3] ---
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	$DER.x[i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
@@ -55,6 +57,8 @@ simulate(simple_der_for); getErrorString();
 // --- Alias of INI[1 | 4] ---
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	$DER.x[1 + i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop

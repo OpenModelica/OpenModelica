@@ -185,12 +185,14 @@ public
       then str;
 
       case ENTWINED_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.UNPROCESSED)");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT)");
+        str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, "", "{", ", ", "}", true, 10) + "\n";
         str := str + List.toString(comp.entwined_slices, function toString(index = -2), "", "", "", "");
       then str;
 
       case GENERIC_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Generic Component (status = Solve.EXPLICIT)");
+        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
@@ -367,7 +369,7 @@ public
     // create individual slices
     for tpl in UnorderedMap.toList(elem_map) loop
       (arr_idx, scal_indices) := tpl;
-      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), listReverse(scal_indices), eqns, mapping) :: entwined_slices;
+      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), scal_indices, eqns, mapping) :: entwined_slices;
     end for;
 
     // create scalar list for fallback
