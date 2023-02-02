@@ -1100,7 +1100,7 @@ public
 
       case IF() then Branch.sizeOf(listHead(eq.branches));
       case WHEN() then Branch.sizeOf(listHead(eq.branches));
-      else 1;
+      else 0;
     end matchcontinue;
   end sizeOf;
 
