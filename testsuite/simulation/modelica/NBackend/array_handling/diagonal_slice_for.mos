@@ -25,8 +25,7 @@ equation
   for j in 2:10 loop
     x[j] = y[j-1] * sin(time);
   end for;
-  y[5] = x[4];
-  for i in 2:4 loop
+  for i in 2:5 loop
     y[i] = x[i-1];
   end for;
   for i in 6:10 loop

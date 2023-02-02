@@ -185,7 +185,7 @@ public
       then str;
 
       case ENTWINED_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.UNPROCESSED)");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT)");
         str := str + List.toString(comp.entwined_slices, function toString(index = -2), "", "", "", "");
       then str;
 
@@ -368,7 +368,7 @@ public
     // create individual slices
     for tpl in UnorderedMap.toList(elem_map) loop
       (arr_idx, scal_indices) := tpl;
-      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), listReverse(scal_indices), eqns, mapping) :: entwined_slices;
+      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), scal_indices, eqns, mapping) :: entwined_slices;
     end for;
 
     // create scalar list for fallback

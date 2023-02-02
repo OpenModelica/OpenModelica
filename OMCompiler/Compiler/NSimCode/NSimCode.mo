@@ -34,7 +34,6 @@ encapsulated package NSimCode
  description: This file contains the main data type for the backend containing
               all data. It further contains the lower and solve main function.
 "
-
 protected
   // OF imports
   import Absyn;
@@ -119,9 +118,32 @@ public
       Integer genericCallIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
-      UnorderedMap<EquationPointer, Integer> generic_call_map;
+      UnorderedMap<Identifier, Integer> generic_call_map;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
+
+  uniontype Identifier
+    record IDENTIFIER
+      Pointer<Equation> eqn;
+      ComponentRef var_cref;
+    end IDENTIFIER;
+
+    function toString
+      input Identifier ident;
+      output String str = "cref: " + ComponentRef.toString(ident.var_cref) + "\neqn: " + Equation.pointerToString(ident.eqn);
+    end toString;
+
+    function hash
+      input Identifier ident;
+      output Integer i = stringHashDjb2(toString(ident));
+    end hash;
+
+    function isEqual
+      input Identifier ident1;
+      input Identifier ident2;
+      output Boolean b = Equation.equalName(ident1.eqn, ident2.eqn) and ComponentRef.isEqual(ident1.var_cref, ident2.var_cref);
+    end isEqual;
+  end Identifier;
 
   function EMPTY_SIM_CODE_INDICES
     output SimCodeIndices indices = SIM_CODE_INDICES(
@@ -132,7 +154,7 @@ public
       1,0,0,
       0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
-      UnorderedMap.new<Integer>(Equation.hash, Equation.equalName)
+      UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual)
     );
   end EMPTY_SIM_CODE_INDICES;
 
@@ -356,7 +378,7 @@ public
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
-            generic_loop_calls := list(SimGenericCall.fromEquation(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
+            generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
