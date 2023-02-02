@@ -52,7 +52,7 @@ Generated on |date| at |time|
 .. toctree::
   :maxdepth: 1
 
-  tracreleases
+  githubreleases
   contributors
 
 .. only:: html or epub
