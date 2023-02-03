@@ -5249,7 +5249,7 @@ void WelcomePageWidget::addLatestNewsListItems()
   mpLatestNewsListWidget->clear();
   /* if show latest news settings is not set then don't fetch the latest news items. */
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
-    QUrl newsUrl("http://hugo.openmodelica.org/tags/news/index.xml");
+    QUrl newsUrl("https://openmodelica.org/tags/news/index.xml");
     mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
   }
 }
