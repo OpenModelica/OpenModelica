@@ -277,9 +277,9 @@ void GraphicsView::drawCoordinateSystem()
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->mCoordinateSystem;
+    coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->mCoordinateSystem;
+    coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
   }
 
   if (coordinateSystem.hasExtent()) {
@@ -299,9 +299,9 @@ void GraphicsView::drawCoordinateSystem()
   if (!mCoOrdinateSystem.isComplete()) {
     ModelInstance::CoordinateSystem mergedCoordinateSystem;
     if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->mMergedCoOrdinateSystem;
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
 
     if (mergedCoordinateSystem.hasExtent()) {
@@ -337,12 +337,12 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
     pExtendModel = dynamic_cast<ModelInstance::Extend*>(pModelInstance);
   }
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    if (!(pExtendModel && !pExtendModel->mIconMap.getprimitivesVisible())) {
-      shapes = pModelInstance->getIconAnnotation()->getGraphics();
+    if (!(pExtendModel && !pExtendModel->getAnnotation()->getIconMap().getprimitivesVisible())) {
+      shapes = pModelInstance->getAnnotation()->getIconAnnotation()->getGraphics();
     }
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    if (!(pExtendModel && !pExtendModel->mDiagramMap.getprimitivesVisible())) {
-      shapes = pModelInstance->getDiagramAnnotation()->getGraphics();
+    if (!(pExtendModel && !pExtendModel->getAnnotation()->getDiagramMap().getprimitivesVisible())) {
+      shapes = pModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics();
     }
   }
 
@@ -476,7 +476,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
     for (int i = 0; i < connections.size(); ++i) {
       auto pConnection = connections.at(i);
       // if connection is valid and has line annotation
-      if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getLine()
+      if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getAnnotation()->getLine()
           && !connectionExists(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName(), inherited)) {
         // get start and end elements
         QStringList startElementList = pConnection->getStartConnector()->getNameParts();
@@ -561,7 +561,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
               pConnectionLineAnnotation->setStartElementName(pConnection->getStartConnector()->getName());
               pConnectionLineAnnotation->setEndElement(pEndConnectorElement);
               pConnectionLineAnnotation->setEndElementName(pConnection->getEndConnector()->getName());
-              pConnectionLineAnnotation->setLine(pConnection->getLine());
+              pConnectionLineAnnotation->setLine(pConnection->getAnnotation()->getLine());
               addConnectionDetails(pConnectionLineAnnotation);
               addItem(pConnectionLineAnnotation);
               addConnectionToList(pConnectionLineAnnotation);
@@ -590,7 +590,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
     for (int i = 0; i < transitions.size(); ++i) {
       auto pTransition = transitions.at(i);
       // if transition is valid and has line annotation
-      if (pTransition->getStartConnector() && pTransition->getEndConnector() && pTransition->getLine()) {
+      if (pTransition->getStartConnector() && pTransition->getEndConnector() && pTransition->getAnnotation()->getLine()) {
         // get start element
         Element *pStartElement = getElementObject(pTransition->getStartConnector()->getName());
         // show error message if start element is not found.
@@ -629,7 +629,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
               pTransitionLineAnnotation->setStartElementName(pTransition->getStartConnector()->getName());
               pTransitionLineAnnotation->setEndElement(pEndElement);
               pTransitionLineAnnotation->setEndElementName(pTransition->getEndConnector()->getName());
-              pTransitionLineAnnotation->setLine(pTransition->getLine());
+              pTransitionLineAnnotation->setLine(pTransition->getAnnotation()->getLine());
               addConnectionDetails(pTransitionLineAnnotation);
               addItem(pTransitionLineAnnotation);
               addTransitionToList(pTransitionLineAnnotation);
@@ -658,7 +658,7 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
     for (int i = 0; i < initialStates.size(); ++i) {
       auto pInitialState = initialStates.at(i);
       // if initialState is valid and has line annotation
-      if (pInitialState->getStartConnector() && pInitialState->getLine()) {
+      if (pInitialState->getStartConnector() && pInitialState->getAnnotation()->getLine()) {
         // get start element
         Element *pStartElement = getElementObject(pInitialState->getStartConnector()->getName());
         // show error message if start element is not found.
@@ -683,7 +683,7 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
             if (pInitialStateLineAnnotation) {
               pInitialStateLineAnnotation->setStartElement(pStartElement);
               pInitialStateLineAnnotation->setStartElementName(pInitialState->getStartConnector()->getName());
-              pInitialStateLineAnnotation->setLine(pInitialState->getLine());
+              pInitialStateLineAnnotation->setLine(pInitialState->getAnnotation()->getLine());
               addConnectionDetails(pInitialStateLineAnnotation);
               addItem(pInitialStateLineAnnotation);
               addInitialStateToList(pInitialStateLineAnnotation);
@@ -2959,7 +2959,7 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
       if (pRootElement && !pRootElement->isSelected()) {
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
-            ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isState()) ||
+            ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
               !pElement->getLibraryTreeItem()->isNonExisting() && pElement->getLibraryTreeItem()->isState()))) {
           return pElement;
@@ -3069,7 +3069,7 @@ void GraphicsView::addConnection(Element *pElement)
             && (!(pElement->isExpandableConnector() || pElement->isArray()
                 || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
           if (mpModelWidget->isNewApi() && pElement->getModel()) {
-            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getIconAnnotation()->getGraphics();
+            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
             if (!shapes.isEmpty()) {
               mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor());
             } else if (pElement->getShapesList().size() > 0) {

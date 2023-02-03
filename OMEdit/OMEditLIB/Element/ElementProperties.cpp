@@ -148,7 +148,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mpElement = 0;
   mpModelInstanceElement = pElement;
   mpElementParameters = pElementParameters;
-  const ModelInstance::DialogAnnotation dialogAnnotation = mpModelInstanceElement->getDialogAnnotation();
+  const ModelInstance::DialogAnnotation dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
   mTab = dialogAnnotation.getTab();
   mGroupBox = dialogAnnotation.getGroup();
   mGroupBoxDefined = !mGroupBox.isEmpty();
@@ -179,7 +179,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
   if (mShowStartAttribute && mGroupBox.isEmpty()) {
     mGroupBox = "Initialization";
-  } else if (mGroupBox.isEmpty() && (isParameter || mpModelInstanceElement->hasDialogAnnotation() || mpModelInstanceElement->isReplaceable())) {
+  } else if (mGroupBox.isEmpty() && (isParameter || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation() || mpModelInstanceElement->getReplaceable()->isReplaceable())) {
     mGroupBox = "Parameters";
   }
 
@@ -189,21 +189,21 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   setFixedState("false", true);
   // set the value type based on element type.
   if (mpModelInstanceElement->getType().compare(QStringLiteral("Boolean")) == 0) {
-    if (mpModelInstanceElement->getChoices().isCheckBox() || mpModelInstanceElement->getChoices().isDymolaCheckBox()) {
+    if (mpModelInstanceElement->getAnnotation()->getChoices().isCheckBox() || mpModelInstanceElement->getAnnotation()-> getChoices().isDymolaCheckBox()) {
       mValueType = Parameter::CheckBox;
     } else {
       mValueType = Parameter::Boolean;
     }
   } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
-  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->isReplaceable()) {
+  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->getReplaceable()->isReplaceable()) {
     // replaceable component or short element definition
     if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isType()) {
       mValueType = Parameter::ReplaceableClass;
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
-  } else if (!mpModelInstanceElement->getChoices().getChoices().isEmpty()) {
+  } else if (!mpModelInstanceElement->getAnnotation()->getChoices().getChoices().isEmpty()) {
     mValueType = Parameter::Choices;
   } else {
     mValueType = Parameter::Normal;
@@ -252,11 +252,14 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     mpUnitComboBox->setCurrentIndex(1);
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
-  mpCommentLabel = new Label(mpModelInstanceElement->getComment());
+  QString comment = mpModelInstanceElement->getReplaceable()->getComment();
+  if (comment.isEmpty()) {
+    comment = mpModelInstanceElement->getComment();
+  }
+  mpCommentLabel = new Label(comment);
 
   if (mValueType == Parameter::ReplaceableClass) {
     QString className = mpModelInstanceElement->getModel()->getName();
-    QString comment = mpModelInstanceElement->getComment();
     setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, mUnit);
   } else if (mValueType == Parameter::ReplaceableComponent) {
     setValueWidget(QString("replaceable %1 %2").arg(mpModelInstanceElement->getParentModel()->getName(), mpModelInstanceElement->getName()), true, mUnit);
@@ -552,11 +555,11 @@ void Parameter::createValueWidget()
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
       if (MainWindow::instance()->isNewApi()) {
-        constrainedByClassName = mpModelInstanceElement->getReplaceable().getConstrainedby();
+        constrainedByClassName = mpModelInstanceElement->getReplaceable()->getConstrainedby();
         if (constrainedByClassName.isEmpty()) {
           constrainedByClassName = mpModelInstanceElement->getType();
         }
-        choices = mpModelInstanceElement->getChoices().getChoices();
+        choices = mpModelInstanceElement->getAnnotation()->getChoices().getChoices();
         parentClassName = mpModelInstanceElement->getParentModel()->getName();
         if (mpModelInstanceElement->getModel()) {
           restriction = mpModelInstanceElement->getModel()->getRestriction();
@@ -619,7 +622,7 @@ void Parameter::createValueWidget()
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->addItem("", "");
-      foreach (QString choice, mpModelInstanceElement->getChoices().getChoices()) {
+      foreach (QString choice, mpModelInstanceElement->getAnnotation()->getChoices().getChoices()) {
         mpValueComboBox->addItem(choice, choice);
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
@@ -1396,7 +1399,7 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
       continue;
     }
     // if connectorSizing is present then don't show the parameter
-    if (pElement->getDialogAnnotation().isConnectorSizing()) {
+    if (pElement->getAnnotation()->getDialogAnnotation().isConnectorSizing()) {
       continue;
     }
     // create the Parameter
@@ -2150,7 +2153,7 @@ void ElementAttributes::initializeDialog()
     // get Properties
     mpFinalCheckBox->setChecked(mpElement->getModelElement()->isFinal());
     mpProtectedCheckBox->setChecked(!mpElement->getModelElement()->isPublic());
-    mpReplaceAbleCheckBox->setChecked(mpElement->getModelElement()->isReplaceable());
+    mpReplaceAbleCheckBox->setChecked(mpElement->getModelElement()->getReplaceable()->isReplaceable());
     // get Casuality
     const QString direction = mpElement->getModelElement()->getDirection();
     if (direction.compare(QStringLiteral("input")) == 0) {
@@ -2266,7 +2269,7 @@ void ElementAttributes::updateElementAttributes()
     bool attributesChanged = false;
     attributesChanged |= mpElement->getModelElement()->isFinal() != mpFinalCheckBox->isChecked();
     attributesChanged |= !mpElement->getModelElement()->isPublic() != mpProtectedCheckBox->isChecked();
-    attributesChanged |= mpElement->getModelElement()->isReplaceable() != mpReplaceAbleCheckBox->isChecked();
+    attributesChanged |= mpElement->getModelElement()->getReplaceable()->isReplaceable() != mpReplaceAbleCheckBox->isChecked();
     attributesChanged |= mpElement->getModelElement()->getVariability().compare(variability) != 0;
     attributesChanged |= mpElement->getModelElement()->isInner() != mpInnerCheckBox->isChecked();
     attributesChanged |= mpElement->getModelElement()->isOuter() != mpOuterCheckBox->isChecked();
