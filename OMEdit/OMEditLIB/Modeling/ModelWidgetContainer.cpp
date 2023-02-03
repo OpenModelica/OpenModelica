@@ -69,6 +69,7 @@
 #include <QPrintDialog>
 #include <QDesktopServices>
 #include <QClipboard>
+#include <QStringBuilder>
 
 ModelInfo::ModelInfo()
 {
@@ -5114,7 +5115,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
     mpLatestNewsFrame->setVisible(false);
   }
   // latest news
-  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News"));
+  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
   mpNoLatestNewsLabel = new Label;
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
@@ -5248,7 +5249,7 @@ void WelcomePageWidget::addLatestNewsListItems()
   mpLatestNewsListWidget->clear();
   /* if show latest news settings is not set then don't fetch the latest news items. */
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
-    QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=23&format=feed&amp;type=rss");
+    QUrl newsUrl("http://hugo.openmodelica.org/tags/news/index.xml");
     mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
   }
 }
@@ -5264,35 +5265,55 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
     QXmlStreamReader xml(response);
     int count = 0;
     QString title, link;
+    QDateTime pubDateTime, endDateTime;
     while (!xml.atEnd()) {
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement) {
         if (xml.name() == "item") {
-          while (!xml.atEnd()) {
-            xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement) {
-              if (xml.name() == "title") {
-                title = xml.readElementText();
-              }
-              if (xml.name() == "link") {
-                link = xml.readElementText();
-                if (count >= maxNewsSize) {
-                  break;
-                }
-                count++;
-                QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
-                listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
-                listItem->setText(title);
-                listItem->setData(Qt::UserRole, link);
-                break;
-              }
-            }
+          title = "";
+          link = "";
+          pubDateTime = QDateTime();
+          endDateTime = QDateTime();
+          // read everything inside item
+          xml.readNext();
+          if (xml.name() == "title") {
+            title = xml.readElementText();
+          }
+          xml.readNext();
+          if (xml.name() == "link") {
+            link = xml.readElementText();
+          }
+          xml.readNext();
+          if (xml.name() == "pubDate") {
+            pubDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
+          }
+          xml.readNext();
+          if (xml.name() == "endDate") {
+            endDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
         }
-      }
-      if (count >= maxNewsSize) {
-        break;
+      } else if (xml.tokenType() == QXmlStreamReader::EndElement) {
+        if (xml.name() == "item") {
+          // add the item to the list view
+          QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
+          listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
+          QString itemTitle;
+          if (pubDateTime.isValid() && endDateTime.isValid()) {
+            itemTitle = QLocale::c().toString(pubDateTime, "yyyy-MM-dd") % " - " % QLocale::c().toString(endDateTime, "yyyy-MM-dd") % " " % title;
+          } else if (pubDateTime.isValid()) {
+            itemTitle = QLocale::c().toString(pubDateTime, "yyyy-MM-dd") % " " % title;
+          } else {
+            itemTitle = title;
+          }
+          listItem->setText(itemTitle);
+          listItem->setData(Qt::UserRole, link);
+          count++;
+          // if reached max news size
+          if (count >= maxNewsSize) {
+            break;
+          }
+        }
       }
     }
   } else {
