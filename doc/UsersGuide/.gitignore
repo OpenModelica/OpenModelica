@@ -45,7 +45,6 @@ source/simoptions.inc
 source/testmodel.pdf
 source/testmodel.png
 source/testmodel.svg
-source/tracreleases.inc
 source/__pycache__/
 source/media/mdt-build-prompt.pdf
 source/media/mdt-create-project.pdf
