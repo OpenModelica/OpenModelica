@@ -44,6 +44,8 @@ See [Dockerfile.build-deps](https://github.com/OpenModelica/OpenModelicaBuildScr
 Get OpenModelica from our [Github repository](https://github.com/OpenModelica/OpenModelica).
 ```bash
 git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica
+git submodule init
+git submodule update
 ```
 
 ## Build OpenModelicaCompiler
