@@ -271,7 +271,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     /* set yScale from nominal values */
     for(i=0; i < data->modelData->nStates; ++i) {
       idaData->yScale[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-      idaData->ypScale[i] = 1.0; // TODO AHeu: 1 is not a good scaling value. Use something like nominal value / number of intervals
+      idaData->ypScale[i] = 1.0; // TODO: 1 is not a good scaling value. Use something like nominal value / number of intervals
     }
     /* daeMode: set nominal values for algebraic variables */
     if (idaData->daeMode) {
@@ -1592,7 +1592,7 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   {
     for(int i = 0; i < SM_COLUMNS_D(Jac); i++)
     {
-      SM_ELEMENT_D(Jac, i, i) -= (double) cj; // TODO AHeu: Why subtract cj?
+      SM_ELEMENT_D(Jac, i, i) -= (double) cj;
     }
   }
 
@@ -1977,11 +1977,6 @@ static void idaScaleVector(N_Vector vec, double* factors, unsigned int size)
   printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
   for(i=0; i < size; ++i)
   {
-    // TODO AHeu: Make sure scaling is not 0
-    if (fabs(factors[i]) < 1e-8) {
-      throwStreamPrint(NULL, "In function idaScaleVector: Rescaling with factor %e.", factors[i]);
-    }
-
     data[i] = data[i] / factors[i];
   }
   printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
