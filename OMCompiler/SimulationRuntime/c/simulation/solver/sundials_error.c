@@ -832,6 +832,32 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
   }
 }
 
+/**
+ * @brief Error handler function for CVODE
+ *
+ * @param errorCode   Error code from CVODE
+ * @param module      Name of the CVODE module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with CVodeSetUserData.
+ */
+void cvodeErrorHandlerFunction(int errorCode, const char *module,
+                               const char *function, char *msg, void *userData)
+{
+  /* Variables */
+  CVODE_SOLVER* cvodeData;
+  DATA* data;
+
+  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+    cvodeData = (CVODE_SOLVER*) userData;
+    data = (DATA*)cvodeData->simData->data;
+
+    infoStreamPrint(LOG_SOLVER, 1, "#### CVODE error message #####");
+    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(LOG_SOLVER);
+  }
+}
 
 /**
  * @brief Error handler function for IDA
