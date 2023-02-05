@@ -902,91 +902,28 @@ public
 
         case (Equation.FOR_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
           // get expanded matrix rows
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoFor(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            iter          = eqn.iter,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
-          CausalizeModes.update(modes, eqn_scal_idx, eqn_arr_idx, mode_to_var_part, unique_dependencies);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes,
+            function Slice.getDependentCrefIndicesPseudoFor(iter = eqn.iter));
         then ();
 
         case (Equation.ARRAY_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
-          CausalizeModes.update(modes, eqn_scal_idx, eqn_arr_idx, mode_to_var_part, unique_dependencies);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
-          CausalizeModes.update(modes, eqn_scal_idx, eqn_arr_idx, mode_to_var_part, unique_dependencies);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (Equation.IF_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (Equation.WHEN_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
-            dependencies  = unique_dependencies,
-            map           = map,
-            mapping       = mapping,
-            eqn_arr_idx   = eqn_arr_idx
-          );
-          // check for arrayLength(m_part) == eqn_size ?
-
-          // add matrix rows to correct locations and update causalize modes
-          expandRows(m, eqn_scal_idx, m_part);
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (_, SOME(mapping)) guard(pseudo) algorithm
@@ -1011,6 +948,37 @@ public
         then ();
       end match;
     end fillMatrix;
+
+    function fillMatrixArray
+      input list<ComponentRef> unique_dependencies;
+      input UnorderedMap<ComponentRef, Integer> map;
+      input Adjacency.Mapping mapping;
+      input Integer eqn_arr_idx;
+      input array<list<Integer>> m;
+      input CausalizeModes modes;
+      input getDependentCrefIndices func;
+    protected
+      partial function getDependentCrefIndices
+        input list<ComponentRef> dependencies;
+        input UnorderedMap<ComponentRef, Integer> map;
+        input Adjacency.Mapping mapping;
+        input Integer eqn_arr_idx;
+        output array<list<Integer>> m_part;
+        output array<array<Integer>> mode_to_var_part;
+      end getDependentCrefIndices;
+      Integer eqn_scal_idx, eqn_size;
+      array<list<Integer>> m_part;
+      array<array<Integer>> mode_to_var_part;
+    algorithm
+      (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+      (m_part, mode_to_var_part) := func(unique_dependencies, map, mapping, eqn_arr_idx);
+      // check for arrayLength(m_part) == eqn_size ?
+      // add matrix rows to correct locations and update causalize modes
+      expandRows(m, eqn_scal_idx, m_part);
+      if eqn_size > 1 then
+        CausalizeModes.update(modes, eqn_scal_idx, eqn_arr_idx, mode_to_var_part, unique_dependencies);
+      end if;
+    end fillMatrixArray;
 
     function cleanMatrix
       input array<list<Integer>> m;
