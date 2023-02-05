@@ -185,8 +185,8 @@ simulate(builtin_functions); getErrorString();
 //
 // Partial Derivative Variables (2/15)
 // ****************************************
-// (1)       [DER-] (14) Real[14] $DER.x
-// (2)       [ALGB] (1) Real y
+// (1)       [ALGB] (1) Real y
+// (2)       [DER-] (14) Real[14] $DER.x
 //
 // Seed Variables (1/14)
 // ****************************************
