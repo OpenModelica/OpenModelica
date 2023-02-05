@@ -82,9 +82,9 @@ typedef enum sundialsFlagType {
 /* Function prototypes */
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
-#ifndef OMC_FMI_RUNTIME
 void cvodeErrorHandlerFunction(int errorCode, const char *module,
                                const char *function, char *msg, void *userData);
+#ifndef OMC_FMI_RUNTIME
 void idaErrorHandlerFunction(int errorCode, const char *module,
                              const char *function, char *msg, void *userData);
 void kinsolErrorHandlerFunction(int errorCode, const char *module,
