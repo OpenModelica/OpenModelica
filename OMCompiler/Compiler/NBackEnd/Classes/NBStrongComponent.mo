@@ -510,13 +510,13 @@ public
 
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
-        cref := BVariable.getVarName(comp.var);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
-        updateDependencyMap(cref, dependencies, map, jacType);
+        updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
       then ();
 
       case MULTI_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         for var in comp.vars loop
           updateDependencyMap(BVariable.getVarName(var), dependencies, map, jacType);
         end for;
