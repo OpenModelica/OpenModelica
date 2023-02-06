@@ -1286,7 +1286,14 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
       if (node.valid())
       {
-        node->setName(shape._id);
+        osg::ref_ptr<osg::Group> group = node->asGroup();
+        if (group.valid()) {
+          for (unsigned int i = 0; i < group->getNumChildren(); i++) {
+            group->getChild(i)->setName(shape._id);
+          }
+        } else { // Should never occur
+          node->setName(shape._id);
+        }
 
         osg::ref_ptr<osg::Material> material = new osg::Material();
         material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
