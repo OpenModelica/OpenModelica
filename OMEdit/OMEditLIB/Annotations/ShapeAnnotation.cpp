@@ -1144,6 +1144,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mTextString.update(time, mpParentComponent);
 
     if (updated) {
+      applyTransformation();
       update();
     }
   }
