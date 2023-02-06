@@ -507,7 +507,7 @@ private:
     QList<Extend *> getExtends() const {return mExtends;}
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
-    void readCoordinateSystemFromExtendsClass(bool isIcon);
+    void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
     QList<Element *> getElements() const {return mElements;}
     QString getFileName() const {return mFileName;}
@@ -709,10 +709,10 @@ private:
     Extend();
     void deserialize(const QJsonObject &jsonObject);
 
-    Annotation *getAnnotation() const {return mpAnnotation.get();}
+    Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}
     Modifier getExtendsModifier() const {return mExtendsModifier;}
   private:
-    std::unique_ptr<Annotation> mpAnnotation;
+    std::unique_ptr<Annotation> mpExtendsAnnotation;
     Modifier mExtendsModifier;
   };
 

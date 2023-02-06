@@ -147,7 +147,7 @@ namespace ModelInstance
 
   bool CoordinateSystem::isComplete() const
   {
-    return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasGrid;
+    return mHasExtent && mHasPreserveAspectRatio;
   }
 
   void CoordinateSystem::deserialize(const QJsonObject &jsonObject)
@@ -882,12 +882,12 @@ namespace ModelInstance
      *
      * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
      */
-    if (!mpAnnotation->getIconAnnotation()->mCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(true);
+    if (!mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem, true);
     }
 
-    if (!mpAnnotation->getDiagramAnnotation()->mCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(false);
+    if (!mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
     }
 
     if (mModelJson.contains("components")) {
@@ -990,39 +990,34 @@ namespace ModelInstance
     return (mRestriction.compare(QStringLiteral("type")) == 0);
   }
 
-  void Model::readCoordinateSystemFromExtendsClass(bool isIcon)
+  void Model::readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon)
   {
-    /* From Modelica Specification Version 3.5-dev
-     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+    /* From Modelica Specification Version 3.6-dev
+     * The coordinate system attributes (extent and preserveAspectRatio) of a class are separately defined by the following priority:
      * 1. The coordinate system annotation given in the class (if specified).
      * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.1.1.
      * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
      *
      * Following is the second case.
      */
     foreach (auto pExtend, mExtends) {
       ModelInstance::CoordinateSystem coordinateSystem;
-      IconDiagramAnnotation *pIconDiagramAnnotation = 0;
       if (isIcon) {
         coordinateSystem = pExtend->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-        pIconDiagramAnnotation = mpAnnotation->getIconAnnotation();
       } else {
         coordinateSystem = pExtend->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-        pIconDiagramAnnotation = mpAnnotation->getDiagramAnnotation();
       }
 
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasExtent() && coordinateSystem.hasExtent()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setExtent(coordinateSystem.getExtent());
+      if (!pCoordinateSystem->hasExtent() && coordinateSystem.hasExtent()) {
+        pCoordinateSystem->setExtent(coordinateSystem.getExtent());
       }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+      if (!pCoordinateSystem->hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
+        pCoordinateSystem->setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
       }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasInitialScale() && coordinateSystem.hasInitialScale()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
-      }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasGrid() && coordinateSystem.hasGrid()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setGrid(coordinateSystem.getGrid());
+
+      if (!pCoordinateSystem->isComplete()) {
+        pExtend->readCoordinateSystemFromExtendsClass(pCoordinateSystem, isIcon);
       }
       break; // we only check coordinate system of first inherited class. See the comment in start of function i.e., "The coordinate systems of the first base-class ..."
     }
@@ -1657,7 +1652,7 @@ namespace ModelInstance
   Extend::Extend()
     : Model()
   {
-    mpAnnotation = std::make_unique<Annotation>(this);
+    mpExtendsAnnotation = std::make_unique<Annotation>(this);
   }
 
   void Extend::deserialize(const QJsonObject &jsonObject)
@@ -1667,7 +1662,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("annotation")) {
-      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
+      mpExtendsAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
 
     if (jsonObject.contains("baseClass")) {
