@@ -1549,12 +1549,13 @@ void UpdateVisitor::apply(osg::Geode& node)
   }//end switch action
 
   if (_changeMaterialProperties) {
-    //set color
-    if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0)
+    if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0) {
+      //set color
       changeColor(node.getOrCreateStateSet(), _visualizer->getColor());
 
-    //set transparency
-    changeTransparency(node.getOrCreateStateSet(), _visualizer->getTransparency());
+      //set transparency
+      changeTransparency(node.getOrCreateStateSet(), _visualizer->getTransparency());
+    }
   }
 
   traverse(node);
