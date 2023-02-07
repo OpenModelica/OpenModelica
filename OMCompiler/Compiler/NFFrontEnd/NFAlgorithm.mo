@@ -167,6 +167,16 @@ public
     str := Statement.toStringList(alg.statements, indent);
   end toString;
 
+  function setInputsOutputs
+    input output Algorithm alg;
+  protected
+    list<ComponentRef> inputs, outputs;
+  algorithm
+    (inputs, outputs) := getInputsOutputs(alg.statements);
+    alg.inputs := inputs;
+    alg.outputs := outputs;
+  end setInputsOutputs;
+
   function getInputsOutputs "This function finds the inputs and outputs of an
     algorithm. Inputs are values that are reffered on the right hand side of any
     statement in the algorithm and an output is a variables belonging to the
@@ -304,7 +314,7 @@ protected
       case Expression.CREF(cref = cr) algorithm
         // since outputs get stripped, also strip inputs
         // otherwise uninitialized output detection doesn't work properly
-        cr := ComponentRef.stripSubscriptsExceptModel(cr);
+        cr := ComponentRef.stripSubscriptsAll(cr);
         if not UnorderedSet.contains(cr, outputs_set) then
           UnorderedSet.add(cr, inputs_set);
         end if;
@@ -350,7 +360,7 @@ protected
            this algorithm section"
         So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
         */
-        cr := ComponentRef.stripSubscriptsExceptModel(cr);
+        cr := ComponentRef.stripSubscriptsAll(cr);
         if UnorderedSet.remove(cr, inputs_set) then
           if Flags.isSet(Flags.FAILTRACE) then
             Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});

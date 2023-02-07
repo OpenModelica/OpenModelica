@@ -839,8 +839,11 @@ public
       Pointer<Equation> derivative;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      // possibly adapt for algorithms
-      dependencies := BEquation.Equation.collectCrefs(eqn, function Slice.getDependentCref(map = map, pseudo = pseudo));
+
+      dependencies := match eqn
+        case Equation.ALGORITHM() then list(cref for cref guard(UnorderedMap.contains(cref, map)) in listAppend(eqn.alg.inputs, eqn.alg.outputs));
+        else Equation.collectCrefs(eqn, function Slice.getDependentCref(map = map, pseudo = pseudo));
+      end match;
       dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
 
       if (st < MatrixStrictness.FULL) then
@@ -893,8 +896,8 @@ public
       Integer eqn_scal_idx, eqn_size;
       list<ComponentRef> unique_dependencies;
     algorithm
-      // ToDo: maybe bottleneck! test this for efficiency
-      unique_dependencies := List.uniqueOnTrue(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies), ComponentRef.isEqual);
+      unique_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in dependencies);
+      unique_dependencies := UnorderedSet.unique_list(unique_dependencies, ComponentRef.hash, ComponentRef.isEqual);
       _ := match (eqn, mapping_opt)
         local
           Mapping mapping;
@@ -910,11 +913,15 @@ public
           fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
-        case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
+        case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
+          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+          row := Slice.getDependentCrefIndicesPseudoScalar(unique_dependencies, map, mapping);
+          for i in 0:eqn_size-1 loop
+            arrayUpdate(m, eqn_scal_idx+i, listAppend(row, m[eqn_scal_idx+i]));
+          end for;
         then ();
 
-        case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
+        case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
           fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 

@@ -270,19 +270,19 @@ public
   protected
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
-    list<Integer> sizes, subs;
+    list<Integer> sizes, int_subs;
   algorithm
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped);
-      subs := ComponentRef.subscriptsToInteger(cref);
-      var_scal_idx := locationToIndex(List.zip(sizes, subs), var_start);
+      int_subs := ComponentRef.subscriptsToInteger(cref);
+      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
     end for;
     // remove duplicates and sort
-    indices := List.sort(List.unique(indices), intLt);
+    indices := List.sort(List.uniqueIntN(indices, max(i for i in indices)), intLt);
   end getDependentCrefIndicesPseudoScalar;
 
   function getDependentCrefIndicesPseudoArray

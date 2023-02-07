@@ -324,6 +324,10 @@ algorithm
       else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
   end match;
 
+  // get inputs and outputs for algorithms now that types are computed
+  flatModel.algorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.algorithms);
+  flatModel.initialAlgorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.initialAlgorithms);
+
   execStat(getInstanceName());
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
 

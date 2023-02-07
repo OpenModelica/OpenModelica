@@ -1078,8 +1078,7 @@ protected
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
-    // ToDo! get array sizes instead of only list length
-    size := listLength(alg.outputs);
+    size := sum(ComponentRef.size(out) for out in alg.outputs);
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
