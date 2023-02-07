@@ -874,7 +874,7 @@ algorithm
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
 
-  json := dumpJSONInstanceTree(inst_tree);
+  json := dumpJSONInstanceTree(inst_tree, cls_node);
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstance;
 
@@ -957,6 +957,7 @@ end buildInstanceTreeComponent;
 
 function dumpJSONInstanceTree
   input InstanceTree tree;
+  input InstNode scope;
   input Boolean root = true;
   input Boolean isDeleted = false;
   output JSON json = JSON.emptyObject();
@@ -986,7 +987,7 @@ algorithm
     json := JSON.addPair("extends", dumpJSONExtendsList(exts, isDeleted), json);
   end if;
 
-  json := dumpJSONCommentOpt(cmt, node, json);
+  json := dumpJSONCommentOpt(cmt, scope, json);
 
   if not isDeleted then
     if not listEmpty(comps) then
@@ -1109,7 +1110,7 @@ algorithm
   if Class.isOnlyBuiltin(InstNode.getClass(node)) then
     json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
   else
-    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false, isDeleted = isDeleted), json);
+    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
   end if;
 end dumpJSONExtends;
 
@@ -1216,7 +1217,7 @@ function dumpJSONComponentType
 algorithm
   json := match (cls, ty)
     case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
-    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, isDeleted = isDeleted);
+    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, node, isDeleted = isDeleted);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;
