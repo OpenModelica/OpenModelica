@@ -173,16 +173,15 @@ algorithm
   end match;
 end isUnit;
 
-public function hashUnitMod
+public function hashUnit
   input Unit inKey;
-  input Integer inMod;
   output Integer outHash;
 protected
   String str;
 algorithm
   str := unit2string(inKey);
-  outHash := stringHashDjb2Mod(str, inMod);
-end hashUnitMod;
+  outHash := stringHashDjb2(str);
+end hashUnit;
 
 public function unitEqual
   input Unit inKey;

@@ -33,13 +33,52 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
                 sh "echo PATH: $PATH"
-                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release" +
-                                          " -DCMAKE_INSTALL_PREFIX=build" +
-                                          " -DOM_OMC_ENABLE_FORTRAN=OFF" +
-                                          " -DOM_OMC_ENABLE_IPOPT=OFF" +
-                                          " -DOM_OMC_ENABLE_CPP_RUNTIME=OFF"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                          + " -DCMAKE_INSTALL_PREFIX=build"
+                                          // Look in /opt/local first to prefer the macports libraries
+                                          // over others in the system.
+                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                          // Always specify the compilers explicilty for macOS
+                                          + " -DCMAKE_C_COMPILER=gcc"
+                                          + " -DCMAKE_CXX_COMPILER=g++"
+                                          // Disable fortran (and ipopt) for this build because
+                                          // we build a pkg from it and we do not want to depend
+                                          // on Fortran for now.
+                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
+                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
                                       )
                 sh "build/bin/omc --version"
+                // Create a product build package
+                sh "cd build_cmake && cpack -G productbuild"
+                // Get the generated pkg filename.
+                pkg_filename = sh(script: 'basename build_cmake/_packages/*', returnStdout: true).trim()
+                echo "Package file name: ${pkg_filename}"
+
+                // This is relative to the ssh config specified in Jenkins configuration.
+                relative_remote_dir = "pkg/arm64/nightly/"
+                echo "Relative destination path: ${relative_remote_dir}"
+                // The full dest path. Because relative paths do not seem to work for creating symlinks. Not sure why.
+                full_remote_dir = "/home/build/mac/${relative_remote_dir}"
+                echo "Full destination path: ${full_remote_dir}"
+
+                // Publish to build.openmodelica.org:/home/build/mac (using the ssh config 'cmake-macos-packages')
+                sshPublisher (
+                  failOnError: true,
+                  publishers: [
+                    sshPublisherDesc(
+                      configName: 'cmake-macos-packages',
+                      transfers: [
+                        sshTransfer(
+                          remoteDirectory: "${relative_remote_dir}",
+                          sourceFiles: "build_cmake/_packages/${pkg_filename}",
+                          removePrefix: "build_cmake/_packages/",
+                          // Make a symbolic link to the latest package.
+                          // Unfortunatelly, relative paths do not seem to work. Use full path to the files.
+                          execCommand: "ln -sf ${full_remote_dir}/${pkg_filename} ${full_remote_dir}/OpenModelica-latest.pkg")
+                      ]
+                    )
+                  ]
+                )
               }
             }
           }

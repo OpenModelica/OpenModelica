@@ -394,7 +394,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   return parseStream(input, langStd, strict, runningTestsuite);
 }
 
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
 #include "../../OMEncryption/Parser/parseEncryption.c"
 #endif
 
@@ -427,7 +427,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   if (len > 3 && 0==strcmp(fileName+len-4,".mof"))
     ModelicaParser_flags |= PARSE_FLAT;
 
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
     return parseEncryptedFile(fileName, langStd, strict, runningTestsuite, libraryPath, lveInstance);
   }
@@ -469,7 +469,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
 int startLibraryVendorExecutable(const char* path, void** lveInstance)
 {
   *lveInstance = mmc_mk_some(0);
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
   return startLibraryVendorExecutableImpl(path, lveInstance);
 #endif
   return 0;
@@ -477,7 +477,7 @@ int startLibraryVendorExecutable(const char* path, void** lveInstance)
 
 int checkLVEToolLicense(void** lveInstance, const char* packageName)
 {
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
   return checkLVEToolLicenseImpl(lveInstance, packageName);
 #endif
   return 0;
@@ -485,7 +485,7 @@ int checkLVEToolLicense(void** lveInstance, const char* packageName)
 
 int checkLVEToolFeature(void** lveInstance, const char* feature)
 {
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
   return checkLVEToolFeatureImpl(lveInstance, feature);
 #endif
   return 0;
@@ -493,7 +493,7 @@ int checkLVEToolFeature(void** lveInstance, const char* feature)
 
 void stopLibraryVendorExecutable(void** lveInstance)
 {
-#ifdef OMENCRYPTION
+#ifdef OM_ENABLE_ENCRYPTION
   stopLibraryVendorExecutableImpl(lveInstance);
 #endif
 }

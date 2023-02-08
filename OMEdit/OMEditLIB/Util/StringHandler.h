@@ -103,12 +103,13 @@ public:
   static QString getArrowString(StringHandler::Arrow type);
   static QComboBox* getStartArrowComboBox();
   static QComboBox* getEndArrowComboBox();
-  static int getFontWeight(QList<StringHandler::TextStyle> styleList);
-  static bool getFontItalic(QList<StringHandler::TextStyle> styleList);
-  static bool getFontUnderline(QList<StringHandler::TextStyle> styleList);
+  static int getFontWeight(QVector<TextStyle> styleList);
+  static bool getFontItalic(QVector<StringHandler::TextStyle> styleList);
+  static bool getFontUnderline(QVector<StringHandler::TextStyle> styleList);
   static Qt::Alignment getTextAlignment(StringHandler::TextAlignment alignment);
   static StringHandler::TextAlignment getTextAlignmentType(QString alignment);
   static QString getTextAlignmentString(StringHandler::TextAlignment alignment);
+  static StringHandler::TextStyle getTextStyleType(QString textStyle);
   static QString getTextStyleString(StringHandler::TextStyle textStyle);
   static QString removeFirstLastCurlBrackets(QString value);
   static QString removeFirstLastParentheses(QString value);
@@ -156,7 +157,6 @@ public:
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
   static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
-  static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
   static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
   static QString toCamelCase(QString str);
   static QMap<int, int> getLeadingSpaces(QString contents);

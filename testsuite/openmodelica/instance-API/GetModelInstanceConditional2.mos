@@ -1,0 +1,70 @@
+// name: GetModelInstanceConditional2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    parameter Real x;
+  end A;
+
+  model B
+    extends A;
+    Real y;
+  end B;
+
+  model M
+    B b if false;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"b\",
+//       \"type\": {
+//         \"name\": \"B\",
+//         \"restriction\": \"model\",
+//         \"extends\": [
+//           {
+//             \"baseClass\": {
+//               \"name\": \"A\",
+//               \"restriction\": \"model\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 7,
+//                 \"columnEnd\": 14
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 6,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 9,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"condition\": false
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 11,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 13,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

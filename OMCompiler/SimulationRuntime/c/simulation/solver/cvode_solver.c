@@ -996,7 +996,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
  *
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling.
- * @param solverInfo        CVODE solver data struckt.
+ * @param solverInfo        CVODE solver data struct.
  * @param tNext             Next desired time step for integrator to end.
  * @param states            States vector.
  * @param fmuComponent      FMU Data for fmu callback functions.
@@ -1004,7 +1004,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
  */
 int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
 {
-  /* Variabes */
+  /* Variables */
   int flag;
   int retVal = 0;
 

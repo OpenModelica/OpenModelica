@@ -88,6 +88,7 @@ algorithm
   csets := ConnectionSets.emptySets(listLength(expandable_conns) + listLength(undeclared_conns));
   csets := addExpandableConnectorsToSets(expandable_conns, csets);
   (undeclared_conns, csets) := List.mapFold(undeclared_conns, addUndeclaredConnectorToSets, csets);
+
   // Extract the sets of connected connectors.
   csets_array := ConnectionSets.extractSets(csets);
 
@@ -423,6 +424,7 @@ algorithm
   // Create a normal non-expandable complex type for the augmented expandable connector.
   complex_ty := Typing.makeConnectorType(cls_tree, isExpandable = false);
   ty := Type.COMPLEX(cls_node, complex_ty);
+  ty := Type.liftArrayLeftList(ty, Type.arrayDims(InstNode.getType(exp_node)));
   cls := Class.setType(ty, cls);
   InstNode.updateClass(cls, cls_node);
   InstNode.componentApply(exp_node, Component.setType, ty);
@@ -483,10 +485,9 @@ end updatePotentiallyPresentVariable;
 
 function hashConnector
   input Connector conn;
-  input Integer mod;
   output Integer res;
 algorithm
-  res := stringHashDjb2Mod(ComponentRef.firstName(conn.name), mod);
+  res := stringHashDjb2(ComponentRef.firstName(conn.name));
 end hashConnector;
 
 annotation(__OpenModelica_Interface="frontend");

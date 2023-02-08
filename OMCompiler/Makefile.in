@@ -17,7 +17,7 @@ host = @host@
 host_short = @host_short@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
-CMAKE=@CMAKE@
+CMAKE=@OMC_CMAKE_EXE@
 # Use the system's default cmake if nothing is passed to configure script, i.e., no CMAKE=<some_path> is specified
 ifeq ($(CMAKE),)
 	CMAKE=cmake
@@ -81,13 +81,13 @@ LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO$(STAEXT)
 ZLIB_DIR=3rdParty/zlib
 LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib$(STAEXT)
 
-OMENCRYPTION=@OMENCRYPTION@
+OM_ENABLE_ENCRYPTION=@OM_ENABLE_ENCRYPTION@
 LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
 MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
 
 SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)" -DSUITESPARSECONFIG_LIBRARY="libsuitesparseconfig$(SHREXT)"
 
-ifeq ($(OMENCRYPTION),yes)
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
@@ -112,7 +112,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 omc-bootstrapped: $(SEMLA_LIB)
-	$(MAKE) interactive sim-dependencies install-openturns
+	$(MAKE) interactive sim-dependencies
 	$(MAKE) ModelicaExternalC
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)

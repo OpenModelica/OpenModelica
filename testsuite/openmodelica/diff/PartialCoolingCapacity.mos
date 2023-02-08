@@ -1,0 +1,29 @@
+// depends: PartialCoolingCapacityBefore.mo
+// status: correct
+
+before:=readFile("PartialCoolingCapacityBefore.mo");getErrorString();
+loadFile("PartialCoolingCapacityAfter.mo");getErrorString();
+res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.color);getErrorString();
+
+// Result:
+// "within;
+// partial block PartialCoolingCapacity
+// algorithm
+//        biquadratic(
+//          x1=B,
+//          x2=B);
+// end PartialCoolingCapacity;
+// "
+// ""
+// true
+// ""
+// "within;
+// partial block PartialCoolingCapacity
+// algorithm
+//        biquadratic(
+//          x1=[4;32mA[0m,
+//          x2=[4;32mA[0m);
+// end PartialCoolingCapacity;
+// "
+// ""
+// endResult

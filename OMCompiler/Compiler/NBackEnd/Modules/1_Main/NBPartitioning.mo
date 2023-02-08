@@ -39,6 +39,7 @@ public
 
 protected
   // NF
+  import NFBackendExtension.{BackendInfo, VariableKind};
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Variable = NFVariable;
@@ -143,22 +144,16 @@ public
 protected
   uniontype Cluster
     record CLUSTER
-      list<ComponentRef> variables    "list of all variables in this set";
-      list<ComponentRef> eqn_idnts    "list of all equations in this set";
+      UnorderedSet<ComponentRef> variables    "list of all variables in this set";
+      UnorderedSet<ComponentRef> eqn_idnts    "list of all equations in this set";
     end CLUSTER;
 
     function toString
       input Cluster cluster;
       output String str;
     algorithm
-      str := "### Cluster Variables:\n";
-      for cref in cluster.variables loop
-        str := str + "  " + ComponentRef.toString(cref) + "\n";
-      end for;
-      str := str + "### Cluster Equation Identifiers:\n";
-      for cref in cluster.eqn_idnts loop
-        str := str + "  " + ComponentRef.toString(cref) + "\n";
-      end for;
+      str := "### Cluster Variables:\n" + UnorderedSet.toString(cluster.variables, ComponentRef.toString)
+        + "### Cluster Equation Identifiers:\n" + UnorderedSet.toString(cluster.eqn_idnts, ComponentRef.toString);
     end toString;
 
     function merge
@@ -168,48 +163,29 @@ protected
     protected
       Cluster c1 = Pointer.access(cluster1);
       Cluster c2 = Pointer.access(cluster2);
-      Integer c1v = listLength(c1.variables);
-      Integer c1e = listLength(c1.eqn_idnts);
-      Integer c2v = listLength(c2.variables);
-      Integer c2e = listLength(c2.eqn_idnts);
-      list<ComponentRef> variables    "list of all variables in this set";
-      list<ComponentRef> eqn_idnts    "list of all equations in this set";
+      Integer c1v = UnorderedSet.size(c1.variables);
+      Integer c1e = UnorderedSet.size(c1.eqn_idnts);
+      Integer c2v = UnorderedSet.size(c2.variables);
+      Integer c2e = UnorderedSet.size(c2.eqn_idnts);
     algorithm
-      // do magic here, wait for adrian to provide dangerous list merging
-
-      // find the smaller list to append
-      if c1v > c2v then
-        variables := Dangerous.listAppendDestroy(c2.variables, c1.variables);
-      else
-        variables := Dangerous.listAppendDestroy(c1.variables, c2.variables);
-      end if;
-
-      // find the smaller list to append
-      if c1e > c2e then
-        eqn_idnts := Dangerous.listAppendDestroy(c2.eqn_idnts, c1.eqn_idnts);
-      else
-        eqn_idnts := Dangerous.listAppendDestroy(c1.eqn_idnts, c2.eqn_idnts);
-      end if;
+      c1.variables := UnorderedSet.union(c1.variables, c2.variables);
+      c1.eqn_idnts := UnorderedSet.union(c1.eqn_idnts, c2.eqn_idnts);
 
       // find the lowest number of pointers needed to be changed
       if (c1v + c1e) > (c2v + c2e) then
-        c1.variables := variables;
-        c1.eqn_idnts := eqn_idnts;
         Pointer.update(cluster1, c1);
-        for var in c2.variables loop
+        for var in UnorderedSet.toList(c2.variables) loop
           UnorderedMap.add(var, cluster1, map);
         end for;
-        for var in c2.eqn_idnts loop
+        for var in UnorderedSet.toList(c2.eqn_idnts) loop
           UnorderedMap.add(var, cluster1, map);
         end for;
       else
-        c2.variables := variables;
-        c2.eqn_idnts := eqn_idnts;
-        Pointer.update(cluster2, c2);
-        for var in c1.variables loop
+        Pointer.update(cluster2, c1);
+        for var in UnorderedSet.toList(c1.variables) loop
           UnorderedMap.add(var, cluster2, map);
         end for;
-        for var in c1.eqn_idnts loop
+        for var in UnorderedSet.toList(c1.eqn_idnts) loop
           UnorderedMap.add(var, cluster2, map);
         end for;
       end if;
@@ -235,7 +211,7 @@ protected
         if not UnorderedSet.contains(cref, cref_marks) then
           cluster := Pointer.access(cluster_ptr);
           clusters := cluster :: clusters;
-          for var in cluster.variables loop
+          for var in UnorderedSet.toList(cluster.variables) loop
             try
               UnorderedSet.addUnique(var, cref_marks);
             else
@@ -255,7 +231,7 @@ protected
               fail();
             end try;
           end for;
-          for var in cluster.eqn_idnts loop
+          for var in UnorderedSet.toList(cluster.eqn_idnts) loop
             try
               UnorderedSet.addUnique(var, cref_marks);
             else
@@ -288,6 +264,8 @@ protected
       input Pointer<Integer> index;
       output System.System system;
     protected
+      list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
+      list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
       array<Boolean> marked_vars = Pointer.access(marked_vars_ptr);
       Boolean isInit = systemType == System.SystemType.INI;
       list<Pointer<Variable>> var_lst, filtered_vars;
@@ -296,15 +274,15 @@ protected
       EquationPointers systEquations;
       Integer var_idx;
     algorithm
-      for cref in cluster.variables loop
+      for cref in cvars loop
         var_idx := VariablePointers.getVarIndex(variables, cref);
         if var_idx > 0 then
           marked_vars[var_idx] := false;
         end if;
       end for;
-      var_lst := list(BVariable.getVarPointer(cref) for cref in cluster.variables);
+      var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
       filtered_vars := list(var for var guard(VariablePointers.contains(var, variables)) in var_lst);
-      eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cluster.eqn_idnts);
+      eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cidnt);
 
       systVariables := VariablePointers.fromList(filtered_vars);
       systEquations := EquationPointers.fromList(eqn_lst);
@@ -408,7 +386,7 @@ protected
   end collectPartitions;
 
   function collectPartitionsEquation
-    input Pointer<Equation> eqn;
+    input output Pointer<Equation> eqn;
     input System.SystemType systemType;
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   protected
@@ -442,50 +420,68 @@ protected
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   protected
     ComponentRef stripped;
+    list<ComponentRef> children;
     Boolean b;
   algorithm
-    stripped := ComponentRef.stripSubscriptsAll(varCref);
+    // extract potential record children
+    children := match BVariable.getVar(varCref)
+      local
+        list<Pointer<Variable>> children_vars;
 
-    b := match systemType
-      case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
-      case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
-      then fail();
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
+      then list(BVariable.getVarName(var) for var in children_vars);
+
+      else {varCref};
     end match;
-    if not b then
-      _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
-        local
-          ClusterPointer cluster1, cluster2;
-          Cluster c;
 
-        // neither equation nor variable already have a cluster
-        case (NONE(), NONE()) algorithm
-          cluster1 := Pointer.create(CLUSTER({}, {}));
-          addCrefToMap(stripped, cluster1, map);
-          addCrefToMap(eqCref, cluster1, map);
-        then ();
+    for child in children loop
+      stripped := ComponentRef.stripSubscriptsAll(child);
 
-        // equation does not have a cluster, but variable has one
-        case (NONE(), SOME(cluster2)) algorithm
-          addCrefToMap(eqCref, cluster2, map);
-        then ();
-
-        // variable does not have a cluster, but equation has one
-        case (SOME(cluster1), NONE()) algorithm
-          addCrefToMap(stripped, cluster1, map);
-        then ();
-
-        // both already have a different cluster
-        case (SOME(cluster1), SOME(cluster2))
-        guard(not referenceEq(cluster1, cluster2)) algorithm
-          Cluster.merge(cluster1, cluster2, map);
-        then ();
-
-        // both already have the same cluster
-        else ();
+      // check if cref has to be considered as a dependency
+      b := match systemType
+        case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
+        case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
+        then fail();
       end match;
-    end if;
+
+      if not b then
+        _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
+          local
+            ClusterPointer cluster1, cluster2;
+            Cluster c;
+
+          // neither equation nor variable already have a cluster
+          case (NONE(), NONE()) algorithm
+            cluster1 := Pointer.create(CLUSTER(
+              variables = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual),
+              eqn_idnts = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)));
+            addCrefToMap(stripped, cluster1, map);
+            addCrefToMap(eqCref, cluster1, map);
+          then ();
+
+         // equation does not have a cluster, but variable has one
+          case (NONE(), SOME(cluster2)) algorithm
+            addCrefToMap(eqCref, cluster2, map);
+          then ();
+
+          // variable does not have a cluster, but equation has one
+          case (SOME(cluster1), NONE()) algorithm
+            addCrefToMap(stripped, cluster1, map);
+          then ();
+
+          // both already have a different cluster
+          case (SOME(cluster1), SOME(cluster2))
+          guard(not referenceEq(cluster1, cluster2)) algorithm
+            Cluster.merge(cluster1, cluster2, map);
+          then ();
+
+          // both already have the same cluster
+          else ();
+        end match;
+      end if;
+    end for;
   end collectPartitionsCref;
 
   function addCrefToMap
@@ -502,29 +498,29 @@ protected
     // states and there derivatives belong to one partition
     // discrete states and there previous value also
     if BVariable.isDAEResidual(var_ptr) then
-      cluster.eqn_idnts := cref :: cluster.eqn_idnts;
+      UnorderedSet.add(cref, cluster.eqn_idnts);
     elseif BVariable.isState(var_ptr) then
-      cluster.variables := cref :: cluster.variables;
       cref2 := BVariable.getDerCref(cref);
-      cluster.variables := cref2 :: cluster.variables;
+      UnorderedSet.add(cref, cluster.variables);
+      UnorderedSet.add(cref2, cluster.variables);
       addSecond := true;
     elseif BVariable.isStateDerivative(var_ptr) then
-      cluster.variables := cref :: cluster.variables;
       cref2 := BVariable.getStateCref(cref);
-      cluster.variables := cref2 :: cluster.variables;
+      UnorderedSet.add(cref, cluster.variables);
+      UnorderedSet.add(cref2, cluster.variables);
       addSecond := true;
     elseif BVariable.isDiscreteState(var_ptr) then
-      cluster.variables := cref :: cluster.variables;
       cref2 := BVariable.getPreCref(cref);
-      cluster.variables := cref2 :: cluster.variables;
+      UnorderedSet.add(cref, cluster.variables);
+      UnorderedSet.add(cref2, cluster.variables);
       addSecond := true;
     elseif BVariable.isPrevious(var_ptr) then
-      cluster.variables := cref :: cluster.variables;
       cref2 := BVariable.getStateCref(cref);
-      cluster.variables := cref2 :: cluster.variables;
+      UnorderedSet.add(cref, cluster.variables);
+      UnorderedSet.add(cref2, cluster.variables);
       addSecond := true;
     else
-      cluster.variables := cref :: cluster.variables;
+      UnorderedSet.add(cref, cluster.variables);
     end if;
     Pointer.update(clusterPointer, cluster);
     UnorderedMap.add(cref, clusterPointer, map);

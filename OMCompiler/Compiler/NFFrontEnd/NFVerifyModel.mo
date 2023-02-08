@@ -159,7 +159,6 @@ protected
       crefs := match eq
         case Equation.EQUALITY()       then whenEquationEqualityCrefs(eq.lhs, crefs);
         case Equation.ARRAY_EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
-        case Equation.REINIT()         then whenEquationEqualityCrefs(eq.cref, crefs);
         case Equation.IF()             then whenEquationIfCrefs(eq.branches, eq.source, crefs);
         else crefs;
       end match;

@@ -1,0 +1,39 @@
+// depends: multipoleFluidTemperatureBefore.mo
+// status: correct
+// Checks that we can handle algorithm sections with multiple changes
+
+before:=readFile("multipoleFluidTemperatureBefore.mo");getErrorString();
+loadFile("multipoleFluidTemperatureAfter.mo");getErrorString();
+diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.color);getErrorString();
+// Result:
+// "within;
+// function multipoleFluidTemperature
+// algorithm
+//   for i in j loop
+//     z := C();
+//     rbm := 'abs'();
+//     x := D();
+//     for j in 1:nPip loop
+//       rbm := 'abs'(X);
+//     end for;
+//   end for;
+// end multipoleFluidTemperature;
+// "
+// ""
+// true
+// ""
+// "within;
+// function multipoleFluidTemperature
+// algorithm
+//   for i in j loop
+//     z := C();
+//     rbm := [4;32mabs[0m();
+//     x := D();
+//     for j in 1:nPip loop
+//       rbm := [4;32mabs[0m(X);
+//     end for;
+//   end for;
+// end multipoleFluidTemperature;
+// "
+// ""
+// endResult

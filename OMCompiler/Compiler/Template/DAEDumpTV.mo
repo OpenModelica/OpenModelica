@@ -873,6 +873,7 @@ package DAE
     record GIVEN end GIVEN;
     record SOUGHT end SOUGHT;
     record REFINE end REFINE;
+    record PROPAGATE end PROPAGATE;
   end Uncertainty;
 
   uniontype Distribution

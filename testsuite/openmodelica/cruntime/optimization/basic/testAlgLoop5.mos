@@ -58,20 +58,15 @@ getErrorString();
 //     resultFile = "testAlgLoop5_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_init CONST -iit 0.2 -iim=none -iif=ReferenceFiles/testAlgLoop5_ref.mat'",
 //     messages = "assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $EqCon$t1 >= 0.0 and $EqCon$t1 <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$t1 <= 0.0, has value: -1.66533e-16
+// |                 | |       | (($EqCon$t1 >= 0.0 and $EqCon$t1 <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$t1 <= 0.0, has value: -1.66533e-16\"
 // assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $EqCon$t2 >= 0.0 and $EqCon$t2 <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$t2 <= 0.0, has value: -0.20139
+// |                 | |       | (($EqCon$t2 >= 0.0 and $EqCon$t2 <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$t2 <= 0.0, has value: -0.20139\"
 // assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $EqCon$$con$con >= 0.0 and $EqCon$$con$con <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$$con$con <= 0.0, has value: 1.11022e-16
+// |                 | |       | (($EqCon$$con$con >= 0.0 and $EqCon$$con$con <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$$con$con <= 0.0, has value: 1.11022e-16\"
 // assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $finalCon$fcon3 >= 10.0 and $finalCon$fcon3 <= 10.0
-// assert            | warning | Variable violating min/max constraint: 10.0 <= $finalCon$fcon3 <= 10.0, has value: -13.0063
+// |                 | |       | (($finalCon$fcon3 >= 10.0 and $finalCon$fcon3 <= 10.0)) --> \"Variable violating min/max constraint: 10.0 <= $finalCon$fcon3 <= 10.0, has value: -13.0063\"
 // assert            | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | $finalCon$fcon >= 0.0 and $finalCon$fcon <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$fcon <= 0.0, has value: 16
+// |                 | |       | (($finalCon$fcon >= 0.0 and $finalCon$fcon <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $finalCon$fcon <= 0.0, has value: 16\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables

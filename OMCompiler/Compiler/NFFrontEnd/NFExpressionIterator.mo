@@ -66,6 +66,7 @@ public
 
   function fromExp
     input Expression exp;
+    input Boolean backend = false;
     output ExpressionIterator iterator;
   algorithm
     iterator := match exp
@@ -76,7 +77,7 @@ public
 
       case Expression.ARRAY()
         algorithm
-          (e, expanded) := ExpandExp.expand(exp);
+          (e, expanded) := ExpandExp.expand(exp, backend);
 
           if not expanded then
             Error.assertion(false, getInstanceName() + " got unexpandable expression `" +
@@ -87,10 +88,10 @@ public
 
       case Expression.CREF()
         algorithm
-          e := ExpandExp.expandCref(exp);
+          e := ExpandExp.expandCref(exp, backend);
 
           iterator := match e
-            case Expression.ARRAY() then fromExp(e);
+            case Expression.ARRAY() then fromExp(e, backend);
             else SCALAR_ITERATOR(e);
           end match;
         then
@@ -98,9 +99,9 @@ public
 
       else
         algorithm
-          e := ExpandExp.expand(exp);
+          e := ExpandExp.expand(exp, backend);
         then
-          if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e);
+          if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend);
 
     end match;
   end fromExp;

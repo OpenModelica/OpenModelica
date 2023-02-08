@@ -949,15 +949,4 @@ void kinsolInfoHandlerFunction(const char *module, const char *function,
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
 }
 
-/**
- * @brief  Function not supported without WITH_SUNDIALS
- *
- * @param A
- * @param name
- * @param logLevel
- */
-void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel) {
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-}
-
 #endif /* WITH_SUNDIALS */

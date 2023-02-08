@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
+#include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
 #include "TLMCoSimulationThread.h"
 #include "TLMCoSimulationDialog.h"
@@ -242,7 +243,7 @@ void TLMCoSimulationOutputWidget::managerProcessStarted()
 void TLMCoSimulationOutputWidget::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
   QTextCharFormat format;
-  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  format.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpManagerOutputTextBox->appendOutput(output, format);
 }
 
@@ -282,7 +283,7 @@ void TLMCoSimulationOutputWidget::monitorProcessStarted()
 void TLMCoSimulationOutputWidget::writeMonitorOutput(QString output, StringHandler::SimulationMessageType type)
 {
   QTextCharFormat format;
-  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  format.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpMonitorOutputTextBox->appendOutput(output, format);
 }
 

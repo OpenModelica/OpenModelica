@@ -75,7 +75,7 @@ public:
     SaveInOneFile,
     SaveFolderStructure
   };
-  LibraryTreeItem();
+  LibraryTreeItem(QAbstractItemModel *pParent);
   LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                   QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();
@@ -288,7 +288,7 @@ public:
                                                Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
-  void addModelicaLibraries();
+  void addModelicaLibraries(const QVector<QPair<QString, QString> > libraries = QVector<QPair<QString, QString> >());
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
@@ -483,7 +483,7 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false,
                 bool loadExternalModel = false);
-  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false);
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
@@ -522,11 +522,12 @@ private:
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
+  static void cancelLoadingLibraries(const QStringList classes);
 private slots:
   void handleAutoLoadedLibrary();
 public slots:
   void loadSystemLibrary();
-  void loadSystemLibrary(const QString &library, QString version = QString("default"));
+  void loadSystemLibrary(const QString &library, QString version = QString("default"), bool secondAttempt = false);
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };

@@ -438,6 +438,26 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
 }
 
 /*!
+ * \brief OMSProxy::replaceSubModel
+ * \Adds the submodel to the system
+ * \param cref
+ * \param fmupath
+ * \param dryCount
+ * \param count
+ * \return
+ */
+bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int *count)
+{
+  QString command = "oms_replaceSubModel";
+  QStringList args;
+  args << "\"" + cref + "\"" << fmuPath << QString::number(dryCount);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_replaceSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData(), dryCount, count);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::createElementGeometryUsingPosition
  * Creates the element geometry using position.
  * \param cref

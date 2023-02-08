@@ -220,3 +220,4 @@ tags
 *clang_output*
 
 Compiler/Util/Autoconf.mo
+Compiler/boot/bomc/

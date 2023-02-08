@@ -1,0 +1,76 @@
+// name: GetModelInstanceDerived2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type RealInput = input Real;
+  type RealInput2 = RealInput(start = 1.0);
+");
+
+getModelInstance(RealInput, true); getErrorString();
+getModelInstance(RealInput2, true); getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"RealInput\",
+//   \"restriction\": \"type\",
+//   \"prefixes\": {
+//     \"direction\": \"input\"
+//   },
+//   \"extends\": [
+//     {
+//       \"baseClass\": \"Real\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 2,
+//     \"columnEnd\": 30
+//   }
+// }"
+// ""
+// "{
+//   \"name\": \"RealInput2\",
+//   \"restriction\": \"type\",
+//   \"modifiers\": {
+//     \"start\": \"1.0\"
+//   },
+//   \"extends\": [
+//     {
+//       \"baseClass\": {
+//         \"name\": \"RealInput\",
+//         \"restriction\": \"type\",
+//         \"prefixes\": {
+//           \"direction\": \"input\"
+//         },
+//         \"extends\": [
+//           {
+//             \"baseClass\": \"Real\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 2,
+//           \"columnEnd\": 30
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 3,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 3,
+//     \"columnEnd\": 43
+//   }
+// }"
+// ""
+// endResult

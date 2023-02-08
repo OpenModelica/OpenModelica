@@ -244,7 +244,7 @@ algorithm
   userLibraries := getUserLibraryPath();
   Util.createDirectoryTree(userLibraries);
   packageIndex := userLibraries + "index.json";
-  if not Curl.multiDownload({(url,packageIndex)}) then
+  if not Curl.multiDownload({({url},packageIndex)}) then
     Error.addMessage(Error.ERROR_PKG_INDEX_FAILED_DOWNLOAD, {url,packageIndex});
     success := false;
   else
@@ -299,6 +299,7 @@ algorithm
     end if;
     return;
   end if;
+
   if not System.regularFileExists(packageIndex) then
     if not updateIndex() then
       return;
@@ -436,29 +437,38 @@ function installPackage
   input String pkg;
   input String version;
   input Boolean exactMatch;
+  input Boolean skipDownload = false;
   output Boolean success;
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
-  list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
+  list<tuple<list<String>,String>> urlPathList, urlPathListToDownload;
+  String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation, cachePath=getCachePath(), installCachePath=getInstallationCachePath(), curCachePath;
+  list<String> mirrors;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
     if p.pkg == pkg and not p.needsInstall then
-      Error.addSourceMessage(Error.NOTIFY_PKG_NO_INSTALL, {pkg, version, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      if version == SemanticVersion.toString(p.version) then
+        Error.addSourceMessage(Error.NOTIFY_PKG_ALREADY_INSTALLED, {pkg, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      else
+        Error.addSourceMessage(Error.NOTIFY_PKG_NO_INSTALL, {pkg, version, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+      end if;
     end if;
   end for;
   packagesToInstall := list(p for p guard p.needsInstall in packageList);
-  cachePath := getCachePath();
 
   for pack in packagesToInstall loop
     Util.createDirectoryTree(cachePath);
   end for;
 
-  urlPathList := List.sort(list((p.urlToZipFile, cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
-  urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
-  if not Curl.multiDownload(urlPathListToDownload) then
-    fail();
+  if not skipDownload then
+    mirrors := getMirrors();
+    urlPathList := List.sort(list((getAllUrls(p.urlToZipFile, mirrors), if System.regularFileExists(installCachePath + System.basename(p.urlToZipFile)) then installCachePath + System.basename(p.urlToZipFile) else cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    urlPathList := List.unique(urlPathList);
+    urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
+    if not Curl.multiDownload(urlPathListToDownload) then
+      fail();
+    end if;
   end if;
 
   for pack in packagesToInstall loop
@@ -477,22 +487,23 @@ algorithm
       end try;
     end if;
 
+    curCachePath := if System.regularFileExists(installCachePath + System.basename(pack.urlToZipFile)) then installCachePath else cachePath;
     if Util.endsWith(pack.path, ".mo") then
       // We are not copying a full directory, so also look for Resources in the zip-file
       dirOfPath := System.dirname(pack.path);
       if pack.singleFileStructureCopyAllFiles then
-        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
+        Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
         expectedLocation := destPath + "/" + System.basename(pack.path);
         if not System.rename(expectedLocation, destPathPkgMo) then
-          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
+          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {curCachePath + System.basename(pack.urlToZipFile), expectedLocation});
           // System.removeDirectory(destPath);
           fail();
         end if;
       else
-        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
+        Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
       end if;
     else
-      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
+      Unzip.unzipPath(curCachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
     end if;
 
     if System.regularFileExists(destPathPkgMo) then
@@ -502,7 +513,7 @@ algorithm
         Error.addSourceMessage(Error.NOTIFY_PKG_UPGRADE_DONE, {pack.sha, oldSha}, makeSourceInfo(destPathPkgMo));
       end if;
     else
-      Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), destPathPkgMo});
+      Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {curCachePath + System.basename(pack.urlToZipFile), destPathPkgMo});
       System.removeDirectory(destPath);
       fail();
     end if;
@@ -510,16 +521,81 @@ algorithm
   end for;
 end installPackage;
 
+function installCachedPackages
+  "Installs cached libraries from the installation directory if the user's
+   library directory is empty or doesn't exist, to allow bundling libraries with
+   the installation."
+protected
+  String packageIndex, homeDir;
+  JSON obj, libs_obj, lib_obj, versions_obj;
+  list<String> libs;
+algorithm
+  homeDir := Settings.getHomeDir(runningTestsuite=Testsuite.isRunning());
+  if not listEmpty(System.subDirectories(getUserLibraryPath())) or homeDir=="" or homeDir=="/" then
+    // Return if the user's library directory isn't empty, or if we're running
+    // e.g. rtest in which case the path might not be correct but we don't care
+    // and don't want any extra output.
+    return;
+  end if;
+
+  // Try to fetch the package index from the installation directory.
+  packageIndex := getInstallationIndexPath();
+
+  if not System.regularFileExists(packageIndex) then
+    return;
+  end if;
+
+  obj := JSON.makeNull();
+
+  try
+    obj := JSON.parseFile(packageIndex);
+  else
+    Error.addSourceMessage(Error.ERROR_PKG_INDEX_NOT_PARSED, {packageIndex}, makeSourceInfo(packageIndex));
+  end try;
+
+  // Fetch the names of all the libraries in the package index.
+  try
+    libs_obj := JSON.get(obj, "libs");
+    libs := JSON.getKeys(libs_obj);
+  else
+    return;
+  end try;
+
+  if not listEmpty(libs) then
+    Error.addSourceMessage(Error.NOTIFY_INITIALIZING_USER_LIBRARIES, {getUserLibraryPath()}, makeSourceInfo(packageIndex));
+  end if;
+
+  // Copy the index to the user library folder to avoid getting errors when
+  // installing the libraries.
+  if not System.regularFileExists(getIndexPath()) then
+    Util.createDirectoryTree(getUserLibraryPath());
+    System.copyFile(packageIndex, getIndexPath());
+  end if;
+
+  // Install each version of each library in the package index.
+  for lib in libs loop
+    lib_obj := JSON.get(libs_obj, lib);
+    versions_obj := JSON.getOrDefault(lib_obj, "versions", JSON.emptyObject());
+
+    for version in JSON.getKeys(versions_obj) loop
+      installPackage(lib, version, true, skipDownload = true);
+    end for;
+  end for;
+
+  // Try to download a new package index so the user gets an up to date one.
+  updateIndex();
+end installCachedPackages;
+
 protected
 
 function compareUrlBool
-  input tuple<String,String> tpl1, tpl2;
+  input tuple<list<String>,String> tpl1, tpl2;
   output Boolean b;
 protected
   String s1, s2;
 algorithm
-  (s1,_) := tpl1;
-  (s2,_) := tpl2;
+  (s1::_,_) := tpl1;
+  (s2::_,_) := tpl2;
   b := stringCompare(s1, s2) > 0;
 end compareUrlBool;
 
@@ -661,6 +737,38 @@ algorithm
   res := if JSON.hasKey(obj, "sha") then JSON.getString(JSON.get(obj, "sha")) else System.basename(JSON.getString(JSON.get(obj, "zipfile")));
 end getShaOrZipfile;
 
+function getAllUrls
+  input String url;
+  input list<String> mirrors;
+  output list<String> urls;
+protected
+  String urlWithoutProtocol, newUrl;
+algorithm
+  urls := {url};
+  if not Util.stringStartsWith("https://", url) then
+    return;
+  end if;
+  urlWithoutProtocol := substring(url,9,stringLength(url));
+  for mirror in mirrors loop
+    newUrl := if Util.endsWith(mirror, "/") then (mirror + urlWithoutProtocol) else (mirror + "/" + urlWithoutProtocol);
+    urls := newUrl::urls;
+  end for;
+end getAllUrls;
+
+function getMirrors
+  output list<String> mirrors;
+protected
+  JSON obj;
+algorithm
+  obj := getPackageIndex(false);
+  if not JSON.hasKey(obj, "mirrors") then
+    mirrors := {};
+    return;
+  end if;
+  obj := JSON.get(obj, "mirrors");
+  mirrors := JSON.getStringList(obj);
+end getMirrors;
+
 function getUserLibraryPath
   output String path;
 algorithm
@@ -673,6 +781,7 @@ algorithm
   path := Settings.getHomeDir(Testsuite.isRunning()) + "/.openmodelica/libraries/index.json";
 end getIndexPath;
 
+public
 function getCachePath
   output String path;
 algorithm
@@ -680,6 +789,18 @@ algorithm
 end getCachePath;
 
 protected
+
+function getInstallationIndexPath
+  output String path;
+algorithm
+  path := Settings.getInstallationDirectoryPath() + "/share/omlibrary/cache/index.json";
+end getInstallationIndexPath;
+
+function getInstallationCachePath
+  output String path;
+algorithm
+  path := Settings.getInstallationDirectoryPath() + "/share/omlibrary/cache/";
+end getInstallationCachePath;
 
 function makeSourceInfo
   input String fileName;

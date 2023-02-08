@@ -34,6 +34,8 @@
 /* For MMC_THROW, so we can end this thing */
 #include "../meta/meta_modelica.h"
 
+const FILE_INFO omc_dummyFileInfo = omc_dummyFileInfo_val;
+
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
@@ -304,7 +306,7 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...)
   MMC_THROW();
 }
 
-void messageText(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   int i;
   int len;
@@ -317,6 +319,15 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
   for(i=0; i<level[stream]; ++i)
       printf("| ");
 
+  if (info.filename && strlen(info.filename) > 0) {
+    // Print to stdout because we are using printf down below as well.
+    printInfo(stdout, info);
+    printf("\n");
+
+    printf("%-17s | ", "|");
+    printf("%-7s | ", "|");
+  }
+
   for(i=0; msg[i]; i++)
   {
     if(msg[i] == '\n')
@@ -324,7 +335,7 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
       msg[i] = '\0';
       printf("%s\n", msg);
       if (msg[i+1]) {
-        messageText(type, stream, 0, &msg[i+1], 1, indexes);
+        messageText(type, stream, omc_dummyFileInfo, 0, &msg[i+1], 1, indexes);
       }
       return;
     }
@@ -340,12 +351,28 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
   if (indentNext) level[stream]++;
 }
 
+/**
+ * @brief Close messages.
+ *
+ * Use for active streams to reduce level of indentation by one.
+ *
+ * @param stream Log stream.
+ */
 static void messageCloseText(int stream)
 {
-  if(ACTIVE_STREAM(stream))
+  if(ACTIVE_STREAM(stream)) {
     level[stream]--;
+  }
 }
 
+/**
+ * @brief Close warning messages.
+ *
+ * Use for warning messages that indented the stream either because the stream is active
+ * or showAllWarnings is true.
+ *
+ * @param stream Log stream.
+ */
 static void messageCloseTextWarning(int stream)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
@@ -353,8 +380,16 @@ static void messageCloseTextWarning(int stream)
   }
 }
 
-void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
+void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes) = messageText;
+/**
+ * @brief Close messages.
+ * See messageCloseText() for more info.
+ */
 void (*messageClose)(int stream) = messageCloseText;
+/**
+ * @brief Close warning messages.
+ * See messageCloseTextWarning() for more info.
+ */
 void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
 
 #define SIZE_LOG_BUFFER 2048
@@ -365,11 +400,11 @@ void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list 
   if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
-void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+void infoStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
   if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -377,7 +412,7 @@ void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *i
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, indexes);
+    messageFunction(LOG_TYPE_INFO, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
@@ -389,11 +424,11 @@ void infoStreamPrint(int stream, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
-void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -401,10 +436,22 @@ void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
+    messageFunction(LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
+/**
+ * @brief Print warning to stream.
+ *
+ * Prints message only if stream is active or global variable showAllWarnings is true.
+ *
+ * Use messageCloseWarning to close message, if indentNext is true.
+ *
+ * @param stream      Stream to print to.
+ * @param indentNext  Will increase indentation level by one if true.
+ * @param format      Format string with message to print.
+ * @param ...         Arguments for format string.
+ */
 void warningStreamPrint(int stream, int indentNext, const char *format, ...)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
@@ -413,16 +460,16 @@ void warningStreamPrint(int stream, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
-void va_warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, va_list args)
+void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, va_list args)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
+    messageFunction(LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
@@ -431,7 +478,7 @@ void va_warningStreamPrint(int stream, int indentNext, const char *format, va_li
   if (ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
@@ -442,22 +489,22 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   va_end(args);
-  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
+  messageFunction(LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
 }
 
 void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
+  messageFunction(LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
 }
 
-void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, va_list args)
+void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, va_list args)
 {
 
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, indexes);
+  messageFunction(LOG_TYPE_ERROR, stream, info, indentNext, logBuffer, 0, indexes);
 }
 #endif
 
@@ -470,11 +517,11 @@ void debugStreamPrint(int stream, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, stream, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_DEBUG, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
-void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
   if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -482,7 +529,7 @@ void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, stream, indentNext, logBuffer, 0, indexes);
+    messageFunction(LOG_TYPE_DEBUG, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 #endif
@@ -520,7 +567,7 @@ void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list a
 #if !defined(OMC_MINIMAL_LOGGING)
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
+  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
@@ -539,7 +586,7 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 #endif
 }
 
-void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...)
+void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
   char logBuffer[SIZE_LOG_BUFFER];
@@ -547,7 +594,7 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *in
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   va_end(args);
-  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
+  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);

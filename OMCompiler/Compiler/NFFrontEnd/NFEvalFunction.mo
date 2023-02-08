@@ -396,7 +396,7 @@ algorithm
         UnorderedMap.apply(local_map, function applyBindingReplacement(map = local_map));
         bindings := UnorderedMap.valueList(local_map);
       then
-        Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true), cls.ty, bindings);
+        Expression.makeRecord(InstNode.fullPath(cls_node), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, map, mutableParams);
   end match;
@@ -583,7 +583,7 @@ protected
   UnorderedMap<String, Expression> arg_map;
   list<Expression> args;
 algorithm
-  arg_map := UnorderedMap.new<Expression>(stringHashDjb2Mod, stringEq);
+  arg_map := UnorderedMap.new<Expression>(stringHashDjb2, stringEq);
 
   // Add default arguments from the slots.
   for s in newFn.slots loop
@@ -678,7 +678,7 @@ algorithm
   () := match value
     case Expression.EMPTY()
       algorithm
-        Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+        Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
           {InstNode.name(outputNode)}, InstNode.info(outputNode));
       then
         fail();
@@ -1441,7 +1441,7 @@ algorithm
       expl := getExternalOutputResult(c, map) :: expl;
     end for;
 
-    exp := Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true),
+    exp := Expression.makeRecord(InstNode.fullPath(cls_node),
       InstNode.getType(cls_node), listReverseInPlace(expl));
   else
     Error.assertion(false, getInstanceName() +

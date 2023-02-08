@@ -104,11 +104,10 @@ void mmc_set_current_pos(const char *pos)
 void mmc_do_out_of_memory()
 {
   threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  FILE_INFO info = omc_dummyFileInfo;
 #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
-  omc_assert(threadData, info, "Out of memory!");
+  omc_assert(threadData, omc_dummyFileInfo, "Out of memory!");
 #else
-  omc_assert_warning(info, "Out of memory! Faking a stack overflow.");
+  omc_assert_warning(omc_dummyFileInfo, "Out of memory! Faking a stack overflow.");
   mmc_do_stackoverflow(threadData);
 #endif
   abort();  // Silence invalid noreturn warning. This is never reached.

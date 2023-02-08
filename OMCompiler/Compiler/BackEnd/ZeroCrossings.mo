@@ -107,10 +107,25 @@ end add_list;
 
 function toList
   input ZeroCrossingSet zc;
-  output list<ZeroCrossing> lst;
+  output list<ZeroCrossing> lst = {};
+
 algorithm
   lst := DoubleEnded.toListNoCopyNoClear(zc.zc);
 end toList;
+
+function updateIndices
+  input list<ZeroCrossing> ilst;
+  output list<ZeroCrossing> olst = {};
+protected
+  Integer i = 0;
+algorithm
+  for zc in ilst loop
+    zc.index := i;
+    olst := zc :: olst;
+    i := i + 1;
+  end for;
+  olst := listReverse(olst);
+end updateIndices;
 
 function contains
   input ZeroCrossingSet zc_set;

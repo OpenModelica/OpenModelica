@@ -23,7 +23,7 @@ package FMUResourceTest "Test table resource"
     extends Test0(t_new(
         tableOnFile=true,
         tableName="a",
-        fileName=loadResource("modelica://FMUResourceTest/Resources/table_test_utf8.txt")));
+        fileName=loadResource("modelica://FMUResourceTest/Resources/table_test%40utf8.txt")));
     annotation (experiment(StartTime=0, StopTime=100));
   end TestResource;
 end FMUResourceTest;

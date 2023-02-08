@@ -29,7 +29,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Per Östlund <per.ostlund@liu.se>
  */
 
 #include "ExpressionTest.h"
@@ -49,7 +49,7 @@ QString evalString(const QString &str)
 {
   return FlatModelica::Expression::parse(str).evaluate([] (const std::string &) {
     // Assume that all variables have the value 1.0 for testing purposes.
-    return 1.0;
+    return FlatModelica::Expression(1.0);
   }).toQString();
 }
 
@@ -300,6 +300,147 @@ void ExpressionTest::functions_data()
   QTest::newRow("diagonal")
     << "diagonal({1, 2, 3})"
     << "{{1,0,0},{0,2,0},{0,0,3}}";
+}
+
+void ExpressionTest::parseJSON()
+{
+  QFETCH(QJsonValue, jsonValue);
+  QFETCH(QString, string);
+
+  try {
+    FlatModelica::Expression e;
+    e.deserialize(jsonValue);
+    qDebug() << e.toQString();
+    //qDebug() << jsonValue;
+    //qDebug() << e.serialize();
+    QCOMPARE(e.serialize(), jsonValue);
+    QCOMPARE(e.toQString(), string);
+  } catch (const std::exception &e) {
+    QFAIL(e.what());
+  }
+}
+
+void ExpressionTest::parseJSON_data()
+{
+  QTest::addColumn<QJsonValue>("jsonValue");
+  QTest::addColumn<QString>("string");
+  QJsonValue value;
+
+  value = 3;
+  QTest::newRow("json_integer1") << value << "3";
+
+  value = -52;
+  QTest::newRow("json_integer2") << value << "-52";
+
+  value = 3.14;
+  QTest::newRow("json_real1") << value << "3.14";
+
+  value = true;
+  QTest::newRow("json_boolean1") << value << "true";
+
+  value = false;
+  QTest::newRow("json_boolean2") << value << "false";
+
+  value = "string";
+  QTest::newRow("json_string1") << value << "\"string\"";
+
+  value = QJsonArray{1, 2, 3, 4, 5};
+  QTest::newRow("json_array1") << value << "{1,2,3,4,5}";
+
+  //value = QJsonObject{
+  //  {"$kind", "cref"},
+  //  {"parts", QJsonArray{
+  //    QJsonObject{
+  //      {"name", "a"},
+  //      {"subscripts", QJsonArray{1, 2, ":"}}
+  //    },
+  //    QJsonObject{
+  //      {"name", "b"}
+  //    },
+  //    QJsonObject{
+  //      {"name", "c"},
+  //      {"subscripts", QJsonArray{3}}
+  //    }
+  //  }}
+  //};
+  //QTest::newRow("json_cref1") << value;
+
+  value = QJsonObject{
+    {"$kind", "record"},
+    {"name", "TestRecord"},
+    {"elements", QJsonArray{4, "test"}}
+  };
+  QTest::newRow("json_record1") << value << "TestRecord(4,\"test\")";
+
+  value = QJsonObject{
+    {"$kind", "call"},
+    {"name", "fill"},
+    {"arguments", QJsonArray{1, 2, 3}}
+  };
+  QTest::newRow("json_call1") << value << "fill(1,2,3)";
+
+  value = QJsonObject{
+    {"$kind", "binary_op"},
+    {"lhs", QJsonArray{1, 2, 3}},
+    {"op", ".+"},
+    {"rhs", QJsonArray{4, 5, 6}}
+  };
+  QTest::newRow("json_binary1") << value << "({1,2,3} .+ {4,5,6})";
+
+  value = QJsonObject{
+    {"$kind", "unary_op"},
+    {"op", "not"},
+    {"exp", false}
+  };
+  QTest::newRow("json_unary1") << value << "not false";
+
+  value = QJsonObject{
+    {"$kind", "if"},
+    {"condition", true},
+    {"true", 1},
+    {"false", 2}
+  };
+  QTest::newRow("json_if1") << value << "if true then 1 else 2";
+
+  value = QJsonObject{
+    {"$kind", "enum"},
+    {"name", "FillPattern.Solid"},
+    {"index", 1}
+  };
+  QTest::newRow("json_enum") << value << "FillPattern.Solid";
+
+  value = QJsonObject{
+    {"$kind", "range"},
+    {"start", 1},
+    {"stop", 4}
+  };
+  QTest::newRow("json_range1") << value << "1:4";
+
+  value = QJsonObject{
+    {"$kind", "range"},
+    {"start", 3},
+    {"step", 2},
+    {"stop", 11}
+  };
+  QTest::newRow("json_range2") << value << "3:2:11";
+
+  value = QJsonObject{
+    {"$kind", "iterator_call"},
+    {"name", "$array"},
+    {"exp", 1},
+    {"iterators", QJsonArray{
+      QJsonObject{
+          {"name", "i"},
+          {"range", QJsonObject{{"$kind", "range"}, {"start", 1}, {"stop", 3}}}
+        },
+      QJsonObject{
+          {"name", "j"},
+          {"range", QJsonObject{{"$kind", "range"}, {"start", 2}, {"stop", 4}}}
+        }
+      }
+    }
+  };
+  QTest::newRow("json_iterator_call1") << value << "{1 for i in 1:3, j in 2:4}";
 }
 
 void ExpressionTest::cleanupTestCase()

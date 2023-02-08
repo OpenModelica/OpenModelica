@@ -148,6 +148,7 @@ public:
   bool isPlottingPerspectiveActive();
   bool isDebuggingPerspectiveActive();
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
+  QAction* getUnloadAllAction() {return mpUnloadAllAction;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
   QAction* getSaveTotalAction() {return mpSaveTotalAction;}
@@ -318,6 +319,7 @@ private:
   QAction *mpLoadEncryptedLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
+  QAction *mpUnloadAllAction;
   // CompositeModel File Actions
   QAction *mpNewCompositeModelFileAction;
   QAction *mpOpenCompositeModelFileAction;
@@ -485,6 +487,7 @@ public slots:
   void loadEncryptedLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
+  void unloadAll(bool onlyModelicaClasses = false);
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();
@@ -559,6 +562,8 @@ public slots:
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
+  void updateModel(const QString &modelName);
+  void updateModelHelper(LibraryTreeItem *pLibraryTreeItem, const QString &modelName);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);

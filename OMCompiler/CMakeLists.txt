@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
 project(OMCompiler C CXX)
 
+# For now, unless explicitly specified otherwise, we set install component simrt
+# for everything installed from the OMCompiler directory. There are some places that
+# modify this explicitly, e.g., the omc compiler ('COMPONENT omc'), the cpp runtime (COMPONENT simrtcpp),
+# and FMU realted installtions (COMPONENT fmu)
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrt)
+
 ## OPTIONS #################################################################################################
 
 omc_option(OM_OMC_ENABLE_FORTRAN "Enable Fortran support. Fortran is required if you enable IPOPT support." ON)
@@ -11,8 +17,7 @@ endif()
 
 omc_option(OM_OMC_ENABLE_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
 if(OM_OMC_ENABLE_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
-message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled.
-    ***Note: currently it is not possible to disable IPOPT from OpenModelica. This Option is here as a placeholder. ")
+  message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled. You can disable Ipopt by adding -DOM_OMC_ENABLE_IPOPT=OFF to the CMake configure command.")
 endif()
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
@@ -48,8 +53,9 @@ omc_add_subdirectory(3rdParty)
 # declaration so that we can be consistent and correct with our inclusions.
 # We do this after 3rdParty is added!! because some libs in FMILib use implicit function declaration
 # because of missing #defines due to bad configuration for now.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
 endif()
 
 omc_add_subdirectory(SimulationRuntime)

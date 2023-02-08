@@ -53,9 +53,9 @@ val(system2.s2, {0.0,0.1});
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from DualMassOscillator.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
 // "
 // "DualMassOscillator.System1.fmu"
 // ""

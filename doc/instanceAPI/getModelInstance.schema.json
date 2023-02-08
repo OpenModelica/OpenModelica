@@ -8,9 +8,55 @@
       "description": "The name of the class",
       "type": "string"
     },
+    "dims": {
+      "description": "The class' dimensions",
+      "$ref": "#/definitions/dimensions"
+    },
     "restriction": {
       "description": "The kind of class",
       "type": "string"
+    },
+    "prefixes": {
+      "description": "The class prefixes",
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "inner": {
+          "type": "boolean"
+        },
+        "outer": {
+          "type": "boolean"
+        },
+        "replaceable": {
+          "$ref": "#/definitions/replaceablePrefix"
+        },
+        "redeclare": {
+          "type": "boolean"
+        },
+        "partial": {
+          "type": "boolean"
+        },
+        "encapsulated": {
+          "type": "boolean"
+        },
+        "connector": {
+          "type": "string",
+          "enum": ["flow", "stream"]
+        },
+        "variability": {
+          "type": "string",
+          "enum": ["constant", "parameter", "discrete"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["input", "output"]
+        }
+      }
     },
     "modifiers": {
       "description": "Modifier from the SCode",
@@ -57,6 +103,52 @@
         "required": ["lhs", "rhs"]
       }
     },
+    "initialStates": {
+      "description": "The top-level initial state machine states of the class instance",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "arguments": {
+            "description": "The arguments of an initialState call",
+            "type": "array",
+            "items": {
+              "$ref": "expression.schema.json"
+            }
+          },
+          "comment": {
+            "$ref": "#/definitions/comment"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotation"
+          }
+        },
+        "required": ["arguments"]
+      }
+    },
+    "transitions": {
+      "description": "The top-level state machine transitions of the class instance",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "arguments": {
+            "description": "The arguments of a transition call",
+            "type": "array",
+            "items": {
+              "$ref": "expression.schema.json"
+            }
+          },
+          "comment": {
+            "$ref": "#/definitions/comment"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotation"
+          }
+        },
+        "required": ["arguments"]
+      }
+    },
     "replaceable": {
       "description": "The replaceable elements of the class instance",
       "type": "array",
@@ -81,9 +173,12 @@
           }
         ]
       }
+    },
+    "source": {
+      "$ref": "#/definitions/source"
     }
   },
-  "required": ["name"],
+  "required": ["name", "restriction", "source"],
   "definitions": {
     "comment": {
       "type": "string"
@@ -133,7 +228,16 @@
         },
         "baseClass": {
           "description": "The class instance of the extended class",
-          "$ref": "#"
+          "oneOf": [
+            {
+              "description": "Class type",
+              "$ref": "#"
+            },
+            {
+              "description": "Builtin type",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -166,24 +270,7 @@
             },
             "dims": {
               "description": "The component's dimensions",
-              "type": "object",
-              "properties": {
-                "absyn": {
-                  "properties": "Dimensions from the Absyn",
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "typed": {
-                  "properties": "Instantiated dimensions",
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": ["absyn", "typed"]
+              "$ref": "#/definitions/dimensions"
             },
             "modifiers": {
               "description": "Modifier from the SCode",
@@ -214,7 +301,7 @@
                   "type": "boolean"
                 },
                 "replaceable": {
-                  "type": "boolean"
+                  "$ref": "#/definitions/replaceablePrefix"
                 },
                 "redeclare": {
                   "type": "boolean"
@@ -242,7 +329,38 @@
               "$ref": "#/definitions/annotation"
             }
           },
-          "required": ["name", "type", "modifier", "prefixes"]
+          "required": ["name"]
+        }
+      ]
+    },
+    "replaceablePrefix": {
+      "oneOf": [
+        {
+          "description": "A replaceable prefix without a constrainedby clause",
+          "type": "boolean"
+        },
+        {
+          "description": "A replaceable prefix with a constrainedby clause",
+          "type": "object",
+          "properties": {
+            "constrainedby": {
+              "description": "The name of the constraining class",
+              "type": "string"
+            },
+            "modifiers": {
+              "description": "The modifiers on the constrainedby clause",
+              "type": "#/definitions/scodeModifier"
+            },
+            "comment": {
+              "description": "The comment on the constrainedby clause",
+              "$ref": "#/definitions/comment"
+            },
+            "annotation": {
+              "description": "The annotation on the constrainedby clause",
+              "$ref": "#/definitions/annotation"
+            }
+          },
+          "required": ["constrainedby"]
         }
       ]
     },
@@ -275,6 +393,14 @@
             "$value": {
               "type": "string",
               "description": "The string representation of the binding equation"
+            },
+            "final": {
+              "type": "boolean",
+              "description": "Whether the modifier is final or not"
+            },
+            "each": {
+              "type": "boolean",
+              "description": "Whether the modifier is each or not"
             }
           },
           "additionalProperties": {
@@ -284,6 +410,58 @@
           "minProperties": 1
         }
       ]
+    },
+    "dimensions": {
+      "description": "An element's dimensions",
+      "type": "object",
+      "properties": {
+        "absyn": {
+          "properties": "Dimensions from the Absyn",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "typed": {
+          "properties": "Instantiated dimensions",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["absyn", "typed"]
+    },
+    "source": {
+      "type": "object",
+      "description": "Source file information",
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "The path of the source file"
+        },
+        "lineStart": {
+          "type": "integer",
+          "description": "Line number start"
+        },
+        "columnStart": {
+          "type": "integer",
+          "description": "Column number start"
+        },
+        "lineEnd": {
+          "type": "integer",
+          "description": "Line number end"
+        },
+        "columnEnd": {
+          "type": "integer",
+          "description": "Column number end"
+        },
+        "readonly": {
+          "type": "boolean",
+          "description": "Whether the source file is readable or not"
+        }
+      },
+      "required": ["filename", "location"]
     }
   }
 }

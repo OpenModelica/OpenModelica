@@ -700,7 +700,7 @@ QComboBox* StringHandler::getEndArrowComboBox()
  * Returns the font weight
  * \return
  */
-int StringHandler::getFontWeight(QList<StringHandler::TextStyle> styleList)
+int StringHandler::getFontWeight(QVector<StringHandler::TextStyle> styleList)
 {
   foreach (StringHandler::TextStyle textStyle, styleList) {
     if (textStyle == StringHandler::TextStyleBold) {
@@ -716,7 +716,7 @@ int StringHandler::getFontWeight(QList<StringHandler::TextStyle> styleList)
  * Returns true if font is italic.
  * \return
  */
-bool StringHandler::getFontItalic(QList<StringHandler::TextStyle> styleList)
+bool StringHandler::getFontItalic(QVector<StringHandler::TextStyle> styleList)
 {
   foreach (StringHandler::TextStyle textStyle, styleList) {
     if (textStyle == StringHandler::TextStyleItalic) {
@@ -732,7 +732,7 @@ bool StringHandler::getFontItalic(QList<StringHandler::TextStyle> styleList)
  * Returns true is font is underline.
  * \return
  */
-bool StringHandler::getFontUnderline(QList<StringHandler::TextStyle> styleList)
+bool StringHandler::getFontUnderline(QVector<TextStyle> styleList)
 {
   foreach (StringHandler::TextStyle textStyle, styleList) {
     if (textStyle == StringHandler::TextStyleUnderLine) {
@@ -798,6 +798,25 @@ QString StringHandler::getTextAlignmentString(StringHandler::TextAlignment align
       return "TextAlignment.Right";
     default:
       return "TextAlignment.Center";
+  }
+}
+
+/*!
+ * \brief StringHandler::getTextStyleType
+ * Returns the text style type.
+ * \param textStyle
+ * \return
+ */
+StringHandler::TextStyle StringHandler::getTextStyleType(QString textStyle)
+{
+  if (textStyle.compare("TextStyle.Bold") == 0) {
+    return StringHandler::TextStyleBold;
+  } else if (textStyle.compare("TextStyle.Italic") == 0) {
+    return StringHandler::TextStyleItalic;
+  } else if (textStyle.compare("TextStyle.UnderLine") == 0) {
+    return StringHandler::TextStyleUnderLine;
+  } else {
+    return StringHandler::TextStyleBold;
   }
 }
 
@@ -1701,24 +1720,6 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
       return "OMEditInfo";
     default:
       return "unknown";
-  }
-}
-
-QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMessageType type)
-{
-  switch (type) {
-    case StringHandler::OMEditInfo:
-      return Qt::blue;
-    case StringHandler::SMWarning:
-    case StringHandler::Error:
-    case StringHandler::Assert:
-      return Qt::red;
-    case StringHandler::Debug:
-    case StringHandler::Info:
-    case StringHandler::Unknown:
-    default:
-      return Qt::black;
-      break;
   }
 }
 

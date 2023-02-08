@@ -98,9 +98,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int numEventIterations = 0;
-  int discreteChanged = 0;
-  modelica_boolean relationChanged = 0;
-  data->simulationInfo->needToIterate = 0;
+  modelica_boolean discreteChanged = FALSE;
+  modelica_boolean relationChanged = FALSE;
+  data->simulationInfo->needToIterate = FALSE;
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
@@ -559,7 +559,7 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
   }
   messageClose(stream);
 
@@ -1106,6 +1106,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
   data->simulationInfo->setcVars = (modelica_real*) calloc(data->modelData->nSetcVars, sizeof(modelica_real));
   data->simulationInfo->datainputVars = (modelica_real*) calloc(data->modelData->ndataReconVars, sizeof(modelica_real));
+  data->simulationInfo->setbVars = (modelica_real*) calloc(data->modelData->nSetbVars, sizeof(modelica_real));
 
 #if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   /* buffer for mixed systems */
@@ -1355,6 +1356,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->outputVars);
   free(data->simulationInfo->setcVars);
   free(data->simulationInfo->datainputVars);
+  free(data->simulationInfo->setbVars);
 
   /* free external objects buffer */
   free(data->simulationInfo->extObjs);

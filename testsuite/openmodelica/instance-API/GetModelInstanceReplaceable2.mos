@@ -1,0 +1,87 @@
+// name: GetModelInstanceReplaceable2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    replaceable Real x \"definition comment\" constrainedby Real(start = 1);
+    replaceable Real y constrainedby Real(start = 2) \"constrainedby comment\";
+    replaceable Real z \"definition comment\" constrainedby Real \"constrainedby comment\" annotation(choicesAllMatching = true);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"replaceable\": {
+//           \"constrainedby\": \"Real\",
+//           \"modifiers\": {
+//             \"start\": \"1\"
+//           }
+//         }
+//       },
+//       \"comment\": \"definition comment\"
+//     },
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"replaceable\": {
+//           \"constrainedby\": \"Real\",
+//           \"modifiers\": {
+//             \"start\": \"2\"
+//           },
+//           \"comment\": \"constrainedby comment\"
+//         }
+//       }
+//     },
+//     {
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"replaceable\": {
+//           \"constrainedby\": \"Real\",
+//           \"comment\": \"constrainedby comment\",
+//           \"annotation\": {
+//             \"choicesAllMatching\": true
+//           }
+//         }
+//       },
+//       \"comment\": \"definition comment\"
+//     }
+//   ],
+//   \"replaceable\": [
+//     {
+//       \"name\": \"x\",
+//       \"type\": \"Real\"
+//     },
+//     {
+//       \"name\": \"y\",
+//       \"type\": \"Real\"
+//     },
+//     {
+//       \"name\": \"z\",
+//       \"type\": \"Real\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 6,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

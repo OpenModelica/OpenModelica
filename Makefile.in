@@ -17,18 +17,16 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
-all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
+all: @ALL_TARGETS@
 
 .PRECIOUS: Makefile
-.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing test fast-test testsuite-depends omsens_qt
+.PHONY: omc omlibrary omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing test fast-test testsuite-depends omsens_qt
 
 omc: omc.skip
 omc.skip:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
-omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" core
-omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" all
+omlibrary:
+	$(MAKE) -C libraries lib-for-installing
 omplot: omplot.skip
 omplot.skip: omc
 	test -f $@ || $(MAKE) -C OMPlot
@@ -65,7 +63,7 @@ ReferenceFiles.skip:
 	$(MAKE) -C testsuite/ReferenceFiles
 libs-for-testing: libs-for-testing.skip
 libs-for-testing.skip: omc
-	$(MAKE) -C testsuite/libraries-for-testing/
+	$(MAKE) -C libraries
 ffi-test-lib: ffi-test-lib.skip
 ffi-test-lib.skip:
 	$(MAKE) -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc
@@ -128,14 +126,11 @@ utf8-iconv:
 
 clean:
 	test ! -d build || rm -r build/
-	for d in @subdirs@ testsuite/difftool testsuite/libraries-for-testing; do $(MAKE) -C $$d clean; done
-
-LIBGITDIRS = `ls -f libraries/git`
+	for d in @subdirs@ testsuite/difftool libraries; do $(MAKE) -C $$d clean; done
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch
-	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -197,11 +192,12 @@ install: install-dirs
 	test ! -d "@OMBUILDDIR@"/share/omnotebook/nls/ || cp -p "@OMBUILDDIR@"/share/omnotebook/nls/*.qm ${INSTALL_SHAREDIR}/omnotebook/nls/
 	test ! -d "@OMBUILDDIR@"/share/OMSimulator/ || cp -rp "@OMBUILDDIR@"/share/OMSimulator ${INSTALL_SHAREDIR}/
 	# Scripts
-	cp -rp "@OMBUILDDIR@"/share/omc/scripts/*.* "@OMBUILDDIR@"/share/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
+	cp -rp "@OMBUILDDIR@"/share/omc/scripts/*.* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
 	cp -p "@OMBUILDDIR@"/share/omc/java/* ${INSTALL_JAVADIR}
 	# Translations
 	# cp -rp "@OMBUILDDIR@"/share/locale/* ${INSTALL_LOCALEDIR}/
+	test ! -d "@OMBUILDDIR@"/share/omlibrary || cp -rp "@OMBUILDDIR@"/share/omlibrary "${INSTALL_SHAREDIR}/"
 
 Makefile: Makefile.in config.status
 	./config.status

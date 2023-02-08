@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-int checkForDiscreteChanges(DATA* data, threadData_t *threadData);
+modelica_boolean checkForDiscreteChanges(DATA* data, threadData_t *threadData);
 
 #ifdef __cplusplus
 }

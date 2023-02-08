@@ -406,6 +406,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCompilationProcess = 0;
   setCompilationProcessKilled(false);
   mIsCompilationProcessRunning = false;
+  mpPostCompilationProcess = 0;
+  setPostCompilationProcessKilled(false);
+  mIsPostCompilationProcessRunning = false;
   mpSimulationProcess = 0;
   setSimulationProcessKilled(false);
   mIsSimulationProcessRunning = false;
@@ -426,6 +429,11 @@ SimulationOutputWidget::~SimulationOutputWidget()
   if (mpCompilationProcess && isCompilationProcessRunning()) {
     mpCompilationProcess->kill();
     mpCompilationProcess->deleteLater();
+  }
+  // post compilation process
+  if (mpPostCompilationProcess && isPostCompilationProcessRunning()) {
+    mpPostCompilationProcess->kill();
+    mpPostCompilationProcess->deleteLater();
   }
   // simulation process
   if (mpSimulationProcess && isSimulationProcessRunning()) {
@@ -489,7 +497,7 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   /* set the text color */
   QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(pSimulationMessage->mType));
+  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(pSimulationMessage->mType));
   mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
   /* append the output */
   /* write the error message */
@@ -574,6 +582,128 @@ void SimulationOutputWidget::compileModel()
 #endif
 }
 
+
+/*!
+ * \brief SimulationOutputWidget::runPostCompilation
+ * Runs the post compilation command after the compilation of the model.
+ */
+void SimulationOutputWidget::runPostCompilation()
+{
+  const QString postCompilationCommand = OptionsDialog::instance()->getSimulationPage()->getPostCompilationCommand();
+  if (postCompilationCommand.size())
+  {
+    mpPostCompilationProcess = new QProcess;
+    mpPostCompilationProcess->setWorkingDirectory(mSimulationOptions.getWorkingDirectory());
+    connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
+    connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
+    connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+    connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
+  #else
+    connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
+  #endif
+    connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
+    writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Qt::blue);
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+    QStringList args(QProcess::splitCommand(postCompilationCommand));
+    const QString program(args.takeFirst());
+    mpPostCompilationProcess->start(program, args);
+  #else
+    mpPostCompilationProcess->start(postCompilationCommand);
+  #endif
+  }
+  else
+  {
+    // no post-compilation step, run directly the simulation
+    if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
+      runSimulationExecutable();
+    }
+  }
+}
+
+/*!
+ * \brief SimulationOutputWidget::postCompilationProcessStarted
+* Slot activated when mpPostCompilationProcess started signal is raised.\n
+ * Updates the progress label, bar and button controls.
+ */
+void SimulationOutputWidget::postCompilationProcessStarted()
+{
+  mIsPostCompilationProcessRunning = true;
+  mpProgressLabel->setText(tr("Post compiling %1.").arg(mSimulationOptions.getClassName()));
+  mpProgressBar->setRange(0, 0);
+  mpProgressBar->setTextVisible(false);
+  mpCancelButton->setText(tr("Cancel Compilation"));
+  mpCancelButton->setEnabled(true);
+}
+
+/*!
+ * \brief SimulationOutputWidget::readPostCompilationStandardOutput
+ * Slot activated when mpPostCompilationProcess readyReadStandardOutput signal is raised.\n
+ */
+void SimulationOutputWidget::readPostCompilationStandardOutput()
+{
+  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardOutput()), Qt::black);
+}
+
+/*!
+ * \brief SimulationOutputWidget::readPostCompilationStandardError
+ * Slot activated when mpPostCompilationProcess readyReadStandardError signal is raised.\n
+ */
+void SimulationOutputWidget::readPostCompilationStandardError()
+{
+  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), Qt::red);
+}
+
+/*!
+ * \brief SimulationOutputWidget::postCompilationProcessError
+ * Slot activated when mpPostCompilationProcess errorOccurred signal is raised.\n
+ * \param error
+ */
+void SimulationOutputWidget::postCompilationProcessError(QProcess::ProcessError error)
+{
+  Q_UNUSED(error);
+  mIsPostCompilationProcessRunning = false;
+  /* this signal is raised when we kill the compilation process forcefully. */
+  if (isPostCompilationProcessKilled()) {
+    return;
+  }
+  writeCompilationOutput(mpPostCompilationProcess->errorString(), Qt::red);
+}
+
+/*!
+ * \brief SimulationOutputWidget::postCompilationProcessFinished
+ * Slot activated when mpPostCompilationProcess finished signal is raised.\n
+ * If the mpPostCompilationProcess finished normally then run the simulation executable.\n
+ * \param exitCode
+ * \param exitStatus
+ */
+void SimulationOutputWidget::postCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  mIsPostCompilationProcessRunning = false;
+  QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+    writeCompilationOutput(tr("Post compilation process finished successfully.\n"), Qt::blue);
+    postCompilationProcessFinishedHelper(exitCode, exitStatus);
+    // if not build only and launch the algorithmic debugger is false then run the simulation process.
+    if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
+      runSimulationExecutable();
+    }
+  } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
+    writeCompilationOutput(exitCodeStr, Qt::red);
+    postCompilationProcessFinishedHelper(exitCode, exitStatus);
+  } else {
+    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    postCompilationProcessFinishedHelper(exitCode, exitStatus);
+  }
+}
+
+void SimulationOutputWidget::postCompilationProcessFinishedHelper(int /*exitCode*/, QProcess::ExitStatus /*exitStatus*/)
+{
+  mpProgressLabel->setText(tr("Post compilation of %1 is finished.").arg(mSimulationOptions.getClassName()));
+  mpProgressBar->setRange(0, 1);
+  mpProgressBar->setValue(1);
+  mpCancelButton->setEnabled(false);
+}
 
 /*!
  * \brief getPathsFromBatFile
@@ -822,6 +952,14 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
     mpProgressBar->setValue(1);
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
+  } else if (isPostCompilationProcessRunning()) {
+    setPostCompilationProcessKilled(true);
+    mpPostCompilationProcess->kill();
+    mpProgressLabel->setText(tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(1);
+    mpCancelButton->setEnabled(false);
+    mpArchivedSimulationItem->setStatus(Helper::finished);
   } else if (isSimulationProcessRunning()) {
     setSimulationProcessKilled(true);
     mpSimulationProcess->kill();
@@ -982,12 +1120,9 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     exitCodeStr.append("\nTry compiling with the default MinGW compiler. Select \"MinGW\" in \"Tools->Options->Simulation->Target Build\".");
   }
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);
+    writeCompilationOutput(tr("Compilation process finished successfully.\n"), Qt::blue);
     compilationProcessFinishedHelper(exitCode, exitStatus);
-    // if not build only and launch the algorithmic debugger is false then run the simulation process.
-    if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
-      runSimulationExecutable();
-    }
+    runPostCompilation();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
     writeCompilationOutput(exitCodeStr, Qt::red);
     compilationProcessFinishedHelper(exitCode, exitStatus);

@@ -57,7 +57,6 @@ public type HashSet = tuple<
 
 partial function FuncHashCref
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -88,7 +87,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExpMod,Expression.expEqual,ExpressionDump.printExpStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExp,Expression.expEqual,ExpressionDump.printExpStr));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -280,8 +280,7 @@ public
 
   function hash
     input SBSet set;
-    input Integer mod;
-    output Integer hash = intMod(UnorderedSet.size(set.asets), mod);
+    output Integer hash = UnorderedSet.size(set.asets);
   end hash;
 
   function toString

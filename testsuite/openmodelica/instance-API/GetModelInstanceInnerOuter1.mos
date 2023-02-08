@@ -37,10 +37,14 @@ getModelInstance(B, prettyPrint=true);
 //               \"inner\": true
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 8
+//         }
 //       }
 //     },
 //     {
@@ -50,6 +54,13 @@ getModelInstance(B, prettyPrint=true);
 //         \"inner\": true
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

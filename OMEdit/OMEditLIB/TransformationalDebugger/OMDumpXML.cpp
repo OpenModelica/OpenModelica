@@ -272,175 +272,148 @@ QString OMEquation::toString()
   }
 }
 
-MyHandler::MyHandler(QFile &file, QHash<QString,OMVariable> &variables, QList<OMEquation*> &equations) : variables(variables), equations(equations)
+MyHandler::MyHandler(QFile &file, QHash<QString,OMVariable> &vars, QList<OMEquation*> &eqs) : variables(vars), equations(eqs)
 {
   hasOperationsEnabled = false;
-  QXmlSimpleReader xmlReader;
-  QXmlInputSource *source = new QXmlInputSource(&file);
-  xmlReader.setContentHandler(this);
-  xmlReader.setErrorHandler(this);
-  bool ok = xmlReader.parse(source);
-  delete source;
-  if (!ok) {
+  QXmlStreamReader xmlStreamReader(&file);
+  while (!xmlStreamReader.atEnd()) {
+    QXmlStreamReader::TokenType token = xmlStreamReader.readNext();
+    if (token == QXmlStreamReader::StartDocument) {
+      variables.clear();
+      equations.clear();
+      /* use index from 1; add dummy element 0 */
+      equations.append(new OMEquation());
+      currentSection = "unknown section";
+    } else if (token == QXmlStreamReader::EndDocument) {
+      currentVariable.ops.clear(); /* avoid double delete */
+    } else if (token == QXmlStreamReader::Characters) {
+      currentText = xmlStreamReader.text().toString();
+    } else if (token == QXmlStreamReader::StartElement) {
+      QXmlStreamAttributes attributes = xmlStreamReader.attributes();
+      if (xmlStreamReader.name() == "variable") {
+        currentVariable.name = attributes.value("name").toString();
+        currentVariable.comment = attributes.value("comment").toString();
+        currentVariable.definedIn.clear();
+        currentVariable.usedIn.clear();
+        currentVariable.types.clear();
+        currentInfo = OMInfo();
+      } else if (xmlStreamReader.name() == "info") {
+        currentInfo.file = attributes.value("file").toString();
+        currentInfo.lineStart = attributes.value("lineStart").toLong();
+        currentInfo.lineEnd = attributes.value("lineEnd").toLong();
+        currentInfo.colStart = attributes.value("colStart").toLong();
+        currentInfo.colEnd = attributes.value("colEnd").toLong();
+        currentInfo.isValid = true;
+      } else if (xmlStreamReader.name() == "equation") {
+        currentEquation = new OMEquation();
+        currentEquation->index = attributes.value("index").toLong();
+        currentEquation->parent = attributes.value("parent").toLong(); // Returns 0 on failure, which suits us
+        currentEquation->section = currentSection;
+        nestedEquations.clear();
+        currentInfo = OMInfo();
+      } else if (xmlStreamReader.name() == "eq") {
+        nestedEquations.append(attributes.value("index").toLong());
+      } else if (xmlStreamReader.name() == "equations" ||
+                 xmlStreamReader.name() == "jacobian-equations" ||
+                 xmlStreamReader.name() == "initial-equations" ||
+                 xmlStreamReader.name() == "parameter-equations" ||
+                 xmlStreamReader.name() == "start-equations") {
+        currentSection = xmlStreamReader.name().toString();
+      } else if (xmlStreamReader.name() == "defines") {
+        currentEquation->defines.append(attributes.value("name").toString());
+      } else if (xmlStreamReader.name() == "depends") {
+        currentEquation->depends.append(attributes.value("name").toString());
+      } else if (xmlStreamReader.name() == "operations") {
+        operations.clear();
+        hasOperationsEnabled = true;
+      } else if (equationTags.contains(xmlStreamReader.name().toString())) {
+        texts.clear();
+      } else if (operationTags.contains(xmlStreamReader.name().toString())) {
+        texts.clear();
+        if (xmlStreamReader.name() == "scalarize") {
+          currentIndex = attributes.value("index").toLong();
+        }
+      }
+    } else if (token == QXmlStreamReader::EndElement) {
+      QXmlStreamAttributes attributes = xmlStreamReader.attributes();
+      if (xmlStreamReader.name() == "type") {
+        currentVariable.types.append(currentText);
+      } else if (operationExpTags.contains(xmlStreamReader.name().toString()) || equationPartTags.contains(xmlStreamReader.name().toString())) {
+        texts.append(currentText.trimmed());
+      }
+      if (xmlStreamReader.name() == "variable") {
+        currentVariable.info = currentInfo;
+        currentVariable.ops = operations;
+        operations.clear();
+        variables[currentVariable.name] = currentVariable;
+      } else if (xmlStreamReader.name() == "equation") {
+        currentEquation->info = currentInfo;
+        currentEquation->ops = operations;
+        currentEquation->eqs = nestedEquations;
+        operations.clear();
+        if (currentEquation->index != equations.size()) {
+          printf("failing: %d expect %d\n", currentEquation->index, equations.size()+1);
+          break;
+        }
+        equations.append(currentEquation);
+        foreach (QString def, currentEquation->defines) {
+          if (!variables.contains(def)) {
+            qDebug() << "Defines " << def << " not found in variables.";
+            continue;
+          }
+          variables[def].definedIn.append(currentEquation->index);
+        }
+        foreach (QString def, currentEquation->depends) {
+          if (variables.contains(def)) {
+            variables[def].usedIn.append(currentEquation->index);
+          } else {
+            qDebug() << "Depends " << def << " not found in variables.";
+          }
+        }
+      } else if (equationTags.contains(xmlStreamReader.name().toString())) {
+        currentEquation->text = texts;
+        currentEquation->tag = xmlStreamReader.name().toString();
+        texts.clear();
+      } else if (xmlStreamReader.name() == "simplify") {
+        operations.append(new OMOperationSimplify(texts));
+      } else if (xmlStreamReader.name() == "inline") {
+        operations.append(new OMOperationInline(texts));
+      } else if (xmlStreamReader.name() == "substitution") {
+        operations.append(new OMOperationSubstitution(texts));
+      } else if (xmlStreamReader.name() == "scalarize") {
+        operations.append(new OMOperationScalarize(currentIndex,texts));
+      } else if (xmlStreamReader.name() == "solved") {
+        operations.append(new OMOperationSolved(texts));
+      } else if (xmlStreamReader.name() == "linear-solved") {
+        operations.append(new OMOperationLinearSolved(texts));
+      } else if (xmlStreamReader.name() == "solve") {
+        operations.append(new OMOperationSolve(texts));
+      } else if (xmlStreamReader.name() == "derivative") {
+        operations.append(new OMOperationDifferentiate(texts));
+      } else if (xmlStreamReader.name() == "op-residual") {
+        operations.append(new OMOperationResidual(texts));
+      } else if (xmlStreamReader.name() == "dummyderivative") {
+        operations.append(new OMOperationDummyDerivative(texts));
+      } else if (xmlStreamReader.name() == "flattening") {
+        operations.append(new OMOperationFlattening(texts));
+      }
+    }
+  }
+
+  // error handling
+  if (xmlStreamReader.hasError()) {
+    qWarning() << "Fatal error on line" << xmlStreamReader.lineNumber()
+               << ", column" << xmlStreamReader.columnNumber() << ":"
+                << xmlStreamReader.errorString();
     throw QString("Parsing failed: %1").arg(file.fileName());
   }
 }
 
 MyHandler::~MyHandler()
 {
-
   foreach (OMEquation *eq, equations) {
     delete eq;
   }
-}
-
-bool MyHandler::startDocument()
-{
-  variables.clear();
-  equations.clear();
-  /* use index from 1; add dummy element 0 */
-  equations.append(new OMEquation());
-  currentSection = "unknown section";
-  return true;
-}
-
-bool MyHandler::endDocument()
-{
-  currentVariable.ops.clear(); /* avoid double delete */
-  return true;
-}
-
-bool MyHandler::characters( const QString & ch )
-{
-  currentText = ch;
-  return true;
-}
-
-bool MyHandler::startElement( const QString & namespaceURI, const QString & localName, const QString & qName, const QXmlAttributes & atts)
-{
-  Q_UNUSED(namespaceURI);
-  Q_UNUSED(localName);
-  if (qName == "variable") {
-    currentVariable.name = atts.value("name");
-    currentVariable.comment = atts.value("comment");
-    currentVariable.definedIn.clear();
-    currentVariable.usedIn.clear();
-    currentVariable.types.clear();
-    currentInfo = OMInfo();
-  } else if (qName == "info") {
-    currentInfo.file = atts.value("file");
-    currentInfo.lineStart = atts.value("lineStart").toLong();
-    currentInfo.lineEnd = atts.value("lineEnd").toLong();
-    currentInfo.colStart = atts.value("colStart").toLong();
-    currentInfo.colEnd = atts.value("colEnd").toLong();
-    currentInfo.isValid = true;
-  } else if (qName == "equation") {
-    currentEquation = new OMEquation();
-    currentEquation->index = atts.value("index").toLong();
-    currentEquation->parent = atts.value("parent").toLong(); // Returns 0 on failure, which suits us
-    currentEquation->section = currentSection;
-    nestedEquations.clear();
-    currentInfo = OMInfo();
-  } else if (qName == "eq") {
-    nestedEquations.append(atts.value("index").toLong());
-  } else if (qName == "equations" ||
-             qName == "jacobian-equations" ||
-             qName == "initial-equations" ||
-             qName == "parameter-equations" ||
-             qName == "start-equations") {
-    currentSection = qName;
-  } else if (qName == "defines") {
-    currentEquation->defines.append(atts.value("name"));
-  } else if (qName == "depends") {
-    currentEquation->depends.append(atts.value("name"));
-  } else if (qName == "operations") {
-    operations.clear();
-    hasOperationsEnabled = true;
-  } else if (equationTags.contains(qName)) {
-    texts.clear();
-  } else if (operationTags.contains(qName)) {
-    texts.clear();
-    if (qName == "scalarize") {
-      currentIndex = atts.value("index").toLong();
-    }
-  }
-  return true;
-}
-
-bool MyHandler::endElement( const QString & namespaceURI, const QString & localName, const QString & qName)
-{
-  Q_UNUSED(namespaceURI);
-  Q_UNUSED(localName);
-  if (qName == "type") {
-    currentVariable.types.append(currentText);
-  } else if (operationExpTags.contains(qName) || equationPartTags.contains(qName)) {
-    texts.append(currentText.trimmed());
-  }
-  if (qName == "variable") {
-    currentVariable.info = currentInfo;
-    currentVariable.ops = operations;
-    operations.clear();
-    variables[currentVariable.name] = currentVariable;
-  } else if (qName == "equation") {
-    currentEquation->info = currentInfo;
-    currentEquation->ops = operations;
-    currentEquation->eqs = nestedEquations;
-    operations.clear();
-    if (currentEquation->index != equations.size()) {
-      printf("failing: %d expect %d\n", currentEquation->index, equations.size()+1);
-      return false;
-    }
-    equations.append(currentEquation);
-    foreach (QString def, currentEquation->defines) {
-      if (!variables.contains(def)) {
-        qDebug() << "Defines " << def << " not found in variables.";
-        continue;
-      }
-      variables[def].definedIn.append(currentEquation->index);
-    }
-    foreach (QString def, currentEquation->depends) {
-      if (variables.contains(def)) {
-        variables[def].usedIn.append(currentEquation->index);
-      } else {
-        qDebug() << "Depends " << def << " not found in variables.";
-      }
-    }
-  } else if (equationTags.contains(qName)) {
-    currentEquation->text = texts;
-    currentEquation->tag = qName;
-    texts.clear();
-  } else if (qName == "simplify") {
-    operations.append(new OMOperationSimplify(texts));
-  } else if (qName == "inline") {
-    operations.append(new OMOperationInline(texts));
-  } else if (qName == "substitution") {
-    operations.append(new OMOperationSubstitution(texts));
-  } else if (qName == "scalarize") {
-    operations.append(new OMOperationScalarize(currentIndex,texts));
-  } else if (qName == "solved") {
-    operations.append(new OMOperationSolved(texts));
-  } else if (qName == "linear-solved") {
-    operations.append(new OMOperationLinearSolved(texts));
-  } else if (qName == "solve") {
-    operations.append(new OMOperationSolve(texts));
-  } else if (qName == "derivative") {
-    operations.append(new OMOperationDifferentiate(texts));
-  } else if (qName == "op-residual") {
-    operations.append(new OMOperationResidual(texts));
-  } else if (qName == "dummyderivative") {
-    operations.append(new OMOperationDummyDerivative(texts));
-  } else if (qName == "flattening") {
-    operations.append(new OMOperationFlattening(texts));
-  }
-  return true;
-}
-
-bool MyHandler::fatalError(const QXmlParseException & exception)
-{
-  qWarning() << "Fatal error on line" << exception.lineNumber()
-             << ", column" << exception.columnNumber() << ":"
-              << exception.message();
-  return false;
 }
 
 const QSet<QString> MyHandler::operationTags = QSet<QString>() << "simplify" << "substitution" << "inline" << "scalarize" << "solved" << "linear-solved" << "solve" << "derivative" << "op-residual" << "dummyderivative" << "flattening";

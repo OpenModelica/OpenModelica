@@ -49,7 +49,7 @@ AC_SUBST(OMC_LIBS)
 AC_SUBST(OMPCFLAGS)
 AC_SUBST(RUNTIMECC)
 AC_SUBST(RUNTIMECFLAGS)
-AC_SUBST(MAKE)
+AC_SUBST(OMC_MAKE_EXE)
 AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
@@ -92,11 +92,11 @@ AC_SUBST(LIBDL)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(LDFLAGS_LIBSTDCXX)
 AC_SUBST(CPP_RUNTIME_ARGS)
-AC_SUBST(OMENCRYPTION)
+AC_SUBST(OM_ENABLE_ENCRYPTION)
 AC_SUBST(MINGW_EXTRA_LIBS)
 AC_SUBST(BSTATIC)
 AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
-AC_SUBST(CMAKE)
+AC_SUBST(OMC_CMAKE_EXE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -136,7 +136,13 @@ if test -z "$AR"; then
 fi
 
 if test -z "$MAKE"; then
-  MAKE=make
+  OMC_MAKE_EXE=make
+fi
+
+if test -z "$CMAKE"; then
+  OMC_CMAKE_EXE=cmake
+else
+  OMC_CMAKE_EXE="$CMAKE"
 fi
 
 dnl Disables the default CXXFLAGS="-g -O2"
@@ -849,12 +855,12 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
 AC_ARG_WITH(ENCRYPTION, [  --with-ENCRYPTION                 Compile SEMLA and link omc to it],
 [
   if test "$withval" = "yes"; then
-    OMENCRYPTION=yes
+    OM_ENABLE_ENCRYPTION=yes
   else
-    OMENCRYPTION=no
+    OM_ENABLE_ENCRYPTION=no
   fi
 ], [
-    OMENCRYPTION=no
+    OM_ENABLE_ENCRYPTION=no
 ])
 
 m4_include([common/m4/semver.m4])

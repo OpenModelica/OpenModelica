@@ -441,7 +441,7 @@ algorithm
       equation
         vars = List.map(vars, convertFromExpToTypesVar);
       then
-        DAE.T_COMPLEX(CIS, vars, ec);
+        DAE.T_COMPLEX(CIS, vars, ec, inType.usedExternally);
 
     case DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec)
       equation
@@ -1159,7 +1159,7 @@ algorithm
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation
         vars = valuesToVars(vl, ids);
-      then DAE.T_COMPLEX(ClassInf.RECORD(cname),vars,NONE());
+      then DAE.T_COMPLEX(ClassInf.RECORD(cname),vars,NONE(), false);
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
@@ -3871,7 +3871,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         varLst = list(simplifyVar(v) for v in varLst);
       then
-        DAE.T_COMPLEX(CIS, varLst, ec);
+        DAE.T_COMPLEX(CIS, varLst, ec, inType.usedExternally);
 
     // do this for records too, otherwise:
     // frame.R = Modelica.Mechanics.MultiBody.Frames.Orientation({const_matrix);
@@ -3880,7 +3880,7 @@ algorithm
       equation
         varLst = list(simplifyVar(v) for v in varLst);
       then
-        DAE.T_COMPLEX(CIS, varLst, ec);
+        DAE.T_COMPLEX(CIS, varLst, ec, inType.usedExternally);
 
     // otherwise just return the same!
     case DAE.T_COMPLEX() then inType;

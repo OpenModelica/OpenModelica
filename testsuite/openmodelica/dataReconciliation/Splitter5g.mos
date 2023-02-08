@@ -20,10 +20,10 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.Splitter5g
@@ -66,10 +66,10 @@ getErrorString();
 // 32: Q04:VARIABLE()  type: Real
 // 33: h03:VARIABLE()  type: Real
 // 34: h02:VARIABLE()  type: Real
-// 35: h01:VARIABLE()  type: Real
-// 36: Q03:VARIABLE()  type: Real
-// 37: Q02:VARIABLE()  type: Real
-// 38: P01:VARIABLE()  type: Real
+// 35: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 36: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 37: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 38: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 // 39: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
 // 40: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
 // 41: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
@@ -256,10 +256,10 @@ getErrorString();
 // ========================================
 // 1: h03:VARIABLE()  type: Real
 // 2: h02:VARIABLE()  type: Real
-// 3: h01:VARIABLE()  type: Real
-// 4: Q03:VARIABLE()  type: Real
-// 5: Q02:VARIABLE()  type: Real
-// 6: P01:VARIABLE()  type: Real
+// 3: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 4: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 5: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 6: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 //
 //
 // Binding equations:(6)
@@ -417,10 +417,10 @@ getErrorString();
 // 32: Q04:VARIABLE()  type: Real
 // 33: h03:VARIABLE()  type: Real
 // 34: h02:VARIABLE()  type: Real
-// 35: h01:VARIABLE()  type: Real
-// 36: Q03:VARIABLE()  type: Real
-// 37: Q02:VARIABLE()  type: Real
-// 38: P01:VARIABLE()  type: Real
+// 35: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 36: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 37: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 38: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 // 39: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
 // 40: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
 // 41: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
@@ -607,10 +607,10 @@ getErrorString();
 // ========================================
 // 1: h03:VARIABLE()  type: Real
 // 2: h02:VARIABLE()  type: Real
-// 3: h01:VARIABLE()  type: Real
-// 4: Q03:VARIABLE()  type: Real
-// 5: Q02:VARIABLE()  type: Real
-// 6: P01:VARIABLE()  type: Real
+// 3: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 4: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 5: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 6: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 //
 //
 // Binding equations:(10)
@@ -724,10 +724,10 @@ getErrorString();
 //
 // Boundary conditions to be computed (4)
 // ========================================
-// 1: P01:VARIABLE()  type: Real
-// 2: h01:VARIABLE()  type: Real
-// 3: Q03:VARIABLE()  type: Real
-// 4: Q02:VARIABLE()  type: Real
+// 1: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 2: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 3: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 4: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 //
 //
 // Extract set-S' to compute the boundary conditions
@@ -816,10 +816,10 @@ getErrorString();
 //
 // Boundary condition Vars' (4)
 // ========================================
-// 1: P01:VARIABLE()  type: Real
-// 2: h01:VARIABLE()  type: Real
-// 3: Q03:VARIABLE()  type: Real
-// 4: Q02:VARIABLE()  type: Real
+// 1: P01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 2: h01:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 3: Q03:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
+// 4: Q02:VARIABLE(uncertain=Uncertainty.propagate)  type: Real
 //
 //
 // Intermediate vars in set-S' (27)

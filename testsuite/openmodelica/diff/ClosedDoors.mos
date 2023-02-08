@@ -1,0 +1,32 @@
+// Check that there is no extra space added after modification
+// depends: ClosedDoorsBefore.mo
+// status: correct
+
+before:=readFile("ClosedDoorsBefore.mo");
+loadFile("ClosedDoorsAfter.mo");
+after:=list();
+getErrorString();
+diffModelicaFileListings(
+  before,
+  after,
+  OpenModelica.Scripting.DiffFormat.plain,
+  failOnSemanticsChange=true);
+getErrorString();
+// Result:
+// "within;
+// model ClosedDoors
+//   Modelica.Blocks.Sources.Sine sinBou(freqHz=1/3600);
+// end ClosedDoors;
+// "
+// true
+// "model ClosedDoors
+//   Modelica.Blocks.Sources.Sine sinBou(f = 1 / 3600);
+// end ClosedDoors;"
+// ""
+// "within;
+// model ClosedDoors
+//   Modelica.Blocks.Sources.Sine sinBou(f=1/3600);
+// end ClosedDoors;
+// "
+// ""
+// endResult

@@ -82,7 +82,7 @@ type HashSet = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
 type HashVector = array<list<tuple<Key,Integer>>>;
 type ValueArray = tuple<Integer,Integer,array<Option<Key>>>;
 type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString>;
-partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
+partial function FuncHash input Key key; output Integer hash; end FuncHash;
 partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
 partial function FuncKeyString input Key key; output String str; end FuncKeyString;
 
@@ -143,7 +143,7 @@ algorithm
           //print("adding when present, indx =" );print(intString(indx));print("\n");
           varr = valueArraySetnth(varr, indx, key);
         else
-          indx = hashFunc(key, bsize);
+          indx = intMod(hashFunc(key), bsize);
           newpos = valueArrayLength(varr);
           varr = valueArrayAdd(varr, key);
           indexes = hashvec[indx + 1];
@@ -160,7 +160,7 @@ algorithm
         print(" key: ");
         s = keystrFunc(key);
         print(s + " Hash: ");
-        hval = hashFunc(key,bsize);
+        hval = intMod(hashFunc(key),bsize);
         print(intString(hval));
         print("\n");
       then
@@ -190,7 +190,7 @@ algorithm
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,_,fntpl as (hashFunc,_,_)))
       equation
-        indx = hashFunc(key, bsize);
+        indx = intMod(hashFunc(key), bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, key);
         indexes = hashvec[indx + 1];
@@ -225,7 +225,7 @@ algorithm
     case (_,
         ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
       equation
-        indx = hashFunc(key, bsize);
+        indx = intMod(hashFunc(key), bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, key);
         indexes = hashvec[indx + 1];
@@ -332,7 +332,7 @@ algorithm
 
     case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
       equation
-        hashindx = hashFunc(key, bsize);
+        hashindx = intMod(hashFunc(key), bsize);
         indexes = hashvec[hashindx + 1];
         (indx,b) = get2(key, indexes, keyEqual);
         k = if b then valueArrayNthT(varr, indx) else NONE();

@@ -2,7 +2,7 @@
 # qwt 6.1.5 and OpenModelica
 
 cmake_minimum_required (VERSION 3.14)
-project (qwt VERSION 6.1.5 LANGUAGES CXX)
+project (omqwt VERSION 6.1.5 LANGUAGES CXX)
 
 option (QWT_WITH_PLOT "Whether to build plot" ON)
 option (QWT_WITH_SVG "Whether to build svg" ON)

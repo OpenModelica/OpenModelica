@@ -464,6 +464,8 @@ protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared outShared = inShared "unused";
   output Boolean outChanged;
+protected
+  Boolean hasFailed = false;
 algorithm
   (osyst, outChanged) := matchcontinue(isyst)
     local
@@ -474,10 +476,15 @@ algorithm
       ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
+      hasFailed = true;
     then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
 
     else (isyst, inChanged);
   end matchcontinue;
+
+  // Fail after error is displayed.
+  // We do it this way, because I was to lazy to rewrite all of this function.
+  if hasFailed then fail(); end if;
 end inputDerivativesUsedWork;
 
 protected function traverserinputDerivativesUsed "author: Frenkel TUD 2012-10"
@@ -4422,7 +4429,7 @@ uniontype LinearJacobian
 
     /* Loop over all equations and create residual expression. */
     for loopEq in loopEqs loop
-      row := UnorderedMap.new<Real>(intMod, intEq);
+      row := UnorderedMap.new<Real>(Util.id, intEq);
       (eqn, index) := loopEq;
       res := BackendEquation.createResidualExp(eqn);
       /* Loop over all variables and differentiate residual expression for each. */

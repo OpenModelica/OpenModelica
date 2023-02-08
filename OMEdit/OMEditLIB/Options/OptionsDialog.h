@@ -37,6 +37,7 @@
 
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+#include "Util/StringHandler.h"
 
 #include <QFontComboBox>
 #include <QStackedWidget>
@@ -193,6 +194,15 @@ private:
   HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
+  QString mMatchingAlgorithm;
+  QString mIndexReductionMethod;
+  bool mInitialization;
+  bool mEvaluateAllParameters;
+  bool mNLSanalyticJacobian;
+  bool mParmodauto;
+  bool mOldInstantiation;
+  bool mEnableFMUImport;
+  QString mAdditionalTranslationFlags;
   MessagesPage *mpMessagesPage;
   NotificationsPage *mpNotificationsPage;
   LineStylePage *mpLineStylePage;
@@ -215,6 +225,34 @@ private:
   QDialogButtonBox *mpButtonBox;
 };
 
+class CodeColorsWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  CodeColorsWidget(QWidget *pParent = 0);
+  QListWidget* getItemsListWidget() {return mpItemsListWidget;}
+  PreviewPlainTextEdit* getPreviewPlainTextEdit() {return mpPreviewPlainTextEdit;}
+private:
+  QGroupBox *mpColorsGroupBox;
+  Label *mpItemsLabel;
+  QListWidget *mpItemsListWidget;
+  Label *mpItemColorLabel;
+  QPushButton *mpItemColorPickButton;
+  Label *mpPreviewLabel;
+  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
+  ListWidgetItem *mpTextItem;
+  ListWidgetItem *mpNumberItem;
+  ListWidgetItem *mpKeywordItem;
+  ListWidgetItem *mpTypeItem;
+  ListWidgetItem *mpFunctionItem;
+  ListWidgetItem *mpQuotesItem;
+  ListWidgetItem *mpCommentItem;
+signals:
+  void colorUpdated();
+private slots:
+  void pickColor();
+};
+
 class GeneralSettingsPage : public QWidget
 {
   Q_OBJECT
@@ -227,7 +265,7 @@ public:
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
-  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
+  QString getWorkingDirectory();
   QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
   bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}
@@ -308,6 +346,7 @@ class LibrariesPage : public QWidget
 public:
   LibrariesPage(OptionsDialog *pOptionsDialog);
   QLineEdit *getModelicaPathTextBox() const {return mpModelicaPathTextBox;}
+  QCheckBox *getLoadLatestModelicaCheckbox() const {return mpLoadLatestModelicaCheckbox;}
   QTreeWidget* getSystemLibrariesTree() {return mpSystemLibrariesTree;}
   QTreeWidget* getUserLibrariesTree() {return mpUserLibrariesTree;}
   OptionsDialog *mpOptionsDialog;
@@ -315,7 +354,9 @@ private:
   QGroupBox *mpSystemLibrariesGroupBox;
   Label *mpModelicaPathLabel;
   QLineEdit *mpModelicaPathTextBox;
+  QPushButton *mpModelicaPathBrowseButton;
   Label *mpSystemLibrariesNoteLabel;
+  QCheckBox *mpLoadLatestModelicaCheckbox;
   QTreeWidget *mpSystemLibrariesTree;
   QPushButton *mpAddSystemLibraryButton;
   QPushButton *mpRemoveSystemLibraryButton;
@@ -328,6 +369,7 @@ private:
   QPushButton *mpEditUserLibraryButton;
   QDialogButtonBox *mpUserLibrariesButtonBox;
 private slots:
+  void selectModelicaPath();
   void openAddSystemLibrary();
   void removeSystemLibrary();
   void openEditSystemLibrary();
@@ -622,6 +664,8 @@ public:
 #ifdef Q_OS_WIN
   QCheckBox* getUseStaticLinkingCheckBox() {return mpUseStaticLinkingCheckBox;}
 #endif
+  void setPostCompilationCommand(const QString & cmd) {mpPostCompilationCommandLineEdit->setText(cmd);}
+  QString getPostCompilationCommand() {return mpPostCompilationCommandLineEdit->text().trimmed();}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -648,6 +692,7 @@ private:
 #ifdef Q_OS_WIN
   QCheckBox *mpUseStaticLinkingCheckBox;
 #endif
+  QLineEdit *mpPostCompilationCommandLineEdit;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
@@ -677,14 +722,15 @@ public:
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
-  QColor getNotificationColor() {return mNotificaitonColor;}
+  QColor getNotificationColor() const {return mNotificaitonColor;}
   void setNotificationPickColorButtonIcon();
   void setWarningColor(QColor color) {mWarningColor = color;}
-  QColor getWarningColor() {return mWarningColor;}
+  QColor getWarningColor() const {return mWarningColor;}
   void setWarningPickColorButtonIcon();
   void setErrorColor(QColor color) {mErrorColor = color;}
-  QColor getErrorColor() {return mErrorColor;}
+  QColor getErrorColor() const {return mErrorColor;}
   void setErrorPickColorButtonIcon();
+  QColor getColor(const StringHandler::SimulationMessageType type) const;
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -879,7 +925,6 @@ private:
   QLineEdit *mpFigaroOptionsFileTextBox;
   QPushButton *mpBrowseFigaroOptionsFileButton;
   Label *mpFigaroProcessLabel;
-  QString mFigaroProcessPath;
   QLineEdit *mpFigaroProcessTextBox;
   QPushButton *mpBrowseFigaroProcessButton;
   QPushButton *mpResetFigaroProcessButton;
@@ -897,7 +942,7 @@ public:
   DebuggerPage(OptionsDialog *pOptionsDialog);
   void setGDBPath(QString path);
   QString getGDBPath();
-  QString getGDBPathForSettings() {return mpGDBPathTextBox->text();}
+  QLineEdit* getGDBPathTextBox() {return mpGDBPathTextBox;}
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
   QSpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
   QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}
@@ -1065,6 +1110,7 @@ public:
   DiscardLocalTranslationFlagsDialog(QWidget *pParent = 0);
 private:
   Label *mpDescriptionLabel;
+  Label *mpDescriptionLabel2;
   QListWidget *mpClassesWithLocalTranslationFlagsListWidget;
   QPushButton *mpYesButton;
   QPushButton *mpNoButton;

@@ -23,7 +23,7 @@ target_link_libraries(ParModelicaAuto PUBLIC Boost::graph)
 target_compile_definitions(ParModelicaAuto PRIVATE USE_FLOW_SCHEDULER)
 
 # For now, disable deprecation warning from the json reader. We do not plan to update any time soon.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(ParModelicaAuto PRIVATE -Wno-deprecated-declarations)
 endif()
 

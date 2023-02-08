@@ -9,12 +9,16 @@ model FuncOverloadAmbiguousDefault
   function F
     input Integer f1;
     output Integer f2;
+  algorithm
+    f2 := f1;
   end F;  
 
   function G
     input Integer g1;
     input Integer g2 = 1;
     output Integer g3;
+  algorithm
+    g3 := g1 + g2;
   end G;
   
   function OV = $overload(F,G);
@@ -24,7 +28,7 @@ end FuncOverloadAmbiguousDefault;
 
 // Result:
 // Error processing file: FuncOverloadAmbiguousDefault.mo
-// [flattening/modelica/scodeinst/FuncOverloadAmbiguousDefault.mo:22:3-22:20:writable] Error: Ambiguous matching functions found for FuncOverloadAmbiguousDefault.OV(/*Integer*/ 1).
+// [flattening/modelica/scodeinst/FuncOverloadAmbiguousDefault.mo:26:3-26:20:writable] Error: Ambiguous matching functions found for FuncOverloadAmbiguousDefault.OV(/*Integer*/ 1).
 // Candidates are:
 //   FuncOverloadAmbiguousDefault.G(Integer g1, Integer g2 = 1) => Integer
 //   FuncOverloadAmbiguousDefault.F(Integer f1) => Integer

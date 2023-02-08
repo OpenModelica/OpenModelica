@@ -109,7 +109,8 @@ public
     protected
       Expression start;
     algorithm
-      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind) + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
+      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind)
+        + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
       if Util.isSome(var.start) then
         start := Util.getOption(var.start);
         str := str + " = " + Expression.toString(start);
@@ -709,6 +710,7 @@ public
       list<SimVar> sensitivityVars "variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates";
       list<SimVar> dataReconSetcVars;
       list<SimVar> dataReconinputVars;
+      list<SimVar> dataReconSetBVars;
     end SIMVARS;
 
     function toString
@@ -719,6 +721,8 @@ public
       str := str + SimVar.listToString(vars.stateVars, "States");
       str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := str + SimVar.listToString(vars.intAlgVars, "Integer Algebraic Variables");
+      str := str + SimVar.listToString(vars.boolAlgVars, "Boolean Algebraic Variables");
       str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
       str := str + SimVar.listToString(vars.residualVars, "Residual Variables");
@@ -748,6 +752,7 @@ public
       list<SimVar> sensitivityVars = {};
       list<SimVar> dataReconSetcVars = {};
       list<SimVar> dataReconinputVars = {};
+      list<SimVar> dataReconSetBVars = {};
     algorithm
       _ := match varData
         local
@@ -804,7 +809,8 @@ public
         realOptimizeFinalConstraintsVars    = realOptimizeFinalConstraintsVars,
         sensitivityVars                     = sensitivityVars,
         dataReconSetcVars                   = dataReconSetcVars,
-        dataReconinputVars                  = dataReconinputVars
+        dataReconinputVars                  = dataReconinputVars,
+        dataReconSetBVars                   = dataReconSetBVars
       );
     end create;
 
@@ -860,7 +866,8 @@ public
                           + listLength(simVars.realOptimizeFinalConstraintsVars)
                           + listLength(simVars.sensitivityVars)
                           + listLength(simVars.dataReconSetcVars)
-                          + listLength(simVars.dataReconinputVars);
+                          + listLength(simVars.dataReconinputVars)
+                          + listLength(simVars.dataReconSetBVars);
     end size;
 
     function convert
@@ -896,7 +903,8 @@ public
         realOptimizeFinalConstraintsVars  = SimVar.convertList(simVars.realOptimizeFinalConstraintsVars),
         sensitivityVars                   = SimVar.convertList(simVars.sensitivityVars),
         dataReconSetcVars                 = SimVar.convertList(simVars.dataReconSetcVars),
-        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars));
+        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars),
+        dataReconSetBVars                 = SimVar.convertList(simVars.dataReconSetBVars));
     end convert;
 
     function createSimVarLists
@@ -999,6 +1007,14 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        case (Type.ENUMERATION(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
+            simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
+            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
         case (Type.BOOLEAN(), VarType.PARAMETER)
           algorithm
             Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.booleanParamIndex) :: Pointer.access(bool_lst));
@@ -1057,7 +1073,7 @@ public
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
   type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...

@@ -100,16 +100,16 @@ public
         Solve.Status status;
         Expression replace_exp;
 
-      case StrongComponent.SINGLE_EQUATION() algorithm
+      case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, status, _) := Solve.solveEquation(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp), replacements);
+          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp, true), replacements);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();

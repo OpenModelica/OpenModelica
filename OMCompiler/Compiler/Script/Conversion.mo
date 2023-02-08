@@ -86,7 +86,7 @@ protected
     function newNode
       output ConversionRules node;
     algorithm
-      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(System.stringHashDjb2Mod, stringEq), {});
+      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(System.stringHashDjb2, stringEq), {});
     end newNode;
   end ConversionRules;
 
@@ -702,13 +702,13 @@ protected
   function newRuleTable
     output RuleTable table;
   algorithm
-    table := UnorderedMap.new<RuleList>(System.stringHashDjb2Mod, stringEq);
+    table := UnorderedMap.new<RuleList>(System.stringHashDjb2, stringEq);
   end newRuleTable;
 
   function newTypeTable
     output TypeTable table;
   algorithm
-    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2Mod, stringEq);
+    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2, stringEq);
   end newTypeTable;
 
   function newEnv
@@ -1055,6 +1055,9 @@ protected
         then
           ();
 
+      case Absyn.ElementArg.ELEMENTARGCOMMENT()
+        then ();
+
     end match;
   end convertElementArg;
 
@@ -1188,7 +1191,7 @@ protected
   protected
     type OptExp = Option<Absyn.Exp>;
   algorithm
-    placeholders := UnorderedMap.new<OptExp>(System.stringHashDjb2Mod, stringEq);
+    placeholders := UnorderedMap.new<OptExp>(System.stringHashDjb2, stringEq);
 
     for arg in args loop
       UnorderedMap.add(AbsynUtil.pathString(AbsynUtil.elementArgName(arg)),
@@ -1572,7 +1575,7 @@ protected
   protected
     UnorderedSet<Absyn.Path> imports;
   algorithm
-    imports := UnorderedSet.new(AbsynUtil.pathHashMod, AbsynUtil.pathEqual, 1);
+    imports := UnorderedSet.new(AbsynUtil.pathHash, AbsynUtil.pathEqual, 1);
     outElements := list(e for e guard not importExists(e, imports) in elements);
   end filterDuplicateImports;
 
@@ -2026,6 +2029,12 @@ protected
       case Absyn.Exp.TUPLE()
         algorithm
           exp.expressions := convertExps(exp.expressions, localRules, rules, env, info);
+        then
+          ();
+
+      case Absyn.Exp.EXPRESSIONCOMMENT()
+        algorithm
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
         then
           ();
 

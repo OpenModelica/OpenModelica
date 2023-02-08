@@ -1,5 +1,5 @@
 # Cannot be parametrized in Jenkins...
-FROM docker.openmodelica.org/build-deps:v1.13-qt4-xenial
+FROM docker.openmodelica.org/build-deps:v1.13.1-qt4-xenial
 
 # We don't know the uid of the user who will build, so make the /cache directories world writable
 

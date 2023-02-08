@@ -413,7 +413,7 @@ algorithm
     case (cache,_,_,DAE.PREFIX(DAE.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,_,DAE.PREFIX(DAE.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
-        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE()), ds);
+        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), false), ds);
         cref_ = ComponentReference.makeCrefIdent(i,ident_ty,s);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_));
       then
@@ -421,7 +421,7 @@ algorithm
     case (cache,env,_,DAE.PREFIX(DAE.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
-        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE()), ds);
+        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), false), ds);
         cref_2 = ComponentReference.makeCrefQual(i,ident_ty,s,cref);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_2));
       then
@@ -456,13 +456,13 @@ algorithm
     case (DAE.PREFIX(DAE.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
     case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation
-        cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()),s);
+        cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s);
         cref_1 = prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
     case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
-        cref_ = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()),s,cref);
+        cref_ = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s,cref);
         cref_1 = prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;

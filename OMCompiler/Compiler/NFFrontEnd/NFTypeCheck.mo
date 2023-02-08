@@ -79,6 +79,7 @@ import Component = NFComponent;
 import InstContext = NFInstContext;
 import NFInstNode.InstNodeType;
 import Array;
+import Inline = NFInline;
 
 public
 type MatchKind = enumeration(
@@ -230,6 +231,8 @@ algorithm
     (outExp, outType) := matchOverloadedBinaryOperator(
       exp1, type1, var1, op, exp2, type2, var2, candidates, info);
   end if;
+
+  outExp := Inline.inlineCallExp(outExp);
 end checkOverloadedBinaryOperator;
 
 function matchOverloadedBinaryOperator
@@ -1345,6 +1348,8 @@ algorithm
        Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
+
+  outExp := Inline.inlineCallExp(outExp);
 end checkOverloadedUnaryOperator;
 
 function checkLogicalBinaryOperation
@@ -2507,6 +2512,12 @@ algorithm
       algorithm
         matchKind := if Type.isScalar(actualType) and Expression.isComponentExpression(exp) then
           MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
+    case "__Block"
+      algorithm
+        matchKind := if Type.isComplex(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
       then
         (actualType, matchKind);
 

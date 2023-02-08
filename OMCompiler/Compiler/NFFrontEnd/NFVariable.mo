@@ -105,8 +105,7 @@ public
 
   function hash
     input Variable var;
-    input Integer mod;
-    output Integer i = ComponentRef.hash(var.name, mod);
+    output Integer i = ComponentRef.hash(var.name);
   end hash;
 
   function equalName
@@ -182,6 +181,22 @@ public
     end if;
   end expand;
 
+  function expandChildren
+    "Expands a variable into itself and its children if its complex."
+    input Variable var;
+    output list<Variable> children;
+  algorithm
+    children := match var.ty
+      case Type.COMPLEX() then var :: List.flatten(list(expandChildren(v) for v in var.children));
+      else {var};
+    end match;
+  end expandChildren;
+
+  function isComplex
+    input Variable var;
+    output Boolean b = Type.isComplex(var.ty);
+  end isComplex;
+
   function isStructural
     input Variable variable;
     output Boolean structural =
@@ -249,6 +264,16 @@ public
     output Boolean isPublic = variable.visibility == Visibility.PUBLIC;
   end isPublic;
 
+  function isProtected
+    input Variable variable;
+    output Boolean isProtected = variable.visibility == Visibility.PROTECTED;
+  end isProtected;
+
+  function isEncrypted
+    input Variable variable;
+    output Boolean isEncrypted = Util.endsWith(variable.info.fileName, ".moc");
+  end isEncrypted;
+
   function lookupTypeAttribute
     input String name;
     input Variable var;
@@ -264,19 +289,65 @@ public
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
 
-  function mapExp
+  function propagateAnnotation
+    input String name;
+    input Boolean overwrite;
     input output Variable var;
-    input MapFn fn;
+  protected
+    InstNode node;
+    Option<SCode.SubMod> mod;
+  protected
+    SCode.Annotation anno;
+  algorithm
+    if ComponentRef.isCref(var.name) then
+      node := ComponentRef.node(var.name);
+      // InstNode.getAnnotation is recursive and returns the first annotation found.
+      // if the original is supposed to be overwritten, skip the node itself and look at the parent
+      if overwrite then
+        mod := match node
+          case InstNode.COMPONENT_NODE() then InstNode.getAnnotation(name, node.parent);
+          else NONE();
+        end match;
+      else
+        mod := InstNode.getAnnotation(name, node);
+      end if;
+
+      if isSome(mod) then
+        anno := SCode.ANNOTATION(modification = SCode.MOD(
+          finalPrefix = SCode.NOT_FINAL(),
+          eachPrefix  = SCode.NOT_EACH(),
+          subModLst   = {Util.getOption(mod)},
+          binding     = NONE(),
+          info        = sourceInfo()));
+        var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
+      end if;
+    end if;
+  end propagateAnnotation;
 
     partial function MapFn
       input output Expression exp;
     end MapFn;
+
+  function mapExp
+    input output Variable var;
+    input MapFn fn;
+  algorithm
+    var.binding := Binding.mapExp(var.binding, fn);
+    var.typeAttributes := list(
+      (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
+    var.children := list(mapExp(v, fn) for v in var.children);
+    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
+  end mapExp;
+
+  function mapExpShallow
+    input output Variable var;
+    input MapFn fn;
   algorithm
     var.binding := Binding.mapExpShallow(var.binding, fn);
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), fn)) for a in var.typeAttributes);
-    var.children := list(mapExp(v, fn) for v in var.children);
-  end mapExp;
+    var.children := list(mapExpShallow(v, fn) for v in var.children);
+  end mapExpShallow;
 
   function toString
     input Variable var;

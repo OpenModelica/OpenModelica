@@ -78,8 +78,19 @@ typedef struct _stat omc_stat_t;
 typedef struct stat omc_stat_t;
 #endif
 int omc_stat(const char *filename, omc_stat_t *statbuf);
+int omc_lstat(const char *filename, omc_stat_t *statbuf);
+
+/**
+ * @brief checks if a file/folder exists on the system.
+ * NOTE: Will return success even for directories, i.e., will not confirm that it is indeed a file.
+ *
+ * @param filename  the filename to check for existence.
+ * @return int  returns 1 if the file/folder exists, 0 otherwise.
+ */
+int omc_file_exists(const char* filename);
 
 int omc_unlink(const char *filename);
+int omc_rename(const char *source, const char *dest);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 wchar_t* longabspath(wchar_t* unicodePath);

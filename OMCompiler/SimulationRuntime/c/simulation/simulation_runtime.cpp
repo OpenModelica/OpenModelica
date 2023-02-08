@@ -557,11 +557,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
   if(omc_flag[FLAG_IIF]) {
-    omc_stat_t attrib;
     if (omc_flag[FLAG_INPUT_PATH]) {
       const char *tmp_filename;
 
-      if (omc_stat(omc_flagValue[FLAG_IIF], &attrib ) == 0) {
+      if (omc_file_exists(omc_flagValue[FLAG_IIF])) {
         if (0 > GC_asprintf(&tmp_filename, "%s", omc_flagValue[FLAG_IIF] )) {
           throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
         }
@@ -576,7 +575,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     else {
       init_file = omc_flagValue[FLAG_IIF];
     }
-    if (omc_stat(init_file.c_str(), &attrib ) != 0) {
+    if (!omc_file_exists(init_file.c_str())) {
       throwStreamPrint(NULL, "Initialization file \"%s\" doesn't exist.", init_file.c_str());
     }
   }
@@ -634,8 +633,16 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   {
     infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
     infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
-    retVal = reconcileBoundaryConditions(data, threadData, retVal);
+    retVal = boundaryConditions(data, threadData, retVal);
     infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
+  }
+
+  if (omc_flag[FLAG_DATA_RECONCILE_STATE])
+  {
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Starting!");
+    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    retVal = dataReconciliation(data, threadData, retVal);
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {
@@ -1158,18 +1165,22 @@ void communicateMsg(char id, unsigned int size, const char *data)
 #endif
 }
 
-
-/* \brief main function for simulator
+/**
+ * @brief Parses the commandline (program options) and sets some
+ * values. See initRuntimeAndSimulation for more info.
+ * This allows generated simulation code to check-on/read options and flags before
+ * it calls the main _main_SimulationRuntime function to do the simulation.
  *
- * The arguments for the main function are:
- * -v verbose = debug
- * -vf = flags set verbosity flags
- * -f init_file.txt use input data from init file.
- * -r res.plt write result to file.
+ * @param argc
+ * @param argv  This gets overwritten on Windows!!
+ * @param data
+ * @param threadData
+ * @return int    Returns 0 on success. Returns 1 otherwise.
+ *
+ * Note: The function will overwrite argv to its wide character representation. Not sure
+ * if this is a good idea. However, I am leaving it as it was for now.
  */
-
-int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
-{
+int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   /* Support for non-ASCII characters
    * Read the unicode command line arguments and replace the normal arguments with it.
@@ -1182,10 +1193,25 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   }
 #endif
 
-  int retVal = -1;
-  MMC_TRY_INTERNAL(globalJumpBuffer)
   if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
+
+  return 0;
+}
+
+/* \brief main function for simulator
+ *
+ * The arguments for the main function are:
+ * -v verbose = debug
+ * -vf = flags set verbosity flags
+ * -f init_file.txt use input data from init file.
+ * -r res.plt write result to file.
+ */
+
+int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
+{
+  int retVal = -1;
+  MMC_TRY_INTERNAL(globalJumpBuffer)
 
   /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
@@ -1263,7 +1289,7 @@ static inline void sendXMLTCPIfClosed()
   }
 }
 
-static void messageXMLTCP(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+static void messageXMLTCP(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   numOpenTags++;
   xmlTcpStream << "<message stream=\"" << LOG_STREAM_NAME[stream] << "\" type=\"" << LOG_TYPE_DESC[type] << "\" text=\"";
@@ -1320,7 +1346,7 @@ static void printEscapedXML(const char *msg)
   }
 }
 
-static void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+static void messageXML(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
   printEscapedXML(msg);

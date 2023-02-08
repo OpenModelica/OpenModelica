@@ -323,6 +323,12 @@ algorithm
       then
         (if referenceEq(exp.exp,e1) and referenceEq(exp.index,e2) then exp else Absyn.DOT(e1, e2), arg);
 
+    case Absyn.EXPRESSIONCOMMENT()
+      equation
+        (e1, arg) = traverseExpBidir(exp.exp, enterFunc, exitFunc, arg);
+      then
+        (if referenceEq(exp.exp,e1) then exp else Absyn.EXPRESSIONCOMMENT(exp.commentsBefore, e1, exp.commentsAfter), arg);
+
     else
       algorithm
         (,,enterName) := System.dladdr(enterFunc);
@@ -661,6 +667,8 @@ algorithm
         equationItem.equation_ := eq;
       then
         ();
+
+    case Absyn.EQUATIONITEMCOMMENT() then ();
 
   end match;
 end traverseEquationItemBidir;
@@ -1237,19 +1245,14 @@ algorithm
   end match;
 end pathCompareNoQual;
 
-public function pathHashMod "Hashes a path."
+public function pathHash "Hashes a path."
   input Absyn.Path path;
-  input Integer mod;
   output Integer hash;
 algorithm
-// hash := valueHashMod(path,mod);
-// print(pathString(path) + " => " + intString(hash) + "\n");
-// hash := stringHashDjb2Mod(pathString(path),mod);
-// TODO: stringHashDjb2 is missing a default value for the seed; add this once we bootstrapped omc so we can use that function instead of our own hack
-  hash := intAbs(intMod(pathHashModWork(path,5381),mod));
-end pathHashMod;
+  hash := pathHashWork(path,5381);
+end pathHash;
 
-public function pathHashModWork "Hashes a path."
+public function pathHashWork "Hashes a path."
   input Absyn.Path path;
   input Integer acc;
   output Integer hash;
@@ -1259,11 +1262,11 @@ algorithm
       Absyn.Path p;
       String s;
       Integer i,i2;
-    case (Absyn.FULLYQUALIFIED(p),_) then pathHashModWork(p, acc*31 + 46 /* '.' */);
-    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashModWork(p, i2*31 + i);
+    case (Absyn.FULLYQUALIFIED(p),_) then pathHashWork(p, acc*31 + 46 /* '.' */);
+    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashWork(p, i2*31 + i);
     case (Absyn.IDENT(s),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then i2*31 + i;
   end match;
-end pathHashModWork;
+end pathHashWork;
 
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Absyn.Path> inPathOption;
@@ -1908,6 +1911,9 @@ algorithm
       // inExp.index is only allowed to contain names to index the function call; not crefs that are evaluated in any way
       then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
 
+    case (Absyn.EXPRESSIONCOMMENT(),_,_)
+      then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
+
     else
       equation
         Error.addInternalError(getInstanceName() + " failed " + Dump.printExpStr(inExp), sourceInfo());
@@ -2407,6 +2413,33 @@ algorithm
         subscripts;
   end match;
 end getSubsFromCref;
+
+public function getString
+  input Absyn.Exp exp;
+  output String str;
+algorithm
+  str := match exp
+    case Absyn.EXPRESSIONCOMMENT() then getString(exp.exp);
+    case Absyn.STRING(str) then str;
+  end match;
+end getString;
+
+public function stripCommentExpressions
+  input output Absyn.Exp exp;
+algorithm
+  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, true);
+end stripCommentExpressions;
+
+protected function stripCommentExpressionsHelper<T>
+  input output Absyn.Exp exp;
+  input output T extra;
+algorithm
+  exp := match exp
+    case Absyn.TUPLE({exp}) then exp;
+    case Absyn.EXPRESSIONCOMMENT() then exp.exp;
+    else exp;
+  end match;
+end stripCommentExpressionsHelper;
 
 public function crefGetLastIdent
   "Gets the last ident in a Absyn.ComponentRef"
@@ -3115,13 +3148,21 @@ algorithm
     case Absyn.NOMOD() then true;
 
     // search inside, some(exp)
-    case Absyn.EQMOD()
-      algorithm
-        (_, lst::{}) := traverseExpBidir(eqMod.exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
-      then
-        listEmpty(lst);
+    case Absyn.EQMOD() then onlyLiteralsInExp(eqMod.exp);
+
   end match;
 end onlyLiteralsInEqMod;
+
+public function onlyLiteralsInExp
+  "Checks if an expression only contains literal expressions."
+  input Absyn.Exp exp;
+  output Boolean onlyLiterals;
+protected
+  list<Absyn.Exp> lst;
+algorithm
+  (_, lst::{}) := traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
+  onlyLiterals := listEmpty(lst);
+end onlyLiteralsInExp;
 
 protected function onlyLiteralsInExpEnter
 "@author: adrpo
@@ -3694,7 +3735,7 @@ algorithm
   outExternal := List.find(class_parts, isExternalPart);
 end getExternalDecl;
 
-protected function isExternalPart
+public function isExternalPart
   input Absyn.ClassPart inClassPart;
   output Boolean outFound;
 algorithm
@@ -5608,6 +5649,13 @@ algorithm
   callExp := Absyn.Exp.CALL(name, Absyn.FunctionArgs.FUNCTIONARGS(posArgs, namedArgs), {});
 end makeCall;
 
+public function setClassCommentsAfterEnd
+  input output Absyn.Class cl;
+  input list<String> comments;
+algorithm
+  cl.commentsAfterEnd := comments;
+end setClassCommentsAfterEnd;
+
 public function pathReplaceFirst
   "Replaces the first identifier of a path with another path. Ex:
     pathReplaceFirst(A.B.C, X.Y.Z) => X.Y.Z.B.C"
@@ -5943,6 +5991,16 @@ algorithm
     else ();
   end match;
 end mapSubscriptExp;
+
+function getElementConstrainingClass
+  input Absyn.Element element;
+  output Option<Absyn.ConstrainClass> cc;
+algorithm
+  cc := match element
+    case Absyn.Element.ELEMENT() then element.constrainClass;
+    else NONE();
+  end match;
+end getElementConstrainingClass;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

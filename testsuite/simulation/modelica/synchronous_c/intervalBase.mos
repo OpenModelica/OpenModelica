@@ -80,8 +80,8 @@ val(intv3, 1.0);    // 0.25
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation.
+// "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
 // Notification: Automatically loaded package Modelica 4.0.0 due to usage.
 // "
 // intv1:

@@ -35,6 +35,7 @@ encapsulated uniontype NFConnections
   import FlatModel = NFFlatModel;
   import ComponentRef = NFComponentRef;
   import Equation = NFEquation;
+  import NFPrefixes.ConnectorType;
 
 protected
   import Connections = NFConnections;
@@ -201,6 +202,92 @@ public
         ComponentRef.toString(cref) + "\n", ElementSource.getInfo(source));
     end if;
   end makeConnectors;
+
+  function split
+    input output Connections conns;
+  algorithm
+    conns.flows := List.mapFlat(conns.flows, Connector.split);
+    conns.connections := List.mapFlat(conns.connections, Connection.split);
+  end split;
+
+  function connectCount
+    input Connector conn;
+    input UnorderedMap<Connector, Integer> connectCounts;
+    output Integer count;
+  algorithm
+    count := UnorderedMap.getOrDefault(conn, connectCounts, 0);
+  end connectCount;
+
+  function scalarize
+    input output Connections conns;
+    input Boolean keepSingleConnectedArrays;
+  protected
+    UnorderedMap<Connector, Integer> connect_counts;
+    list<Connector> flows = {};
+    list<Connection> connections = {};
+    Integer count;
+  algorithm
+    if keepSingleConnectedArrays then
+      connect_counts := analyseArrayConnections(conns);
+
+      for f in conns.flows loop
+        count := connectCount(f, connect_counts);
+
+        if count == 0 then
+          flows := f :: flows;
+        elseif count > 1 then
+          flows := listAppend(Connector.scalarize(f), flows);
+        end if;
+      end for;
+
+      for c in conns.connections loop
+        if not ConnectorType.isStream(c.lhs.cty) and
+           connectCount(c.lhs, connect_counts) == 1 and connectCount(c.rhs, connect_counts) == 1 then
+          connections := c :: connections;
+        else
+          connections := listAppend(Connection.scalarize(c), connections);
+        end if;
+      end for;
+
+      conns.flows := listReverseInPlace(flows);
+      conns.connections := listReverseInPlace(connections);
+    else
+      conns.flows := List.mapFlat(conns.flows, Connector.scalarize);
+      conns.connections := List.mapFlat(conns.connections, Connection.scalarize);
+    end if;
+  end scalarize;
+
+  function analyseArrayConnections
+    input Connections conns;
+    output UnorderedMap<Connector, Integer> connectCounts;
+  algorithm
+    connectCounts := UnorderedMap.new<Integer>(Connector.hashNoSubs, Connector.isEqualNoSubs,
+      listLength(conns.connections));
+
+    for conn in conns.connections loop
+      analyseArrayConnector(conn.lhs, connectCounts);
+      analyseArrayConnector(conn.rhs, connectCounts);
+    end for;
+  end analyseArrayConnections;
+
+  function analyseArrayConnector
+    input Connector conn;
+    input UnorderedMap<Connector, Integer> connectCounts;
+  protected
+    function update
+      input Option<Integer> count;
+      output Integer outCount;
+    algorithm
+      outCount := match count
+        case SOME(outCount) then outCount + 1;
+        else 1;
+      end match;
+    end update;
+  algorithm
+    if Connector.isArray(conn) or ComponentRef.hasSubscripts(conn.name) then
+      UnorderedMap.addUpdate(conn, update, connectCounts);
+    end if;
+  end analyseArrayConnector;
 
   function toString
     input Connections conns;

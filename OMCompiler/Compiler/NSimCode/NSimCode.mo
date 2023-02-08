@@ -34,7 +34,6 @@ encapsulated package NSimCode
  description: This file contains the main data type for the backend containing
               all data. It further contains the lower and solve main function.
 "
-
 protected
   // OF imports
   import Absyn;
@@ -60,8 +59,8 @@ protected
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData};
-  import NBEvents.EventInfo;
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
+  import NBEvents.{EventInfo, StateEvent};
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import System = NBSystem;
@@ -69,6 +68,7 @@ protected
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
   import NSimJacobian.SimJacobian;
+  import SimGenericCall = NSimGenericCall;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.SimVar;
   import NSimVar.SimVars;
@@ -108,7 +108,6 @@ public
       Integer booleanAliasIndex;
       Integer stringAliasIndex;
 
-
       Integer equationIndex;
       Integer linearSystemIndex;
       Integer nonlinearSystemIndex;
@@ -116,10 +115,35 @@ public
       Integer jacobianIndex;
       Integer residualIndex;
       Integer implicitIndex; // this can be removed i think -> moved to solve
+      Integer genericCallIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
+      UnorderedMap<Identifier, Integer> generic_call_map;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
+
+  uniontype Identifier
+    record IDENTIFIER
+      Pointer<Equation> eqn;
+      ComponentRef var_cref;
+    end IDENTIFIER;
+
+    function toString
+      input Identifier ident;
+      output String str = "cref: " + ComponentRef.toString(ident.var_cref) + "\neqn: " + Equation.pointerToString(ident.eqn);
+    end toString;
+
+    function hash
+      input Identifier ident;
+      output Integer i = stringHashDjb2(toString(ident));
+    end hash;
+
+    function isEqual
+      input Identifier ident1;
+      input Identifier ident2;
+      output Boolean b = Equation.equalName(ident1.eqn, ident2.eqn) and ComponentRef.isEqual(ident1.var_cref, ident2.var_cref);
+    end isEqual;
+  end Identifier;
 
   function EMPTY_SIM_CODE_INDICES
     output SimCodeIndices indices = SIM_CODE_INDICES(
@@ -128,8 +152,9 @@ public
       0,0,0,0,
       0,0,0,0,
       1,0,0,
-      0,0,0,
-      UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual)
+      0,0,0,0,
+      UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
+      UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual)
     );
   end EMPTY_SIM_CODE_INDICES;
 
@@ -139,6 +164,7 @@ public
       list<Expression> literals                         "shared literals";
       list<SimCodeFunction.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes             "Names of all external functions that are called";
+      list<SimGenericCall> generic_loop_calls           "Generic for-loop and array calls";
       list<SimStrongComponent.Block> independent        "state and strictly input dependent variables. they are not inserted into any partion";
       list<SimStrongComponent.Block> allSim             "All simulation system blocks";
       list<list<SimStrongComponent.Block>> ode          "Only ode blocks for integrator";
@@ -205,6 +231,10 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
+      if not listEmpty(simCode.generic_loop_calls) then
+        str := str + StringUtil.headline_3("Generic Calls");
+        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
+      end if;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
       end if;
@@ -243,6 +273,7 @@ public
           SimCodeIndices simCodeIndices;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
+          list<SimGenericCall> generic_loop_calls;
           list<SimStrongComponent.Block> independent, allSim = {}, nominal, min, max, param, no_ret, algorithms;
           list<SimStrongComponent.Block> event_blocks = {}, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
@@ -252,7 +283,7 @@ public
           list<SimJacobian> jacobians;
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           Option<DaeModeData> daeModeData;
-          SimJacobian jacA, jacB, jacC, jacD, jacF;
+          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
@@ -268,6 +299,7 @@ public
 
             literals := {};
             externalFunctionIncludes := {};
+
             independent := {};
             nominal := {};
             min := {};
@@ -339,11 +371,14 @@ public
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+            (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jacobians := listReverse(jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
             // jacobian blocks only from simulation jacobians
-            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF});
+            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
+
+            generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
@@ -352,6 +387,7 @@ public
               literals                  = literals,
               recordDecls               = recordDecls,
               externalFunctionIncludes  = externalFunctionIncludes,
+              generic_loop_calls        = generic_loop_calls,
               independent               = independent,
               allSim                    = allSim,
               ode                       = ode,
@@ -425,6 +461,7 @@ public
         literals                      = {}, // usally set by a traversal below...
         recordDecls                   = simCode.recordDecls, // ToDo: convert this to new structures
         externalFunctionIncludes      = simCode.externalFunctionIncludes,
+        generic_loop_calls            = list(SimGenericCall.convert(gc) for gc in simCode.generic_loop_calls),
         localKnownVars                = SimStrongComponent.Block.convertList(simCode.independent),
         allEquations                  = SimStrongComponent.Block.convertList(simCode.allSim),
         odeEquations                  = SimStrongComponent.Block.convertListList(simCode.ode),
@@ -638,6 +675,8 @@ public
       Integer numSetcVars;
       Integer numDataReconVars;
       Integer numRealIntputVars;
+      Integer numSetbVars;
+      Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
     function create
@@ -647,39 +686,41 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings            = listLength(eventInfo.stateEvents),
-        numTimeEvents               = listLength(eventInfo.timeEvents),
-        numRelations                = listLength(eventInfo.stateEvents),
-        numMathEventFunctions       = eventInfo.numberMathEvents,
-        numStateVars                = listLength(vars.stateVars),
-        numAlgVars                  = listLength(vars.algVars),
-        numDiscreteReal             = listLength(vars.discreteAlgVars),
-        numIntAlgVars               = listLength(vars.intAlgVars),
-        numBoolAlgVars              = listLength(vars.boolAlgVars),
-        numAlgAliasVars             = listLength(vars.aliasVars),
-        numIntAliasVars             = listLength(vars.intAliasVars),
-        numBoolAliasVars            = listLength(vars.boolAliasVars),
-        numParams                   = listLength(vars.paramVars),
-        numIntParams                = listLength(vars.intParamVars),
-        numBoolParams               = listLength(vars.boolParamVars),
-        numOutVars                  = listLength(vars.outputVars),
-        numInVars                   = listLength(vars.inputVars),
-        numExternalObjects          = listLength(vars.extObjVars),
-        numStringAlgVars            = listLength(vars.stringAlgVars),
-        numStringParamVars          = listLength(vars.stringParamVars),
-        numStringAliasVars          = listLength(vars.stringAliasVars),
-        numEquations                = simCodeIndices.equationIndex,
-        numLinearSystems            = simCodeIndices.linearSystemIndex,
-        numNonLinearSystems         = simCodeIndices.nonlinearSystemIndex,
-        numMixedSystems             = 0,
-        numStateSets                = 0,
-        numJacobians                = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
-        numOptimizeConstraints      = 0,
-        numOptimizeFinalConstraints = 0,
-        numSensitivityParameters    = 0,
-        numSetcVars                 = 0,
-        numDataReconVars            = 0,
-        numRealIntputVars           = 0);
+        numZeroCrossings             = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
+        numTimeEvents                = listLength(eventInfo.timeEvents),
+        numRelations                 = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
+        numMathEventFunctions        = eventInfo.numberMathEvents,
+        numStateVars                 = listLength(vars.stateVars),
+        numAlgVars                   = listLength(vars.algVars),
+        numDiscreteReal              = listLength(vars.discreteAlgVars),
+        numIntAlgVars                = listLength(vars.intAlgVars),
+        numBoolAlgVars               = listLength(vars.boolAlgVars),
+        numAlgAliasVars              = listLength(vars.aliasVars),
+        numIntAliasVars              = listLength(vars.intAliasVars),
+        numBoolAliasVars             = listLength(vars.boolAliasVars),
+        numParams                    = listLength(vars.paramVars),
+        numIntParams                 = listLength(vars.intParamVars),
+        numBoolParams                = listLength(vars.boolParamVars),
+        numOutVars                   = listLength(vars.outputVars),
+        numInVars                    = listLength(vars.inputVars),
+        numExternalObjects           = listLength(vars.extObjVars),
+        numStringAlgVars             = listLength(vars.stringAlgVars),
+        numStringParamVars           = listLength(vars.stringParamVars),
+        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numEquations                 = simCodeIndices.equationIndex,
+        numLinearSystems             = simCodeIndices.linearSystemIndex,
+        numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
+        numMixedSystems              = 0,
+        numStateSets                 = 0,
+        numJacobians                 = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
+        numOptimizeConstraints       = 0,
+        numOptimizeFinalConstraints  = 0,
+        numSensitivityParameters     = 0,
+        numSetcVars                  = 0,
+        numDataReconVars             = 0,
+        numRealIntputVars            = 0,
+        numSetbVars                  = 0,
+        numRelatedBoundaryConditions = 0);
     end create;
 
     function convert
@@ -687,39 +728,41 @@ public
       output OldSimCode.VarInfo oldVarInfo;
     algorithm
       oldVarInfo := OldSimCode.VARINFO(
-        numZeroCrossings            = varInfo.numZeroCrossings,
-        numTimeEvents               = varInfo.numTimeEvents,
-        numRelations                = varInfo.numRelations,
-        numMathEventFunctions       = varInfo.numMathEventFunctions,
-        numStateVars                = varInfo.numStateVars,
-        numAlgVars                  = varInfo.numAlgVars,
-        numDiscreteReal             = varInfo.numDiscreteReal,
-        numIntAlgVars               = varInfo.numIntAlgVars,
-        numBoolAlgVars              = varInfo.numBoolAlgVars,
-        numAlgAliasVars             = varInfo.numAlgAliasVars,
-        numIntAliasVars             = varInfo.numIntAliasVars,
-        numBoolAliasVars            = varInfo.numBoolAliasVars,
-        numParams                   = varInfo.numParams,
-        numIntParams                = varInfo.numIntParams,
-        numBoolParams               = varInfo.numBoolParams,
-        numOutVars                  = varInfo.numOutVars,
-        numInVars                   = varInfo.numInVars,
-        numExternalObjects          = varInfo.numExternalObjects,
-        numStringAlgVars            = varInfo.numStringAlgVars,
-        numStringParamVars          = varInfo.numStringParamVars,
-        numStringAliasVars          = varInfo.numStringAliasVars,
-        numEquations                = varInfo.numEquations,
-        numLinearSystems            = varInfo.numLinearSystems,
-        numNonLinearSystems         = varInfo.numNonLinearSystems,
-        numMixedSystems             = varInfo.numMixedSystems,
-        numStateSets                = varInfo.numStateSets,
-        numJacobians                = varInfo.numJacobians,
-        numOptimizeConstraints      = varInfo.numOptimizeConstraints,
-        numOptimizeFinalConstraints = varInfo.numOptimizeFinalConstraints,
-        numSensitivityParameters    = varInfo.numSensitivityParameters,
-        numSetcVars                 = varInfo.numSetcVars,
-        numDataReconVars            = varInfo.numDataReconVars,
-        numRealInputVars            = varInfo.numRealIntputVars);
+        numZeroCrossings             = varInfo.numZeroCrossings,
+        numTimeEvents                = varInfo.numTimeEvents,
+        numRelations                 = varInfo.numRelations,
+        numMathEventFunctions        = varInfo.numMathEventFunctions,
+        numStateVars                 = varInfo.numStateVars,
+        numAlgVars                   = varInfo.numAlgVars,
+        numDiscreteReal              = varInfo.numDiscreteReal,
+        numIntAlgVars                = varInfo.numIntAlgVars,
+        numBoolAlgVars               = varInfo.numBoolAlgVars,
+        numAlgAliasVars              = varInfo.numAlgAliasVars,
+        numIntAliasVars              = varInfo.numIntAliasVars,
+        numBoolAliasVars             = varInfo.numBoolAliasVars,
+        numParams                    = varInfo.numParams,
+        numIntParams                 = varInfo.numIntParams,
+        numBoolParams                = varInfo.numBoolParams,
+        numOutVars                   = varInfo.numOutVars,
+        numInVars                    = varInfo.numInVars,
+        numExternalObjects           = varInfo.numExternalObjects,
+        numStringAlgVars             = varInfo.numStringAlgVars,
+        numStringParamVars           = varInfo.numStringParamVars,
+        numStringAliasVars           = varInfo.numStringAliasVars,
+        numEquations                 = varInfo.numEquations,
+        numLinearSystems             = varInfo.numLinearSystems,
+        numNonLinearSystems          = varInfo.numNonLinearSystems,
+        numMixedSystems              = varInfo.numMixedSystems,
+        numStateSets                 = varInfo.numStateSets,
+        numJacobians                 = varInfo.numJacobians,
+        numOptimizeConstraints       = varInfo.numOptimizeConstraints,
+        numOptimizeFinalConstraints  = varInfo.numOptimizeFinalConstraints,
+        numSensitivityParameters     = varInfo.numSensitivityParameters,
+        numSetcVars                  = varInfo.numSetcVars,
+        numDataReconVars             = varInfo.numDataReconVars,
+        numRealInputVars             = varInfo.numRealIntputVars,
+        numSetbVars                  = varInfo.numSetbVars,
+        numRelatedBoundaryConditions = varInfo.numRelatedBoundaryConditions);
     end convert;
   end VarInfo;
 
@@ -851,7 +894,7 @@ public
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");
-        var.index := SimVar.getIndex(UnorderedMap.getSafe(cref, simcode_map));
+        var.index := SimVar.getIndex(UnorderedMap.getSafe(cref, simcode_map, sourceInfo()));
         daeModeAlgVars := var :: daeModeAlgVars;
       end for;
     end rewriteAlgebraicVarsIdx;

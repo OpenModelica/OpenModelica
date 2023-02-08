@@ -5,17 +5,18 @@
   - [3.1. General Notes](#31-general-notes)
   - [3.2. Linux](#32-linux)
   - [3.3. macOS](#33-macos)
+    - [3.3.1 Common macOS issues](#331-common-macos-issues)
   - [3.4. Windows MSYS/MinGW](#34-windows-msysmingw)
-  - [3.5. Generic Usage.](#35-generic-usage)
 - [4. Configuration Options.](#4-configuration-options)
   - [4.1. OpenModelica Specific Configuration Options](#41-openmodelica-specific-configuration-options)
     - [4.1.1. OpenModelica Options](#411-openmodelica-options)
     - [4.1.2. OpenModelica/OMCompiler Options](#412-openmodelicaomcompiler-options)
     - [4.1.3. OpenModelica/OMEdit Options](#413-openmodelicaomedit-options)
-    - [4.1.4. Other Options](#414-other-options)
-  - [4.2. Selecting a Compiler.](#42-selecting-a-compiler)
-  - [4.3. Disabling Colors for Makefile Generators](#43-disabling-colors-for-makefile-generators)
-  - [4.4. Enabling Verbose Output](#44-enabling-verbose-output)
+    - [4.1.4. OpenModelica/OMShell Options](#414-openmodelicaomshell-options)
+    - [4.1.4. Other OpenModleica specific Options](#414-other-openmodleica-specific-options)
+  - [4.2. Useful CMake Configuration Options](#42-useful-cmake-configuration-options)
+    - [4.2.1. Disabling Colors for Makefile Generators](#421-disabling-colors-for-makefile-generators)
+    - [4.2.2 Enabling Verbose Output](#422-enabling-verbose-output)
 - [5. Integration with Editors/Tools](#5-integration-with-editorstools)
 - [6. Running Tests (rtest)](#6-running-tests-rtest)
 
@@ -26,9 +27,14 @@ We recommend you read the instructions for your Operating System as they contain
 That said, if you are familiar with CMake and have all the dependencies installed you can compile OpenModelica using the standard CMake flow.
 
 ```sh
+git clone https://github.com/OpenModelica/OpenModelica.git --recursive
 cd OpenModelica
 cmake -S . -B build_cmake
+# Build using cmake's generic commands.
 cmake --build build_cmake --target install --parallel <Nr. of cores>
+# OR build using the command for your generator directly, e.g., Makefiles based
+# cd build_cmake
+# make -j <Nr. of cores> install
 
 # Default install dir is a directory named install_cmake inside the build directory.
 ./build_cmake/install_cmake/bin/omc --help
@@ -47,9 +53,9 @@ It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well 
 
 # 3. Usage
 ## 3.1. General Notes
-- In source build is forbidden.
+- In source build is not recommended. Always create a dedicated build directory, e.g. `OpenModelica/build_cmake`
 
-- Use `-Wno-dev` to silence CMake warnings from 3rdParty libraries.
+- Add `-Wno-dev` to your CMake configuration command to silence CMake warnings from 3rdParty libraries.
   ```
   cmake .. -Wno-dev
   ```
@@ -58,73 +64,93 @@ It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well 
 
    The reason for this suggestion is that the `autotools + Makefile` build system we have now uses this `build` directory for _installation_. Therefore, if you plan to fallback to the autotools build at some point or you want to switch back and forth between the CMake and autotools build systems (perhaps to cross check something), then it is probably a good idea to make sure that they do not overwrite eachother's outputs.
 ## 3.2. Linux
-There is nothing special to be done for linux. You can follow the examples above or chose your own combination of parameters (e.g. build type, generator, install dir ...).
+There is nothing special to be done for linux. Once you have installed all the dependencies (If you need help, follow the instructions [here](https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/README.Linux.md) **excluding** the configuration steps, `autoconf`, ...), you can follow the instruction in [quick start](#1-quick-start) section above or choose your own combination of [configuration options](#4-configuration-options) (e.g. build type, generator, install dir ...).
 
 ## 3.3. macOS
-On macOS you need to install:
-- XCode: ```xcode-select –-install```
-- macports: https://guide.macports.org/#installing.macports
-  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph gfortran```
-- Compile OpenModelica via:
+On macOS you need to install: XCode and macports
+- XCode:
+  ```sh
+  xcode-select –-install
   ```
-  git clone https://github.com/OpenModelica/OpenModelica.git --recursive
-  cd OpenModelica
-  cmake -S . -B build_cmake -DCMAKE_PREFIX_PATH=/opt/local -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF
-  cmake --build build_cmake --parallel 10 --target install
-  ```
+- macports: Follow the instructions on https://guide.macports.org/#installing.macports
 
-If some of the above instructions fail, read on below.
-On macOS there are a few pitfalls/issues which need attention.
-
-- if building simulation code fails go OMEdit -> Preferences -> Simulation and change the C / C++ compiler to gcc/g++.
-
-- once Qt5 is installed via ```port```, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
+Once XCode and macports are installed, you need to install the dependencies for OpenModelica using macports:
 
   ```sh
-  port contents qt5
+  sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
   ```
-  to see the directory. You will need to tell CMake to look in this directory for packages you installed with macports. This can be done by specifying
 
+Optionally, You can also install `gfortran` if you plan to use OpenModelica for dynamic optimization purposes.
+> **Note**
+> If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++` (instead of `clang` and `clang++`).
+
+If you cannot or do not want to use `gfortran`, then you should disable Fortran support by adding  ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
+
+You can now configure and compile OpenModelica as:
   ```sh
-  cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
+  # With Fortran OFF
+  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF
+  # With Fortran ON
+  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran
   ```
 
-- It is also recommended to specify your C, C++ and Fortran (optional) compilers explicitly on macOS. This applies **even when you are using your default compiler**. The reason for this is that we have noticed, for example, `/usr/bin/c++` and your compiler may not match in what default include directories they search. While CMake knows and handles this difference, OpenModelica notes and saves the C and C++ compiles used to compile it and uses them to compile simulation code. Therefore it is recommended that you specify the C and C++ compilers explicitly. Assuming your compilers are on your path you can achieve this by calling CMake as follow:
+> **Warning**
+> Always specify your C, C++, and Fortran (optional) compilers explicitly on macOS.
 
-  ```sh
-  cmake ... -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ...
-
-  # OR
-  cmake ... -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran ...
-  ```
-
-- If your setup does not have a Fortran compiler, you can disable Fortran support. In this case you should also disable support for Ipopt.
-
-  ```sh
-  cmake ... -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF ...
-  ```
-
-With these consideration, your final configure command should look something like
-
-  ```sh
-  cmake  -S . -B build_cmake ... -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local ...
-
-  # or if you do not have a Fortran compiler
-  cmake -S . -B build_cmake -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=/opt/local ...
-  ```
+> **Warning**
+> This applies **even when you want to use the systems default compiler**. The reason for this is that `/usr/bin/c++` and your actual compiler (e.g., `clang++`) may not match in what default include directories they search.
 
 Once configuration finishes successfully you can build OpenModelica as you would on any unix system, e.g.,
 
-```sh
-cmake --build build_cmake --parallel <Nr. of cores> --target install
-# Default install dir is a directory named install_cmake inside the build directory.
-./build_cmake/install_cmake/bin/omc --help
-```
+  ```sh
+  cmake --build build_cmake --parallel <Nr. of cores> --target install
+  # Default install dir is a directory named install_cmake inside the build directory.
+  ./build_cmake/install_cmake/bin/omc --help
+  ```
 
+### 3.3.1 Common macOS issues
+If you encounter some errors while configuring, building, or simulating-with OpenModelica read on below. On macOS there are a few pitfalls/issues which need attention.
 
+- If configuration fails due to missing packages, e.g. Qt components, add the macports root packages directory to CMAKE_PREFIX_PATH. Run
+
+  ```sh
+  $ port contents qt5
+  Port qt5 contains:
+    /opt/local/share/doc/qt5/README.txt
+  ```
+  to see the directory. Then add the base directory of the result (/opt/local by default) to CMAKE_PREFIX_PATH by specifying
+
+  ```sh
+  $ cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
+  ```
+
+- If your compilation fails because of linking issues such as these:
+
+  ```ld: warning: ignoring file /opt/local/lib/libboost_filesystem-mt.dylib, building for macOS-x86_64 but attempting to link with file built for macOS-arm64```
+
+  then check your $PATH and set it to something sane like:
+
+  ```export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH```
+
+  then clean OpenModelica
+  ```sh
+  cd OpenModelica
+  git clean -ffdx
+  git submodule foreach --recursive git clean -ffdx
+  ```
+  and start again with the commands above.
+
+- If building simulation code fails because your compiler cannot find ```stdio.h``` then do one of the following:
+  - If you have not already, make sure you have specified your C and C++ compilers explicitly when configuring OpenModelica (see above). Reconfigure and recompile OpenModelica.
+  - If you do not want to reconfigure and build, you can instead manually change the compilers used by OMEdit (for example) by going to Tools -> options -> Simulation and adjusting `C Compiler` and `CXX Compiler` fields, i.e., they should NOT be `usr/bin/cc` and `/usr/bin/c++`.
+  - Another option is to set the proper SDKROOT and PATH in a terminal before starting OMEdit:
+    ```sh
+    export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+    export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+    ```
 
 ## 3.4. Windows MSYS/MinGW
-There is also nothing special about MSYS/MinGW if you are familiar with it. Just a few hints:
+There is nothing special about MSYS/MinGW if you are familiar with it. Just a few hints:
 
   - The generator should be "MSYS Makefiles". This is not what CMake chooses by default for Windows.
   - You might want to make sure the output colors do not get mingled for Makefile target generation.
@@ -132,26 +158,18 @@ There is also nothing special about MSYS/MinGW if you are familiar with it. Just
 Considering these, your final configure and build lines would be
 
 ```sh
-mkdir build_cmake && cd build_cmake
-cmake .. -Wno-dev -G "MSYS Makefiles"
+cd OpenModelica
+cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles"
 make -j9 install -Oline
 
 # Default install dir is a directory named install_cmake inside the build directory.
 ./install_cmake/bin/omc --help
 ```
-`-Oline` instructs GNU Make to print outputs one line at a time, makeing sure ANSI color codes do not get interleaved. **Note that** with this flag ON, a Makefile step is printed once it is **completed**, not when it is issued. So if you see something taking a long time, it is probably the thing that is printed right after which is actually the culprit.
+> **Note**
+> `-Oline` instructs GNU Make to print outputs one line at a time, makeing sure ANSI color codes do not get interleaved.
 
-
-## 3.5. Generic Usage.
-If you want to follow a process that is "generator" agnostic, e.g., if you are writing a script that should run across platforms, you can explicitly use the CMake versions of the build commands instead of the generator specific ones.
-
-```sh
-cmake -S . -B build_cmake
-cmake --build build_cmake --parallel <Nr. of cores> --target install
-
-# Default install dir is a directory named install_cmake inside the build directory.
-./build_cmake/install_cmake/bin/omc --help
-```
+> **Note**
+> With `-Oline` added, a Makefile step is printed once it is **completed**, not when it is issued. So if you see something taking a long time, it is probably the thing that is printed right after which is actually the culprit.
 
 
 # 4. Configuration Options.
@@ -163,26 +181,31 @@ The main ones (with their default values) are
 ```cmake
 OM_USE_CCACHE=ON
 OM_ENABLE_GUI_CLIENTS=ON
+OM_ENABLE_ENCRYPTION=OFF
 OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_IPOPT=ON
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
+OM_OMEDIT_ENABLE_TESTS=OFF
+OM_OMSHELL_ENABLE_TERMINAL=ON
 ```
 ### 4.1.1. OpenModelica Options
 `OM_USE_CCACHE` option is for enabling/disabling ccache support as explained in [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
 
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser, OMPlot, OMShell. You will need to install and make available the necessary packages (and their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
 
-**Hint**: You might be tempted to disable these optional components in order to reduce re-compilation time when you are workign on something unrelated. For example, if you have been using the `autotools` build system, you might have noticed that re-compilation will take additional time due to CPP runtime or OMEdit even though you have not modified nothing in there. **The recommendation now is to have everything enabled** IF you have the required packages installed anyway (Qt libs and boost). Re-compilation will not take any significant additional time on things you have not modified. If you have ccache available it is even better as recompilation after a clean (with no new modifications) will also be extremely fast.
+`OM_ENABLE_ENCRYPTION` allows you to enable/disable building OpenModelica with library encryption support. Note that, for this to work, you need an additional module which is not distributed in the default OpenModelcia source repository. Contact the OpenModelica team if you need encryption support.
 
 ### 4.1.2. OpenModelica/OMCompiler Options
-`OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This will require multiple Boost library components (file_system, program_options, ...)
+`OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This requires multiple Boost library components (file_system, program_options, ...)
 
-`OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does not have a Fortran compile you can disable this. Fortran is required if you enable IPOPT support (`OM_OMC_ENABLE_IPOPT`).
+`OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does not have a Fortran compiler you can disable this. Fortran is required if you enable IPOPT support (`OM_OMC_ENABLE_IPOPT`).
 
 `OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization support with Ipopt. Enabling this requires having a working Fortran compiler.
 
 ### 4.1.3. OpenModelica/OMEdit Options
+`OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
+
 `OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the required runtime DLLs for MSYS/MinGW builds.
 
 You should disable this if you are either
@@ -191,7 +214,10 @@ You should disable this if you are either
 
   - Using OMDev or other MSYS/MinGW setup and have specified the MSYS/MinGW system directories as your CMake install directory.
 
-### 4.1.4. Other Options
+### 4.1.4. OpenModelica/OMShell Options
+`OM_OMSHELL_ENABLE_TERMINAL` allows you to enable/disable the building of the OMShell-terminal command-line REPL application. This requires the GNU readline library. Note that this is different from the Qt based OMShell GUI application.
+
+### 4.1.4. Other OpenModleica specific Options
 There are also some additional options that are kept as a migration step to maintain the similarity with the `autotools` build system.
 
 
@@ -202,19 +228,8 @@ OM_OMC_USE_LAPACK=ON
 
 These options are not guaranteed to work properly if they are changed from their default values as of now.
 
-## 4.2. Selecting a Compiler.
-If you, for example, want to use clang instead of GCC, you can do so by modifying `CMAKE_<LANG>_COMPILER`
-```sh
-cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-```
-
-CMake picks up the default compiler by checking for CC/CXX in your environment. This means you can also achieve the same thing by modifying the environment just for the current CMake invocation:
-
-```sh
-CC=clang CXX=clang++ cmake ..
-```
-
-## 4.3. Disabling Colors for Makefile Generators
+## 4.2. Useful CMake Configuration Options
+### 4.2.1. Disabling Colors for Makefile Generators
 If you do not like colors you can disable them.
 ```sh
 cmake .. -DCMAKE_COLOR_MAKEFILE=OFF
@@ -222,7 +237,7 @@ cmake .. -DCMAKE_COLOR_MAKEFILE=OFF
 
 This can be useful if you want to redirect output to a file for example.
 
-## 4.4. Enabling Verbose Output
+### 4.2.2 Enabling Verbose Output
 Sometimes you might want to get a verbose output to see what CMake is actually doing and what exact commands it is issuing.
 
 If you are using CMake itself to issue builds (recommended) instead of invoking the generator directly, you can specify `-v` to the build command
@@ -260,12 +275,12 @@ However, you can and should modify `rtest` to pick up the omc compiled by your C
 
 Find the line
 ```
-$OPENMODELICAHOME="$1build";
+$OPENMODELICAHOME="$1build_cmake/install_cmake";
 ```
 
-and change it to something like
+and adjust it to point to the installation directory you have specified when configuring OpenModelica, e.g.,
 ```
-$OPENMODELICAHOME="$1build_cmake/install_cmake";
+$OPENMODELICAHOME="$1build_cmake_release/install_cmake";
 ```
 
 

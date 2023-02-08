@@ -74,9 +74,13 @@ template equationIndex(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_FOR_RESIDUAL(__)
+  case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_GENERIC_ASSIGN(__)
+  case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
     then index
@@ -108,12 +112,29 @@ template equationIndexAlternativeTearing(SimEqSystem eq)
 end equationIndexAlternativeTearing;
 
 template dumpEqs(list<SimEqSystem> eqs)
+::= match getConfigString(OBFUSCATE)
+  case "none" then dumpEqsWork(eqs)
+end dumpEqs;
+
+template dumpEqsWork(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_RESIDUAL(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: RESIDUAL
+      <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_FOR_RESIDUAL(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: FOR_RESIDUAL
+      <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_GENERIC_RESIDUAL(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: GENERIC_RESIDUAL
       <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
@@ -135,6 +156,11 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: ARRAY_CALL_ASSIGN
 
       <%dumpCref(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_GENERIC_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SES_GENERIC_ASSIGN call index: <%e.call_index%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<
@@ -167,7 +193,16 @@ template dumpEqs(list<SimEqSystem> eqs)
         <%ls.simJac |> (i1,i2,eq) =>
         <<
         <cell row="<%i1%>" col="<%i2%>">
-          <%match eq case e as SES_RESIDUAL(__) then
+          <%match eq
+            case e as SES_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_FOR_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_GENERIC_RESIDUAL(__) then
             <<
             <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
@@ -245,10 +280,10 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       unknown equation
       >>
-end dumpEqs;
+end dumpEqsWork;
 
 
-template dumpAlgSystemOps (Option<DerivativeMatrix> derivativeMatrix)
+template dumpAlgSystemOps(Option<DerivativeMatrix> derivativeMatrix)
 "dumps description of eqations of algebraic system.
  Helper function for dumpEqs."
 ::=
@@ -268,7 +303,7 @@ template dumpAlgSystemOps (Option<DerivativeMatrix> derivativeMatrix)
   >>
 end dumpAlgSystemOps;
 
-template dumpAlgSystemColumn (OMSIFunction column ,Text &columnBuffer, Text &varsBuffer)
+template dumpAlgSystemColumn(OMSIFunction column ,Text &columnBuffer, Text &varsBuffer)
 "dumps equation description for one OMSIFunction"
 ::=
 
@@ -333,6 +368,11 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
 end dumpWhenOps;
 
 template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
+::= match getConfigString(OBFUSCATE)
+  case "none" then dumpEqsAlternativeTearingWork(eqs)
+end dumpEqsAlternativeTearing;
+
+template dumpEqsAlternativeTearingWork(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_LINEAR(alternativeTearing=SOME(at as LINEARSYSTEM(__))) then
@@ -348,11 +388,20 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
         <%at.simJac |> (i1,i2,eq) =>
         <<
         <cell row="<%i1%>" col="<%i2%>">
-          <%match eq case e as SES_RESIDUAL(__) then
+          <%match eq
+            case e as SES_RESIDUAL(__) then
             <<
             <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
-           %>
+            case e as SES_FOR_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+            case e as SES_GENERIC_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
+            >>
+          %>
         </cell>
         >>
         %>
@@ -377,7 +426,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
       <<
       unknown equation
       >>
-end dumpEqsAlternativeTearing;
+end dumpEqsAlternativeTearingWork;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenUtilSimulation;

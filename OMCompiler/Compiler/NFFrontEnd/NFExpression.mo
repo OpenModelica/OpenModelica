@@ -323,6 +323,16 @@ public
     end match;
   end isImpureCall;
 
+  function isExternalCall
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isExternal(exp.call);
+      else false;
+    end match;
+  end isExternalCall;
+
   function isCallNamed
     input Expression exp;
     input String name;
@@ -349,8 +359,11 @@ public
     output Boolean isTrue;
   algorithm
     isTrue := match exp
+      local
+        Expression e;
       case BOOLEAN(true) then true;
       case ARRAY() then Array.all(exp.elements, isAllTrue);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then Expression.isAllTrue(e);
       else false;
     end match;
   end isAllTrue;
@@ -913,6 +926,16 @@ public
     INTEGER(value=value) := exp;
   end integerValue;
 
+  function integerValueOrDefault
+    input Expression exp;
+    input output Integer value = 0;
+  algorithm
+    value := match exp
+      case INTEGER() then exp.value;
+      else value;
+    end match;
+  end integerValueOrDefault;
+
   function makeInteger
     input Integer value;
     output Expression exp = INTEGER(value);
@@ -1102,7 +1125,7 @@ public
     Integer start, step, stop;
   algorithm
     (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start) / step);
+    size := realInt((stop - start + 1) / step);
   end rangeSize;
 
   function applySubscripts
@@ -5521,7 +5544,12 @@ public
         algorithm
           subs := list(s for s guard not filterSplitIndices2(s, node) in subs);
         then
-          applySubscripts(subs, exp.exp);
+          if listEmpty(subs) then
+            exp.exp
+          elseif Type.isUnknown(exp.ty) then
+            SUBSCRIPTED_EXP(exp.exp, subs, exp.ty, List.any(subs, Subscript.isSplit))
+          else
+            applySubscripts(subs, exp.exp);
 
       else exp;
     end match;
@@ -5919,11 +5947,14 @@ public
       case Expression.SIZE()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("size"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
+          json := JSON.addPair("name", JSON.makeString("size"), json);
 
           if isSome(exp.dimIndex) then
-            json := JSON.addPair("index", toJSON(Util.getOption(exp.dimIndex)), json);
+            JSON.addPair("arguments",
+              JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
+          else
+            JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
         then
           json;
@@ -5933,7 +5964,7 @@ public
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -5942,7 +5973,7 @@ public
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -5952,7 +5983,7 @@ public
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -5961,7 +5992,7 @@ public
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -5969,9 +6000,9 @@ public
       case Expression.RELATION()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("relation"), json);
+          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -5986,30 +6017,9 @@ public
         then
           json;
 
-      case Expression.CAST()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("cast"), json);
-          json := JSON.addPair("type", JSON.makeString(Type.toString(exp.ty)), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
-
-      case Expression.BOX()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("box"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
-
-      case Expression.UNBOX()
-        algorithm
-          json := JSON.emptyObject();
-          json := JSON.addPair("$kind", JSON.makeString("unbox"), json);
-          json := JSON.addPair("exp", toJSON(exp.exp), json);
-        then
-          json;
+      case Expression.CAST() then toJSON(exp.exp);
+      case Expression.BOX() then toJSON(exp.exp);
+      case Expression.UNBOX() then toJSON(exp.exp);
 
       case Expression.SUBSCRIPTED_EXP()
         algorithm
@@ -6053,7 +6063,47 @@ public
     end match;
   end toJSON;
 
+  function tupleElements
+    input Expression exp;
+    output list<Expression> expl;
+  algorithm
+    expl := match exp
+      case TUPLE() then exp.elements;
+      else {exp};
+    end match;
+  end tupleElements;
 
+  function wrapCall
+    "wrapper function to apply a Call function"
+    input output Expression exp;
+    input callFun fun;
+    partial function callFun
+      input output Call call;
+    end callFun;
+  algorithm
+    exp := match exp
+      case CALL() algorithm
+        exp.call := fun(exp.call);
+      then exp;
+      else exp;
+    end match;
+  end wrapCall;
+
+  function repairOperator
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case BINARY() algorithm
+        exp.operator := Operator.repairBinary(exp.operator, typeOf(exp.exp1), typeOf(exp.exp2));
+      then exp;
+
+      case MULTARY() algorithm
+        exp.operator := Operator.repairMultary(exp.operator, list(typeOf(e) for e in listAppend(exp.arguments, exp.inv_arguments)));
+      then exp;
+
+      else exp;
+    end match;
+  end repairOperator;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

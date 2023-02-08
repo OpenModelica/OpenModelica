@@ -18,6 +18,7 @@ FMI Export
 
 To export the FMU use the OpenModelica command
 `translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_
+or `buildModelFMU(ModelName)` <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
 from command line interface, OMShell, OMNotebook or MDT.
 The export FMU command is also integrated with OMEdit.
 Select `File > Export > FMU` the FMU package is generated in the
@@ -83,15 +84,64 @@ The BouncingBall_flags.json for this example is displayed in
   :name: BouncingBall FMI flags
   :caption: BouncingBall FMI flags
 
-For this to work OpenModelica will export all needed dependecies into the FMU
+For this to work OpenModelica will export all needed dependencies into the FMU
 if and only if the flag fmiFlags was set.
 To have CVODE in a SourceCode FMU the user needs to add all sources for
 SUNDIALS manualy and create a build script as well.
 
+CMake FMU Export
+~~~~~~~~~~~~~~~~
+
+A prototype implementation of FMUs compiled with CMake instead of Makefiels is available
+when using compiler flag :ref:`--fmuCMakeBuild<omcflag-fmuCMakeBuild>`.
+This is useful for creating Source-Code FMUs and for cross-platform compilation.
+On Windows this is currently the only way to use Docker images for cross-platform compilation.
+
+It is possible to add runtime dependencies into the FMU using
+:ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>`.
+The default value *modelica* will include every external libraries mentioned by an annotation
+as well as its dependencies (recursive). The system default locations are excluded.
+
+The minimum CMake version required is v3.21.
+
+.. _fmi-import :
+
 FMI Import
 ~~~~~~~~~~
 
-To import the FMU package use the OpenModelica command importFMU,
+If you want to simulate a single, stand-alone FMU, or possibly a connection
+of several FMUs, the recommended tool to do that is OMSimulator, see the
+`OMSimulator documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_
+for further information.
+
+FMI Import allows to use an FMU, generated according to the FMI for Model
+Exchange 2.0 standard, as a component in a Modelica model. This can be
+useful if the FMU describes the behaviour of a component or sub-system in a
+structured Modelica model, which is not easily turned into a pure FMI-based
+model that can be handled by OMSimulator.
+
+FMI is a computational description of a dynamic model, while a Modelica model is
+a declarative description; this means that not all conceivable FMUs can be successfully
+imported as Modelica models. Also, the current implementation of FMU import in
+OpenModelica is still somewhat experimental and not guaranteed to work in all
+cases. However, if the FMU-ME you want to import was exported from a Modelica model
+and only represents continuous time dynamic behaviour, it should work without problems
+when imported as a Modelica block.
+
+Please also note that the current implementation of FMI Import in OpenModelica
+is based on a built-in wrapper that uses a `reinit()` statement in an algorithm
+section. This is not allowed by the Modelica Language Specification, so it is
+necessary to set the compiler to accept this non-standard construct by setting
+the `--allowNonStandardModelica=reinitInAlgorithms` compiler flag. In OMEdit,
+you can set this option by activating the *Enable FMU Import* checkbox in the
+*Tools | Options | Simulation | Translation Flags* tab. This will generate a warning during
+compilation, as there is no guarantee that the imported model using this feature
+can be ported to other Modelica tools; if you want to use a model that contains
+imported FMUs in another Modelica tool, you should rely on the other tool's import
+feature to generate the Modelica blocks corresponding to the FMUs.
+
+After setting the `--allowNonStandardModelica` flag, to import the FMU package
+use the OpenModelica command importFMU,
 
 .. omc-mos ::
   :parsed:
@@ -99,42 +149,13 @@ To import the FMU package use the OpenModelica command importFMU,
   list(OpenModelica.Scripting.importFMU, interfaceOnly=true)
 
 The command could be used from command line interface, OMShell,
-OMNotebook or MDT. The importFMU command is also integrated with OMEdit.
-Select `File > Import > FMU` the FMU package is extracted in the directory
-specified by workdir, since the workdir parameter is optional so if its
-not specified then the current directory of omc is used. You can use the
-`cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the current location.
+OMNotebook or MDT. The importFMU command is also integrated with OMEdit
+through the `File > Import > FMU` dialog: the FMU package is extracted in the directory
+specified by workdir, or in the current directory of omc if not specified, see
+`Tools > Open Working Directory`. 
 
-The implementation supports FMI for Model Exchange 1.0 & 2.0 and FMI for
-Co-Simulation 1.0 stand-alone. The support for FMI Co-Simulation is
-still under development.
-
-The FMI Import is currently a prototype. The prototype has been tested
-in OpenModelica with several examples. It has also been tested with
-example FMUs from FMUSDK and Dymola. A more complete version for FMI
-Import will be released in the near future.
-
-When importing the model into OMEdit, roughly the following commands will be executed:
-
-.. omc-mos ::
-  :erroratend:
-
-
-  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  translateModelFMU(BouncingBall)
-  imported_fmu_mo_file:=importFMU("BouncingBall.fmu")
-  loadFile(imported_fmu_mo_file)
-
-The imported FMU can then be simulated like any normal model:
-
-.. omc-mos ::
-
-  simulate(BouncingBall_me_FMU, stopTime=3.0)
-
-.. omc-gnuplot :: bouncingball_fmu
-  :caption: Height of the bouncing ball, simulated through an FMU.
-
-  h
+The imported FMU is then loaded in the Libraries Browser and can be used as any
+other regular Modelica block.
 
 Transmission Line Modeling (TLM) Based Co-Simulation
 ----------------------------------------------------

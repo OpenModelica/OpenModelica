@@ -60,14 +60,17 @@ public
   import NFBackendExtension.VariableKind;
 
   // Backend Imports
+  import NBAdjacency.Mapping;
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
+  import NBEquation.Iterator;
   import BVariable = NBVariable;
 
   //Util Imports
   import Array;
   import BaseHashTable;
   import ExpandableArray;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import Util;
@@ -117,8 +120,7 @@ public
 
   function hash
     input Pointer<Variable> var_ptr;
-    input Integer mod;
-    output Integer i = Variable.hash(Pointer.access(var_ptr), mod);
+    output Integer i = Variable.hash(Pointer.access(var_ptr));
   end hash;
 
   function equalName
@@ -448,11 +450,11 @@ public
     b := match Pointer.access(var)
       local
         Expression fixed;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isAllTrue(fixed);
       else false;
     end match;
   end isFixed;
@@ -956,7 +958,7 @@ public
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
@@ -968,21 +970,37 @@ public
 
   function makeEventVar
     "Creates a generic boolean variable pointer from a unique index and context name.
-    e.g. (\"$WHEN\", 4) --> $WHEN_4"
-    input String name                 "context name e.g. §WHEN";
-    input Integer uniqueIndex         "unique identifier index";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
-    output ComponentRef cref          "new component reference";
+    e.g. (\"$SEV\", 4) --> $SEV_4"
+    input String name                           "context name e.g. §WHEN";
+    input Integer uniqueIndex                   "unique identifier index";
+    input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
+    output Pointer<Variable> var_ptr            "pointer to new variable";
+    output ComponentRef cref                    "new component reference";
   protected
     InstNode node;
+    ComponentRef var_cref;
     Variable var;
+    list<ComponentRef> iter_crefs;
+    list<Subscript> iter_subs;
+    list<Integer> sub_sizes;
+    Type ty;
   algorithm
+    // get subscripts from optional iterator
+    (iter_crefs, _) := Iterator.getFrames(iterator);
+    iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
+    if listEmpty(iter_subs) then
+      ty := Type.BOOLEAN();
+    else
+      sub_sizes := Iterator.sizes(iterator);
+      ty := Type.ARRAY(Type.BOOLEAN(), list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+    end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, {}, Type.BOOLEAN(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
-    // create variable and set its kind to dae_residual (change name?)
-    var := fromCref(cref);
-    // update the variable to be a seed and pass the pointer to the original variable
+    cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    // create variable
+    var := fromCref(var_cref);
+    // update the variable to be discrete and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
@@ -1004,7 +1022,7 @@ public
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
@@ -1061,7 +1079,7 @@ public
         Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, b);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty, b);
         var.backendinfo := binfo;
       then var;
 
@@ -1088,7 +1106,7 @@ public
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty);
         var.backendinfo := binfo;
       then var;
 
@@ -1591,7 +1609,7 @@ public
         end if;
 
         // flatten potential records
-        for var in listReverse(scalar_vars) loop
+        for var in scalar_vars loop
           if Type.isComplex(var.ty) then
             flattened := true;
             element_vars := Scalarize.scalarizeComplexVariable(var);
@@ -1609,6 +1627,26 @@ public
         variables := fromList(listReverse(new_vars), true);
       end if;
     end scalarize;
+
+    function varSlice
+      input VariablePointers vars;
+      input Integer scal;
+      input Mapping mapping;
+      output ComponentRef cref;
+    protected
+      Pointer<Variable> var;
+      Integer arr, start, size;
+      Type ty;
+      list<Integer> sizes, vals;
+    algorithm
+      arr := mapping.var_StA[scal];
+      (start, size) := mapping.var_AtS[arr];
+      var := VariablePointers.getVarAt(vars, arr);
+      Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
+      sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
+      vals := Slice.indexToLocation(scal-start, sizes);
+      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+    end varSlice;
 
   protected
     function createSortHashTpl
@@ -1659,6 +1697,8 @@ public
       VariablePointers states             "States";
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
+      VariablePointers records            "Records";
+      VariablePointers artificials        "artificial variables to have pointers on crefs";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
@@ -1762,7 +1802,9 @@ public
               VariablePointers.toString(varData.discretes, "Discrete", false) +
               VariablePointers.toString(varData.previous, "Previous", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
-              VariablePointers.toString(varData.constants, "Constant", false);
+              VariablePointers.toString(varData.constants, "Constant", false) +
+              VariablePointers.toString(varData.records, "Record", false) +
+              VariablePointers.toString(varData.artificials, "Artificial", false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);

@@ -919,6 +919,8 @@ algorithm
   xmlString := System.stringReplace(xmlString, "\"", "&quot;");
   xmlString := System.stringReplace(xmlString, "<", "&lt;");
   xmlString := System.stringReplace(xmlString, ">", "&gt;");
+  xmlString := System.stringReplace(xmlString, "\n", "&#10;");
+  xmlString := System.stringReplace(xmlString, "\r", "&#13;");
   // TODO! FIXME!, we have issues with accented chars in comments
   // that end up in the Model_init.xml file and makes it not well
   // formed but the line below does not work if the xmlString is

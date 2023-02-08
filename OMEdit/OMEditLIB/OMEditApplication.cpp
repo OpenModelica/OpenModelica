@@ -79,11 +79,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
-  QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
-  /* Set the default locale of the application so that QSpinBox etc show values according to the locale.
-   * Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
-   */
+  QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
+  // Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
   QLocale::setDefault(QLocale::c());
 
   QString translationDirectory = installationDirectoryPath + QString("/share/omedit/nls");
@@ -113,7 +110,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   bool debug = false;
   bool newApi = false;
   QString fileName = "";
-  QStringList fileNames;
+  QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
@@ -145,7 +142,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
-            printf("Invalid command line argument: %s %s\n", fileName.toUtf8().constData(), absoluteFileName.toUtf8().constData());
+            invalidFlags.append(fileName);
           }
         }
       }
@@ -160,6 +157,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
     exit(1);
+  }
+  // show error of invalid flags
+  if (!invalidFlags.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {
@@ -191,7 +193,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       switch (answer) {
         case QMessageBox::AcceptRole:
           OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(false);
-          Utilities::getApplicationSettings()->setValue("simulation/newInst", true);
           OptionsDialog::instance()->saveSimulationSettings();
           break;
         case QMessageBox::RejectRole:

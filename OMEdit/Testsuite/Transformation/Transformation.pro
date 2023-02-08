@@ -29,11 +29,10 @@
  #/
 
 include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
 TARGET = Transformation
 
-SOURCES += ../Common/Util.cpp \
-  TransformationTest.cpp
+SOURCES += TransformationTest.cpp
 
-HEADERS += ../Common/Util.h \
-  TransformationTest.h
+HEADERS += TransformationTest.h

@@ -46,9 +46,9 @@
 #include "util/simulation_options.h"
 #include "util/context.h"
 
-#define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
+#define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
-#define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
+#define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
 #define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
@@ -577,6 +577,8 @@ typedef struct MODEL_DATA
   long nSensitivityParamVars;
   long nSetcVars;
   long ndataReconVars;
+  long nSetbVars;
+  long nRelatedBoundaryConditions;
 } MODEL_DATA;
 
 /**
@@ -743,6 +745,7 @@ typedef struct SIMULATION_INFO
   modelica_real* outputVars;
   modelica_real* setcVars;
   modelica_real* datainputVars;
+  modelica_real* setbVars;
 
   EXTERNAL_INPUT external_input;
 

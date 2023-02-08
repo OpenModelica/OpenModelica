@@ -289,7 +289,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpJustifyToolButton->setCheckable(true);
   connect(mpJustifyToolButton, SIGNAL(clicked()), SLOT(justify()));
   // alignment button group
-  QButtonGroup *pAlignmentButtonGroup = new QButtonGroup;
+  QButtonGroup *pAlignmentButtonGroup = new QButtonGroup(this);
   pAlignmentButtonGroup->setExclusive(true);
   pAlignmentButtonGroup->addButton(mpAlignLeftToolButton);
   pAlignmentButtonGroup->addButton(mpAlignCenterToolButton);

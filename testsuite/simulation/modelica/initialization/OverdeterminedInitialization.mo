@@ -47,7 +47,7 @@ package OverdeterminedInitialization
         use_eps_Re=true,
         p_start=10000000)
         annotation (Placement(transformation(extent={{-80,60},{-60,80}})));
-      discrete Modelica.SIunits.MassFlowRate m_flow_initial;
+      discrete Modelica.Units.SI.MassFlowRate m_flow_initial;
     equation
       when time > 0.1 then
         m_flow_initial = valve.port_a.m_flow;
@@ -139,7 +139,7 @@ The initial equations are consistent however and a tool shall reduce them approp
         p_start=10000000,
         use_eps_Re=true)
         annotation (Placement(transformation(extent={{-80,60},{-60,80}})));
-      discrete Modelica.SIunits.MassFlowRate m_flow_initial;
+      discrete Modelica.Units.SI.MassFlowRate m_flow_initial;
     equation
       when time > 0.1 then
         m_flow_initial = valve.port_a.m_flow;
@@ -709,9 +709,9 @@ The initial equations are consistent however and a tool shall reduce them approp
                 extent={{-60,-10},{-40,10}}, rotation=0), iconTransformation(
                 extent={{-60,-10},{-40,10}})));
         Modelica.Electrical.Analog.Basic.Ground G annotation(Placement(transformation(extent = {{30,-80},{50,-60}}, rotation = 0)));
-        Modelica.Electrical.Analog.Sources.SineVoltage S1(freqHz = 1, V = 1, phase = shift) annotation(Placement(transformation(extent = {{-10,30},{10,50}}, rotation = 0)));
-        Modelica.Electrical.Analog.Sources.SineVoltage S2(freqHz = 1, V = 1, phase = 2 * pi / 3 + shift) annotation(Placement(transformation(extent = {{-10,-10},{10,10}}, rotation = 0)));
-        Modelica.Electrical.Analog.Sources.SineVoltage S3(freqHz = 1, V = 1, phase = 4 * pi / 3 + shift) annotation(Placement(transformation(extent = {{-8,-50},{12,-30}}, rotation = 0)));
+        Modelica.Electrical.Analog.Sources.SineVoltage S1(f = 1, V = 1, phase = shift) annotation(Placement(transformation(extent = {{-10,30},{10,50}}, rotation = 0)));
+        Modelica.Electrical.Analog.Sources.SineVoltage S2(f = 1, V = 1, phase = 2 * pi / 3 + shift) annotation(Placement(transformation(extent = {{-10,-10},{10,10}}, rotation = 0)));
+        Modelica.Electrical.Analog.Sources.SineVoltage S3(f = 1, V = 1, phase = 4 * pi / 3 + shift) annotation(Placement(transformation(extent = {{-8,-50},{12,-30}}, rotation = 0)));
       equation
         connect(G.p,S1.n) annotation(Line(points = {{40,-60},{40,40},{10,40}}, color = {0,0,255}, smooth = Smooth.None));
         connect(G.p,S2.n) annotation(Line(points = {{40,-60},{40,0},{10,0}}, color = {0,0,255}, smooth = Smooth.None));

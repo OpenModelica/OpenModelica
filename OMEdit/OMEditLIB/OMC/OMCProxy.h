@@ -115,7 +115,7 @@ public:
   QString getErrorLevel();
   int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
-  void loadSystemLibraries();
+  void loadSystemLibraries(const QVector<QPair<QString, QString> > libraries);
   void loadUserLibraries();
   QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = false,
                             bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
@@ -129,6 +129,7 @@ public:
   bool isPartial(QString className);
   bool isReplaceable(QString parentClassName, QString className);
   StringHandler::ModelicaClasses getClassRestriction(QString className);
+  bool setParameterValue(const QString &className, const QString &parameter, const QString &value);
   QString getParameterValue(const QString &className, const QString &parameter);
   QStringList getComponentModifierNames(QString className, QString name);
   QString getComponentModifierValue(QString className, QString name);
@@ -196,13 +197,10 @@ public:
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
-  bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
-                     int priority, QString annotation);
-  bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
-                        int priority);
-  bool updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset,
-                        bool oldSynchronize, int oldPriority, QString condition, bool immediate, bool reset, bool synchronize, int priority,
-                        QString annotation);
+  bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
+  bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority);
+  bool updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority,
+                        QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
   bool addInitialState(QString className, QString state, QString annotation);
   bool deleteInitialState(QString className, QString state);
   bool updateInitialState(QString className, QString state, QString annotation);
@@ -282,7 +280,10 @@ public:
   QStringList getAvailablePackageVersions(QString pkg, QString version);
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
-  QJsonObject getModelInstance(const QString &className, bool prettyPrint = false);
+  QJsonObject getModelInstance(const QString &className, bool prettyPrint = false, bool icon = false);
+  int storeAST();
+  bool restoreAST(int id);
+  bool clear();
 signals:
   void commandFinished();
 public slots:

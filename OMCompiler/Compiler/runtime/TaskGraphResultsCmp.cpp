@@ -149,8 +149,7 @@ GraphParser::~GraphParser()
 
 bool GraphParser::CheckIfFileExists(const char* fileName)
 {
-  omc_stat_t stats;
-  return 0 == omc_stat(fileName, &stats);
+  return omc_file_exists(fileName);
 }
 
 GraphMLParser::GraphMLParser() : GraphParser()

@@ -141,61 +141,39 @@ public
         Slice<EquationPointer> new_eqn_slice;
         DifferentiationArguments diffArguments;
 
-      case StrongComponent.SINGLE_EQUATION() algorithm
+      case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_EQUATION(new_var, new_eqn, comp.status);
+      then StrongComponent.SINGLE_COMPONENT(new_var, new_eqn, comp.status);
 
-      case StrongComponent.SINGLE_ARRAY() algorithm
-        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ARRAY(new_var, new_eqn, comp.status);
-
-      case StrongComponent.SINGLE_ALGORITHM() algorithm
+      case StrongComponent.MULTI_COMPONENT() algorithm
         new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn, comp.status);
+      then StrongComponent.MULTI_COMPONENT(new_vars, new_eqn, comp.status);
 
-      case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
-        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_RECORD_EQUATION(new_var, new_eqn, comp.status);
-
-      // is this needed? when equations should never be differentiated
-      case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_WHEN_EQUATION(new_vars, new_eqn, comp.status);
-
-      case StrongComponent.SINGLE_IF_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_IF_EQUATION(new_vars, new_eqn, comp.status);
-
-      case StrongComponent.SLICED_EQUATION() algorithm
+      case StrongComponent.SLICED_COMPONENT() algorithm
         (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);
         new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
         new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
         Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
-      then StrongComponent.SLICED_EQUATION(new_cref, new_var_slice, new_eqn_slice, comp.status);
+      then StrongComponent.SLICED_COMPONENT(new_cref, new_var_slice, new_eqn_slice, comp.status);
 
-      case StrongComponent.ENTWINED_EQUATION() algorithm
+      case StrongComponent.GENERIC_COMPONENT() algorithm
+        (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
+        Pointer.update(diffArguments_ptr, diffArguments);
+        new_eqn := differentiateEquationPointer(Slice.getT(comp.eqn), diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.GENERIC_COMPONENT(new_cref, Slice.SLICE(new_eqn, comp.eqn.indices));
+
+      case StrongComponent.ENTWINED_COMPONENT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
       then fail();
 
       case StrongComponent.ALGEBRAIC_LOOP() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for algebraic loop:\n" + StrongComponent.toString(comp)});
-      then fail();
-
-      case StrongComponent.TORN_LOOP() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for torn loop:\n" + StrongComponent.toString(comp)});
       then fail();
 
       case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
@@ -291,22 +269,6 @@ public
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
-
-      case Equation.SIMPLE_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.lhs), diffArguments);
-        (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.rhs), diffArguments);
-        attr := differentiateEquationAttributes(eq.attr, diffArguments);
-        res := match (lhs, rhs, eq.ty)
-
-          // If both are still a componentRef, create simple equation.
-          case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref), _)
-          then Equation.SIMPLE_EQUATION(eq.ty, lhs_cref, rhs_cref, eq.source, attr);
-
-          // check for array type
-          case (_, _ , Type.ARRAY()) then Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, NONE());
-          else Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr);
-        end match;
-      then (res, diffArguments);
 
       case Equation.RECORD_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
@@ -578,8 +540,10 @@ public
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
-      // function body expressions are not lowered (maybe do it?)
+      // function body expressions, empty and wild crefs are not lowered (maybe do it?)
       case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -591,6 +555,12 @@ public
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
 
+
+      // -------------------------------------
+      //    EMPTY and WILD crefs do nothing
+      // -------------------------------------
+      case (Expression.CREF(cref = ComponentRef.EMPTY()), _, _) then (exp, diffArguments);
+      case (Expression.CREF(cref = ComponentRef.WILD()), _, _)  then (exp, diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
@@ -743,6 +713,8 @@ public
   algorithm
     (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(crefExp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
@@ -785,7 +757,7 @@ public
         // interface map. If the map contains a variable it has a zero derivative
         // if the value is "true" it has to be stripped from the interface
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
-        UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2Mod, stringEqual);
+        UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
@@ -870,7 +842,40 @@ public
   algorithm
     exp := match (exp)
       local
+        Integer i;
         Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
+
+      // SMOOTH
+      case (Expression.CALL()) guard(name == "smooth")
+      algorithm
+        {arg1, arg2} := Call.arguments(exp.call);
+        ret := match arg1
+          case Expression.INTEGER(i) guard(i > 0) algorithm
+            (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            exp.call := Call.setArguments(exp.call, {Expression.INTEGER(i-1), ret2});
+          then exp;
+          case Expression.INTEGER(i) algorithm
+            (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            exp := Expression.CALL(Call.makeTypedCall(
+              fn          = NFBuiltinFuncs.NO_EVENT,
+              args        = {ret2},
+              variability = Expression.variability(ret2),
+              purity      = NFPrefixes.Purity.PURE
+            ));
+          then exp;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+      then ret;
+
+      // NO_EVENT
+      case (Expression.CALL()) guard(name == "noEvent")
+      algorithm
+        {arg1} := Call.arguments(exp.call);
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
 
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
@@ -878,7 +883,7 @@ public
       algorithm
         // differentiate the call
         {arg1} := Call.arguments(exp.call);
-        ret := differentiateBuiltinCall1Arg(name, arg1);
+        (ret, diffArguments) := differentiateBuiltinCall1Arg(name, arg1, diffArguments);
         if not Expression.isZero(ret) then
           // differentiate the argument (inner derivative)
           diffArg1 := differentiateExpression(arg1, diffArguments);
@@ -919,6 +924,7 @@ public
     input String name;
     input Expression arg;
     output Expression derFuncCall;
+    input output DifferentiationArguments diffArguments;
   protected
     // these probably need to be adapted to the size and type of arg
     Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
@@ -935,6 +941,16 @@ public
       case ("ceil")     then Expression.makeZero(Type.REAL());
       case ("floor")    then Expression.makeZero(Type.REAL());
       case ("integer")  then Expression.makeZero(Type.INTEGER());
+
+      // sum(arg) -> sum(d arg)
+      case ("sum") algorithm
+        (ret, diffArguments) := differentiateExpression(arg, diffArguments);
+      then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SUM,
+          args        = {ret},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
 
       // abs(arg) -> sign(arg)
       case ("abs") then Expression.CALL(Call.makeTypedCall(
@@ -1254,7 +1270,7 @@ public
     (statements, diffArguments) := List.mapFold(alg.statements, differentiateStatement, diffArguments);
     statements_flat := List.flatten(statements);
     (inputs, outputs) := Algorithm.getInputsOutputs(statements_flat);
-    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.source);
+    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.scope, alg.source);
   end differentiateAlgorithm;
 
   function differentiateStatement
@@ -1275,7 +1291,7 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
-        diff_stmt.rhs := SimplifyExp.simplify(rhs);
+        diff_stmt.rhs := SimplifyExp.simplify(rhs, true);
       then {diff_stmt, stmt};
 
       // II. delegate differentiation to body and only return differentiated statement

@@ -149,7 +149,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnits := UnorderedMap.new<Unit>(stringHashDjb2Mod, stringEq);
+  outKnownUnits := UnorderedMap.new<Unit>(stringHashDjb2, stringEq);
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -163,7 +163,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := UnorderedMap.new<String>(hashUnitMod, unitEqual);
+  outKnownUnitsInverse := UnorderedMap.new<String>(hashUnit, unitEqual);
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -198,16 +198,15 @@ algorithm
   end match;
 end isMaster;
 
-public function hashUnitMod
+public function hashUnit
   input Unit inKey;
-  input Integer inMod;
   output Integer outHash;
 protected
   String str;
 algorithm
   str := unit2string(inKey);
-  outHash := stringHashDjb2Mod(str, inMod);
-end hashUnitMod;
+  outHash := stringHashDjb2(str);
+end hashUnit;
 
 public function unitEqual
   input Unit inKey;

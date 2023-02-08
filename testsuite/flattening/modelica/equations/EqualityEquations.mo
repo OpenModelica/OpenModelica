@@ -32,7 +32,7 @@ end EqualityEquations;
 
 // Result:
 // Error processing file: EqualityEquations.mo
-// [flattening/modelica/equations/EqualityEquations.mo:30:3-30:33:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1, 3.0, z / y) = f(1.0, 2.0);).
+// [flattening/modelica/equations/EqualityEquations.mo:30:3-30:33:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1, 3.0, z/y) = f(1.0, 2.0);).
 // Error: Error occurred while flattening model EqualityEquations
 //
 // # Error encountered! Exiting...

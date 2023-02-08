@@ -233,7 +233,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
         eqSystemNumber, data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++) {
@@ -251,6 +251,8 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   } else {
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
   }
+  solverData->time = data->localData[0]->timeValue;
+  solverData->initial = data->simulationInfo->initial;
 
   /* start solving loop */
   while(!giveUp && success != NLS_SOLVED)
