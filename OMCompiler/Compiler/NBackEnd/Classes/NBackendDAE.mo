@@ -782,7 +782,7 @@ protected
           end for;
         else
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + "Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
           end if;
         end if;
       then result;
