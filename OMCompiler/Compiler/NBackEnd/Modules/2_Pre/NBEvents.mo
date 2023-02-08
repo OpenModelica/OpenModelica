@@ -909,7 +909,7 @@ protected
   protected
     Equation eqn = Pointer.access(eqn_ptr);
     list<Frame> frames;
-    Boolean createAux = Equation.isAlgorithm(eqn_ptr);
+    Boolean createAux = not Equation.isAlgorithm(eqn_ptr);
   algorithm
     eqn := match eqn
       case Equation.ALGORITHM() algorithm
