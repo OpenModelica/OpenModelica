@@ -913,16 +913,16 @@ public
           fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
+        case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
+          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
+        then ();
+
         case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.getDependentCrefIndicesPseudoScalar(unique_dependencies, map, mapping);
           for i in 0:eqn_size-1 loop
             arrayUpdate(m, eqn_scal_idx+i, listAppend(row, m[eqn_scal_idx+i]));
           end for;
-        then ();
-
-        case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          fillMatrixArray(unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
         then ();
 
         case (Equation.IF_EQUATION(), SOME(mapping)) guard(pseudo) algorithm

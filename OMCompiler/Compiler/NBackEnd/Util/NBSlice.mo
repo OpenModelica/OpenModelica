@@ -282,7 +282,9 @@ public
       indices := var_scal_idx :: indices;
     end for;
     // remove duplicates and sort
-    indices := List.sort(List.uniqueIntN(indices, max(i for i in indices)), intLt);
+    if not listEmpty(indices) then
+      indices := List.sort(List.uniqueIntN(indices, max(i for i in indices)), intLt);
+    end if;
   end getDependentCrefIndicesPseudoScalar;
 
   function getDependentCrefIndicesPseudoArray
