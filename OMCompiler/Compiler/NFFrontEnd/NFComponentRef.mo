@@ -1535,13 +1535,17 @@ public
       case CREF()
         algorithm
           d := 1 + depth(cref.restCref);
-        then
-          d;
+        then d;
 
       case WILD() then 0;
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function size
+    input ComponentRef cref;
+    output Integer s = product(i for i in sizes(cref));
+  end size;
 
   function sizes
     input ComponentRef cref;

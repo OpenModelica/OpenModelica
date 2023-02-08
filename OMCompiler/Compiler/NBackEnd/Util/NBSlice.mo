@@ -270,19 +270,21 @@ public
   protected
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
-    list<Integer> sizes, subs;
+    list<Integer> sizes, int_subs;
   algorithm
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped);
-      subs := ComponentRef.subscriptsToInteger(cref);
-      var_scal_idx := locationToIndex(List.zip(sizes, subs), var_start);
+      int_subs := ComponentRef.subscriptsToInteger(cref);
+      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
     end for;
     // remove duplicates and sort
-    indices := List.sort(List.unique(indices), intLt);
+    if not listEmpty(indices) then
+      indices := List.sort(List.uniqueIntN(indices, max(i for i in indices)), intLt);
+    end if;
   end getDependentCrefIndicesPseudoScalar;
 
   function getDependentCrefIndicesPseudoArray
@@ -416,7 +418,8 @@ public
     input Mapping var_rep_mapping                                 "index mapping for variable representatives";
     input Mapping eqn_rep_mapping                                 "index mapping for equation representatives";
     input Iterator iter                                           "iterator frames";
-    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    input list<Integer> slice = {}                                "optional slice, empty list implies full slice";
+    input Boolean implicit = false                                "do not compute row cref indices if implicit";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
     ComponentRef stripped;
@@ -438,10 +441,16 @@ public
     frames := List.zip(names, ranges);
 
     // get row cref lst
-    row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
-    row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
-    num_rows := listLength(row_scal_lst);
-    row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
+    if implicit then
+      row_crefs := ComponentRef.scalarizeAll(row_cref);
+      row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
+      num_rows := listLength(row_crefs);
+    else
+      row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
+      row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
+      num_rows := listLength(row_scal_lst);
+      row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
+    end if;
 
     if not listEmpty(dependencies) then
       for dep in dependencies loop

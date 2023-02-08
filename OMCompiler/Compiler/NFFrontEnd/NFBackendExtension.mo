@@ -222,7 +222,7 @@ public
         case DAE_AUX_VAR()        then "[AUX-]";
         case LOOP_ITERATION()     then "[LOOP]";
         case LOOP_SOLVED()        then "[INNR]";
-        case FRONTEND_DUMMY()     then "[DMMY] Dummy Variable.";
+        case FRONTEND_DUMMY()     then "[DMMY]";
                                   else "[FAIL] " + getInstanceName() + " failed.";
       end match;
     end toString;

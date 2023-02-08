@@ -489,6 +489,7 @@ public
   algorithm
     _ := match comp
       local
+        Pointer<Equation> eqn_ptr;
         ComponentRef cref;
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
         list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
@@ -531,7 +532,7 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -566,7 +567,7 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -584,6 +585,15 @@ public
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
           tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set));
+          eqn_ptr := Slice.getT(slice);
+          if Equation.isForEquation(eqn_ptr) then
+            // if its a for equation get all dependencies corresponding to their residual.
+            // we do not really care for order and assume full dependency anyway
+            eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
+            cref := Equation.getEqnName(eqn_ptr);
+            scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, slice.indices, true);
+            tmp := List.flatten(list(Util.tuple22(tpl) for tpl in scalarized_dependencies));
+          end if;
           dependencies := listAppend(tmp, dependencies);
         end for;
 

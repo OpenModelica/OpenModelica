@@ -522,10 +522,10 @@ public
     "Returns true, if the variable is a dummy variable.
     Note: !Only works in the backend, will return true for any variable if used
     during frontend!"
-    input Variable var;
+    input Pointer<Variable> var;
     output Boolean isDummy;
   algorithm
-    isDummy := match var
+    isDummy := match Pointer.access(var)
       case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY())) then true;
       else false;
     end match;
