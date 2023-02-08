@@ -24,6 +24,7 @@ UnitCheck20.mos \
 UnitCheck21.mos \
 UnitCheck22.mos \
 UnitCheck23.mos \
+UnitCheck24.mos \
 ticket3631.mos \
 
 
