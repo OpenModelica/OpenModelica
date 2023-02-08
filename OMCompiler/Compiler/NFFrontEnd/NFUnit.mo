@@ -133,6 +133,7 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
   ("kat",        UNIT(1e0, 1, 0, 0,-1, 0, 0, 0)), //Katal
   ("1",          UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //1
   ("rad",        UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //rad; displayUnit ="deg"
+  ("deg",        UNIT(0.01745329251994329577, 0, 0, 0, 0, 0, 0, 0)), // deg = (pi/180)*rad
 //("B",          UNIT(1e-2, 0, 0, 0, 0, 0, 0, 0)), //Bel (dezibel dB)
 //("phon",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Phon
 //("sone",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Sone
