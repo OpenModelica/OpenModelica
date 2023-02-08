@@ -1279,6 +1279,7 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
   for (ShapeObject& shape : shapes)
   {
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
+    transf->setName(shape._id);
 
     if (shape._type.compare("stl") == 0)
     { //cad node
@@ -1286,15 +1287,6 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
       if (node.valid())
       {
-        osg::ref_ptr<osg::Group> group = node->asGroup();
-        if (group.valid()) {
-          for (unsigned int i = 0; i < group->getNumChildren(); i++) {
-            group->getChild(i)->setName(shape._id);
-          }
-        } else { // Should never occur
-          node->setName(shape._id);
-        }
-
         osg::ref_ptr<osg::Material> material = new osg::Material();
         material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
 
@@ -1310,7 +1302,6 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       osg::ref_ptr<DXFile> dxfDraw = new DXFile(shape._fileName);
 
       osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-      geode->setName(shape._id);
       geode->addDrawable(dxfDraw.get());
 
       transf->addChild(geode.get());
@@ -1321,7 +1312,6 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
       osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-      geode->setName(shape._id);
       geode->addDrawable(shapeDraw.get());
 
       osg::ref_ptr<osg::Material> material = new osg::Material();
@@ -1344,6 +1334,7 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
   for (VectorObject& vector : vectors)
   {
     osg::ref_ptr<AutoTransformVisualizer> transf = new AutoTransformVisualizer(&vector);
+    transf->setName(vector._id);
     transf->setAutoRotateMode(osg::AutoTransform::NO_ROTATION);
     transf->setAutoScaleTransitionWidthRatio(0);
     transf->setAutoScaleToScreen(vector.isScaleInvariant());
@@ -1362,7 +1353,6 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
     shapeDraw2->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-    geode->setName(vector._id);
     geode->addDrawable(shapeDraw0.get());
     geode->addDrawable(shapeDraw1.get());
     geode->addDrawable(shapeDraw2.get());

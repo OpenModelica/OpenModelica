@@ -261,8 +261,9 @@ void ViewerWidget::pickVisualizer(int x, int y)
   if (mpSceneView->computeIntersections(mpSceneView->getCamera(), osgUtil::Intersector::WINDOW, x, y, intersections)) {
     //take the first intersection with a facette only
     osgUtil::LineSegmentIntersector::Intersections::const_iterator hitr = intersections.cbegin();
-    if (!hitr->nodePath.empty() && !hitr->nodePath.back()->getName().empty()) {
-      mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->nodePath.back()->getName());
+    constexpr osg::NodePath::size_type lvl = 2;
+    if (hitr->nodePath.size() > lvl && !hitr->nodePath.at(lvl)->getName().empty()) {
+      mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->nodePath.at(lvl)->getName());
       //std::cout<<"Object identified by name "<<mpSelectedVisualizer->_id<<std::endl;
     } else if (hitr->drawable.valid()) {
       mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->drawable->className());
