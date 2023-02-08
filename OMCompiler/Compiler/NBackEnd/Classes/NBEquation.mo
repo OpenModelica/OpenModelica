@@ -126,11 +126,15 @@ public
       ComponentRef name;
       Expression range;
     algorithm
-      (names, ranges) := List.unzip(frames);
-      iter := match (names, ranges)
-        case ({name}, {range})  then SINGLE(name, range);
-                                else NESTED(listArray(names), listArray(ranges));
-      end match;
+      if listEmpty(frames) then
+        iter := EMPTY();
+      else
+        (names, ranges) := List.unzip(frames);
+        iter := match (names, ranges)
+          case ({name}, {range})  then SINGLE(name, range);
+                                  else NESTED(listArray(names), listArray(ranges));
+        end match;
+      end if;
     end fromFrames;
 
     function getFrames
@@ -1487,10 +1491,7 @@ public
           (names, ranges) := Iterator.getFrames(eqn.iter);
         then List.zip(names, ranges);
 
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because eqation is not a for-equation: \n"
-            + Equation.toString(eqn)});
-        then fail();
+        else {};
       end match;
     end getForFrames;
 
