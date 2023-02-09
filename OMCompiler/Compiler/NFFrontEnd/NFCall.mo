@@ -2065,6 +2065,17 @@ public
     end match;
   end toArrayConstructor;
 
+  function isConnectionsOperator
+    input Call call;
+    output Boolean isOp;
+  algorithm
+    isOp := match call
+      case TYPED_CALL()
+        then Function.isBuiltin(call.fn) and functionNameFirst(call) == "Connections";
+      else false;
+    end match;
+  end isConnectionsOperator;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;
