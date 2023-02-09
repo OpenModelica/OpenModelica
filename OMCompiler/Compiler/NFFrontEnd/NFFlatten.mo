@@ -1082,6 +1082,12 @@ algorithm
           rhs := Expression.CREF(ty, rhs.cref);
         then Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, eq.source) :: equations;
 
+      // Pass Connections.* operators as they are and let the connection
+      // handling deal with them.
+      case Equation.NORETCALL(exp = lhs as Expression.CALL())
+        guard Call.isConnectionsOperator(lhs.call)
+        then eq :: equations;
+
       // wrap general equation into for loop
       else
         algorithm
