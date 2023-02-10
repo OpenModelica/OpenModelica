@@ -1344,7 +1344,7 @@ namespace FlatModelica
 
   void Enum::print(std::ostream &os) const
   {
-    os << _name << '(' << _index << ')';
+    os << _name;
   }
 
   QJsonValue Enum::serialize() const
