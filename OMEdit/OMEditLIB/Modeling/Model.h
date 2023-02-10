@@ -440,7 +440,8 @@ private:
 
     QString getName() const {return mName;}
     void setName(const QString &name) {mName = name;}
-    QString getValue() const;
+    QString getValue() const {return mValue;}
+    QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     QList<Modifier> getModifiers() const {return mModifiers;}
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
@@ -575,6 +576,7 @@ private:
     Modifier getModifier() const {return mModifier;}
     FlatModelica::Expression getBinding() const {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    void resetBinding() {mBinding = mBindingForReset;}
     QString getModifierValueFromType(QStringList modifierName);
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
@@ -599,6 +601,7 @@ private:
     Model *mpModel;
     Modifier mModifier;
     FlatModelica::Expression mBinding;
+    FlatModelica::Expression mBindingForReset;
     QStringList mAbsynDims;
     QStringList mTypedDims;
     bool mPublic;

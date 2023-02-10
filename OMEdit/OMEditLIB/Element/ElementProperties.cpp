@@ -270,8 +270,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     setValueWidget(start, true, mUnit);
     setFixedState(fixed, true);
   }
-  mEnable.evaluate(mpModelInstanceElement->getParentModel());
-  setEnabled(mEnable);
+  update();
 }
 
 /*!
@@ -672,11 +671,11 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
  * Updates the value binding of the parameter and call updateParameters so depending parameters gets updated.
  * \param value
  */
-void Parameter::updateValueBinding(bool value)
+void Parameter::updateValueBinding(const FlatModelica::Expression expression)
 {
   if (MainWindow::instance()->isNewApi()) {
     // update the binding with the new value
-    mpModelInstanceElement->setBinding(FlatModelica::Expression(value));
+    mpModelInstanceElement->setBinding(expression);
     mpElementParameters->updateParameters();
   }
 }
@@ -754,7 +753,12 @@ void Parameter::valueComboBoxChanged(int index)
     value = mpValueComboBox->lineEdit()->placeholderText();
   }
 
-  updateValueBinding(value.compare(QStringLiteral("true")) == 0);
+  try {
+    updateValueBinding(FlatModelica::Expression::parse(value));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse value: " << value;
+    qDebug() << e.what();
+  }
 }
 
 /*!
@@ -766,7 +770,7 @@ void Parameter::valueComboBoxChanged(int index)
 void Parameter::valueCheckBoxChanged(bool toggle)
 {
   mValueCheckBoxModified = true;
-  updateValueBinding(toggle);
+  updateValueBinding(FlatModelica::Expression(toggle));
 }
 
 /*!
@@ -1455,7 +1459,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
         pParameter->setValueWidget(modifier.getValue(), true, pParameter->getUnit());
         foreach (auto subModifier, modifier.getModifiers()) {
           if (subModifier.getName().compare(QStringLiteral("start")) == 0 || subModifier.getName().compare(QStringLiteral("fixed")) == 0) {
-            QString startOrFixed = subModifier.getValue();
+            QString startOrFixed = subModifier.getValueWithoutQuotes();
             if (!startOrFixed.isEmpty()) {
               if (!pParameter->isGroupBoxDefined()) {
                 pParameter->setGroupBox("Initialization");
@@ -1468,7 +1472,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
               }
             }
           } else if (subModifier.getName().compare(QStringLiteral("displayUnit")) == 0) {
-            QString displayUnit = subModifier.getValue();
+            QString displayUnit = subModifier.getValueWithoutQuotes();
             int index = pParameter->getUnitComboBox()->findData(displayUnit);
             if (index < 0) {
               // add extends modifier as additional display unit if compatible
@@ -1572,7 +1576,7 @@ void ElementParameters::fetchElementModifiers()
         pParameter->setValueWidget(modifier.getValue(), mpElement->isInheritedElement(), pParameter->getUnit());
         foreach (auto subModifier, modifier.getModifiers()) {
           if (subModifier.getName().compare(QStringLiteral("start")) == 0 || subModifier.getName().compare(QStringLiteral("fixed")) == 0) {
-            QString startOrFixed = subModifier.getValue();
+            QString startOrFixed = subModifier.getValueWithoutQuotes();
             if (!startOrFixed.isEmpty()) {
               if (!pParameter->isGroupBoxDefined()) {
                 pParameter->setGroupBox("Initialization");
@@ -1585,7 +1589,7 @@ void ElementParameters::fetchElementModifiers()
               }
             }
           } else if (subModifier.getName().compare(QStringLiteral("displayUnit")) == 0) {
-            QString displayUnit = subModifier.getValue();
+            QString displayUnit = subModifier.getValueWithoutQuotes();
             int index = pParameter->getUnitComboBox()->findData(displayUnit);
             if (index < 0) {
               // add modifier as additional display unit if compatible
@@ -1681,7 +1685,7 @@ void ElementParameters::fetchClassExtendsModifiers()
               pParameter->setValueWidget(subModifier.getValue(), false, pParameter->getUnit());
               foreach (auto subSubModifier, subModifier.getModifiers()) {
                 if (subSubModifier.getName().compare(QStringLiteral("start")) == 0 || subSubModifier.getName().compare(QStringLiteral("fixed")) == 0) {
-                  QString startOrFixed = subSubModifier.getValue();
+                  QString startOrFixed = subSubModifier.getValueWithoutQuotes();
                   if (!startOrFixed.isEmpty()) {
                     if (!pParameter->isGroupBoxDefined()) {
                       pParameter->setGroupBox("Initialization");
@@ -1694,7 +1698,7 @@ void ElementParameters::fetchClassExtendsModifiers()
                     }
                   }
                 } else if (subSubModifier.getName().compare(QStringLiteral("displayUnit")) == 0) {
-                  QString displayUnit = subSubModifier.getValue();
+                  QString displayUnit = subSubModifier.getValueWithoutQuotes();
                   int index = pParameter->getUnitComboBox()->findData(displayUnit);
                   if (index < 0) {
                     // add extends modifier as additional display unit if compatible
@@ -1711,7 +1715,7 @@ void ElementParameters::fetchClassExtendsModifiers()
                     pParameter->setDisplayUnit(displayUnit);
                   }
                 } else {
-                  pParameter->setValueWidget(modifier.getValue(), false, pParameter->getUnit());
+                  pParameter->setValueWidget(modifier.getValueWithoutQuotes(), false, pParameter->getUnit());
                 }
               }
             }
@@ -1991,6 +1995,23 @@ void ElementParameters::updateElementParameters()
     }
   }
   accept();
+}
+
+/*!
+ * \brief ElementParameters::reject
+ * Reimplementation of QDialog::reject()
+ */
+void ElementParameters::reject()
+{
+  if (MainWindow::instance()->isNewApi()) {
+    foreach (Parameter *pParameter, mParametersList) {
+      // reset any changed parameter binding
+      if (pParameter->isValueModified()) {
+        pParameter->getModelInstanceElement()->resetBinding();
+      }
+    }
+  }
+  QDialog::reject();
 }
 
 /*!
