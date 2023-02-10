@@ -5572,12 +5572,17 @@ end genSPCRSRows;
 template genSPColors(list<list<Integer>> colorList, String arrayName)
 "This template generates row of the CRS format"
 ::=
-  let colorArray = (colorList |> (indexes) hasindex index0 =>
-    let colorCol = ( indexes |> i_index =>
-    <<<%arrayName%>[<%i_index%>] = <%intAdd(index0,1)%>;>>
-    ;separator="\n")
-  '<%colorCol%>'
-  ;separator="\n")
+  let colorArray = (colorList |> (indices) hasindex index0 =>
+    let length = '<%listLength(indices)%>'
+    let index = '<%intAdd(index0,1)%>'
+    let ind_name = 'indices_<%index%>'
+  <<
+  /* color <%index%> with <%length%> columns */
+  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
+    '<%i_index%>' ;separator=", ")%>};
+  for(i=0; i<<%length%>; i++)
+    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
+  >>;separator="\n\n")
   <<
   <%colorArray%>
   >>
