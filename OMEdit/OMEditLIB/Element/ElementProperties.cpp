@@ -1874,8 +1874,6 @@ void ElementParameters::updateElementParameters()
     }
     // if valueChanged is true then put the change in the undo stack.
     if (valueChanged) {
-      // remove all the modifiers of a component.
-      pOMCProxy->removeComponentModifiers(className, mpElement->getName());
       // apply the new Component modifiers if any
       QMap<QString, QString>::iterator newElementModifier;
       for (newElementModifier = elementModifiersMap.begin(); newElementModifier != elementModifiersMap.end(); ++newElementModifier) {
