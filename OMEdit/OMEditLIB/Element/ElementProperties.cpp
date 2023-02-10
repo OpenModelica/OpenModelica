@@ -754,7 +754,14 @@ void Parameter::valueComboBoxChanged(int index)
   }
 
   try {
-    updateValueBinding(FlatModelica::Expression::parse(value));
+    switch (mValueType) {
+      case Parameter::Enumeration:
+        updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
+        break;
+      default:
+        updateValueBinding(FlatModelica::Expression::parse(value));
+        break;
+    }
   } catch (const std::exception &e) {
     qDebug() << "Failed to parse value: " << value;
     qDebug() << e.what();

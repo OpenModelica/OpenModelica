@@ -56,7 +56,7 @@ FlatModelica::Expression EllipseClosureAnnotation::toExp() const
 
 void EllipseClosureAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getClosureType(QString::fromStdString(exp.enumValue()));
   }
 }

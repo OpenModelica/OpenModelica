@@ -64,8 +64,8 @@ void ArrowAnnotation::fromExp(const FlatModelica::Expression &exp)
     auto &elems = exp.elements();
 
     if (elems.size() == 2) {
-      mValue.replace(0, elems[0].isInteger() ? StringHandler::getArrowType(QString::fromStdString(elems[0].enumValue())) : StringHandler::ArrowNone);
-      mValue.replace(1, elems[1].isInteger() ? StringHandler::getArrowType(QString::fromStdString(elems[1].enumValue())) : StringHandler::ArrowNone);
+      mValue.replace(0, elems[0].isEnum() ? StringHandler::getArrowType(QString::fromStdString(elems[0].enumValue())) : StringHandler::ArrowNone);
+      mValue.replace(1, elems[1].isEnum() ? StringHandler::getArrowType(QString::fromStdString(elems[1].enumValue())) : StringHandler::ArrowNone);
     }
   }
 }
