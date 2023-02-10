@@ -692,11 +692,6 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::getValue() const
-  {
-    return StringHandler::removeFirstLastQuotes(mValue);
-  }
-
   QString Modifier::getModifierValue(QStringList qualifiedModifierName)
   {
     if (qualifiedModifierName.isEmpty()) {
@@ -711,7 +706,7 @@ namespace ModelInstance
     foreach (auto subModifier, modifier.getModifiers()) {
       if (subModifier.getName().compare(modifierName) == 0) {
         if (qualifiedModifierName.isEmpty()) {
-          return StringHandler::removeFirstLastQuotes(subModifier.getValue());
+          return subModifier.getValueWithoutQuotes();
         } else {
           return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
         }
@@ -1038,7 +1033,7 @@ namespace ModelInstance
     QString value = "";
     foreach (auto pElement, mElements) {
       if (pElement->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-        value = pElement->getModifier().getValue();
+        value = pElement->getModifier().getValueWithoutQuotes();
         // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
         if (value.isEmpty() && pElement->getModel()) {
           value = pElement->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
@@ -1047,7 +1042,7 @@ namespace ModelInstance
         break;
       }
     }
-    return StringHandler::removeFirstLastQuotes(value);
+    return value;
   }
 
   QString Model::getParameterValueFromExtendsModifiers(const QString &parameter)
@@ -1343,6 +1338,7 @@ namespace ModelInstance
       if (valueObject.contains("value")) {
         try {
           mBinding.deserialize(valueObject.value("value"));
+          mBindingForReset = mBinding;
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
@@ -1350,6 +1346,7 @@ namespace ModelInstance
       } else if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
+          mBindingForReset = mBinding;
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("binding");
           qDebug() << e.what();
