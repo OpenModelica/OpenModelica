@@ -48,6 +48,8 @@
 #include <QTextStream>
 #include <QFile>
 
+#include <unordered_map>
+
 // TODO: Support is missing for the following shape types:
 //  - beam,
 //  - gearwheel.
@@ -109,6 +111,35 @@ public:
 
 public:
   std::string fileName;
+};
+
+template<typename T>
+struct std::hash<const osg::ref_ptr<T>> {
+  std::size_t operator()(const osg::ref_ptr<T>& ref) const {
+    return reinterpret_cast<std::uintptr_t>(ref.get());
+  }
+};
+
+class CADFile : public osg::Group
+{
+public:
+  CADFile(osg::Node* subgraph);
+  ~CADFile() = default;
+  void scaleVertices(osg::Geode& geode, bool scaling, float scaleX, float scaleY, float scaleZ);
+
+public:
+  std::unordered_map<const osg::ref_ptr<osg::Geometry>, osg::ref_ptr<osg::Vec3Array>> unscaledGeometryVertices;
+};
+
+class CADVisitor : public osg::NodeVisitor
+{
+public:
+  CADVisitor(CADFile* cadFile);
+  ~CADVisitor() {cadFile.release();}
+  void apply(osg::Geode& geode) override;
+
+private:
+  osg::ref_ptr<CADFile> cadFile;
 };
 
 #endif //end EXTRASHAPES_H
