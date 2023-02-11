@@ -87,9 +87,9 @@ class DXF3dFace
 public:
   DXF3dFace();
   ~DXF3dFace();
-  QString fill3dFace(QTextStream* stream);
   void dumpDXF3DFace();
-  osg::Vec3f calcNormals();
+  QString fill3dFace(QTextStream* stream);
+  osg::Vec3f calcNormal();
 
 public:
   osg::Vec3 vec1;
@@ -103,16 +103,12 @@ public:
 
 class DXFile : public osg::Geometry
 {
- public:
-    /*-----------------------------------------
-     * CONSTRUCTORS
-     *---------------------------------------*/
-   DXFile(std::string filename);
-     ~DXFile() = default;
-
-  //members
 public:
-    std::string fileName;
+  DXFile(std::string filename);
+  ~DXFile() = default;
+
+public:
+  std::string fileName;
 };
 
 #endif //end EXTRASHAPES_H

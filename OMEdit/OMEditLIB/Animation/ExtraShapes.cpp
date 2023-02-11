@@ -37,6 +37,10 @@
 #endif
 #include <cmath>
 
+#include <osg/LightModel>
+#include <osg/StateAttribute>
+#include <osg/StateSet>
+
 #include "ExtraShapes.h"
 #include <iostream>
 
@@ -441,7 +445,7 @@ Spring::Spring(float r, float rWire, float nWindings, float l) :
 
 /*!
  * \brief getAutoCADRGB
- * get rgb color values for AutoCAD colorcoding accoridng to: http://sub-atomic.com/~moses/acadcolors.html
+ * get rgb color values for AutoCAD color coding according to: http://sub-atomic.com/~moses/acadcolors.html
  * \param int colorCode
  */
 osg::Vec4f getAutoCADRGB(int colorCode)
@@ -713,9 +717,9 @@ osg::Vec4f getAutoCADRGB(int colorCode)
 DXF3dFace::DXF3dFace()
   :
   vec1(),
-    vec2(),
-    vec3(),
-    vec4(),
+  vec2(),
+  vec3(),
+  vec4(),
   layer(""),
   colorCode(0),
   color()
@@ -731,21 +735,20 @@ DXF3dFace::~DXF3dFace()
 
 /*!
  * \brief DXF3dFace::dumpDXF3DFace
- * dumps information aboput 3d face on stdout
+ * dumps information about 3d face on stdout
  */
 void DXF3dFace::dumpDXF3DFace()
 {
-  std::cout << "3-DFACE (" << vec1[0] <<", " << vec1[1]<<", "<< vec1[2]<<")"
-                   <<"(" << vec2[0] <<", " << vec2[1]<<", "<< vec2[2]<<")"
-                   << "("<< vec3[0] << ", "<< vec3[1]<<", "<< vec3[2] << ")"
-                   <<"(" << vec4[0] << ", "<< vec4[1]<<", "<< vec4[2]<< ")" <<std::endl;
+  std::cout << "3D-FACE (" << vec1[0] << ", " << vec1[1] << ", " << vec1[2] << ")"
+                    << "(" << vec2[0] << ", " << vec2[1] << ", " << vec2[2] << ")"
+                    << "(" << vec3[0] << ", " << vec3[1] << ", " << vec3[2] << ")"
+                    << "(" << vec4[0] << ", " << vec4[1] << ", " << vec4[2] << ")" << std::endl;
 
 }
 
-
 /*!
  * \brief DXF3dFace::fill3dFace
- * fills a 3d face object with information from the textstream
+ * fills a 3d face object with information from the text stream
  * \param QTextStream* stream
  */
 QString DXF3dFace::fill3dFace(QTextStream* stream)
@@ -834,14 +837,14 @@ QString DXF3dFace::fill3dFace(QTextStream* stream)
 }
 
 /*!
- * \brief DXF3dFace::calcNormals
+ * \brief DXF3dFace::calcNormal
  * calculates normal vector for the facet
  */
-osg::Vec3f DXF3dFace::calcNormals()
+osg::Vec3f DXF3dFace::calcNormal()
 {
-  osg::Vec3f v1 = osg::Vec3f(vec1[0]- vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]);
+  osg::Vec3f v1 = osg::Vec3f(vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]);
   osg::Vec3f v2 = osg::Vec3f(vec1[0] - vec3[0], vec1[1] - vec3[1], vec1[2] - vec3[2]);
-  osg::Vec3f normal =  normalize(cross(normalize(v1), normalize(v2)));
+  osg::Vec3f normal = normalize(cross(normalize(v1), normalize(v2)));
   return normal;
 }
 
@@ -866,8 +869,8 @@ DXFile::DXFile(std::string filename)
 
     // prepare drawing objects
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array(num3dFaces * 4);
-    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array(num3dFaces * 4);
-    osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array(num3dFaces * 4);
+    osg::ref_ptr<osg::Vec3Array> normals  = new osg::Vec3Array(num3dFaces * 4);
+    osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array(num3dFaces * 4);
 
     // fill face objects
     DXF3dFace* faces = new DXF3dFace[num3dFaces];
@@ -889,23 +892,24 @@ DXFile::DXFile(std::string filename)
       }
       else if (!line.compare("3DFACE")) {
         //std::cout << "fill face entity" << std::endl;
+        line = faces[faceIdx].fill3dFace(in);
+        const osg::Vec3f normal = faces[faceIdx].calcNormal();
 
         //add vertices
-        line = faces[faceIdx].fill3dFace(in);
-        (*vertices)[(faceIdx*4) + 0] = faces[faceIdx].vec1;
+        (*vertices)[(faceIdx * 4) + 0] = faces[faceIdx].vec1;
         (*vertices)[(faceIdx * 4) + 1] = faces[faceIdx].vec2;
         (*vertices)[(faceIdx * 4) + 2] = faces[faceIdx].vec3;
         (*vertices)[(faceIdx * 4) + 3] = faces[faceIdx].vec4;
+        //add normals
+        (*normals)[(faceIdx * 4) + 0] = normal;
+        (*normals)[(faceIdx * 4) + 1] = normal;
+        (*normals)[(faceIdx * 4) + 2] = normal;
+        (*normals)[(faceIdx * 4) + 3] = normal;
         //add colors
         (*colors)[(faceIdx * 4) + 0] = faces[faceIdx].color;
         (*colors)[(faceIdx * 4) + 1] = faces[faceIdx].color;
         (*colors)[(faceIdx * 4) + 2] = faces[faceIdx].color;
         (*colors)[(faceIdx * 4) + 3] = faces[faceIdx].color;
-        //add normals
-        (*normals)[(faceIdx * 4) + 0] = faces[faceIdx].calcNormals();
-        (*normals)[(faceIdx * 4) + 1] = faces[faceIdx].calcNormals();
-        (*normals)[(faceIdx * 4) + 2] = faces[faceIdx].calcNormals();
-        (*normals)[(faceIdx * 4) + 3] = faces[faceIdx].calcNormals();
 
         faceIdx = faceIdx + 1;
       }
@@ -935,8 +939,7 @@ DXFile::DXFile(std::string filename)
         (*facette)[2] = (i * 4) + 2;
         this->addPrimitiveSet(facette);
       }
-      else
-      {
+      else {
         //std::cout << "its a quad" << std::endl;
         osg::ref_ptr<osg::DrawElementsUInt> facette = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 4);
         (*facette)[0] = (i * 4) + 0;
@@ -952,6 +955,11 @@ DXFile::DXFile(std::string filename)
     //add colors
     this->setColorArray(colors);
     this->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+
+    //MSL assumes 3dfaces are two-sided
+    const osg::ref_ptr<osg::StateSet> ss = this->getOrCreateStateSet();
+    const osg::ref_ptr<osg::LightModel> lightModel = new osg::LightModel();
+    lightModel->setTwoSided(true);
+    ss->setAttributeAndModes(lightModel.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED);
   }
 }
-
