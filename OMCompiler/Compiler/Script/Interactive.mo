@@ -9546,7 +9546,8 @@ protected function deleteEquationInEqlist
 algorithm
   outAbsynEquationItemLst := match (inAbsynEquationItemLst1,inComponentRef2,inComponentRef3)
     local
-      list<Absyn.EquationItem> res,xs;
+      list<Absyn.EquationItem> res,xs,loopRes,forEqList;
+      Absyn.ForIterators forIterator;
       Absyn.ComponentRef cn1,cn2,c1,c2;
       Absyn.EquationItem x;
 
@@ -9556,6 +9557,16 @@ algorithm
         AbsynUtil.crefEqual(c1,cn1) and AbsynUtil.crefEqual(c2,cn2)
       then
         deleteEquationInEqlist(xs, c1, c2);
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR(forEquations = forEqList, iterators = forIterator)) :: xs),c1,c2)
+      equation
+        res = deleteEquationInEqlist(xs, c1, c2);
+        loopRes = deleteEquationInEqlist(forEqList, c1, c2);
+
+        if listLength(loopRes) > 0 then
+          loopRes = { Absyn.EQUATIONITEM(Absyn.EQ_FOR(forIterator, loopRes), NONE(), AbsynUtil.dummyInfo) };
+        end if;
+      then
+        listAppend(loopRes, res);
     case ((x :: xs),c1,c2)
       equation
         res = deleteEquationInEqlist(xs, c1, c2);
