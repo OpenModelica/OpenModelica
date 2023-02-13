@@ -63,7 +63,7 @@ simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAG"); getEr
 //                f^1 = 147.4130591026
 //                f^2 = -500000001.0000000000
 //
-//    Function values of non-linear equations n(w0) .... 1
+//    Function values of non-linear equations n(w0) ....
 //
 //                n^1 = f^1 = 147.4130591026
 //                n^2 = f^2 = -500000001.0000000000
