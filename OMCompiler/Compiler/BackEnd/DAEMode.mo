@@ -120,6 +120,10 @@ algorithm
       BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
     end if;
 
+    if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
+      dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
+    end if;
+
     if Flags.isSet(Flags.BLT_DUMP) then
       BackendDump.bltdump("bltdump", dae);
     end if;
