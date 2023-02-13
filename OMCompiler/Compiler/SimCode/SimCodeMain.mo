@@ -739,7 +739,7 @@ algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
-      String str, newdir, newpath, resourcesDir, dirname;
+      String str, newpath, resourcesDir, bname;
       String fmutmp;
       String guid;
       Boolean b;
@@ -764,21 +764,15 @@ algorithm
         Util.createDirectoryTree(fmutmp + "/resources/");
         resourcesDir := fmutmp + "/resources/";
         for path in simCode.modelInfo.resourcePaths loop
-          dirname := System.dirname(path);
-          // on windows, remove ":" from the path!
-          if Autoconf.os == "Windows_NT" then
-            dirname := System.stringReplace(dirname, ":", "");
-          end if;
-          newdir := resourcesDir + dirname;
-          newpath := resourcesDir + path;
+          bname := System.basename(path);
+          newpath := resourcesDir + bname;
           if System.regularFileExists(newpath) or System.directoryExists(newpath) then
             /* Already copied. Maybe one resource loaded a library and this one only a file in the directory */
             continue;
           end if;
-          Util.createDirectoryTree(newdir);
           // copy the file or directory
-          if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"") then
-            Error.addInternalError("Failed to copy path " + path + " to " + fmutmp + "/resources/" + dirname, sourceInfo());
+          if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newpath + "\"") then
+            Error.addInternalError("Failed to copy path " + path + " to " + fmutmp + "/resources/" + bname, sourceInfo());
           end if;
         end for;
 
