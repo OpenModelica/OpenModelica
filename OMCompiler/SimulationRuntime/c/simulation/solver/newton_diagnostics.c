@@ -1188,14 +1188,14 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    printf("\n");
 
    // Prints function values "f", i.e. residuals as function of x0
-   printf("\n   Function values of all equations f(x0) .... \n");
+   printf("\n   Function values of all equations f(x0) ....\n");
    for( i = 0; i < m; i++)
       if (fabs(f[i]) > 1.e-9)
       printf("\n               f^%d = %14.10f", i+1, f[i]);
    printf("\n");
 
    // Prints vector n
-   printf("\n   Function values of non-linear equations n(w0) .... %d\n");
+   printf("\n   Function values of non-linear equations n(w0) ....\n");
    for( i = 0; i < p; ++i)
       printf("\n               n^%d = f^%d = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
    printf("\n");
