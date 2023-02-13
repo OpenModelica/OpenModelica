@@ -1,120 +1,144 @@
-# Compiling OMC using OMDev package
+# Windows Instructions
 
-- Checkout the OMDev package
-  - Install git for windows https://git-scm.com/downloads
-  - make sure we git clone with the correct line endings, run in a terminal:
+## Table of content
+
+- [1 OMDev Package](#1-omdev-package)
+  - [1.1 General Notes](#11-general-notes)
+  - [1.2 Install OMDev](#12-install-omdev)
+  - [1.3 Install Additional Programs](#13-install-additional-programs)
+  - [1.4 Environment Variables](#14-environment-variables)
+- [2 Compile OpenModelica](#2-compile-openmodelica)
+  - [2.1 MSYS and CMake](#21-msys-and-cmake)
+  - [2.2 MSYS and Make](#22-msys-and-make)
+- [3 Testsuite](#3-testsuite)
+- [4 Troubleshooting](#4-troubleshooting)
+
+# 1 OMDev Package
+
+We use Linux tools to compile OpenModelica on Windows. For that you'll need to install the
+OMDev package contains all prerequisites to compile OMC on Windows using
+msys2, mingw32 and mingw64.
+
+## 1.1 General Notes
+
+  - Install Git for Windows https://git-scm.com/downloads
+  - Make sure you git clone with the correct line endings, run in a (Git Bash) terminal:
     ```bash
       git config --global core.eol lf
       git config --global core.autocrlf input
     ```
-  - get OMDev from git
-     ```bash
-    git clone https://openmodelica.org/git/OMDev.git
-     ```
-  - this package contains all prerequisites to compile OMC on Windows using msys2+mingw32+mingw64
-  - if you get issues with OpenModelica compilation maybe you should update OMDev (git pull)
-  - please make sure you have OMDEV environment variable defined and that you have restarted or logout/login to make it available
-- Make sure you place the OMDev package into `C:\OMDev\`
-  - Follow the instructions in the `C:\OMDev\INSTALL.txt` file
-- Install Java SE Development Kit (for javac)
-- Install svn tools for windows in TortoiseSVN (needed to checkout some of the Modelica libraries)
-  - do not install git using pacman in msys, it does not work correctly!
-- get OpenModelica from git
-  - do not create an OpenModelica directory in which you clone OpenModelica repository, it will be created when you clone it
-  - start `$OMDEV\tools\msys\mingw64.exe` or `$OMDEV\tools\msys\mingw32.exe` and type:
+
+  - Do not install git using pacman in msys, it does not work correctly!
+
+## 1.2 Install OMDev
+
+  - Clone OMDev into a directory without any spaces in the path. We recommend to use
+    `C:\OMDev\`.
+
+    Run the following in a Git Bash:
     ```bash
-    # change the directory to where you want the OpenModelica repository on your hard drive
-    cd /path/to/where/you/want/to/clone/the/repository
-    # export the path to your tools: git, svn, java/javac
-    # note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
-    export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
-    # git clone OpenModelica recursively using the installed git for windows
-    git clone https://github.com/OpenModelica/OpenModelica.git --recursive
+      cd /c/
+      git clone https://openmodelica.org/git/OMDev.git
     ```
-  - you should have an OpenModelica directory you got from OpenModelica GIT repository https://github.com/OpenModelica/OpenModelica
-  - you can also follow the instructions at the bottom of the page on how to get OpenModelica sources
-- You could use msys2+mingw32 or msys2+mingw64 or Eclipse to build OMC. Follow the instructions in **Compiling OMC using MSYS** or **Compiling OMC using Eclipse**.
 
-## Compiling OMC using MSYS
+  - Define a Windows environment variable `OMDEV` pointing to the OMDev directory.
+    Restart or logiut/login to make it available.
 
-- To compile 32bit OMC start `$OMDEV\tools\msys\mingw32.exe`
-- To compile 64bit OMC start `$OMDEV\tools\msys\mingw64.exe`
+  - Follow the instructions in the `C:\OMDev\INSTALL.txt` file.
 
-After starting the terminal type:
+If you encounter issues with OpenModelica compilation try updating OMDev (git pull).
+
+## 1.3 Install Additional Programs
+
+Install the following programms and add them to your MSYS `PATH`
+
+  - Git (should alread be installed)
+  - Java SE Development Kit (for javac)
+  - TortoiseSVN, SVN tool for Windows
+
+## 1.4 Environment Variables
+
+Start `$OMDEV\tools\msys\mingw64.exe` or `$OMDEV\tools\msys\mingw32.exe` and run:
+
 ```bash
-cd /path/to/OpenModelica
-
 # export the path to your tools: git, svn, java/javac
 # note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
 export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
-# export these environment variables
 export OPENMODELICAHOME="c:\\path\\to\\OpenModelica\\build"
 export OPENMODELICALIBRARY="c:\\path\\to\\OpenModelica\\build\\lib\\omlibrary"
+```
+You can add this to your `.bashrc` file
+(usually in `C:\OMDev\tools\msys\home\<USERNAME>\.bashrc`), to always have them in your
+`PATH`.
 
-# build omc using 8 cores (-j8), if you have less cores use that number in -jN
-make -f Makefile.omdev.mingw -j8
+# 2 Compile OpenModelica
+
+You can use msys2+mingw32 or msys2+mingw64 with the Makefiles or CMake.
+It's also possible to build with Eclipse using the Makefiles.
+Follow the instructions in [MSYS and Make](#21-msys-and-make) or [Eclipse](#22-eclipse).
+
+## 2.1 MSYS and CMake
+
+Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell start a MSYS
+shell `$OMDEV\tools\msys\mingw64.exe` and run the following:
+
+```bash
+cd /path/to/OpenModelica
+cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles"
+cd build_cmake
+# Replace <Nr. of cores> with the number of your cores
+make -j<Nr. of cores> install -Oline
+```
+
+## 2.2 MSYS and Make
+
+Start MSYS terminal `$OMDEV\tools\msys\mingw64.exe` (64 bit) or
+`$OMDEV\tools\msys\mingw32.exe` (32 bit) and run:
+
+```bash
+cd /path/to/OpenModelica
+
+# build omc using number of cores, replace by your number of cores
+make -f Makefile.omdev.mingw -j<Nr. of cores>
 
 # to build the QT clients make sure you ran \path\to\OMDEV\SETUP_OMDEV_Qt5.bat first
 
 # if you want to build only omedit then run:
-make -f Makefile.omdev.mingw -j8 omedit
+make -f Makefile.omdev.mingw -j<Nr. of cores> omedit
 
 # if you want to build all qtclients run
-make -f Makefile.omdev.mingw -j8 qtclients
+make -f Makefile.omdev.mingw -j<Nr. of cores> qtclients
 ```
 
+# 3 Testsuite
 
-## Compiling OMC using Eclipse
+Many of the tests inside the testsuite are OS dependent and will only work on a Linux OS.
+Nonetheless you can run the testsuite, but a lot of failing tests should be expected.
 
-- Inside the OpenModelica directory you will find a `.project-sample` file
-  which you should rename to `.project` and do whatever modifications
-  you need on it to reflect your paths. Windows doesn't let you create files
-  that start with dot (.) so you do like this,
-  - Start->Run->cmd.exe
-  - $ cd \path\to\OpenModelica
-  - $ ren ".project-sample" ".project"
-- rename the file `OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch-sample` or `OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch-sample`
-  to `OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch` or `OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch` and do whatever modifications are needed on it to reflect your paths.
-- Installing Modelica Development Tooling (MDT) and setting your Eclipse workspace
-  Start Eclipse and follow instructions from https://trac.openmodelica.org/documents/MDT/install/InstallingMDT.pdf
-  to install MDT. Eclipse will restart at the end. Start Eclipse, change workspace to your installation:
-  - note here that your workspace must point one directory up the OpenModelica GIT directory (for me named OpenModelica).
-  - Example: if you cloned OpenModelica in a directory like this `c:\some_paths\dev\OpenModelica` then your workspace must point to `c:\some_paths\dev\`
-- Setting your project.
-    - File -> New -> (Modelica Project) or File -> New -> Project -> Modelica -> Modelica Project
-    - Type the name of your OpenModelica directory installation. For me **OpenModelica**
-    - Say Finish.
-- Editing the OMDev-MINGW-OpenModelicaBuilder
-    - Project->Project Properties->Builders->OMDev-MINGW-OpenModelicaBuilder->Edit
-    - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to your directory name
-    - make sure that in the builder environment you have the PATH set to git, svn and java/javac
-- Running the OMDev-MINGW-OpenModelica builder:
-    - To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B or right-click project and say rebuild.
-    - Then the OMDev-MINGW-OpenModelicaBuilder will start and compile an OpenModelica/build/omc.exe.
-    - If the builder refuse to start, please check the **NOTES** below.
+The Testsuite is only supported if you build using Makefiles. For CMake check
+[README.cmake.md](../README.cmake.md).
 
-## Troubleshooting Eclipse/OMDev builder
+Start your MSYS shell from OMDev and run:
 
-If something does not work in Eclipse, please check:
+```bash
+make -f Makefile.omdev.mingw omc testsuite-depends -j<Nr. of cores>
+cd testsuite/partests
+./runtests.pl
+```
 
-1. Is the Modelica perspective chosen in eclipse? Set it up in the right top corner.
-2. Is OMDev installed into c:\OMDev?
-   - Be sure in C:\OMDev you have directories **tools**, **bin**, **include** and not another OMDev directory.
-   - Set a OMDEV variable to point to it. Right Click on My Computer->Properties->Advanced Tab->Environment Variables. Add variable OMDEV and set the text to C:\OMDev
-   - Close and restart Eclipse to pick up the OMDEV variable.
-4. Right click on the OpenModelica project in Eclipse and say Refresh
-5. Right click on the OpenModelica project in Eclipse and say Properties
-   - Go to Builders and see if you have the builder `OMDev-MINGW-OpenModelicaBuilder32bit` or `OMDev-MINGW-OpenModelicaBuilder64bit` available.
-6. Right click on the OpenModelica project and say **Rebuild**.
-7. Make sure OMDEV environment variable is defined (and you have restarted or logout/login from Windows to make it available)
+# 4 Troubleshooting
 
-If these do not work, look into your OpenModelica/.project
-to see if you have any reference to: `OMDev-MINGW-OpenModelicaBuilder32bit` or `OMDev-MINGW-OpenModelicaBuilder64bit` there. If you don't, then:
-- close Eclipse
-- copy your .project-sample to .project again from DOS:
-  - Start->Run->cmd
-  - $ cd \path\to\OpenModelica
-  - $ ren ".project-sample" ".project"
-- open Eclipse and do step 3-5 above.
+If something does not work check the following:
+
+1. Is OMDev installed into `C:\OMDev`?
+   - Be sure you have directories `tools`, `bin` and `include` in `C:\OMDev`.
+   - Is environment variable `OMDEV` defined and pointing to it?
+     Right Click on My Computer->Properties->Advanced Tab->Environment Variables.
+     Add variable `OMDEV` and set the text to `C:\OMDev`.
+     Restarted or logout/login from Windows to make it available.
 
 For problems with OMDev package, contact Adrian Pop, adrian.pop@liu.se
+
+--------------
+
+Last updated 2023-02-13.
