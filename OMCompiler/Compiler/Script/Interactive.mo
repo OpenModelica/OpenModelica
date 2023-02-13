@@ -5620,6 +5620,13 @@ algorithm
               end if;
             then
               ();
+
+          case Absyn.REDECLARATION()
+            algorithm
+              rest_submods := List.append_reverse(inNewMod.elementArgLst, rest_submods);
+            then
+              ();
+
           else ();
         end match;
 
