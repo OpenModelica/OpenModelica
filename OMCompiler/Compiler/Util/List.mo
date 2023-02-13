@@ -728,6 +728,21 @@ algorithm
  element := listGet(inList, index);
 end getIndexFirst;
 
+public function getAtIndexLst<T>
+  "zero based"
+  input list<T> lst;
+  input list<Integer> positions;
+  input Boolean zeroBased = false;
+  output list<T> olst = {};
+protected
+  array<T> arr = listArray(lst);
+  Integer shift = if zeroBased then 1 else 0;
+algorithm
+  for pos in listReverse(positions) loop
+    olst := arr[pos+shift] :: olst;
+  end for;
+end getAtIndexLst;
+
 public function firstN<T>
   "Returns the first N elements of a list, or fails if there are not enough
    elements in the list."

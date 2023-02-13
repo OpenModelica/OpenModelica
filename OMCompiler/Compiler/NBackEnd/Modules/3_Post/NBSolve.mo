@@ -465,7 +465,7 @@ public
         scalarized      = false
       );
       (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-      derivative := SimplifyExp.simplify(derivative);
+      derivative := SimplifyExp.simplify(derivative, true);
 
       if Expression.isZero(derivative) then
         invertRelation := false;

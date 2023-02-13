@@ -57,11 +57,11 @@ void ModelInstanceTest::initTestCase()
 
 void ModelInstanceTest::classAnnotations()
 {
-  if (mpModelInstance->getIconAnnotation()->getGraphics().isEmpty()) {
+  if (mpModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class icon annotation.");
   }
 
-  if (mpModelInstance->getDiagramAnnotation()->getGraphics().isEmpty()) {
+  if (mpModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class diagram annotation.");
   }
 }
@@ -89,8 +89,11 @@ void ModelInstanceTest::classExtends()
 
 void ModelInstanceTest::cleanupTestCase()
 {
+  qDebug() << "cleanupTestCase 1";
   if (mpModelInstance) {
     delete mpModelInstance;
   }
+  qDebug() << "cleanupTestCase 2";
   MainWindow::instance()->close();
+  qDebug() << "cleanupTestCase 3";
 }

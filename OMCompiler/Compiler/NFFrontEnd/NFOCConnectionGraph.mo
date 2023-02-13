@@ -1119,29 +1119,33 @@ algorithm
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
               case _ guard Expression.isEmptyArray(listHead(call.arguments))
                 equation
-                 if Flags.isSet(Flags.CGRAPH) then
+                  if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
-                 end if;
-               then Expression.BOOLEAN(false);
+                  end if;
+                then
+                  Expression.BOOLEAN(false);
+
               // normal call
               case {Expression.CREF(cref = cref)}
                 algorithm
                   // find partner in branches
                   branches := getBranches(graph);
+                  cref := ComponentRef.stripIteratorSubscripts(cref);
+
                   try
-                   cref1 := getEdge(cref,branches);
-                   // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                   //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                   if Flags.isSet(Flags.CGRAPH) then
-                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                       ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                   end if;
-                   result := getRooted(cref,cref1,rooted);
-                   //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
-                   //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
-                   if Flags.isSet(Flags.CGRAPH) then
-                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
-                   end if;
+                    cref1 := getEdge(cref,branches);
+                    // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+                    //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+                    if Flags.isSet(Flags.CGRAPH) then
+                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+                        ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+                    end if;
+                    result := getRooted(cref,cref1,rooted);
+                    //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
+                    //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
+                    if Flags.isSet(Flags.CGRAPH) then
+                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
+                    end if;
                   else // add an error message:
                     str := ComponentRef.toString(cref);
                     Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
@@ -1159,15 +1163,18 @@ algorithm
             res := match call.arguments
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
               case _ guard Expression.isEmptyArray(listHead(call.arguments))
-                equation
+                algorithm
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
                   end if;
-                then Expression.BOOLEAN(false);
+                then
+                  Expression.BOOLEAN(false);
+
               // normal call
               case {Expression.CREF(cref = cref)}
-                equation
-                  result = List.isMemberOnTrue(cref, roots, ComponentRef.isEqual);
+                algorithm
+                  cref := ComponentRef.stripIteratorSubscripts(cref);
+                  result := List.isMemberOnTrue(cref, roots, ComponentRef.isEqual);
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
                   end if;
@@ -1228,9 +1235,7 @@ algorithm
       then
         intLt(i1,i2);
     // in fail case return true
-    else
-      then
-        true;
+    else true;
   end matchcontinue;
 end getRooted;
 
@@ -1239,42 +1244,23 @@ protected function getEdge
   input ComponentRef cr;
   input Edges edges;
   output ComponentRef ocr;
+protected
+  ComponentRef cref1, cref2;
 algorithm
-  ocr := matchcontinue(cr,edges)
-    local
-      Edges rest;
-      ComponentRef cref1,cref2;
-    case(_,(cref1,cref2)::_)
-      equation
-        cref1 = getEdge1(cr,cref1,cref2);
-      then
-        cref1;
-    case(_,_::rest)
-      then
-        getEdge(cr,rest);
-  end matchcontinue;
-end getEdge;
+  for edge in edges loop
+    (cref1, cref2) := edge;
 
-protected function getEdge1
-"return the Edge partner of a edge, fails if not found"
-  input ComponentRef cr;
-  input ComponentRef cref1;
-  input ComponentRef cref2;
-  output ComponentRef ocr;
-algorithm
-  ocr := matchcontinue(cr,cref1,cref2)
-    case(_,_,_)
-      equation
-        true = ComponentRef.isEqual(cr,cref1);
-      then
-        cref2;
-    else
-      equation
-        true = ComponentRef.isEqual(cr,cref2);
-      then
-        cref1;
-  end matchcontinue;
-end getEdge1;
+    if ComponentRef.isEqual(cr, cref1) then
+      ocr := cref2;
+      return;
+    elseif ComponentRef.isEqual(cr, cref2) then
+      ocr := cref1;
+      return;
+    end if;
+  end for;
+
+  fail();
+end getEdge;
 
 protected function printConnectionStr
 "prints the connection str"

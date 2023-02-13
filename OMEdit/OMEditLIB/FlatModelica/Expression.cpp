@@ -487,6 +487,7 @@ namespace FlatModelica
       virtual bool isString()     const { return false; }
       virtual bool isArray()      const { return false; }
       virtual bool isCall()       const { return false; }
+      virtual bool isEnum()       const { return false; }
       virtual bool isLiteral() const = 0;
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
@@ -597,9 +598,10 @@ namespace FlatModelica
     std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Enum>(*this); }
     Expression eval(const Expression::VariableEvaluator &var_eval) const override;
 
-    bool isInteger() const override { return true; }
+    bool isEnum() const override { return true; }
     bool isLiteral() const override { return true; }
     const std::string& value() const { return _name; }
+    int index() const { return _index; }
     void print(std::ostream &os) const override;
     QJsonValue serialize() const override;
 
@@ -1797,6 +1799,7 @@ namespace FlatModelica
 
   Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval) const
   {
+    Q_UNUSED(var_eval);
     return Expression(std::make_unique<IteratorCall>(*this));
   }
 
@@ -2271,6 +2274,16 @@ namespace FlatModelica
   }
 
   /*!
+   * \brief Expression::isEnum
+   * Checks if the Expression is a Enum.
+   * \return true if the Expression is a Enum, otherwise false.
+   */
+  bool Expression::isEnum() const
+  {
+    return _value && _value->isEnum();
+  }
+
+  /*!
    * \brief Expression::isNumber
    * Checks if the Expression is an Integer or Real.
    * \return true if the Expression is a number, otherwise false.
@@ -2457,6 +2470,17 @@ namespace FlatModelica
   std::string Expression::enumValue() const
   {
     return dynamic_cast<const Enum&>(*_value).value();
+  }
+
+  /*!
+   * \brief Expression::enumIndex
+   * Returns the index of the Expression if it's an Enum, or throws an
+   * error if the Expression is not an Enum.
+   * \return
+   */
+  int Expression::enumIndex() const
+  {
+    return dynamic_cast<const Enum&>(*_value).index();
   }
 
   /*!
@@ -2817,10 +2841,14 @@ namespace FlatModelica
       return e1.boolValue() == e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() == e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() == e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() == e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() == e2.realValue();
+    } else {
+      return false;
     }
   }
 
@@ -2836,10 +2864,14 @@ namespace FlatModelica
       return e1.boolValue() != e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() != e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() != e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() != e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() != e2.realValue();
+    } else {
+      return false;
     }
   }
 
@@ -2855,10 +2887,14 @@ namespace FlatModelica
       return e1.boolValue() < e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() < e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() < e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() < e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() < e2.realValue();
+    } else {
+      return false;
     }
   }
 
@@ -2874,10 +2910,14 @@ namespace FlatModelica
       return e1.boolValue() <= e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() <= e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() <= e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() <= e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() <= e2.realValue();
+    } else {
+      return false;
     }
   }
 
@@ -2893,10 +2933,14 @@ namespace FlatModelica
       return e1.boolValue() > e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() > e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() > e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() > e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() > e2.realValue();
+    } else {
+      return false;
     }
   }
 
@@ -2912,10 +2956,14 @@ namespace FlatModelica
       return e1.boolValue() >= e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
       return e1.stringValue() >= e2.stringValue();
+    } else if (e1.isEnum() && e2.isEnum()) {
+      return e1.enumIndex() >= e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() >= e2.intValue();
-    } else {
+    } else if (e1.isReal() && e2.isReal()) {
       return e1.realValue() >= e2.realValue();
+    } else {
+      return false;
     }
   }
 

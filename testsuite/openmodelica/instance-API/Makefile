@@ -6,12 +6,15 @@ GetModelInstanceAnnotation2.mos \
 GetModelInstanceAnnotation3.mos \
 GetModelInstanceAnnotation4.mos \
 GetModelInstanceAnnotation5.mos \
+GetModelInstanceAnnotation6.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
+GetModelInstanceBinding1.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \
 GetModelInstanceConditional1.mos \
+GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
@@ -22,8 +25,11 @@ GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
+GetModelInstanceExtends3.mos \
 GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
+GetModelInstanceIcon3.mos \
+GetModelInstanceIcon4.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \

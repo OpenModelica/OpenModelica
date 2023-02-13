@@ -3714,7 +3714,7 @@ algorithm
           index := 1;
 
           for sub in subs loop
-            if Subscript.isIterator(sub, iterator) then
+            if Subscript.equalsIterator(sub, iterator) then
               crefs := (cref, index) :: crefs;
             end if;
 

@@ -739,58 +739,60 @@ protected
         EquationAttributes attr;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty))
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          //ToDo! How to get Record size and replace NONE()?
+        guard(Type.isArray(ty)) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
       // sometimes regular equalities are array equations aswell. Need to update frontend?
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty))
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          //ToDo! How to get Record size and replace NONE()?
+        guard(Type.isArray(ty)) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
-                                          else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
+                                        else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
 
-      case FEquation.FOR(range = SOME(range))
-        algorithm
-        // Treat each body equation individually because they can have different equation attributes
-        // E.g.: DISCRETE, EvalStages
+      case FEquation.FOR(range = SOME(range)) algorithm
+        if Expression.rangeSize(range) > 0 then
+          // Treat each body equation individually because they can have different equation attributes
+          // E.g.: DISCRETE, EvalStages
 
-        iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
-        for eq in frontend_equation.body loop
-          new_body := listAppend(lowerEquation(eq, init), new_body);
-        end for;
-        for body_elem_ptr in new_body loop
-          body_elem := Pointer.access(body_elem_ptr);
-          body_elem := BEquation.FOR_EQUATION(
-            ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
-            iter    = Iterator.SINGLE(iterator, range),
-            body    = {body_elem},
-            source  = frontend_equation.source,
-            attr    = Equation.getAttributes(body_elem)
-          );
+          iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+          for eq in frontend_equation.body loop
+            new_body := listAppend(lowerEquation(eq, init), new_body);
+          end for;
+          for body_elem_ptr in new_body loop
+            body_elem := Pointer.access(body_elem_ptr);
+            body_elem := BEquation.FOR_EQUATION(
+              ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+              iter    = Iterator.SINGLE(iterator, range),
+              body    = {body_elem},
+              source  = frontend_equation.source,
+              attr    = Equation.getAttributes(body_elem)
+            );
 
-          // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
-          Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
-          result := body_elem_ptr :: result;
-        end for;
+            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
+            Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
+            result := body_elem_ptr :: result;
+          end for;
+        else
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
+          end if;
+        end if;
       then result;
 
       // if equation
       case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
-      case FEquation.WHEN()   then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
-      case FEquation.ASSERT() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
+      case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
+      case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -923,17 +925,17 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    // ToDo! inherit findEvents or implement own routine to be applied after lowering
     input FEquation frontend_equation;
     input Boolean init;
-    output Equation backend_equation;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equation := match frontend_equation
+    backend_equations := match frontend_equation
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
+        list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
@@ -941,13 +943,14 @@ protected
           // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
-      then BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(whenEqBody), whenEqBody, source, attr);
+          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
           attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
@@ -1077,8 +1080,7 @@ protected
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
-    // ToDo! get array sizes instead of only list length
-    size := listLength(alg.outputs);
+    size := sum(ComponentRef.size(out) for out in alg.outputs);
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
