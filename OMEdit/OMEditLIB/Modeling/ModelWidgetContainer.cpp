@@ -956,7 +956,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           ModelInstance::Element *pElement = new ModelInstance::Element(pModelInstance);
           pElement->setName(name);
           pElement->setType(pLibraryTreeItem->getNameStructure());
-          pElement->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(pLibraryTreeItem->getNameStructure(), true)));
+          pElement->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(pLibraryTreeItem->getNameStructure())));
           pModelInstance->addElement(pElement);
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
           addElementToView(pElement, false, true, true, position);
@@ -5802,7 +5802,7 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   // set the new ModelInstance
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true, icon));
+  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), false, icon));
   drawModel(modelInfo);
   // delete the old ModelInstance
   if (pOldModelInstance) {
