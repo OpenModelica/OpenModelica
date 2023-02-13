@@ -10,15 +10,15 @@ automatically generated from the documentation repository.
 
 ## OpenModelica environment
 
-The [OpenModelica Compiler](/OMCompiler/) is the core of the OpenModelica project.
-[OMEdit](/OMEdit/) is the graphical user interface on top of the compiler.
-[OMSimulator](/OMSimulator/) is a capable FMI and SSP-based Co-Simulation environment,
+The [OpenModelica Compiler](OMCompiler/) is the core of the OpenModelica project.
+[OMEdit](OMEdit/) is the graphical user interface on top of the compiler.
+[OMSimulator](OMSimulator/) is a capable FMI and SSP-based Co-Simulation environment,
 available as a standalone version or integrated in OMEdit.
 In addition there are interactive environments
-[OMNotebook](/OMNotebook/), [OMPlot](/OMPlot/) and [OMShell](/OMShell/)
+[OMNotebook](OMNotebook/), [OMPlot](OMPlot/) and [OMShell](OMShell/)
 interaction with the OMCompiler as well as various other tools:
-[OMOptim](/OMOptim/), [OMParser](/OMParser/), [OMSens](/OMSens/),
-[OMSense_Qt](/OMSens_Qt/).
+[OMOptim](OMOptim/), [OMParser](OMParser/), [OMSens](OMSens/),
+[OMSense_Qt](OMSens_Qt/).
 
 ## Working with the repository
 
@@ -66,7 +66,9 @@ cd OpenModelica
 git checkout v1.16.2
 git submodule update --force --init --recursive
 ```
+
 If you have issues building you can try to clean and reset the repository using:
+
 ```bash
 git clean -fdx
 git submodule foreach --recursive git clean -fdx
@@ -74,7 +76,9 @@ git reset --hard
 git submodule foreach --recursive git reset --hard
 git submodule update --init --recursive
 ```
+
 To check your working copy status and the hashes of the submodules, use:
+
 ```bash
 git status
 git submodule status --recursive
@@ -90,13 +94,13 @@ git submodule status --recursive
 
 ## Build OpenModelica
 
-* [Linux/WSL/OSX Instructions](/OMCompiler/README.Linux.md)
-* [Windows Instructions](/OMCompiler/README-OMDev-MINGW.md)
+* [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
+* [Windows Instructions](OMCompiler/README-OMDev-MINGW.md)
 
 ## How to run
 
 Here is a short example session.
-This example uses [OMShell-terminal](/OMShell), but OMShell, mos-scripts, or OMNotebook
+This example uses [OMShell-terminal](OMShell), but OMShell, mos-scripts, or OMNotebook
 work the same way.
 
 ```
@@ -162,13 +166,13 @@ end Modelica.Electrical.Analog.Basic.Resistor;
 
 The long-term development of OpenModelica is supported by a non-profit organization - the [Open Source Modelica Consortium (OSMC)](https://openmodelica.org/home/consortium/).
 
-See [CONTRIBUTING.md](/CONTRIBUTING.md) on how to contribute to the development.
+See [CONTRIBUTING.md](CONTRIBUTING.md) on how to contribute to the development.
 If you encounter any bugs, feel free to open a ticket about it.
 For general questions regarding OpenModelica there is a [discussions section](https://github.com/OpenModelica/OpenModelica/discussions) available.
 
 ## License
 
-See [OSMC-License.txt](/OSMC-License.txt).
+See [OSMC-License.txt](OSMC-License.txt).
 
 ## How to cite
 
