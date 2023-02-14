@@ -780,10 +780,10 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
  * If flag LOG_SOLVER_V is provided even more statistics will be collected.
  *
  * @param cvode_mem         Pointer to CVODE memory block.
- * @param solverStatsTmp    Pointer to solverStatsTmp of solverInfo.
+ * @param solverStats       Pointer to solverStats of solverInfo.
  * @param threadData        Thread data for error handling.
  */
-void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, threadData_t *threadData)
+void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData_t *threadData)
 {
   /* Variables */
   long int tmp1, tmp2;
@@ -794,32 +794,32 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
   tmp1 = 0;
   flag = CVodeGetNumSteps(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumSteps");
-  solverStatsTmp[0] = tmp1;
+  solverStats->nStepsTaken = tmp1;
 
   /* Get number of right hand side evaluations */
   /* TODO: Is it okay to count number of rhs evaluations instead of residual evaluations? */
   tmp1 = 0;
   flag = CVodeGetNumRhsEvals(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumRhsEvals");
-  solverStatsTmp[1] = tmp1;
+  solverStats->nCallsODE = tmp1;
 
   /* Get number of Jacobian evaluations */
   tmp1 = 0;
   flag = CVodeGetNumJacEvals(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeGetNumJacEvals");
-  solverStatsTmp[2] = tmp1;
+  solverStats->nCallsJacobian = tmp1;
 
   /* Get number of local error test failures */
   tmp1 = 0;
   flag = CVodeGetNumErrTestFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumErrTestFails");
-  solverStatsTmp[3] = tmp1;
+  solverStats->nErrorTestFailures = tmp1;
 
   /* Get number of nonlinear convergence failures */
   tmp1 = 0;
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumNonlinSolvConvFails");
-  solverStatsTmp[4] = tmp1;
+  solverStats->nConvergenveTestFailures = tmp1;
 
   /* Get even more statistics */
   if (useStream[LOG_SOLVER_V])
@@ -979,7 +979,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   }
 
   /* Save statistics */
-  cvode_save_statistics(cvodeData->cvode_mem, solverInfo->solverStatsTmp, threadData);
+  cvode_save_statistics(cvodeData->cvode_mem, &solverInfo->solverStatsTmp, threadData);
 
   infoStreamPrint(LOG_SOLVER, 0, "##CVODE## Finished Integrator step.");
   /* Measure time */
