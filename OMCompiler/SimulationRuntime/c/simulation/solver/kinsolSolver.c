@@ -56,8 +56,6 @@
 
 /* Function prototypes */
 static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData);
-static int nlsJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                  void *userData, N_Vector tmp1, N_Vector tmp2);
 static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
                         void* userData, N_Vector tmp1, N_Vector tmp2);
 int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
