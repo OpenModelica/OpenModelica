@@ -79,7 +79,7 @@ add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
-if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13" AND NOT APPLE)
   target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
 endif()
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
