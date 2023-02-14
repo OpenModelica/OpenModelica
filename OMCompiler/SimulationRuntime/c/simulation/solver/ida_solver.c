@@ -1050,34 +1050,32 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* steps */
   tmp = 0;
   flag = IDAGetNumSteps(idaData->ida_mem, &tmp);
-  if (flag == IDA_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[0] = tmp;
-  }
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumSteps");
+  solverInfo->solverStatsTmp.nStepsTaken = tmp;
 
   /* functionODE evaluations */
   tmp = 0;
   flag = IDAGetNumResEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumResEvals");
-  solverInfo->solverStatsTmp[1] = tmp;
+  solverInfo->solverStatsTmp.nCallsODE = tmp;
 
   /* Jacobians evaluations */
   tmp = 0;
   flag = IDAGetNumJacEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumJacEvals");
-  solverInfo->solverStatsTmp[2] = tmp;
+  solverInfo->solverStatsTmp.nCallsJacobian = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumErrTestFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumErrTestFails");
-  solverInfo->solverStatsTmp[3] = tmp;
+  solverInfo->solverStatsTmp.nErrorTestFailures = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumNonlinSolvConvFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvConvFails");
-  solverInfo->solverStatsTmp[4] = tmp;
+  solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
 
   /* get more statistics */
   if (useStream[LOG_SOLVER_V])

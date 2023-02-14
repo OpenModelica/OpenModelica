@@ -708,6 +708,14 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
 
+  /* save dassl stats */
+  // TODO: Who thought this is an acceptable way to log stats in iwork? Never heard of structs?
+  solverInfo->solverStatsTmp.nStepsTaken              = dasslData->iwork[10];
+  solverInfo->solverStatsTmp.nCallsODE                = dasslData->iwork[11];
+  solverInfo->solverStatsTmp.nCallsJacobian           = dasslData->iwork[12];
+  solverInfo->solverStatsTmp.nErrorTestFailures       = dasslData->iwork[13];
+  solverInfo->solverStatsTmp.nConvergenveTestFailures = dasslData->iwork[14];
+
   if(ACTIVE_STREAM(LOG_DASSL))
   {
     infoStreamPrint(LOG_DASSL, 1, "dassl call statistics: ");
@@ -718,19 +726,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     infoStreamPrint(LOG_DASSL, 0, "step size used on last successful step: %0.4g", dasslData->rwork[6]);
     infoStreamPrint(LOG_DASSL, 0, "the order of the method used on the last step: %d", dasslData->iwork[7]);
     infoStreamPrint(LOG_DASSL, 0, "the order of the method to be attempted on the next step: %d", dasslData->iwork[8]);
-    infoStreamPrint(LOG_DASSL, 0, "number of steps taken so far: %d", (int)dasslData->iwork[10]);
-    infoStreamPrint(LOG_DASSL, 0, "number of calls of functionODE() : %d", (int)dasslData->iwork[11]);
-    infoStreamPrint(LOG_DASSL, 0, "number of calculation of jacobian : %d", (int)dasslData->iwork[12]);
-    infoStreamPrint(LOG_DASSL, 0, "total number of convergence test failures: %d", (int)dasslData->iwork[13]);
-    infoStreamPrint(LOG_DASSL, 0, "total number of error test failures: %d", (int)dasslData->iwork[14]);
+    infoStreamPrint(LOG_DASSL, 0, "number of steps taken so far: %d", solverInfo->solverStatsTmp.nStepsTaken);
+    infoStreamPrint(LOG_DASSL, 0, "number of calls of functionODE() : %d", solverInfo->solverStatsTmp.nCallsODE);
+    infoStreamPrint(LOG_DASSL, 0, "number of calculation of jacobian : %d", solverInfo->solverStatsTmp.nCallsJacobian);
+    infoStreamPrint(LOG_DASSL, 0, "total number of convergence test failures: %d", solverInfo->solverStatsTmp.nErrorTestFailures);
+    infoStreamPrint(LOG_DASSL, 0, "total number of error test failures: %d", solverInfo->solverStatsTmp.nConvergenveTestFailures);
     messageClose(LOG_DASSL);
-  }
-
-  /* save dassl stats */
-  for(ui = 0; ui < numStatistics; ui++)
-  {
-    assert(10 + ui < dasslData->liw);
-    solverInfo->solverStatsTmp[ui] = dasslData->iwork[10 + ui];
   }
 
   infoStreamPrint(LOG_DASSL, 0, "Finished DASSL step.");

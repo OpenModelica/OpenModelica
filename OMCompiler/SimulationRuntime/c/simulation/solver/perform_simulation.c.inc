@@ -368,10 +368,7 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   int ui;
   if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep)
   {
-    for(ui=0; ui<numStatistics; ui++)
-    {
-      solverInfo->solverStats[ui] += solverInfo->solverStatsTmp[ui];
-    }
+    addSolverStats(&solverInfo->solverStats, &solverInfo->solverStatsTmp);
   }
 }
 

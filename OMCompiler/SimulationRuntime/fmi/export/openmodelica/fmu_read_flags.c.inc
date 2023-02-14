@@ -168,8 +168,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->solverStats = NULL;
-  solverInfo->solverStatsTmp = NULL;
 
   /* read fmu flags from flags.json */
   char* flags_filename = functions->allocateMemory(strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 20, sizeof(char));
