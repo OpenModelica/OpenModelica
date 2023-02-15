@@ -34,6 +34,7 @@ ForStatement5fail.mos \
 ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
+getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \

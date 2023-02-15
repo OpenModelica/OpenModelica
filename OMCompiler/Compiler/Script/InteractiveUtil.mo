@@ -4509,5 +4509,75 @@ algorithm
   outElements := List.deleteMemberOnTrue(name, inElements, classElementItemIsNamed);
 end removeClassInElementitemlist;
 
+public function getPathedElementInProgram
+  "Looks up a class element in the program using the given path."
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Absyn.Element element;
+protected
+  Absyn.Class cls;
+algorithm
+  cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), program);
+
+  if AbsynUtil.pathIsIdent(path) then
+    // Since the program only stores classes instead of elements we have to
+    // create a dummy element if we find a top-level class.
+    element := Absyn.Element.ELEMENT(false, NONE(), Absyn.InnerOuter.NOT_INNER_OUTER(),
+      Absyn.ElementSpec.CLASSDEF(false, cls), cls.info, NONE());
+  else
+    SOME(element) := getPathedElementInClass(AbsynUtil.pathRest(path), cls);
+  end if;
+end getPathedElementInProgram;
+
+protected function getPathedElementInClass
+  input Absyn.Path path;
+  input Absyn.Class cls;
+  output Option<Absyn.Element> element = NONE();
+algorithm
+  for part in AbsynUtil.getClassPartsInClass(cls) loop
+    element := getPathedElementInClassPart(path, part);
+
+    if isSome(element) then
+      break;
+    end if;
+  end for;
+end getPathedElementInClass;
+
+protected function getPathedElementInClassPart
+  input Absyn.Path path;
+  input Absyn.ClassPart part;
+  output Option<Absyn.Element> element = NONE();
+protected
+  Absyn.Element e;
+algorithm
+  for item in AbsynUtil.getElementItemsInClassPart(part) loop
+    if AbsynUtil.isElementItemClassNamed(AbsynUtil.pathFirstIdent(path), item) then
+      Absyn.ElementItem.ELEMENTITEM(element = e) := item;
+
+      if AbsynUtil.pathIsIdent(path) then
+        element := SOME(e);
+      else
+        element := getPathedElementInElement(AbsynUtil.pathRest(path), e);
+      end if;
+
+      break;
+    end if;
+  end for;
+end getPathedElementInClassPart;
+
+protected function getPathedElementInElement
+  input Absyn.Path path;
+  input Absyn.Element element;
+  output Option<Absyn.Element> outElement;
+protected
+  Absyn.Class cls;
+algorithm
+  outElement := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls))
+      then getPathedElementInClass(path, cls);
+    else NONE();
+  end match;
+end getPathedElementInElement;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
