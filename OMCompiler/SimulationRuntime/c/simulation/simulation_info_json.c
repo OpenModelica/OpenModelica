@@ -425,7 +425,7 @@ static const char* readFunction(const char *str, FUNCTION_INFO *xml, int i, cons
   str=skipValue(str, fileName);
   xml->id = i;
   len = str-str2;
-  name = malloc(len);
+  name = malloc(len);         // TODO AHeu: This leaks memory!
   memcpy(name, str2, len-1);
   name[len-1] = '\0';
   xml->name = name;

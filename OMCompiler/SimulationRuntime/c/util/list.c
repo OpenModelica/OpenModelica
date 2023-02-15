@@ -115,7 +115,7 @@ void listPushFront(LIST *list, const void *data)
   tmpNode->data = malloc(list->itemSize);
   assertStreamPrint(NULL, 0 != tmpNode->data, "out of memory");
 
-  memcpy(tmpNode->data, data, list->itemSize);
+  memcpy(tmpNode->data, data, list->itemSize);      // TODO AHeu: Invalid read, size doesn't match createValueElement?
   tmpNode->next = list->first;
   ++(list->length);
 
@@ -173,7 +173,7 @@ void listPushBack(LIST *list, const void *data)
 }
 
 /**
- * @brief Copies data into new tmpNode and inserts tmpNode into list after prevNode
+ * @brief Copies data into new node and inserts it into list after prevNode
  *
  * @param list       Pointer to list
  * @param prevNode   Pointer to previous node
@@ -300,6 +300,31 @@ void listClear(LIST *list)
 }
 
 /**
+ * @brief Remove all nodes after startNode from list.
+ *
+ * Checks if startNode is part of list.
+ *
+ * @param list        List to remove elements from.
+ * @param startNode   Node to remove after. startNode won't be removed.
+ */
+void listClearAfterNode(LIST *list, LIST_NODE *startNode) {
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != startNode, "invalid list-node");
+
+  assertStreamPrint(NULL, listIsIn(list, startNode), "listClearAfterNode: start node not in list!");
+
+  LIST_NODE* delNode = startNode->next;
+  while (delNode) {
+    LIST_NODE* nextNode = delNode->next;
+    freeNode(delNode);
+    list->length--;
+    delNode = nextNode;
+  }
+  startNode->next = NULL;
+  list->last = startNode;
+}
+
+/**
  * @brief Retruns first node of list
  *
  * @param list    Pointer to list
@@ -324,7 +349,30 @@ LIST_NODE *listNextNode(LIST_NODE *node)
 }
 
 /**
- * @brief Returns node data
+ * @brief Test if node is in list
+ *
+ * @param list                  Pointer to List.
+ * @param node                  Node to test if in list.
+ * @return modelica_boolean     True if node is in list, false otherwise.
+ */
+modelica_boolean listIsIn(LIST *list, LIST_NODE *node) {
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+
+  modelica_boolean isIn = FALSE;
+  LIST_NODE* tmpNode = list->first;
+  while (tmpNode) {
+    if (node == tmpNode) {
+      return TRUE;
+    }
+    tmpNode = tmpNode->next;
+  }
+
+  return FALSE;
+}
+
+/**
+ * @brief Returns node data.
  *
  * @param node    Pointer to node
  * @return        Pointer to data
@@ -336,7 +384,13 @@ void *listNodeData(LIST_NODE *node)
   return node->data;
 }
 
-/* not sure about this, looks dangerous */
+/**
+ * @brief Copy content of data into node data.
+ *
+ * @param list    List containing node.
+ * @param node    Node to update.
+ * @param data    Data to copy into node data.
+ */
 void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -344,31 +398,6 @@ void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
   assertStreamPrint(NULL, 0 != node->data, "invalid list-data");
   memcpy(node->data, data, list->itemSize);
   return;
-}
-
-/* not sure about this, looks dangerous */
-LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  LIST_NODE *next = node->next;
-  node->next = newNext;
-  return next;
-}
-
-/* not sure about this, looks dangerous */
-void updatelistFirst(LIST* list, LIST_NODE *node)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  list->first = node;
-}
-
-/* not sure about this, looks dangerous */
-void updatelistLength(LIST* list, unsigned int newLength)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  list->length = newLength;
 }
 
 /**

@@ -47,36 +47,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define UNUSED(x) (void)(x)
+
 /* Forward extrapolate function definition */
 double extrapolateValues(const double, const double, const double, const double, const double);
 
-VALUES_LIST* allocValueList(unsigned int numberOfList)
+/**
+ * @brief Allocate value lists.
+ *
+ * @param numberOfList    Number of lists to allocate.
+ * @param valueSize       Length of array double* values
+ * @return VALUES_LIST*   Array of value lists.
+ */
+VALUES_LIST* allocValueList(unsigned int numberOfList, unsigned int valueSize)
 {
   unsigned int i = 0;
   VALUES_LIST* valueList = (VALUES_LIST*) malloc(numberOfList*sizeof(VALUES_LIST));
 
-  for(i=0; i<numberOfList; ++i){
-    (valueList+i)->valueList = allocList(sizeof(VALUE));
+  unsigned int itemSize = sizeof(VALUE) + valueSize*sizeof(double);
+  for(i=0; i<numberOfList; i++) {
+    valueList[i].valueList = allocList(itemSize);
   }
 
   return valueList;
 }
 
-void freeValueList(VALUES_LIST *valueList, unsigned int numberOfList)
+/**
+ * @brief Free array of value lists.
+ *
+ * @param valueList       Array of value lists.
+ * @param numberOfList    Length of array valueList.
+ */
+void freeValueList(VALUES_LIST* valueList, unsigned int numberOfList)
 {
-  VALUE* elem;
-  VALUES_LIST *tmpList;
+  unsigned int i = 0;
 
-  int i,j;
-  for(j = 0; j < numberOfList; ++j)
-  {
-    tmpList = valueList+j;
-    for(i = 0; i < listLen(tmpList->valueList); ++i)
-    {
-      elem = (VALUE*) listFirstData(tmpList->valueList);
-      listRemoveFront(tmpList->valueList);
-    }
-    freeList(tmpList->valueList);
+  for(i=0; i<numberOfList; i++) {
+    freeList(valueList[i].valueList);
   }
   free(valueList);
 }
@@ -88,25 +95,14 @@ void freeValueList(VALUES_LIST *valueList, unsigned int numberOfList)
  * @param valueList    Pointer to value list
  * @param startNode    Pointer to list node, following nodes will be deleted
  */
-void cleanValueList(VALUES_LIST *valueList, LIST_NODE *startNode)
+void cleanValueList(LIST* valueList, LIST_NODE *startNode)
 {
   int len;
   if(startNode)
   {
-    /* clean list from next node */
-    len = listLen(valueList->valueList);
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueList length: %d", len);
-    LIST_NODE *node = updateNodeNext(valueList->valueList, startNode, NULL);
-    while(node)
-    {
-      LIST_NODE *tmpNode = listNextNode(node);
-      freeNode(node);
-      node = tmpNode;
-      len--;
-    }
-    updatelistLength(valueList->valueList, len);
+    listClearAfterNode(valueList, startNode);
   }
-  else listClear(valueList->valueList);
+  else listClear(valueList);
 }
 
 /**
@@ -115,20 +111,21 @@ void cleanValueList(VALUES_LIST *valueList, LIST_NODE *startNode)
  * @param valueList    Pointer to value list
  * @param time         time
  */
-void cleanValueListbyTime(VALUES_LIST *valueList, double time)
+void cleanValueListbyTime(LIST *valueList, double time)
 {
   LIST_NODE *next, *it;
   VALUE* elem;
 
   printValuesListTimes(valueList);
   // need to get first node at each iteration since head is removed
-  for(it = listFirstNode(valueList->valueList); it; it = listFirstNode(valueList->valueList))
+  for(it = listFirstNode(valueList); it; it = listFirstNode(valueList))
   {
+    assert(it != NULL);
     elem = (VALUE*)listNodeData(it);
     if (elem->time <= time)
     {
       cleanValueList(valueList, it);
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "New list length %d: ", listLen(valueList->valueList));
+      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "New list length %d: ", listLen(valueList));
       printValuesListTimes(valueList);
       infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Done!");
       break;
@@ -137,54 +134,64 @@ void cleanValueListbyTime(VALUES_LIST *valueList, double time)
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueListbyTime %g check element: ", time);
     printValueElement(elem);
 
-    listRemoveFront(valueList->valueList);
+    listRemoveFront(valueList);
   }
 }
 
 /**
- * @brief Creates a new value element for a value list.
+ * @brief Create new value element for value list.
  *
- * @param size      size of values array
- * @param time      time
- * @param values    array of values
+ * @param size      Length of values array.
+ * @param time      Time
+ * @param values    Array of values
  */
 VALUE* createValueElement(unsigned int size, double time, double* values)
 {
-  VALUE* elem = (VALUE*) malloc(sizeof(VALUE));
-  elem->values = (double*) malloc(size*sizeof(double));
+  VALUE* elem = calloc(1, sizeof(VALUE));
+  elem->values = calloc(size, sizeof(double));
   elem->time = time;
   elem->size = size;
 
   memcpy(elem->values, values, size*sizeof(double));
 
   /* debug output */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Create Element");
-  messageClose(LOG_NLS_EXTRAPOLATE);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Create Element");
 
   return elem;
 }
 
+/**
+ * @brief Free value element allocated with createValueElement
+ *
+ * @param elem    Value element to free.
+ */
 void freeValue(VALUE* elem)
 {
   free(elem->values);
   free(elem);
 }
 
-void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
+/**
+ * @brief Adds copy of new element to list.
+ *
+ * @param valuesList    List
+ * @param newElem       New element to add to list.
+ */
+void addListElement(LIST* valuesList, VALUE* newElem)
 {
   LIST_NODE *node, *next;
   VALUE* elem;
   int replace = 0, i = 0;
 
   /* debug output */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Adding element in a list of size %d", listLen(valuesList->valueList));
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Adding element in a list of size %d", listLen(valuesList));
   printValueElement(newElem);
 
-  /*  if it's empty, just push in  */
-  if (listLen(valuesList->valueList) == 0)
+  /*  if it's empty, just push it in */
+  if (listLen(valuesList) == 0)
   {
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "List is empty add just.");
-    listPushFront(valuesList->valueList, (void*) newElem);
+    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "List is empty add new element.");
+    listPushFront(valuesList, (void*) newElem);
 
     messageClose(LOG_NLS_EXTRAPOLATE);
     return;
@@ -193,13 +200,13 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
   /*  if the element at begin is earlier than current
    *  push the element just in front and if the end element
    *  is later than current push it just back.*/
-  node = listFirstNode(valuesList->valueList);
+  node = listFirstNode(valuesList);
   if ( fabs( ((VALUE*)listNodeData(node))->time - newElem->time ) > MINIMAL_STEP_SIZE )
   {
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "First Value list element is:");
     printValueElement(((VALUE*)listNodeData(node)));
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "so new element is added before.");
-    listPushFront(valuesList->valueList, (void*) newElem);
+    listPushFront(valuesList, (void*) newElem);
 
     messageClose(LOG_NLS_EXTRAPOLATE);
     return;
@@ -241,15 +248,15 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
   /* add element before currect node */
   if (!replace){
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Insert element before last output element.");
-    listInsert(valuesList->valueList, node, (void*) newElem);
+    listInsert(valuesList, node, (void*) newElem);
   }
   else
   {
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "replace element.");
-    updateNodeData(valuesList->valueList, next, (void*) newElem);
+    updateNodeData(valuesList, next, (void*) newElem);
   }
   /*  clean list if too full */
-  if (i < 3 && listLen(valuesList->valueList)>10)
+  if (i < 3 && listLen(valuesList)>10)
   {
     while(i < 4)
     {
@@ -271,17 +278,17 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
  * @param extrapolatedValues    values extrapolated (overwritten)
  * @param oldOutput             old values just before time
  */
-void getValues(VALUES_LIST* valuesList, double time, double* extrapolatedValues, double* oldOutput)
+void getValues(LIST* valuesList, double time, double* extrapolatedValues, double* oldOutput)
 {
   LIST_NODE *it;
   LIST_NODE *old = NULL;
   LIST_NODE *old2 = NULL;
   VALUE *oldValues, *old2Values, *elem;
 
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Get values for time %g in a list of size %d", time, listLen(valuesList->valueList));
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Get values for time %g in a list of size %d", time, listLen(valuesList));
 
   /* find corresponding values */
-  for(it = listFirstNode(valuesList->valueList); it; it = listNextNode(it))
+  for(it = listFirstNode(valuesList); it; it = listNextNode(it))
   {
     elem = (VALUE*)listNodeData(it);
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Searching current element:");
@@ -313,8 +320,8 @@ void getValues(VALUES_LIST* valuesList, double time, double* extrapolatedValues,
   if (old2 == NULL)
   {
     oldValues = (VALUE*) listNodeData(old);
-    memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));
-    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
+    memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));    // TODO AHeu: Invalid read!
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));             // TODO AHeu: Invalid read?
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "take just old values.");
   }
   else
@@ -327,9 +334,9 @@ void getValues(VALUES_LIST* valuesList, double time, double* extrapolatedValues,
     printValueElement(old2Values);
     for(i = 0; i < oldValues->size; ++i)
     {
-      extrapolatedValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);
+      extrapolatedValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);    // TODO AHeu: Invalid read!
     }
-    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));     // TODO AHeu: Invalid read!
   }
   messageClose(LOG_NLS_EXTRAPOLATE);
   return;
@@ -349,31 +356,30 @@ void printValueElement(VALUE* elem)
   }
 }
 
-void printValuesListTimes(VALUES_LIST* list)
-{
-  /* debug output */
-  if(ACTIVE_STREAM(LOG_NLS_EXTRAPOLATE))
-  {
-    int i;
-    LIST_NODE *it;
-    VALUE *elem;
+/**
+ * @brief Print function for printValuesListTimes
+ *
+ * @param data      Data of node of type VALUE*
+ * @param stream    Stream to output to.
+ * @param unused    Unused
+ */
+static void printElemTimes(void* data, int stream, void* unused) {
+  UNUSED(unused);
+  VALUE* elem = (VALUE*) data;
 
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Print all elements");
-    it = listFirstNode(list->valueList);
-    if(!it)
-    {
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "List is empty!");
-    }
-    else
-    {
-      /* go though the list */
-      for(i = 0; it; it = listNextNode(it)) {
-        elem = (VALUE*)listNodeData(it);
-        infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Element %d at time %g", i++, elem->time);
-      }
-    }
-    messageClose(LOG_NLS_EXTRAPOLATE);
+  unsigned int i;
+  for(i=0; i<elem->size; i++) {
+    infoStreamPrint(stream, 0, "Element %d at time %g", i, elem->time);
   }
+}
+
+/**
+ * @brief Print value times of value list.
+ *
+ * @param list    Value list.
+ */
+void printValuesListTimes(LIST* list) {
+  printList(list, LOG_NLS_EXTRAPOLATE, printElemTimes);
 }
 
 /*! \fn extraPolateValues

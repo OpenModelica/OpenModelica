@@ -615,7 +615,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     else
     {
       /* save stats before print */
-      addSolverStats(&solverInfo->solverStats, &solverInfo->solverStatsTmp);
+      addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
 
       infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
       infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats.nStepsTaken);

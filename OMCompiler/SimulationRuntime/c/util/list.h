@@ -37,6 +37,8 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
+#include "openmodelica_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,16 +67,15 @@ extern "C" {
   void listRemoveFront(LIST *list);
 
   void listClear(LIST *list);
+  void listClearAfterNode(LIST *list, LIST_NODE *startNode);
   void freeNode(LIST_NODE *node);
 
   LIST_NODE *listFirstNode(LIST *list);
   LIST_NODE *listNextNode(LIST_NODE *node);
+  modelica_boolean listIsIn(LIST *list, LIST_NODE *node);
 
   void *listNodeData(LIST_NODE *node);
   void updateNodeData(LIST *list, LIST_NODE *node, const void *data);
-  LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext);
-  void updatelistFirst(LIST* list, LIST_NODE *node);
-  void updatelistLength(LIST* list, unsigned int newLength);
   void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*));
 
 #ifdef __cplusplus
