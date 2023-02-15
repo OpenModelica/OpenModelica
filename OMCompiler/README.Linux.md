@@ -82,17 +82,18 @@ First you need to install the dependencies:
 - libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica) tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
 - omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
-- [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 - libcurl (libcurl4-gnutls-dev)
+- ncurses, readline (optional, used by OMShell-terminal)
+- OpenSceneGraph (optional, used by OMEdit)
+- Qt5 or Qt4, Webkit, QtOpenGL (optional, used by OMEdit)
 
 # 2 Compile OpenModelica
 
-Now there are two options to build OpenModelica:
+Now there are two options to build OpenModelica. If you are new or unsure what to pick, choose the new CMake build.
+On OSX only the CMake build is supported.
 
   1. Use new CMake build.
   2. Use legacy Makefiles build.
-
-For OSX only Cmake build is supported.
 
 ## 2.1 CMake build
 
@@ -153,11 +154,11 @@ autoreconf --install # Or autoconf if you have autoconf <=2.69
 ```
 
 
-# 3 Testsuite
+# 3 Test suite
 
-If you compiled the OpenModelica compiler succesfully you can run the testsuite to check
+If you compiled the OpenModelica compiler successfully you can run the test suite to check
 if everything is working. Some tests are a bit fragile and depend on the OS and versions
-of used 3rd-party tools. So a few failing tests don't have to be a major consern.
+of used 3rd-party tools. So a few failing tests don't have to be a major concern.
 
 ## 3.1 CMake
 
@@ -173,7 +174,7 @@ apt install flex zip
 make omsimulator
 ```
 
-And then start the testsuite:
+And then start the test suite:
 
 ```bash
 make test

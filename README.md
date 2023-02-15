@@ -11,14 +11,14 @@ automatically generated from the documentation repository.
 ## OpenModelica environment
 
 The [OpenModelica Compiler](OMCompiler/) is the core of the OpenModelica project.
-[OMEdit](OMEdit/) is the graphical user interface on top of the compiler.
-[OMSimulator](OMSimulator/) is a capable FMI and SSP-based Co-Simulation environment,
+[OMEdit](OMEdit/README.md) is the graphical user interface on top of the compiler.
+[OMSimulator](OMSimulator/README.md) is a capable FMI and SSP-based Co-Simulation environment,
 available as a standalone version or integrated in OMEdit.
 In addition there are interactive environments
-[OMNotebook](OMNotebook/), [OMPlot](OMPlot/) and [OMShell](OMShell/)
+[OMNotebook](OMNotebook/README.md), [OMPlot](OMPlot/README.md) and [OMShell](OMShell/README.md)
 interaction with the OMCompiler as well as various other tools:
-[OMOptim](OMOptim/), [OMParser](OMParser/), [OMSens](OMSens/),
-[OMSense_Qt](OMSens_Qt/).
+[OMOptim](OMOptim/README.md), [OMParser](OMParser/README.md), [OMSens](OMSens/README.md),
+[OMSense_Qt](OMSens_Qt/README.md).
 
 ## Working with the repository
 
@@ -95,7 +95,7 @@ git submodule status --recursive
 ## Build OpenModelica
 
 * [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
-* [Windows Instructions](OMCompiler/README-OMDev-MINGW.md)
+* [Windows Instructions](OMCompiler/README.Windows.md)
 
 ## How to run
 
