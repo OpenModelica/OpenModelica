@@ -40,6 +40,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Private function prototypes */
+modelica_boolean listIsIn(LIST *list, LIST_NODE *node);
+
 struct LIST_NODE
 {
   void *data;         /* Data of list element.
