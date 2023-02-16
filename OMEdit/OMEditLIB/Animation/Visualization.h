@@ -44,6 +44,7 @@
 #include <QImage>
 #include <QOpenGLContext> // must be included before OSG headers
 
+#include <osg/Version>
 #include <osg/Transform>
 #include <osg/AutoTransform>
 #include <osg/MatrixTransform>
@@ -87,11 +88,10 @@ public:
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node) override;
   virtual void apply(osg::Transform& node) override;
-  // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
-#ifdef Q_OS_WIN
+#if OSG_MIN_VERSION_REQUIRED(3, 6, 0)
   virtual void apply(osg::AutoTransform& node) override;
 #else
-  virtual void apply(osg::AutoTransform& node);
+  virtual void apply(osg::AutoTransform& node); // Work-around for osg::NodeVisitor::apply(osg::AutoTransform&) (see OSG commit a4b0dc7)
 #endif
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
