@@ -10,6 +10,7 @@ GetModelInstanceAnnotation6.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
+GetModelInstanceBinding2.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \

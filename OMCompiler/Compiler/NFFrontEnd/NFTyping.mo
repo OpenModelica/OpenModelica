@@ -700,6 +700,7 @@ algorithm
             then
               (dim, ty_err);
 
+          else (dimension, TypingError.NO_ERROR());
         end match;
 
         () := match ty_err
