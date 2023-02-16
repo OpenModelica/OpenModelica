@@ -50,7 +50,12 @@ extern "C" {
   struct LIST;
   typedef struct LIST LIST;
 
-  LIST *allocList(unsigned int itemSize);
+
+  typedef void*(allocListNodeDataFunc_t)(const void* data);
+  typedef void(freeListNodeDataFunc_t)(void* data);
+  typedef void(copyListNodeDataFunc_t)(void* dest, const void* src);
+
+  LIST *allocList(allocListNodeDataFunc_t* allocListNodeFunc, freeListNodeDataFunc_t* freeListNodeFunc, copyListNodeDataFunc_t* copyListNodeDataFunc);
   void freeList(LIST *list);
 
   void listPushFront(LIST *list, const void *data);
@@ -68,7 +73,7 @@ extern "C" {
 
   void listClear(LIST *list);
   void listClearAfterNode(LIST *list, LIST_NODE *startNode);
-  void freeNode(LIST_NODE *node);
+  void freeNode(LIST *list, LIST_NODE *node);
 
   LIST_NODE *listFirstNode(LIST *list);
   LIST_NODE *listNextNode(LIST_NODE *node);

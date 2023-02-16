@@ -51,6 +51,9 @@
 
 /* Forward extrapolate function definition */
 double extrapolateValues(const double, const double, const double, const double, const double);
+void* valueListAlloc(const void* data);
+void valueListFree(void* data);
+void valueListCopy(void* dest, const void* src);
 
 /**
  * @brief Allocate value lists.
@@ -64,9 +67,8 @@ VALUES_LIST* allocValueList(unsigned int numberOfList, unsigned int valueSize)
   unsigned int i = 0;
   VALUES_LIST* valueList = (VALUES_LIST*) malloc(numberOfList*sizeof(VALUES_LIST));
 
-  unsigned int itemSize = sizeof(VALUE) + valueSize*sizeof(double);
   for(i=0; i<numberOfList; i++) {
-    valueList[i].valueList = allocList(itemSize);
+    valueList[i].valueList = allocList(valueListAlloc, valueListFree, valueListCopy);
   }
 
   return valueList;
@@ -391,7 +393,6 @@ void printValuesListTimes(LIST* list) {
  *  \param [in]  [old2] old value at time2
  *  \param [in]  [time2] time for the second value
  */
-
 double extrapolateValues(const double time, const double old1, const double time1, const double old2, const double time2)
 {
   double retValue;
@@ -406,4 +407,45 @@ double extrapolateValues(const double time, const double old1, const double time
   }
 
   return retValue;
+}
+
+/**
+ * @brief Allocate memory for valueList elements.
+ *
+ * @param data      value list element, containing size of array values
+ *                  Has to be of type VALUE*;
+ * @return void*    Allocated memory for LIST_NODE data.
+ */
+void* valueListAlloc(const void* data) {
+  const VALUE* valueElem = (VALUE*) data;
+  VALUE* newElem = malloc(sizeof(VALUE));
+  assertStreamPrint(NULL, newElem != NULL, "valueListAlloc: Out of memory");
+  newElem->values = malloc(valueElem->size*sizeof(double));
+  assertStreamPrint(NULL, newElem->values != NULL, "valueListAlloc: Out of memory");
+  return (void*) newElem;
+}
+
+/**
+ * @brief Free memory allocated with valueListAlloc.
+ *
+ * @param data      Void pointer, representing index for new list element.
+ */
+void valueListFree(void* data) {
+  VALUE* valueElem = (VALUE*) data;
+  free(valueElem->values);
+  free(valueElem);
+}
+
+/**
+ * @brief Copy data of valueList elements.
+ *
+ * @param dest    Void pointer of destination data, representing VALUE.
+ * @param src     Void pointer of source data, representing VALUE.
+ */
+void valueListCopy(void* dest, const void* src) {
+  VALUE* destValue = (VALUE*) dest;
+  VALUE* srcValue = (VALUE*) src;
+  destValue->size = srcValue->size;
+  destValue->time = srcValue->time;
+  memcpy(destValue->values, srcValue->values, srcValue->size*sizeof(double));
 }

@@ -53,6 +53,9 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
 
+void* eventListAlloc(const void* data);
+void eventListFree(void* data);
+void eventListCopy(void* dest, const void* src);
 
 #ifdef __cplusplus
 }

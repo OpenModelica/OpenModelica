@@ -221,7 +221,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = 0;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
-  solverInfo->eventLst = allocList(sizeof(long));
+  solverInfo->eventLst = allocList(eventListAlloc, eventListFree, eventListCopy);
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;

@@ -295,7 +295,7 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   LIST_NODE* it;
   fortran_integer i=0;
-  LIST *tmpEventList = allocList(sizeof(long));
+  LIST *tmpEventList = allocList(eventListAlloc, eventListFree, eventListCopy);
 
   /* static work arrays */
   double *states_left = data->simulationInfo->states_left;
@@ -494,6 +494,37 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
   TRACE_POP
 }
 
+/**
+ * @brief Allocate memory for eventList elements.
+ *
+ * @param data      Unused.
+ * @return void*    Allocated memory for LIST_NODE data.
+ */
+void* eventListAlloc(const void* data) {
+  void* newElem = malloc(sizeof(long));
+  assertStreamPrint(NULL, newElem != NULL, "eventListAlloc: Out of memory");
+  return newElem;
+}
+
+/**
+ * @brief Free memory allocated with eventListAlloc.
+ *
+ * @param data      Void pointer, representing index for new list element.
+ */
+void eventListFree(void* data) {
+  free(data);
+}
+
+/**
+ * @brief Copy data of eventList elements.
+ *
+ * @param dest    Void pointer of destination data, representing long index.
+ * @param src     Void pointer of source data, representing long index.
+ */
+void eventListCopy(void* dest, const void* src) {
+  long* dest_event = (long*) dest;
+  *dest_event = *((long*) src);
+}
 
 #ifdef __cplusplus
 }
