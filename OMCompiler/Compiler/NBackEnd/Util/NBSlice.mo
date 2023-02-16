@@ -51,6 +51,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import List;
@@ -89,7 +90,9 @@ public
     String sliceStr;
   algorithm
     str := func(slice.t);
+    if maxLength > 0 then
       str := str + "\n\t slice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = 10);
+    end if;
   end toString;
 
   function lstToString
@@ -99,6 +102,11 @@ public
     partial function toStringT_ = toStringT "ugly hack to make type T known to subfunction";
     output String str = List.toString(lst, function toString(func = func, maxLength = maxLength), "", "\t", ";\n\t", ";", false);
   end lstToString;
+
+  function isFull
+    input Slice<T> slice;
+    output Boolean b = listEmpty(slice.indices);
+  end isFull;
 
   function simplify
     "only to be used for unordered purposes!
@@ -262,19 +270,21 @@ public
   protected
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
-    list<Integer> sizes, subs;
+    list<Integer> sizes, int_subs;
   algorithm
     for cref in dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped);
-      subs := ComponentRef.subscriptsToInteger(cref);
-      var_scal_idx := locationToIndex(List.zip(sizes, subs), var_start);
+      int_subs := ComponentRef.subscriptsToInteger(cref);
+      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
     end for;
     // remove duplicates and sort
-    indices := List.sort(List.unique(indices), intLt);
+    if not listEmpty(indices) then
+      indices := List.sort(List.uniqueIntN(indices, max(i for i in indices)), intLt);
+    end if;
   end getDependentCrefIndicesPseudoScalar;
 
   function getDependentCrefIndicesPseudoArray
@@ -352,11 +362,10 @@ public
     output array<array<Integer>> mode_to_var;
   protected
     list<ComponentRef> names;
-    list<Expression> ranges, subs;
+    list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
-    ComponentRef stripped;
-    Integer eqn_start, eqn_size, var_arr_idx, var_start, var_scal_idx, mode = 1;
-    list<Integer> scal_lst, sizes;
+    Integer eqn_start, eqn_size, var_scal_idx, mode = 1;
+    list<Integer> scal_lst;
     Integer idx;
     array<Integer> mode_to_var_row;
   algorithm
@@ -373,12 +382,7 @@ public
       mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
     end for;
     for cref in dependencies loop
-      stripped        := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
-      (var_start, _)  := mapping.var_AtS[var_arr_idx];
-      sizes           := ComponentRef.sizes(stripped);
-      subs            := ComponentRef.subscriptsToExpression(cref, true);
-      scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+      scal_lst := getCrefInFrameIndices(cref, frames, mapping, map);
 
       if listLength(scal_lst) <> eqn_size then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -409,9 +413,13 @@ public
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
-    input UnorderedMap<ComponentRef, list<ComponentRef>> map      "hash table to check for relevance";
+    input VariablePointers var_rep                                "scalarized variable representatives";
+    input VariablePointers eqn_rep                                "scalarized equation representatives";
+    input Mapping var_rep_mapping                                 "index mapping for variable representatives";
+    input Mapping eqn_rep_mapping                                 "index mapping for equation representatives";
     input Iterator iter                                           "iterator frames";
-    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    input list<Integer> slice = {}                                "optional slice, empty list implies full slice";
+    input Boolean implicit = false                                "do not compute row cref indices if implicit";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
     ComponentRef stripped;
@@ -422,54 +430,96 @@ public
     list<tuple<ComponentRef, Expression>> frames;
     list<ComponentRef> new_row_crefs = {}, new_dep_crefs;
     list<list<ComponentRef>> scalar_dependenciesT = {};
+
+    list<Integer> row_scal_lst, dep_scal_lst;
+    Integer num_rows;
+    list<list<ComponentRef>> accum_dep_lst = {};
+    list<ComponentRef> row_crefs;
   algorithm
     // get iterator frames
     (names, ranges) := Iterator.getFrames(iter);
     frames := List.zip(names, ranges);
 
-    // get new subscripts for row cref
-    subs := ComponentRef.subscriptsToExpression(row_cref, false);
-    new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
-    new_row_cref_subs := if not listEmpty(slice) then List.keepPositions(new_row_cref_subs, slice) else new_row_cref_subs;
-
-    // reapply new subscripts for each frame location
-    stripped := ComponentRef.stripSubscriptsAll(row_cref);
-    for new_subs_single in new_row_cref_subs loop
-      evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_row_crefs;
-    end for;
-
-    // get the scalar crefs for each column cref
-    if not listEmpty(dependencies) then
-      for cref in dependencies loop
-        subs := ComponentRef.subscriptsToExpression(cref, false);
-        new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
-        new_subs := if not listEmpty(slice) then List.keepPositions(new_subs, slice) else new_row_cref_subs;
-
-        if listLength(new_subs) <> listLength(new_row_crefs) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because number of flattened indices " + intString(listLength(new_subs))
-            + " differ from equation size " + intString(listLength(new_row_cref_subs)) + "."});
-          fail();
-        end if;
-
-        // apply all subscript lists for scalarization to create scalar crefs
-        new_dep_crefs := {};
-        stripped := ComponentRef.stripSubscriptsAll(cref);
-        for new_subs_single in new_subs loop
-          evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
-          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, true, true) :: new_dep_crefs;
-        end for;
-        scalar_dependenciesT := new_dep_crefs :: scalar_dependenciesT;
-      end for;
-
-      // transpose scalar_dependenciesT and merge with new_row_crefs
-      tpl_lst := List.zip(new_row_crefs, List.transposeList(scalar_dependenciesT));
+    // get row cref lst
+    if implicit then
+      row_crefs := ComponentRef.scalarizeAll(row_cref);
+      row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
+      num_rows := listLength(row_crefs);
     else
-      tpl_lst := list((new_row_cref, {}) for new_row_cref in new_row_crefs);
+      row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
+      row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
+      num_rows := listLength(row_scal_lst);
+      row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
     end if;
 
+    if not listEmpty(dependencies) then
+      for dep in dependencies loop
+        if UnorderedMap.contains(dep, var_rep.map) then
+          // case 1: direct dependency as var
+          dep_scal_lst := getCrefInFrameIndices(dep, frames, var_rep_mapping, var_rep.map);
+          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
+
+          if listLength(dep_scal_lst) <> num_rows then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
+              + " differ from number of rows size " + intString(num_rows) + "."});
+            fail();
+          else
+            accum_dep_lst := list(VariablePointers.varSlice(var_rep, i, var_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
+          end if;
+        elseif UnorderedMap.contains(dep, eqn_rep.map) then
+          // case 2: indirect dependency as eqn
+          dep_scal_lst := getCrefInFrameIndices(dep, frames, eqn_rep_mapping, eqn_rep.map);
+          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
+
+          if listLength(dep_scal_lst) <> num_rows then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
+              + " differ from number of rows size " + intString(num_rows) + "."});
+            fail();
+          else
+            accum_dep_lst := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
+          end if;
+        end if;
+      end for;
+      accum_dep_lst := List.transposeList(accum_dep_lst);
+    else
+      accum_dep_lst := {};
+    end if;
+
+    if listEmpty(accum_dep_lst) then
+      accum_dep_lst := List.fill({}, num_rows);
+    end if;
+
+    tpl_lst := List.zip(row_crefs, accum_dep_lst);
   end getDependentCrefsPseudoForCausalized;
+
+  function getDependentCrefsPseudoArrayCausalized
+    "[Adjacency.MatrixType.PSEUDO] Array equations.
+    Turns cref dependencies into index lists, used for adjacency."
+    input ComponentRef row_cref                                   "cref representing the current row";
+    input list<ComponentRef> dependencies                         "dependent var crefs";
+    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
+  protected
+    list<ComponentRef> row_cref_scal, dep_scal;
+    list<list<ComponentRef>> dependencies_scal = {};
+    Boolean sliced = not listEmpty(slice);
+  algorithm
+    row_cref_scal := ComponentRef.scalarizeAll(row_cref);
+    if sliced then
+      row_cref_scal := List.getAtIndexLst(row_cref_scal, slice, true);
+    end if;
+    for dep in listReverse(dependencies) loop
+      dep_scal := ComponentRef.scalarizeAll(dep);
+      if sliced then
+        dep_scal := List.getAtIndexLst(dep_scal, slice, true);
+      end if;
+      dependencies_scal := dep_scal :: dependencies_scal;
+    end for;
+    dependencies_scal := List.transposeList(dependencies_scal);
+    tpl_lst := List.zip(row_cref_scal, dependencies_scal);
+  end getDependentCrefsPseudoArrayCausalized;
 
   function locationToIndex
     "reverse function to indexToLocation()
@@ -837,59 +887,10 @@ public
   // ############################################################
 
 protected
-  function combineFrames2Exp
-    "Iterates over all elements in nested iterators represented by frames.
-    On each single location of a frame it saves all iterator cref -> integer
-    replacements in a map and applies these replacements on the subscripts."
-    input list<Expression> subs                               "list of cref subscripts";
-    input list<tuple<ComponentRef, Expression>> frames        "list of frame tuples containing iterator name and range";
-    input UnorderedMap<ComponentRef, Expression> replacements "replacement rules iterator cref -> integer (may have to be simplified)";
-    input output list<list<Expression>> new_subs = {}               "list of replaced subscript expressions";
-  algorithm
-    new_subs := match frames
-      local
-        list<tuple<ComponentRef, Expression>> rest;
-        ComponentRef iterator;
-        Expression range;
-        Integer start, step, stop;
-        list<Expression> local_subs;
-
-      // only occurs for non-for-loop equations (no frames to replace)
-      case {} then {subs};
-
-      // extract numeric information about the range
-      case (iterator, range) :: rest algorithm
-        (start, step, stop) := Expression.getIntegerRange(range);
-        // traverse every index in the range
-        for index in start:step:stop loop
-          UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
-          if listEmpty(rest) then
-            // bottom line, resolve current configuration and create index for it
-            local_subs := list(SimplifyExp.simplify(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements))) for sub in subs);
-            new_subs := listReverse(local_subs) :: new_subs;
-          else
-            // not last frame, go deeper
-            new_subs := combineFrames2Exp(subs, rest, replacements, new_subs);
-          end if;
-        end for;
-      then new_subs;
-
-      case (iterator, range) :: _ algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because uniontype records are wrong: "
-          + ComponentRef.toString(iterator) + " in " + Expression.toString(range)});
-      then fail();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
-      then fail();
-
-    end match;
-  end combineFrames2Exp;
-
   function combineFrames2Indices
-    "Does the same es combineFrames2Exp but converts each of the now integer
-    subscript lists (in combination with subscript sizes) to a single scalar
-    index of the subscripted cref."
+    "Iterates over all elements in nested iterators represented by frames.
+    Converts each of the now integer subscript lists (in combination with
+    subscript sizes) to a single scalar index of the subscripted cref."
     input Integer first                                       "index of first variable. start counting from here";
     input list<Integer> sizes                                 "list of variables sizes";
     input list<Expression> subs                               "list of cref subscripts";
@@ -937,6 +938,26 @@ protected
     end match;
   end combineFrames2Indices;
 
+  function getCrefInFrameIndices
+    input ComponentRef cref                                 "cref to get indices from";
+    input list<tuple<ComponentRef, Expression>> frames      "iterator frames at which to evaluate cref";
+    input Mapping mapping                                   "index mapping (only variable mapping needed)";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    output list<Integer> scal_lst                           "scalar indices of cref";
+  protected
+    ComponentRef stripped;
+    Integer var_arr_idx, var_start;
+    list<Integer> sizes;
+    list<Expression> subs;
+  algorithm
+      stripped        := ComponentRef.stripSubscriptsAll(cref);
+      var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
+      (var_start, _)  := mapping.var_AtS[var_arr_idx];
+      sizes           := ComponentRef.sizes(stripped);
+      subs            := ComponentRef.subscriptsToExpression(cref, true);
+      scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+  end getCrefInFrameIndices;
+
   function resolveDimensionsSubscripts
     "uses the replacement module to replace all iterator crefs in the subscript with the current position.
     Returns a list of tuples containing the size of each subscript and current position."
@@ -949,7 +970,7 @@ protected
     list<Integer> values;
   algorithm
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(Expression.integerValue(SimplifyExp.simplify(rep)) for rep in replaced);
+    values := list(Expression.integerValue(SimplifyExp.simplify(rep, true)) for rep in replaced);
     ranges := List.zip(sizes, values);
   end resolveDimensionsSubscripts;
 

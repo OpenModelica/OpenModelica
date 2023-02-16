@@ -1,0 +1,24 @@
+// name: UnitCheck23
+// keywords: initialization
+// status: correct
+// cflags: -d=newInst --unitChecking -d=dumpUnits
+
+loadString("
+  model UnitCheck23
+    type MassFlowRate = Real(final unit = \"kg/s\");
+    MassFlowRate[1, 0] ports_mXi_flow;
+  end UnitCheck23;
+"); getErrorString();
+
+instantiateModel(UnitCheck23); getErrorString();
+
+// Result:
+// true
+// ""
+// (ports_mXi_flow, 1000.0 * s^(-1) * g^(1))
+// ######## UnitCheck COMPLETED ########
+// "class UnitCheck23
+// end UnitCheck23;
+// "
+// ""
+// endResult

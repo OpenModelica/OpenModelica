@@ -86,7 +86,7 @@ namespace IAEX
     void add(Document *doc);
     void add(DocumentView *view);
 
-    void open(const QString filename, int readmode = READMODE_NORMAL );
+    void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0);
     void removeTempFiles(QString filename);      // Added 2006-01-16 AF
     vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
     void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF

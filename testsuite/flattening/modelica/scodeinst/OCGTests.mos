@@ -171,13 +171,11 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 has 11122 equation(s) and 11122 variable(s).
 // 9069 of these are trivial equation(s)."
-// "[NFFrontEnd/NFUnitCheck.mo:0:0-0:0:writable] Error: Internal error NFUnitCheck.checkUnits: unit check module failed
-// "
+// ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic has 9016 equation(s) and 9016 variable(s).
 // 7224 of these are trivial equation(s)."
-// "[NFFrontEnd/NFUnitCheck.mo:0:0-0:0:writable] Error: Internal error NFUnitCheck.checkUnits: unit check module failed
-// "
+// ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 has 2055 equation(s) and 2055 variable(s).
 // 1515 of these are trivial equation(s)."

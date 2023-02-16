@@ -219,6 +219,7 @@ public:
   QString getName() const;
   QString getClassName() const;
   QString getComment() const;
+  bool isCondition() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceElement() {return mpReferenceElement;}
   Element* getParentElement() {return mpParentElement;}

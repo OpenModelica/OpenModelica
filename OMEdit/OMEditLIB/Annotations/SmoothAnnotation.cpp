@@ -56,7 +56,7 @@ FlatModelica::Expression SmoothAnnotation::toExp() const
 
 void SmoothAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getSmoothType(QString::fromStdString(exp.enumValue()));
   }
 }

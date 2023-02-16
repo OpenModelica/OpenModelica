@@ -655,7 +655,7 @@ Element::Element(ModelInstance::Element *pModelElement, bool inherited, Graphics
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   } else {
-    mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
+    mTransformation.parseTransformation(mpModelElement->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(QStringList());
@@ -745,7 +745,7 @@ Element::Element(ModelInstance::Element *pModelElement, Element *pParentElement,
   mpBusComponent = 0;
   drawInheritedElementsAndShapes();
   mTransformation = Transformation(StringHandler::Icon, this);
-  mTransformation.parseTransformation(mpModelElement->getPlacementAnnotation(), getCoOrdinateSystemNew());
+  mTransformation.parseTransformation(mpModelElement->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
@@ -1156,7 +1156,7 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mTransformation.isValid()) {
-    setVisible(mTransformation.getVisible());
+    setVisible(mTransformation.getVisible() && isCondition());
     if (mpStateElementRectangle) {
       if (isVisible()) {
         if (mHasTransition && mIsInitialState) {
@@ -1223,6 +1223,20 @@ QString Element::getComment() const
 }
 
 /*!
+ * \brief Element::isCondition
+ * Returns the element condition.
+ * \return
+ */
+bool Element::isCondition() const
+{
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    return mpModelElement->getCondition();
+  } else {
+    return true;
+  }
+}
+
+/*!
  * \brief Element::getRootParentElement
  * Returns the root parent Element.
  * \return
@@ -1263,12 +1277,12 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel->isConnector()) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     } else {
-      coordinateSystem = mpModel->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
   } else {
-    coordinateSystem = mpModel->getIconAnnotation()->mMergedCoOrdinateSystem;
+    coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
   }
   return coordinateSystem;
 }
@@ -2332,7 +2346,7 @@ void Element::createDefaultElement()
  */
 void Element::createStateElement()
 {
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState())
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState())
       || (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState())) {
     mpStateElementRectangle = new RectangleAnnotation(this);
     mpStateElementRectangle->setVisible(false);
@@ -2678,9 +2692,9 @@ void Element::createClassShapes()
      * Always use the icon annotation when element type is port.
      */
     if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      shapes = mpModel->getDiagramAnnotation()->getGraphics();
+      shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
     } else {
-      shapes = mpModel->getIconAnnotation()->getGraphics();
+      shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
     }
 
     foreach (auto shape, shapes) {
@@ -3564,7 +3578,7 @@ void Element::duplicate()
       return;
     }
   } else {
-    name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
+    name = mpGraphicsView->getUniqueElementName(getClassName(), StringHandler::toCamelCase(getName()));
   }
   QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
@@ -3901,7 +3915,7 @@ void Element::showElementPropertiesDialog()
 void Element::updateDynamicSelect(double time)
 {
   // state machine debugging
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
@@ -3918,7 +3932,7 @@ void Element::updateDynamicSelect(double time)
 
 void Element::resetDynamicSelect()
 {
-  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
+  if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
     // no need to do anything for state machines case.
   } else { // DynamicSelect
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {

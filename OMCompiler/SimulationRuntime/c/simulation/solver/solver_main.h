@@ -42,8 +42,6 @@
 #include "../../util/list.h"
 #include "../../util/simulation_options.h"
 
-static const unsigned int numStatistics = 5;
-
 /**
  * @brief Solver statistics.
  */
@@ -80,9 +78,8 @@ typedef struct SOLVER_INFO
   unsigned long stateEvents;
   unsigned long sampleEvents;
   /* integrator stats */
-  /* TODO: Change to SOLVERSTATS!!!! */
-  unsigned int* solverStats;          /* Statistic for integrator */
-  unsigned int* solverStatsTmp;       /* tmp solver stats to update solverStats with */
+  SOLVERSTATS solverStats;            /* Statistic for integrator */
+  SOLVERSTATS solverStatsTmp;         /* tmp solver stats to update solverStats with */
 
   /* further options */
   int integratorSteps;              /* 1 => stepSizeControl; 0 => equidistant grid */
@@ -113,6 +110,9 @@ extern int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* s
 void checkTermination(DATA* data);
 
 extern int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates);
+
+void resetSolverStats(SOLVERSTATS* stats);
+void addSolverStats(SOLVERSTATS* destStats, SOLVERSTATS* addStats);
 
 #ifdef __cplusplus
   }

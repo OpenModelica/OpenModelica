@@ -123,6 +123,8 @@ val(x[3],1);
 // --- Alias of INI[1 | 1] ---
 // BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_0)
 // 	[----] for i in 1:10 loop
@@ -142,6 +144,8 @@ val(x[3],1);
 //
 // BLOCK 1: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_0)
 // 	[----] for i in 1:10 loop
@@ -267,6 +271,8 @@ val(x[3],1);
 // --- Alias of INI[1 | 2] ---
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
@@ -294,6 +300,8 @@ val(x[3],1);
 //
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
@@ -419,6 +427,8 @@ val(x[3],1);
 // --- Alias of INI[1 | 2] ---
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
@@ -446,6 +456,8 @@ val(x[3],1);
 //
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop

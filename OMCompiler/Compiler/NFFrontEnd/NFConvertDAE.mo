@@ -44,6 +44,7 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import Call = NFCall;
 import ComponentReference;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -459,13 +460,22 @@ function convertStateSelectAttribute
   input Binding binding;
   output Option<DAE.StateSelect> stateSelect;
 protected
-  InstNode node;
   String name;
-  Expression exp = Binding.getTypedExp(binding);
+algorithm
+  name := getStateSelectName(Binding.getTypedExp(binding));
+  stateSelect := SOME(lookupStateSelectMember(name));
+end convertStateSelectAttribute;
+
+function getStateSelectName
+  input Expression exp;
+  output String name;
+protected
+  Expression e;
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+    case Expression.CREF() then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
         Error.assertion(false, getInstanceName() +
@@ -473,9 +483,7 @@ algorithm
       then
         fail();
   end match;
-
-  stateSelect := SOME(lookupStateSelectMember(name));
-end convertStateSelectAttribute;
+end getStateSelectName;
 
 function lookupStateSelectMember
   input String name;
@@ -937,7 +945,7 @@ protected
 algorithm
   Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
-  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
+  ty := InstNode.getType(iterator);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()

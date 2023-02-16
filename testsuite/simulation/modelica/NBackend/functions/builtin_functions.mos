@@ -26,7 +26,7 @@ end builtin_functions;
 
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=symjacdump"); getErrorString();
+setCommandLineOptions("--newBackend -d=symjacdump"); getErrorString();
 simulate(builtin_functions); getErrorString();
 // Result:
 // true
@@ -185,180 +185,69 @@ simulate(builtin_functions); getErrorString();
 //
 // Partial Derivative Variables (2/15)
 // ****************************************
-// (1)       [JACV] (14) Real[14] $pDER_ODE_JAC.$DER.x
-// (2)       [JACV] (1) Real $pDER_ODE_JAC.y
+// (1)       [ALGB] (1) Real y
+// (2)       [DER-] (14) Real[14] $DER.x
 //
 // Seed Variables (1/14)
 // ****************************************
-// (1)       [SEED] (14) Real[14] $SEED_ODE_JAC.x
-//
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	Real $pDER_ODE_JAC.y
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.y = sign(x[2]) * $SEED_ODE_JAC.x[2] ($RES_ODE_JAC_0)
-//
-// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[1]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[1] = 0.5 / y ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_1)
-// 	 slice: {}
-//
-// BLOCK 3: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[2]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[2] = cos(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_2)
-// 	 slice: {}
-//
-// BLOCK 4: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[3]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[3] = -sin(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_3)
-// 	 slice: {}
-//
-// BLOCK 5: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[4]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[4] = 1/cos(y) ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_4)
-// 	 slice: {}
-//
-// BLOCK 6: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[5]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[5] = 1/(1.0 - y ^ 2.0) ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_5)
-// 	 slice: {}
-//
-// BLOCK 7: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[6]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[6] = -1/(1.0 - y ^ 2.0) ^ 0.5 * $pDER_ODE_JAC.y ($RES_ODE_JAC_6)
-// 	 slice: {}
-//
-// BLOCK 8: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[7]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[7] = 1/1.0 + y ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_7)
-// 	 slice: {}
-//
-// BLOCK 9: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[8]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[8] = cosh(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_8)
-// 	 slice: {}
-//
-// BLOCK 10: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[9]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[9] = sinh(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_9)
-// 	 slice: {}
-//
-// BLOCK 11: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[10]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[10] = (1.0 - tanh(y) ^ 2.0) * $pDER_ODE_JAC.y ($RES_ODE_JAC_10)
-// 	 slice: {}
-//
-// BLOCK 12: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[11]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[11] = exp(y) * $pDER_ODE_JAC.y ($RES_ODE_JAC_11)
-// 	 slice: {}
-//
-// BLOCK 13: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[12]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[12] = 1/1.0 + y * $pDER_ODE_JAC.y ($RES_ODE_JAC_12)
-// 	 slice: {}
-//
-// BLOCK 14: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[13]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[13] = 0.4342944819032518 / 1.0 + y * $pDER_ODE_JAC.y ($RES_ODE_JAC_13)
-// 	 slice: {}
-//
-// BLOCK 15: Sliced Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	$pDER_ODE_JAC.$DER.x[14]
-// ### Equation:
-// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[14] = y / y ^ 2.0 + x[1] ^ 2.0 * $SEED_ODE_JAC.x[1] - x[1] / y ^ 2.0 + x[1] ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_14)
-// 	 slice: {}
+// (1)       [STAT] (14) Real[14] x (fixed = {true for $i1 in 1:14}, start = {-1.0 for $i1 in 1:14})
 //
 // ========================================
 // Sparsity Pattern (nnz: 15)
 // ========================================
 //
+// ### Seeds (col vars) ###
+// ----------------------------------------
+// {x[14], x[13], x[12], x[11], x[10], x[9], x[8], x[7], x[6], x[5], x[4], x[3], x[2], x[1]}
+//
+// ### Partials (row vars) ###
+// ----------------------------------------
+// {$DER.x[14], $DER.x[13], $DER.x[12], $DER.x[11], $DER.x[10], $DER.x[9], $DER.x[8], $DER.x[7], $DER.x[6], $DER.x[5], $DER.x[4], $DER.x[3], $DER.x[2], $DER.x[1]}
+//
 // ### Columns ###
 // ----------------------------------------
-// (x[14])	 affects:	{}
-// (x[13])	 affects:	{}
-// (x[12])	 affects:	{}
-// (x[11])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[4])	 affects:	{}
-// (x[3])	 affects:	{}
-// (x[2])	 affects:	{$DER.x[14],$DER.x[9],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[10],$DER.x[5],$DER.x[11],$DER.x[6],$DER.x[12],$DER.x[7],$DER.x[13],$DER.x[8]}
 // (x[1])	 affects:	{$DER.x[14]}
+// (x[2])	 affects:	{$DER.x[9],$DER.x[14],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[5],$DER.x[10],$DER.x[6],$DER.x[11],$DER.x[7],$DER.x[12],$DER.x[8],$DER.x[13]}
+// (x[3])	 affects:	{}
+// (x[4])	 affects:	{}
+// (x[5])	 affects:	{}
+// (x[6])	 affects:	{}
+// (x[7])	 affects:	{}
+// (x[8])	 affects:	{}
+// (x[9])	 affects:	{}
+// (x[10])	 affects:	{}
+// (x[11])	 affects:	{}
+// (x[12])	 affects:	{}
+// (x[13])	 affects:	{}
+// (x[14])	 affects:	{}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($DER.x[14])	 depends on:	{x[2],x[1]}
-// ($DER.x[13])	 depends on:	{x[2]}
-// ($DER.x[12])	 depends on:	{x[2]}
-// ($DER.x[11])	 depends on:	{x[2]}
-// ($DER.x[10])	 depends on:	{x[2]}
-// ($DER.x[9])	 depends on:	{x[2]}
-// ($DER.x[8])	 depends on:	{x[2]}
-// ($DER.x[7])	 depends on:	{x[2]}
-// ($DER.x[6])	 depends on:	{x[2]}
-// ($DER.x[5])	 depends on:	{x[2]}
-// ($DER.x[4])	 depends on:	{x[2]}
-// ($DER.x[3])	 depends on:	{x[2]}
-// ($DER.x[2])	 depends on:	{x[2]}
 // ($DER.x[1])	 depends on:	{x[2]}
+// ($DER.x[2])	 depends on:	{x[2]}
+// ($DER.x[3])	 depends on:	{x[2]}
+// ($DER.x[4])	 depends on:	{x[2]}
+// ($DER.x[5])	 depends on:	{x[2]}
+// ($DER.x[6])	 depends on:	{x[2]}
+// ($DER.x[7])	 depends on:	{x[2]}
+// ($DER.x[8])	 depends on:	{x[2]}
+// ($DER.x[9])	 depends on:	{x[2]}
+// ($DER.x[10])	 depends on:	{x[2]}
+// ($DER.x[11])	 depends on:	{x[2]}
+// ($DER.x[12])	 depends on:	{x[2]}
+// ($DER.x[13])	 depends on:	{x[2]}
+// ($DER.x[14])	 depends on:	{x[2],x[1]}
 //
 // ========================================
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {x[14],x[13],x[12],x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[1]}
-//   - Row:    {$DER.x[14]}
+//   - Column: {x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14]}
+//   - Row:    {}
 //
 // Color (2)
-//   - Column: {x[2]}
-//   - Row:    {$DER.x[14],$DER.x[13],$DER.x[12],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[1]}
+//   - Column: {x[1]}
+//   - Row:    {}
 //
 //
 // record SimulationResult

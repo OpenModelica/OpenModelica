@@ -244,7 +244,7 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/tracreleases.rst
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/githubreleases.rst source/tracreleases.inc
 
 source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEditLIB/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
@@ -270,8 +270,6 @@ source/simoptions.inc:
 source/omchelptext.rst:
 	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
-source/tracreleases.rst: source/tracreleases.py
-	cd source && ./tracreleases.py
 source/omsimulator-help.inc:
 	$(OPENMODELICAHOME)/bin/OMSimulator --help > "$@.tmp"
 	mv "$@.tmp" "$@"
@@ -281,3 +279,5 @@ omsimulatorstuff:
 	$(MAKE) $(OMSUSERSGUIDE)/source/OMSimulatorPython.inc source/omsimulator-help.inc
 	test -e source/omsimulator || ln -s "$(OMSUSERSGUIDE)/source" "source/omsimulator"
 	for f in api images OMCScripting.inc OMSimulatorLib.inc OMSimulatorLua.inc OMSimulatorPython.inc releaselink.inc; do test -e "source/$$f" || ln -s "$(OMSUSERSGUIDE)/source/$$f" "source/$$f"; done
+source/githubreleases.rst: source/githubreleases.py
+	(cd source && python3 githubreleases.py)

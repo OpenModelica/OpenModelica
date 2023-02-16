@@ -662,7 +662,7 @@ algorithm
       FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
-      Absyn.ClassDef cdef;
+      Absyn.Element elem;
       Absyn.Exp aexp;
       DAE.DAElist dae;
       BackendDAE.BackendDAE daelow;
@@ -756,8 +756,8 @@ algorithm
 
     case ("getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
-        Absyn.CLASS(body = cdef) = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = System.unescapedString(getClassComment(cdef));
+        elem = InteractiveUtil.getPathedElementInProgram(path, SymbolTable.getAbsyn());
+        str = System.unescapedString(getClassElementComment(elem));
       then
         Values.STRING(str);
 
@@ -3629,7 +3629,7 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := Autoconf.cmake + " -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
@@ -3638,7 +3638,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  Autoconf.cmake + " --build . && " + Autoconf.make + " install && " +
+                  "cmake --build . &&  make  install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -5550,7 +5550,6 @@ algorithm
       String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags;
       Absyn.Path classname;
       Absyn.Program p;
-      Absyn.Class cdef;
       Real edit,build,globalEdit,globalBuild,timeCompile;
       FCore.Graph env;
       SimCode.SimulationSettings simSettings;
@@ -7561,7 +7560,7 @@ protected
 algorithm
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
-  cmt := getClassComment(cdef);
+  cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);
   if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(path)) then
     isProtectedClass := false;
@@ -7613,7 +7612,31 @@ algorithm
   end match;
 end getClassDimensions;
 
-function getClassComment "Returns the class comment of a Absyn.ClassDef"
+function getClassElementComment
+  "Returns the comment on a class element."
+  input Absyn.Element element;
+  output String commentStr;
+protected
+  Absyn.Class cls;
+algorithm
+  commentStr := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls))
+      algorithm
+        // The comment can go either before and/or after the constrainedby clause,
+        // the one after has higher priority.
+        commentStr := InteractiveUtil.getConstrainingClassComment(element.constrainClass);
+
+        if stringEmpty(commentStr) then
+          commentStr := getClassDefComment(cls.body);
+        end if;
+      then
+        commentStr;
+
+    else "";
+  end match;
+end getClassElementComment;
+
+function getClassDefComment "Returns the class comment of a Absyn.ClassDef"
   input Absyn.ClassDef inClassDef;
   output String outString;
 algorithm
@@ -7634,7 +7657,7 @@ algorithm
     case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
     else "";
   end match;
-end getClassComment;
+end getClassDefComment;
 
 protected function getAnnotationInEquation
   "This function takes an `EquationItem\' and returns a comma separated

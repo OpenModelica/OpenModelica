@@ -69,6 +69,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // create the filter text box
   mpFilterTextBox = new QLineEdit;
   mpFilterTextBox->installEventFilter(this);
+  mpFilterTextBox->setClearButtonEnabled(true);
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer(this);
@@ -1251,7 +1252,7 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
  * \param displayUnit
  * \return
  */
-QString Utilities::convertUnitToSymbol(const QString displayUnit)
+QString Utilities::convertUnitToSymbol(const QString &displayUnit)
 {
   if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
     return QChar(937);
@@ -1268,7 +1269,7 @@ QString Utilities::convertUnitToSymbol(const QString displayUnit)
  * \param symbol
  * \return
  */
-QString Utilities::convertSymbolToUnit(const QString symbol)
+QString Utilities::convertSymbolToUnit(const QString &symbol)
 {
   // Greek Omega
   if (symbol.compare(QChar(937)) == 0) {

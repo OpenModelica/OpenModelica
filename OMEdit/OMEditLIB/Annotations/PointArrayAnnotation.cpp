@@ -51,9 +51,15 @@ PointArrayAnnotation& PointArrayAnnotation::operator= (const QVector<QPointF> &v
   return *this;
 }
 
-QPointF &PointArrayAnnotation::operator[](int i)
+const QPointF &PointArrayAnnotation::operator[](int i) const
 {
   return mValue[i];
+}
+
+void PointArrayAnnotation::setPoint(int i, const QPointF &value)
+{
+  mValue[i] = value;
+  setExp();
 }
 
 bool PointArrayAnnotation::operator==(const PointArrayAnnotation &pointArray) const

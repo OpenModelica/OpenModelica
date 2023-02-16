@@ -1007,6 +1007,14 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        case (Type.ENUMERATION(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
+            simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
+            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
         case (Type.BOOLEAN(), VarType.PARAMETER)
           algorithm
             Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.booleanParamIndex) :: Pointer.access(bool_lst));

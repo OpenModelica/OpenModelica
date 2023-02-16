@@ -1,0 +1,35 @@
+// name: setElementModifierValue
+// keywords:
+// status: correct
+// cflags: -d=-newInst
+//
+// Tests the setElementModifierValue API function.
+//
+
+loadString("
+  model M
+    ClasswithReplaceable classwithReplaceable;
+  end M;
+");
+
+setElementModifierValue(M, classwithReplaceable.testClass, $Code((redeclare ClassB testClass "A")));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, classwithReplaceable.testClass, $Code((redeclare ClassB testClass "B")));
+getErrorString();
+list(M);
+
+// Result:
+// true
+// Ok
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"A\");
+// end M;"
+// Ok
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"B\");
+// end M;"
+// endResult

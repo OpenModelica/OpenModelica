@@ -1,0 +1,35 @@
+// name: getClassComment
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  package P \"P comment\"
+    replaceable model M1 = M constrainedby M \"After constraint\";
+    replaceable model M2 = M \"Before constraint\" constrainedby M;
+    replaceable model M3 = M \"Before constraint\" constrainedby M \"After constraint\";
+
+    model M \"M comment\"
+    end M;
+
+    model extends ME \"ME comment\"
+    end ME;
+  end P;
+");
+
+getClassComment(P);
+getClassComment(P.M1);
+getClassComment(P.M2);
+getClassComment(P.M3);
+getClassComment(P.M);
+getClassComment(P.ME);
+
+// Result:
+// true
+// "P comment"
+// "After constraint"
+// "Before constraint"
+// "After constraint"
+// "M comment"
+// "ME comment"
+// endResult

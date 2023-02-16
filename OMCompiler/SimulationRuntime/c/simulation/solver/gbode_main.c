@@ -931,11 +931,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       memcpy(gbfData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gbfData->stats.nStepsTaken;
-      solverInfo->solverStatsTmp[1] = gbfData->stats.nCallsODE;
-      solverInfo->solverStatsTmp[2] = gbfData->stats.nCallsJacobian;
-      solverInfo->solverStatsTmp[3] = gbfData->stats.nErrorTestFailures;
-      solverInfo->solverStatsTmp[4] = gbfData->stats.nConvergenveTestFailures;
+      memcpy(&solverInfo->solverStatsTmp, &gbfData->stats, sizeof(SOLVERSTATS));
 
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1421,7 +1417,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         memcpy(gbData->gbfData->yOld, sData->realVars, nStates * sizeof(double));
 
         /* write statistics to the solverInfo data structure */
-        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+        memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1542,7 +1538,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
-  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+  memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(LOG_SOLVER);
   return 0;
@@ -1790,7 +1786,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
         /* write statistics to the solverInfo data structure */
-        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+        memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1909,7 +1905,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
-  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+  memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(LOG_SOLVER);
   return 0;

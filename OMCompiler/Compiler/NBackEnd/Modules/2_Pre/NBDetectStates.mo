@@ -264,7 +264,7 @@ protected
           else
             // one or less algebraic variables > differentiate the expression
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
-            returnExp := SimplifyExp.simplify(returnExp);
+            returnExp := SimplifyExp.simplify(returnExp, true);
             if listLength(oDiffArgs.new_vars) == 1 then
               der_var := List.first(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));

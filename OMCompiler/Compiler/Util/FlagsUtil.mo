@@ -248,7 +248,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SET_BASED_GRAPHS,
   Flags.MERGE_COMPONENTS,
   Flags.DUMP_SLICE,
-  Flags.VECTORIZE_BINDINGS
+  Flags.VECTORIZE_BINDINGS,
+  Flags.DUMP_EVENTS
 };
 
 protected

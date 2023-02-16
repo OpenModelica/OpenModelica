@@ -100,7 +100,7 @@ void TextStyleAnnotation::fromExp(const FlatModelica::Expression &exp)
     clear();
 
     for (size_t i = 0u; i < elems.size(); ++i) {
-      mValue.append(elems[i].isInteger() ? StringHandler::getTextStyleType(QString::fromStdString(elems[i].enumValue())) : StringHandler::TextStyleBold);
+      mValue.append(elems[i].isEnum() ? StringHandler::getTextStyleType(QString::fromStdString(elems[i].enumValue())) : StringHandler::TextStyleBold);
     }
   }
 }

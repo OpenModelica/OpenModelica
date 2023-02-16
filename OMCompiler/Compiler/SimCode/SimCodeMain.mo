@@ -401,10 +401,12 @@ algorithm
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
     simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    if Flags.isSet(Flags.DUMP_SIMCODE) then
+      print(NSimCode.SimCode.toString(simCode));
+    end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
-      print(NSimCode.SimCode.toString(simCode));
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
     end if;
     timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);

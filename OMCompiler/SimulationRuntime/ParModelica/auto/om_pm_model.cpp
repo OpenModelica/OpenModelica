@@ -33,6 +33,9 @@
  Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
+// We need this to get the flag/option values passed to a simulation executable.
+#include "simulation/options.h"
+
 #include "om_pm_model.hpp"
 
 #include <cstring>
@@ -259,9 +262,19 @@ void load_equation(Equation& current_node, const nlohmann::json& json_eq) {
 
 void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
     std::string json_file = this->name + "_ode.json";
+
+    if (omc_flag[FLAG_INPUT_PATH]) {
+      json_file = std::string(omc_flagValue[FLAG_INPUT_PATH]) + "/" + json_file;
+    }
+
     // utility::log("") << "Loading " << json_file << std::endl;
 
     std::ifstream  f_s(json_file);
+    if (!f_s.is_open()) {
+        utility::error("Fatal") << "Could not open dependency json file '" << json_file << "'. Please make sure the file is generated in the correct place and is readable." << std::endl;
+    }
+
+
     nlohmann::json jmodel_info;
 
     jmodel_info << f_s;

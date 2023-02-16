@@ -101,13 +101,17 @@ static IDA_SOLVER *idaDataGlobal;
 
 
 /**
- * @brief Return true if IDA flag signals success.
+ * @brief Return true if flag signals success.
  *
- * @param flag                Return value of IDA routine.
- * @return modelica_boolean   TRUE if flag is signalling success.
+ * If flag is IDA_SUCCESS or IDA_TSTOP_RETURN return true.
+ * Warnings (IDA_WARNING) or encountering roots (IDA_ROOT_RETURN) doesn't count as success.
+ *
+ * @param flag                Value of IDA/IDAS flag.
+ * @return modelica_boolean   Return true if flag signals success, otherwise return false.
  */
-static modelica_boolean IDAisSuccess(int flag) {
-  switch (flag) {
+modelica_boolean IDAflagIsSuccess(int flag) {
+  switch (flag)
+  {
   case IDA_SUCCESS:
   case IDA_TSTOP_RETURN:
   case IDA_ROOT_RETURN:
@@ -117,32 +121,6 @@ static modelica_boolean IDAisSuccess(int flag) {
   }
 }
 
-/**
- * @brief Error handler function.
- *
- * Print IDA errors to `LOG_SOLVER` stream.
- * Function has to be of type IDAErrHandlerFn and is set with IDASetErrHandlerFn.
- *
- * TODO: Move to sundials_Error.c or remove.
- *
- * @param error_code    IDA error code.
- * @param module        Name of IDA module reporting the error.
- * @param function      Name of IDA function in which error occurred.
- * @param msg           Error message.
- * @param userData      Pointer to user data, set by IDASetErrHandlerFn. Is of type IDA_SOLVER*.
- */
-void errOutputIDA(int error_code, const char *module, const char *function,
-                  char *msg, void *userData)
-{
-  TRACE_PUSH
-  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
-  DATA* data = idaData->userData->data;
-  infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
-  infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", error_code, module, function);
-  infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-  messageClose(LOG_SOLVER);
-  TRACE_POP
-}
 
 /**
  * @brief Initialize main IDA data.
@@ -235,7 +213,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetUserData");
 
   /* Set error handler */
-  flag = IDASetErrHandlerFn(idaData->ida_mem, errOutputIDA, idaData);
+  flag = IDASetErrHandlerFn(idaData->ida_mem, idaErrorHandlerFunction, idaData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
 
   /* Set nominal values of the states for absolute tolerances */
@@ -734,7 +712,7 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
   /* try again without line search if first try fails */
-  if (!IDAisSuccess(flag)){
+  if (!IDAflagIsSuccess(flag)){
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
     IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
     flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
@@ -941,8 +919,8 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
 
-    /* Error handling */
-    if ((flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN) && solverInfo->currentTime >= tout)
+    /* error handling */
+    if (IDAflagIsSuccess(flag) && solverInfo->currentTime >= tout)
     {
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
@@ -971,10 +949,34 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
     else
     {
-      infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
-      //checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASolve");  // Will throw and jump to next MMC_CATCH_INTERNAL
-      finished = 1 /* TRUE */;
-      retVal = flag;
+      if (IDAflagIsSuccess(flag))
+      {
+        infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
+      }
+      else if (flag == IDA_ROOT_RETURN)
+      {
+        infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
+        finished = 1 /* TRUE */;
+      }
+      else if (flag == IDA_TOO_MUCH_WORK)
+      {
+        warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      }
+      else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail )
+      {
+        flag = IDAReInit(idaData->ida_mem,
+            solverInfo->currentTime,
+            idaData->y,
+            idaData->yp);
+        restartAfterLSFail = 1;
+        warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
+      }
+      else
+      {
+        infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+        finished = 1 /* TRUE */;
+        retVal = flag;
+      }
     }
 
     /* closing new step message */
@@ -1038,34 +1040,32 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* steps */
   tmp = 0;
   flag = IDAGetNumSteps(idaData->ida_mem, &tmp);
-  if (flag == IDA_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[0] = tmp;
-  }
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumSteps");
+  solverInfo->solverStatsTmp.nStepsTaken = tmp;
 
   /* functionODE evaluations */
   tmp = 0;
   flag = IDAGetNumResEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumResEvals");
-  solverInfo->solverStatsTmp[1] = tmp;
+  solverInfo->solverStatsTmp.nCallsODE = tmp;
 
   /* Jacobians evaluations */
   tmp = 0;
   flag = IDAGetNumJacEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumJacEvals");
-  solverInfo->solverStatsTmp[2] = tmp;
+  solverInfo->solverStatsTmp.nCallsJacobian = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumErrTestFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumErrTestFails");
-  solverInfo->solverStatsTmp[3] = tmp;
+  solverInfo->solverStatsTmp.nErrorTestFailures = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumNonlinSolvConvFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvConvFails");
-  solverInfo->solverStatsTmp[4] = tmp;
+  solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
 
   /* get more statistics */
   if (useStream[LOG_SOLVER_V])

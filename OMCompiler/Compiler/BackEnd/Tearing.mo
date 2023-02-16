@@ -1680,7 +1680,7 @@ end omcTearing4_1;
 // ============================================================================
 // Section for minimal tearing
 //   Tear only the minimal amount of variables from strong components which are
-//   all discrete variables.
+//   all discrete variables and CSE variables.
 // ============================================================================
 protected function minimalTearing
   "Tears discrete variables from Loops.
