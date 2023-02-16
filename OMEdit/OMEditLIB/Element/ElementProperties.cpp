@@ -198,8 +198,12 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     mValueType = Parameter::Enumeration;
   } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceElement->getReplaceable()->isReplaceable()) {
     // replaceable component or short element definition
-    if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isType()) {
+    if (mpModelInstanceElement->getModel()) {
       mValueType = Parameter::ReplaceableClass;
+      mpModifyReplaceableButton = new QToolButton;
+      mpModifyReplaceableButton->setText("M");
+      mpModifyReplaceableButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+      connect(mpModifyReplaceableButton, SIGNAL(clicked()), SLOT(modifyReplaceableButtonClicked()));
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
@@ -680,6 +684,12 @@ void Parameter::updateValueBinding(const FlatModelica::Expression expression)
   }
 }
 
+void Parameter::modifyReplaceableButtonClicked()
+{
+  QString className = mpModelInstanceElement->getType();
+  qDebug() << className;
+}
+
 /*!
  * \brief Parameter::fileSelectorButtonClicked
  * Slot activated when mpFileSelectorButton clicked SIGNAL is raised.
@@ -1107,6 +1117,13 @@ void ElementParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
+
+          if (pParameter->getModifyReplaceableButton()) {
+            pGroupBoxGridLayout->addWidget(pParameter->getModifyReplaceableButton(), layoutIndex, columnIndex++);
+          } else {
+            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+          }
+
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
             pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), layoutIndex, columnIndex++);
