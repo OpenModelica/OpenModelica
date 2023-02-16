@@ -322,8 +322,8 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
   if (old2 == NULL)
   {
     oldValues = (VALUE*) listNodeData(old);
-    memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));    // TODO AHeu: Invalid read!
-    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));             // TODO AHeu: Invalid read?
+    memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "take just old values.");
   }
   else
@@ -336,9 +336,9 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
     printValueElement(old2Values);
     for(i = 0; i < oldValues->size; ++i)
     {
-      extrapolatedValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);    // TODO AHeu: Invalid read!
+      extrapolatedValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);
     }
-    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));     // TODO AHeu: Invalid read!
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
   }
   messageClose(LOG_NLS_EXTRAPOLATE);
   return;
