@@ -333,7 +333,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
-  NONLINEAR_PATTERN* nonlinearPattern;
+  NONLINEAR_PATTERN *nonlinearPattern;
+  int *eqn_simcode_indices;
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);

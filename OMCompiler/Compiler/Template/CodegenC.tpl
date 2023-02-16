@@ -2744,6 +2744,10 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].freeStaticNLSData = freeStaticDataNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].checkConstraints = <%constraintsCall%>;
+
+      const int tmp_eqn_indices_<%nls.indexNonLinearSystem%>[<%listLength(nls.eqs)%>] = {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>};
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = malloc(<%listLength(nls.eqs)%> * sizeof(int));
+      memcpy(nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices, tmp_eqn_indices_<%nls.indexNonLinearSystem%>, <%listLength(nls.eqs)%> * sizeof(int));
       >>
 end generateNonLinearSystemData;
 
