@@ -9,7 +9,7 @@
   - [2.1 CMake build](#21-cmake-build)
   - [2.2 Make build](#22-make-build)
   - [2.3 CORBA support](#23-corba-support)
-- [3 Testsuite](#3-testsuite)
+- [3 Test Suite](#3-test-suite)
 - [4 General Notes](#4-general-notes)
 
 # 1. Build dependencies
@@ -89,11 +89,16 @@ First you need to install the dependencies:
 
 # 2 Compile OpenModelica
 
-Now there are two options to build OpenModelica. If you are new or unsure what to pick, choose the new CMake build.
-On OSX only the CMake build is supported.
+There are two options to build OpenModelica:
 
   1. Use new CMake build.
   2. Use legacy Makefiles build.
+
+If you are new or unsure what to pick, choose the new CMake build.
+On OSX only the CMake build is supported.
+But most of our CI is still using the old Makefiles build, so use those if you need to
+reproduce some issue showing in the CI.
+Also OMEdit compiled with CMake seems to be slower for some reason.
 
 ## 2.1 CMake build
 
@@ -101,12 +106,14 @@ Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell run:
 
 ```bash
 # (Optional) Install ccache for faster re-compilation and flex for omc-diff
-apt-get install ccache flex
+sudo apt-get install ccache flex
 ```
 
 ```bash
 cd OpenModelica
+# Configure CMake, create Makefiles in build_cmake
 cmake -S . -B build_cmake
+# Compile with generated Makefiles
 cmake --build build_cmake --parallel <Nr. of cores> --target install
 ```
 

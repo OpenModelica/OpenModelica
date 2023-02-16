@@ -43,9 +43,10 @@ developments or latest heads, use:
 cd OpenModelica
 git checkout master
 git pull
-git submodule foreach --recursive "git checkout master"
-# To update; you will need to merge each submodule, but your changes will remain
-git submodule foreach --recursive "git pull"
+# To checkout the latest master on each submodule run
+# >ou will need to merge each submodule, but your changes will remain
+git submodule foreach --recursive "git checkout master && git pull"
+
 # Running master on all submodules might lead to build errors
 # so use this to make sure you force all submodules to the commits
 # from the OpenModelica glue project which are properly tested

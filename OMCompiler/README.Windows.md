@@ -10,8 +10,9 @@
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
   - [2.2 MSYS and Make](#22-msys-and-make)
-- [3 Testsuite](#3-testsuite)
-- [4 Troubleshooting](#4-troubleshooting)
+- [3 Installer](#3-installer)
+- [4 Test Suite](#4-test-suite)
+- [5 Troubleshooting](#5-troubleshooting)
 
 # 1 OMDev Package
 
@@ -110,12 +111,18 @@ make -f Makefile.omdev.mingw -j<Nr. of cores> omedit
 make -f Makefile.omdev.mingw -j<Nr. of cores> qtclients
 ```
 
-# 3 Testsuite
+# 3 Installer
 
-Many of the tests inside the testsuite are OS dependent and will only work on a Linux OS.
-Nonetheless you can run the testsuite, but a lot of failing tests should be expected.
+To build the OpenModelica releases and installer the Makefiles build and NSIS is used.
+If you need to know more checkout [OpenModelicaSetup/BuildWindowsRelease.sh](https://github.com/OpenModelica/OpenModelicaSetup#readme)
 
-The Testsuite is only supported if you build using Makefiles. For CMake check
+
+# 4 Test Suite
+
+Many of the tests inside the test suite are OS dependent and will only work on a Linux OS.
+Nonetheless you can run the test suite, but a lot of failing tests should be expected.
+
+The test suite is only supported if you build using Makefiles. For CMake check
 [README.cmake.md](../README.cmake.md).
 
 Start your MSYS shell from OMDev and run:
@@ -126,7 +133,7 @@ cd testsuite/partests
 ./runtests.pl
 ```
 
-# 4 Troubleshooting
+# 5 Troubleshooting
 
 If something does not work check the following:
 
