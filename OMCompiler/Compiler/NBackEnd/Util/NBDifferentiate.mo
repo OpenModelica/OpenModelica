@@ -1291,7 +1291,7 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
-        diff_stmt.rhs := SimplifyExp.simplify(rhs);
+        diff_stmt.rhs := SimplifyExp.simplify(rhs, true);
       then {diff_stmt, stmt};
 
       // II. delegate differentiation to body and only return differentiated statement

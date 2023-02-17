@@ -930,6 +930,8 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_DOPRI45 */       "dopri45",
   /* RK_DOPRISSC1 */     "dopriSsc1",
   /* RK_DOPRISSC2 */     "dopriSsc2",
+  /* RK_TSIT5 */         "tsit5",
+  /* RK_RUNGEKUTTA */    "rungekutta",
   /* RK_RKSSC */         "rungekuttaSsc"
 };
 
@@ -976,6 +978,8 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)",
   /* RK_DOPRISSC1 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 1)",
   /* RK_DOPRISSC2 */     "Explicit Runge-Kutta method Dormand-Prince with large stability region (order 2)",
+  /* RK_TSIT5 */         "Explicit Runge-Kutta method from Tsitouras (order 5)",
+  /* RK_RUNGEKUTTA */    "Explicit classical Runge-Kutta method (order 4)",
   /* RK_RKSSC */         "Explicit Runge-Kutta method with large stabiliy region (order 1)"
 };
 

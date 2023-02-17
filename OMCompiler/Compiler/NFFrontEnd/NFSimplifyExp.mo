@@ -62,11 +62,12 @@ public
 function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
   input Expression exp;
+  input Boolean backend;
   output Expression res;
   input String name = "";
   input String indent = "";
 algorithm
-  res := simplify(exp);
+  res := simplify(exp, backend);
   if Flags.isSet(Flags.DUMP_SIMPLIFY) and not Expression.isEqual(exp, res) then
     print(indent + "### dumpSimplify | " + name + " ###\n");
     print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
@@ -76,18 +77,19 @@ end simplifyDump;
 
 function simplify
   input output Expression exp;
+  input Boolean backend = false;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
-        exp.ty := ComponentRef.getSubscriptedType(exp.cref, true);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref, backend);
       then
         exp;
 
     case Expression.ARRAY()
       algorithm
-        exp.elements := Array.map(exp.elements, simplify);
+        exp.elements := Array.map(exp.elements, function simplify(backend = false));
       then
         exp;
 
@@ -596,7 +598,7 @@ algorithm
   end for;
 
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
-    default_exp, simplify, function simplifyBinaryOp(op = op));
+    default_exp, function simplify(backend = false), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
 
 function simplifySize
@@ -1168,11 +1170,15 @@ algorithm
   if not split then
     // Select the first element as long as the subscripted expression is an
     // array where all elements are equal.
-    while Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
+    while not listEmpty(subs) and Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
           Array.allEqual(Expression.arrayElements(subscriptedExp), Expression.isEqual) loop
       subs := listRest(subs);
       subscriptedExp := arrayGet(Expression.arrayElements(subscriptedExp), 1);
     end while;
+
+    if listEmpty(subs) then
+      return;
+    end if;
   end if;
 
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));

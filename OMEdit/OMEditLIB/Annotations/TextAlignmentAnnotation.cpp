@@ -56,7 +56,7 @@ FlatModelica::Expression TextAlignmentAnnotation::toExp() const
 
 void TextAlignmentAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getTextAlignmentType(QString::fromStdString(exp.enumValue()));
   }
 }

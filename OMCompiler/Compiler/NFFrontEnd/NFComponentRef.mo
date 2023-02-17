@@ -1435,6 +1435,28 @@ public
     end match;
   end stripSubscriptsExceptModel;
 
+  function stripIteratorSubscripts
+    input output ComponentRef cref;
+  protected
+    list<Subscript> subs;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          if not listEmpty(cref.subscripts) and Subscript.isIterator(List.last(cref.subscripts)) then
+            subs := listReverse(cref.subscripts);
+            subs := List.trim(subs, Subscript.isIterator);
+            cref.subscripts := listReverseInPlace(subs);
+          end if;
+
+          cref.restCref := stripIteratorSubscripts(cref.restCref);
+        then
+          ();
+
+      else ();
+    end match;
+  end stripIteratorSubscripts;
+
   function simplifySubscripts
     input output ComponentRef cref;
     input Boolean trim = false;
@@ -1535,13 +1557,17 @@ public
       case CREF()
         algorithm
           d := 1 + depth(cref.restCref);
-        then
-          d;
+        then d;
 
       case WILD() then 0;
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function size
+    input ComponentRef cref;
+    output Integer s = product(i for i in sizes(cref));
+  end size;
 
   function sizes
     input ComponentRef cref;

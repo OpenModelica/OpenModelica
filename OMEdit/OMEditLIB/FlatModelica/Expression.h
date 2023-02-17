@@ -105,6 +105,7 @@ namespace FlatModelica
       bool isLiteral() const;
       bool isInteger() const;
       bool isReal() const;
+      bool isEnum() const;
       bool isNumber() const;
       bool isBoolean() const;
       bool isBooleanish() const;
@@ -122,6 +123,7 @@ namespace FlatModelica
       bool boolValue() const;
       std::string stringValue() const;
       std::string enumValue() const;
+      int enumIndex() const;
       QString QStringValue() const;
       QString functionName() const;
 

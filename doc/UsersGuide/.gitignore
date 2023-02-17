@@ -33,7 +33,6 @@ source/openmodelica.bib
 source/switch.pdf
 source/switch.png
 source/switch.svg
-source/tracreleases.rst
 source/interface.inc
 source/tmp.rst
 source/tmp.wiki
@@ -46,7 +45,6 @@ source/simoptions.inc
 source/testmodel.pdf
 source/testmodel.png
 source/testmodel.svg
-source/tracreleases.inc
 source/__pycache__/
 source/media/mdt-build-prompt.pdf
 source/media/mdt-create-project.pdf

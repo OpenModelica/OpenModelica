@@ -246,6 +246,8 @@ enum GB_METHOD {
   RK_DOPRI45,         /* dopri45*/
   RK_DOPRISSC1,       /* dopriSsc1*/
   RK_DOPRISSC2,       /* dopriSsc2*/
+  RK_TSIT5,           /* tsit5*/
+  RK_RUNGEKUTTA,      /* rungekutta*/
   RK_RKSSC,           /* rungekuttaSsc */
 
 

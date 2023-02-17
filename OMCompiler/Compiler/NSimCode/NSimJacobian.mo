@@ -55,6 +55,7 @@ public
   import SimCodeUtil = NSimCodeUtil;
   import SimCode = NSimCode;
   import SimGenericCall = NSimGenericCall;
+  import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarType};
 
@@ -211,42 +212,49 @@ public
           UnorderedMap<ComponentRef, SimVar> dummy_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
           SimStrongComponent.Block columnEqn;
           VarData varData;
-          VariablePointers unknowns_scalar, seed_scalar;
+          VariablePointers unknowns_scalar, seed_scalar, res_scalar, tmp_scalar;
           list<SimStrongComponent.Block> columnEqns = {};
           Pointer<list<SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
-          list<SimVar> columnVars, seedVars;
+          Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
+          Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
+          list<SimVar> columnVars, resVars, tmpVars, seedVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring;
           Integer numColors;
           SimJacobian jac;
-          UnorderedMap<EquationPointer, Integer> sim_map;
+          UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
           // temporarly safe the generic call map from simcode to recover it afterwards
           // we use a local map to have seperated generic call lists for each jacobian
           sim_map := indices.generic_call_map;
-          indices.generic_call_map := UnorderedMap.new<Integer>(Equation.hash, Equation.equalName);
+          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
           for i in arrayLength(jacobian.comps):-1:1 loop
             (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_map);
             columnEqns := columnEqn :: columnEqns;
           end for;
 
           // extract generic loop calls and put the old generic call map back
-          generic_loop_calls := list(SimGenericCall.fromEquation(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
+          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
 
           // scalarize variables for sim code
           unknowns_scalar := VariablePointers.scalarize(varData.unknowns);
           seed_scalar := VariablePointers.scalarize(varData.seedVars);
-
+          res_scalar := VariablePointers.scalarize(varData.resultVars);
+          tmp_scalar := VariablePointers.scalarize(varData.tmpVars);
           // use dummy simcode indices to always start at 0 for column and seed vars
           VariablePointers.map(unknowns_scalar, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(res_scalar, function SimVar.traverseCreate(acc = resVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(tmp_scalar, function SimVar.traverseCreate(acc = tmpVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
+          resVars := listReverse(Pointer.access(resVars_ptr));
+          tmpVars := listReverse(Pointer.access(tmpVars_ptr));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(columnVars) + listLength(seedVars));
           SimCodeUtil.addListSimCodeMap(columnVars, jac_map);
@@ -258,10 +266,10 @@ public
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
             partitionIndex      = 0,
-            numberOfResultVars  = listLength(columnVars),
+            numberOfResultVars  = listLength(resVars),
             columnEqns          = listReverse(columnEqns),
             constantEqns        = {},
-            columnVars          = columnVars,
+            columnVars          = tmpVars,
             seedVars            = seedVars,
             sparsity            = sparsity,
             sparsityT           = sparsityT,
@@ -366,7 +374,14 @@ public
           fail();
         end try;
       end for;
+      simPattern := List.sort(simPattern, sparsityTplSortGt);
     end createSparsityPattern;
+
+    function sparsityTplSortGt
+      input tuple<Integer, list<Integer>> col1 "or row1";
+      input tuple<Integer, list<Integer>> col2 "or row2";
+      output Boolean b = Util.tuple21(col1) > Util.tuple21(col2);
+    end sparsityTplSortGt;
 
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;

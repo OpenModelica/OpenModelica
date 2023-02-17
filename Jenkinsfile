@@ -506,6 +506,7 @@ pipeline {
           environment {
             RUNTESTDB = "/cache/runtest/" // Dummy directory
             LIBRARIES = "/cache/omlibrary"
+            GITHUB_AUTH = credentials('OpenModelica-Hudson')
           }
           steps {
             script {

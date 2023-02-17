@@ -874,7 +874,7 @@ algorithm
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
 
-  json := dumpJSONInstanceTree(inst_tree);
+  json := dumpJSONInstanceTree(inst_tree, cls_node);
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstance;
 
@@ -926,7 +926,7 @@ algorithm
 
     case (_, ClassTree.INSTANTIATED_TREE(exts = ext_nodes))
       algorithm
-        exts := list(buildInstanceTree(e) for e in ext_nodes);
+        exts := list(buildInstanceTree(e, isDerived = true) for e in ext_nodes);
         components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
                            for i in cls_tree.localComponents);
       then
@@ -957,7 +957,9 @@ end buildInstanceTreeComponent;
 
 function dumpJSONInstanceTree
   input InstanceTree tree;
+  input InstNode scope;
   input Boolean root = true;
+  input Boolean isDeleted = false;
   output JSON json = JSON.emptyObject();
 protected
   InstNode node;
@@ -982,17 +984,19 @@ algorithm
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
 
   if not listEmpty(exts) then
-    json := JSON.addPair("extends", dumpJSONExtendsList(exts), json);
+    json := JSON.addPair("extends", dumpJSONExtendsList(exts, isDeleted), json);
   end if;
 
-  json := dumpJSONCommentOpt(cmt, node, json);
+  json := dumpJSONCommentOpt(cmt, scope, json);
 
-  if not listEmpty(comps) then
-    json := JSON.addPair("components", dumpJSONComponents(comps), json);
+  if not isDeleted then
+    if not listEmpty(comps) then
+      json := JSON.addPair("components", dumpJSONComponents(comps), json);
+    end if;
+
+    sections := Class.getSections(InstNode.getClass(node));
+    json := dumpJSONEquations(sections, node, json);
   end if;
-
-  sections := Class.getSections(InstNode.getClass(node));
-  json := dumpJSONEquations(sections, node, json);
 
   if root then
     j := dumpJSONReplaceableElements(node);
@@ -1010,6 +1014,9 @@ protected
   SCode.Annotation ann;
   array<InstNode> exts;
   JSON j;
+  InstNode scope = node;
+  InstContext.Type context;
+  Boolean annotation_is_literal = true;
 algorithm
   Inst.expand(node);
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
@@ -1033,13 +1040,29 @@ algorithm
       algorithm
         ann.modification := SCodeUtil.filterSubMods(ann.modification,
           function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+        annotation_is_literal := SCodeUtil.onlyLiteralsInMod(ann.modification);
       then
         if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
 
     else NONE();
   end match;
 
-  json := dumpJSONCommentOpt(cmt, node, json, failOnError = true);
+  // Instantiate the scope if the annotation contains component references that
+  // we need to be able to look up.
+  if not annotation_is_literal then
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
+      scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
+      scope := Inst.instantiate(scope, context = context, instPartial = true);
+      Inst.insertGeneratedInners(scope, InstNode.topScope(scope), context);
+      Inst.instExpressions(scope, context = context);
+    else
+    end try;
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+
+  json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
 end dumpJSONInstanceIcon;
 
 function dumpJSONInstanceIconExtends
@@ -1061,15 +1084,17 @@ end dumpJSONPath;
 
 function dumpJSONExtendsList
   input list<InstanceTree> exts;
+  input Boolean isDeleted;
   output JSON json = JSON.emptyArray();
 algorithm
   for ext in exts loop
-    json := JSON.addElement(dumpJSONExtends(ext), json);
+    json := JSON.addElement(dumpJSONExtends(ext, isDeleted), json);
   end for;
 end dumpJSONExtendsList;
 
 function dumpJSONExtends
   input InstanceTree ext;
+  input Boolean isDeleted;
   output JSON json = JSON.emptyObject();
 protected
   InstNode node;
@@ -1085,7 +1110,7 @@ algorithm
   if Class.isOnlyBuiltin(InstNode.getClass(node)) then
     json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
   else
-    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), json);
+    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
   end if;
 end dumpJSONExtends;
 
@@ -1131,10 +1156,11 @@ algorithm
   elem := InstNode.definition(node);
 
   () := match (comp, elem)
-    case (_, SCode.Element.COMPONENT())
+    case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty, isDeleted = true), json);
         json := dumpJSONSCodeMod(elem.modifications, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
@@ -1160,7 +1186,7 @@ algorithm
 
         is_constant := comp.attributes.variability <= Variability.PARAMETER;
 
-        if Binding.isBound(comp.binding) then
+        if Binding.isExplicitlyBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
         end if;
 
@@ -1186,11 +1212,12 @@ function dumpJSONComponentType
   input InstanceTree cls;
   input InstNode node;
   input Type ty;
+  input Boolean isDeleted = false;
   output JSON json;
 algorithm
   json := match (cls, ty)
     case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
-    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls);
+    case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, node, isDeleted = isDeleted);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;

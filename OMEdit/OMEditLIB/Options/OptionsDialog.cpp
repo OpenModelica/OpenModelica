@@ -3679,10 +3679,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pWelcomePageViewButtonsLayout->addWidget(mpHorizontalViewRadioButton);
   pWelcomePageViewButtonsLayout->addWidget(mpVerticalViewRadioButton);
   // Show/hide latest news checkbox
-  mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News"));
+  mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News && Events"));
   mpShowLatestNewsCheckBox->setChecked(OptionsDefaults::GeneralSettings::showLatestNews);
   // Recent files and latest news size
-  Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News Size:"));
+  Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News & Events Size:"));
   mpRecentFilesAndLatestNewsSizeSpinBox = new QSpinBox;
   mpRecentFilesAndLatestNewsSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
   // Welcome Page layout

@@ -21,6 +21,7 @@ getModelInstance(M, prettyPrint=true);
 //   \"components\": [
 //     {
 //       \"name\": \"x\",
+//       \"type\": \"Real\",
 //       \"condition\": false,
 //       \"prefixes\": {
 //         \"variability\": \"parameter\"

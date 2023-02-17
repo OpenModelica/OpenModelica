@@ -104,9 +104,9 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
 // TODO: Describe me
 void denseOutput_ESDIRK2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates) {
 
-  tableau->b_dt[0] = (-0.353553390593273762200422174434 * dt + 0.707106781186547524400844364376) * dt;
-  tableau->b_dt[1] = (-0.353553390593273762200422174434 * dt + 0.707106781186547524400844364376) * dt;
-  tableau->b_dt[2] = (0.707106781186547524400844364376 * dt - 0.414213562373095048801688728752) * dt;
+  tableau->b_dt[0] = (-0.353553390593273762200422174434 * dt + 0.707106781186547524400844364376);
+  tableau->b_dt[1] = (-0.353553390593273762200422174434 * dt + 0.707106781186547524400844364376);
+  tableau->b_dt[2] = (0.707106781186547524400844364376 * dt - 0.414213562373095048801688728752);
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
@@ -152,10 +152,10 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 // TODO: Describe me
 void denseOutput_ESDIRK3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates) {
 
-  tableau->b_dt[0] = (( 0.72725113948167801576010183297 * dt -  1.64214330331007985668149581856) * dt +  1.10253318817512566608268612912) * dt;
-  tableau->b_dt[1] = (( 2.95565086274697614850386507333 * dt -  5.31600425191699734895990708092) * dt +  1.76505591559306625240821895982) * dt;
-  tableau->b_dt[2] = ((-2.76590870387663402359101154815 * dt +  4.56002748003149592371151163314) * dt - 0.822328848433089776649988630911) * dt;
-  tableau->b_dt[3] = ((-0.916993298352020140672955364224 * dt +  2.39812007519558128192989126681) * dt -  1.04526025533510214184091644271) * dt;
+  tableau->b_dt[0] = (( 0.72725113948167801576010183297 * dt -  1.64214330331007985668149581856) * dt +  1.10253318817512566608268612912);
+  tableau->b_dt[1] = (( 2.95565086274697614850386507333 * dt -  5.31600425191699734895990708092) * dt +  1.76505591559306625240821895982);
+  tableau->b_dt[2] = ((-2.76590870387663402359101154815 * dt +  4.56002748003149592371151163314) * dt - 0.822328848433089776649988630911);
+  tableau->b_dt[3] = ((-0.916993298352020140672955364224 * dt +  2.39812007519558128192989126681) * dt -  1.04526025533510214184091644271);
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
@@ -186,14 +186,57 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 }
 
 // TODO: Describe me
+void denseOutput_TSIT5(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates) {
+
+tableau->b_dt[0] = ((           -1.0530884977290216 * dt +   2.913255461821912743750681) * dt    -2.763706197274825911336736) * dt + 1;
+tableau->b_dt[1] = ((                        0.1017 * dt        -0.22339999999999999818) * dt +       0.13169999999999999727) * dt;
+tableau->b_dt[2] = ((          2.490627285651252793 * dt    -5.941033872131504734702492) * dt +   3.930296236894751528506874) * dt;
+tableau->b_dt[3] = ((         -16.54810288924490272 * dt +   30.33818863028232159817299) * dt    -12.41107716693367698373438) * dt;
+tableau->b_dt[4] = ((          47.37952196281928122 * dt    -88.17890489476640110142767) * dt +   37.50931341651103919496904) * dt;
+tableau->b_dt[5] = ((         -34.87065786149660974 * dt +   65.09189467479367152629022) * dt    -27.89652628919728780594826) * dt;
+tableau->b_dt[6] = ((                           2.5 * dt                             -4) * dt +                          1.5) * dt;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+// TODO: Describe me
+void getButcherTableau_TSIT5(BUTCHER_TABLEAU* tableau) {
+
+  tableau->nStages = 7;
+  tableau->order_b = 5;
+  tableau->order_bt = 4;
+  tableau->fac = 1.0;
+
+  const double c[]  = {                              0,                           0.161,                           0.327,                             0.9, 0.980025540904509685729810286287,                               1,                               1};
+  const double A[]  = {
+                                                        0,                                0,                                0,                                0,                                0,                                0,                                0,
+                                                    0.161,                                0,                                0,                                0,                                0,                                0,                                0,
+                          -0.00848065549235698854442687425023,  0.33548065549235698854442687425,                                0,                                0,                                0,                                0,                                0,
+                          2.89715305710549343213043259419, -6.35944848997507484314815991238,  4.36229543286958141101772731819,                                0,                                0,                                0,                                0,
+                          5.32586482843925660442887792084, -11.7488835640628278777471703398,  7.49553934288983620830460478456, -0.0924950663617552492565020793321,                                0,                                0,                                0,
+                          5.86145544294642002865925148698, -12.9209693178471092917061186818,  8.15936789857615864318040079454, -0.0715849732814009972245305425258, -0.0282690503940683829090030572127,                                0,                                0,
+                          0.0964607668180652295181673131651,                             0.01, 0.479889650414499574775249532291,  1.37900857410374189319227482186, -3.29006951543608067990104758571,   2.3247105240997739824153559184,                                0};
+  const double b[]  = {0.0964607668180652295181673131651,                            0.01, 0.479889650414499574775249532291, 1.37900857410374189319227482186, -3.29006951543608067990104758571,  2.3247105240997739824153559184,                               0};
+  const double bt[] = {0.0982407778702910009615458637727, 0.0108164344596567469032236360634, 0.472008772404237578764934804618, 1.52371958127700480072943996983, -3.87242668088863590492098519636, 2.78279263002896092907699243723, -0.0151515151515151515151515151515};
+
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_TSIT5;
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = TRUE;
+}
+
+// TODO: Describe me
 void denseOutput_ESDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates) {
 
-  tableau->b_dt[0] = (((-1.814633935531616 * dt +  4.618832897422703) * dt -  3.778176353214843) * dt + 0.9583897562880389) * dt;
-  tableau->b_dt[1] = (((-1.814633935531616 * dt +  4.618832897422703) * dt -  3.778176353214843) * dt + 0.9583897562880389) * dt;
-  tableau->b_dt[2] = ((( 2.714470299415405 * dt -  6.218774114213813) * dt +  3.906479659268208) * dt - 0.01451817355659667) * dt;
-  tableau->b_dt[3] = ((( 1.971766118125971 * dt -  6.260604445464527) * dt +  6.104137916978977) * dt -  1.313526970068258) * dt;
-  tableau->b_dt[4] = ((( 8.360167968264329 * dt -  18.18832628590062) * dt +  11.40440368742219) * dt -  1.684500390199829) * dt;
-  tableau->b_dt[5] = (((-9.417136514742473 * dt +  21.43003905073355) * dt -  13.85866855723969) * dt +  2.095766021248606) * dt;
+  tableau->b_dt[0] = (((-1.814633935531616 * dt +  4.618832897422703) * dt -  3.778176353214843) * dt + 0.9583897562880389);
+  tableau->b_dt[1] = (((-1.814633935531616 * dt +  4.618832897422703) * dt -  3.778176353214843) * dt + 0.9583897562880389);
+  tableau->b_dt[2] = ((( 2.714470299415405 * dt -  6.218774114213813) * dt +  3.906479659268208) * dt - 0.01451817355659667);
+  tableau->b_dt[3] = ((( 1.971766118125971 * dt -  6.260604445464527) * dt +  6.104137916978977) * dt -  1.313526970068258);
+  tableau->b_dt[4] = ((( 8.360167968264329 * dt -  18.18832628590062) * dt +  11.40440368742219) * dt -  1.684500390199829);
+  tableau->b_dt[5] = (((-9.417136514742473 * dt +  21.43003905073355) * dt -  13.85866855723969) * dt +  2.095766021248606);
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
@@ -340,6 +383,49 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
     setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
     tableau->isKLeftAvailable = TRUE;
     tableau->isKRightAvailable = FALSE;
+  }
+}
+
+// TODO: Describe me
+void getButcherTableau_RUNGEKUTTA(BUTCHER_TABLEAU* tableau) {
+
+  if (tableau->richardson) {
+    tableau->nStages = 4;
+    tableau->order_b = 4;
+
+    /* Butcher Tableau */
+    const double c[]  = {                              0,                             0.5,                             0.5,                               1};
+    const double A[]  = {
+                                                          0,                                0,                                0,                                0,
+                                                        0.5,                                0,                                0,                                0,
+                                                          0,                              0.5,                                0,                                0,
+                                                          0,                                0,                                1,                                0};
+    const double b[]  = {0.166666666666666666666666666667, 0.333333333333333333333333333333, 0.333333333333333333333333333333, 0.166666666666666666666666666667};
+    const double* bt = NULL;
+
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+    tableau->isKLeftAvailable = FALSE;
+    tableau->isKRightAvailable = FALSE;
+  } else {
+    tableau->nStages = 5;
+    tableau->order_b = 4;
+    tableau->order_bt = 3;
+    tableau->fac = 1.0;
+
+    /* Butcher Tableau */
+    const double c[]  = {                              0,                             0.5,                             0.5,                               1,                               1};
+    const double A[]  = {
+                                                          0,                                0,                                0,                                0,                                0,
+                                                        0.5,                                0,                                0,                                0,                                0,
+                                                          0,                              0.5,                                0,                                0,                                0,
+                                                          0,                                0,                                1,                                0,                                0,
+                            0.166666666666666666666666666667, 0.333333333333333333333333333333, 0.333333333333333333333333333333, 0.166666666666666666666666666667,                                0};
+    const double b[]  = {0.166666666666666666666666666667, 0.333333333333333333333333333333, 0.333333333333333333333333333333, 0.166666666666666666666666666667,                               0};
+    const double bt[] = {0.166666666666666666666666666667, 0.333333333333333333333333333333, 0.333333333333333333333333333333, 0.0666666666666666666666666666667,                             0.1};
+
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+    tableau->isKLeftAvailable = TRUE;
+    tableau->isKRightAvailable = TRUE;
   }
 }
 
@@ -1333,6 +1419,12 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       break;
     case RK_TRAPEZOID:
       getButcherTableau_TRAPEZOID(tableau);
+      break;
+    case RK_RUNGEKUTTA:
+      getButcherTableau_RUNGEKUTTA(tableau);
+      break;
+    case RK_TSIT5:
+      getButcherTableau_TSIT5(tableau);
       break;
     case RK_DOPRI45:
       getButcherTableau_DOPRI45(tableau);

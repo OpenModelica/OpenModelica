@@ -1,0 +1,208 @@
+// name: GetModelInstanceBinding1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model World
+    parameter Configuration conf1;
+    parameter Configuration conf2 = conf1;
+  end World;
+
+  record Configuration
+  end Configuration;
+
+  model A
+    outer World world;
+  end A;
+
+  model M
+    inner World world;
+    A a;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"world\",
+//       \"type\": {
+//         \"name\": \"World\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"conf1\",
+//             \"type\": {
+//               \"name\": \"Configuration\",
+//               \"restriction\": \"record\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 8,
+//                 \"columnEnd\": 20
+//               }
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"name\": \"conf2\",
+//             \"type\": {
+//               \"name\": \"Configuration\",
+//               \"restriction\": \"record\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 8,
+//                 \"columnEnd\": 20
+//               }
+//             },
+//             \"modifiers\": \"conf1\",
+//             \"value\": {
+//               \"binding\": {
+//                 \"$kind\": \"cref\",
+//                 \"parts\": [
+//                   {
+//                     \"name\": \"world\"
+//                   },
+//                   {
+//                     \"name\": \"conf1\"
+//                   }
+//                 ]
+//               },
+//               \"value\": {
+//                 \"$kind\": \"record\",
+//                 \"name\": \"Configuration\",
+//                 \"elements\": [
+//
+//                 ]
+//               }
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 12
+//         }
+//       },
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     },
+//     {
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"world\",
+//             \"type\": {
+//               \"name\": \"world\",
+//               \"restriction\": \"model\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"conf1\",
+//                   \"type\": {
+//                     \"name\": \"Configuration\",
+//                     \"restriction\": \"record\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 7,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 8,
+//                       \"columnEnd\": 20
+//                     }
+//                   },
+//                   \"prefixes\": {
+//                     \"variability\": \"parameter\"
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"conf2\",
+//                   \"type\": {
+//                     \"name\": \"Configuration\",
+//                     \"restriction\": \"record\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 7,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 8,
+//                       \"columnEnd\": 20
+//                     }
+//                   },
+//                   \"modifiers\": \"conf1\",
+//                   \"value\": {
+//                     \"binding\": {
+//                       \"$kind\": \"cref\",
+//                       \"parts\": [
+//                         {
+//                           \"name\": \"world\"
+//                         },
+//                         {
+//                           \"name\": \"conf1\"
+//                         }
+//                       ]
+//                     },
+//                     \"value\": {
+//                       \"$kind\": \"record\",
+//                       \"name\": \"Configuration\",
+//                       \"elements\": [
+//
+//                       ]
+//                     }
+//                   },
+//                   \"prefixes\": {
+//                     \"variability\": \"parameter\"
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 15,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 15,
+//                 \"columnEnd\": 22
+//               }
+//             },
+//             \"prefixes\": {
+//               \"inner\": true
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 10,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 12,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 14,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 17,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

@@ -35,6 +35,7 @@
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
 #include "MessagesWidget.h"
+#include "Options/OptionsDialog.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -146,7 +147,7 @@ namespace ModelInstance
 
   bool CoordinateSystem::isComplete() const
   {
-    return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasGrid;
+    return mHasExtent && mHasPreserveAspectRatio;
   }
 
   void CoordinateSystem::deserialize(const QJsonObject &jsonObject)
@@ -163,6 +164,13 @@ namespace ModelInstance
     if (jsonObject.contains("grid")) {
       mHasGrid = mGrid.deserialize(jsonObject.value("grid"));
     }
+  }
+
+  GraphicItem::GraphicItem()
+  {
+    mVisible = true;
+    mOrigin = QPointF(0, 0);
+    mRotation = 0;
   }
 
   void GraphicItem::deserialize(const QJsonArray &jsonArray)
@@ -189,7 +197,20 @@ namespace ModelInstance
 
   FilledShape::FilledShape()
   {
-    mLineThickness = 0.25;
+    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+    if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
+      mLineColor = pOptionsDialog->getLineStylePage()->getLineColor();
+    } else {
+      mLineColor = QColor(0, 0, 0);
+    }
+    if (pOptionsDialog->getFillStylePage()->getFillColor().isValid()) {
+      mFillColor = pOptionsDialog->getFillStylePage()->getFillColor();
+    } else {
+      mFillColor = QColor(0, 0, 0);
+    }
+    mPattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
+    mFillPattern = StringHandler::getFillPatternType(pOptionsDialog->getFillStylePage()->getFillPattern());
+    mLineThickness = pOptionsDialog->getLineStylePage()->getLineThickness();
   }
 
   void FilledShape::deserialize(const QJsonArray &jsonArray)
@@ -235,8 +256,22 @@ namespace ModelInstance
   Line::Line(Model *pParentModel)
     : Shape(pParentModel)
   {
-    mThickness = 0.25;
-    mArrowSize = 3;
+    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+    if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
+      mColor = pOptionsDialog->getLineStylePage()->getLineColor();
+    } else {
+      mColor = QColor(0, 0, 0);
+    }
+    mPattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
+    mThickness = pOptionsDialog->getLineStylePage()->getLineThickness();
+    mArrow.replace(0, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineStartArrow()));
+    mArrow.replace(1, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineEndArrow()));
+    mArrowSize = pOptionsDialog->getLineStylePage()->getLineArrowSize();
+    if (pOptionsDialog->getLineStylePage()->getLineSmooth()) {
+      mSmooth = StringHandler::SmoothBezier;
+    } else {
+      mSmooth = StringHandler::SmoothNone;
+    }
   }
 
   void Line::deserialize(const QJsonArray &jsonArray)
@@ -295,7 +330,7 @@ namespace ModelInstance
   Polygon::Polygon(Model *pParentModel)
     : Shape(pParentModel)
   {
-
+    mSmooth = StringHandler::SmoothNone;
   }
 
   void Polygon::deserialize(const QJsonArray &jsonArray)
@@ -313,7 +348,9 @@ namespace ModelInstance
   Rectangle::Rectangle(Model *pParentModel)
     : Shape(pParentModel)
   {
+    mBorderPattern = StringHandler::BorderNone;
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mRadius = 0;
   }
 
   void Rectangle::deserialize(const QJsonArray &jsonArray)
@@ -332,6 +369,7 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mStartAngle = 0;
     mEndAngle = 360;
     if (mStartAngle == 0 && mEndAngle == 360) {
       mClosure = StringHandler::ClosureChord;
@@ -357,6 +395,11 @@ namespace ModelInstance
     : Shape(pParentModel)
   {
     mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mTextString = "";
+    mFontSize = 0;
+    mFontName = Helper::systemFontInfo.family();
+    mTextColor = QColor(0, 0, 0);
+    mHorizontalAlignment = StringHandler::TextAlignmentCenter;
   }
 
   void Text::deserialize(const QJsonArray &jsonArray)
@@ -441,6 +484,116 @@ namespace ModelInstance
     }
   }
 
+  Annotation::Annotation(Model *pParentModel)
+    : mPlacementAnnotation(pParentModel)
+  {
+    mpParentModel = pParentModel;
+    mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(pParentModel);
+    mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(pParentModel);
+    mDocumentationClass = false;
+    mVersion = "";
+    mVersionDate = "";
+    mVersionBuild = 0;
+    mDateModified = "";
+    mPreferredView = "";
+    mState = false;
+    mAccess = "";
+    // Element annotation
+    mChoicesAllMatching = false;
+    mHasDialogAnnotation = false;
+    mDialogAnnotation = DialogAnnotation();
+  }
+
+  void Annotation::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("Icon")) {
+      mpIconAnnotation->deserialize(jsonObject.value("Icon").toObject());
+    }
+
+    if (jsonObject.contains("Diagram")) {
+      mpDiagramAnnotation->deserialize(jsonObject.value("Diagram").toObject());
+    }
+
+    if (jsonObject.contains("DocumentationClass")) {
+      mDocumentationClass.deserialize(jsonObject.value("DocumentationClass"));
+    }
+
+    if (jsonObject.contains("version")) {
+      mVersion.deserialize(jsonObject.value("version"));
+    }
+
+    if (jsonObject.contains("versionDate")) {
+      mVersionDate.deserialize(jsonObject.value("versionDate"));
+    }
+
+    if (jsonObject.contains("versionBuild")) {
+      mVersionBuild.deserialize(jsonObject.value("versionBuild"));
+    }
+
+    if (jsonObject.contains("dateModified")) {
+      mDateModified.deserialize(jsonObject.value("dateModified"));
+    }
+
+    if (jsonObject.contains("preferredView")) {
+      mPreferredView.deserialize(jsonObject.value("preferredView"));
+    }
+
+    if (jsonObject.contains("__Dymola_state")) {
+      mState.deserialize(jsonObject.value("__Dymola_state"));
+    }
+
+    if (jsonObject.contains("Protection")) {
+      QJsonObject protection = jsonObject.value("Protection").toObject();
+      if (protection.contains("access")) {
+        QJsonObject access = protection.value("access").toObject();
+        if (access.contains("name")) {
+          mAccess.deserialize(access.value("name"));
+        }
+      }
+    }
+    // Element annotation
+    if (jsonObject.contains("choicesAllMatching")) {
+      mChoicesAllMatching.deserialize(jsonObject.value("choicesAllMatching"));
+    }
+
+    if (jsonObject.contains("Placement")) {
+      mPlacementAnnotation = PlacementAnnotation(mpParentModel);
+      mPlacementAnnotation.deserialize(jsonObject.value("Placement").toObject());
+    }
+
+    if (jsonObject.contains("Dialog")) {
+      mHasDialogAnnotation = true;
+      mDialogAnnotation = DialogAnnotation();
+      mDialogAnnotation.deserialize(jsonObject.value("Dialog").toObject());
+    }
+
+    if (jsonObject.contains("Evaluate")) {
+      mEvaluate.deserialize(jsonObject.value("Evaluate"));
+    }
+
+    if (jsonObject.contains("choices")) {
+      mChoices.deserialize(jsonObject.value("choices").toObject());
+    }
+    // Connection annotation
+    if (jsonObject.contains("Line")) {
+      mpLine = std::make_unique<Line>(mpParentModel);
+      mpLine->deserialize(jsonObject.value("Line").toObject());
+    }
+
+    if (jsonObject.contains("Text")) {
+      mpText = std::make_unique<Text>(mpParentModel);
+      mpText->deserialize(jsonObject.value("Text").toObject());
+    }
+    // Extend annotation
+    if (jsonObject.contains("IconMap")) {
+      mIconMap.deserialize(jsonObject.value("IconMap").toObject());
+    }
+
+    if (jsonObject.contains("DiagramMap")) {
+      mDiagramMap.deserialize(jsonObject.value("DiagramMap").toObject());
+    }
+  }
+
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -452,6 +605,7 @@ namespace ModelInstance
     foreach (auto pShape, mGraphics) {
       delete pShape;
     }
+    mGraphics.clear();
   }
 
   void IconDiagramAnnotation::deserialize(const QJsonObject &jsonObject)
@@ -538,11 +692,6 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::getValue() const
-  {
-    return StringHandler::removeFirstLastQuotes(mValue);
-  }
-
   QString Modifier::getModifierValue(QStringList qualifiedModifierName)
   {
     if (qualifiedModifierName.isEmpty()) {
@@ -557,7 +706,7 @@ namespace ModelInstance
     foreach (auto subModifier, modifier.getModifiers()) {
       if (subModifier.getName().compare(modifierName) == 0) {
         if (qualifiedModifierName.isEmpty()) {
-          return StringHandler::removeFirstLastQuotes(subModifier.getValue());
+          return subModifier.getValueWithoutQuotes();
         } else {
           return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
         }
@@ -565,6 +714,37 @@ namespace ModelInstance
     }
 
     return "";
+  }
+
+  Replaceable::Replaceable(Model *pParentModel)
+  {
+    mpParentModel = pParentModel;
+    mIsReplaceable = false;
+    mConstrainedby = "";
+    mpAnnotation = std::make_unique<Annotation>(pParentModel);
+  }
+
+  void Replaceable::deserialize(const QJsonValue &jsonValue)
+  {
+    if (jsonValue.isObject()) {
+      mIsReplaceable = true;
+      QJsonObject replaceableObject = jsonValue.toObject();
+      mConstrainedby = replaceableObject.value("constrainedby").toString();
+
+      if (replaceableObject.contains("modifiers")) {
+        mModifier.deserialize(replaceableObject.value("modifiers"));
+      }
+
+      if (replaceableObject.contains("comment")) {
+        mComment = replaceableObject.value("comment").toString();
+      }
+
+      if (replaceableObject.contains("annotation")) {
+        mpAnnotation->deserialize(replaceableObject.value("annotation").toObject());
+      }
+    } else {
+      mIsReplaceable = jsonValue.toBool();
+    }
   }
 
   Model::Model()
@@ -584,9 +764,6 @@ namespace ModelInstance
     foreach (auto pExtend, mExtends) {
       delete pExtend;
     }
-
-    delete mpIconAnnotation;
-    delete mpDiagramAnnotation;
 
     foreach (auto pElement, mElements) {
       delete pElement;
@@ -688,53 +865,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("annotation")) {
-      QJsonObject annotation = mModelJson.value("annotation").toObject();
-
-      if (annotation.contains("Icon")) {
-        mpIconAnnotation->deserialize(annotation.value("Icon").toObject());
-      }
-
-      if (annotation.contains("Diagram")) {
-        mpDiagramAnnotation->deserialize(annotation.value("Diagram").toObject());
-      }
-
-      if (annotation.contains("DocumentationClass")) {
-        mDocumentationClass.deserialize(annotation.value("DocumentationClass"));
-      }
-
-      if (annotation.contains("version")) {
-        mVersion.deserialize(annotation.value("version"));
-      }
-
-      if (annotation.contains("versionDate")) {
-        mVersionDate.deserialize(annotation.value("versionDate"));
-      }
-
-      if (annotation.contains("versionBuild")) {
-        mVersionBuild.deserialize(annotation.value("versionBuild"));
-      }
-
-      if (annotation.contains("dateModified")) {
-        mDateModified.deserialize(annotation.value("dateModified"));
-      }
-
-      if (annotation.contains("preferredView")) {
-        mPreferredView.deserialize(annotation.value("preferredView"));
-      }
-
-      if (annotation.contains("__Dymola_state")) {
-        mState.deserialize(annotation.value("__Dymola_state"));
-      }
-
-      if (annotation.contains("Protection")) {
-        QJsonObject protection = annotation.value("Protection").toObject();
-        if (protection.contains("access")) {
-          QJsonObject access = protection.value("access").toObject();
-          if (access.contains("name")) {
-            mAccess.deserialize(access.value("name"));
-          }
-        }
-      }
+      mpAnnotation->deserialize(mModelJson.value("annotation").toObject());
     }
 
     /* From Modelica Specification Version 3.5-dev
@@ -746,12 +877,12 @@ namespace ModelInstance
      *
      * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
      */
-    if (!mpIconAnnotation->mCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(true);
+    if (!mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem, true);
     }
 
-    if (!mpDiagramAnnotation->mCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(false);
+    if (!mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
     }
 
     if (mModelJson.contains("components")) {
@@ -854,39 +985,34 @@ namespace ModelInstance
     return (mRestriction.compare(QStringLiteral("type")) == 0);
   }
 
-  void Model::readCoordinateSystemFromExtendsClass(bool isIcon)
+  void Model::readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon)
   {
-    /* From Modelica Specification Version 3.5-dev
-     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+    /* From Modelica Specification Version 3.6-dev
+     * The coordinate system attributes (extent and preserveAspectRatio) of a class are separately defined by the following priority:
      * 1. The coordinate system annotation given in the class (if specified).
      * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.1.1.
      * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
      *
      * Following is the second case.
      */
     foreach (auto pExtend, mExtends) {
       ModelInstance::CoordinateSystem coordinateSystem;
-      IconDiagramAnnotation *pIconDiagramAnnotation = 0;
       if (isIcon) {
-        coordinateSystem = pExtend->getIconAnnotation()->mCoordinateSystem;
-        pIconDiagramAnnotation = mpIconAnnotation;
+        coordinateSystem = pExtend->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
       } else {
-        coordinateSystem = pExtend->getDiagramAnnotation()->mCoordinateSystem;
-        pIconDiagramAnnotation = mpDiagramAnnotation;
+        coordinateSystem = pExtend->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
       }
 
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasExtent() && coordinateSystem.hasExtent()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setExtent(coordinateSystem.getExtent());
+      if (!pCoordinateSystem->hasExtent() && coordinateSystem.hasExtent()) {
+        pCoordinateSystem->setExtent(coordinateSystem.getExtent());
       }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+      if (!pCoordinateSystem->hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
+        pCoordinateSystem->setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
       }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasInitialScale() && coordinateSystem.hasInitialScale()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
-      }
-      if (!pIconDiagramAnnotation->mMergedCoOrdinateSystem.hasGrid() && coordinateSystem.hasGrid()) {
-        pIconDiagramAnnotation->mMergedCoOrdinateSystem.setGrid(coordinateSystem.getGrid());
+
+      if (!pCoordinateSystem->isComplete()) {
+        pExtend->readCoordinateSystemFromExtendsClass(pCoordinateSystem, isIcon);
       }
       break; // we only check coordinate system of first inherited class. See the comment in start of function i.e., "The coordinate systems of the first base-class ..."
     }
@@ -896,7 +1022,7 @@ namespace ModelInstance
   {
     foreach (auto pModelElement, mElements) {
       if (pModelElement->getName().compare(parameter) == 0) {
-        return pModelElement->getDialogAnnotation().isConnectorSizing();
+        return pModelElement->getAnnotation()->getDialogAnnotation().isConnectorSizing();
       }
     }
     return false;
@@ -907,7 +1033,7 @@ namespace ModelInstance
     QString value = "";
     foreach (auto pElement, mElements) {
       if (pElement->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-        value = pElement->getModifier().getValue();
+        value = pElement->getModifier().getValueWithoutQuotes();
         // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
         if (value.isEmpty() && pElement->getModel()) {
           value = pElement->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
@@ -916,7 +1042,7 @@ namespace ModelInstance
         break;
       }
     }
-    return StringHandler::removeFirstLastQuotes(value);
+    return value;
   }
 
   QString Model::getParameterValueFromExtendsModifiers(const QString &parameter)
@@ -975,16 +1101,7 @@ namespace ModelInstance
     mEncapsulated = false;
     mExtends.clear();
     mComment = "";
-    mpIconAnnotation = new IconDiagramAnnotation(this);
-    mpDiagramAnnotation = new IconDiagramAnnotation(this);
-    mDocumentationClass = false;
-    mVersion = "";
-    mVersionDate = "";
-    mVersionBuild = 0;
-    mDateModified = "";
-    mPreferredView = "";
-    mState = false;
-    mAccess = "";
+    mpAnnotation = std::make_unique<Annotation>(this);
     mElements.clear();
     mFileName = "";
     mLineStart = 0;
@@ -1138,10 +1255,23 @@ namespace ModelInstance
     if (jsonObject.contains("__Dymola_checkBox")) {
       mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
+
+    if (jsonObject.contains("choice")) {
+      QJsonArray choices = jsonObject.value("choice").toArray();
+      foreach (auto choice, choices) {
+        if (choice.isObject()) {
+          QJsonObject choiceObject = choice.toObject();
+          if (choiceObject.contains("$value")) {
+            mChoice.append(choiceObject.value("$value").toString());
+          }
+        } else {
+          mChoice.append(choice.toString());
+        }
+      }
+    }
   }
 
   Element::Element(Model *pParentModel)
-    : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
     mpModel = 0;
@@ -1170,14 +1300,13 @@ namespace ModelInstance
     mFinal = false;
     mInner = false;
     mOuter = false;
-    mReplaceable = false;
+    mpReplaceable = std::make_unique<Replaceable>(mpParentModel);
     mRedeclare = false;
     mConnector = "";
     mVariability = "";
     mDirection = "";
     mComment = "";
-    mChoicesAllMatching = false;
-    mHasDialogAnnotation = false;
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
   }
 
   void Element::deserialize(const QJsonObject &jsonObject)
@@ -1187,7 +1316,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("condition")) {
-      mCondition = jsonObject.value("condition").toBool();
+      mCondition = jsonObject.value("condition").toBool(true);
     }
 
     if (jsonObject.contains("type")) {
@@ -1209,6 +1338,7 @@ namespace ModelInstance
       if (valueObject.contains("value")) {
         try {
           mBinding.deserialize(valueObject.value("value"));
+          mBindingForReset = mBinding;
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
@@ -1216,6 +1346,7 @@ namespace ModelInstance
       } else if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
+          mBindingForReset = mBinding;
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("binding");
           qDebug() << e.what();
@@ -1261,14 +1392,7 @@ namespace ModelInstance
       }
 
       if (prefixes.contains("replaceable")) {
-        auto replaceable = prefixes.value("replaceble");
-
-        if (replaceable.isObject()) {
-          mReplaceable = true;
-          // constrainedby stuff goes here
-        } else {
-          mReplaceable = replaceable.toBool();
-        }
+        mpReplaceable->deserialize(prefixes.value("replaceable"));
       }
 
       if (prefixes.contains("redeclare")) {
@@ -1294,28 +1418,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("annotation")) {
-      QJsonObject annotation = jsonObject.value("annotation").toObject();
-
-      if (annotation.contains("choicesAllMatching")) {
-        mChoicesAllMatching.deserialize(annotation.value("choicesAllMatching"));
-      }
-
-      if (annotation.contains("Placement")) {
-        mPlacementAnnotation.deserialize(annotation.value("Placement").toObject());
-      }
-
-      if (annotation.contains("Dialog")) {
-        mHasDialogAnnotation = true;
-        mDialogAnnotation.deserialize(annotation.value("Dialog").toObject());
-      }
-
-      if (annotation.contains("Evaluate")) {
-        mEvaluate.deserialize(annotation.value("Evaluate"));
-      }
-
-      if (annotation.contains("choices")) {
-        mChoices.deserialize(annotation.value("choices").toObject());
-      }
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
 
@@ -1420,51 +1523,23 @@ namespace ModelInstance
   Connection::Connection(Model *pParentModel)
   {
     mpParentModel = pParentModel;
-    mpStartConnector = 0;
-    mpEndConnector = 0;
-    mpLine = 0;
-    mpText = 0;
-  }
-
-  Connection::~Connection()
-  {
-    if (mpStartConnector) {
-      delete mpStartConnector;
-    }
-    if (mpEndConnector) {
-      delete mpEndConnector;
-    }
-    if (mpLine) {
-      delete mpLine;
-    }
-    if (mpText) {
-      delete mpText;
-    }
+    mpAnnotation = std::make_unique<Annotation>(pParentModel);
   }
 
   void Connection::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("lhs")) {
-      mpStartConnector = new Connector;
+      mpStartConnector = std::make_unique<Connector>();
       mpStartConnector->deserialize(jsonObject.value("lhs").toObject());
     }
 
     if (jsonObject.contains("rhs")) {
-      mpEndConnector = new Connector;
+      mpEndConnector = std::make_unique<Connector>();
       mpEndConnector->deserialize(jsonObject.value("rhs").toObject());
     }
 
     if (jsonObject.contains("annotation")) {
-      QJsonObject annotation = jsonObject.value("annotation").toObject();
-      if (annotation.contains("Line")) {
-        mpLine = new Line(mpParentModel);
-        mpLine->deserialize(annotation.value("Line").toObject());
-      }
-
-      if (annotation.contains("Text")) {
-        mpText = new Text(mpParentModel);
-        mpText->deserialize(annotation.value("Text").toObject());
-      }
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
 
@@ -1476,15 +1551,12 @@ namespace ModelInstance
   Transition::Transition(Model *pParentModel)
   {
     mpParentModel = pParentModel;
-    mpStartConnector = 0;
-    mpEndConnector = 0;
     mCondition = false;
     mImmediate = true;
     mReset = true;
     mSynchronize = false;
     mPriority = 1;
-    mpLine = 0;
-    mpText = 0;
+    mpAnnotation = std::make_unique<Annotation>(pParentModel);
   }
 
   void Transition::deserialize(const QJsonObject &jsonObject)
@@ -1493,12 +1565,12 @@ namespace ModelInstance
       QJsonArray arguments = jsonObject.value("arguments").toArray();
       if (arguments.size() > 6) {
         if (arguments.at(0).isObject()) {
-          mpStartConnector = new Connector;
+          mpStartConnector = std::make_unique<Connector>();
           mpStartConnector->deserialize(arguments.at(0).toObject());
         }
 
         if (arguments.at(1).isObject()) {
-          mpEndConnector = new Connector;
+          mpEndConnector = std::make_unique<Connector>();
           mpEndConnector->deserialize(arguments.at(1).toObject());
         }
 
@@ -1511,16 +1583,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("annotation")) {
-      QJsonObject annotation = jsonObject.value("annotation").toObject();
-      if (annotation.contains("Line")) {
-        mpLine = new Line(mpParentModel);
-        mpLine->deserialize(annotation.value("Line").toObject());
-      }
-
-      if (annotation.contains("Text")) {
-        mpText = new Text(mpParentModel);
-        mpText->deserialize(annotation.value("Text").toObject());
-      }
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
 
@@ -1541,8 +1604,7 @@ namespace ModelInstance
   InitialState::InitialState(Model *pParentModel)
   {
     mpParentModel = pParentModel;
-    mpStartConnector = 0;
-    mpLine = 0;
+    mpAnnotation = std::make_unique<Annotation>(pParentModel);
   }
 
   void InitialState::deserialize(const QJsonObject &jsonObject)
@@ -1551,18 +1613,14 @@ namespace ModelInstance
       QJsonArray arguments = jsonObject.value("arguments").toArray();
       if (!arguments.isEmpty()) {
         if (arguments.at(0).isObject()) {
-          mpStartConnector = new Connector;
+          mpStartConnector = std::make_unique<Connector>();
           mpStartConnector->deserialize(arguments.at(0).toObject());
         }
       }
     }
 
     if (jsonObject.contains("annotation")) {
-      QJsonObject annotation = jsonObject.value("annotation").toObject();
-      if (annotation.contains("Line")) {
-        mpLine = new Line(mpParentModel);
-        mpLine->deserialize(annotation.value("Line").toObject());
-      }
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
 
@@ -1591,12 +1649,7 @@ namespace ModelInstance
   Extend::Extend()
     : Model()
   {
-
-  }
-
-  Extend::~Extend()
-  {
-
+    mpExtendsAnnotation = std::make_unique<Annotation>(this);
   }
 
   void Extend::deserialize(const QJsonObject &jsonObject)
@@ -1606,22 +1659,13 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("annotation")) {
-      QJsonObject annotation = jsonObject.value("annotation").toObject();
-
-      if (annotation.contains("IconMap")) {
-        mIconMap.deserialize(annotation.value("IconMap").toObject());
-      }
-
-      if (annotation.contains("DiagramMap")) {
-        mDiagramMap.deserialize(annotation.value("DiagramMap").toObject());
-      }
+      mpExtendsAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
 
     if (jsonObject.contains("baseClass")) {
       Model::setModelJson(jsonObject.value("baseClass").toObject());
       Model::deserialize();
     }
-
   }
 
 }
