@@ -39,6 +39,7 @@
 
 #include <QRadioButton>
 
+class ElementParametersOld;
 class ElementParameters;
 class Parameter : public QObject
 {
@@ -179,8 +180,56 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(Element *pComponent, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, QWidget *pParent = 0);
   ~ElementParameters();
+  GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  bool getInherited() const {return mInherited;}
+  void updateParameters();
+private:
+  ModelInstance::Element *mpElement;
+  GraphicsView *mpGraphicsView;
+  bool mInherited;
+  Label *mpParametersHeading;
+  QFrame *mHorizontalLine;
+  QTabWidget *mpParametersTabWidget;
+  QGroupBox *mpComponentGroupBox;
+  Label *mpComponentNameLabel;
+  Label *mpComponentNameTextBox;
+  Label *mpComponentCommentLabel;
+  Label *mpComponentCommentTextBox;
+  QGroupBox *mpComponentClassGroupBox;
+  Label *mpComponentClassNameLabel;
+  Label *mpComponentClassNameTextBox;
+  Label *mpComponentClassCommentLabel;
+  Label *mpComponentClassCommentTextBox;
+  Label *mpModifiersLabel;
+  QLineEdit *mpModifiersTextBox;
+  QMap<QString, int> mTabsMap;
+  QList<Parameter*> mParametersList;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+
+  void setUpDialog();
+  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
+  void createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert = false);
+  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
+  void fetchElementModifiers();
+  void fetchClassExtendsModifiers();
+  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+public slots:
+  void commentLinkClicked(QString link);
+  void updateElementParameters();
+  virtual void reject() override;
+};
+
+class ElementParametersOld : public QDialog
+{
+  Q_OBJECT
+public:
+  ElementParametersOld(Element *pComponent, QWidget *pParent = 0);
+  ~ElementParametersOld();
 
   void updateParameters();
 private:
@@ -202,7 +251,6 @@ private:
   QLineEdit *mpModifiersTextBox;
   QMap<QString, int> mTabsMap;
   QList<Parameter*> mParametersList;
-  QList<Parameter*> mOrderedParametersList;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
@@ -210,18 +258,13 @@ private:
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem);
   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
-  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
-  void createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert = false);
-  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementExtendsModifiers();
   void fetchElementModifiers();
-  void fetchClassExtendsModifiers();
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();
-  virtual void reject() override;
 };
 
 class ElementAttributes : public QDialog

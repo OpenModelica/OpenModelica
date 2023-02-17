@@ -3841,12 +3841,22 @@ void Element::showParameters()
     }
     pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpLibraryTreeItem->getNameStructure()).arg(getName()));
   }
-  pMainWindow->getProgressBar()->setRange(0, 0);
-  pMainWindow->showProgressBar();
-  ElementParameters *pElementParameters = new ElementParameters(this, pMainWindow);
-  pMainWindow->hideProgressBar();
-  pMainWindow->getStatusBar()->clearMessage();
-  pElementParameters->exec();
+
+  if (MainWindow::instance()->isNewApi()) {
+    pMainWindow->getProgressBar()->setRange(0, 0);
+    pMainWindow->showProgressBar();
+    ElementParameters *pElementParameters = new ElementParameters(mpModelElement, mpGraphicsView, isInheritedElement(), pMainWindow);
+    pMainWindow->hideProgressBar();
+    pMainWindow->getStatusBar()->clearMessage();
+    pElementParameters->exec();
+  } else {
+    pMainWindow->getProgressBar()->setRange(0, 0);
+    pMainWindow->showProgressBar();
+    ElementParametersOld *pElementParametersOld = new ElementParametersOld(this, pMainWindow);
+    pMainWindow->hideProgressBar();
+    pMainWindow->getStatusBar()->clearMessage();
+    pElementParametersOld->exec();
+  }
 }
 
 /*!

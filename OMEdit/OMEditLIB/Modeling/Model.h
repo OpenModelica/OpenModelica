@@ -484,11 +484,12 @@ private:
   {
   public:
     Model();
-    Model(const QJsonObject &jsonObject);
+    Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
+    Element *getParentElement() const {return mpParentElement;}
     QString getName() const {return mName;}
     QStringList getDims() const {return mDims;}
     QString getRestriction() const {return mRestriction;}
@@ -530,6 +531,7 @@ private:
     void initialize();
 
     QJsonObject mModelJson;
+    Element *mpParentElement = 0;
     QString mName;
     QStringList mDims;
     QString mRestriction;
@@ -568,6 +570,7 @@ private:
     Model *getParentModel() const {return mpParentModel;}
     void setName(const QString &name) {mName = name;}
     QString getName() const {return mName;}
+    QString getQualifiedName() const;
     bool getCondition() const {return mCondition;}
     void setType(const QString &type) {mType = type;}
     QString getType() const {return mType;}

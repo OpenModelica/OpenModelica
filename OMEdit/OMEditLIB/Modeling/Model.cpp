@@ -750,10 +750,11 @@ namespace ModelInstance
     initialize();
   }
 
-  Model::Model(const QJsonObject &jsonObject)
+  Model::Model(const QJsonObject &jsonObject, Element *pParentElement)
   {
     initialize();
     mModelJson = jsonObject;
+    mpParentElement = pParentElement;
     deserialize();
   }
 
@@ -1316,7 +1317,7 @@ namespace ModelInstance
       if (jsonObject.value("type").isString()) {
         mType = jsonObject.value("type").toString();
       } else if (jsonObject.value("type").isObject()) {
-        mpModel = new Model(jsonObject.value("type").toObject());
+        mpModel = new Model(jsonObject.value("type").toObject(), this);
         mType = mpModel->getName();
       }
     }
@@ -1415,6 +1416,20 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Element::getQualifiedName
+   * Returns the qualified name of the element.
+   * \return
+   */
+  QString Element::getQualifiedName() const
+  {
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+    } else {
+      return mName;
+    }
+  }
+
   QString Element::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.
@@ -1473,7 +1488,7 @@ namespace ModelInstance
     if (mSubScripts.isEmpty()) {
       return mName;
     } else {
-      return QString("%1[%2]").arg(mName, mSubScripts.join(","));
+      return mName % "[" % mSubScripts.join(",") % "]";
     }
   }
 
