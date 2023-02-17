@@ -57,6 +57,11 @@
   #include <omp.h>
 #endif
 
+/* Private function prototypes */
+void* syncTimerListAlloc(const void* data);
+void syncTimerListFree(void* data);
+void syncTimerListCopy(void* dest, const void* src);
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -1045,7 +1050,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   if (data->modelData->nBaseClocks > 0) {
     data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(data->modelData->nBaseClocks, sizeof(BASECLOCK_DATA));
-    data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
+    data->simulationInfo->intvlTimers = allocList(syncTimerListAlloc, syncTimerListFree, syncTimerListCopy);
   } else {
     data->simulationInfo->baseClocks = NULL;
     data->simulationInfo->intvlTimers = NULL;
@@ -1616,5 +1621,38 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
   return trunc(value1/value2);
 #endif
 }
+
+
+/**
+ * @brief Allocate memory for syncTimerList elements.
+ *
+ * @param data      Unused.
+ * @return void*    Allocated memory for LIST_NODE data.
+ */
+void* syncTimerListAlloc(const void* data) {
+  void* newElem = malloc(sizeof(SYNC_TIMER));
+  assertStreamPrint(NULL, newElem != NULL, "syncTimerListAlloc: Out of memory");
+  return newElem;
+}
+
+/**
+ * @brief Free memory allocated with syncTimerListAlloc.
+ *
+ * @param data      Void pointer, representing SYNC_TIMER.
+ */
+void syncTimerListFree(void* data) {
+  free(data);
+}
+
+/**
+ * @brief Copy data of syncTimerList elements.
+ *
+ * @param dest    Void pointer of destination data, representing SYNC_TIMER.
+ * @param src     Void pointer of source data, representing SYNC_TIMER.
+ */
+void syncTimerListCopy(void* dest, const void* src) {
+  memcpy(dest, src, sizeof(SYNC_TIMER));
+}
+
 
 int measure_time_flag=0;

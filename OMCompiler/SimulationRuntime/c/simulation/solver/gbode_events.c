@@ -164,7 +164,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   LIST_NODE* it;
   fortran_integer i=0;
-  LIST *tmpEventList = allocList(sizeof(long));
+  LIST *tmpEventList = allocList(eventListAlloc, eventListFree, eventListCopy);
 
   /* static work arrays */
   double *states_left = data->simulationInfo->states_left;

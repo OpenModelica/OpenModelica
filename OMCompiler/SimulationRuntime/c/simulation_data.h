@@ -65,6 +65,7 @@
 /* Forward declarations */
 struct DATA;
 typedef struct DATA DATA;
+typedef struct VALUES_LIST VALUES_LIST;
 
 /* Model info structures */
 typedef struct VAR_INFO
@@ -327,7 +328,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsxOld;              /* previous x */
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
 
-  void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
+  VALUES_LIST *oldValueList;           /* old values organized in a sorted list for extrapolation and interpolate, respectively */
   modelica_real *resValues;            /* memory space for evaluated residual values */
 
   NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */

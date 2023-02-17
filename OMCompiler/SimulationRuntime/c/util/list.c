@@ -40,18 +40,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Private function prototypes */
+modelica_boolean listIsIn(LIST *list, LIST_NODE *node);
+
 struct LIST_NODE
 {
-  void *data;
-  LIST_NODE *next;
+  void *data;         /* Data of list element.
+                       * Use allocListNodeFunc, freeListNodeFunc and copyListNodeDataFunc for alloc, free and copy. */
+  LIST_NODE *next;    /* Pointer to next list element. */
 };
 
 struct LIST
 {
-  LIST_NODE *first;
-  LIST_NODE *last;
-  unsigned int itemSize;
-  unsigned int length;
+  LIST_NODE *first;                             /* Pointer to first list element */
+  LIST_NODE *last;                              /* Pointer to last list element */
+  unsigned int length;                          /* Number if list elements */
+  allocListNodeDataFunc_t* allocListNodeData;   /* Function to allocate memory for LIST_NODE data. */
+  freeListNodeDataFunc_t* freeListNodeData;     /* Function to free memory of LIST_NODE data. */
+  copyListNodeDataFunc_t* copyListNodeData;     /* Function to copy memory of LIST_NODE data. */
 };
 
 /**
@@ -60,14 +66,25 @@ struct LIST
  * @param itemSize    Size of data
  * @return list       Pointer to list
  */
-LIST *allocList(unsigned int itemSize)
+
+/**
+ * @brief Allocates memory for a new empty list
+ *
+ * @param allocListNodeData   Function to allocate memory for new list elements data.
+ * @param freeListNodeData    Function to free memory for list elements data.
+ * @param copyListNodeData    Function to copy list elements data.
+ * @return LIST*              New empty list.
+ */
+LIST *allocList(allocListNodeDataFunc_t* allocListNodeData, freeListNodeDataFunc_t* freeListNodeData, copyListNodeDataFunc_t* copyListNodeData)
 {
   LIST *list = (LIST*)malloc(sizeof(LIST));
   assertStreamPrint(NULL, 0 != list, "out of memory");
 
   list->first = NULL;
   list->last = NULL;
-  list->itemSize = itemSize;
+  list->allocListNodeData = allocListNodeData;
+  list->freeListNodeData = freeListNodeData;
+  list->copyListNodeData = copyListNodeData;
   list->length = 0;
 
   return list;
@@ -92,9 +109,9 @@ void freeList(LIST *list)
  *
  * @param node    Pointer to node
  */
-void freeNode(LIST_NODE *node)
+void freeNode(LIST *list, LIST_NODE *node)
 {
-  free(node->data);
+  list->freeListNodeData(node->data);
   free(node);
 }
 
@@ -112,10 +129,10 @@ void listPushFront(LIST *list, const void *data)
   tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
   assertStreamPrint(NULL, 0 != tmpNode, "out of memory");
 
-  tmpNode->data = malloc(list->itemSize);
+  tmpNode->data = list->allocListNodeData(data);
   assertStreamPrint(NULL, 0 != tmpNode->data, "out of memory");
 
-  memcpy(tmpNode->data, data, list->itemSize);
+  list->copyListNodeData(tmpNode->data, data);
   tmpNode->next = list->first;
   ++(list->length);
 
@@ -156,10 +173,10 @@ void listPushBack(LIST *list, const void *data)
   tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
   assertStreamPrint(NULL, 0 != tmpNode, "out of memory");
 
-  tmpNode->data = malloc(list->itemSize);
+  tmpNode->data = list->allocListNodeData(data);
   assertStreamPrint(NULL, 0 != tmpNode->data, "out of memory");
 
-  memcpy(tmpNode->data, data, list->itemSize);
+  list->copyListNodeData(tmpNode->data, data);
   tmpNode->next = NULL;
   ++(list->length);
 
@@ -173,7 +190,7 @@ void listPushBack(LIST *list, const void *data)
 }
 
 /**
- * @brief Copies data into new tmpNode and inserts tmpNode into list after prevNode
+ * @brief Copies data into new node and inserts it into list after prevNode
  *
  * @param list       Pointer to list
  * @param prevNode   Pointer to previous node
@@ -184,9 +201,9 @@ void listInsert(LIST *list, LIST_NODE* prevNode, const void *data)
   LIST_NODE *tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
   assertStreamPrint(NULL, 0 != tmpNode, "out of memory");
 
-  tmpNode->data = malloc(list->itemSize);
+  tmpNode->data = list->allocListNodeData(data);
   assertStreamPrint(NULL, 0 != tmpNode->data, "out of memory");
-  memcpy(tmpNode->data, data, list->itemSize);
+  list->copyListNodeData(tmpNode->data, data);
 
   tmpNode->next = prevNode->next;
   prevNode->next = tmpNode;
@@ -265,7 +282,7 @@ void listRemoveFront(LIST *list)
   if(list->first)
   {
     LIST_NODE *tmpNode = list->first->next;
-    freeNode(list->first);
+    freeNode(list, list->first);
 
     list->first = tmpNode;
     --(list->length);
@@ -290,7 +307,7 @@ void listClear(LIST *list)
   while(delNode)
   {
     LIST_NODE *tmpNode = delNode->next;
-    freeNode(delNode);
+    freeNode(list, delNode);
     delNode = tmpNode;
   }
 
@@ -300,7 +317,32 @@ void listClear(LIST *list)
 }
 
 /**
- * @brief Retruns first node of list
+ * @brief Remove all nodes after startNode from list.
+ *
+ * Checks if startNode is part of list.
+ *
+ * @param list        List to remove elements from.
+ * @param startNode   Node to remove after. startNode won't be removed.
+ */
+void listClearAfterNode(LIST *list, LIST_NODE *startNode) {
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != startNode, "invalid list-node");
+
+  assertStreamPrint(NULL, listIsIn(list, startNode), "listClearAfterNode: start node not in list!");
+
+  LIST_NODE* delNode = startNode->next;
+  while (delNode) {
+    LIST_NODE* nextNode = delNode->next;
+    freeNode(list, delNode);
+    list->length--;
+    delNode = nextNode;
+  }
+  startNode->next = NULL;
+  list->last = startNode;
+}
+
+/**
+ * @brief Returns first node of list
  *
  * @param list    Pointer to list
  * @return        Pointer to first node (NULL if list is empty)
@@ -324,7 +366,30 @@ LIST_NODE *listNextNode(LIST_NODE *node)
 }
 
 /**
- * @brief Returns node data
+ * @brief Test if node is in list
+ *
+ * @param list                  Pointer to List.
+ * @param node                  Node to test if in list.
+ * @return modelica_boolean     True if node is in list, false otherwise.
+ */
+modelica_boolean listIsIn(LIST *list, LIST_NODE *node) {
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+
+  modelica_boolean isIn = FALSE;
+  LIST_NODE* tmpNode = list->first;
+  while (tmpNode) {
+    if (node == tmpNode) {
+      return TRUE;
+    }
+    tmpNode = tmpNode->next;
+  }
+
+  return FALSE;
+}
+
+/**
+ * @brief Returns node data.
  *
  * @param node    Pointer to node
  * @return        Pointer to data
@@ -336,39 +401,22 @@ void *listNodeData(LIST_NODE *node)
   return node->data;
 }
 
-/* not sure about this, looks dangerous */
+/**
+ * @brief Update content of node->data with data.
+ *
+ * Uses provided copyListNodeData function.
+ *
+ * @param list    List containing node.
+ * @param node    Node to update.
+ * @param data    Data to copy into node data.
+ */
 void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
   assertStreamPrint(NULL, 0 != node->data, "invalid list-data");
-  memcpy(node->data, data, list->itemSize);
+  list->copyListNodeData(node->data, data);
   return;
-}
-
-/* not sure about this, looks dangerous */
-LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  LIST_NODE *next = node->next;
-  node->next = newNext;
-  return next;
-}
-
-/* not sure about this, looks dangerous */
-void updatelistFirst(LIST* list, LIST_NODE *node)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  list->first = node;
-}
-
-/* not sure about this, looks dangerous */
-void updatelistLength(LIST* list, unsigned int newLength)
-{
-  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  list->length = newLength;
 }
 
 /**
@@ -384,7 +432,6 @@ void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*))
 
   if (useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing list:");
-    infoStreamPrint(stream, 0, "itemSize: %d [size of one item in bytes]", list->itemSize);
     infoStreamPrint(stream, 0, "length: %d", list->length);
 
     listElem = list->first;
