@@ -1541,6 +1541,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("OpenModelica_uriToFilename"),expLst={DAE.SCONST(s1)}))
       algorithm
         s2 := OpenModelica.Scripting.uriToFilename(s1);
+        s2 := System.basename(s2);
         if Flags.getConfigBool(Flags.BUILDING_FMU) then
           e := Expression.makeImpureBuiltinCall("OpenModelica_fmuLoadResource",{DAE.SCONST(s2)},DAE.T_STRING_DEFAULT);
         else
