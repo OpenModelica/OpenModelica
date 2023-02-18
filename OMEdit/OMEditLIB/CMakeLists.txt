@@ -59,6 +59,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Annotations/BooleanAnnotation.cpp
                       Annotations/PointAnnotation.cpp
                       Annotations/RealAnnotation.cpp
+                      Annotations/Renderers.cpp
                       Annotations/ColorAnnotation.cpp
                       Annotations/LinePatternAnnotation.cpp
                       Annotations/FillPatternAnnotation.cpp
@@ -187,6 +188,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Annotations/BooleanAnnotation.h
                       Annotations/PointAnnotation.h
                       Annotations/RealAnnotation.h
+                      Annotations/Renderers.h
                       Annotations/ColorAnnotation.h
                       Annotations/LinePatternAnnotation.h
                       Annotations/FillPatternAnnotation.h

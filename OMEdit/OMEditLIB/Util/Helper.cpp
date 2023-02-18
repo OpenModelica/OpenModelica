@@ -53,6 +53,7 @@ QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;TIFF (*.tiff)";
 QString Helper::bitmapFileTypes = "Image Files (*.png *.bmp *.jpg *.jpeg);;PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
+QString Helper::annotationBitmapFileTypes = "Image Files (*.png *.bmp *.jpg *.jpeg, *.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg);;SVG (*.svg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.json)";

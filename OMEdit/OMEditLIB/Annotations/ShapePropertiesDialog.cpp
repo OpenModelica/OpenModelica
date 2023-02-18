@@ -377,16 +377,16 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Image Group Box
   mpImageGroupBox = new QGroupBox(tr("Image"));
   mpFileLabel = new Label(Helper::fileLabel);
-  mpFileTextBox = new QLineEdit(mpShapeAnnotation->getFileName());
+  mpFileTextBox = new QLineEdit(mpBitmapAnnotation ? mpBitmapAnnotation->getFileName() : "");
   mpFileTextBox->setEnabled(false);
   mpBrowseFileButton = new QPushButton(Helper::browse);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
   mpStoreImageInModelCheckBox = new QCheckBox(tr("Store image in model"));
-  mpStoreImageInModelCheckBox->setChecked(mpShapeAnnotation->getFileName().isEmpty());
+  mpStoreImageInModelCheckBox->setChecked(mpBitmapAnnotation ? mpBitmapAnnotation->getFileName().isEmpty() : true);
   connect(mpStoreImageInModelCheckBox, SIGNAL(toggled(bool)), SLOT(storeImageInModelToggled(bool)));
   mpPreviewImageLabel = new Label;
   mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
-  mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpShapeAnnotation->getImage()));
+  mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpBitmapAnnotation ? mpBitmapAnnotation->getImage() : BitmapAnnotation::getPlaceholderImage()));
   mpPreviewImageScrollArea = new QScrollArea;
   mpPreviewImageScrollArea->setMinimumSize(400, 150);
   mpPreviewImageScrollArea->setWidgetResizable(true);
@@ -796,7 +796,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   }
   /* validate the bitmap file name */
   if (mpBitmapAnnotation) {
-    if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty()) {
+    if (mpStoreImageInModelCheckBox->isChecked() && mpBitmapAnnotation->getImageSource().isEmpty()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                               GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
@@ -868,7 +868,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   /* save bitmap file name and image source */
   if (mpBitmapAnnotation) {
     if (mpStoreImageInModelCheckBox->isChecked()) {
-      mpShapeAnnotation->setFileName("");
+      mpBitmapAnnotation->setFileName("");
       if (!mpFileTextBox->text().isEmpty()) {
         QUrl fileUrl(mpFileTextBox->text());
         QFileInfo fileInfo(mpFileTextBox->text());
@@ -888,13 +888,8 @@ bool ShapePropertiesDialog::applyShapeProperties()
         QFile imageFile(fileName);
         imageFile.open(QIODevice::ReadOnly);
         QByteArray imageByteArray = imageFile.readAll();
-        mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+        mpBitmapAnnotation->setImageSource(imageByteArray.toBase64());
       }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
-      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
-#else // QT_VERSION_CHECK
-      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
-#endif // QT_VERSION_CHECK
     } else {
       /* find the class to create a relative path */
       MainWindow *pMainWindow = MainWindow::instance();
@@ -905,14 +900,10 @@ bool ShapePropertiesDialog::applyShapeProperties()
       QFileInfo classFileInfo(pLibraryTreeItem->getFileName());
       QDir classDirectory = classFileInfo.absoluteDir();
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());
-      mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
-      mpShapeAnnotation->setImageSource("");
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
-      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
-#else // QT_VERSION_CHECK
-      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
-#endif // QT_VERSION_CHECK
+      mpBitmapAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
+      mpBitmapAnnotation->setImageSource("");
     }
+    mpBitmapAnnotation->updateRenderer();
   }
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (mpLineAnnotation) {
@@ -957,7 +948,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
 
 void ShapePropertiesDialog::browseImageFile()
 {
-  QString imageFileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::bitmapFileTypes, NULL);
+  QString imageFileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::annotationBitmapFileTypes, NULL);
   if (imageFileName.isEmpty()) {
     return;
   }

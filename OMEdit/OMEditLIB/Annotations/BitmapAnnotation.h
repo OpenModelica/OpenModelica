@@ -38,35 +38,57 @@
 #include "ShapeAnnotation.h"
 #include "Util/Utilities.h"
 
+#include <memory>
+
+class Renderer;
 class Element;
-class BitmapAnnotation : public ShapeAnnotation
-{
+class BitmapAnnotation : public ShapeAnnotation {
   Q_OBJECT
 public:
   // Used for icon/diagram shape
-  BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
-  BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView);
+  BitmapAnnotation(QString classFileName, QString annotation,
+                   GraphicsView *pGraphicsView);
+  BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName,
+                   bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
-  BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent);
+  BitmapAnnotation(BitmapAnnotation *pBitmapAnnotation, Element *pParent);
+  BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName,
+                   Element *pParent);
   // Used for icon/diagram inherited shape
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation,
+                   GraphicsView *pGraphicsView);
   // Used for OMSimulator FMU
   BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView);
+  ~BitmapAnnotation();
   void parseShapeAnnotation(QString annotation) override;
   void parseShapeAnnotation();
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+             QWidget *widget = 0) override;
   void drawBitmapAnnotation(QPainter *painter);
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   ModelInstance::Model *getParentModel() const override;
-  void setBitmap(ModelInstance::Bitmap *pBitmap) {mpBitmap = pBitmap;}
+  void setBitmap(ModelInstance::Bitmap *pBitmap) { mpBitmap = pBitmap; }
+  void setFileName(QString fileName);
+  QString getFileName();
+  void setImageSource(QString imageSource);
+  QString getImageSource();
+  QImage getImage();
+  void setDefaults();
+  void updateRenderer();
+  static QImage getPlaceholderImage();
+
 private:
   ModelInstance::Bitmap *mpBitmap;
+
+protected:
+  QString mFileName;
+  QString mImageSource;
+  std::unique_ptr<Renderer> mpRenderer;
 public slots:
   void duplicate() override;
 };
