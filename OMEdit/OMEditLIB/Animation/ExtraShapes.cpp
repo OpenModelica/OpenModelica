@@ -37,6 +37,8 @@
 #endif
 #include <cmath>
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/LightModel>
 #include <osg/StateAttribute>
 #include <osg/StateSet>
