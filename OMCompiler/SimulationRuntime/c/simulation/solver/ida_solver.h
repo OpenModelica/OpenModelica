@@ -80,6 +80,7 @@ typedef struct IDA_SOLVER
   double *ypScale;
   double *resScale;
   int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
+  SUNMatrix scaleMatrix;
 
   /* ### work array used in jacobian calculation ### */
   double sqrteps;
@@ -93,8 +94,6 @@ typedef struct IDA_SOLVER
   void* ida_mem;
   int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
   IDA_USERDATA* userData;
-  SUNMatrix tmpJac;
-  SUNMatrix denseJac;
 
   /* linear solver data */
   SUNLinearSolver linSol;   /* Linear solver object */
