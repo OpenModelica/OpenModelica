@@ -170,23 +170,20 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
       kinsolData->linearSolverMethod == NLS_LS_TOTALPIVOT) {
     kinsolData->linSol = SUNLinSol_Dense(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(LOG_STDOUT, 0,
-                       "KINSOL: In function SUNLinSol_Dense: Input incompatible.");
+      throwStreamPrint(NULL, "KINSOL: In function SUNLinSol_Dense: Input incompatible.");
     }
   } else if (kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->linSol = SUNLinSol_LapackDense(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(LOG_STDOUT, 0,
-                       "KINSOL: In function SUNLinSol_LapackDense: Input incompatible.");
+      throwStreamPrint(NULL, "KINSOL: In function SUNLinSol_LapackDense: Input incompatible.");
     }
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     kinsolData->linSol = SUNLinSol_KLU(kinsolData->y, kinsolData->J);
     if (kinsolData->linSol == NULL) {
-      errorStreamPrint(LOG_STDOUT, 0,
-                       "KINSOL: In function SUNLinSol_KLU: Input incompatible.");
+      throwStreamPrint(NULL, "KINSOL: In function SUNLinSol_KLU: Input incompatible.");
     }
   } else {
-    errorStreamPrint(LOG_STDOUT, 0, "KINSOL: Unknown linear solver method.");
+    throwStreamPrint(NULL, "KINSOL: Unknown linear solver method.");
   }
   /* Log used solver */
   infoStreamPrint(LOG_NLS, 0, "KINSOL: Using linear solver method %s", NLS_LS_METHOD[kinsolData->linearSolverMethod]);
@@ -203,7 +200,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
     } else if (sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac); /* Use numeric Jacobian with sparsity pattern */
     } else {
-      flag = KINSetJacFn(kinsolData->kinsolMemory, NULL); /* Use internal difference quotient for Jacobian */
+      throwStreamPrint(NULL, "KINSOL: In function resetKinsolMemory: Sparse linear solver KLU needs sparse Jacobian, but no sparsity pattern is available. Use a dense non-linear solver instead of KINSOL.");
     }
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
@@ -222,7 +219,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
  */
 NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry) {
   /* Allocate system data */
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
+  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)calloc(1, sizeof(NLS_KINSOL_DATA));
 
   kinsolData->size = size;
   kinsolData->linearSolverMethod = userData->nlsData->nlsLinearSolver;
@@ -398,11 +395,13 @@ static int nlsDenseJac(long int N,
 /**
  * @brief Set element of jacobian saved in CSC SUNMatrix.
  *
- * @param row
- * @param col
- * @param value
- * @param nth
- * @param A
+ * @param row     Index of row.
+ * @param col     Index of column
+ * @param value   Value to set in (row, column).
+ * @param nth     Index of row indices in A.indexvals.
+ *                indexvals - pointer to a contiguous block of int variables (of length NNZ),
+ *                containing the row indices of each nonzero matrix entry held in data
+ * @param A       Sparse CSC Matrix
  */
 static void setJacElementKluSparse(int row, int col, double value, int nth,
                                    SUNMatrix A) {
@@ -1065,17 +1064,20 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     return errorCode;
   case KIN_LSETUP_FAIL:
     /* In case something goes wrong with the symbolic jacobian try the numerical */
-    if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
-        nlsData->isPatternAvailable &&
-        nlsData->analyticalJacobianColumn != NULL) {
-      warningStreamPrint(LOG_NLS_V, 0,
-                         "KINSOL: The kinls setup routine (lsetup) encountered an error. "
-                         "Retry with numerical Jacobian.\n");
-      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-    }
-    if (flag < 0) {
-      return FALSE;
+    warningStreamPrint(LOG_NLS_V, 0,
+                       "KINSOL: The kinls setup routine (lsetup) encountered an error. "
+                       "Retry with numerical Jacobian.\n");
+    if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
+      if (nlsData->isPatternAvailable && nlsData->analyticalJacobianColumn != NULL) {
+        flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+        checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+        if (flag < 0) {
+          return FALSE;
+        }
+      } else {
+        errorStreamPrint(LOG_STDOUT, 0, "KINSOL: Trying to switch to numeric Jacobian for sparse solver KLU, but no sparsity pattern is available.");
+        return FALSE;
+      }
     }
     break;
   case KIN_LINESEARCH_BCFAIL:
