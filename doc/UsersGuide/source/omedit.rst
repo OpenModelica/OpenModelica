@@ -1133,8 +1133,8 @@ reading and writing the options.
 
 .. _omedit-options-general :
 
-General
-~~~~~~~
+General Options
+~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1198,8 +1198,8 @@ General
 
   -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
 
-Libraries
-~~~~~~~~~
+Libraries Options
+~~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1214,8 +1214,8 @@ Libraries
 
 .. _omedit-options-text-editor :
 
-Text Editor
-~~~~~~~~~~~
+Text Editor Options
+~~~~~~~~~~~~~~~~~~~
 -  Format
 
   -  *Line Ending* - Sets the file line ending.
@@ -1255,8 +1255,8 @@ Text Editor
 
   -  *Font Size* – Sets the font size for the editor.
 
-Modelica Editor
-~~~~~~~~~~~~~~~
+Modelica Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 -  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
 
@@ -1268,7 +1268,51 @@ Modelica Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
-MetaModelica Editor
+MetaModelica Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+CompositeModel Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+SSP Editor Options
+~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+C/C++ Editor Options
+~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+HTML Editor Options
 ~~~~~~~~~~~~~~~~~~~
 
 -  Colors
@@ -1279,52 +1323,8 @@ MetaModelica Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
-CompositeModel Editor
-~~~~~~~~~~~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-SSP Editor
-~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-C/C++ Editor
-~~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-HTML Editor
-~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-Graphical Views
-~~~~~~~~~~~~~~~
+Graphical Views Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 - General
 
@@ -1371,8 +1371,8 @@ Graphical Views
 
 .. _omedit-options-simulation :
 
-Simulation
-~~~~~~~~~~
+Simulation Options
+~~~~~~~~~~~~~~~~~~
 
 -  Simulation
 
@@ -1452,8 +1452,8 @@ Simulation
 
 .. _omedit-options-messages :
 
-Messages
-~~~~~~~~
+Messages Options
+~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1479,8 +1479,8 @@ Messages
 
   -  *Error Color* – Sets the text color for error messages.
 
-Notifications
-~~~~~~~~~~~~~
+Notifications Options
+~~~~~~~~~~~~~~~~~~~~~
 
 -  Notifications
 
@@ -1514,8 +1514,8 @@ Notifications
 
     -  *Keep using new frontend*
 
-Line Style
-~~~~~~~~~~
+Line Style Options
+~~~~~~~~~~~~~~~~~~
 
 -  Line Style
 
@@ -1533,8 +1533,8 @@ Line Style
 
   -  *Smooth* – If true then the line is drawn as a Bezier curve.
 
-Fill Style
-~~~~~~~~~~
+Fill Style Options
+~~~~~~~~~~~~~~~~~~
 
 -  Fill Style
 
@@ -1542,8 +1542,8 @@ Fill Style
 
   -  *Pattern* – Sets the fill pattern.
 
-Plotting
-~~~~~~~~
+Plotting Options
+~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1582,8 +1582,8 @@ Plotting
 
   - *Legend*
 
-Figaro
-~~~~~~
+Figaro Options
+~~~~~~~~~~~~~~
 
 -  Figaro
 
@@ -1595,8 +1595,8 @@ Figaro
 
 .. _omedit-options-debugger :
 
-Debugger
-~~~~~~~~
+Debugger Options
+~~~~~~~~~~~~~~~~
 
 -  Algorithmic Debugger
 
@@ -1626,8 +1626,8 @@ Debugger
 
 .. _omedit-options-fmi :
 
-FMI
-~~~
+FMI Options
+~~~~~~~~~~~
 
 -  Export
 
@@ -1675,8 +1675,8 @@ FMI
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
      then the temporary FMU directory that is created for importing the FMU will be deleted.
 
-OMTLMSimulator
-~~~~~~~~~~~~~~
+OMTLMSimulator Options
+~~~~~~~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1686,8 +1686,8 @@ OMTLMSimulator
 
   -  *Monitor Process* - path to OMTLMSimulator monitor process.
 
-OMSimulator/SSP
-~~~~~~~~~~~~~~~
+OMSimulator/SSP Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 -  General
 

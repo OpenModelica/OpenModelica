@@ -525,22 +525,22 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
 
   /* Update statistics */
   /* TODO: Statistics are incomplete: If you retry you need to count that as well */
-  solverInfo->solverStatsTmp[0] += 1;                 /* Number of steps */
+  solverInfo->solverStatsTmp.nStepsTaken += 1;                 /* Number of steps */
 
   tmp = 0;
   flag = KINGetNumFuncEvals(kData->kin_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumFuncEvals");
-  solverInfo->solverStatsTmp[1] += tmp;               /* functionODE evaluations */
+  solverInfo->solverStatsTmp.nCallsODE += tmp;               /* functionODE evaluations */
 
   tmp = 0;
   flag = KINGetNumJacEvals(kData->kin_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumJacEvals");
-  solverInfo->solverStatsTmp[2] += tmp;               /* Jacobians evaluations */
+  solverInfo->solverStatsTmp.nCallsJacobian += tmp;               /* Jacobians evaluations */
 
   tmp = 0;
   flag = KINGetNumBetaCondFails(kData->kin_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSpilsGetNumJtimesEvals");
-  solverInfo->solverStatsTmp[4] += tmp;               /* beta-condition failures evaluations */
+  solverInfo->solverStatsTmp.nErrorTestFailures += tmp;               /* beta-condition failures evaluations */
 
   if (solvedSuccessfully != 0) {
     infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished unsuccessful.");

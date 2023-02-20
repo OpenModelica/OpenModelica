@@ -4296,6 +4296,19 @@ algorithm
   outElts := listReverseInPlace(outElts);
 end getDefineUnitsInElements;
 
+public function getClassPartsInClass
+  input Absyn.Class cls;
+  output list<Absyn.ClassPart> parts;
+protected
+  Absyn.ClassDef cdef = cls.body;
+algorithm
+  parts := match cdef
+    case Absyn.ClassDef.PARTS() then cdef.classParts;
+    case Absyn.ClassDef.CLASS_EXTENDS() then cdef.parts;
+    else {};
+  end match;
+end getClassPartsInClass;
+
 public function getElementItemsInClass
   "Returns the public and protected elements in a class."
   input Absyn.Class inClass;

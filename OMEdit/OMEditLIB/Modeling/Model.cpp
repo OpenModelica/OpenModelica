@@ -602,9 +602,7 @@ namespace ModelInstance
 
   IconDiagramAnnotation::~IconDiagramAnnotation()
   {
-    foreach (auto pShape, mGraphics) {
-      delete pShape;
-    }
+    qDeleteAll(mGraphics);
     mGraphics.clear();
   }
 
@@ -761,25 +759,20 @@ namespace ModelInstance
 
   Model::~Model()
   {
-    foreach (auto pExtend, mExtends) {
-      delete pExtend;
-    }
+    qDeleteAll(mExtends);
+    mExtends.clear();
 
-    foreach (auto pElement, mElements) {
-      delete pElement;
-    }
+    qDeleteAll(mElements);
+    mElements.clear();
 
-    foreach (auto pConnection, mConnections) {
-      delete pConnection;
-    }
+    qDeleteAll(mConnections);
+    mConnections.clear();
 
-    foreach (auto pTransition, mTransitions) {
-      delete pTransition;
-    }
+    qDeleteAll(mTransitions);
+    mTransitions.clear();
 
-    foreach (auto pInitialState, mInitialStates) {
-      delete pInitialState;
-    }
+    qDeleteAll(mInitialStates);
+    mInitialStates.clear();
   }
 
   void Model::deserialize()

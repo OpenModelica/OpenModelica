@@ -52,8 +52,10 @@ extern "C" {
 #ifdef WITH_SUNDIALS
 
 #include <cvode/cvode.h>
+#include "cvode_solver.h"
 #ifndef OMC_FMI_RUNTIME
 #include <ida/ida.h>
+#include "ida_solver.h"
 #include <kinsol/kinsol.h>
 #include "kinsolSolver.h"
 #endif
@@ -80,7 +82,11 @@ typedef enum sundialsFlagType {
 /* Function prototypes */
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
+void cvodeErrorHandlerFunction(int errorCode, const char *module,
+                               const char *function, char *msg, void *userData);
 #ifndef OMC_FMI_RUNTIME
+void idaErrorHandlerFunction(int errorCode, const char *module,
+                             const char *function, char *msg, void *userData);
 void kinsolErrorHandlerFunction(int errorCode, const char *module,
                                 const char *function, char *msg,
                                 void *userData);

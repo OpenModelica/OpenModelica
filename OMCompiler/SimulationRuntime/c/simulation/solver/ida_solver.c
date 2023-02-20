@@ -98,37 +98,26 @@ int ida_event_update(DATA* data, threadData_t *threadData);
 static IDA_SOLVER *idaDataGlobal;
 
 
-/* TODO: Move to sundials_Error.c or remove */
-int checkIDAflag(int flag)
-{
-  TRACE_PUSH
-  int retVal;
-  switch(flag)
+/**
+ * @brief Return true if flag signals success.
+ *
+ * If flag is IDA_SUCCESS or IDA_TSTOP_RETURN return true.
+ * Warnings (IDA_WARNING) or encountering roots (IDA_ROOT_RETURN) doesn't count as success.
+ *
+ * @param flag                Value of IDA/IDAS flag.
+ * @return modelica_boolean   Return true if flag signals success, otherwise return false.
+ */
+modelica_boolean IDAflagIsSuccess(int flag) {
+  switch (flag)
   {
   case IDA_SUCCESS:
   case IDA_TSTOP_RETURN:
-    retVal = 0;
-    break;
+    return TRUE;
   default:
-    retVal = 1;
-    break;
+    return FALSE;
   }
-  TRACE_POP
-  return retVal;
 }
 
-/* TODO: Move to sundials_Error.c or remove */
-void errOutputIDA(int error_code, const char *module, const char *function,
-                  char *msg, void *userData)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->data);
-  infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
-  infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", error_code, module, function);
-  infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-  messageClose(LOG_SOLVER);
-  TRACE_POP
-}
 
 /**
  * @brief Initialize main IDA data.
@@ -221,7 +210,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetUserData");
 
   /* Set error handler */
-  flag = IDASetErrHandlerFn(idaData->ida_mem, errOutputIDA, idaData);
+  flag = IDASetErrHandlerFn(idaData->ida_mem, idaErrorHandlerFunction, idaData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
 
   /* Set nominal values of the states for absolute tolerances */
@@ -317,7 +306,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]) {
       idaData->stepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
       flag = IDASetMaxStep(idaData->ida_mem, idaData->stepsTime);
-      if (checkIDAflag(flag)) {
+      if (!IDAflagIsSuccess(flag)) {
         throwStreamPrint(threadData, "##IDA## Setting max steps of the IDA solver!");
       }
       infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
@@ -505,7 +494,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxErrorTestFails = atoi(omc_flagValue[FLAG_IDA_MAXERRORTESTFAIL]);
     flag = IDASetMaxErrTestFails(idaData->ida_mem, maxErrorTestFails);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxErrTestFails failed!");
     }
   }
@@ -515,7 +504,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxNonlinIters = atoi(omc_flagValue[FLAG_IDA_MAXNONLINITERS]);
     flag = IDASetMaxNonlinIters(idaData->ida_mem, maxNonlinIters);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxNonlinIters failed!");
     }
   }
@@ -525,7 +514,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxConvFails = atoi(omc_flagValue[FLAG_IDA_MAXCONVFAILS]);
     flag = IDASetMaxConvFails(idaData->ida_mem, maxConvFails);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxConvFails failed!");
     }
   }
@@ -535,7 +524,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     double nonlinConvCoef = atof(omc_flagValue[FLAG_IDA_NONLINCONVCOEF]);
     flag = IDASetNonlinConvCoef(idaData->ida_mem, nonlinConvCoef);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetNonlinConvCoef failed!");
     }
   }
@@ -544,7 +533,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->daeMode) {
     if (omc_flag[FLAG_NO_SUPPRESS_ALG]) {
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
-      if (checkIDAflag(flag)) {
+      if (!IDAflagIsSuccess(flag)) {
         throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
       }
     }
@@ -553,7 +542,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
 
     flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-    if (checkIDAflag(flag)) {
+    if (!IDAflagIsSuccess(flag)) {
       throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
     }
   }
@@ -565,7 +554,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     assertStreamPrint(threadData, initialStepSize >= DASSL_STEP_EPS, "Selected initial step size %e is too small.", initialStepSize);
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
-    if (checkIDAflag(flag)) {
+    if (!IDAflagIsSuccess(flag)) {
       throwStreamPrint(threadData, "##IDA## Set initial step size failed!");
     }
     infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
@@ -590,22 +579,22 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensInit");
 
     flag = IDASetSensParams(idaData->ida_mem, data->simulationInfo->realParameter, NULL, data->simulationInfo->sensitivityParList);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetSensParams failed!");
     }
 
     flag = IDASetSensDQMethod(idaData->ida_mem, IDA_FORWARD, 0);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetSensDQMethod failed!");
     }
 
     flag = IDASensEEtolerances(idaData->ida_mem);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
     }
 /*
     flag = IDASetSensErrCon(idaData->ida_mem, TRUE);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
     }
 */
@@ -742,13 +731,13 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
   /* try again without line search if first try fails */
-  if (checkIDAflag(flag)){
+  if (!IDAflagIsSuccess(flag)){
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
     IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
     flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
     IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
     }
   }
@@ -835,7 +824,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         idaData->y,
         idaData->yp);
 
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while reinit IDA solver after event!");
     }
 
@@ -858,7 +847,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         }
       }
       flag = IDASensReInit(idaData->ida_mem, IDA_SIMULTANEOUS, idaData->yS, idaData->ySp);
-      if (checkIDAflag(flag)){
+      if (!IDAflagIsSuccess(flag)){
         throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
       }
     }
@@ -911,7 +900,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
     stepsMode = IDA_ONE_STEP;
     flag = IDASetStopTime(idaData->ida_mem, tout);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while set stopTime!");
     }
   }
@@ -950,14 +939,14 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     sData->timeValue = solverInfo->currentTime;
 
     /* error handling */
-    if ( !checkIDAflag(flag) && solverInfo->currentTime >= tout)
+    if (IDAflagIsSuccess(flag) && solverInfo->currentTime >= tout)
     {
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
     }
     else
     {
-      if (!checkIDAflag(flag))
+      if (IDAflagIsSuccess(flag))
       {
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
       }
@@ -1041,7 +1030,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   if (idaData->idaSmode)
   {
     flag = IDAGetSens(idaData->ida_mem, &solverInfo->currentTime, idaData->ySResult);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain results for parameter sensitivities!");
     }
   }
@@ -1050,34 +1039,32 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* steps */
   tmp = 0;
   flag = IDAGetNumSteps(idaData->ida_mem, &tmp);
-  if (flag == IDA_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[0] = tmp;
-  }
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumSteps");
+  solverInfo->solverStatsTmp.nStepsTaken = tmp;
 
   /* functionODE evaluations */
   tmp = 0;
   flag = IDAGetNumResEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumResEvals");
-  solverInfo->solverStatsTmp[1] = tmp;
+  solverInfo->solverStatsTmp.nCallsODE = tmp;
 
   /* Jacobians evaluations */
   tmp = 0;
   flag = IDAGetNumJacEvals(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumJacEvals");
-  solverInfo->solverStatsTmp[2] = tmp;
+  solverInfo->solverStatsTmp.nCallsJacobian = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumErrTestFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumErrTestFails");
-  solverInfo->solverStatsTmp[3] = tmp;
+  solverInfo->solverStatsTmp.nErrorTestFailures = tmp;
 
   /* local error test failures */
   tmp = 0;
   flag = IDAGetNumNonlinSolvConvFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvConvFails");
-  solverInfo->solverStatsTmp[4] = tmp;
+  solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
 
   /* get more statistics */
   if (useStream[LOG_SOLVER_V])

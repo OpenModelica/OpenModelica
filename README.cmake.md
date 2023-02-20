@@ -1,3 +1,4 @@
+# OpenModelica CMake build instructions
 
 - [1. Quick start](#1-quick-start)
 - [2. ccache](#2-ccache)
@@ -160,6 +161,7 @@ Considering these, your final configure and build lines would be
 ```sh
 cd OpenModelica
 cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles"
+cd build_cmake
 make -j9 install -Oline
 
 # Default install dir is a directory named install_cmake inside the build directory.
@@ -269,17 +271,22 @@ Some editors and tools will check for the existence of this file automatically. 
 
 # 6. Running Tests (rtest)
 
-Running the entirety of the OpenModelica testsuite is a complicated process and outside the scope for now. So there is no `ctest` support yet and CMake does not run any tests for you. In other words, you can not expect to test the sanity of your compilation by doing something like `make test`.
+Running the entirety of the OpenModelica testsuite is a complicated process and outside the scope for now.
+So there is no `ctest` support yet and CMake does not run any tests for you.
+In other words, you can not expect to test the sanity of your compilation by doing something like `make test`.
 
-However, you can and should modify `rtest` to pick up the omc compiled by your CMake build system. By default `rtest` will look for omc in `<OpenModelica>/build/`. Therefore it needs to be modified to look for omc in your specified `CMAKE_INSTALL_PREFIX` which by default will be `<OpenModelica>/<build_dir>/install_cmake/` if you have not specified another `CMAKE_INSTALL_PREFIX`.
+However, you can and should modify `rtest` to pick up the omc compiled by your CMake build system.
+By default `rtest` will look for omc in `<OpenModelica>/build/`. Therefore it needs to be
+modified to look for omc in your specified `CMAKE_INSTALL_PREFIX` which by default will be
+`<OpenModelica>/<build_dir>/install_cmake/` if you have not specified another `CMAKE_INSTALL_PREFIX`.
 
 Find the line
-```
+```perl
 $OPENMODELICAHOME="$1build_cmake/install_cmake";
 ```
 
 and adjust it to point to the installation directory you have specified when configuring OpenModelica, e.g.,
-```
+```perl
 $OPENMODELICAHOME="$1build_cmake_release/install_cmake";
 ```
 

@@ -249,6 +249,33 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
   }
 }
 
+/**
+ * @brief Error handler function for CVODE
+ *
+ * @param errorCode   Error code from CVODE
+ * @param module      Name of the CVODE module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with CVodeSetUserData.
+ */
+void cvodeErrorHandlerFunction(int errorCode, const char *module,
+                               const char *function, char *msg, void *userData)
+{
+  /* Variables */
+  CVODE_SOLVER* cvodeData;
+  DATA* data;
+
+  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+    cvodeData = (CVODE_SOLVER*) userData;
+    data = (DATA*)cvodeData->simData->data;
+
+    infoStreamPrint(LOG_SOLVER, 1, "#### CVODE error message #####");
+    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(LOG_SOLVER);
+  }
+}
+
 #ifndef OMC_FMI_RUNTIME
 /**
  * @brief Checks given KINSOL flag and reports potential error.
@@ -486,7 +513,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
     break;
   case IDA_RTFUNC_FAIL:
     throwStreamPrint(NULL,
-                     "##IDA## In function %s: The rootnding function failed "
+                     "##IDA## In function %s: The rootfinding function failed "
                      "in an unrecoverable manner.",
                      functionName);
     break;
@@ -499,7 +526,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_FIRST_RES_FAIL:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: The user-provided residual "
-                     "function failed recoverably on the rst call.",
+                     "function failed recoverably on the first call.",
                      functionName);
     break;
   case IDA_LINESEARCH_FAIL:
@@ -833,13 +860,40 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
 }
 
 /**
+ * @brief Error handler function for IDA
+ *
+ * @param errorCode   Error code from IDA
+ * @param module      Name of the IDA module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with IDASetUserData.
+ */
+void idaErrorHandlerFunction(int errorCode, const char *module,
+                             const char *function, char *msg, void *userData)
+{
+  /* Variables */
+  IDA_SOLVER* idaData;
+  DATA* data;
+
+  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+    idaData = (IDA_SOLVER*) userData;
+    data = (DATA*)idaData->userData->data;
+
+    infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
+    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(LOG_SOLVER);
+  }
+}
+
+/**
  * @brief Error handler function given to KINSOL.
  *
  * @param errorCode   Error code from KINSOL
  * @param module      Name of the KINSOL module reporting the error.
  * @param function    Name of the function in which the error occurred.
  * @param msg         Error Message.
- * @param userData    Pointer to user data given with KINSetErrHandlerFn.
+ * @param userData    Pointer to user data given with KINSetUserData.
  */
 void kinsolErrorHandlerFunction(int errorCode, const char* module,
                                 const char *function, char* msg,

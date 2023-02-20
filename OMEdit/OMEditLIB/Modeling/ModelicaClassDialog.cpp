@@ -1325,12 +1325,12 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   TextEditor *pTextEditor = new TextEditor(pParent);
   pTextEditor->setPlainText(informationText);
   if (modelicaTextHighlighter) {
-    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
-                                                                        pTextEditor->getPlainTextEdit());
+    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(), pTextEditor->getPlainTextEdit());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
   QPushButton *pOkButton = new QPushButton(Helper::ok);
+  pOkButton->setAutoDefault(true);
   connect(pOkButton, SIGNAL(clicked()), SLOT(close()));
   // set layout
   QHBoxLayout *buttonLayout = new QHBoxLayout;

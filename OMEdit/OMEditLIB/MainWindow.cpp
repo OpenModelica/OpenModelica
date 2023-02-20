@@ -873,9 +873,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
-    QString windowTitle = QString("%1 - %2").arg(Helper::checkModel, pLibraryTreeItem->getNameStructure());
-    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
-    pInformationDialog->show();
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, checkModelResult, Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
   hideProgressBar();
