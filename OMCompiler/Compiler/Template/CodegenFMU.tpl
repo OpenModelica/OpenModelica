@@ -1649,21 +1649,21 @@ template dumpFMUModelDescriptionInputOutputVariable(String name, String causalit
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanOutput "+name+""
 end dumpFMUModelDescriptionInputOutputVariable;
 
-template importFMUModelica(FmiImport fmi)
+template importFMUModelica(FmiImport fmi, String name)
  "Generates the Modelica code depending on the FMU type."
 ::=
 match fmi
 case FMIIMPORT(__) then
   match fmiInfo
     case (INFO(fmiVersion = "1.0", fmiType = 0)) then
-      importFMU1ModelExchange(fmi)
+      importFMU1ModelExchange(fmi, name)
     case (INFO(fmiVersion = "1.0", fmiType = 1)) then
-      importFMU1CoSimulationStandAlone(fmi)
+      importFMU1CoSimulationStandAlone(fmi, name)
     case (INFO(fmiVersion = "2.0", fmiType = 1)) then
-      importFMU2ModelExchange(fmi)
+      importFMU2ModelExchange(fmi, name)
 end importFMUModelica;
 
-template importFMU1ModelExchange(FmiImport fmi)
+template importFMU1ModelExchange(FmiImport fmi, String name)
  "Generates Modelica code for FMI Model Exchange version 1.0"
 ::=
 match fmi
@@ -1721,7 +1721,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
   let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
   <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+  model <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%><%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
@@ -2013,11 +2013,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" outCallEventUpdate = fmi1CompletedIntegratorStep_OMC(fmi1me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1CompletedIntegratorStep;
     end fmi1Functions;
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
   >>
 end importFMU1ModelExchange;
 
-template importFMU2ModelExchange(FmiImport fmi)
+template importFMU2ModelExchange(FmiImport fmi, String name)
  "Generates Modelica code for FMI Model Exchange version 2.0"
 ::=
 match fmi
@@ -2079,7 +2079,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "2.0")
   let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "2.0")
   <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+  model <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%><%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
@@ -2402,11 +2402,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" outCallEventUpdate = fmi2CompletedIntegratorStep_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2CompletedIntegratorStep;
     end fmi2Functions;
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
   >>
 end importFMU2ModelExchange;
 
-template importFMU1CoSimulationStandAlone(FmiImport fmi)
+template importFMU1CoSimulationStandAlone(FmiImport fmi, String name)
  "Generates Modelica code for FMI Co-simulation stand alone version 1.0"
 ::=
 match fmi
@@ -2464,7 +2464,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
   let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
   <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+  model <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%><%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     constant String fmuLocation = "file://<%fmuWorkingDirectory%>/resources";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
@@ -2628,7 +2628,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetString;
     end fmi1Functions;
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
   >>
 end importFMU1CoSimulationStandAlone;
 
