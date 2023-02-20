@@ -26,7 +26,10 @@ install(TARGETS OMEdit
 if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
 
   # Escape the environment variable path
-  string(REPLACE "\\" "/" OMDEV_ESCAPED $ENV{OMDev})
+  if(NOT DEFINED ENV{OMDEV})
+    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+  endif()
+  string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
 
   # Check if 64 bit
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)

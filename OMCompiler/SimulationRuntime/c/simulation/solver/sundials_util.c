@@ -68,7 +68,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
     errorStreamPrint(LOG_STDOUT, 0,
-                     "KLU: In function setJacElementKluSparse: Wrong sparse format "
+                     "In function setJacElementSundialsSparse: Wrong sparse format "
                      "of SUNMatrix A.");
   }
 

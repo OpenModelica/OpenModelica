@@ -365,10 +365,9 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
 
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
-  int ui;
   if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep)
   {
-    addSolverStats(&solverInfo->solverStats, &solverInfo->solverStatsTmp);
+    addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
   }
 }
 
