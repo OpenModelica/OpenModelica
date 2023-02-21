@@ -22,9 +22,6 @@ getModelInstance(P.M, prettyPrint=true);
 // "{
 //   \"name\": \"P.M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
-//
-//   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 5,

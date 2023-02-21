@@ -844,12 +844,16 @@ namespace ModelInstance
       }
     }
 
-    if (mModelJson.contains("extends")) {
-      QJsonArray extends = mModelJson.value("extends").toArray();
-      foreach (QJsonValue extend, extends) {
-        Extend *pExtend = new Extend;
-        pExtend->deserialize(extend.toObject());
-        mExtends.append(pExtend);
+    QJsonArray elements = mModelJson.value("elements").toArray();
+
+    foreach (const QJsonValue &element, elements) {
+      QJsonObject elementObject = element.toObject();
+      QString kind = elementObject.value("$kind").toString();
+
+      if (kind == "extends") {
+        mExtends.append(new Extend(elementObject));
+      } else if (kind == "component") {
+        mElements.append(new Element(this, elementObject));
       }
     }
 
@@ -876,18 +880,6 @@ namespace ModelInstance
 
     if (!mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
       readCoordinateSystemFromExtendsClass(&mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
-    }
-
-    if (mModelJson.contains("components")) {
-      QJsonArray components = mModelJson.value("components").toArray();
-      foreach (QJsonValue component, components) {
-        QJsonObject componentObject = component.toObject();
-        if (!componentObject.isEmpty()) {
-          Element *pElement = new Element(this);
-          pElement->deserialize(component.toObject());
-          mElements.append(pElement);
-        }
-      }
     }
 
     if (mModelJson.contains("source")) {
@@ -1271,6 +1263,12 @@ namespace ModelInstance
     initialize();
   }
 
+  Element::Element(Model *pParentModel, const QJsonObject &jsonObject)
+    : Element(pParentModel)
+  {
+    deserialize(jsonObject);
+  }
+
   Element::~Element()
   {
     if (mpModel) {
@@ -1643,6 +1641,12 @@ namespace ModelInstance
     : Model()
   {
     mpExtendsAnnotation = std::make_unique<Annotation>(this);
+  }
+
+  Extend::Extend(const QJsonObject &jsonObject)
+    : Extend()
+  {
+    deserialize(jsonObject);
   }
 
   void Extend::deserialize(const QJsonObject &jsonObject)

@@ -153,6 +153,14 @@ algorithm
   end match;
 end addElement;
 
+function addElementNotNull
+  input JSON value;
+  input JSON obj;
+  output JSON outObj;
+algorithm
+  outObj := if isNull(value) then obj else addElement(value, obj);
+end addElementNotNull;
+
 function addPair
   "Adds a key-value pair to a JSON object, or returns a new object with the
    key-value pair if the JSON is null."

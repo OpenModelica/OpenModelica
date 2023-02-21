@@ -27,14 +27,16 @@ getModelInstance(M, prettyPrint=true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"b\",
 //       \"type\": {
 //         \"name\": \"B\",
 //         \"restriction\": \"model\",
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": {
 //               \"name\": \"A\",
 //               \"restriction\": \"model\",
