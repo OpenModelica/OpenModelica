@@ -561,6 +561,7 @@ private:
   {
   public:
     Element(Model *pParentModel);
+    Element(Model *pParentModel, const QJsonObject &jsonObject);
     ~Element();
     void initialize();
     void deserialize(const QJsonObject &jsonObject);
@@ -710,6 +711,7 @@ private:
   {
   public:
     Extend();
+    Extend(const QJsonObject &jsonObject);
     void deserialize(const QJsonObject &jsonObject);
 
     Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}

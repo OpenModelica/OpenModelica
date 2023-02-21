@@ -35,13 +35,39 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"final\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"direction\": \"input\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"w\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -51,6 +77,7 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"z\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -66,31 +93,9 @@ getModelInstance(M, prettyPrint = true);
 //           \"columnEnd\": 14
 //         }
 //       }
-//     }
-//   ],
-//   \"components\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"final\": true
-//       }
 //     },
 //     {
-//       \"name\": \"y\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"direction\": \"input\"
-//       }
-//     },
-//     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"inner\": true
-//       }
-//     },
-//     {
+//       \"$kind\": \"component\",
 //       \"name\": \"w\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -100,16 +105,19 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"c\",
 //       \"type\": {
 //         \"name\": \"C\",
 //         \"restriction\": \"connector\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"e\",
 //             \"type\": \"Real\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -117,6 +125,7 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"s\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -136,12 +145,6 @@ getModelInstance(M, prettyPrint = true);
 //         \"public\": false,
 //         \"variability\": \"parameter\"
 //       }
-//     }
-//   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"w\",
-//       \"type\": \"Real\"
 //     }
 //   ],
 //   \"source\": {

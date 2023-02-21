@@ -24,8 +24,9 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifiers\": \"1.0\",
@@ -37,6 +38,21 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"class\",
+//       \"name\": \"M\",
+//       \"prefixes\": {
+//         \"replaceable\": true
+//       },
+//       \"source\": {
+//         \"filename\": \"<interactive>\",
+//         \"lineStart\": 5,
+//         \"columnStart\": 17,
+//         \"lineEnd\": 7,
+//         \"columnEnd\": 10
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
 //       \"name\": \"m\",
 //       \"type\": {
 //         \"name\": \"M\",
@@ -44,8 +60,9 @@ getModelInstance(M, prettyPrint = true);
 //         \"prefixes\": {
 //           \"replaceable\": true
 //         },
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\"
 //           }
@@ -59,13 +76,6 @@ getModelInstance(M, prettyPrint = true);
 //         }
 //       }
 //     }
-//   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\"
-//     },
-//     \"M\"
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",

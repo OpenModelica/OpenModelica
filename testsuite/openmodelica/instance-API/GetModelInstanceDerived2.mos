@@ -21,8 +21,9 @@ getModelInstance(RealInput2, true); getErrorString();
 //   \"prefixes\": {
 //     \"direction\": \"input\"
 //   },
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": \"Real\"
 //     }
 //   ],
@@ -41,16 +42,18 @@ getModelInstance(RealInput2, true); getErrorString();
 //   \"modifiers\": {
 //     \"start\": \"1.0\"
 //   },
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"RealInput\",
 //         \"restriction\": \"type\",
 //         \"prefixes\": {
 //           \"direction\": \"input\"
 //         },
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": \"Real\"
 //           }
 //         ],

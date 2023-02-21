@@ -24,14 +24,16 @@ getModelInstance(M, prettyPrint=true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": {
 //         \"name\": \"MyReal\",
 //         \"restriction\": \"type\",
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": \"Real\"
 //           }
 //         ],
