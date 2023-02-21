@@ -3845,10 +3845,11 @@ void Element::showParameters()
   if (MainWindow::instance()->isNewApi()) {
     pMainWindow->getProgressBar()->setRange(0, 0);
     pMainWindow->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelElement, mpGraphicsView, isInheritedElement(), pMainWindow);
+    ElementParameters *pElementParameters = new ElementParameters(mpModelElement, mpGraphicsView, isInheritedElement(), false, pMainWindow);
     pMainWindow->hideProgressBar();
     pMainWindow->getStatusBar()->clearMessage();
     pElementParameters->exec();
+    pElementParameters->deleteLater();
   } else {
     pMainWindow->getProgressBar()->setRange(0, 0);
     pMainWindow->showProgressBar();

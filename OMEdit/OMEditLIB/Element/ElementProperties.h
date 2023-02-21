@@ -60,12 +60,14 @@ public:
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   void setTab(QString tab) {mTab = tab;}
   StringAnnotation getTab() {return mTab;}
-  void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
-  StringAnnotation getGroupBox() {return mGroupBox;}
-  void setGroupBoxDefined(bool groupBoxDefined) {mGroupBoxDefined = groupBoxDefined;}
-  bool isGroupBoxDefined() const {return mGroupBoxDefined;}
+  void setGroup(QString group) {mGroup = group;}
+  StringAnnotation getGroup() {return mGroup;}
+  void setGroupDefined(bool groupDefined) {mGroupDefined = groupDefined;}
+  bool isGroupDefined() const {return mGroupDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
-  bool isShowStartAttribute() {return mShowStartAttribute;}
+  bool isShowStartAttribute() const {return mShowStartAttribute;}
+  void setShowStartAndFixed(bool showStartAndFixed) {mShowStartAndFixed = showStartAndFixed;}
+  bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   StringAnnotation getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
   Label* getNameLabel() {return mpNameLabel;}
@@ -101,10 +103,11 @@ private:
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
-  StringAnnotation mGroupBox;
-  bool mGroupBoxDefined;
+  StringAnnotation mGroup;
+  bool mGroupDefined;
   BooleanAnnotation mEnable;
   BooleanAnnotation mShowStartAttribute;
+  bool mShowStartAndFixed;
   BooleanAnnotation mColorSelector;
   StringAnnotation mLoadSelectorFilter;
   StringAnnotation mLoadSelectorCaption;
@@ -180,15 +183,19 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
   ~ElementParameters();
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
-  bool getInherited() const {return mInherited;}
+  bool isInherited() const {return mInherited;}
+  bool isNested() const {return mNested;}
+  QString getModification() const {return mModification;}
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
   bool mInherited;
+  bool mNested;
+  QString mModification;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
   QTabWidget *mpParametersTabWidget;
