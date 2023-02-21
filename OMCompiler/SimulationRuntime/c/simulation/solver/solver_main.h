@@ -70,7 +70,7 @@ typedef struct SOLVER_INFO
   double lastdesiredStep;
 
   /* events */
-  LIST* eventLst;
+  LIST* eventLst;         /* List with long indices from data->simulationInfo->zeroCrossingIndex */
   int didEventStep;       /* Boolean stating if during the last step an event was encountered,
                            * Used to reinitialize ODE/DAE solver after event iteration */
 

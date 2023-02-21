@@ -93,42 +93,33 @@ static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 int ida_event_update(DATA* data, threadData_t *threadData);
 
+int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A);
+
 /* Static variables */
 /* TODO: Don't use global variables */
 static IDA_SOLVER *idaDataGlobal;
 
 
-/* TODO: Move to sundials_Error.c or remove */
-int checkIDAflag(int flag)
-{
-  TRACE_PUSH
-  int retVal;
-  switch(flag)
+/**
+ * @brief Return true if flag signals success.
+ *
+ * If flag is IDA_SUCCESS or IDA_TSTOP_RETURN return true.
+ * Warnings (IDA_WARNING) or encountering roots (IDA_ROOT_RETURN) doesn't count as success.
+ *
+ * @param flag                Value of IDA/IDAS flag.
+ * @return modelica_boolean   Return true if flag signals success, otherwise return false.
+ */
+modelica_boolean IDAflagIsSuccess(int flag) {
+  switch (flag)
   {
   case IDA_SUCCESS:
   case IDA_TSTOP_RETURN:
-    retVal = 0;
-    break;
+    return TRUE;
   default:
-    retVal = 1;
-    break;
+    return FALSE;
   }
-  TRACE_POP
-  return retVal;
 }
 
-/* TODO: Move to sundials_Error.c or remove */
-void errOutputIDA(int error_code, const char *module, const char *function,
-                  char *msg, void *userData)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->data);
-  infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
-  infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", error_code, module, function);
-  infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-  messageClose(LOG_SOLVER);
-  TRACE_POP
-}
 
 /**
  * @brief Initialize main IDA data.
@@ -221,7 +212,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetUserData");
 
   /* Set error handler */
-  flag = IDASetErrHandlerFn(idaData->ida_mem, errOutputIDA, idaData);
+  flag = IDASetErrHandlerFn(idaData->ida_mem, idaErrorHandlerFunction, idaData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
 
   /* Set nominal values of the states for absolute tolerances */
@@ -250,9 +241,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   if (omc_flag[FLAG_IDA_SCALING]) { /* idaNoScaling */
     /* allocate memory for scaling */
-    idaData->yScale  = (double*) malloc(idaData->N*sizeof(double));
-    idaData->ypScale = (double*) malloc(idaData->N*sizeof(double));
-    idaData->resScale  = (double*) malloc(idaData->N*sizeof(double));
+    idaData->yScale   = (double*) malloc(idaData->N*sizeof(double));
+    idaData->ypScale  = (double*) malloc(idaData->N*sizeof(double));
+    idaData->resScale = (double*) malloc(idaData->N*sizeof(double));
 
     /* set yScale from nominal values */
     for(i=0; i < data->modelData->nStates; ++i) {
@@ -272,8 +263,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
     messageClose(LOG_SOLVER_V);
   } else {
-    idaData->yScale  = NULL;
-    idaData->ypScale = NULL;
+    idaData->yScale   = NULL;
+    idaData->ypScale  = NULL;
     idaData->resScale = NULL;
   }
   /* initialize */
@@ -317,7 +308,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]) {
       idaData->stepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
       flag = IDASetMaxStep(idaData->ida_mem, idaData->stepsTime);
-      if (checkIDAflag(flag)) {
+      if (!IDAflagIsSuccess(flag)) {
         throwStreamPrint(threadData, "##IDA## Setting max steps of the IDA solver!");
       }
       infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
@@ -400,7 +391,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   switch (idaData->linearSolverMethod){
   case IDA_LS_SPGMR:
     idaData->J = NULL;
-    idaData->tmpJac = NULL;
     idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
@@ -409,7 +399,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     break;
   case IDA_LS_SPBCG:
     idaData->J = NULL;
-    idaData->tmpJac = NULL;
     idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
@@ -418,7 +407,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     break;
   case IDA_LS_SPTFQMR:
     idaData->J = NULL;
-    idaData->tmpJac = NULL;
     idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
@@ -427,7 +415,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     break;
   case IDA_LS_DENSE:
     idaData->J = SUNDenseMatrix(idaData->N, idaData->N);
-    idaData->tmpJac = NULL;
     idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_Dense: Input incompatible.");
@@ -438,8 +425,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     if (idaData->NNZ < 0) {
       throwStreamPrint(threadData, "##IDA## idaData->NNZ not set.");
     }
-    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
-    idaData->tmpJac = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
+    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
     idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_KLU: Input incompatible.");
@@ -466,10 +452,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case COLOREDSYMJAC:
     case COLOREDNUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
+
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(idaData->jacColumns));
       idaData->allocatedParMem = 1;   /* TRUE */
+      if (omc_flag[FLAG_IDA_SCALING]) {
+        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
+      } else {
+        idaData->scaleMatrix = NULL;
+      }
 #endif
       break;
     default:
@@ -505,7 +497,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxErrorTestFails = atoi(omc_flagValue[FLAG_IDA_MAXERRORTESTFAIL]);
     flag = IDASetMaxErrTestFails(idaData->ida_mem, maxErrorTestFails);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxErrTestFails failed!");
     }
   }
@@ -515,7 +507,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxNonlinIters = atoi(omc_flagValue[FLAG_IDA_MAXNONLINITERS]);
     flag = IDASetMaxNonlinIters(idaData->ida_mem, maxNonlinIters);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxNonlinIters failed!");
     }
   }
@@ -525,7 +517,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     int maxConvFails = atoi(omc_flagValue[FLAG_IDA_MAXCONVFAILS]);
     flag = IDASetMaxConvFails(idaData->ida_mem, maxConvFails);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetMaxConvFails failed!");
     }
   }
@@ -535,7 +527,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     double nonlinConvCoef = atof(omc_flagValue[FLAG_IDA_NONLINCONVCOEF]);
     flag = IDASetNonlinConvCoef(idaData->ida_mem, nonlinConvCoef);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetNonlinConvCoef failed!");
     }
   }
@@ -544,7 +536,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->daeMode) {
     if (omc_flag[FLAG_NO_SUPPRESS_ALG]) {
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
-      if (checkIDAflag(flag)) {
+      if (!IDAflagIsSuccess(flag)) {
         throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
       }
     }
@@ -553,7 +545,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
 
     flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-    if (checkIDAflag(flag)) {
+    if (!IDAflagIsSuccess(flag)) {
       throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
     }
   }
@@ -565,7 +557,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     assertStreamPrint(threadData, initialStepSize >= DASSL_STEP_EPS, "Selected initial step size %e is too small.", initialStepSize);
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
-    if (checkIDAflag(flag)) {
+    if (!IDAflagIsSuccess(flag)) {
       throwStreamPrint(threadData, "##IDA## Set initial step size failed!");
     }
     infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
@@ -590,22 +582,22 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensInit");
 
     flag = IDASetSensParams(idaData->ida_mem, data->simulationInfo->realParameter, NULL, data->simulationInfo->sensitivityParList);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetSensParams failed!");
     }
 
     flag = IDASetSensDQMethod(idaData->ida_mem, IDA_FORWARD, 0);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASetSensDQMethod failed!");
     }
 
     flag = IDASensEEtolerances(idaData->ida_mem);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
     }
 /*
     flag = IDASetSensErrCon(idaData->ida_mem, TRUE);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
     }
 */
@@ -634,6 +626,15 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
 {
   TRACE_PUSH
 
+  if (omc_flag[FLAG_IDA_SCALING]) {
+    /* free scaling data */
+    free(idaData->yScale);
+    free(idaData->ypScale);
+    free(idaData->resScale);
+    SUNMatDestroy(idaData->scaleMatrix);
+  }
+
+  /* free work arrays */
   free(idaData->userData);
   free(idaData->ysave);
   free(idaData->ypsave);
@@ -642,7 +643,6 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
   /* Free linear solver data */
   N_VDestroy_Serial(idaData->y_linSol);
   SUNMatDestroy(idaData->J);
-  SUNMatDestroy(idaData->tmpJac);
   SUNLinSolFree(idaData->linSol);
 
   /* Free dae-mode data */
@@ -742,13 +742,13 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
   /* try again without line search if first try fails */
-  if (checkIDAflag(flag)){
+  if (!IDAflagIsSuccess(flag)){
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
     IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
     flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
     IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
     infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
     }
   }
@@ -835,7 +835,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         idaData->y,
         idaData->yp);
 
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while reinit IDA solver after event!");
     }
 
@@ -858,7 +858,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         }
       }
       flag = IDASensReInit(idaData->ida_mem, IDA_SIMULTANEOUS, idaData->yS, idaData->ySp);
-      if (checkIDAflag(flag)){
+      if (!IDAflagIsSuccess(flag)){
         throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
       }
     }
@@ -911,7 +911,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
     stepsMode = IDA_ONE_STEP;
     flag = IDASetStopTime(idaData->ida_mem, tout);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while set stopTime!");
     }
   }
@@ -950,14 +950,14 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     sData->timeValue = solverInfo->currentTime;
 
     /* error handling */
-    if ( !checkIDAflag(flag) && solverInfo->currentTime >= tout)
+    if (IDAflagIsSuccess(flag) && solverInfo->currentTime >= tout)
     {
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
     }
     else
     {
-      if (!checkIDAflag(flag))
+      if (IDAflagIsSuccess(flag))
       {
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
       }
@@ -1041,7 +1041,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   if (idaData->idaSmode)
   {
     flag = IDAGetSens(idaData->ida_mem, &solverInfo->currentTime, idaData->ySResult);
-    if (checkIDAflag(flag)){
+    if (!IDAflagIsSuccess(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain results for parameter sensitivities!");
     }
   }
@@ -1823,19 +1823,8 @@ static int callSparseJacobian(double currentTime, double cj,
   }
 
   /* add cj to diagonal elements and store in Jac */
-  if (idaData->tmpJac == NULL) {
-    throwStreamPrint(threadData, "tmpJac is NULL");
-  }
-  SUNMatZero(idaData->tmpJac);
-  if (!idaData->daeMode)
-  {
-    for (i=0; i < idaData->N; ++i){
-      SM_INDEXPTRS_S(idaData->tmpJac)[i] = i;
-      SM_INDEXVALS_S(idaData->tmpJac)[i] = i;
-      SM_DATA_S(idaData->tmpJac)[i] = -cj;
-    }
-    SM_INDEXPTRS_S(idaData->tmpJac)[idaData->N] = idaData->N;
-    SUNMatScaleAdd(1.0, Jac, idaData->tmpJac);
+  if (!idaData->daeMode) {
+    _omc_SUNMatScaleIAdd_Sparse(-cj, Jac);
   }
 
   /* profiling */
@@ -1845,6 +1834,242 @@ static int callSparseJacobian(double currentTime, double cj,
   TRACE_POP
   return 0;
 }
+
+/*! \fn int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
+ *
+ *  calculates A+c*I and stores the result in A
+ *
+ *  FIXME put this into sundials or use another library in the future.
+ */
+int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
+{
+  sunindextype j, i, p, nz, newvals, M, N, cend, nw;
+  booleantype newmat, found;
+  sunindextype *w, *Ap, *Ai, *Cp, *Ci;
+  realtype *x, *Ax, *Cx;
+  SUNMatrix C;
+
+  /* store shortcuts to matrix dimensions (M is inner dimension, N is outer) */
+  if (SM_SPARSETYPE_S(A) == CSC_MAT) {
+    M = SM_ROWS_S(A);
+    N = SM_COLUMNS_S(A);
+  }
+  else {
+    M = SM_COLUMNS_S(A);
+    N = SM_ROWS_S(A);
+  }
+
+  /* access data arrays from A (return if failure) */
+  Ap = Ai = NULL;
+  Ax = NULL;
+  if (SM_INDEXPTRS_S(A))  Ap = SM_INDEXPTRS_S(A);
+  else  return (SUNMAT_MEM_FAIL);
+  if (SM_INDEXVALS_S(A))  Ai = SM_INDEXVALS_S(A);
+  else  return (SUNMAT_MEM_FAIL);
+  if (SM_DATA_S(A))       Ax = SM_DATA_S(A);
+  else  return (SUNMAT_MEM_FAIL);
+
+
+  /* determine if A contains values on the diagonal (so c*I can just be added in)
+   * and collect indices of the diagonal entries.
+   * if not, then increment counter for extra storage that should be required. */
+  newvals = 0;
+  w = (sunindextype *) malloc(M * sizeof(sunindextype));
+  for (j = 0; j < (M < N ? M : N); j++) {
+    /* scan column (row if CSR) of A, searching for diagonal value */
+    found = SUNFALSE;
+    for (i = Ap[j]; i < Ap[j+1]; i++) {
+      if (Ai[i] == j) {
+        found = SUNTRUE;
+        w[j] = i;
+        break;
+      }
+    }
+    /* if no diagonal found, increment necessary storage counter */
+    if (!found)  newvals += 1;
+  }
+
+  /* If extra nonzeros required, check whether matrix has sufficient storage space
+     for new nonzero entries  (so c*I can be inserted into existing storage) */
+  newmat = SUNFALSE;   /* no reallocation needed */
+  if (newvals > (SM_NNZ_S(A) - Ap[N]))
+    newmat = SUNTRUE;
+
+
+  /* perform operation based on existing/necessary structure */
+
+  /*   case 1: A already contains the diagonal */
+  if (newvals == 0) {
+
+    /* iterate through diagonal, adding c */
+    for (j = 0; j < (M < N ? M : N); j++)
+      Ax[w[j]] = c + Ax[w[j]];
+
+    free(w);
+
+  /*   case 2: A has sufficient storage, but does not already contain a diagonal */
+  } else if (!newmat) {
+
+    /* create work array for nonzero values in a single column (row) */
+    x = (realtype *) malloc(M * sizeof(realtype));
+
+    /* determine storage location where last column (row) should end */
+    nz = Ap[N] + newvals;
+
+    /* store pointer past last column (row) from original A,
+       and store updated value in revised A */
+    cend = Ap[N];
+    Ap[N] = nz;
+
+    /* iterate through columns (rows) backwards */
+    for (j = N-1; j >= 0; j--) {
+
+      /* reset diagonal element, in case it's not in A */
+      x[j] = 0.0;
+
+      /* iterate down column (row) of A, collecting nonzeros */
+      for (p = Ap[j], i = 0; p < cend; p++, i++) {
+        w[i] = Ai[p];          /* collect index */
+        x[w[i]] = Ax[p];       /* collect value */
+      }
+
+      /* store nnz of this column (row) */
+      nw = cend - Ap[j];
+
+      /* add identity to this column (row) */
+      if (j < M) {
+        x[j] += c;     /* update value */
+      }
+
+      /* fill entries of A with this column's (row's) data */
+      for (i = nw-1; i >= 0 && w[i] > j; i--) {
+        Ai[--nz] = w[i];
+        Ax[nz] = x[w[i]];
+      }
+      if (w[i] != j) {
+        Ai[--nz] = j;
+        Ax[nz] = x[j];
+      }
+      for (; i >= 0; i--) {
+        Ai[--nz] = w[i];
+        Ax[nz] = x[w[i]];
+      }
+
+      /* clear out temporary values for this column (row) */
+      for (i = 0; i < nw; i++) {
+        x[w[i]] = 0.0;
+      }
+      if (j < M) {
+        x[j] = 0.0;
+      }
+
+      /* store ptr past this col (row) from orig A, update value for new A */
+      cend = Ap[j];
+      Ap[j] = nz;
+    }
+
+    /* clean up */
+    free(w);
+    free(x);
+
+  /*   case 3: A must be reallocated with sufficient storage */
+  } else {
+
+    /* create work array for nonzero values in a single column (row) */
+    free(w);
+    x = (realtype *) malloc(M * sizeof(realtype));
+
+    /* create new matrix for sum */
+    C = SUNSparseMatrix(SM_ROWS_S(A), SM_COLUMNS_S(A),
+                        Ap[N] + newvals,
+                        SM_SPARSETYPE_S(A));
+
+    /* access data from CSR structures (return if failure) */
+    Cp = Ci = NULL;
+    Cx = NULL;
+    if (SM_INDEXPTRS_S(C))  Cp = SM_INDEXPTRS_S(C);
+    else  return (SUNMAT_MEM_FAIL);
+    if (SM_INDEXVALS_S(C))  Ci = SM_INDEXVALS_S(C);
+    else  return (SUNMAT_MEM_FAIL);
+    if (SM_DATA_S(C))       Cx = SM_DATA_S(C);
+    else  return (SUNMAT_MEM_FAIL);
+
+    /* initialize total nonzero count */
+    nz = 0;
+
+    /* iterate through columns (rows for CSR) */
+    for (j = 0; j < N; j++) {
+
+      /* set current column (row) pointer to current # nonzeros */
+      Cp[j] = nz;
+
+      /* reset diagonal element, in case it's not in A */
+      x[j] = 0.0;
+
+      /* iterate down column (along row) of A, collecting nonzeros */
+      for (p = Ap[j]; p < Ap[j+1]; p++) {
+        x[Ai[p]] = Ax[p];      /* collect value */
+      }
+
+      /* add identity to this column (row) */
+      if (j < M) {
+        x[j] += c;     /* update value */
+      }
+
+      /* fill entries of C with this column's (row's) data */
+      for (p = Ap[j]; p < Ap[j+1] && Ai[p] < j; p++) {
+        Ci[nz] = Ai[p];
+        Cx[nz++] = x[Ai[p]];
+      }
+      if (Ai[p] != j) {
+        Ci[nz] = j;
+        Cx[nz++] = x[j];
+      }
+      for (; p < Ap[j+1]; p++) {
+        Ci[nz] = Ai[p];
+        Cx[nz++] = x[Ai[p]];
+      }
+
+      /* clear out temporary values for this column (row) */
+      for (p = Ap[j]; p < Ap[j+1]; p++) {
+        x[Ai[p]] = 0.0;
+      }
+      if (j < M) {
+        x[j] = 0.0;
+      }
+    }
+    /* clean up */
+    free(x);
+
+    /* indicate end of data */
+    Cp[N] = nz;
+
+    /* update A's structure with C's values; nullify C's pointers */
+    SM_NNZ_S(A) = SM_NNZ_S(C);
+
+    if (SM_DATA_S(A))
+      free(SM_DATA_S(A));
+    SM_DATA_S(A) = SM_DATA_S(C);
+    SM_DATA_S(C) = NULL;
+
+    if (SM_INDEXVALS_S(A))
+      free(SM_INDEXVALS_S(A));
+    SM_INDEXVALS_S(A) = SM_INDEXVALS_S(C);
+    SM_INDEXVALS_S(C) = NULL;
+
+    if (SM_INDEXPTRS_S(A))
+      free(SM_INDEXPTRS_S(A));
+    SM_INDEXPTRS_S(A) = SM_INDEXPTRS_S(C);
+    SM_INDEXPTRS_S(C) = NULL;
+
+    /* clean up */
+    SUNMatDestroy_Sparse(C);
+
+  }
+  return SUNMAT_SUCCESS;
+
+}
+
 
 /* TODO: Unify with nlsKinsolFScaling from kinsolSolver.c? */
 static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleMatrix)
@@ -1861,7 +2086,6 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
   double *errwgt = N_VGetArrayPointer_Serial(idaData->errwgt);
   _omc_fillVector(_omc_createVector(idaData->N, errwgt), 1.);
 
-  SUNMatrix scaleMatrix;
   SUNMatrix denseMatrix;
 
   if (inScaleMatrix == NULL){
@@ -1880,9 +2104,11 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
       if (idaData->NNZ < 0) {
         throwStreamPrint(NULL, "##IDA## idaData->NNZ not set.");
       }
-      scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
+      if (idaData->scaleMatrix == NULL) {
+        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
+      }
       callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
-                        scaleMatrix, idaData, tmp1, tmp2, tmp3);
+                         idaData->scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
     else
     {
@@ -1890,8 +2116,9 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
       callDenseJacobian(data->localData[0]->timeValue, 1.0, idaData->y,
                         idaData->yp, rres, denseMatrix, idaData, tmp1, tmp2,
                         tmp3);
-      scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, CSC_MAT);
-      if (scaleMatrix == NULL) {
+      SUNMatDestroy(idaData->scaleMatrix);
+      idaData->scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, CSC_MAT);
+      if (idaData->scaleMatrix == NULL) {
         errorStreamPrint(
             LOG_STDOUT, 0,
             "##IDA## In function SUNSparseFromDenseMatrix: Requirements are "
@@ -1905,14 +2132,14 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
   else
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "##IDA## use given scaling matrix.");
-    scaleMatrix = inScaleMatrix;
+    idaData->scaleMatrix = inScaleMatrix;
   }
 
   /* set resScale factors */
   _omc_fillVector(_omc_createVector(idaData->N,idaData->resScale), MINIMAL_SCALE_FACTOR);
-  for(i=0; i<SM_NNZ_S(scaleMatrix); ++i){
-    if (idaData->resScale[SM_INDEXVALS_S(scaleMatrix)[i]] < fabs(SM_DATA_S(scaleMatrix)[i])) {
-        idaData->resScale[SM_INDEXVALS_S(scaleMatrix)[i]] = fabs(SM_DATA_S(scaleMatrix)[i]);
+  for(i=0; i<SM_INDEXPTRS_S(idaData->scaleMatrix)[idaData->N]; ++i){
+    if (idaData->resScale[SM_INDEXVALS_S(idaData->scaleMatrix)[i]] < fabs(SM_DATA_S(idaData->scaleMatrix)[i])) {
+        idaData->resScale[SM_INDEXVALS_S(idaData->scaleMatrix)[i]] = fabs(SM_DATA_S(idaData->scaleMatrix)[i]);
       }
   }
 
@@ -1921,7 +2148,6 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
 
   /* Free memory */
   messageClose(LOG_SOLVER_V);
-  SUNMatDestroy(scaleMatrix);
   N_VDestroy_Serial(tmp1);
   N_VDestroy_Serial(tmp2);
   N_VDestroy_Serial(tmp3);

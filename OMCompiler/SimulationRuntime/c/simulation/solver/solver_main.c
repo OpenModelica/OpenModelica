@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -221,7 +221,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = 0;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
-  solverInfo->eventLst = allocList(sizeof(long));
+  solverInfo->eventLst = allocList(eventListAlloc, eventListFree, eventListCopy);
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
@@ -615,7 +615,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     else
     {
       /* save stats before print */
-      addSolverStats(&solverInfo->solverStats, &solverInfo->solverStatsTmp);
+      addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
 
       infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
       infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats.nStepsTaken);

@@ -1293,7 +1293,9 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
         osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
         ss->setAttribute(material.get());
 
-        transf->addChild(node.get());
+        osg::ref_ptr<CADFile> cad = new CADFile(node.get());
+
+        transf->addChild(cad.get());
       }
     }
     else if (shape._type.compare("dxf") == 0)
@@ -1304,7 +1306,9 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       osg::ref_ptr<osg::Geode> geode = new osg::Geode();
       geode->addDrawable(dxfDraw.get());
 
-      transf->addChild(geode.get());
+      osg::ref_ptr<CADFile> cad = new CADFile(geode.get());
+
+      transf->addChild(cad.get());
     }
     else
     { //geode with shape drawable
@@ -1427,7 +1431,19 @@ void UpdateVisitor::apply(osg::Geode& node)
     case VisualizerType::shape:
      {
       ShapeObject* shape = _visualizer->asShape();
-      if (shape->_type.compare("dxf") != 0 and shape->_type.compare("stl") != 0)
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
+      {
+        //it's a cad file so we have to rescale the underlying geometry vertices
+        if (shape->getTransformNode().valid() && shape->getTransformNode()->getNumChildren() > 0)
+        {
+          osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(shape->getTransformNode()->getChild(0));
+          if (cad.valid())
+          {
+            cad->scaleVertices(node, shape->_extra.exp, shape->_length.exp, shape->_width.exp, shape->_height.exp);
+          }
+        }
+      }
+      else
       {
         //it's a drawable and not a cad file so we have to create a new drawable
         osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
