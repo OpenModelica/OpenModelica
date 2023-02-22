@@ -5752,7 +5752,7 @@ author: Waurich TUD 09/2015"
 protected
   Integer size, nVars, nEqs;
   array<Integer> ass1,ass2, varVisited;
-  list<Integer> outputVarIndxs, stateIndxs, stateTasks, stateTasks1 , outputTasks, predecessors, tasks, varIdcs, eqIdcs, stateDerIdcs;
+  list<Integer> outputVarIndxs, allVarIndxs, stateIndxs, stateTasks, stateTasks1 , outputTasks, predecessors, tasks, varIdcs, eqIdcs, stateDerIdcs;
   list<BackendDAE.StrongComponent> comps, compsNew, addComps;
   BackendDAE.StrongComponent comp;
   BackendDAE.EqSystem syst;
@@ -5775,6 +5775,8 @@ protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   Integer systemNumber=0, numberOfSystems;
+
+  list<Integer> eqIndLst, eqIndexLst = {};
 
   constant Boolean debug = false;
 algorithm
@@ -5800,6 +5802,7 @@ algorithm
     //get output variables
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
     varLst := BackendVariable.varList(vars);
+    allVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
     varLst := List.filterOnTrue(varLst,BackendVariable.isVarOnTopLevelAndOutput);
 
     if not listEmpty(varLst) then
@@ -5856,15 +5859,19 @@ algorithm
       eqLstNew := {};
       varLstNew := {};
       for comp in compsNew loop
-        (varLst,_,eqLst,_) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
+        (varLst,_,eqLst,eqIndLst) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
         varLstNew := listAppend(varLst,varLstNew);
         eqLstNew := listAppend(eqLst,eqLstNew);
+        eqIndexLst := listAppend(eqIndLst,eqIndexLst);
       end for;
 
-      // causalize again
+      // find new and unneeded vars and equations
       syst.orderedVars := BackendVariable.listVar1(listReverse(varLstNew));
       syst.orderedEqs := BackendEquation.listEquation(listReverse(eqLstNew));
+      vars := BackendVariable.deleteVars(syst.orderedVars, vars);
+      eqs := BackendEquation.deleteList(eqs, eqIndexLst);
 
+      // causalize again
       syst.m := NONE();
       syst.mT := NONE();
       syst.matching := BackendDAE.NO_MATCHING();
@@ -5889,6 +5896,14 @@ algorithm
     else
       if debug then print("No output variables in this system ("+intString(systemNumber)+"/"+intString(numberOfSystems)+")\n"); end if;
     end if;
+
+    // make unneeded vars parameters and equations initial equations
+    (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, BackendVariable.makeParamFixed, false);
+    (eqs, _) := BackendEquation.traverseEquationArray_WithUpdate(eqs,BackendEquation.setEquationKind, BackendDAE.INITIAL_EQUATION());
+
+    // add unneeded variables and equations
+    shared.globalKnownVars := BackendVariable.addVariables(vars, shared.globalKnownVars);
+    shared.initialEqs := BackendEquation.addList(BackendEquation.equationList(eqs), shared.initialEqs);
   end for;
 
   // alias vars are not necessary anymore
