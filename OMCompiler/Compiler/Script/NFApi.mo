@@ -1073,7 +1073,7 @@ algorithm
       j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
     end for;
 
-    json := JSON.addPair("extends", j, json);
+    json := JSON.addPair("elements", j, json);
   end if;
 
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));

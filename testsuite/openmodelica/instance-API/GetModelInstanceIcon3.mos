@@ -31,7 +31,7 @@ getModelInstanceIcon(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
