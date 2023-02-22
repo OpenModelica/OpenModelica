@@ -38,11 +38,11 @@ getErrorString();
 // true
 // "{
 //   \"name\": \"M\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
-//         \"extends\": [
+//         \"elements\": [
 //           {
 //             \"baseClass\": {
 //               \"name\": \"Icons.A\"
