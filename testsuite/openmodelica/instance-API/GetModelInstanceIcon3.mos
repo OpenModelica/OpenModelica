@@ -33,6 +33,7 @@ getModelInstanceIcon(M, prettyPrint=true);
 //   \"name\": \"M\",
 //   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
 //         \"annotation\": {
