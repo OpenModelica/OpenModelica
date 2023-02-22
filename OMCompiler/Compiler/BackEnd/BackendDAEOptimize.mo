@@ -5752,7 +5752,7 @@ author: Waurich TUD 09/2015"
 protected
   Integer size, nVars, nEqs;
   array<Integer> ass1,ass2, varVisited;
-  list<Integer> outputVarIndxs, stateIndxs, stateTasks, stateTasks1 , outputTasks, predecessors, tasks, varIdcs, eqIdcs, stateDerIdcs;
+  list<Integer> outputVarIndxs, allVarIndxs, stateIndxs, stateTasks, stateTasks1 , outputTasks, predecessors, tasks, varIdcs, eqIdcs, stateDerIdcs;
   list<BackendDAE.StrongComponent> comps, compsNew, addComps;
   BackendDAE.StrongComponent comp;
   BackendDAE.EqSystem syst;
@@ -5802,6 +5802,7 @@ algorithm
     //get output variables
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
     varLst := BackendVariable.varList(vars);
+    allVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
     varLst := List.filterOnTrue(varLst,BackendVariable.isVarOnTopLevelAndOutput);
 
     if not listEmpty(varLst) then
@@ -5864,10 +5865,13 @@ algorithm
         eqIndexLst := listAppend(eqIndLst,eqIndexLst);
       end for;
 
-      // causalize again
+      // find new and unneeded vars and equations
       syst.orderedVars := BackendVariable.listVar1(listReverse(varLstNew));
       syst.orderedEqs := BackendEquation.listEquation(listReverse(eqLstNew));
+      vars := BackendVariable.deleteVars(syst.orderedVars, vars);
+      eqs := BackendEquation.deleteList(eqs, eqIndexLst);
 
+      // causalize again
       syst.m := NONE();
       syst.mT := NONE();
       syst.matching := BackendDAE.NO_MATCHING();
