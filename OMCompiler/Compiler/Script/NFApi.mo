@@ -1112,6 +1112,7 @@ function dumpJSONInstanceIconExtends
   input InstNode ext;
   output JSON json = JSON.emptyObject();
 algorithm
+  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
 end dumpJSONInstanceIconExtends;
 
