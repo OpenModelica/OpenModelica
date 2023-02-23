@@ -48,8 +48,10 @@ extern "C" {
 #endif
 
 #ifdef WITH_SUNDIALS
+#include <sundials/sundials_matrix.h>
 
 void setJacElementSundialsSparse(int row, int column, int nth, double value, void* Jac, int nRows);
+int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A);
 
 #endif /* WITH_SUNDIALS */
 
