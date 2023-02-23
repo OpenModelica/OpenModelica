@@ -606,12 +606,12 @@ bool ElementInfo::isModiferClassRecord(QString modifierName, Element *pElement)
   return result;
 }
 
-Element::Element(ModelInstance::Component *pModelCompnent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position)
+Element::Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position)
   : QGraphicsItem(0), mpReferenceElement(0), mpParentElement(0)
 {
   setZValue(2000);
-  mpModelComponent = pModelCompnent;
-  mpModel = pModelCompnent->getModel();
+  mpModelComponent = pModelComponent;
+  mpModel = pModelComponent->getModel();
   mName = mpModelComponent->getName();
   mClassName = mpModelComponent->getType();
   mpLibraryTreeItem = 0;

@@ -610,7 +610,6 @@ private:
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
   private:
-    QString mKind;
     QString mName;
     bool mCondition;
     QString mType;
@@ -635,7 +634,7 @@ private:
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);
     // Element interface
   public:
-    virtual bool isComponent() const override;
+    virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
   };
 
@@ -648,13 +647,12 @@ private:
     Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}
     Modifier getExtendsModifier() const {return mExtendsModifier;}
   private:
-    QString mKind;
     std::unique_ptr<Annotation> mpExtendsAnnotation;
     Modifier mExtendsModifier;
     // Element interface
   public:
     virtual bool isComponent() const override {return false;}
-    virtual bool isExtend() const override;
+    virtual bool isExtend() const override {return true;}
   };
 
   class Part

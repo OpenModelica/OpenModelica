@@ -1297,7 +1297,6 @@ namespace ModelInstance
 
   void Component::initialize()
   {
-    mKind = "";
     mName = "";
     mCondition = true;
     mType = "";
@@ -1322,10 +1321,6 @@ namespace ModelInstance
 
   void Component::deserialize(const QJsonObject &jsonObject)
   {
-    if (jsonObject.contains("$kind")) {
-      mKind = jsonObject.value("$kind").toString();
-    }
-
     if (jsonObject.contains("name")) {
       mName = jsonObject.value("name").toString();
     }
@@ -1473,25 +1468,15 @@ namespace ModelInstance
     return modifierValue;
   }
 
-  bool Component::isComponent() const
-  {
-    return mKind.compare(QStringLiteral("component")) == 0;
-  }
-
   Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
-    mKind = "";
     mpExtendsAnnotation = std::make_unique<Annotation>(pParentModel);
     deserialize(jsonObject);
   }
 
   void Extend::deserialize(const QJsonObject &jsonObject)
   {
-    if (jsonObject.contains("$kind")) {
-      mKind = jsonObject.value("$kind").toString();
-    }
-
     if (jsonObject.contains("modifiers")) {
       mExtendsModifier.deserialize(jsonObject.value("modifiers"));
     }
@@ -1503,11 +1488,6 @@ namespace ModelInstance
     if (jsonObject.contains("baseClass")) {
       mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
     }
-  }
-
-  bool Extend::isExtend() const
-  {
-    return mKind.compare(QStringLiteral("extends")) == 0;
   }
 
   Part::Part()

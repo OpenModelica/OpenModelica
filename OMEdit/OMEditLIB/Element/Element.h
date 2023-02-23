@@ -196,7 +196,7 @@ public:
     Port  /* Port Element. */
   };
 
-  Element(ModelInstance::Component *pModelCompnent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
+  Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
   Element(ModelInstance::Model *pModel, Element *pParentElement);
   Element(ModelInstance::Component *pModelComponent, Element *pParentElement, Element *pRootParentElement);
 
