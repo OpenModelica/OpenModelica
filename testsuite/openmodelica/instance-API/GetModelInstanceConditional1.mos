@@ -18,9 +18,11 @@ getModelInstance(M, prettyPrint=true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
+//       \"type\": \"Real\",
 //       \"condition\": false,
 //       \"prefixes\": {
 //         \"variability\": \"parameter\"

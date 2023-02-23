@@ -1296,6 +1296,21 @@ algorithm
   end match;
 end setFixedAttr;
 
+public function getFixedAttr "
+  retrieves the protected attribute form VariableAttributes."
+  input Option<DAE.VariableAttributes> attr;
+  output Option<DAE.Exp> isFixed;
+algorithm
+  isFixed := match(attr)
+    case (SOME(DAE.VAR_ATTR_REAL(fixed=isFixed))) then isFixed;
+    case (SOME(DAE.VAR_ATTR_INT(fixed=isFixed))) then isFixed;
+    case (SOME(DAE.VAR_ATTR_BOOL(fixed=isFixed))) then isFixed;
+    case (SOME(DAE.VAR_ATTR_STRING(fixed=isFixed))) then isFixed;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(fixed=isFixed))) then isFixed;
+    else NONE();
+  end match;
+end getFixedAttr;
+
 public function setFinalAttr "
   sets the start attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;

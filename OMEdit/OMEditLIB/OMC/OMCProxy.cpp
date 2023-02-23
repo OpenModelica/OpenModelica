@@ -596,11 +596,10 @@ bool OMCProxy::printMessagesStringInternal()
     const int errorId = getErrorId();
     if (errorId == 371 || errorId == 372 || errorId == 373) {
       mLoadModelError = true;
-    } else {
-      MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
-                              getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-      MessagesWidget::instance()->addGUIMessage(messageItem);
     }
+    MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+                            getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
+    MessagesWidget::instance()->addGUIMessage(messageItem);
   }
   return returnValue;
 }
@@ -2590,14 +2589,15 @@ QString OMCProxy::translateModelXML(QString className)
  * \param debugLogging - enables the debug logging for the imported FMU.
  * \param generateInputConnectors - generates the input variables as connectors
  * \param generateOutputConnectors - generates the output variables as connectors.
+ * \param modelName - Name of the generated model. If empty then the name is auto generated using FMU information.
  * \return generated Modelica Code file path
  */
 QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors,
-                            bool generateOutputConnectors)
+                            bool generateOutputConnectors, QString modelName)
 {
   outputDirectory = outputDirectory.isEmpty() ? "<default>" : outputDirectory;
-  QString fmuFileName = mpOMCInterface->importFMU(fmuName, outputDirectory, logLevel, true, debugLogging, generateInputConnectors,
-                                                  generateOutputConnectors);
+  modelName = modelName.isEmpty() ? "default" : modelName;
+  QString fmuFileName = mpOMCInterface->importFMU(fmuName, outputDirectory, logLevel, true, debugLogging, generateInputConnectors, generateOutputConnectors, modelName);
   printMessagesStringInternal();
   return fmuFileName;
 }

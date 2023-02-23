@@ -39,36 +39,29 @@
 
 #include "../../util/list.h"
 
-typedef struct VALUES_LIST
-{
+typedef struct VALUES_LIST {
   LIST* valueList;
 } VALUES_LIST;
 
-typedef struct VALUE
-{
-  double time;
-  unsigned int size;
-  double *values;
+typedef struct VALUE {
+  double time;            /* Time value */
+  unsigned int size;      /* Length of array values */
+  double *values;         /* Array with values */
 } VALUE;
 
-
-VALUES_LIST *allocValueList(const unsigned int numberOfLists);
-void freeValueList(VALUES_LIST *valueList, unsigned int numberOfLists);
+VALUES_LIST* allocValueList(unsigned int numberOfList, unsigned int valueSize);
+void freeValueList(VALUES_LIST* valueList, unsigned int numberOfLists);
 
 VALUE* createValueElement(unsigned int size, double time, double* values);
 void freeValue(VALUE* elem);
-void cleanValueList(VALUES_LIST *valueListm, LIST_NODE* next);
-void cleanValueListbyTime(VALUES_LIST *valueList, double time);
+void cleanValueList(LIST* valueList, LIST_NODE *startNode);
+void cleanValueListbyTime(LIST *valueList, double time);
 void removeListNodes(LIST* list, LIST_NODE *node);
 
-void addListElement(VALUES_LIST* valueList, VALUE* elem);
-void getValues(VALUES_LIST* valueList, double time, double* values, double* oldOutput);
+void addListElement(LIST* valueList, VALUE* elem);
+void getValues(LIST* valueList, double time, double* values, double* oldOutput);
 
 void printValueElement(VALUE* elem);
-void printValuesListTimes(VALUES_LIST* list);
-
-
+void printValuesListTimes(LIST* list);
 
 #endif
-
-

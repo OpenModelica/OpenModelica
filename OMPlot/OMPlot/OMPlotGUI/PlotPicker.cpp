@@ -173,7 +173,7 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
     if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
         && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = QString("%1").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
+      timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
     }
     QString toolTip;
     for (int i = 0 ; i < plotCurves.size() ; i++) {

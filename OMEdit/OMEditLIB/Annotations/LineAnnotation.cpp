@@ -302,7 +302,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
   setZValue(1000);
-  mpLine = pConnection->getLine();
+  mpLine = pConnection->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -390,7 +390,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
   setZValue(1000);
-  mpLine = pTransition->getLine();
+  mpLine = pTransition->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -422,8 +422,8 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   }
   mPoints = points;
   mOrigin = QPointF(0, 0);
-  if (pTransition->getText()) {
-    mpTextAnnotation = new TextAnnotation(pTransition->getText(), this);
+  if (pTransition->getAnnotation()->getText()) {
+    mpTextAnnotation = new TextAnnotation(pTransition->getAnnotation()->getText(), this);
   } else {
     mpTextAnnotation = 0;
   }
@@ -481,7 +481,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
   setZValue(1000);
-  mpLine = pInitialState->getLine();
+  mpLine = pInitialState->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -612,6 +612,10 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   }
   mPoints.clear();
   mPoints.parse(list.at(3));
+  // add geometries for points
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    addGeometry();
+  }
   // 5th item of list contains the color.
   mLineColor.parse(list.at(4));
   // 6th item of list contains the Line Pattern.
@@ -635,6 +639,10 @@ void LineAnnotation::parseShapeAnnotation()
   GraphicItem::parseShapeAnnotation(mpLine);
 
   mPoints = mpLine->getPoints();
+  // add geometries for points
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    addGeometry();
+  }
   mPoints.evaluate(mpLine->getParentModel());
   mLineColor = mpLine->getColor();
   mLineColor.evaluate(mpLine->getParentModel());
@@ -1017,6 +1025,11 @@ void LineAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
   mPoints.append(point);
+  addGeometry();
+}
+
+void LineAnnotation::addGeometry()
+{
   if (mPoints.size() > 1) {
     if (mGeometries.size() == 0) {
       QPointF currentPoint = mPoints[mPoints.size() - 1];
@@ -1085,15 +1098,15 @@ void LineAnnotation::updateStartPoint(QPointF point)
   }
   /* update the 1st point */
   if (mPoints.size() > 0) {
-    mPoints[0] = point;
+    mPoints.setPoint(0, point);
     updateCornerItem(0);
   }
   /* update the 2nd point */
   if (mPoints.size() > 1) {
     if (mGeometries[0] == ShapeAnnotation::HorizontalLine) {
-      mPoints[1] = QPointF(mPoints[1].x(), mPoints[1].y() + dy);
+      mPoints.setPoint(1, QPointF(mPoints[1].x(), mPoints[1].y() + dy));
     } else if (mGeometries[0] == ShapeAnnotation::VerticalLine) {
-      mPoints[1] = QPointF(mPoints[1].x() + dx, mPoints[1].y());
+      mPoints.setPoint(1, QPointF(mPoints[1].x() + dx, mPoints[1].y()));
     }
     updateCornerItem(1);
   }
@@ -1134,14 +1147,14 @@ void LineAnnotation::updateEndPoint(QPointF point)
     }
     /* update the last point */
     if (mPoints.size() > 1) {
-      mPoints.last() = point;
+      mPoints.setPoint(mPoints.size() - 1, point);
       updateCornerItem(lastIndex);
       /* update the 2nd point */
       if (secondLastIndex < mGeometries.size()) {
         if (mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine) {
-          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
+          mPoints.setPoint(secondLastIndex, QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy));
         } else if (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine) {
-          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
+          mPoints.setPoint(secondLastIndex, QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y()));
         }
         updateCornerItem(secondLastIndex);
       }
@@ -1150,7 +1163,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       removeRedundantPointsGeometriesAndCornerItems();
     }
   } else {
-    mPoints.last() = point;
+    mPoints.setPoint(mPoints.size() - 1, point);
   }
 }
 
@@ -1167,9 +1180,9 @@ void LineAnnotation::updateTransitionTextPosition()
   if (mpTextAnnotation) {
     if (mPoints.size() > 0) {
       if (mImmediate) {
-        mpTextAnnotation->setPos(mPoints.last());
+        mpTextAnnotation->setPos(mPoints.at(mPoints.size() - 1));
       } else {
-        mpTextAnnotation->setPos(mPoints.first());
+        mpTextAnnotation->setPos(mPoints.at(0));
       }
     }
   }
@@ -1237,12 +1250,9 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *LineAnnotation::getParentModel() const
+ModelInstance::Extend *LineAnnotation::getExtend() const
 {
-  if (mpLine) {
-    return mpLine->getParentModel();
-  }
-  return 0;
+  return mpLine->getParentExtend();
 }
 
 /*!
@@ -1370,7 +1380,7 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
     if (mpStartElement) {
       QPointF offset = mpStartElement->mapToScene(mpStartElement->boundingRect().center()) - mPoints[0];
       for (int i = 0 ; i < mPoints.size() ; i++) {
-        mPoints[i] = QPointF(mPoints[i].x() + offset.x(), mPoints[i].y() + offset.y());
+        mPoints.setPoint(i, QPointF(mPoints[i].x() + offset.x(), mPoints[i].y() + offset.y()));
         updateCornerItem(i);
       }
     }
@@ -1836,23 +1846,26 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
  * \param pModelElement
  * \param pParentExpandableConnectorTreeItem
  */
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Component *pModelComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
-  if (pModelElement->getModel()) {
-    restriction = StringHandler::getModelicaClassType(pModelElement->getModel()->getRestriction());
+  if (pModelComponent->getModel()) {
+    restriction = StringHandler::getModelicaClassType(pModelComponent->getModel()->getRestriction());
   }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelElement->getName(), pModelElement->isArray(), pModelElement->getTypedDimensions(),
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelComponent->getName(), pModelComponent->isArray(), pModelComponent->getTypedDimensions(),
                                                                                               restriction, false, pParentExpandableConnectorTreeItem);
   int row = pParentExpandableConnectorTreeItem->getChildren().size();
   QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
   beginInsertRows(index, row, row);
   pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
   endInsertRows();
-  if (pModelElement->getModel()) {
-    QList<ModelInstance::Element*> elements = pModelElement->getModel()->getElements();
+  if (pModelComponent->getModel()) {
+    QList<ModelInstance::Element*> elements = pModelComponent->getModel()->getElements();
     foreach (auto pChildModelElement, elements) {
-      createExpandableConnectorTreeItem(pChildModelElement, pExpandableConnectorTreeItem);
+      if (pChildModelElement->isComponent()) {
+        auto pChildModelComponent = dynamic_cast<ModelInstance::Component*>(pChildModelElement);
+        createExpandableConnectorTreeItem(pChildModelComponent, pExpandableConnectorTreeItem);
+      }
     }
   }
   // create add variable item only if item is expandable connector
@@ -1977,7 +1990,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelElement(),
+      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(),
                                                                              mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     } else {
       mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement(),
@@ -2000,7 +2013,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelElement(),
+      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(),
                                                                            mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     } else {
       mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement(),

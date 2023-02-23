@@ -179,8 +179,9 @@ public
       then changed;
 
       else algorithm
-        // ####### INDEX REDUCTION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.indexReduction(vars, eqns, varData, eqData, funcTree, mapping, matrixType, marked_eqns);
+        // ####### INDEX REDUCTION ######
+        // for now no index reduction
+        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
       then changed;
     end match;
 

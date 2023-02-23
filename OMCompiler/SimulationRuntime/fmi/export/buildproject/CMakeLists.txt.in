@@ -5,7 +5,7 @@ set(FMU_NAME @FMU_NAME_IN@)
 
 project(${FMU_NAME})
 
-# CVODE needed
+# Specifies if CVODE is needed
 @NEED_CVODE@
 
 # Test if RUNTIME_DEPENDENCIES is needed and available
@@ -17,6 +17,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} ST
           "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
 endif()
 
+# FMI header files
 if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
   message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
 endif()
@@ -29,10 +30,12 @@ if(NOT FMI2_FUNCTIONS_H)
 endif()
 message(STATUS "FMI2 include directory: ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}")
 
+# POSIX Threads
 set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+# Source files
 file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
@@ -45,6 +48,7 @@ if (NOT ${NEED_CVODE})
 endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
+# Set install prefix to FMU target system short and architecture
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(FMU_TARGET_SYSTEM_NAME "win")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -75,13 +79,21 @@ else()
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
 
+# Target library
 add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
+# Linker options
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
-  target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
+    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:-undefined,error")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")  # Using GCC
+    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
+  endif()
 endif()
+
+# Link additional libraries
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
 if(${NEED_CVODE})
@@ -99,12 +111,15 @@ else()
   message(STATUS "CVODE: Not linked")
 endif()
 
+# Add include directories
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
                                                sundials@FMU_ADDITIONAL_INCLUDES@)
 
+# Set compiler definitions
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
 
+# Install target
 if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
   install(TARGETS ${FMU_NAME}
     RUNTIME_DEPENDENCIES
@@ -130,6 +145,7 @@ else()
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
+# Zip target creating modelname.fmu
 add_custom_target(create_zip COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../${CMAKE_PROJECT_NAME}.fmu" --format=zip
     "binaries/"

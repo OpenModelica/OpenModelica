@@ -260,7 +260,7 @@ public
     end match;
   end isScalarLiteral;
 
-  function isIterator
+  function equalsIterator
     input Subscript sub;
     input InstNode iterator;
     output Boolean res;
@@ -274,6 +274,19 @@ public
       case INDEX(index = Expression.CREF(cref = cref))
         then InstNode.refEqual(iterator, ComponentRef.node(cref));
 
+      else false;
+    end match;
+  end equalsIterator;
+
+  function isIterator
+    input Subscript sub;
+    output Boolean res;
+  protected
+    ComponentRef cref;
+  algorithm
+    res := match sub
+      case UNTYPED() then Expression.isIterator(sub.exp);
+      case INDEX() then Expression.isIterator(sub.index);
       else false;
     end match;
   end isIterator;

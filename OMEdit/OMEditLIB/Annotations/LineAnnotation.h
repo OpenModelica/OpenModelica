@@ -97,6 +97,7 @@ public:
   QString getShapeAnnotation() override;
   QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point) override;
+  void addGeometry();
   void removePoint(int index);
   void clearPoints() override;
   void updateStartPoint(QPointF point);
@@ -141,7 +142,7 @@ public:
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable) override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
-  ModelInstance::Model *getParentModel() const override;
+  ModelInstance::Extend *getExtend() const override;
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();
@@ -250,7 +251,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(ModelInstance::Component *pModelComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;

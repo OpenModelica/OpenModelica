@@ -57,19 +57,19 @@ void ModelInstanceTest::initTestCase()
 
 void ModelInstanceTest::classAnnotations()
 {
-  if (mpModelInstance->getIconAnnotation()->getGraphics().isEmpty()) {
+  if (mpModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class icon annotation.");
   }
 
-  if (mpModelInstance->getDiagramAnnotation()->getGraphics().isEmpty()) {
+  if (mpModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class diagram annotation.");
   }
 }
 
-void ModelInstanceTest::classComponents()
+void ModelInstanceTest::classElements()
 {
   if (mpModelInstance->getElements().isEmpty()) {
-    QFAIL("Failed to read the class components.");
+    QFAIL("Failed to read the class elements.");
   }
 }
 
@@ -80,17 +80,13 @@ void ModelInstanceTest::classConnections()
   }
 }
 
-void ModelInstanceTest::classExtends()
-{
-  if (mpModelInstance->getExtends().isEmpty()) {
-    QFAIL("Failed to read the class extends.");
-  }
-}
-
 void ModelInstanceTest::cleanupTestCase()
 {
+  qDebug() << "cleanupTestCase 1";
   if (mpModelInstance) {
     delete mpModelInstance;
   }
+  qDebug() << "cleanupTestCase 2";
   MainWindow::instance()->close();
+  qDebug() << "cleanupTestCase 3";
 }

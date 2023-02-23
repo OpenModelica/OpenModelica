@@ -38,16 +38,16 @@ simulate(partitioning); getErrorString();
 // BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	Real $DER.x
+// 	Real y
 // ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
 // BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	Real y
+// 	Real $DER.x
 // ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // ========================================
 // CONTINUOUS 2 ODE System
@@ -80,16 +80,16 @@ simulate(partitioning); getErrorString();
 // BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	Real $DER.x
+// 	Real y
 // ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
 // BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------
 // ### Variable:
-// 	Real y
+// 	Real $DER.x
 // ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // ========================================
 // CONTINUOUS 2 ODE System
@@ -164,21 +164,21 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// --- Alias of INI[1 | 5] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ----------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
-//
 // --- Alias of INI[1 | 4] ---
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
 // 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+//
+// --- Alias of INI[1 | 5] ---
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // ################################################################################
 //

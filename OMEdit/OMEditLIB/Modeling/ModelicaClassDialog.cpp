@@ -1325,12 +1325,12 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   TextEditor *pTextEditor = new TextEditor(pParent);
   pTextEditor->setPlainText(informationText);
   if (modelicaTextHighlighter) {
-    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
-                                                                        pTextEditor->getPlainTextEdit());
+    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(), pTextEditor->getPlainTextEdit());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
   QPushButton *pOkButton = new QPushButton(Helper::ok);
+  pOkButton->setAutoDefault(true);
   connect(pOkButton, SIGNAL(clicked()), SLOT(close()));
   // set layout
   QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -2384,7 +2384,7 @@ void RenameItemDialog::renameItem()
  * \param pGraphicsView
  * \param pParent
  */
-ComponentNameDialog::ComponentNameDialog(QString name, GraphicsView *pGraphicsView, QWidget *pParent)
+ComponentNameDialog::ComponentNameDialog(const QString &nameStructure, QString name, GraphicsView *pGraphicsView, QWidget *pParent)
   : QDialog(pParent), mpGraphicsView(pGraphicsView)
 {
   setWindowTitle(tr("%1 - Enter Component Name").arg(Helper::applicationName));
@@ -2392,6 +2392,7 @@ ComponentNameDialog::ComponentNameDialog(QString name, GraphicsView *pGraphicsVi
   Label *pNoteLabel = new Label(tr("Please choose a meaningful name for this component, to improve the readability of simulation results."));
   pNoteLabel->setElideMode(Qt::ElideMiddle);
   // Create the name label and text box
+  mNameStructure = nameStructure;
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(name);
   mpNameTextBox->selectAll();
@@ -2447,7 +2448,7 @@ void ComponentNameDialog::updateComponentName()
     return;
   }
   // check for existing component name
-  if (!mpGraphicsView->checkElementName(mpNameTextBox->text())) {
+  if (!mpGraphicsView->checkElementName(mNameStructure, mpNameTextBox->text())) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                              GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
     return;

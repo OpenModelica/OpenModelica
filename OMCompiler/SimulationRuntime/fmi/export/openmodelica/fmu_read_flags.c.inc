@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -168,8 +168,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->solverStats = NULL;
-  solverInfo->solverStatsTmp = NULL;
 
   /* read fmu flags from flags.json */
   char* flags_filename = functions->allocateMemory(strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 20, sizeof(char));

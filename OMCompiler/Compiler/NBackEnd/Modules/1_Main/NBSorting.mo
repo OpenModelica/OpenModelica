@@ -538,7 +538,6 @@ public
             // create algebraic loop
             comp := StrongComponent.createPseudoScalar(sorted_body_indices, eqn_to_var, mapping, vars, eqns);
           end if;
-
         then comp;
 
         // create algebraic loop (body components not actually sorted)

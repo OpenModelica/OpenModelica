@@ -107,6 +107,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
 ./simulation/solver/spatialDistribution.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/sundials_error.h \
+./simulation/solver/sundials_util.h \
 ./simulation/solver/synchronous.h
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \

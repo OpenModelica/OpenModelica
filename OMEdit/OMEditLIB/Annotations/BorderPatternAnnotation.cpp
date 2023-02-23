@@ -56,7 +56,7 @@ FlatModelica::Expression BorderPatternAnnotation::toExp() const
 
 void BorderPatternAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getBorderPatternType(QString::fromStdString(exp.enumValue()));
   }
 }

@@ -56,7 +56,7 @@ FlatModelica::Expression FillPatternAnnotation::toExp() const
 
 void FillPatternAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getFillPatternType(QString::fromStdString(exp.enumValue()));
   }
 }

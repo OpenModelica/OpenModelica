@@ -23,9 +23,6 @@ getModelInstance(P.RealInput, prettyPrint=true);
 // "{
 //   \"name\": \"P.M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
-//
-//   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 3,
@@ -40,8 +37,9 @@ getModelInstance(P.RealInput, prettyPrint=true);
 //   \"prefixes\": {
 //     \"direction\": \"input\"
 //   },
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": \"Real\"
 //     }
 //   ],

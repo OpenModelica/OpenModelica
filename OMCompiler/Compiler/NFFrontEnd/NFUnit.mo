@@ -614,7 +614,6 @@ algorithm
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln(getInstanceName() + ": failed to parse unit string " + inUnitString);
     end if;
-    fail();
   end if;
 end parseUnitString;
 

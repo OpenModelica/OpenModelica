@@ -56,7 +56,7 @@ FlatModelica::Expression LinePatternAnnotation::toExp() const
 
 void LinePatternAnnotation::fromExp(const FlatModelica::Expression &exp)
 {
-  if (exp.isInteger()) {
+  if (exp.isEnum()) {
     mValue = StringHandler::getLinePatternType(QString::fromStdString(exp.enumValue()));
   }
 }

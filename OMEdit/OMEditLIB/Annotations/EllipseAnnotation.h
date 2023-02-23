@@ -61,7 +61,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
-  ModelInstance::Model *getParentModel() const override;
+  ModelInstance::Extend *getExtend() const override;
   void setEllipse(ModelInstance::Ellipse *pEllipse) {mpEllipse = pEllipse;}
 private:
   ModelInstance::Ellipse *mpEllipse;

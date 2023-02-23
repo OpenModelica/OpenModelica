@@ -300,6 +300,8 @@ void Plot::replot()
   mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
   mpYScaleDraw->invalidateCache();
 
+  QwtPlot::replot();
+
   // Now we need to again loop through curves to set the color and title.
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
@@ -335,8 +337,6 @@ void Plot::replot()
   } else {
     setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }
-
-  QwtPlot::replot();
 }
 
 } // namespace OMPlot

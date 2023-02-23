@@ -440,7 +440,7 @@ constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(133, "debugDifferentiation
 constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(134, "debugDifferentiationVerbose", false,
   Gettext.gettext("Dumps verbose debug output for the differentiation process."));
 constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(135, "fmuExperimental", false,
-  Gettext.gettext("Adds features to the FMI export that are considered experimental as of now: fmi2GetSpecificDerivatives, canGetSetFMUState"));
+  Gettext.gettext("Adds features to the FMI export that are considered experimental as of now: fmi2GetSpecificDerivatives, canGetSetFMUState, canSerializeFMUstate"));
 constant DebugFlag DUMP_DGESV = DEBUG_FLAG(136, "dumpdgesv", false,
   Gettext.gettext("Enables dumping of the information whether DGESV is used to solve linear systems."));
 constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(137, "multirate", false,

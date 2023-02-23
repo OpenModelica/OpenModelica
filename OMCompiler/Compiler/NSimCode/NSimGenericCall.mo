@@ -37,10 +37,9 @@ public
   // self import
   import SimGenericCall = NSimGenericCall;
 
-
 protected
   // NB import
-  import NBEquation.{Equation, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationPointer, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
 
   // NF import
   import ComponentRef = NFComponentRef;
@@ -51,6 +50,8 @@ protected
   // old backend import
   import OldSimCode = SimCode;
   import OldBackendDAE = BackendDAE;
+
+  import NSimCode.Identifier;
 
 public
   record SINGLE_GENERIC_CALL
@@ -90,15 +91,15 @@ public
     end match;
   end toString;
 
-  function fromEquation
-    input tuple<Pointer<Equation>, Integer> eqn_tpl;
+  function fromIdentifier
+    input tuple<Identifier, Integer> ident_tpl;
     output SimGenericCall call;
   protected
     Pointer<Equation> eqn_ptr;
     Integer index;
     Equation body, eqn;
   algorithm
-    (eqn_ptr, index) := eqn_tpl;
+    (Identifier.IDENTIFIER(eqn = eqn_ptr), index) := ident_tpl;
     eqn := Pointer.access(eqn_ptr);
     call := match eqn
 
@@ -124,7 +125,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect equation: " + Equation.toString(eqn)});
       then fail();
     end match;
-  end fromEquation;
+  end fromIdentifier;
 
   function convert
     input SimGenericCall call;

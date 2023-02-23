@@ -5167,7 +5167,7 @@ algorithm
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow,trytosolve);
 */
-      case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
+    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
       guard
         intGt(r,0)
       equation
@@ -5427,21 +5427,26 @@ algorithm
         false = intEq(rowmark[rabs],-mark);
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
-        e = Expression.expSub(e1,e2);
-        e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
-        (de,solved,derived,cons) = tryToSolveOrDerive(e_derAlias, cr, vars, SOME(shared.functionTree),trytosolve);
-        if not solved then
-          (de,_) = ExpressionSimplify.simplify(de);
-          (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-          solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+        if CommonSubExpression.isCSECref(cr) then
+          solvab = BackendDAE.SOLVABILITY_UNSOLVABLE();
+          cons = {};
         else
-          if derived then
+          e = Expression.expSub(e1,e2);
+          e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
+          (de,solved,derived,cons) = tryToSolveOrDerive(e_derAlias, cr, vars, SOME(shared.functionTree),trytosolve);
+          if not solved then
             (de,_) = ExpressionSimplify.simplify(de);
             (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
             solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
-            solvab = transformSolvabilityForCasualTearingSet(solvab);
           else
-            solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+            if derived then
+              (de,_) = ExpressionSimplify.simplify(de);
+              (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
+              solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+              solvab = transformSolvabilityForCasualTearingSet(solvab);
+            else
+              solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+            end if;
           end if;
         end if;
       then

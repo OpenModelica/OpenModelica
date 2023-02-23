@@ -224,6 +224,7 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
   // 2 = middle mouse button
   // 3 = right mouse button
   unsigned int button = 0;
+  int pixelRatio = qCeil(qApp->devicePixelRatio());
   switch (event->button()) {
     case Qt::LeftButton:
       button = 1;
@@ -235,7 +236,7 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
       button = 3;
       if (event->modifiers() == Qt::ShiftModifier) {
         //qt counts pixels from upper left corner and osg from bottom left corner
-        pickVisualizer(event->x(), this->height() - event->y());
+        pickVisualizer(event->x() * pixelRatio, (this->height() - event->y()) * pixelRatio);
         showVisualizerPickContextMenu(event->pos());
         return;
       }
@@ -243,7 +244,6 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
     default:
       break;
   }
-  int pixelRatio = qCeil(qApp->devicePixelRatio());
   getEventQueue()->mouseButtonPress(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), button);
 }
 
@@ -255,13 +255,15 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
  */
 void ViewerWidget::pickVisualizer(int x, int y)
 {
+  mpSelectedVisualizer = nullptr;
   //std::cout<<"pickVisualizer "<<x<<" and "<<y<<std::endl;
   osgUtil::LineSegmentIntersector::Intersections intersections;
   if (mpSceneView->computeIntersections(mpSceneView->getCamera(), osgUtil::Intersector::WINDOW, x, y, intersections)) {
     //take the first intersection with a facette only
     osgUtil::LineSegmentIntersector::Intersections::const_iterator hitr = intersections.cbegin();
-    if (!hitr->nodePath.empty() && !hitr->nodePath.back()->getName().empty()) {
-      mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->nodePath.back()->getName());
+    constexpr osg::NodePath::size_type lvl = 2;
+    if (hitr->nodePath.size() > lvl && !hitr->nodePath.at(lvl)->getName().empty()) {
+      mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->nodePath.at(lvl)->getName());
       //std::cout<<"Object identified by name "<<mpSelectedVisualizer->_id<<std::endl;
     } else if (hitr->drawable.valid()) {
       mpSelectedVisualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(hitr->drawable->className());

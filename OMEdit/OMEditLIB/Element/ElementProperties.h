@@ -50,12 +50,13 @@ public:
     CheckBox,
     Enumeration,
     ReplaceableComponent,
-    ReplaceableClass
+    ReplaceableClass,
+    Choices
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
-  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
+  Parameter(ModelInstance::Component *pComponent, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
-  ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
+  ModelInstance::Component* getModelInstanceComponent() {return mpModelInstanceComponent;}
   void setTab(QString tab) {mTab = tab;}
   StringAnnotation getTab() {return mTab;}
   void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
@@ -95,7 +96,7 @@ public:
   void update();
 private:
   Element *mpElement;
-  ModelInstance::Element *mpModelInstanceElement;
+  ModelInstance::Component *mpModelInstanceComponent;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
   StringAnnotation mGroupBox;
@@ -128,7 +129,7 @@ private:
 
   void createValueWidget();
   void enableDisableUnitComboBox(const QString &value);
-  void updateValueBinding(bool value);
+  void updateValueBinding(const FlatModelica::Expression expression);
 public slots:
   void fileSelectorButtonClicked();
   void unitComboBoxChanged(int index);
@@ -217,6 +218,7 @@ private:
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();
+  virtual void reject() override;
 };
 
 class ElementAttributes : public QDialog

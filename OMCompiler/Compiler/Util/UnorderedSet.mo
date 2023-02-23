@@ -471,7 +471,7 @@ public
   function size
     "Returns the number of elements the set contains."
     input UnorderedSet<T> set;
-    output Integer size = Mutable.access(set.size);
+    output Integer s = Mutable.access(set.size);
   end size;
 
   function isEmpty
@@ -547,7 +547,7 @@ public
     print("\n");
   end dump;
 
-  public function unique_list<T>
+  function unique_list<T>
     "Takes a list of elements and returns a list with duplicates removed, so that
      each element in the new list is unique."
     input list<T> inList;
@@ -556,6 +556,24 @@ public
     output list<T> outList = toList(fromList(inList, hashFunc, keyEqFunc));
   end unique_list;
 
+  function union
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output UnorderedSet<T> set;
+  protected
+    list<T> lst;
+  algorithm
+    if Mutable.access(set1.size) > Mutable.access(set2.size) then
+      set := set1;
+      lst := toList(set2);
+    else
+      set := set2;
+      lst := toList(set1);
+    end if;
+    for e in lst loop
+      add(e, set);
+    end for;
+  end union;
 protected
   function find
     "Tries to find a key in the set, returning the key as an option, and the

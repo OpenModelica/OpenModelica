@@ -3148,13 +3148,21 @@ algorithm
     case Absyn.NOMOD() then true;
 
     // search inside, some(exp)
-    case Absyn.EQMOD()
-      algorithm
-        (_, lst::{}) := traverseExpBidir(eqMod.exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
-      then
-        listEmpty(lst);
+    case Absyn.EQMOD() then onlyLiteralsInExp(eqMod.exp);
+
   end match;
 end onlyLiteralsInEqMod;
+
+public function onlyLiteralsInExp
+  "Checks if an expression only contains literal expressions."
+  input Absyn.Exp exp;
+  output Boolean onlyLiterals;
+protected
+  list<Absyn.Exp> lst;
+algorithm
+  (_, lst::{}) := traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
+  onlyLiterals := listEmpty(lst);
+end onlyLiteralsInExp;
 
 protected function onlyLiteralsInExpEnter
 "@author: adrpo
@@ -4287,6 +4295,19 @@ algorithm
 
   outElts := listReverseInPlace(outElts);
 end getDefineUnitsInElements;
+
+public function getClassPartsInClass
+  input Absyn.Class cls;
+  output list<Absyn.ClassPart> parts;
+protected
+  Absyn.ClassDef cdef = cls.body;
+algorithm
+  parts := match cdef
+    case Absyn.ClassDef.PARTS() then cdef.classParts;
+    case Absyn.ClassDef.CLASS_EXTENDS() then cdef.parts;
+    else {};
+  end match;
+end getClassPartsInClass;
 
 public function getElementItemsInClass
   "Returns the public and protected elements in a class."

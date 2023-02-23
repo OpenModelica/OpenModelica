@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -222,14 +222,14 @@ static int jacColoredNumericalDense(double currentTime, N_Vector y, N_Vector fy,
  * Not usable at the moment!
  *
  * @param t           Independent variable (time).
- * @param y           Dependent varaible vector.
+ * @param y           Dependent variable vector.
  * @param fy          Current value of f(t,y).
  * @param Jac         Output Jacobian.
  * @param user_data   User supplied data.
  * @param tmp1        Pointer to allocated memory to be used as temp storage or work space.
  * @param tmp2        "
  * @param tmp3        "
- * @return int        Returns 0 on succes, positiv value for recoverable error, negative value for error.
+ * @return int        Returns 0 on success, positive value for recoverable error, negative value for error.
  */
 static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
                              SUNMatrix Jac, void *user_data,
@@ -517,7 +517,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
  * @param solverInfo        Information about main solver. Unused at the moment.
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Return 0 on success.
  */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
@@ -579,6 +579,10 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetUserData");
 
+  /* Set error handler */
+  flag = CVodeSetErrHandlerFn(cvodeData->cvode_mem, cvodeErrorHandlerFunction, cvodeData);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetErrHandlerFn");
+
   /* Set linear solver useb by CVODE */
   cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
   switch (cvodeData->config.jacobianMethod)
@@ -615,13 +619,13 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     infoStreamPrint(LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
     break;
   case COLOREDNUMJAC:
-    throwStreamPrint(threadData, "##CVODE## Linear solver method %s not implemented yet!", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
-    flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
+    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    //flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
+    //checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
+    //infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
   }
 
   /* Set optional non-linear solver module */
@@ -780,10 +784,10 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
  * If flag LOG_SOLVER_V is provided even more statistics will be collected.
  *
  * @param cvode_mem         Pointer to CVODE memory block.
- * @param solverStatsTmp    Pointer to solverStatsTmp of solverInfo.
+ * @param solverStats       Pointer to solverStats of solverInfo.
  * @param threadData        Thread data for error handling.
  */
-void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, threadData_t *threadData)
+void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData_t *threadData)
 {
   /* Variables */
   long int tmp1, tmp2;
@@ -794,32 +798,32 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
   tmp1 = 0;
   flag = CVodeGetNumSteps(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumSteps");
-  solverStatsTmp[0] = tmp1;
+  solverStats->nStepsTaken = tmp1;
 
   /* Get number of right hand side evaluations */
   /* TODO: Is it okay to count number of rhs evaluations instead of residual evaluations? */
   tmp1 = 0;
   flag = CVodeGetNumRhsEvals(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumRhsEvals");
-  solverStatsTmp[1] = tmp1;
+  solverStats->nCallsODE = tmp1;
 
   /* Get number of Jacobian evaluations */
   tmp1 = 0;
   flag = CVodeGetNumJacEvals(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeGetNumJacEvals");
-  solverStatsTmp[2] = tmp1;
+  solverStats->nCallsJacobian = tmp1;
 
   /* Get number of local error test failures */
   tmp1 = 0;
   flag = CVodeGetNumErrTestFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumErrTestFails");
-  solverStatsTmp[3] = tmp1;
+  solverStats->nErrorTestFailures = tmp1;
 
   /* Get number of nonlinear convergence failures */
   tmp1 = 0;
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumNonlinSolvConvFails");
-  solverStatsTmp[4] = tmp1;
+  solverStats->nConvergenveTestFailures = tmp1;
 
   /* Get even more statistics */
   if (useStream[LOG_SOLVER_V])
@@ -845,11 +849,11 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
 /**
  * @brief Main CVODE function to make a step.
  *
- * Integrates on current time intervall.
+ * Integrates on current time interval.
  *
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Returns 0 on success and return flag from CVode else.
  */
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
@@ -979,7 +983,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   }
 
   /* Save statistics */
-  cvode_save_statistics(cvodeData->cvode_mem, solverInfo->solverStatsTmp, threadData);
+  cvode_save_statistics(cvodeData->cvode_mem, &solverInfo->solverStatsTmp, threadData);
 
   infoStreamPrint(LOG_SOLVER, 0, "##CVODE## Finished Integrator step.");
   /* Measure time */

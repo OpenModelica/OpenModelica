@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -111,14 +111,14 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_EULER:
     retVal = euler_ex_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
   case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
 
@@ -126,7 +126,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_DASSL:
     retVal = dassl_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
 #endif
@@ -140,7 +140,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       retVal = euler_ex_step(data, solverInfo);
     }
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
 #endif
@@ -150,47 +150,47 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_IMPRUNGEKUTTA:
     retVal = radau_lobatto_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
   case S_CVODE:
     retVal = cvode_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
 #endif
   case S_ERKSSC:
     retVal = rungekutta_step_ssc(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
   case S_SYM_SOLVER:
     retVal = sym_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
   case S_SYM_SOLVER_SSC:
     retVal = sym_solver_ssc_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
   case S_IRKSCO:
     retVal = irksco_midpoint_rule(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
   case S_GBODE:
     retVal = gbode_main(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
   default:
     throwStreamPrint(threadData, "Unhandled case in solver_main_step.");
@@ -221,12 +221,12 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = 0;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
-  solverInfo->eventLst = allocList(sizeof(long));
+  solverInfo->eventLst = allocList(eventListAlloc, eventListFree, eventListCopy);
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->solverStats = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  solverInfo->solverStatsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
+  resetSolverStats(&solverInfo->solverStats);
+  resetSolverStats(&solverInfo->solverStatsTmp);
 
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose integrator step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
@@ -391,9 +391,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   freeList(solverInfo->eventLst);
-  /* free solver statistics */
-  free(solverInfo->solverStats);
-  free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
   switch (solverInfo->solverMethod)
   {
@@ -618,15 +615,14 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     else
     {
       /* save stats before print */
-      for(ui=0; ui<numStatistics; ui++)
-        solverInfo->solverStats[ui] += solverInfo->solverStatsTmp[ui];
+      addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
 
       infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
-      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats[0]);
-      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats[1]);
-      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats[2]);
-      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats[3]);
-      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats[4]);
+      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats.nStepsTaken);
+      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats.nCallsODE);
+      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats.nCallsJacobian);
+      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
+      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenveTestFailures);
       infoStreamPrint(LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
 #ifdef USE_PARJAC
       infoStreamPrint(LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
@@ -911,9 +907,9 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
   /* save stats */
   /* steps */
-  solverInfo->solverStatsTmp[0] += 1;
+  solverInfo->solverStatsTmp.nStepsTaken += 1;
   /* function ODE evaluation is done directly after this function */
-  solverInfo->solverStatsTmp[1] += 1;
+  solverInfo->solverStatsTmp.nCallsODE += 1;
 
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
@@ -1015,9 +1011,9 @@ static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO
 
     /* save stats */
     /* steps */
-    solverInfo->solverStatsTmp[0] += 1;
+    solverInfo->solverStatsTmp.nStepsTaken += 1;
     /* function ODE evaluation is done directly after this */
-    solverInfo->solverStatsTmp[1] += 4;
+    solverInfo->solverStatsTmp.nCallsODE += 4;
 
 
     //stepsize
@@ -1085,9 +1081,9 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
     /* save stats */
     /* steps */
-    solverInfo->solverStatsTmp[0] += 1;
+    solverInfo->solverStatsTmp.nStepsTaken += 1;
     /* function ODE evaluation is done directly after this */
-    solverInfo->solverStatsTmp[1] += 1;
+    solverInfo->solverStatsTmp.nCallsODE += 1;
   }
   else
   /* in case desired step size is too small */
@@ -1157,9 +1153,9 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
   /* save stats */
   /* steps */
-  solverInfo->solverStatsTmp[0] += 1;
+  solverInfo->solverStatsTmp.nStepsTaken += 1;
   /* function ODE evaluation is done directly after this */
-  solverInfo->solverStatsTmp[1] += rk->work_states_ndims+1;
+  solverInfo->solverStatsTmp.nCallsODE += rk->work_states_ndims+1;
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   return 0;
@@ -1267,4 +1263,34 @@ static void writeOutputVars(char* names, DATA* data)
     p = strtok(NULL, "!");
   }
   fprintf(stdout, "\n"); fflush(stdout);
+}
+
+/**
+ * @brief Set all solver stats to zero.
+ *
+ * @param stats   Pointer to solver stats.
+ */
+void resetSolverStats(SOLVERSTATS* stats) {
+  stats->nStepsTaken = 0;
+  stats->nCallsODE = 0;
+  stats->nCallsJacobian = 0;
+  stats->nErrorTestFailures = 0;
+  stats->nConvergenveTestFailures = 0;
+}
+
+/**
+ * @brief Add two solver statistics.
+ *
+ * destStats += addStats
+ *
+ * @param destStats   Pointer to solver stats to add stats to.
+ *                    On return has result of addition.
+ * @param addStats    Pointer to solver stats to add.
+ */
+void addSolverStats(SOLVERSTATS* destStats, SOLVERSTATS* addStats) {
+  destStats->nStepsTaken              += addStats->nStepsTaken;
+  destStats->nCallsODE                += addStats->nCallsODE;
+  destStats->nCallsJacobian           += addStats->nCallsJacobian;
+  destStats->nErrorTestFailures       += addStats->nErrorTestFailures;
+  destStats->nConvergenveTestFailures += addStats->nConvergenveTestFailures;
 }

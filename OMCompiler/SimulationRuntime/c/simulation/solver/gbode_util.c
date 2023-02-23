@@ -728,33 +728,6 @@ void logSolverStats(enum LOG_STREAM stream, const char* name, double timeValue, 
 }
 
 /**
- * @brief Set solver stats.
- *
- * @param solverStats   Pointer to solverStats to set.
- * @param stats         Values to set in solverStats.
- */
-void setSolverStats(unsigned int* solverStats, SOLVERSTATS* stats) {
-  solverStats[0] = stats->nStepsTaken;
-  solverStats[1] = stats->nCallsODE;
-  solverStats[2] = stats->nCallsJacobian;
-  solverStats[3] = stats->nErrorTestFailures;
-  solverStats[4] = stats->nConvergenveTestFailures;
-}
-
-/**
- * @brief Set all solver stats to zero.
- *
- * @param stats   Pointer to solver stats.
- */
-void resetSolverStats(SOLVERSTATS* stats) {
-  stats->nStepsTaken = 0;
-  stats->nCallsODE = 0;
-  stats->nCallsJacobian = 0;
-  stats->nErrorTestFailures = 0;
-  stats->nConvergenveTestFailures = 0;
-}
-
-/**
  * @brief Info message for GBODE replacement.
  *
  * Dumps simulation flags to use to LOG_STDOUT.

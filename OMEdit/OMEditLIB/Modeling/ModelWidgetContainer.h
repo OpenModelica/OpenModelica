@@ -247,7 +247,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
+  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
@@ -259,8 +259,8 @@ public:
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
-  QString getUniqueElementName(QString elementName, int number = 0);
-  bool checkElementName(QString elementName);
+  QString getUniqueElementName(const QString &nameStructure, QString elementName, int number = 0);
+  bool checkElementName(const QString &nameStructure, QString elementName);
   QList<Element*> getElementsList() {return mElementsList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}

@@ -87,6 +87,7 @@ import SCode;
 import SynchronousFeatures;
 import Tearing;
 import Types;
+import UnorderedMap;
 import Util;
 import Values;
 
@@ -5776,6 +5777,10 @@ protected
   array<Integer> mapIncRowEqn;
   Integer systemNumber=0, numberOfSystems;
 
+  list<Integer> eqIndLst, eqIndexLst = {};
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> der_replacement;
+  BackendDAE.Var derVar;
+
   constant Boolean debug = false;
 algorithm
   daeOut := daeIn;
@@ -5856,9 +5861,10 @@ algorithm
       eqLstNew := {};
       varLstNew := {};
       for comp in compsNew loop
-        (varLst,_,eqLst,_) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
+        (varLst,_,eqLst,eqIndLst) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
         varLstNew := listAppend(varLst,varLstNew);
         eqLstNew := listAppend(eqLst,eqLstNew);
+        eqIndexLst := listAppend(eqIndLst,eqIndexLst);
       end for;
 
       // causalize again
@@ -5886,9 +5892,34 @@ algorithm
       syst.removedEqs := BackendEquation.emptyEqns();
 
       systsNew := syst::systsNew;
+
+      // find unneeded vars and equations
+      vars := BackendVariable.deleteVars(syst.orderedVars, vars);
+      eqs := BackendEquation.deleteList(eqs, eqIndexLst);
     else
       if debug then print("No output variables in this system ("+intString(systemNumber)+"/"+intString(numberOfSystems)+")\n"); end if;
     end if;
+
+    // make unneeded state derivatives and add them to unneeded vars
+    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    for state in BackendVariable.varList(vars) loop
+      if BackendVariable.isStateVar(state) then
+        derVar := BackendVariable.makeVar(ComponentReference.prependStringCref("$DER_REM_", state.varName));
+        UnorderedMap.add(state.varName, Expression.crefExp(derVar.varName), der_replacement);
+        vars := BackendVariable.addVar(derVar, vars);
+      end if;
+    end for;
+
+    // replace unneeded der() calls with derivative crefs
+    eqs := BackendEquation.traverseEquationArray_WithUpdate(eqs, function BackendEquation.traverseExpsOfEquation(inFunc = replaceDerCallOutputsOnly), der_replacement);
+
+    // make unneeded vars parameters and equations initial equations
+    (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, BackendVariable.makeParamOutputsOnly, false);
+    (eqs, _) := BackendEquation.traverseEquationArray_WithUpdate(eqs,BackendEquation.setEquationKind, BackendDAE.INITIAL_EQUATION());
+
+    // add unneeded variables and equations
+    shared.globalKnownVars := BackendVariable.addVariables(vars, shared.globalKnownVars);
+    shared.initialEqs := BackendEquation.addList(BackendEquation.equationList(eqs), shared.initialEqs);
   end for;
 
   // alias vars are not necessary anymore
@@ -5904,6 +5935,18 @@ algorithm
   b := intLt(arrayGet(varArr,idx),0);
 end stateVarIsNotVisited;
 
+protected function replaceDerCallOutputsOnly
+  input output DAE.Exp exp;
+  input output UnorderedMap<DAE.ComponentRef, DAE.Exp> der_replacement;
+algorithm
+  exp := match exp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(cr)})
+      then UnorderedMap.getOrDefault(cr, der_replacement, exp);
+    else exp;
+  end match;
+end replaceDerCallOutputsOnly;
 
 // =============================================================================
 // section for initOptModule >>inlineHomotopy<<

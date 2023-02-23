@@ -325,10 +325,14 @@ algorithm
       else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
   end match;
 
+  // get inputs and outputs for algorithms now that types are computed
+  flatModel.algorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.algorithms);
+  flatModel.initialAlgorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.initialAlgorithms);
+  
+  execStat(getInstanceName());
+  InstUtil.dumpFlatModelDebug("flatten", flatModel);
+  
   if getConnectionResolved then
-    execStat(getInstanceName());
-    InstUtil.dumpFlatModelDebug("flatten", flatModel);
-
     if settings.arrayConnect then
       flatModel := resolveArrayConnections(flatModel);
     else
@@ -1097,6 +1101,12 @@ algorithm
           lhs := Expression.CREF(ty, lhs.cref);
           rhs := Expression.CREF(ty, rhs.cref);
         then Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, eq.source) :: equations;
+
+      // Pass Connections.* operators as they are and let the connection
+      // handling deal with them.
+      case Equation.NORETCALL(exp = lhs as Expression.CALL())
+        guard Call.isConnectionsOperator(lhs.call)
+        then eq :: equations;
 
       // wrap general equation into for loop
       else

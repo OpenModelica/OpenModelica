@@ -69,9 +69,14 @@ ImportFMUDialog::ImportFMUDialog(QWidget *pParent)
   mpBrowseFileButton = new QPushButton(Helper::browse);
   mpBrowseFileButton->setAutoDefault(false);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(setSelectedFile()));
+  // model name
+  mpModelNameLabel = new Label(tr("Model Name:"));
+  mpModelNameTextBox = new QLineEdit;
+  mpModelNameTextBox->setPlaceholderText(tr("Name of the generated model. If empty then the name is auto generated using FMU information."));
   // create Output Directory selection controls
   mpOutputDirectoryLabel = new Label(tr("Output Directory (Optional):"));
   mpOutputDirectoryTextBox = new QLineEdit;
+  mpOutputDirectoryTextBox->setPlaceholderText(tr("If no Output Directory specified then the FMU files are generated in the current working directory."));
   mpBrowseDirectoryButton = new QPushButton(Helper::browse);
   mpBrowseDirectoryButton->setAutoDefault(false);
   connect(mpBrowseDirectoryButton, SIGNAL(clicked()), SLOT(setSelectedDirectory()));
@@ -94,8 +99,6 @@ ImportFMUDialog::ImportFMUDialog(QWidget *pParent)
   // create generate output connectors pins checkbox
   mpGenerateOutputConnectors = new QCheckBox(tr("Generate output connector pins"));
   mpGenerateOutputConnectors->setChecked(true);
-  // import FMU note
-  mpOutputDirectoryNoteLabel = new Label(tr("* If no Output Directory specified then the FMU files are generated in the current working directory."));
   // create OK button
   mpImportButton = new QPushButton(Helper::ok);
   mpImportButton->setAutoDefault(true);
@@ -109,10 +112,11 @@ ImportFMUDialog::ImportFMUDialog(QWidget *pParent)
   pMainLayout->addWidget(mpFmuFileLabel, 2, 0);
   pMainLayout->addWidget(mpFmuFileTextBox, 2, 1);
   pMainLayout->addWidget(mpBrowseFileButton, 2, 2);
-  pMainLayout->addWidget(mpOutputDirectoryLabel, 3, 0);
-  pMainLayout->addWidget(mpOutputDirectoryTextBox, 3, 1);
-  pMainLayout->addWidget(mpBrowseDirectoryButton, 3, 2);
-  pMainLayout->addWidget(mpOutputDirectoryNoteLabel, 4, 0, 1, 3, Qt::AlignLeft);
+  pMainLayout->addWidget(mpModelNameLabel, 3, 0);
+  pMainLayout->addWidget(mpModelNameTextBox, 3, 1, 1, 2);
+  pMainLayout->addWidget(mpOutputDirectoryLabel, 4, 0);
+  pMainLayout->addWidget(mpOutputDirectoryTextBox, 4, 1);
+  pMainLayout->addWidget(mpBrowseDirectoryButton, 4, 2);
   pMainLayout->addWidget(mpLogLevelLabel, 5, 0);
   pMainLayout->addWidget(mpLogLevelComboBox, 5, 1, 1, 2);
   pMainLayout->addWidget(mpDebugLoggingCheckBox, 6, 0, 1, 3);
@@ -172,7 +176,7 @@ void ImportFMUDialog::importFMU()
                                                                          mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt(),
                                                                          mpDebugLoggingCheckBox->isChecked(),
                                                                          mpGenerateIntputConnectors->isChecked(),
-                                                                         mpGenerateOutputConnectors->isChecked());
+                                                                         mpGenerateOutputConnectors->isChecked(), mpModelNameTextBox->text());
   if (!fmuFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->openFile(fmuFileName);
   }

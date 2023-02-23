@@ -700,6 +700,7 @@ algorithm
             then
               (dim, ty_err);
 
+          else (dimension, TypingError.NO_ERROR());
         end match;
 
         () := match ty_err
@@ -3714,7 +3715,7 @@ algorithm
           index := 1;
 
           for sub in subs loop
-            if Subscript.isIterator(sub, iterator) then
+            if Subscript.equalsIterator(sub, iterator) then
               crefs := (cref, index) :: crefs;
             end if;
 

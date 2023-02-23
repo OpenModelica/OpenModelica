@@ -74,6 +74,7 @@ protected
   import SimCode = NSimCode;
   import NSimCode.SimCodeIndices;
   import NSimJacobian.SimJacobian;
+  import NSimCode.Identifier;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -552,6 +553,7 @@ public
           list<Block> single_calls = {};
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
           list<Integer> call_order = {};
+          Identifier ident;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
@@ -576,13 +578,14 @@ public
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
           eqn := Pointer.access(eqn_ptr);
-          if UnorderedMap.contains(eqn_ptr, simCodeIndices.generic_call_map) then
+          ident := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
+          if UnorderedMap.contains(ident, simCodeIndices.generic_call_map) then
             // the generic call body was already generated
-            generic_call_index := UnorderedMap.getSafe(eqn_ptr, simCodeIndices.generic_call_map, sourceInfo());
+            generic_call_index := UnorderedMap.getSafe(ident, simCodeIndices.generic_call_map, sourceInfo());
           else
             // the generic call body was not already generated
             generic_call_index := simCodeIndices.genericCallIndex;
-            UnorderedMap.add(eqn_ptr, generic_call_index, simCodeIndices.generic_call_map);
+            UnorderedMap.add(ident, generic_call_index, simCodeIndices.generic_call_map);
             simCodeIndices.genericCallIndex := simCodeIndices.genericCallIndex + 1;
           end if;
           tmp := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));

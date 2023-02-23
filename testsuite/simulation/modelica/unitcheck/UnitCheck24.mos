@@ -1,0 +1,56 @@
+// name: UnitCheck24
+// keywords:
+// status: correct
+// cflags: -d=newInst --unitChecking -d=dumpUnits
+
+loadString("
+  function to_deg
+    input Real radian(unit = \"rad\");
+    output Real degree(unit = \"deg\");
+  algorithm
+    degree := (180.0/3.14)*radian;
+  end to_deg;
+
+  block To_deg
+    input Real u(unit = \"rad\");
+    output Real y(unit = \"deg\");
+  equation
+    y = to_deg(u);
+  end To_deg;
+
+  model UnitCheck24
+    To_deg to_deg;
+  equation
+    to_deg.u = time;
+  end UnitCheck24;
+"); getErrorString();
+
+instantiateModel(UnitCheck24); getErrorString();
+
+// Result:
+// true
+// ""
+// (to_deg.u, 1.0 * 1)
+// (to_deg.y, UNKOWN())
+// ######## UnitCheck COMPLETED ########
+// "function to_deg
+//   input Real radian(unit = \"rad\");
+//   output Real degree(unit = \"deg\");
+// algorithm
+//   degree := 57.32484076433121 * radian;
+// end to_deg;
+//
+// class UnitCheck24
+//   Real to_deg.u(unit = \"rad\");
+//   Real to_deg.y(unit = \"deg\");
+// equation
+//   to_deg.y = to_deg(to_deg.u);
+//   to_deg.u = time;
+// end UnitCheck24;
+// "
+// "[<interactive>:19:5-19:20:writable] Warning: The following equation is INCONSISTENT due to specified unit information: to_deg.u = time
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"time\" has unit \"s\"
+// - sub-expression \"to_deg.u\" has unit \"1\"
+// "
+// endResult

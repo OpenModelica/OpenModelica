@@ -3038,12 +3038,10 @@ function instAlgorithmSection
   output Algorithm alg;
 protected
   list<Statement> statements;
-  list<ComponentRef> inputs_lst;
-  list<ComponentRef> outputs_lst;
 algorithm
+  // collect inputs and outputs later when types are computed properly
   statements := instStatements(algorithmSection.statements, scope, context);
-  (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
-  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, scope, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, {}, {}, scope, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

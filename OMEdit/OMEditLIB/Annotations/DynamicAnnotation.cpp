@@ -102,12 +102,11 @@ bool DynamicAnnotation::update(double time, Element *parent)
     fromExp(mExp.arg(1).evaluate([&] (std::string name) {
               auto vname = QString::fromStdString(name);
               // the instance api returns the qualified cref
-              vname = StringHandler::getLastWordAfterDot(vname);
-
-              if (parent) {
-                vname = QString("%1.%2").arg(parent->getName(), vname);
+              if (!MainWindow::instance()->isNewApi()) {
+                if (parent) {
+                  vname = QString("%1.%2").arg(parent->getName(), vname);
+                }
               }
-
               return FlatModelica::Expression(MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time));
             }));
     return true;

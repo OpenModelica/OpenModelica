@@ -194,7 +194,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
   if (mVisible) {
     // state machine visualization
     if (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()
-        && ((mpParentComponent->getGraphicsView()->getModelWidget()->isNewApi() && mpParentComponent->getModel() && mpParentComponent->getModel()->isState())
+        && ((mpParentComponent->getGraphicsView()->getModelWidget()->isNewApi() && mpParentComponent->getModel() && mpParentComponent->getModel()->getAnnotation()->isState())
             || (mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()))) {
       if (mpParentComponent->isActiveState()) {
         painter->setOpacity(1.0);
@@ -275,12 +275,9 @@ void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *RectangleAnnotation::getParentModel() const
+ModelInstance::Extend *RectangleAnnotation::getExtend() const
 {
-  if (mpRectangle) {
-    return mpRectangle->getParentModel();
-  }
-  return 0;
+  return mpRectangle->getParentExtend();
 }
 
 /*!

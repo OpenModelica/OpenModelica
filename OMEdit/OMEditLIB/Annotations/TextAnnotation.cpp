@@ -150,9 +150,9 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
    */
   if (pLineAnnotation->getPoints().size() > 0) {
     if (pLineAnnotation->getImmediate()) {
-      setPos(pLineAnnotation->getPoints().last());
+      setPos(pLineAnnotation->getPoints().at(mPoints.size() - 1));
     } else {
-      setPos(pLineAnnotation->getPoints().first());
+      setPos(pLineAnnotation->getPoints().at(0));
     }
   }
 }
@@ -175,9 +175,9 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLine
    */
   if (pLineAnnotation->getPoints().size() > 0) {
     if (pLineAnnotation->getImmediate()) {
-      setPos(pLineAnnotation->getPoints().last());
+      setPos(pLineAnnotation->getPoints().at(mPoints.size() - 1));
     } else {
-      setPos(pLineAnnotation->getPoints().first());
+      setPos(pLineAnnotation->getPoints().at(0));
     }
   }
 }
@@ -235,8 +235,8 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     mLineColor.parse(list.at(11));
   }
   // 13th item of the list contains the font name.
-  const QString fontName = StringHandler::removeFirstLastQuotes(list.at(12));
-  if (!fontName.isEmpty()) {
+  const QString fontName = list.at(12);
+  if (!StringHandler::removeFirstLastQuotes(fontName).isEmpty()) {
     mFontName.parse(fontName);
   }
   // 14th item of the list contains the text styles.
@@ -333,7 +333,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // state machine visualization
     // text annotation on a element
     if (mpElement && mpElement->getGraphicsView()->isVisualizationView()
-        && ((mpElement->getGraphicsView()->getModelWidget()->isNewApi() && mpElement->getModel() && mpElement->getModel()->isState())
+        && ((mpElement->getGraphicsView()->getModelWidget()->isNewApi() && mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
             || (mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()))) {
       if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
@@ -530,12 +530,9 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *TextAnnotation::getParentModel() const
+ModelInstance::Extend *TextAnnotation::getExtend() const
 {
-  if (mpText) {
-    return mpText->getParentModel();
-  }
-  return 0;
+  return mpText->getParentExtend();
 }
 
 void TextAnnotation::initUpdateTextString()
@@ -571,13 +568,13 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QString displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
           if (MainWindow::instance()->isNewApi()) {
-            ModelInstance::Element* pModelElement = Element::getModelElementByName(mpElement->getRootParentElement()->getModel(), variable);
-            if (pModelElement) {
+            ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
+            if (pModelComponent) {
               if (displayUnit.isEmpty()) {
-                displayUnit = pModelElement->getModifierValueFromType(QStringList() << "displayUnit");
+                displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
               }
               if (unit.isEmpty()) {
-                unit = pModelElement->getModifierValueFromType(QStringList() << "unit");
+                unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
               }
             }
           } else {

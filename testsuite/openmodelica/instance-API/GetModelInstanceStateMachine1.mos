@@ -40,8 +40,9 @@ getModelInstance(M, prettyPrint=true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -49,12 +50,14 @@ getModelInstance(M, prettyPrint=true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"state1\",
 //       \"type\": {
 //         \"name\": \"State1\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"i\",
 //             \"type\": \"Integer\",
 //             \"modifiers\": {
@@ -75,6 +78,7 @@ getModelInstance(M, prettyPrint=true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"state2\",
 //       \"type\": {
 //         \"name\": \"State2\",

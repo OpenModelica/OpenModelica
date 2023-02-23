@@ -582,7 +582,7 @@ protected
 algorithm
   if not Function.isSimplified(func) then
     Function.markSimplified(func);
-    Function.mapExp(func, SimplifyExp.simplify, mapBody = false);
+    Function.mapExp(func, function SimplifyExp.simplify(backend = false), mapBody = false);
 
     cls := InstNode.getClass(func.node);
     () := match cls

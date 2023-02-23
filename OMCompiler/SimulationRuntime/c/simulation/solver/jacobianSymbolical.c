@@ -92,7 +92,7 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
  * \brief Generic parallel computation of the colored Jacobian.
  *
  * Exploiting coloring and sparse structure. Used from DASSL and IDA solvers.
- * Only matrix storing format differs for them and therefore setJacElementFunc
+ * Only matrix storing format differs for them and therefore setJacElement function
  * is used to access matrix A.
  *
  * \param rows                Number of rows of jacobian.
@@ -102,12 +102,12 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
  * \param jacColumns          Analytic Jacobian.
  * \param data                Runtime data struct.
  * \param threadData          Thread data for error handling
- * \param setJacElementFunc   Function to set element (i,j) in matrix A.
+ * \param setJacElement       Function to set element (i,j) in matrix A.
  */
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
                                               void* matrixA, ANALYTIC_JACOBIAN* jacColumns, DATA* data,
                                               threadData_t* threadData,
-                                              void (*setJacElement)(int, int, int, double, void*, int))
+                                              setJacElementFunc setJacElement)
 {
 
 #ifdef USE_PARJAC

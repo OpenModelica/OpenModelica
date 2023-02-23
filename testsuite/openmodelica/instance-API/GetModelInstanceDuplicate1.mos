@@ -23,13 +23,15 @@ getModelInstance(B, prettyPrint = true);
 // "{
 //   \"name\": \"B\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\"
 //           }
@@ -42,10 +44,9 @@ getModelInstance(B, prettyPrint = true);
 //           \"columnEnd\": 14
 //         }
 //       }
-//     }
-//   ],
-//   \"components\": [
+//     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\"
 //     }

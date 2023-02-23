@@ -662,7 +662,7 @@ algorithm
       FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
-      Absyn.ClassDef cdef;
+      Absyn.Element elem;
       Absyn.Exp aexp;
       DAE.DAElist dae;
       BackendDAE.BackendDAE daelow;
@@ -756,8 +756,8 @@ algorithm
 
     case ("getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
-        Absyn.CLASS(body = cdef) = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = System.unescapedString(getClassComment(cdef));
+        elem = InteractiveUtil.getPathedElementInProgram(path, SymbolTable.getAbsyn());
+        str = System.unescapedString(getClassElementComment(elem));
       then
         Values.STRING(str);
 
@@ -1688,7 +1688,7 @@ algorithm
       then
         ret_val;
 
-    case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)})
+    case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
@@ -1699,20 +1699,22 @@ algorithm
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
         s1 = System.tolower(Autoconf.platform);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
+        name = AbsynUtil.pathString(classpath);
+        name = if stringEq(name, "Default") or stringEq(name, "default") then "" else name;
+        str = Tpl.tplString2(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors), name);
         pd = Autoconf.pathDelimiter;
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
         str3 = FMI.getFMIVersion(fmiInfo);
-        outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
-        filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}) else stringAppendList({str1,"_",str2,"_FMU.mo"});
-        System.writeFile(outputFile, str);
+        outputFile = if stringEmpty(name) then stringAppendList({str1,"_",str2,"_FMU.mo"}) else stringAppendList({name,".mo"});
+        filename_1 = if b1 then stringAppendList({workdir,pd,outputFile}) else outputFile;
+        System.writeFile(stringAppendList({workdir,pd,outputFile}), str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
       then
         Values.STRING(filename_1);
 
-    case ("importFMU",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+    case ("importFMU",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.CODE(_)})
       equation
         false = System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
@@ -1720,7 +1722,7 @@ algorithm
       then
         Values.STRING("");
 
-    case ("importFMU",{Values.STRING(_),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+    case ("importFMU",{Values.STRING(_),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.CODE(_)})
       then
         Values.STRING("");
 
@@ -5553,7 +5555,6 @@ algorithm
       String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags;
       Absyn.Path classname;
       Absyn.Program p;
-      Absyn.Class cdef;
       Real edit,build,globalEdit,globalBuild,timeCompile;
       FCore.Graph env;
       SimCode.SimulationSettings simSettings;
@@ -7564,7 +7565,7 @@ protected
 algorithm
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
-  cmt := getClassComment(cdef);
+  cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);
   if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(path)) then
     isProtectedClass := false;
@@ -7616,7 +7617,31 @@ algorithm
   end match;
 end getClassDimensions;
 
-function getClassComment "Returns the class comment of a Absyn.ClassDef"
+function getClassElementComment
+  "Returns the comment on a class element."
+  input Absyn.Element element;
+  output String commentStr;
+protected
+  Absyn.Class cls;
+algorithm
+  commentStr := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls))
+      algorithm
+        // The comment can go either before and/or after the constrainedby clause,
+        // the one after has higher priority.
+        commentStr := InteractiveUtil.getConstrainingClassComment(element.constrainClass);
+
+        if stringEmpty(commentStr) then
+          commentStr := getClassDefComment(cls.body);
+        end if;
+      then
+        commentStr;
+
+    else "";
+  end match;
+end getClassElementComment;
+
+function getClassDefComment "Returns the class comment of a Absyn.ClassDef"
   input Absyn.ClassDef inClassDef;
   output String outString;
 algorithm
@@ -7637,7 +7662,7 @@ algorithm
     case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
     else "";
   end match;
-end getClassComment;
+end getClassDefComment;
 
 protected function getAnnotationInEquation
   "This function takes an `EquationItem\' and returns a comma separated

@@ -606,14 +606,14 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   bool preserveAspectRatio = false;
 
   if (MainWindow::instance()->isNewApi()) {
-    ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getParentModel());
+    ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getExtend());
     if (pExtend) {
       if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        extent = pExtend->mIconMap.getExtent();
-        preserveAspectRatio = pExtend->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+        extent = pExtend->getExtendsAnnotation()->getIconMap().getExtent();
+        preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       } else {
-        extent = pExtend->mDiagramMap.getExtent();
-        preserveAspectRatio = pExtend->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+        extent = pExtend->getExtendsAnnotation()->getDiagramMap().getExtent();
+        preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       }
     }
   } else {
@@ -1144,6 +1144,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mTextString.update(time, mpParentComponent);
 
     if (updated) {
+      applyTransformation();
       update();
     }
   }
@@ -1634,15 +1635,15 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
         mPoints.replace(index, point);
         // update previous point
         if (mGeometries.size() > index - 1 && mGeometries[index - 1] == ShapeAnnotation::HorizontalLine && mPoints.size() > index - 1) {
-          mPoints[index - 1] = QPointF(mPoints[index - 1].x(), mPoints[index - 1].y() +  dy);
+          mPoints.setPoint(index - 1, QPointF(mPoints[index - 1].x(), mPoints[index - 1].y() +  dy));
         } else if (mGeometries.size() > index - 1 && mGeometries[index - 1] == ShapeAnnotation::VerticalLine && mPoints.size() > index - 1) {
-          mPoints[index - 1] = QPointF(mPoints[index - 1].x() + dx, mPoints[index - 1].y());
+          mPoints.setPoint(index - 1, QPointF(mPoints[index - 1].x() + dx, mPoints[index - 1].y()));
         }
         // update next point
         if (mGeometries.size() > index && mGeometries[index] == ShapeAnnotation::HorizontalLine && mPoints.size() > index + 1) {
-          mPoints[index + 1] = QPointF(mPoints[index + 1].x(), mPoints[index + 1].y() +  dy);
+          mPoints.setPoint(index + 1, QPointF(mPoints[index + 1].x(), mPoints[index + 1].y() +  dy));
         } else if (mGeometries.size() > index && mGeometries[index] == ShapeAnnotation::VerticalLine && mPoints.size() > index + 1) {
-          mPoints[index + 1] = QPointF(mPoints[index + 1].x() + dx, mPoints[index + 1].y());
+          mPoints.setPoint(index + 1, QPointF(mPoints[index + 1].x() + dx, mPoints[index + 1].y()));
         }
       }
     } else {
@@ -1654,9 +1655,9 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
     mPoints.replace(index, point);
     /* if first point */
     if (index == 0) {
-      mPoints.last() = point;
+      mPoints.setPoint(mPoints.size() - 1, point);
     } else if (index == mPoints.size() - 1) { /* if last point */
-      mPoints.first() = point;
+      mPoints.setPoint(0, point);
     }
     applyTransformation();
   } else {

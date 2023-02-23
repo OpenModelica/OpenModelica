@@ -5572,12 +5572,17 @@ end genSPCRSRows;
 template genSPColors(list<list<Integer>> colorList, String arrayName)
 "This template generates row of the CRS format"
 ::=
-  let colorArray = (colorList |> (indexes) hasindex index0 =>
-    let colorCol = ( indexes |> i_index =>
-    <<<%arrayName%>[<%i_index%>] = <%intAdd(index0,1)%>;>>
-    ;separator="\n")
-  '<%colorCol%>'
-  ;separator="\n")
+  let colorArray = (colorList |> (indices) hasindex index0 =>
+    let length = '<%listLength(indices)%>'
+    let index = '<%intAdd(index0,1)%>'
+    let ind_name = 'indices_<%index%>'
+  <<
+  /* color <%index%> with <%length%> columns */
+  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
+    '<%i_index%>' ;separator=", ")%>};
+  for(i=0; i<<%length%>; i++)
+    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
+  >>;separator="\n\n")
   <<
   <%colorArray%>
   >>
@@ -6101,7 +6106,7 @@ case eqn as SES_ENTWINED_ASSIGN() then
     {
     <%(single_calls |> call hasindex i0 => entwinedSingleCall(call, i0, context, &varDecls, &auxFunction, modelNamePrefix); separator="\n")%>
       default:
-        throwStreamPrint(NULL, "Call index %i at pos %i unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
+        throwStreamPrint(NULL, "Call index %d at pos %d unknown for: <%modelicaLine(eqInfo(eq))%>", call_order[i], i);
         break;
     }
   }
@@ -7162,6 +7167,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%lhs_%> = <%rhs_%>;
       }
       >>
@@ -7173,6 +7181,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%branches_%>
       }
       >>
@@ -7184,6 +7195,9 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         int tmp = idx;
         <%iter_%>
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
         <%branches_%>
       }
       >>

@@ -22,8 +22,9 @@ getErrorString();
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -41,12 +42,6 @@ getErrorString();
 //           ]
 //         }
 //       }
-//     }
-//   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\"
 //     }
 //   ],
 //   \"source\": {

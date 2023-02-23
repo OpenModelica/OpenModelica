@@ -2247,15 +2247,24 @@ getErrorString();
 // -Passed
 //  Set_S has 58 equations and 58 variables
 //
+//
+// The selection of a new tearing variable failed.
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
-// assert            | debug   | Solving non-linear system 66 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!
 // stdout            | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
+// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 1.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_NLS           | error   | residualFunc76: Iteration variable xloc[0] is nan.
+// assert            | debug   | residualFunc76 failed at time=1.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 76 failed at time=1.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// getBestJumpBuffer got simulationJumpBuffer=(nil)
+// Aborted (core dumped)
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -2273,5 +2282,7 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// Error: It is not possible to select a new tearing variable, because all remaining variables have the attribute tearingSelect=never
+// Warning: Function Tearing.selectTearingVar failed at least once. Use -d=tearingdump or -d=tearingdumpV for more information.
 // "
 // endResult

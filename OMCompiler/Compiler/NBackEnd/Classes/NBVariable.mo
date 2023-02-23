@@ -60,6 +60,7 @@ public
   import NFBackendExtension.VariableKind;
 
   // Backend Imports
+  import NBAdjacency.Mapping;
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
   import NBEquation.Iterator;
@@ -69,6 +70,7 @@ public
   import Array;
   import BaseHashTable;
   import ExpandableArray;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import Util;
@@ -520,10 +522,10 @@ public
     "Returns true, if the variable is a dummy variable.
     Note: !Only works in the backend, will return true for any variable if used
     during frontend!"
-    input Variable var;
+    input Pointer<Variable> var;
     output Boolean isDummy;
   algorithm
-    isDummy := match var
+    isDummy := match Pointer.access(var)
       case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY())) then true;
       else false;
     end match;
@@ -1626,6 +1628,26 @@ public
       end if;
     end scalarize;
 
+    function varSlice
+      input VariablePointers vars;
+      input Integer scal;
+      input Mapping mapping;
+      output ComponentRef cref;
+    protected
+      Pointer<Variable> var;
+      Integer arr, start, size;
+      Type ty;
+      list<Integer> sizes, vals;
+    algorithm
+      arr := mapping.var_StA[scal];
+      (start, size) := mapping.var_AtS[arr];
+      var := VariablePointers.getVarAt(vars, arr);
+      Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
+      sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
+      vals := Slice.indexToLocation(scal-start, sizes);
+      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+    end varSlice;
+
   protected
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the name and
@@ -1781,8 +1803,8 @@ public
               VariablePointers.toString(varData.previous, "Previous", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
               VariablePointers.toString(varData.constants, "Constant", false) +
-              VariablePointers.toString(varData.records, "Records", false) +
-              VariablePointers.toString(varData.artificials, "Artificials", false);
+              VariablePointers.toString(varData.records, "Record", false) +
+              VariablePointers.toString(varData.artificials, "Artificial", false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);

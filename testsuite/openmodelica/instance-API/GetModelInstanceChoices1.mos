@@ -25,8 +25,9 @@ getErrorString();
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"b\",
 //       \"type\": \"Boolean\",
 //       \"modifiers\": \"true\",
