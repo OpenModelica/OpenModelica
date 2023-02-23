@@ -46,6 +46,7 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName);
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
 static void checkReturnFlag_SUNLS(int flag, const char *functionName);
+static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
 #endif
 
 /**
@@ -89,6 +90,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
     break;
   case SUNDIALS_SUNLS_FLAG:
     checkReturnFlag_SUNLS(flag, functionName);
+    break;
+  case SUNDIALS_MATRIX_FLAG:
+    checkReturnFlag_SUNMatrix(flag, functionName);
     break;
 #endif
   default:
@@ -438,16 +442,20 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName) {
 }
 
 /**
- * @brief Checks given IDA flag and reports potential error.
+ * @brief Checks given IDA/IDAS flag and reports potential error.
  *
- * @param flag          Return value of Kinsol routine.
+ * Throws on errors.
+ *
+ * TODO: Make it optionla to throw error and only report error instead.
+ *
+ * @param flag          Return value of IDA routine.
  * @param functionName  Name of IDA function that returned the flag.
  */
 static void checkReturnFlag_IDA(int flag, const char *functionName) {
   switch (flag) {
-  case IDA_SUCCESS:
-  case IDA_TSTOP_RETURN:
-  case IDA_ROOT_RETURN:
+  case IDA_SUCCESS:       /* Successful function return. */
+  case IDA_TSTOP_RETURN:  /* IDASolve succeeded by reaching the specified stopping point. */
+  case IDA_ROOT_RETURN:   /* IDASolve succeeded and found one or more roots. */
     break;
   case IDA_WARNING:
     warningStreamPrint(LOG_STDOUT, 0,
@@ -597,6 +605,75 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
                      "##IDA## In function %s: The vector argument where derivative should be stored is NULL.",
                      functionName);
     break;
+  case IDA_NO_QUAD:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Quadratures were not initialized.",
+                     functionName);
+    break;
+  case IDA_QRHS_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side function for quadratures "
+                     "failed in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_FIRST_QRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side function for quadratures "
+                     "failed in an unrecoverable manner on the first call.",
+                     functionName);
+    break;
+  case IDA_REP_QRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided right-hand side repeatedly returned "
+                     "a recoverable error flag, but the solver was unable to recover.",
+                     functionName);
+    break;
+  case IDA_NO_SENS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Sensitivities were not initialized.",
+                     functionName);
+    break;
+  case IDA_SRES_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity residual function failed "
+                     "in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_REP_SRES_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity residual function repeatedly "
+                     "returned a recoverable error flag, but the solver was unable to recover.",
+                     functionName);
+    break;
+  case IDA_BAD_IS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The sensitivity identifier is not valid.",
+                     functionName);
+    break;
+  case IDA_NO_QUADSENS:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: Sensitivity-dependent quadratures were not initialized.",
+                     functionName);
+    break;
+  case IDA_QSRHS_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side function failed in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDA_FIRST_QSRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side function failed in an unrecoverable manner on the first call.",
+                     functionName);
+    break;
+  case IDA_REP_QSRHS_ERR:
+    throwStreamPrint(NULL,
+                     "##IDA## In function %s: The user-provided sensitivity-dependent quadrature "
+                     "righthand side repeatedly returned a recoverable error flag, but the solver "
+                     "was unable to recover.",
+                     functionName);
+    break;
   default:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: Error with flag %i.",
@@ -675,8 +752,8 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
 /**
  * @brief Checks given SUNLS flag and reports potential error.
  *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
+ * @param flag          Return value of SUNLS routine.
+ * @param functionName  Name of SUNLS function that returned the flag.
  */
 static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   switch (flag) {
@@ -775,6 +852,43 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   default:
     throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Checks given SUNMatrix flag and reports potential error.
+ *
+ * @param flag          Return value of SUNMatrix routine.
+ * @param functionName  Name of SUNMatrix function that returned the flag.
+ */
+static void checkReturnFlag_SUNMatrix(int flag, const char *functionName) {
+  switch (flag) {
+  case SUNMAT_SUCCESS:
+    break;
+  case SUNMAT_ILL_INPUT:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Illegal function input.",
+                     functionName);
+    break;
+  case SUNMAT_MEM_FAIL:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Failed memory access/alloc.",
+                     functionName);
+    break;
+  case SUNMAT_OPERATION_FAIL:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: A SUNMatrix operation returned nonzero.",
+                     functionName);
+    break;
+  case SUNMAT_MATVEC_SETUP_REQUIRED:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: The SUNMatMatvecSetup routine needs to be called.",
+                     functionName);
+    break;
+  default:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Error with flag %i.",
                      functionName, flag);
   }
 }
@@ -948,7 +1062,7 @@ void kinsolErrorHandlerFunction(int errorCode, const char* module,
  */
 void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data) {
-  UNUSED(user_data);  /* DIsables compiler warning */
+  UNUSED(user_data);  /* Disables compiler warning */
 
   if (ACTIVE_STREAM(LOG_NLS_V)) {
     warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);

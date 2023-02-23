@@ -37,13 +37,27 @@
 #include "../../simulation_data.h"
 #include "util/parallel_helper.h"
 
+/**
+ * @brief Set element of Jacobian matrix.
+ *
+ * Jac(row, column) = val.
+ *
+ * @param row       Row of matrix element.
+ * @param column    Column of matrix element.
+ * @param nth       Sparsity pattern lead index.
+ * @param value     Value to set in position (i,j).
+ * @param Jac       Pointer to data structure storing matrix.
+ * @param nRows     Number of rows of Jacobian matrix, unused.
+ */
+typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
+
 void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns);
 
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
                                               void* matrixA, ANALYTIC_JACOBIAN* jacColumns,
                                               DATA* data,
                                               threadData_t* threadData,
-                                              void (*setJacElement)(int, int, int, double, void*, int));
+                                              setJacElementFunc setJacElement);
 
 void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns);
 
