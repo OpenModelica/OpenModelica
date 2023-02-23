@@ -1839,6 +1839,7 @@ static int callSparseJacobian(double currentTime, double cj,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
   int i;
+  int flag;
 
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
@@ -1864,7 +1865,8 @@ static int callSparseJacobian(double currentTime, double cj,
 
   /* add cj to diagonal elements and store in Jac */
   if (!idaData->daeMode) {
-    _omc_SUNMatScaleIAdd_Sparse(-cj, Jac);
+    flag = _omc_SUNMatScaleIAdd_Sparse(-cj, Jac);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_MATRIX_FLAG, "_omc_SUNMatScaleIAdd_Sparse");
   }
 
   /* profiling */
@@ -1875,11 +1877,15 @@ static int callSparseJacobian(double currentTime, double cj,
   return 0;
 }
 
-/*! \fn int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
+/**
+ * @brief Calculates A+c*I and stores the result in A.
  *
- *  calculates A+c*I and stores the result in A
+ * TODO: put this into sundials or use another library in the future.
  *
- *  FIXME put this into sundials or use another library in the future.
+ * @param c     Konstant to scale identity matrix I.
+ * @param A     Sparse matrix in CSC or CSR format.
+ * @return int  Returns SUNMAT_SUCCESS on sucess
+ *              or SUNMAT_MEM_FAIL if failed to allocate memroy.
  */
 int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
 {
@@ -2107,7 +2113,6 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
 
   }
   return SUNMAT_SUCCESS;
-
 }
 
 

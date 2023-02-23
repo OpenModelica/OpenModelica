@@ -46,6 +46,7 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName);
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
 static void checkReturnFlag_SUNLS(int flag, const char *functionName);
+static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
 #endif
 
 /**
@@ -89,6 +90,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
     break;
   case SUNDIALS_SUNLS_FLAG:
     checkReturnFlag_SUNLS(flag, functionName);
+    break;
+  case SUNDIALS_MATRIX_FLAG:
+    checkReturnFlag_SUNMatrix(flag, functionName);
     break;
 #endif
   default:
@@ -748,8 +752,8 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
 /**
  * @brief Checks given SUNLS flag and reports potential error.
  *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
+ * @param flag          Return value of SUNLS routine.
+ * @param functionName  Name of SUNLS function that returned the flag.
  */
 static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   switch (flag) {
@@ -848,6 +852,43 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   default:
     throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Checks given SUNMatrix flag and reports potential error.
+ *
+ * @param flag          Return value of SUNMatrix routine.
+ * @param functionName  Name of SUNMatrix function that returned the flag.
+ */
+static void checkReturnFlag_SUNMatrix(int flag, const char *functionName) {
+  switch (flag) {
+  case SUNMAT_SUCCESS:
+    break;
+  case SUNMAT_ILL_INPUT:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Illegal function input.",
+                     functionName);
+    break;
+  case SUNMAT_MEM_FAIL:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Failed memory access/alloc.",
+                     functionName);
+    break;
+  case SUNMAT_OPERATION_FAIL:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: A SUNMatrix operation returned nonzero.",
+                     functionName);
+    break;
+  case SUNMAT_MATVEC_SETUP_REQUIRED:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: The SUNMatMatvecSetup routine needs to be called.",
+                     functionName);
+    break;
+  default:
+    throwStreamPrint(NULL,
+                     "##SUNMatrix## In function %s: Error with flag %i.",
                      functionName, flag);
   }
 }

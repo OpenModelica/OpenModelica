@@ -75,7 +75,9 @@ typedef enum sundialsFlagType {
   SUNDIALS_KIN_FLAG,      /* KINSOL main solver module flags */
   SUNDIALS_KINLS_FLAG,    /* KINSOL linear solver interface flags */
 
-  SUNDIALS_SUNLS_FLAG     /* SUNDIALS linear solver flags */
+  SUNDIALS_SUNLS_FLAG,    /* SUNDIALS linear solver flags */
+
+  SUNDIALS_MATRIX_FLAG    /* SUNMatrix module flags */
 } sundialsFlagType;
 
 /* Function prototypes */
