@@ -1914,10 +1914,32 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.IF_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     else equation
-      Error.addInternalError("BackendEquation.equationKind failed!", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
     then fail();
   end match;
 end equationKind;
+
+public function setEquationKind
+  input output BackendDAE.Equation eq;
+  input output BackendDAE.EquationKind k;
+algorithm
+  eq := match eq
+    local
+      BackendDAE.EquationAttributes a;
+    case BackendDAE.EQUATION(attr=a)          algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.ARRAY_EQUATION(attr=a)    algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.FOR_EQUATION(attr=a)      algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.SOLVED_EQUATION(attr=a)   algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.RESIDUAL_EQUATION(attr=a) algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.WHEN_EQUATION(attr=a)     algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.ALGORITHM(attr=a)         algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.COMPLEX_EQUATION(attr=a)  algorithm a.kind := k; eq.attr := a; then eq;
+    case BackendDAE.IF_EQUATION(attr=a)       algorithm a.kind := k; eq.attr := a; then eq;
+    else algorithm
+      Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
+    then fail();
+  end match;
+end setEquationKind;
 
 public function setEvalStageDynamic
   input output BackendDAE.EvaluationStages evalStage;

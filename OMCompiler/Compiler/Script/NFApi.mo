@@ -97,6 +97,7 @@ import SCodeUtil;
 import ElementSource;
 import InstSettings = NFInst.InstSettings;
 import Testsuite;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 
 public
@@ -828,10 +829,6 @@ algorithm
   end match;
 end getInheritedClasses;
 
-function instAnnotation
-
-end instAnnotation;
-
 uniontype InstanceTree
   record COMPONENT
     InstNode node;
@@ -840,8 +837,8 @@ uniontype InstanceTree
 
   record CLASS
     InstNode node;
-    list<InstanceTree> exts;
-    list<InstanceTree> components;
+    list<InstanceTree> elements;
+    Boolean isExtends;
   end CLASS;
 
   record EMPTY
@@ -903,12 +900,13 @@ function buildInstanceTree
   input Boolean isDerived = false;
   output InstanceTree tree;
 protected
+  InstNode cls_node;
   Class cls;
   ClassTree cls_tree;
-  list<InstanceTree> exts, components;
-  array<InstNode> ext_nodes;
+  list<InstanceTree> elems;
 algorithm
-  cls := InstNode.getClass(InstNode.resolveInner(node));
+  cls_node := InstNode.resolveInner(node);
+  cls := InstNode.getClass(cls_node);
 
   if not isDerived and Class.isOnlyBuiltin(cls) then
     tree := InstanceTree.EMPTY();
@@ -920,20 +918,18 @@ algorithm
   tree := match (cls, cls_tree)
     case (Class.EXPANDED_DERIVED(), _)
       algorithm
-        exts := {buildInstanceTree(cls.baseClass, isDerived = true)};
+        elems := {buildInstanceTree(cls.baseClass, isDerived = true)};
       then
-        InstanceTree.CLASS(node, exts, {});
+        InstanceTree.CLASS(node, elems, isDerived);
 
-    case (_, ClassTree.INSTANTIATED_TREE(exts = ext_nodes))
+    case (_, ClassTree.INSTANTIATED_TREE())
       algorithm
-        exts := list(buildInstanceTree(e, isDerived = true) for e in ext_nodes);
-        components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
-                           for i in cls_tree.localComponents);
+        elems := buildInstanceTreeElements(InstNode.definition(cls_node), cls_tree);
       then
-        InstanceTree.CLASS(node, exts, components);
+        InstanceTree.CLASS(node, elems, isDerived);
 
     case (_, ClassTree.FLAT_TREE())
-      then InstanceTree.CLASS(node, {}, {});
+      then InstanceTree.CLASS(node, {}, isDerived);
 
     else
       algorithm
@@ -943,6 +939,64 @@ algorithm
   end match;
 end buildInstanceTree;
 
+function buildInstanceTreeElements
+  input SCode.Element classDefinition;
+  input ClassTree classTree;
+  output list<InstanceTree> elements = {};
+protected
+  list<SCode.Element> scode_elems;
+  array<Mutable<InstNode>> clss, comps;
+  array<InstNode> exts;
+  Integer cls_index = 1, comp_index = 1, ext_index = 1;
+  InstanceTree tree;
+  list<Integer> local_comps;
+algorithm
+  ClassTree.INSTANTIATED_TREE(classes = clss, components = comps, exts = exts,
+    localComponents = local_comps) := classTree;
+  scode_elems := SCodeUtil.getClassElements(classDefinition);
+
+  if not listEmpty(local_comps) then
+    comp_index :: local_comps := local_comps;
+  end if;
+
+  for e in scode_elems loop
+    elements := match e
+      case SCode.Element.EXTENDS()
+        algorithm
+          tree := buildInstanceTree(exts[ext_index], isDerived = true);
+          ext_index := ext_index + 1;
+        then
+          tree :: elements;
+
+      case SCode.Element.CLASS()
+        guard SCodeUtil.isElementReplaceable(e)
+        algorithm
+          while InstNode.name(Mutable.access(clss[cls_index])) <> e.name loop
+            cls_index := cls_index + 1;
+          end while;
+
+          tree := InstanceTree.CLASS(Mutable.access(clss[cls_index]), {}, false);
+          cls_index := cls_index + 1;
+        then
+          tree :: elements;
+
+      case SCode.Element.COMPONENT()
+        algorithm
+          while InstNode.name(Mutable.access(comps[comp_index])) <> e.name loop
+            comp_index :: local_comps := local_comps;
+          end while;
+
+          tree := buildInstanceTreeComponent(comps[comp_index]);
+        then
+          tree :: elements;
+
+      else elements;
+    end match;
+  end for;
+
+  elements := listReverseInPlace(elements);
+end buildInstanceTreeElements;
+
 function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
   output InstanceTree tree;
@@ -951,7 +1005,7 @@ protected
   InstanceTree cls;
 algorithm
   node := Mutable.access(compNode);
-  cls := buildInstanceTree(InstNode.classScope(node));
+  cls := buildInstanceTree(InstNode.classScope(InstNode.resolveInner(node)));
   tree := InstanceTree.COMPONENT(node, cls);
 end buildInstanceTreeComponent;
 
@@ -963,13 +1017,13 @@ function dumpJSONInstanceTree
   output JSON json = JSON.emptyObject();
 protected
   InstNode node;
-  list<InstanceTree> comps, exts;
+  list<InstanceTree> elems;
   Sections sections;
   Option<SCode.Comment> cmt;
   JSON j;
   SCode.Element def;
 algorithm
-  InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
+  InstanceTree.CLASS(node = node, elements = elems) := tree;
   node := InstNode.resolveInner(node);
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
@@ -983,24 +1037,13 @@ algorithm
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
 
-  if not listEmpty(exts) then
-    json := JSON.addPair("extends", dumpJSONExtendsList(exts, isDeleted), json);
-  end if;
-
   json := dumpJSONCommentOpt(cmt, scope, json);
 
-  if not isDeleted then
-    if not listEmpty(comps) then
-      json := JSON.addPair("components", dumpJSONComponents(comps), json);
-    end if;
+  json := JSON.addPairNotNull("elements", dumpJSONElements(elems, node, isDeleted), json);
 
+  if not isDeleted then
     sections := Class.getSections(InstNode.getClass(node));
     json := dumpJSONEquations(sections, node, json);
-  end if;
-
-  if root then
-    j := dumpJSONReplaceableElements(node);
-    json := JSON.addPairNotNull("replaceable", j, json);
   end if;
 
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
@@ -1030,7 +1073,7 @@ algorithm
       j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
     end for;
 
-    json := JSON.addPair("extends", j, json);
+    json := JSON.addPair("elements", j, json);
   end if;
 
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
@@ -1069,6 +1112,7 @@ function dumpJSONInstanceIconExtends
   input InstNode ext;
   output JSON json = JSON.emptyObject();
 algorithm
+  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
 end dumpJSONInstanceIconExtends;
 
@@ -1082,15 +1126,36 @@ function dumpJSONPath
   output JSON json = JSON.makeString(AbsynUtil.pathString(path));
 end dumpJSONPath;
 
-function dumpJSONExtendsList
-  input list<InstanceTree> exts;
+function dumpJSONElements
+  input list<InstanceTree> elements;
+  input InstNode scope;
   input Boolean isDeleted;
-  output JSON json = JSON.emptyArray();
+  output JSON json = JSON.makeNull();
+protected
+  JSON j;
 algorithm
-  for ext in exts loop
-    json := JSON.addElement(dumpJSONExtends(ext, isDeleted), json);
-  end for;
-end dumpJSONExtendsList;
+  if isDeleted then
+    for e in elements loop
+      j := match e
+        case InstanceTree.CLASS(isExtends = true) then dumpJSONExtends(e, isDeleted);
+        else JSON.makeNull();
+      end match;
+
+      json := JSON.addElementNotNull(j, json);
+    end for;
+  else
+    for e in elements loop
+      j := match e
+        case InstanceTree.CLASS(isExtends = true) then dumpJSONExtends(e, isDeleted);
+        case InstanceTree.CLASS() then dumpJSONReplaceableClass(e.node, scope);
+        case InstanceTree.COMPONENT() then dumpJSONComponent(e.node, e.cls);
+        else JSON.makeNull();
+      end match;
+
+      json := JSON.addElementNotNull(j, json);
+    end for;
+  end if;
+end dumpJSONElements;
 
 function dumpJSONExtends
   input InstanceTree ext;
@@ -1104,6 +1169,7 @@ algorithm
   cls_def := InstNode.definition(node);
   ext_def := InstNode.extendsDefinition(node);
 
+  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
@@ -1114,25 +1180,54 @@ algorithm
   end if;
 end dumpJSONExtends;
 
-function dumpJSONComponents
-  input list<InstanceTree> components;
-  output JSON json = JSON.emptyArray();
+function dumpJSONReplaceableClass
+  input InstNode cls;
+  input InstNode scope;
+  output JSON json = JSON.emptyObject();
 protected
-  InstNode node;
-  JSON j;
+  SCode.Element elem;
+  SCode.ClassDef cdef;
+  InstNode node, derivedNode;
+  Absyn.Path path;
+  list<Absyn.Subscript> dims;
 algorithm
-  for comp in components loop
-    InstanceTree.COMPONENT(node = node) := comp;
-    j := dumpJSONComponent(comp);
+  elem := InstNode.definition(cls);
 
-    if not JSON.isNull(j) then
-      json := JSON.addElement(j, json);
-    end if;
-  end for;
-end dumpJSONComponents;
+  json := JSON.addPair("$kind", JSON.makeString("class"), json);
+  json := JSON.addPair("name", JSON.makeString(InstNode.name(cls)), json);
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
+
+  SCode.Element.CLASS(classDef = cdef) := elem;
+
+  () := match cdef
+    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = SOME(dims)))
+      algorithm
+        try
+          derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
+          json := JSON.addPair("baseClass", dumpJSONNodePath(derivedNode), json);
+        else
+        end try;
+
+        json := JSON.addPairNotNull("dims", dumpJSONDims(dims, {}), json);
+        json := dumpJSONSCodeMod(cdef.modifications, json);
+      then
+        ();
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        json := dumpJSONSCodeMod(cdef.modifications, json);
+      then
+        ();
+
+    else ();
+  end match;
+
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(cls)), json);
+end dumpJSONReplaceableClass;
 
 function dumpJSONComponent
-  input InstanceTree component;
+  input InstNode component;
+  input InstanceTree cls;
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
@@ -1141,11 +1236,9 @@ protected
   Boolean is_constant;
   SCode.Comment cmt;
   SCode.Annotation ann;
-  InstanceTree cls;
   JSON j;
 algorithm
-  InstanceTree.COMPONENT(node = node, cls = cls) := component;
-  node := InstNode.resolveInner(node);
+  node := InstNode.resolveInner(component);
 
   // Skip dumping inner elements that were added by the compiler itself.
   if InstNode.isGeneratedInner(node) then
@@ -1159,6 +1252,7 @@ algorithm
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty, isDeleted = true), json);
         json := dumpJSONSCodeMod(elem.modifications, json);
@@ -1170,6 +1264,7 @@ algorithm
 
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
 
@@ -1180,12 +1275,7 @@ algorithm
 
         json := dumpJSONSCodeMod(elem.modifications, json);
 
-        //if not Type.isComplex(comp.ty) then
-        //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
-        //end if;
-
         is_constant := comp.attributes.variability <= Variability.PARAMETER;
-
         if Binding.isExplicitlyBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
         end if;
@@ -1292,37 +1382,6 @@ algorithm
   end if;
 end dumpJSONBinding;
 
-function dumpJSONBuiltinClassComponents
-  input InstNode clsNode;
-  input output JSON json;
-protected
-  Class cls;
-  ClassTree cls_tree;
-  Component comp;
-  JSON attr_json = JSON.makeNull();
-algorithm
-  cls := InstNode.getClass(clsNode);
-  cls_tree := Class.classTree(cls);
-
-  for c in ClassTree.getComponents(cls_tree) loop
-    comp := InstNode.component(c);
-
-    () := match comp
-      case Component.TYPE_ATTRIBUTE()
-        guard Modifier.hasBinding(comp.modifier)
-        algorithm
-          attr_json := JSON.addPair(Modifier.name(comp.modifier),
-            dumpJSONBinding(Modifier.binding(comp.modifier)), attr_json);
-        then
-          ();
-
-      else ();
-    end match;
-  end for;
-
-  json := JSON.addPairNotNull("attributes", attr_json, json);
-end dumpJSONBuiltinClassComponents;
-
 function dumpJSONClassDims
   input InstNode node;
   input SCode.Element element;
@@ -1351,7 +1410,7 @@ end dumpJSONClassDims;
 function dumpJSONDims
   input list<Absyn.Subscript> absynDims;
   input list<Dimension> typedDims;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   JSON ty_json, absyn_json;
 algorithm
@@ -1360,14 +1419,14 @@ algorithm
     absyn_json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), absyn_json);
   end for;
 
-  json := JSON.addPair("absyn", absyn_json, json);
+  json := JSON.addPairNotNull("absyn", absyn_json, json);
 
   ty_json := JSON.emptyArray();
   for d in typedDims loop
     ty_json := JSON.addElement(JSON.makeString(Dimension.toString(d)), ty_json);
   end for;
 
-  json := JSON.addPair("typed", ty_json, json);
+  json := JSON.addPairNotNull("typed", ty_json, json);
 end dumpJSONDims;
 
 function dumpJSONAttributes

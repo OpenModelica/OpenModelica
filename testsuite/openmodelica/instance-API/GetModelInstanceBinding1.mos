@@ -31,14 +31,16 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"world\",
 //       \"type\": {
 //         \"name\": \"World\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"conf1\",
 //             \"type\": {
 //               \"name\": \"Configuration\",
@@ -56,6 +58,7 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"conf2\",
 //             \"type\": {
 //               \"name\": \"Configuration\",
@@ -107,18 +110,21 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"a\",
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"world\",
 //             \"type\": {
-//               \"name\": \"world\",
+//               \"name\": \"World\",
 //               \"restriction\": \"model\",
-//               \"components\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"conf1\",
 //                   \"type\": {
 //                     \"name\": \"Configuration\",
@@ -136,6 +142,7 @@ getModelInstance(M, prettyPrint = true);
 //                   }
 //                 },
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"conf2\",
 //                   \"type\": {
 //                     \"name\": \"Configuration\",
@@ -176,10 +183,10 @@ getModelInstance(M, prettyPrint = true);
 //               ],
 //               \"source\": {
 //                 \"filename\": \"<interactive>\",
-//                 \"lineStart\": 15,
-//                 \"columnStart\": 5,
-//                 \"lineEnd\": 15,
-//                 \"columnEnd\": 22
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 5,
+//                 \"columnEnd\": 12
 //               }
 //             },
 //             \"prefixes\": {

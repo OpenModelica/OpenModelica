@@ -81,6 +81,7 @@ typedef struct IDA_SOLVER
   double *ypScale;              /* Scaling array fpr derivatives y' */
   double *resScale;             /* Scaling for residual F(t,y,y') */
   modelica_boolean useScaling;  /* Enable / disable scaling of y and yp. */
+  SUNMatrix scaleMatrix;
 
   /* ### work array used in jacobian calculation ### */
   double sqrteps;
@@ -95,8 +96,6 @@ typedef struct IDA_SOLVER
   IDAResFn residualFunction;      /* Residual function forwarded to IDA */
                                   /* See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation */
   IDA_USERDATA* userData;         /* */
-  SUNMatrix tmpJac;
-  SUNMatrix denseJac;
 
   /* linear solver data */
   SUNLinearSolver linSol;   /* Linear solver object */

@@ -57,7 +57,7 @@ static inline void mmc_init_stackoverflow(threadData_t *threadData)
 void mmc_init_stackoverflow(threadData_t *threadData);
 #endif
 
-#if defined(linux)
+#if defined(__linux__)
 static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
 {
   if (oldThreadData)

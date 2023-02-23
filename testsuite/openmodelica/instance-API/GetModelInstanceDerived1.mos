@@ -23,8 +23,9 @@ getErrorString();
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": {
 //         \"name\": \"RealInput\",
@@ -32,8 +33,9 @@ getErrorString();
 //         \"prefixes\": {
 //           \"direction\": \"input\"
 //         },
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": \"Real\"
 //           }
 //         ],
@@ -47,6 +49,7 @@ getErrorString();
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"y\",
 //       \"type\": {
 //         \"name\": \"RealInput2\",
@@ -54,16 +57,18 @@ getErrorString();
 //         \"modifiers\": {
 //           \"start\": \"1.0\"
 //         },
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": {
 //               \"name\": \"RealInput\",
 //               \"restriction\": \"type\",
 //               \"prefixes\": {
 //                 \"direction\": \"input\"
 //               },
-//               \"extends\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"extends\",
 //                   \"baseClass\": \"Real\"
 //                 }
 //               ],
