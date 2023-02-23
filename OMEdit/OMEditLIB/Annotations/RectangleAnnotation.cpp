@@ -275,12 +275,9 @@ void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *RectangleAnnotation::getParentModel() const
+ModelInstance::Extend *RectangleAnnotation::getExtend() const
 {
-  if (mpRectangle) {
-    return mpRectangle->getParentModel();
-  }
-  return 0;
+  return mpRectangle->getParentExtend();
 }
 
 /*!

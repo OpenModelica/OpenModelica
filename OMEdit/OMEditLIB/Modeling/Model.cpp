@@ -251,6 +251,14 @@ namespace ModelInstance
     mpParentModel = pParentModel;
   }
 
+  Extend *Shape::getParentExtend() const
+  {
+    if (mpParentModel && mpParentModel->getParentElement() && mpParentModel->getParentElement()->isExtend()) {
+      return dynamic_cast<ModelInstance::Extend*>(mpParentModel->getParentElement());
+    }
+    return 0;
+  }
+
   Shape::~Shape() = default;
 
   Line::Line(Model *pParentModel)
@@ -745,13 +753,9 @@ namespace ModelInstance
     }
   }
 
-  Model::Model()
+  Model::Model(const QJsonObject &jsonObject, Element *pParentElement)
   {
-    initialize();
-  }
-
-  Model::Model(const QJsonObject &jsonObject)
-  {
+    mpParentElement = pParentElement;
     initialize();
     mModelJson = jsonObject;
     deserialize();
@@ -759,9 +763,6 @@ namespace ModelInstance
 
   Model::~Model()
   {
-    qDeleteAll(mExtends);
-    mExtends.clear();
-
     qDeleteAll(mElements);
     mElements.clear();
 
@@ -851,9 +852,11 @@ namespace ModelInstance
       QString kind = elementObject.value("$kind").toString();
 
       if (kind == "extends") {
-        mExtends.append(new Extend(elementObject));
+        mElements.append(new Extend(this, elementObject));
       } else if (kind == "component") {
-        mElements.append(new Element(this, elementObject));
+        mElements.append(new Component(this, elementObject));
+      } else {
+        qDebug() << "Unhandled kind of element" << kind;
       }
     }
 
@@ -981,33 +984,39 @@ namespace ModelInstance
      *
      * Following is the second case.
      */
-    foreach (auto pExtend, mExtends) {
-      ModelInstance::CoordinateSystem coordinateSystem;
-      if (isIcon) {
-        coordinateSystem = pExtend->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-      } else {
-        coordinateSystem = pExtend->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-      }
+    foreach (auto pElement, mElements) {
+      if (pElement->isExtend() && pElement->getModel()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        ModelInstance::CoordinateSystem coordinateSystem;
+        if (isIcon) {
+          coordinateSystem = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
+        } else {
+          coordinateSystem = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
+        }
 
-      if (!pCoordinateSystem->hasExtent() && coordinateSystem.hasExtent()) {
-        pCoordinateSystem->setExtent(coordinateSystem.getExtent());
-      }
-      if (!pCoordinateSystem->hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
-        pCoordinateSystem->setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
-      }
+        if (!pCoordinateSystem->hasExtent() && coordinateSystem.hasExtent()) {
+          pCoordinateSystem->setExtent(coordinateSystem.getExtent());
+        }
+        if (!pCoordinateSystem->hasPreserveAspectRatio() && coordinateSystem.hasPreserveAspectRatio()) {
+          pCoordinateSystem->setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+        }
 
-      if (!pCoordinateSystem->isComplete()) {
-        pExtend->readCoordinateSystemFromExtendsClass(pCoordinateSystem, isIcon);
+        if (!pCoordinateSystem->isComplete()) {
+          pExtend->getModel()->readCoordinateSystemFromExtendsClass(pCoordinateSystem, isIcon);
+        }
+        break; // we only check coordinate system of first inherited class. See the comment in start of function i.e., "The coordinate systems of the first base-class ..."
       }
-      break; // we only check coordinate system of first inherited class. See the comment in start of function i.e., "The coordinate systems of the first base-class ..."
     }
   }
 
   bool Model::isParameterConnectorSizing(const QString &parameter)
   {
-    foreach (auto pModelElement, mElements) {
-      if (pModelElement->getName().compare(parameter) == 0) {
-        return pModelElement->getAnnotation()->getDialogAnnotation().isConnectorSizing();
+    foreach (auto pElement, mElements) {
+      if (pElement->isComponent()) {
+        auto pComponent = dynamic_cast<Component*>(pElement);
+        if (pComponent->getName().compare(parameter) == 0) {
+          return pComponent->getAnnotation()->getDialogAnnotation().isConnectorSizing();
+        }
       }
     }
     return false;
@@ -1017,14 +1026,17 @@ namespace ModelInstance
   {
     QString value = "";
     foreach (auto pElement, mElements) {
-      if (pElement->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-        value = pElement->getModifier().getValueWithoutQuotes();
-        // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-        if (value.isEmpty() && pElement->getModel()) {
-          value = pElement->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
+      if (pElement->isComponent()) {
+        auto pComponent = dynamic_cast<Component*>(pElement);
+        if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
+          value = pComponent->getModifier().getValueWithoutQuotes();
+          // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
+          if (value.isEmpty() && pComponent->getModel()) {
+            value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
+          }
+          typeName = pComponent->getType();
+          break;
         }
-        typeName = pElement->getType();
-        break;
       }
     }
     return value;
@@ -1033,18 +1045,19 @@ namespace ModelInstance
   QString Model::getParameterValueFromExtendsModifiers(const QString &parameter)
   {
     QString value = "";
-    foreach (auto pExtend, mExtends) {
-      value = pExtend->getExtendsModifier().getModifierValue(QStringList() << parameter);
-      if (!value.isEmpty()) {
-        return value;
-      }
-    }
-
-    if (value.isEmpty()) {
-      foreach (auto pExtend, mExtends) {
-        value = pExtend->getParameterValueFromExtendsModifiers(parameter);
+    foreach (auto pElement, mElements) {
+      if (pElement->isExtend()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        value = pExtend->getExtendsModifier().getModifierValue(QStringList() << parameter);
         if (!value.isEmpty()) {
           return value;
+        } else {
+          if (pExtend->getModel()) {
+            value = pExtend->getModel()->getParameterValueFromExtendsModifiers(parameter);
+            if (!value.isEmpty()) {
+              return value;
+            }
+          }
         }
       }
     }
@@ -1054,17 +1067,19 @@ namespace ModelInstance
 
   FlatModelica::Expression Model::getVariableBinding(const QString &variableName)
   {
-    foreach (auto pElement, mElements) {
-      if (pElement->getName().compare(variableName) == 0) {
-        return pElement->getBinding();
-      }
-    }
-
     FlatModelica::Expression expression;
-    foreach (auto pExtend, mExtends) {
-      expression = pExtend->getVariableBinding(variableName);
-      if (!expression.isNull()) {
-        return expression;
+    foreach (auto pElement, mElements) {
+      if (pElement->isComponent()) {
+        auto pComponent = dynamic_cast<Component*>(pElement);
+        if (pComponent->getName().compare(variableName) == 0) {
+          return pComponent->getBinding();
+        }
+      } else if (pElement->isExtend() && pElement->getModel()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        expression = pExtend->getModel()->getVariableBinding(variableName);
+        if (!expression.isNull()) {
+          return expression;
+        }
       }
     }
 
@@ -1084,7 +1099,6 @@ namespace ModelInstance
     mRedeclare = false;
     mPartial = false;
     mEncapsulated = false;
-    mExtends.clear();
     mComment = "";
     mpAnnotation = std::make_unique<Annotation>(this);
     mElements.clear();
@@ -1259,14 +1273,6 @@ namespace ModelInstance
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;
-    mpModel = 0;
-    initialize();
-  }
-
-  Element::Element(Model *pParentModel, const QJsonObject &jsonObject)
-    : Element(pParentModel)
-  {
-    deserialize(jsonObject);
   }
 
   Element::~Element()
@@ -1276,7 +1282,20 @@ namespace ModelInstance
     }
   }
 
-  void Element::initialize()
+  Component::Component(Model *pParentModel)
+    : Element(pParentModel)
+  {
+    initialize();
+  }
+
+  Component::Component(Model *pParentModel, const QJsonObject &jsonObject)
+    : Element(pParentModel)
+  {
+    initialize();
+    deserialize(jsonObject);
+  }
+
+  void Component::initialize()
   {
     mName = "";
     mCondition = true;
@@ -1300,7 +1319,7 @@ namespace ModelInstance
     mpAnnotation = std::make_unique<Annotation>(mpParentModel);
   }
 
-  void Element::deserialize(const QJsonObject &jsonObject)
+  void Component::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("name")) {
       mName = jsonObject.value("name").toString();
@@ -1314,7 +1333,7 @@ namespace ModelInstance
       if (jsonObject.value("type").isString()) {
         mType = jsonObject.value("type").toString();
       } else if (jsonObject.value("type").isObject()) {
-        mpModel = new Model(jsonObject.value("type").toObject());
+        mpModel = new Model(jsonObject.value("type").toObject(), this);
         mType = mpModel->getName();
       }
     }
@@ -1413,7 +1432,7 @@ namespace ModelInstance
     }
   }
 
-  QString Element::getModifierValueFromType(QStringList modifierNames)
+  QString Component::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.
      * 2. If no unit is found then check it in the derived class modifier value.
@@ -1426,24 +1445,49 @@ namespace ModelInstance
       modifierValue = mpModel->getModifier().getModifierValue(modifierNames);
       // Case 3
       if (modifierValue.isEmpty()) {
-        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
+        modifierValue = Component::getModifierValueFromInheritedType(mpModel, modifierNames);
       }
     }
     return modifierValue;
   }
 
-  QString Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
+  QString Component::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
   {
     QString modifierValue = "";
-    foreach (auto pExtend, pModel->getExtends()) {
-      modifierValue = pExtend->getModifier().getModifierValue(modifierNames);
-      if (modifierValue.isEmpty()) {
-        modifierValue = Element::getModifierValueFromInheritedType(pExtend, modifierNames);
-      } else {
-        return modifierValue;
+    foreach (auto pElement, pModel->getElements()) {
+      if (pElement->isExtend() && pElement->getModel()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        modifierValue = pExtend->getModel()->getModifier().getModifierValue(modifierNames);
+        if (modifierValue.isEmpty()) {
+          modifierValue = Component::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
+        } else {
+          return modifierValue;
+        }
       }
     }
     return modifierValue;
+  }
+
+  Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
+    : Element(pParentModel)
+  {
+    mpExtendsAnnotation = std::make_unique<Annotation>(pParentModel);
+    deserialize(jsonObject);
+  }
+
+  void Extend::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("modifiers")) {
+      mExtendsModifier.deserialize(jsonObject.value("modifiers"));
+    }
+
+    if (jsonObject.contains("annotation")) {
+      mpExtendsAnnotation->deserialize(jsonObject.value("annotation").toObject());
+    }
+
+    if (jsonObject.contains("baseClass")) {
+      mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
+    }
   }
 
   Part::Part()
@@ -1634,34 +1678,6 @@ namespace ModelInstance
 
     if (jsonObject.contains("primitivesVisible")) {
       mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
-    }
-  }
-
-  Extend::Extend()
-    : Model()
-  {
-    mpExtendsAnnotation = std::make_unique<Annotation>(this);
-  }
-
-  Extend::Extend(const QJsonObject &jsonObject)
-    : Extend()
-  {
-    deserialize(jsonObject);
-  }
-
-  void Extend::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("modifiers")) {
-      mExtendsModifier.deserialize(jsonObject.value("modifiers"));
-    }
-
-    if (jsonObject.contains("annotation")) {
-      mpExtendsAnnotation->deserialize(jsonObject.value("annotation").toObject());
-    }
-
-    if (jsonObject.contains("baseClass")) {
-      Model::setModelJson(jsonObject.value("baseClass").toObject());
-      Model::deserialize();
     }
   }
 

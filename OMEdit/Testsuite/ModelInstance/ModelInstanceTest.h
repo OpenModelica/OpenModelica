@@ -59,16 +59,15 @@ private slots:
    */
   void classAnnotations();
   /*!
-   * \brief classComponents
-   * Tests the class components.
+   * \brief classElements
+   * Tests the class elements.
    */
-  void classComponents();
+  void classElements();
   /*!
    * \brief classConnections
    * Tests the class connections.
    */
   void classConnections();
-  void classExtends();
   void cleanupTestCase();
 };
 

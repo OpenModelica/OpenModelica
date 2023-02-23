@@ -276,12 +276,9 @@ void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *BitmapAnnotation::getParentModel() const
+ModelInstance::Extend *BitmapAnnotation::getExtend() const
 {
-  if (mpBitmap) {
-    return mpBitmap->getParentModel();
-  }
-  return 0;
+  return mpBitmap->getParentExtend();
 }
 
 /*!

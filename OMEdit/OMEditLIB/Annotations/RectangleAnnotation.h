@@ -64,7 +64,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
-  ModelInstance::Model *getParentModel() const override;
+  ModelInstance::Extend *getExtend() const override;
   void setRectangle(ModelInstance::Rectangle *pRectangle) {mpRectangle = pRectangle;}
 private:
   ModelInstance::Rectangle *mpRectangle;
