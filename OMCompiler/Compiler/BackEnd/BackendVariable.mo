@@ -1248,14 +1248,18 @@ algorithm
   var.varKind := BackendDAE.PARAM();
 end makeParam;
 
-public function makeParamFixed
+public function makeParamOutputsOnly
   "Change variable to parameter"
   input output BackendDAE.Var var;
   input output Boolean fixed; // also output for traversing
 algorithm
   var.varKind := BackendDAE.PARAM();
   var := setVarFixed(var, fixed);
-end makeParamFixed;
+  var.values := if isSome(var.values) then var.values else SOME(getVariableAttributefromType(var.varType));
+  if isNone(DAEUtil.getFixedAttr(var.values)) then
+    var.values := DAEUtil.setFixedAttr(var.values, SOME(DAE.BCONST(fixed)));
+  end if;
+end makeParamOutputsOnly;
 
 public function isParamOrConstant
 "Return true if variable is parameter or constant"

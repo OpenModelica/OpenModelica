@@ -87,6 +87,7 @@ import SCode;
 import SynchronousFeatures;
 import Tearing;
 import Types;
+import UnorderedMap;
 import Util;
 import Values;
 
@@ -5777,6 +5778,8 @@ protected
   Integer systemNumber=0, numberOfSystems;
 
   list<Integer> eqIndLst, eqIndexLst = {};
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> der_replacement;
+  BackendDAE.Var derVar;
 
   constant Boolean debug = false;
 algorithm
@@ -5897,8 +5900,21 @@ algorithm
       if debug then print("No output variables in this system ("+intString(systemNumber)+"/"+intString(numberOfSystems)+")\n"); end if;
     end if;
 
+    // make unneeded state derivatives and add them to unneeded vars
+    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    for state in BackendVariable.varList(vars) loop
+      if BackendVariable.isStateVar(state) then
+        derVar := BackendVariable.makeVar(ComponentReference.prependStringCref("$DER_REM_", state.varName));
+        UnorderedMap.add(state.varName, Expression.crefExp(derVar.varName), der_replacement);
+        vars := BackendVariable.addVar(derVar, vars);
+      end if;
+    end for;
+
+    // replace unneeded der() calls with derivative crefs
+    eqs := BackendEquation.traverseEquationArray_WithUpdate(eqs, function BackendEquation.traverseExpsOfEquation(inFunc = replaceDerCallOutputsOnly), der_replacement);
+
     // make unneeded vars parameters and equations initial equations
-    (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, BackendVariable.makeParamFixed, false);
+    (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, BackendVariable.makeParamOutputsOnly, false);
     (eqs, _) := BackendEquation.traverseEquationArray_WithUpdate(eqs,BackendEquation.setEquationKind, BackendDAE.INITIAL_EQUATION());
 
     // add unneeded variables and equations
@@ -5919,6 +5935,18 @@ algorithm
   b := intLt(arrayGet(varArr,idx),0);
 end stateVarIsNotVisited;
 
+protected function replaceDerCallOutputsOnly
+  input output DAE.Exp exp;
+  input output UnorderedMap<DAE.ComponentRef, DAE.Exp> der_replacement;
+algorithm
+  exp := match exp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(cr)})
+      then UnorderedMap.getOrDefault(cr, der_replacement, exp);
+    else exp;
+  end match;
+end replaceDerCallOutputsOnly;
 
 // =============================================================================
 // section for initOptModule >>inlineHomotopy<<
