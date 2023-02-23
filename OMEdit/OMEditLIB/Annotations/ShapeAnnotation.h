@@ -215,7 +215,7 @@ public:
   void moveShape(const qreal dx, const qreal dy);
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
-  virtual ModelInstance::Model* getParentModel() const = 0;
+  virtual ModelInstance::Extend* getExtend() const = 0;
   void emitAdded() {emit added();}
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}

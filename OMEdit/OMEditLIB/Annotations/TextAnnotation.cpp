@@ -530,12 +530,9 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *TextAnnotation::getParentModel() const
+ModelInstance::Extend *TextAnnotation::getExtend() const
 {
-  if (mpText) {
-    return mpText->getParentModel();
-  }
-  return 0;
+  return mpText->getParentExtend();
 }
 
 void TextAnnotation::initUpdateTextString()
@@ -571,13 +568,13 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QString displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
           if (MainWindow::instance()->isNewApi()) {
-            ModelInstance::Element* pModelElement = Element::getModelElementByName(mpElement->getRootParentElement()->getModel(), variable);
-            if (pModelElement) {
+            ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
+            if (pModelComponent) {
               if (displayUnit.isEmpty()) {
-                displayUnit = pModelElement->getModifierValueFromType(QStringList() << "displayUnit");
+                displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
               }
               if (unit.isEmpty()) {
-                unit = pModelElement->getModifierValueFromType(QStringList() << "unit");
+                unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
               }
             }
           } else {

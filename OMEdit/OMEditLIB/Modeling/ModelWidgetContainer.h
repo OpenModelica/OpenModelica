@@ -247,7 +247,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
+  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}

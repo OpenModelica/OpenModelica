@@ -248,12 +248,9 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *EllipseAnnotation::getParentModel() const
+ModelInstance::Extend *EllipseAnnotation::getExtend() const
 {
-  if (mpEllipse) {
-    return mpEllipse->getParentModel();
-  }
-  return 0;
+  return mpEllipse->getParentExtend();
 }
 
 /*!

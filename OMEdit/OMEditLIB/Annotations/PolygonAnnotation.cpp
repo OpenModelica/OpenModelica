@@ -320,12 +320,9 @@ void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-ModelInstance::Model *PolygonAnnotation::getParentModel() const
+ModelInstance::Extend *PolygonAnnotation::getExtend() const
 {
-  if (mpPolygon) {
-    return mpPolygon->getParentModel();
-  }
-  return 0;
+  return mpPolygon->getParentExtend();
 }
 
 /*!
