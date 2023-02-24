@@ -34,20 +34,24 @@ getModelInstance(M, prettyPrint=true);
 //         \"annotation\": {
 //           \"Evaluate\": true
 //         },
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"CriticalDamping\",
 //             \"comment\": \"Filter with critical damping\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"Bessel\",
 //             \"comment\": \"Bessel filter\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"Butterworth\",
 //             \"comment\": \"Butterworth filter\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"ChebyshevI\",
 //             \"comment\": \"Chebyshev I filter\"
 //           }
