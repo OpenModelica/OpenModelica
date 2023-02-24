@@ -27,16 +27,19 @@ getModelInstance(M, prettyPrint=true);
 //       \"type\": {
 //         \"name\": \"E2\",
 //         \"restriction\": \"enumeration\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"a\",
 //             \"comment\": \"a\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"b\",
 //             \"comment\": \"b\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"c\",
 //             \"comment\": \"c\"
 //           }

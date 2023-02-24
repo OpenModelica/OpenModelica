@@ -1329,7 +1329,7 @@ algorithm
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(def), node, json);
 
   comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(node)));
-  json := JSON.addPair("components", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
+  json := JSON.addPair("elements", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
 
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
@@ -1349,6 +1349,7 @@ function dumpJSONEnumTypeLiteral
   input InstNode scope;
   output JSON json = JSON.emptyObject();
 algorithm
+  json := JSON.addPair("$kind", JSON.makeString("component"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
   json := dumpJSONCommentOpt(Component.comment(InstNode.component(node)), scope, json);
 end dumpJSONEnumTypeLiteral;

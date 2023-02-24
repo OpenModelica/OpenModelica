@@ -515,7 +515,7 @@ void Parameter::createValueWidget()
   }
   QString constrainedByClassName = QStringLiteral("$Any");
   QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "", restriction = "", elementName = "";
-  QStringList enumerationLiterals, enumerationLiteralsComments, replaceableChoices, choices;
+  QStringList enumerationLiterals, enumerationLiteralsDisplay, replaceableChoices, choices;
 
   switch (mValueType) {
     case Parameter::Boolean:
@@ -531,24 +531,20 @@ void Parameter::createValueWidget()
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->addItem("", "");
-      // add an empty item to comments list to get correct tooltip
-      enumerationLiteralsComments.append("");
       if (MainWindow::instance()->isNewApi()) {
         foreach (auto pModelInstanceElement, mpModelInstanceComponent->getModel()->getElements()) {
           if (pModelInstanceElement->isComponent()) {
             auto pModelInstanceComponent = dynamic_cast<ModelInstance::Component*>(pModelInstanceElement);
             enumerationLiterals.append(pModelInstanceComponent->getName());
-            enumerationLiteralsComments.append(pModelInstanceComponent->getComment());
+            enumerationLiteralsDisplay.append(pModelInstanceComponent->getName() % " " % pModelInstanceComponent->getComment());
           }
         }
       } else {
         enumerationLiterals = pOMCProxy->getEnumerationLiterals(className);
+        enumerationLiteralsDisplay = enumerationLiterals;
       }
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
-        mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
-      }
-      if (MainWindow::instance()->isNewApi()) {
-        Utilities::setToolTip(mpValueComboBox, mpModelInstanceComponent->getModel()->getName(), enumerationLiteralsComments);
+        mpValueComboBox->addItem(enumerationLiteralsDisplay[i], className + "." + enumerationLiterals[i]);
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
