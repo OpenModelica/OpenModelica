@@ -40,12 +40,6 @@ encapsulated uniontype NBMatching
   // SetBased Graph imports
   import NBAdjacency.BipartiteGraph;
   import SBGraph.BipartiteIncidenceList;
-  import SBGraph.VertexDescriptor;
-  import SBGraph.SetType;
-  import SBInterval;
-  import SBMultiInterval;
-  import SBPWLinearMap;
-  import SBSet;
   import NBGraphUtil.{SetVertex, SetEdge};
 
 protected
@@ -103,7 +97,7 @@ public
   algorithm
     (matching, marked_eqns, _, _, _) := continue_(matching, adj, transposed, clear);
     if not partially and not listEmpty(List.flatten(marked_eqns)) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is strcturally singular."});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular."});
       fail();
     end if;
   end regular;
