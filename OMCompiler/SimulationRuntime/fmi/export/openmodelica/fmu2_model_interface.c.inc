@@ -1461,7 +1461,7 @@ fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, si
                                                             /* stringVars */
   for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
     SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-    stateSize += getStringArraySize((char *)(sdata->stringVars), 
+    stateSize += getStringArraySize((char *)(sdata->stringVars),
                                     fmudata->modelData->nVariablesString);
   }
 
@@ -1469,9 +1469,9 @@ fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, si
   stateSize += fmudata->modelData->nParametersReal * sizeof(modelica_real);
   stateSize += fmudata->modelData->nParametersInteger * sizeof(modelica_integer);
   stateSize += fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean);
-  stateSize += getStringArraySize((char *)(internal_state->stringParameter), 
+  stateSize += getStringArraySize((char *)(internal_state->stringParameter),
                                   fmudata->modelData->nParametersString);
-  
+
   *size = stateSize;
   return fmi2OK;
 }
@@ -1494,24 +1494,24 @@ fmi2Status fmi2SerializeFMUstate(fmi2Component c, fmi2FMUstate FMUstate, fmi2Byt
   char *currStr;
   int currStrLen;
   for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
-    SIMULATION_DATA *sdata = 
+    SIMULATION_DATA *sdata =
                         (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
     memcpy(currElement, &(sdata->timeValue), sizeof(modelica_real));
     currElement += sizeof(modelica_real);
-    memcpy(currElement, sdata->realVars, 
+    memcpy(currElement, sdata->realVars,
                         sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
     currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
-    memcpy(currElement, sdata->integerVars, 
+    memcpy(currElement, sdata->integerVars,
                         sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
     currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
     memcpy(currElement, sdata->booleanVars,
                         sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
     currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
 
-    currElement += copyStringArray( (char *)currElement, (char *)(sdata->stringVars), 
+    currElement += copyStringArray( (char *)currElement, (char *)(sdata->stringVars),
                                     fmudata->modelData->nVariablesString);
   }
-  memcpy(currElement, internal_state->realParameter, 
+  memcpy(currElement, internal_state->realParameter,
                       sizeof(modelica_real)*fmudata->modelData->nParametersReal);
   currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
   memcpy(currElement, internal_state->integerParameter,
@@ -1533,7 +1533,7 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
 
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions *) comp->functions;
-  INTERNAL_FMU_STATE *internal_state = 
+  INTERNAL_FMU_STATE *internal_state =
             (INTERNAL_FMU_STATE *) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   DATA *fmudata = (DATA *) comp->fmuData;
@@ -1550,7 +1550,7 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
     /* realVars */
     tmpSimData.realVars = (modelica_real *) functions->
                     allocateMemory(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
-    memcpy(tmpSimData.realVars, currElement, 
+    memcpy(tmpSimData.realVars, currElement,
                                 sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
     currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
 
@@ -1564,7 +1564,7 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
     /* booleanVars */
     tmpSimData.booleanVars = (modelica_boolean *) functions->
                     allocateMemory(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    memcpy(tmpSimData.booleanVars, currElement, 
+    memcpy(tmpSimData.booleanVars, currElement,
                                    sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
     currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
 
@@ -1580,7 +1580,7 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   /* realParameter */
   internal_state->realParameter = (modelica_real *) functions->
                     allocateMemory(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-  memcpy(internal_state->realParameter, currElement, 
+  memcpy(internal_state->realParameter, currElement,
                                         sizeof(modelica_real)*fmudata->modelData->nParametersReal);
   currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
 

@@ -20,8 +20,9 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"pi\",
 //       \"type\": \"Real\",
 //       \"modifiers\": \"3\",
@@ -33,6 +34,7 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"deg\",
 //       \"type\": {
 //         \"name\": \"Angle\",
@@ -43,8 +45,9 @@ getModelInstance(M, prettyPrint = true);
 //             \"$value\": \"\\\"Angle\\\"\"
 //           }
 //         },
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": \"Real\"
 //           }
 //         ],

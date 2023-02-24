@@ -100,8 +100,9 @@ getModelInstance(M, prettyPrint=true);
 //       ]
 //     }
 //   },
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"level\",
 //       \"type\": \"Real\",
 //       \"modifiers\": \"20\",

@@ -133,6 +133,8 @@ private:
     RealAnnotation mLineThickness;
   };
 
+  class Model;
+  class Extend;
   class Shape : public GraphicItem, public FilledShape
   {
   public:
@@ -140,6 +142,7 @@ private:
     virtual ~Shape();
 
     Model *getParentModel() const {return mpParentModel;}
+    Extend *getParentExtend() const;
   private:
     Model *mpParentModel;
   };
@@ -475,21 +478,23 @@ private:
     std::unique_ptr<Annotation> mpAnnotation;
   };
 
-  class Extend;
   class Element;
+  class Component;
   class Connection;
   class Transition;
   class InitialState;
   class Model
   {
   public:
-    Model();
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
+
+    Element *getParentElement() const {return mpParentElement;}
+    Extend *getParentExtend() const;
+    Component *getParentComponent() const;
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
-    Element *getParentElement() const {return mpParentElement;}
     QString getName() const {return mName;}
     QStringList getDims() const {return mDims;}
     QString getRestriction() const {return mRestriction;}
@@ -506,7 +511,6 @@ private:
     bool isRedeclare() const {return mRedeclare;}
     bool isPartial() const {return mPartial;}
     bool isEncapsulated() const {return mEncapsulated;}
-    QList<Extend *> getExtends() const {return mExtends;}
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
@@ -530,8 +534,8 @@ private:
   private:
     void initialize();
 
+    Element *mpParentElement;
     QJsonObject mModelJson;
-    Element *mpParentElement = 0;
     QString mName;
     QStringList mDims;
     QString mRestriction;
@@ -544,7 +548,6 @@ private:
     bool mRedeclare;
     bool mPartial;
     bool mEncapsulated;
-    QList<Extend*> mExtends;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
     QList<Element*> mElements;
@@ -563,19 +566,33 @@ private:
   {
   public:
     Element(Model *pParentModel);
-    ~Element();
+    virtual ~Element();
+
+    Model *getParentModel() const {return mpParentModel;}
+    void setModel(Model *pModel) {mpModel = pModel;}
+    Model *getModel() const {return mpModel;}
+
+    virtual QString getQualifiedName() const = 0;
+    virtual bool isComponent() const = 0;
+    virtual bool isExtend() const = 0;
+  protected:
+    Model *mpParentModel;
+    Model *mpModel = 0;
+  };
+
+  class Component : public Element
+  {
+  public:
+    Component(Model *pParentModel);
+    Component(Model *pParentModel, const QJsonObject &jsonObject);
     void initialize();
     void deserialize(const QJsonObject &jsonObject);
 
-    Model *getParentModel() const {return mpParentModel;}
     void setName(const QString &name) {mName = name;}
     QString getName() const {return mName;}
-    QString getQualifiedName() const;
     bool getCondition() const {return mCondition;}
     void setType(const QString &type) {mType = type;}
     QString getType() const {return mType;}
-    void setModel(Model *pModel) {mpModel = pModel;}
-    Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
     FlatModelica::Expression getBinding() const {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
@@ -597,11 +614,10 @@ private:
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
   private:
-    Model *mpParentModel;
     QString mName;
     bool mCondition;
     QString mType;
-    Model *mpModel;
+
     Modifier mModifier;
     FlatModelica::Expression mBinding;
     FlatModelica::Expression mBindingForReset;
@@ -620,6 +636,29 @@ private:
     std::unique_ptr<Annotation> mpAnnotation;
 
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);
+    // Element interface
+  public:
+    virtual QString getQualifiedName() const override;
+    virtual bool isComponent() const override {return true;}
+    virtual bool isExtend() const override {return false;}
+  };
+
+  class Extend : public Element
+  {
+  public:
+    Extend(Model *pParentModel, const QJsonObject &jsonObject);
+    void deserialize(const QJsonObject &jsonObject);
+
+    Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}
+    Modifier getExtendsModifier() const {return mExtendsModifier;}
+  private:
+    std::unique_ptr<Annotation> mpExtendsAnnotation;
+    Modifier mExtendsModifier;
+    // Element interface
+  public:
+    virtual QString getQualifiedName() const override;
+    virtual bool isComponent() const override {return false;}
+    virtual bool isExtend() const override {return true;}
   };
 
   class Part
@@ -707,19 +746,6 @@ private:
     Model *mpParentModel;
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Annotation> mpAnnotation;
-  };
-
-  class Extend : public Model
-  {
-  public:
-    Extend();
-    void deserialize(const QJsonObject &jsonObject);
-
-    Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}
-    Modifier getExtendsModifier() const {return mExtendsModifier;}
-  private:
-    std::unique_ptr<Annotation> mpExtendsAnnotation;
-    Modifier mExtendsModifier;
   };
 
 }

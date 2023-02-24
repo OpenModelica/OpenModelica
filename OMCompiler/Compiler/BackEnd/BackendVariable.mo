@@ -1248,6 +1248,15 @@ algorithm
   var.varKind := BackendDAE.PARAM();
 end makeParam;
 
+public function makeParamFixed
+  "Change variable to parameter"
+  input output BackendDAE.Var var;
+  input output Boolean fixed; // also output for traversing
+algorithm
+  var.varKind := BackendDAE.PARAM();
+  var := setVarFixed(var, fixed);
+end makeParamFixed;
+
 public function isParamOrConstant
 "Return true if variable is parameter or constant"
   input BackendDAE.Var invar;

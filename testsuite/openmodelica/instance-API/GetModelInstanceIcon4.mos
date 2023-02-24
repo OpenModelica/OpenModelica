@@ -38,12 +38,14 @@ getErrorString();
 // true
 // "{
 //   \"name\": \"M\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
-//         \"extends\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"extends\",
 //             \"baseClass\": {
 //               \"name\": \"Icons.A\"
 //             }

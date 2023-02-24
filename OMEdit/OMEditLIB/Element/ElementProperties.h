@@ -55,9 +55,9 @@ public:
     Choices
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
-  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
+  Parameter(ModelInstance::Component *pComponent, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
-  ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
+  ModelInstance::Component* getModelInstanceComponent() {return mpModelInstanceComponent;}
   void setTab(QString tab) {mTab = tab;}
   StringAnnotation getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
@@ -100,7 +100,7 @@ public:
   void update();
 private:
   Element *mpElement;
-  ModelInstance::Element *mpModelInstanceElement;
+  ModelInstance::Component *mpModelInstanceComponent;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
   StringAnnotation mGroup;
@@ -183,7 +183,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Component *pComponent, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
   ~ElementParameters();
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
@@ -191,7 +191,7 @@ public:
   QString getModification() const {return mModification;}
   void updateParameters();
 private:
-  ModelInstance::Element *mpElement;
+  ModelInstance::Component *mpElement;
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;

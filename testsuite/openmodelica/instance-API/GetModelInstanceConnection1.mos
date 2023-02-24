@@ -32,23 +32,27 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"c1\",
 //             \"type\": {
 //               \"name\": \"C\",
 //               \"restriction\": \"connector\",
-//               \"components\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"e\",
 //                   \"type\": \"Real\"
 //                 },
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"f\",
 //                   \"type\": \"Real\",
 //                   \"prefixes\": {
@@ -66,16 +70,19 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"c2\",
 //             \"type\": {
 //               \"name\": \"C\",
 //               \"restriction\": \"connector\",
-//               \"components\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"e\",
 //                   \"type\": \"Real\"
 //                 },
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"f\",
 //                   \"type\": \"Real\",
 //                   \"prefixes\": {
@@ -121,20 +128,21 @@ getModelInstance(M, prettyPrint = true);
 //           \"columnEnd\": 14
 //         }
 //       }
-//     }
-//   ],
-//   \"components\": [
+//     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"c3\",
 //       \"type\": {
 //         \"name\": \"C\",
 //         \"restriction\": \"connector\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"e\",
 //             \"type\": \"Real\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {

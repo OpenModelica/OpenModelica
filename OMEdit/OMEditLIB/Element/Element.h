@@ -196,9 +196,9 @@ public:
     Port  /* Port Element. */
   };
 
-  Element(ModelInstance::Element *pModelElement, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
+  Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
   Element(ModelInstance::Model *pModel, Element *pParentElement);
-  Element(ModelInstance::Element *pModelElement, Element *pParentElement, Element *pRootParentElement);
+  Element(ModelInstance::Component *pModelComponent, Element *pParentElement, Element *pRootParentElement);
 
   Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo, GraphicsView *pGraphicsView);
   Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement);
@@ -213,8 +213,8 @@ public:
   QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
-  ModelInstance::Element *getModelElement() const {return mpModelElement;}
-  void setModelElement(ModelInstance::Element *pModelElement) {mpModelElement = pModelElement;}
+  ModelInstance::Component *getModelComponent() const {return mpModelComponent;}
+  void setModelComponent(ModelInstance::Component *pModelComponent) {mpModelComponent = pModelComponent;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() const;
   QString getClassName() const;
@@ -305,12 +305,12 @@ public:
   void setBusComponent(Element *pBusComponent);
   Element* getBusComponent() {return mpBusComponent;}
   Element* getElementByName(const QString &elementName);
-  static ModelInstance::Element* getModelElementByName(ModelInstance::Model *pModel, const QString &elementName);
+  static ModelInstance::Component *getModelComponentByName(ModelInstance::Model *pModel, const QString &name);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
 private:
-  ModelInstance::Element *mpModelElement;
+  ModelInstance::Component *mpModelComponent;
   ModelInstance::Model *mpModel;
   QString mName;
   QString mClassName;

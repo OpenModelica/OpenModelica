@@ -23,14 +23,16 @@ getModelInstance(B, prettyPrint=true);
 // "{
 //   \"name\": \"B\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"a\",
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -48,6 +50,7 @@ getModelInstance(B, prettyPrint=true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {

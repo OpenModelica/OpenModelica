@@ -24,14 +24,16 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"a1\",
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"value\": {
@@ -42,6 +44,7 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"y\",
 //             \"type\": \"Real\",
 //             \"value\": {
@@ -77,12 +80,14 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"a2\",
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"value\": {
@@ -94,6 +99,7 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"y\",
 //             \"type\": \"Real\",
 //             \"value\": {

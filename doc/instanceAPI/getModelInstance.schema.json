@@ -18,45 +18,7 @@
     },
     "prefixes": {
       "description": "The class prefixes",
-      "type": "object",
-      "properties": {
-        "public": {
-          "type": "boolean"
-        },
-        "final": {
-          "type": "boolean"
-        },
-        "inner": {
-          "type": "boolean"
-        },
-        "outer": {
-          "type": "boolean"
-        },
-        "replaceable": {
-          "$ref": "#/definitions/replaceablePrefix"
-        },
-        "redeclare": {
-          "type": "boolean"
-        },
-        "partial": {
-          "type": "boolean"
-        },
-        "encapsulated": {
-          "type": "boolean"
-        },
-        "connector": {
-          "type": "string",
-          "enum": ["flow", "stream"]
-        },
-        "variability": {
-          "type": "string",
-          "enum": ["constant", "parameter", "discrete"]
-        },
-        "direction": {
-          "type": "string",
-          "enum": ["input", "output"]
-        }
-      }
+      "$ref": "#/definitions/classPrefixes"
     },
     "modifiers": {
       "description": "Modifier from the SCode",
@@ -65,18 +27,21 @@
     "comment": {
       "$ref": "#/definitions/comment"
     },
-    "extends": {
-      "description": "The extends clauses in the class instance",
+    "elements": {
+      "description": "The elements in the class instance",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/extends"
-      }
-    },
-    "components": {
-      "description": "The components in the class instance",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/component"
+        "oneOf": [
+          {
+            "$ref": "#/definitions/extends"
+          },
+          {
+            "$ref": "#/definitions/component"
+          },
+          {
+            "$ref": "#/definitions/replaceableClass"
+          }
+        ]
       }
     },
     "connections": {
@@ -149,31 +114,6 @@
         "required": ["arguments"]
       }
     },
-    "replaceable": {
-      "description": "The replaceable elements of the class instance",
-      "type": "array",
-      "items": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "name": {
-                "description": "The name of a replaceable component",
-                "type": "string"
-              },
-              "type": {
-                "description": "The type of a replaceable component",
-                "type": "string"
-              }
-            }
-          },
-          {
-            "description": "The name of a replaceable class",
-            "type": "string"
-          }
-        ]
-      }
-    },
     "source": {
       "$ref": "#/definitions/source"
     }
@@ -218,6 +158,10 @@
       "description": "An extends clause",
       "type": "object",
       "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "extends"
+        },
         "modifiers": {
           "description": "SCode modifier on the extends clause",
           "type": "#/definitions/scodeModifier"
@@ -239,7 +183,8 @@
             }
           ]
         }
-      }
+      },
+      "required": ["$kind", "baseClass"]
     },
     "component": {
       "type": "object",
@@ -251,6 +196,10 @@
         {
           "description": "Normal component",
           "properties": {
+            "$kind": {
+              "type": "string",
+              "const": "component"
+            },
             "name": {
               "description": "Name of the component",
               "type": "string"
@@ -329,9 +278,85 @@
               "$ref": "#/definitions/annotation"
             }
           },
-          "required": ["name"]
+          "required": ["$kind", "name", "type"]
         }
       ]
+    },
+    "replaceableClass": {
+      "description": "A replaceable class definition",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "class"
+        },
+        "name": {
+          "description": "Name of the class",
+          "type": "string"
+        },
+        "prefixes": {
+          "description": "The class' prefixes",
+          "$ref": "#/definitions/classPrefixes"
+        },
+        "baseClass": {
+          "description": "The name of the extended class of a short class definition",
+          "type": "string"
+        },
+        "dims": {
+          "description": "The class' dimensions for a short class definition",
+          "$ref": "#/definitions/dimensions"
+        },
+        "modifiers": {
+          "description": "Modifier from the SCode (on short class definitions or class extends)",
+          "$ref": "#/definitions/scodeModifier"
+        },
+        "source": {
+          "$ref": "#/definitions/source"
+        }
+      },
+      "required": ["$kind", "name"]
+    },
+    "classPrefixes": {
+      "description": "The class prefixes",
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "inner": {
+          "type": "boolean"
+        },
+        "outer": {
+          "type": "boolean"
+        },
+        "replaceable": {
+          "$ref": "#/definitions/replaceablePrefix"
+        },
+        "redeclare": {
+          "type": "boolean"
+        },
+        "partial": {
+          "type": "boolean"
+        },
+        "encapsulated": {
+          "type": "boolean"
+        },
+        "connector": {
+          "type": "string",
+          "enum": ["flow", "stream"]
+        },
+        "variability": {
+          "type": "string",
+          "enum": ["constant", "parameter", "discrete"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["input", "output"]
+        }
+      }
     },
     "replaceablePrefix": {
       "oneOf": [

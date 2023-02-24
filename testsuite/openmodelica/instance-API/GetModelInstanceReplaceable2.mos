@@ -20,8 +20,9 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -35,6 +36,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"comment\": \"definition comment\"
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -48,6 +50,7 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"z\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -60,20 +63,6 @@ getModelInstance(M, prettyPrint = true);
 //         }
 //       },
 //       \"comment\": \"definition comment\"
-//     }
-//   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\"
-//     },
-//     {
-//       \"name\": \"y\",
-//       \"type\": \"Real\"
-//     },
-//     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\"
 //     }
 //   ],
 //   \"source\": {

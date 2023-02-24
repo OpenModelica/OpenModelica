@@ -66,10 +66,10 @@ void ModelInstanceTest::classAnnotations()
   }
 }
 
-void ModelInstanceTest::classComponents()
+void ModelInstanceTest::classElements()
 {
   if (mpModelInstance->getElements().isEmpty()) {
-    QFAIL("Failed to read the class components.");
+    QFAIL("Failed to read the class elements.");
   }
 }
 
@@ -77,13 +77,6 @@ void ModelInstanceTest::classConnections()
 {
   if (mpModelInstance->getConnections().isEmpty()) {
     QFAIL("Failed to read the class connections.");
-  }
-}
-
-void ModelInstanceTest::classExtends()
-{
-  if (mpModelInstance->getExtends().isEmpty()) {
-    QFAIL("Failed to read the class extends.");
   }
 }
 

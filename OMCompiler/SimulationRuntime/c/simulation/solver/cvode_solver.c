@@ -222,14 +222,14 @@ static int jacColoredNumericalDense(double currentTime, N_Vector y, N_Vector fy,
  * Not usable at the moment!
  *
  * @param t           Independent variable (time).
- * @param y           Dependent varaible vector.
+ * @param y           Dependent variable vector.
  * @param fy          Current value of f(t,y).
  * @param Jac         Output Jacobian.
  * @param user_data   User supplied data.
  * @param tmp1        Pointer to allocated memory to be used as temp storage or work space.
  * @param tmp2        "
  * @param tmp3        "
- * @return int        Returns 0 on succes, positiv value for recoverable error, negative value for error.
+ * @return int        Returns 0 on success, positive value for recoverable error, negative value for error.
  */
 static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
                              SUNMatrix Jac, void *user_data,
@@ -517,7 +517,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
  * @param solverInfo        Information about main solver. Unused at the moment.
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Return 0 on success.
  */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
@@ -619,13 +619,13 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     infoStreamPrint(LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
     break;
   case COLOREDNUMJAC:
-    throwStreamPrint(threadData, "##CVODE## Linear solver method %s not implemented yet!", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
-    flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
+    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    //flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
+    //checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
+    //infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
   }
 
   /* Set optional non-linear solver module */
@@ -849,11 +849,11 @@ void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData
 /**
  * @brief Main CVODE function to make a step.
  *
- * Integrates on current time intervall.
+ * Integrates on current time interval.
  *
  * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
- * @param cvodeData         CVODE solver data struckt.
+ * @param cvodeData         CVODE solver data struct.
  * @return int              Returns 0 on success and return flag from CVode else.
  */
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)

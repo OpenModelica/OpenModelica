@@ -1,0 +1,162 @@
+// name: GetModelInstanceReplaceable3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    B b;
+
+    replaceable model B
+      Real x;
+    end B;
+
+    replaceable model C
+      Real y;
+    end C;
+
+    replaceable model D = C constrainedby C(y = 1);
+  end A;
+
+  model M
+    extends A(redeclare model B = B, redeclare model C = C(y = 2.0));
+
+    model B
+      Real x = 2.0;
+    end B;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"extends\",
+//       \"modifiers\": {
+//         \"B\": {
+//           \"$value\": \"redeclare model B = B\"
+//         },
+//         \"C\": {
+//           \"$value\": \"redeclare model C = C(y = 2.0)\"
+//         }
+//       },
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"b\",
+//             \"type\": {
+//               \"name\": \"B\",
+//               \"restriction\": \"model\",
+//               \"prefixes\": {
+//                 \"redeclare\": true
+//               },
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": {
+//                     \"name\": \"B\",
+//                     \"restriction\": \"model\",
+//                     \"elements\": [
+//                       {
+//                         \"$kind\": \"component\",
+//                         \"name\": \"x\",
+//                         \"type\": \"Real\",
+//                         \"modifiers\": \"2.0\",
+//                         \"value\": {
+//                           \"binding\": 2
+//                         }
+//                       }
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 19,
+//                       \"columnStart\": 5,
+//                       \"lineEnd\": 21,
+//                       \"columnEnd\": 10
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 17,
+//                 \"columnStart\": 25,
+//                 \"lineEnd\": 17,
+//                 \"columnEnd\": 36
+//               }
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"B\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 19,
+//               \"columnStart\": 5,
+//               \"lineEnd\": 21,
+//               \"columnEnd\": 10
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"C\",
+//             \"prefixes\": {
+//               \"redeclare\": true
+//             },
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 17,
+//               \"columnStart\": 48,
+//               \"lineEnd\": 17,
+//               \"columnEnd\": 68
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"D\",
+//             \"prefixes\": {
+//               \"replaceable\": {
+//                 \"constrainedby\": \"C\",
+//                 \"modifiers\": {
+//                   \"y\": \"1\"
+//                 }
+//               }
+//             },
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 13,
+//               \"columnStart\": 17,
+//               \"lineEnd\": 13,
+//               \"columnEnd\": 29
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 17,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 17,
+//           \"columnEnd\": 69
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 16,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 22,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
