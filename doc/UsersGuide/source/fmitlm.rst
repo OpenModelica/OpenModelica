@@ -152,7 +152,7 @@ The command could be used from command line interface, OMShell,
 OMNotebook or MDT. The importFMU command is also integrated with OMEdit
 through the `File > Import > FMU` dialog: the FMU package is extracted in the directory
 specified by workdir, or in the current directory of omc if not specified, see
-`Tools > Open Working Directory`. 
+`Tools > Open Working Directory`.
 
 The imported FMU is then loaded in the Libraries Browser and can be used as any
 other regular Modelica block.

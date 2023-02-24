@@ -24,7 +24,33 @@ buildModel(problem3); getErrorString();
 // true
 // ""
 //
-//  --- SparsityPattern ---
+//  --- Nonlinear Pattern ---
+// ========================================
+// Number of non zero elements: 0
+// Independents [or inputs] (2)
+// {x[2], x[1]}
+// Dependents [or outputs] (2)
+// {$res_LSJac0_2.$pDERLSJac0.dummyVarLSJac0, $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0}
+// x[2] affects the following (0) outputs
+//   {}
+// x[1] affects the following (0) outputs
+//   {}
+//
+// Transposed pattern
+// $res_LSJac0_2.$pDERLSJac0.dummyVarLSJac0 affects the following (0) outputs
+//   {}
+// $res_LSJac0_1.$pDERLSJac0.dummyVarLSJac0 affects the following (0) outputs
+//   {}
+//
+//  --- Nonlinear Coloring ---
+// ========================================
+// Number of colors: 2
+// The following (1) independents belong to one color
+// 0: {x[2]}
+// The following (1) independents belong to one color
+// 1: {x[1]}
+//
+//  --- Sparsity Pattern ---
 // ========================================
 // Number of non zero elements: 4
 // Independents [or inputs] (2)
@@ -50,7 +76,33 @@ buildModel(problem3); getErrorString();
 // The following (1) independents belong to one color
 // 1: {x[1]}
 //
-//  --- SparsityPattern ---
+//  --- Nonlinear Pattern ---
+// ========================================
+// Number of non zero elements: 0
+// Independents [or inputs] (2)
+// {x[1], x[2]}
+// Dependents [or outputs] (2)
+// {$res_LSJac1_2.$pDERLSJac1.dummyVarLSJac1, $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1}
+// x[1] affects the following (0) outputs
+//   {}
+// x[2] affects the following (0) outputs
+//   {}
+//
+// Transposed pattern
+// $res_LSJac1_2.$pDERLSJac1.dummyVarLSJac1 affects the following (0) outputs
+//   {}
+// $res_LSJac1_1.$pDERLSJac1.dummyVarLSJac1 affects the following (0) outputs
+//   {}
+//
+//  --- Nonlinear Coloring ---
+// ========================================
+// Number of colors: 2
+// The following (1) independents belong to one color
+// 0: {x[1]}
+// The following (1) independents belong to one color
+// 1: {x[2]}
+//
+//  --- Sparsity Pattern ---
 // ========================================
 // Number of non zero elements: 4
 // Independents [or inputs] (2)

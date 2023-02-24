@@ -152,6 +152,27 @@ typedef struct SPARSE_PATTERN
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
 
+/* NONLINEAR_PATTERN
+ *
+ * nonlinear pattern used for initial stability analysis.
+ * The rows and columns are represented in a single vector
+ * with index vectors pointing to the start of each
+ * individual row and column.
+ *
+ * Use freeNonlinearPattern(NONLINEAR_PATTERN *nlp) for "destruction" (see util/jacobian_util.c/h).
+ *
+ */
+typedef struct NONLINEAR_PATTERN
+{
+  unsigned int numberOfVars;           // number of variables
+  unsigned int numberOfEqns;           // number of equations
+  unsigned int numberOfNonlinear;      // number of all nonlinear entries
+  unsigned int* indexVar;              // size: numberOfVars      - starting index of each column for each variable
+  unsigned int* indexEqn;              // size: numberOfEqns      - starting index of each row for each equation
+  unsigned int* columns;               // size: numberOfNonlinear - all columns appended in one vector
+  unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
+} NONLINEAR_PATTERN;
+
 /**
  * @brief Analytic jacobian struct
  *
@@ -312,10 +333,11 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
+  NONLINEAR_PATTERN* nonlinearPattern;
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern);
+  void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);

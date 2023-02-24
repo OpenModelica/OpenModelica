@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,33 +28,14 @@
  *
  */
 
-/*! File jacobian_util.h
+/*! \file newton_diagnostics.h
+ *  Header file for newton diagnostics.
  */
 
-#ifndef OMC_JACOBIAN_UTIL_H
-#define OMC_JACOBIAN_UTIL_H
 
-#include "../simulation_data.h"
+#include "../../openmodelica.h"
+#include "../../simulation_data.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian), SPARSE_PATTERN* sparsePattern);
-ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source);
-void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
-
-SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors);
-void freeSparsePattern(SPARSE_PATTERN *spp);
-enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue);
-
-void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
-
-unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
-unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+/* Function prototypes */
+void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber);

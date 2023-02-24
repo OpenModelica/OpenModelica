@@ -285,6 +285,7 @@ public
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
         inputIndex          = simVar.inputIndex,
+        initNonlinear       = false,  // TODO: Check what to add here!
         matrixName          = simVar.matrixName,
         variability         = NONE(),  //ToDo update this!
         initial_            = NONE(),  //ToDo update this!

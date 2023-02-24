@@ -68,6 +68,7 @@ type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 
 type SparsityPattern = list< tuple<Integer, list<Integer>> >;
+type NonlinearPattern = SparsityPattern; // same structure but different name for the sake of maintenance
 
 uniontype JacobianColumn
   record JAC_COLUMN
@@ -85,6 +86,8 @@ uniontype JacobianMatrix
     String matrixName;                  // unique matrix name
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
+    NonlinearPattern nonlinear;//TS//
+    NonlinearPattern nonlinearT;//TS//
     list<list<Integer>> coloredCols;
     Integer maxColorCols;
     Integer jacobianIndex;
@@ -94,8 +97,7 @@ uniontype JacobianMatrix
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0, {}, NONE());
-
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE());
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 

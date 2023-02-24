@@ -400,7 +400,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -7215,7 +7215,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.VarInnerOuter io;
-      Boolean unreplaceable;
+      Boolean unreplaceable, initNonlinear;
       String name;
       Option<BackendDAE.Var> v;
       Option<DAE.Exp> tplExp;
@@ -7223,22 +7223,22 @@ algorithm
     case NONE()
     then (NONE(), inTypeA);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear)) equation
       (e1_, ext_arg_1) = func(e1, inTypeA);
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
       if referenceEq(e1,e1_) and referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear));
       end if;
     then (v, ext_arg_2);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear)) equation
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
       if referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear));
       end if;
     then (v, ext_arg_2);
 
@@ -10268,6 +10268,43 @@ algorithm
     else false;
   end match;
 end doIndexReduction;
+
+public function markNonlinearIterationVariables
+  input output BackendDAE.BackendDAE dae;
+algorithm
+  dae.eqs := list(markNonlinearIterationVariablesEqSystem(syst) for syst in dae.eqs);
+end markNonlinearIterationVariables;
+
+protected function markNonlinearIterationVariablesEqSystem
+  input output BackendDAE.EqSystem syst;
+algorithm
+  syst := match syst
+    local
+      BackendDAE.StrongComponents comps;
+    case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps)) algorithm
+      for comp in comps loop
+        syst.orderedVars := markNonlinearIterationVariablesStrongComponent(comp, syst.orderedVars);
+      end for;
+    then syst;
+    else syst;
+  end match;
+end markNonlinearIterationVariablesEqSystem;
+
+protected function markNonlinearIterationVariablesStrongComponent
+  input BackendDAE.StrongComponent comp;
+  input output BackendDAE.Variables vars;
+protected
+  list<BackendDAE.Var> nonlinear_iteration_vars;
+algorithm
+  nonlinear_iteration_vars := match comp
+    local
+      BackendDAE.Jacobian jac;
+    case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(jac=jac), linear=false)   then SymbolicJacobian.getNonLinearVariables(jac);
+    case BackendDAE.EQUATIONSYSTEM(jac=jac, jacType=BackendDAE.JAC_GENERIC())                   then SymbolicJacobian.getNonLinearVariables(jac);
+                                                                                                else {};
+  end match;
+  vars := BackendVariable.addVars(nonlinear_iteration_vars, vars);
+end markNonlinearIterationVariablesStrongComponent;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

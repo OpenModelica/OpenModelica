@@ -37,6 +37,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     mixedSystem.c
                     model_help.c
                     newtonIteration.c
+                    newton_diagnostics.c
                     nonlinearSolverHomotopy.c
                     nonlinearSolverHybrd.c
                     nonlinearSolverNewton.c
@@ -76,6 +77,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     mixedSearchSolver.h
                     mixedSystem.h
                     model_help.h
+                    newton_diagnostics.h
                     newtonIteration.h
                     nonlinearSolverHomotopy.h
                     nonlinearSolverHybrd.h

@@ -1650,10 +1650,9 @@ protected
 algorithm
   b := matchcontinue(cr)
     case(DAE.CREF_IDENT(ident=s))
-     then (substring(s, 1, 4) == "$cse");
+     then (stringLength(s) > 3 and substring(s, 1, 4) == "$cse");
     case(DAE.CREF_QUAL(ident=s))
-     then (substring(s, 1, 4) == "$cse");
-    else false;
+     then (stringLength(s) > 3 and substring(s, 1, 4) == "$cse");
   end matchcontinue;
 end isCSECref;
 

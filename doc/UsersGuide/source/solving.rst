@@ -340,7 +340,7 @@ unknowns of the iterative solvers, thus achieving convergence with a few iterati
 are solved anyway, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
 are re-computed and fully consistent with the selected initial conditions, even in case the previously saved simulation results
 refer to a slightly different model configuration. Note that parameters with `fixed = true` will also get their values from the
-imported .mat file, so if you want to change them you need to edit the .mat file accordingly. 
+imported .mat file, so if you want to change them you need to edit the .mat file accordingly.
 
 This option is activated by selecting the simulation result file name in the OMEdit
 *Simulation Setup | Simulation Flag | Equation System Initialization File* input field, or by setting the additional simulation flag
@@ -356,7 +356,7 @@ all parameters and state variables are set to the values loaded from the .mat fi
 to restart a simulation from the final state of a previous one, without bothering about changing the initial conditions
 manually in the Modelica model. Note that the algebraic variables will be recomputed starting from the imported initial
 state and parameter values; the values of algebraic variables in the imported file will be used to initialize iteration
-variables in nonlinear implicit equations of the simulation model, or otherwise ignored. 
+variables in nonlinear implicit equations of the simulation model, or otherwise ignored.
 
 To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
 or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox *Save simulation
@@ -375,7 +375,7 @@ The following minimal working example demonstrates the use of the initial value 
       parameter Real p2 = 2*p1;
       final Real p3 = 3*p1;
     end Base;
-    
+
     model ResultFileGenerator "Dummy model for generating the initial.mat file"
       extends Base(p1 = 7, p2 = 10);
     equation
@@ -388,7 +388,7 @@ The following minimal working example demonstrates the use of the initial value 
       experiment(StopTime = 1),
       __OpenModelica_simulationFlags(r = "initial.mat"));
     end ResultFileGenerator;
-  
+
     model M "Relies on Modelica code only for initialization"
       extends Base(
         v1(start = 14),
@@ -396,16 +396,16 @@ The following minimal working example demonstrates the use of the initial value 
     equation
       (v1 - 3)*(v1 + 10)*(v1 - 15) = 0;
       v2 = time;
-      der(x) = -x;    
+      der(x) = -x;
     initial equation
       x = 6;
     end M;
-    
+
     model M2 "Imports parameters and initial guesses only, solve initial equations"
       extends M;
     annotation(__OpenModelica_simulationFlags(iif = "initial.mat"));
     end M2;
-    
+
     model M3 "import parameters, initial guesses and initial states, skip initial equations"
       extends M;
     annotation(__OpenModelica_simulationFlags(iim = "none", iif = "initial.mat"));

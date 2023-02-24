@@ -21,11 +21,11 @@ loadFile("path/to/MyLibrary");getErrorString();
 setCompilerFlags("-d=optdaedump");getErrorString();
 simulate(MyLibrary.MyModel); getErrorString();
 ```
-You need to run the script from the command line interface. On Linux, you can use your favourite shell, cd to the directory where the .mos file is located and run 
+You need to run the script from the command line interface. On Linux, you can use your favourite shell, cd to the directory where the .mos file is located and run
 ```
 $ omc reproduceBug.mos
 ```
-On Windows, start the command line interface (right-click on the start menu, then run the CMD program), cd to the directory where the .mos file is located and type 
+On Windows, start the command line interface (right-click on the start menu, then run the CMD program), cd to the directory where the .mos file is located and type
 ```
 C:\MyDirectory>"C:\Program Files\OpenModelica1.18.0\bin\omc.exe" reproduceBug.mos
 ```

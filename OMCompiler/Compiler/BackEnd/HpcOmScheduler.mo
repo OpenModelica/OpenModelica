@@ -3546,14 +3546,15 @@ algorithm
       list<SimCodeVar.SimVar> vars;
       String name;
       SimCode.SparsityPattern sparsity,sparsityT;
+      SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;//TS//
       list<list<Integer>> colCols;
       array<Integer> ass;
       Integer newIdx;
       Option<HashTableCrefSimVar.HashTable> crefToSimVarHTJacobian;
-    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass))
+    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass))
       equation
         (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
-   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass));
+   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;

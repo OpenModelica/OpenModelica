@@ -469,6 +469,8 @@ public
             matrixName          = simJac.name,
             sparsity            = simJac.sparsity,
             sparsityT           = simJac.sparsityT,
+            nonlinear           = {}, // kabdelhak: these have to be computed in the backend using the jacobian
+            nonlinearT          = {},
             coloredCols         = simJac.coloring,
             maxColorCols        = simJac.numColors,
             jacobianIndex       = simJac.jacobianIndex,

@@ -696,12 +696,12 @@ For example, assume your model has three top-level inputs named ``u1``, ``u2``, 
   0.0, 0.0, 0.0, 0.0
   1.0, 0.0, 0.0, 0.0
   2.0, 0.0, 0.0, 1.0
-  
+
   "sep=;" time; u3; u2; u1
   0.0; 0.0; 0.0; 0.0
   1.0; 0.0; 0.0; 0.0
   2.0; 0.0; 0.0; 1.0
-  
+
   "sep= " "time" "u3" "u2" "u1"
   0.0 0.0 0.0 0.0
   1.0 0.0 0.0 0.0
@@ -711,7 +711,7 @@ Note that input labels need not be lexicographically ordered, the association be
 
 The CSV-file provides the values of the top level inputs at the specified points in time; linear interpolation is used to provide intermediate values between
 any two subsequent data points. Discontinuous inputs can be obtained by providing two consecutive rows with the same time value, containing the left
-limit values and the right limit values. 
+limit values and the right limit values.
 
 Unless an absolute pathname is provided for the CSV-files, OMEdit will load it from the sub-directory of the working directory which has the same name of the model,
 where all the other input and output data files are located.

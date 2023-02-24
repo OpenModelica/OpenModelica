@@ -34,6 +34,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "../../util/jacobian_util.h"
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
@@ -44,6 +45,7 @@
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
 #include "newtonIteration.h"
+#include "newton_diagnostics.h"
 #endif
 #include "nonlinearSolverHomotopy.h"
 #include "../options.h"
@@ -434,7 +436,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->min = (double*) malloc(size*sizeof(double));
   nonlinsys->max = (double*) malloc(size*sizeof(double));
   /* Init sparsitiy pattern */
-  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, 1 /* true */);
+  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, 1 /* true */, 1 /* true */);
 
   if(nonlinsys->isPatternAvailable) {
     /* only test for singularity if sparsity pattern is supposed to be there */
@@ -659,7 +661,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
-    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 0 /* false */);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 0 /* false */, 0 /* false */);
   }
 
   messageClose(LOG_NLS);
@@ -690,6 +692,7 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
   free(nonlinsys->min);
   free(nonlinsys->max);
   freeValueList(nonlinsys->oldValueList, 1);
+  freeNonlinearPattern(nonlinsys->nonlinearPattern);
 
   /* Free CSV data */
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1214,6 +1217,15 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* print debug initial information */
   infoStreamPrint(LOG_NLS, 1, "############ Solve nonlinear system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   printNonLinearInitialInfo(LOG_NLS, data, nonlinsys);
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* Improve start values with newton diagnostics method */
+  if(omc_flag[FLAG_NEWTON_DIAGNOSTICS] && data->simulationInfo->initial && sysNumber == 0) {
+    infoStreamPrint(LOG_NLS, 0, "Running newton diagnostics");
+    newtonDiagnostics(data, threadData, sysNumber);
+  }
+#endif
+
 
   /* try */
 #ifndef OMC_EMCC

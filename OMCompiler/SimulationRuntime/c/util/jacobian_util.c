@@ -218,3 +218,66 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
   }
   return jacobianMethod;
 }
+
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp) {
+  if (nlp != NULL) {
+    free(nlp->indexVar); nlp->indexVar = NULL;
+    free(nlp->indexEqn); nlp->indexEqn = NULL;
+    free(nlp->columns);  nlp->columns = NULL;
+    free(nlp->rows);     nlp->rows = NULL;
+  }
+}
+
+unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx){
+  unsigned int idx_start = nlp->indexVar[var_idx];
+  unsigned int idx_stop;
+  if (var_idx == nlp->numberOfVars){
+    idx_stop = nlp->numberOfNonlinear;
+  }else{
+    idx_stop = nlp->indexVar[var_idx + 1];
+  }
+
+  unsigned int* col = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
+
+  int index = 0;
+  for(int i = idx_start; i < idx_stop + 1; i++){
+    col[index] = nlp->columns[i];
+    index++;
+  }
+
+  //for(int j = 0; j < nlp->numberOfNonlinear; j++)
+  //  printf("nlp->columns[%d] = %d\n", j, nlp->columns[j]);
+  //for(int j = 0; j < nlp->numberOfVars+1; j++)
+  //  printf("nlp->indexVar[%d] = %d\n", j, nlp->indexVar[j]);
+
+  return col;
+}
+
+unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx){
+  unsigned int idx_start = nlp->indexEqn[eqn_idx];
+  unsigned int idx_stop;
+  if (eqn_idx == nlp->numberOfEqns){
+    idx_stop = nlp->numberOfNonlinear;
+  }else{
+    idx_stop = nlp->indexEqn[eqn_idx + 1];
+  }
+  //printf("   eqn_idx   = %d\n", eqn_idx);
+  //printf("   idx_start = %d\n", idx_start);
+  //printf("   idx_stop  = %d\n", idx_stop);
+  unsigned int* row = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
+
+  int index = 0;
+  for(int i = idx_start; i < idx_stop + 1; i++){
+    row[index] = nlp->rows[i];
+    //printf("      row[index] = row[%d] = %d\n", index, row[index]);
+    index++;
+  }
+
+  //for(int j = 0; j < nlp->numberOfNonlinear; j++)
+  //  printf("nlp->rows[%d] = %d\n", j, nlp->rows[j]);
+  //for(int j = 0; j < nlp->numberOfEqns; j++)
+  //  printf("nlp->indexEqn[%d] = %d\n", j, nlp->indexEqn[j]);
+
+  return row;
+}
+

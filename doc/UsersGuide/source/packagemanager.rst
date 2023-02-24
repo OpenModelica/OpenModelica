@@ -58,7 +58,7 @@ The Package Manager
 
 The Open Source Modelica Consortium (OSMC) maintains a collection of publicly available, open-source Modelica libraries
 on its servers, see https://github.com/OpenModelica/OMPackageManager. These libraries are routinely tested with past
-released versions of OpenModelica, as well as with the current development version on the master branch, see 
+released versions of OpenModelica, as well as with the current development version on the master branch, see
 the `overview report <https://libraries.openmodelica.org/branches/overview-combined.html>`_.
 Based on the testing results and on information gathered from the library developers, these packages are classified
 in terms of level of support in OpenModelica. Backwards-compatibility information is also collected from the
@@ -122,7 +122,7 @@ In this case you have two options:
 - Unload all and Reload XYZ: in this case, all previously loaded libraries, that may generate conflicts, are unloaded first;
   then XYZ is loaded, and finally the right versions of the libraries XYZ uses, as declared in its ``uses`` annotation,
   will be loaded automatically.
-  
+
 If you are normally working with only one version of the Modelica standard library, you can set it to be automatically loaded
 from the Tools|Options|Libraries menu; in case you need to work with a library that uses a previous, non-backwards compatible
 version, the Unload all and Reload option comes handy. Otherwise, you can avoid loading the Modelica library automatically
