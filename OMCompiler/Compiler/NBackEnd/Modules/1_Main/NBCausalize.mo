@@ -165,7 +165,6 @@ public
     (func) := match flag
       case "PFPlusExt"  then causalizePseudoArray;
       case "SBGraph"    then causalizeArray;
-      case "linear"     then causalizeScalar;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
       else algorithm
@@ -179,31 +178,6 @@ public
   // ############################################################
 
 protected
-  function causalizeScalar extends Module.causalizeInterface;
-  protected
-    VariablePointers variables;
-    EquationPointers equations;
-    Adjacency.Matrix adj;
-    Matching matching;
-    list<StrongComponent> comps;
-  algorithm
-    // compress the arrays to remove gaps
-    variables := VariablePointers.compress(system.unknowns);
-    equations := EquationPointers.compress(system.equations);
-
-    // create solvable adjacency matrix for matching and full for sorting
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.SOLVABLE);
-    (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.FULL);
-    comps := Sorting.tarjan(adj, matching, variables, equations);
-
-    system.unknowns := variables;
-    system.equations := equations;
-    system.adjacencyMatrix := SOME(adj);
-    system.matching := SOME(matching);
-    system.strongComponents := SOME(listArray(comps));
-  end causalizeScalar;
-
   function causalizePseudoArray extends Module.causalizeInterface;
   protected
     VariablePointers variables;

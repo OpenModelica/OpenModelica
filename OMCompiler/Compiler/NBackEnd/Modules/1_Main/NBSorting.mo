@@ -218,11 +218,6 @@ public
         Matching phase2_matching;
         array<SuperNode> super_nodes;
 
-      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
-        comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
-        comps := list(StrongComponent.create(idx_lst, matching, vars, eqns) for idx_lst in comps_indices);
-      then comps;
-
       case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         bucket := PseudoBucket.create(matching.eqn_to_var, adj.mapping, adj.modes);
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
@@ -232,8 +227,8 @@ public
 
         // kabdelhak: this matching is superfluous, SuperNode.create always returns these types.
         // it is just safer if something is changed in the future
-        _ := match (phase2_adj, phase2_matching)
-          case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+        _ := match phase2_adj
+          case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
             phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
             comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
           then ();
@@ -371,8 +366,8 @@ public
       list<Integer> var_lst;
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
-      phase2_adj := match (phase2_adj, phase2_matching)
-        case (Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+      phase2_adj := match phase2_adj
+        case Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
           //### 1. store all loop indices ###
           for scc in algebraic_loops loop
             for idx in scc loop
@@ -443,7 +438,7 @@ public
         then phase2_adj;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
       end match;
     /*

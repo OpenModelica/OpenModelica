@@ -179,13 +179,6 @@ public
   algorithm
     // 1. Match the system
     (matching, marked_eqns, mapping, matrixType, matrixStrictness) := match adj
-      // SCALAR
-      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
-        (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
-        (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
-        matching := MATCHING(var_to_eqn, eqn_to_var);
-      then (matching, marked_eqns, NONE(), NBAdjacency.MatrixType.SCALAR, adj.st);
-
       // PSEUDO ARRAY
       case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
@@ -200,7 +193,7 @@ public
 
       // EMPTY
       case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX()
-      then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.FULL);
+      then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.FULL);
 
       // FAIL
       else algorithm

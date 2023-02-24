@@ -246,20 +246,6 @@ public
     end match;
   end getUnsolvableExpCrefs;
 
-  function getDependentCrefIndices
-    "[Adjacency.MatrixType.SCALAR] All equations.
-    Turns cref dependencies into index lists, used for adjacency."
-    input list<ComponentRef> dependencies         "dependent var crefs";
-    input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
-    output list<Integer> indices = {};
-  algorithm
-    for cref in dependencies loop
-      indices := UnorderedMap.getSafe(cref, map, sourceInfo()) :: indices;
-    end for;
-    // remove duplicates and sort
-    indices := List.sort(List.unique(indices), intLt);
-  end getDependentCrefIndices;
-
   function getDependentCrefIndicesPseudoScalar
     "[Adjacency.MatrixType.PSEUDO] Scalar equations.
     Turns cref dependencies into index lists, used for adjacency."
