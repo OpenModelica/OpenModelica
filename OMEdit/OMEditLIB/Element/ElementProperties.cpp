@@ -170,15 +170,15 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
 
   QString start = "";
   bool isParameter = (mpModelInstanceComponent->getVariability().compare(QStringLiteral("parameter")) == 0);
-  // If not a parameter then check for start modifier
-  if (!isParameter && !mShowStartAttribute) {
+  // If mShowStartAttribute is not set then check for start modifier
+  if (!mShowStartAndFixed) {
     start = mpModelInstanceComponent->getModifier().getModifierValue(QStringList() << "start");
     mShowStartAndFixed = !start.isEmpty();
   }
-  /* if start modifier or showStartAttribute and group name is empty then set group name to Initialization.
+  /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
    * else set group name to Parameters for actual parameters or elements that have dialog annotation or replaceable elements.
    */
-  if ((mShowStartAndFixed || mShowStartAttribute) && mGroup.isEmpty()) {
+  if (mShowStartAndFixed && mGroup.isEmpty()) {
     mGroup = "Initialization";
   } else if (mGroup.isEmpty() && (isParameter || mpModelInstanceComponent->getAnnotation()->hasDialogAnnotation() || mpModelInstanceComponent->getReplaceable()->isReplaceable())) {
     mGroup = "Parameters";
@@ -271,7 +271,7 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
   } else {
     setValueWidget(mpModelInstanceComponent->getModifier().getValue(), true, mUnit);
   }
-  if (mShowStartAndFixed || mShowStartAttribute) {
+  if (!start.isEmpty()) {
     setValueWidget(start, true, mUnit);
   }
   update();
@@ -1200,7 +1200,7 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
   foreach (auto pElement, pModelInstance->getElements()) {
     if (pElement->isComponent()) {
       auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
-      // if we already have the parameter from one of the inherited class then just skip this one.
+      // if we already have the parameter with same name then just skip this one.
       if (findParameter(pComponent->getName())) {
         continue;
       }
@@ -1230,18 +1230,9 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
         if (pParametersScrollArea && !pGroupBox) {
           pGroupBox = new GroupBox(pParameter->getGroup());
           pParametersScrollArea->addGroupBox(pGroupBox);
-          mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
-        } else {
-          ParametersScrollArea *pParametersScrollArea;
-          pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
-          GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
-          if (pParametersScrollArea && !pGroupBox) {
-            pGroupBox = new GroupBox(pParameter->getGroup());
-            pParametersScrollArea->addGroupBox(pGroupBox);
-          }
-          // set the group image
-          pGroupBox->setGroupImage(pParameter->getGroupImage());
         }
+        // set the group image
+        pGroupBox->setGroupImage(pParameter->getGroupImage());
       }
       mParametersList.append(pParameter);
     } else if (pElement->isExtend() && pElement->getModel()) {
