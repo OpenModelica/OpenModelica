@@ -278,6 +278,7 @@ constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(ComponentRef.EMPTY(
 function flatten
   input InstNode classInst;
   input String name;
+  input Boolean getConnectionResolved = true;
   output FlatModel flatModel;
 protected
   Sections sections;
@@ -327,17 +328,36 @@ algorithm
   // get inputs and outputs for algorithms now that types are computed
   flatModel.algorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.algorithms);
   flatModel.initialAlgorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.initialAlgorithms);
-
+  
   execStat(getInstanceName());
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
-
-  if settings.arrayConnect then
-    flatModel := resolveArrayConnections(flatModel);
-  else
-    flatModel := resolveConnections(flatModel, deleted_vars, settings);
+  
+  if getConnectionResolved then
+    if settings.arrayConnect then
+      flatModel := resolveArrayConnections(flatModel);
+    else
+      flatModel := resolveConnections(flatModel, deleted_vars, settings);
+    end if;
+    InstUtil.dumpFlatModelDebug("connections", flatModel);
   end if;
-  InstUtil.dumpFlatModelDebug("connections", flatModel);
 end flatten;
+
+function flattenConnection
+  input InstNode classInst;
+  input String name;
+  output Connections conns;
+protected
+  FlatModel flatModel;
+  UnorderedSet<ComponentRef> deleted_vars;
+algorithm
+  flatModel := flatten(classInst, name, false);
+  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
+  // get the connections from the model
+  (flatModel, conns) := Connections.collect(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
+  // Elaborate expandable connectors.
+  (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+end flattenConnection;
 
 function collectFunctions
   input FlatModel flatModel;

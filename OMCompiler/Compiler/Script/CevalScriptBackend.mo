@@ -2785,6 +2785,9 @@ algorithm
 
     case ("getNthConnection",_) then ValuesUtil.makeArray({});
 
+    case ("getConnectionList", {Values.CODE(Absyn.C_TYPENAME(path))})
+      then getConnectionList(path);
+
     case ("getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
         absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
@@ -8610,6 +8613,22 @@ algorithm
 
   result := Values.STRING(str);
 end instantiateModel;
+
+protected function getConnectionList
+"@author: rahulp
+  Returns a list of all connect equations including those in loops"
+  input Absyn.Path className;
+  output Values.Value valList;
+  protected
+    SCode.Program sp, annotation_sp;
+    list<list<String>> connList;
+  algorithm
+    annotation_sp := AbsynToSCode.translateAbsyn2SCode(InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    (_, sp) := FBuiltin.getInitialFunctions();
+    sp := listAppend(SymbolTable.getSCode(), sp);
+    connList := NFInst.instClassForConnection(className, sp, annotation_sp);
+    valList := ValuesUtil.makeArray(list(ValuesUtil.makeArray(List.map(conn, ValuesUtil.makeString)) for conn in connList));
+end getConnectionList;
 
 protected function runConversionScript
   input Absyn.Path clsPath;

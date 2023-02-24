@@ -309,5 +309,12 @@ public
     str := stringDelimitList(strl, "\n");
   end toString;
 
+  function toStringList
+    input Connections conns;
+    output list<list<String>> strl = {};
+  algorithm
+    strl := list({Connector.toString(c.lhs), Connector.toString(c.rhs)} for c in conns.connections);
+  end toStringList;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFConnections;
