@@ -155,7 +155,7 @@ public
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
   algorithm
-    _ := match Pointer.access(state)
+    () := match Pointer.access(state)
       local
         ComponentRef name, start_name;
         Pointer<Variable> var_ptr, start_var;
@@ -283,7 +283,7 @@ public
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_pre_eqs;
     input Pointer<Integer> idx;
   algorithm
-    _ := match Pointer.access(disc_state)
+    () := match Pointer.access(disc_state)
       local
         Pointer<Variable> previous;
         Pointer<BEquation.Equation> pre_eq;

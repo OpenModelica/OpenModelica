@@ -248,62 +248,6 @@ public
     end match;
   end isEqual;
 
-  function create
-    input list<Integer> comp_indices;
-    input Matching matching;
-    input VariablePointers vars;
-    input EquationPointers eqns;
-    output StrongComponent comp;
-  algorithm
-    comp := match matching
-
-      case Causalize.ARRAY_MATCHING() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array strong components are not yet supported."});
-      then fail();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-      then fail();
-    end match;
-  end create;
-
-  function createPseudo
-    input list<Integer> comp_indices;
-    input array<Integer> eqn_to_var;
-    input VariablePointers vars;
-    input EquationPointers eqns;
-    input Adjacency.Mapping mapping;
-    input Adjacency.CausalizeModes modes;
-    input PseudoBucket bucket;
-    output Option<StrongComponent> comp;
-  algorithm
-    comp := match comp_indices
-      local
-        Integer i, mode;
-        PseudoBucketValue val;
-        PseudoBucketKey key;
-        ComponentRef cref_to_solve;
-        list<Integer> eqn_scal_indices;
-        list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
-        list<StrongComponent> entwined = {};
-
-      case {i} guard(Adjacency.CausalizeModes.contains(i, modes)) algorithm
-        if bucket.marks[i] then
-          // has already been created
-          comp := NONE();
-        else
-          // get mode and bucket
-          mode := Adjacency.CausalizeModes.get(i, eqn_to_var[i], modes);
-          val  := PseudoBucket.get(i, mapping.eqn_StA[i], mode, bucket);
-          comp := SOME(createPseudoSlice(mapping.eqn_StA[i], val.cref_to_solve, val.eqn_scal_indices, eqns, mapping));
-        end if;
-      then comp;
-
-      // if it is no array structure just use scalar
-      else SOME(createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns));
-    end match;
-  end createPseudo;
-
   function createPseudoSlice
     input Integer eqn_arr_idx;
     input ComponentRef cref_to_solve;
@@ -487,7 +431,7 @@ public
     input Boolean pseudo                                      "true if arrays are unscalarized";
     input JacobianType jacType                                "sets the context";
   algorithm
-    _ := match comp
+    () := match comp
       local
         Pointer<Equation> eqn_ptr;
         ComponentRef cref;

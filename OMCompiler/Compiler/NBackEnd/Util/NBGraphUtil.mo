@@ -182,7 +182,7 @@ public
         SOME((eqn_mi, eqn_d)) := eqn_tpl_opt;
       end if;
 
-      _ := match eqn
+      () := match eqn
         local
           Expression range;
           Equation body;
@@ -244,7 +244,7 @@ public
       input UnorderedMap<SetEdge, Integer> edgeMap;
       input UnorderedMap<ComponentRef, Integer> map    "unordered map to check for relevance";
     algorithm
-      _ := match exp
+      () := match exp
         local
           ComponentRef cref;
           SBMultiInterval eqn_mi, var_mi;

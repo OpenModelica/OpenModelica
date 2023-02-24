@@ -3540,7 +3540,7 @@ function getConnectionList "returns an array of all connections including those 
 external "builtin";
 annotation(
   Documentation(info="<html>
-Returns a list of all connect equations including those in loops. For example: 
+Returns a list of all connect equations including those in loops. For example:
 <pre>{{\"connection1.lhs\",\"connection1.rhs\"}, {\"connection2.lhs\",\"connection2.rhs\"}}</pre>
 </html>"),
   preferredView="text");

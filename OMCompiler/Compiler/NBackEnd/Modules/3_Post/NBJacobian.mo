@@ -120,7 +120,7 @@ public
             newEvents := syst::newEvents;
           end for;
 
-          _ := match systemType
+          () := match systemType
             case NBSystem.SystemType.ODE algorithm
               bdae.ode := newSystems;
               bdae.ode_event := newEvents;
@@ -187,7 +187,7 @@ public
       jacobian := match jacobian case BackendDAE.JACOBIAN() algorithm jacobian.name := name; then jacobian; end match;
     else
       for jac in jacobians loop
-        _ := match jac
+        () := match jac
           local
             VarData tmpVarData;
             SparsityPattern tmpPattern;

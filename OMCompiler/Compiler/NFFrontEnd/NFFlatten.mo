@@ -328,10 +328,10 @@ algorithm
   // get inputs and outputs for algorithms now that types are computed
   flatModel.algorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.algorithms);
   flatModel.initialAlgorithms := list(Algorithm.setInputsOutputs(al) for al in flatModel.initialAlgorithms);
-  
+
   execStat(getInstanceName());
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
-  
+
   if getConnectionResolved then
     if settings.arrayConnect then
       flatModel := resolveArrayConnections(flatModel);

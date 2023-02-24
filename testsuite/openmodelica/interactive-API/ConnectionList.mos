@@ -6,12 +6,12 @@
 //
 
 loadString("
-  model M 
-    connector A 
+  model M
+    connector A
     end A;
-    connector B 
+    connector B
     end B;
-    
+
     parameter Integer n = 3;
     A a[n], c;
     B b[n], d;
@@ -35,7 +35,7 @@ loadString("
     end A;
     connector B
     end B;
-   
+
     parameter Integer n = 5;
     A a[n];
     B b[n];

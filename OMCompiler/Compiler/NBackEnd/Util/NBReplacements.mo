@@ -93,7 +93,7 @@ public
     input StrongComponent comp;
     input UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    _ := match comp
+    () := match comp
       local
         ComponentRef varName;
         Equation solvedEq;
@@ -114,7 +114,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();
         end if;
-      then replacements;
+      then ();
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component is not simple: " + StrongComponent.toString(comp)});

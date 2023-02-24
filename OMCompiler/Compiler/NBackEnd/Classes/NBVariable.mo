@@ -572,7 +572,7 @@ public
     output ComponentRef der_cref      "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    _ := match ComponentRef.node(cref)
+    () := match ComponentRef.node(cref)
       local
         InstNode derNode;
         Pointer<Variable> state, dummy_ptr = Pointer.create(DUMMY_VARIABLE);
@@ -778,7 +778,7 @@ public
     input output ComponentRef cref    "old component reference to new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    _ := match ComponentRef.node(cref)
+    () := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> disc;
@@ -831,7 +831,7 @@ public
     input String name                 "name of the matrix this seed belongs to";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    _ := match ComponentRef.node(cref)
+    () := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
@@ -864,7 +864,7 @@ public
     input String name                 "name of the matrix this partial derivative belongs to";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    _ := match ComponentRef.node(cref)
+    () := match ComponentRef.node(cref)
       local
         InstNode qual;
         Variable var;
@@ -916,7 +916,7 @@ public
     input output ComponentRef cref    "old component reference to new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    _ := match ComponentRef.node(cref)
+    () := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
@@ -1408,7 +1408,7 @@ public
       Integer index;
     algorithm
       var := Pointer.access(varPointer);
-      _ := match UnorderedMap.get(var.name, variables.map)
+      () := match UnorderedMap.get(var.name, variables.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.update(index, varPointer, variables.varArr);
         then ();
@@ -1428,7 +1428,7 @@ public
       Integer index;
     algorithm
       var := Pointer.access(var_ptr);
-      _ := match UnorderedMap.get(var.name, variables.map)
+      () := match UnorderedMap.get(var.name, variables.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.delete(index, variables.varArr);
           // set the index to -1 to avoid removing entries

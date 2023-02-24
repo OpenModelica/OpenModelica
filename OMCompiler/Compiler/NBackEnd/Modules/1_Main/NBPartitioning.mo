@@ -405,7 +405,7 @@ protected
     input System.SystemType systemType;
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(not ComponentRef.isTime(exp.cref)) algorithm
         _ := collectPartitionsCref(exp.cref, eqCref, systemType, map);
       then ();
@@ -447,7 +447,7 @@ protected
       end match;
 
       if not b then
-        _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
+        () := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
           local
             ClusterPointer cluster1, cluster2;
             Cluster c;
