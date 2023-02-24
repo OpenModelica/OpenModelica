@@ -219,7 +219,6 @@ private:
 
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
-  void createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert = false);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementModifiers();
   void fetchClassExtendsModifiers();

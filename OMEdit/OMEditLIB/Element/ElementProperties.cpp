@@ -1091,11 +1091,6 @@ void ElementParameters::setUpDialog()
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(mpElement->getModel());
-  /* We append the actual Element's parameters first so that they appear first on the list.
-   * For that we use QList insert instead of append in ElementParameters::createTabsGroupBoxesAndParametersHelper() function.
-   * Modelica.Electrical.Analog.Basic.Resistor order is wrong if we don't use insert.
-   */
-  createTabsGroupBoxesAndParametersHelper(mpElement->getModel(), true);
   fetchElementExtendsModifiers(mpElement->getModel());
   fetchElementModifiers();
   fetchClassExtendsModifiers();
@@ -1120,11 +1115,11 @@ void ElementParameters::setUpDialog()
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
 
-          if (pParameter->getModifyReplaceableButton()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getModifyReplaceableButton(), layoutIndex, columnIndex++);
-          } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
-          }
+//          if (pParameter->getModifyReplaceableButton()) {
+//            pGroupBoxGridLayout->addWidget(pParameter->getModifyReplaceableButton(), layoutIndex, columnIndex++);
+//          } else {
+//            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+//          }
 
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
@@ -1207,23 +1202,6 @@ void ElementParameters::setUpDialog()
 void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance)
 {
   foreach (auto pElement, pModelInstance->getElements()) {
-    if (pElement->isExtend() && pElement->getModel()) {
-      auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
-      createTabsGroupBoxesAndParameters(pExtend->getModel());
-      createTabsGroupBoxesAndParametersHelper(pExtend->getModel());
-    }
-  }
-}
-
-/*!
- * \brief ElementParameters::createTabsGroupBoxesAndParametersHelper
- * \param pModelInstance
- * \param useInsert
- */
-void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::Model *pModelInstance, bool useInsert)
-{
-  int insertIndex = 0;
-  foreach (auto pElement, pModelInstance->getElements()) {
     if (pElement->isComponent()) {
       auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
       // if we already have the parameter from one of the inherited class then just skip this one.
@@ -1242,7 +1220,6 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
       }
       // create the Parameter
       Parameter *pParameter = new Parameter(pComponent, this);
-
       if (!mTabsMap.contains(pParameter->getTab())) {
         ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
         GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
@@ -1270,13 +1247,10 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(ModelInstance::M
           pGroupBox->setGroupImage(pParameter->getGroupImage());
         }
       }
-
-      if (useInsert) {
-        mParametersList.insert(insertIndex, pParameter);
-      } else {
-        mParametersList.append(pParameter);
-      }
-      insertIndex++;
+      mParametersList.append(pParameter);
+    } else if (pElement->isExtend() && pElement->getModel()) {
+      auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
+      createTabsGroupBoxesAndParameters(pExtend->getModel());
     }
   }
 }
