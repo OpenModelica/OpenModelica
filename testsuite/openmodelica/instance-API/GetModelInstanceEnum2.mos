@@ -1,0 +1,68 @@
+// name: GetModelInstanceEnum2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    type E1 = enumeration(a \"a\", b \"b\", c \"c\");
+    type E2 = E1;
+    parameter E2 e;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"e\",
+//       \"type\": {
+//         \"name\": \"E2\",
+//         \"restriction\": \"enumeration\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"a\",
+//             \"comment\": \"a\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"b\",
+//             \"comment\": \"b\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"c\",
+//             \"comment\": \"c\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 17
+//         }
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 6,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

@@ -12,10 +12,10 @@ model Splitter5g
   Real P2(uncertain = Uncertainty.refine); // Variable of interest;
   Real P3(uncertain = Uncertainty.refine); // Variable of interest;
 
-  Real P01 = 10 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
-  Real Q02 = 1 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
-  Real Q03 = 1 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
-  Real h01 = 1e5 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
+  Real P01(uncertain = Uncertainty.propagate) = 10 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
+  Real Q02(uncertain = Uncertainty.propagate) = 1 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
+  Real Q03(uncertain = Uncertainty.propagate) = 1 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
+  Real h01(uncertain = Uncertainty.propagate) = 1e5 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
   Real h02 = 1e5 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
   Real h03 = 1e5 annotation(__OpenModelica_BoundaryCondition = true); // Boundary condition
   parameter Real cp = 5000;

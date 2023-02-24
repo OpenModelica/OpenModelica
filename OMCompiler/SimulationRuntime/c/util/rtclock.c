@@ -431,7 +431,7 @@ int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
 static clockid_t omc_clock = OMC_CLOCK_MONOTONIC;
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
   omc_clock = newClock == OMC_CLOCK_REALTIME ? OMC_CLOCK_MONOTONIC : CLOCK_PROCESS_CPUTIME_ID;
 #else
   omc_clock = OMC_CLOCK_MONOTONIC;

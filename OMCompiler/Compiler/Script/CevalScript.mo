@@ -99,6 +99,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import PackageManagement;
 import Parser;
 import Print;
 import SCode;
@@ -369,6 +370,8 @@ public function loadModel
 protected
   Boolean b;
 algorithm
+  PackageManagement.installCachedPackages();
+
   for m in imodelsToLoad loop
     (pnew, b) := loadModel1(m, modelicaPath, forceLoad, notifyLoad,
       checkUses, requireExactVersion, encrypted, pathToFile, pnew);
@@ -392,12 +395,12 @@ protected
   Boolean onlyCheckFirstModelicaPath;
   Absyn.Path path;
   list<String> versionsLst;
-  String pathStr, versions, version, thisModelicaPath, dir;
+  String pathStr, versions, version, thisModelicaPath, dir, requestedBy;
   Absyn.Program pnew;
   ErrorTypes.MessageTokens msgTokens;
   Option<Absyn.Class> cl;
 algorithm
-  (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
+  (path, requestedBy, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
     thisModelicaPath::_ := System.strtok(modelicaPath, Autoconf.groupDelimiter);
@@ -423,7 +426,7 @@ algorithm
 
       if notifyLoad and not forceLoad then
         version := getPackageVersion(path, pnew);
-        msgTokens := {AbsynUtil.pathString(path), version};
+        msgTokens := {AbsynUtil.pathString(path), version, requestedBy};
         Error.addMessage(Error.NOTIFY_LOAD_MODEL_DUE_TO_USES, msgTokens);
         System.loadModelCallBack(AbsynUtil.pathFirstIdent(path));
       end if;
@@ -2245,7 +2248,7 @@ algorithm
 
         System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
 
         w := InteractiveUtil.buildWithin(funcpath);
 

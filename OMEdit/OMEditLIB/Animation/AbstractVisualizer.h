@@ -35,17 +35,18 @@
 #ifndef ABSTRACTVISUALIZER_H
 #define ABSTRACTVISUALIZER_H
 
+#include <string>
 #include <iostream>
 
-#include "rapidxml.hpp"
-
 #include <QOpenGLContext> // must be included before OSG headers
+#include <QColor>
 
 #include <osg/Vec3f>
 #include <osg/Matrix>
 #include <osg/Uniform>
+#include <osg/Transform>
 
-#include <QColor>
+#include "rapidxml.hpp"
 
 enum class VisualizerType {shape, vector, surface};
 
@@ -94,18 +95,27 @@ public:
   unsigned int fmuValueRef;
 };
 
+class ShapeObject;
+class VectorObject;
+typedef void SurfaceObject;
+
 class AbstractVisualizerObject
 {
 public:
   AbstractVisualizerObject(const VisualizerType type);
   virtual ~AbstractVisualizerObject() = 0;
   virtual void dumpVisualizerAttributes() const;
+  virtual ShapeObject* asShape() {return nullptr;}
+  virtual VectorObject* asVector() {return nullptr;}
+  virtual SurfaceObject* asSurface() {return nullptr;}
   virtual bool isShape() const final {return mVisualizerType == VisualizerType::shape;}
   virtual bool isVector() const final {return mVisualizerType == VisualizerType::vector;}
   virtual bool isSurface() const final {return mVisualizerType == VisualizerType::surface;}
   virtual VisualizerType getVisualizerType() const final {return mVisualizerType;}
   virtual StateSetAction getStateSetAction() const final {return mStateSetAction;}
   virtual void setStateSetAction(const StateSetAction action) final {mStateSetAction = action;}
+  virtual osg::ref_ptr<osg::Transform> getTransformNode() const final {return mTransformNode;}
+  virtual void setTransformNode(const osg::ref_ptr<osg::Transform> transform) final {mTransformNode = transform;}
   virtual std::string getTextureImagePath() const final {return mTextureImagePath;}
   virtual void setTextureImagePath(const std::string texture) final {mTextureImagePath = texture;}
   virtual float getTransparency() const final {return mTransparency;}
@@ -117,6 +127,7 @@ public:
 private:
   VisualizerType mVisualizerType;
   StateSetAction mStateSetAction;
+  osg::ref_ptr<osg::Transform> mTransformNode;
   std::string mTextureImagePath;
   float mTransparency;
 public:

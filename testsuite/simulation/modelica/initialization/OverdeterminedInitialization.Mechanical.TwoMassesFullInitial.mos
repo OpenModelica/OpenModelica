@@ -1,9 +1,9 @@
 // name: OverdeterminedInitialization.Mechanical.TwoMassesFullInitial
 // keywords: initialization, over-determined
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
 setCommandLineOptions("-d=initialization"); getErrorString();
@@ -25,7 +25,7 @@ simulate(OverdeterminedInitialization.Mechanical.TwoMassesFullInitial); getError
 // end SimulationResult;
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.v = $START.mass1.v ($START.mass2.v = $START.mass1.v)
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass2.s = $START.mass2.s ($START.mass1.s + 0.5 * (mass1.L + mass2.L) = $START.mass2.s)
-// Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization sytem:
+// Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization system:
 //          mass1.v = $START.mass1.v
 //          mass2.s = $START.mass2.s.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

@@ -173,7 +173,7 @@ algorithm
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
   FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
-  outString := Tpl.tplString2(AbsynDumpTpl.dumpClass, inClass, defaultDumpOptions);
+  outString := Tpl.tplString3(AbsynDumpTpl.dumpClass, inClass, "", defaultDumpOptions);
   FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassStr;
 
@@ -815,6 +815,34 @@ algorithm
   outString := Tpl.tplString(AbsynDumpTpl.dumpElementArg,inElementArg);
   FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseElementArgStr;
+
+public function shouldSeparateAfterElementArg
+  input list<Absyn.ElementArg> args;
+  output list<tuple<Absyn.ElementArg,Boolean>> outArgs;
+protected
+  Integer numNonComment=0, cur=0;
+  Boolean b;
+algorithm
+  for arg in args loop
+    numNonComment := match arg
+      case Absyn.ELEMENTARGCOMMENT() then numNonComment;
+      else numNonComment + 1;
+    end match;
+  end for;
+  outArgs := {};
+  for arg in args loop
+    b := match arg
+      case Absyn.ELEMENTARGCOMMENT() then false;
+      else
+        algorithm
+          cur := cur + 1;
+        then cur < numNonComment;
+    end match;
+    outArgs := (arg,b)::outArgs;
+  end for;
+  outArgs := listReverse(outArgs);
+end shouldSeparateAfterElementArg;
+
 
 public function unparseElementItemStr
   "Prettyprints and ElementItem."
@@ -3353,7 +3381,7 @@ algorithm
       Absyn.Restriction restriction;
       Absyn.ClassDef    body;
       SourceInfo info;
-    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info)
+    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,_,_,info)
       equation
         Print.printBuf("record Absyn.CLASS name = \"");
         Print.printBuf(name);

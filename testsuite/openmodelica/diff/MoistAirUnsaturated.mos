@@ -1,0 +1,29 @@
+// depends: MoistAirUnsaturatedBefore.mo
+// status: correct
+
+before:=readFile("MoistAirUnsaturatedBefore.mo");getErrorString();
+loadFile("MoistAirUnsaturatedAfter.mo");getErrorString();
+res:=diffModelicaFileListings(before,list(),OpenModelica.Scripting.DiffFormat.color);getErrorString();
+
+// Result:
+// "within;
+// package MoistAirUnsaturated
+// redeclare function extends thermalConductivity
+// algorithm
+//   lambda := Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluate(Modelica.SIunits.Conversions.to_degC(state.T));
+// end thermalConductivity;
+// end MoistAirUnsaturated;
+// "
+// ""
+// true
+// ""
+// "within;
+// package MoistAirUnsaturated
+// redeclare function extends thermalConductivity
+// algorithm
+//   lambda := [9;31mModelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluate(Modelica.SIunits.Conversions.to_degC(state.T))[0m[4;32mModelica.Math.Polynomials.evaluate(Modelica.Units.Conversions.to_degC(state.T))[0m;
+// end thermalConductivity;
+// end MoistAirUnsaturated;
+// "
+// ""
+// endResult

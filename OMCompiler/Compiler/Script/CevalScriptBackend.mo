@@ -85,7 +85,6 @@ import Expression;
 import ExpressionDump;
 import FBuiltin;
 import FGraph;
-import FGraphDump;
 import Figaro;
 import FindZeroCrossings;
 import FInst;
@@ -111,7 +110,6 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import Obfuscate;
-import OpenTURNS;
 import PackageManagement;
 import Parser;
 import Print;
@@ -146,7 +144,7 @@ protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE());
+  },NONE(), false);
 
 protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
@@ -159,13 +157,13 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeCompile",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE());
+  },NONE(), false);
 
 protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE());
+  },NONE(), false);
 
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
@@ -664,7 +662,7 @@ algorithm
       FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
-      Absyn.ClassDef cdef;
+      Absyn.Element elem;
       Absyn.Exp aexp;
       DAE.DAElist dae;
       BackendDAE.BackendDAE daelow;
@@ -758,8 +756,8 @@ algorithm
 
     case ("getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
-        Absyn.CLASS(body = cdef) = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = System.unescapedString(getClassComment(cdef));
+        elem = InteractiveUtil.getPathedElementInProgram(path, SymbolTable.getAbsyn());
+        str = System.unescapedString(getClassElementComment(elem));
       then
         Values.STRING(str);
 
@@ -1119,11 +1117,13 @@ algorithm
             fail();
           end try;
           if not StringUtil.equalIgnoreSpace(s3, s4) then
+            System.writeFile("SanityCheckFailBefore.mo", s3);
+            System.writeFile("SanityCheckFailAfter.mo", s4);
             if b then
-              Error.addInternalError("After merging the strings, the semantics changed for some reason. Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
               fail();
             else
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
             end if;
             sanityCheckFailed := true;
           end if;
@@ -1431,30 +1431,6 @@ algorithm
       then
         ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
-    case ("buildOpenTURNSInterface",vals)
-      equation
-        (outCache,scriptFile) = buildOpenTURNSInterface(outCache,inEnv,vals,msg);
-      then
-        Values.STRING(scriptFile);
-
-    case ("buildOpenTURNSInterface",_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"buildOpenTURNSInterface failed. Use getErrorString() to see why."});
-      then
-        fail();
-
-    case ("runOpenTURNSPythonScript",vals)
-      equation
-        (outCache,logFile) = runOpenTURNSPythonScript(outCache,inEnv,vals,msg);
-      then
-        Values.STRING(logFile);
-
-    case ("runOpenTURNSPythonScript",_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"runOpenTURNSPythonScript failed. Use getErrorString() to see why"});
-      then
-        fail();
-
     // adrpo: see if the model exists before simulation!
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       equation
@@ -1712,7 +1688,7 @@ algorithm
       then
         ret_val;
 
-    case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)})
+    case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
@@ -1723,20 +1699,22 @@ algorithm
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
         s1 = System.tolower(Autoconf.platform);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
+        name = AbsynUtil.pathString(classpath);
+        name = if stringEq(name, "Default") or stringEq(name, "default") then "" else name;
+        str = Tpl.tplString2(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors), name);
         pd = Autoconf.pathDelimiter;
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
         str3 = FMI.getFMIVersion(fmiInfo);
-        outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
-        filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}) else stringAppendList({str1,"_",str2,"_FMU.mo"});
-        System.writeFile(outputFile, str);
+        outputFile = if stringEmpty(name) then stringAppendList({str1,"_",str2,"_FMU.mo"}) else stringAppendList({name,".mo"});
+        filename_1 = if b1 then stringAppendList({workdir,pd,outputFile}) else outputFile;
+        System.writeFile(stringAppendList({workdir,pd,outputFile}), str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
       then
         Values.STRING(filename_1);
 
-    case ("importFMU",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+    case ("importFMU",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.CODE(_)})
       equation
         false = System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
@@ -1744,7 +1722,7 @@ algorithm
       then
         Values.STRING("");
 
-    case ("importFMU",{Values.STRING(_),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+    case ("importFMU",{Values.STRING(_),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.CODE(_)})
       then
         Values.STRING("");
 
@@ -2234,12 +2212,14 @@ algorithm
 
     case ("getAvailableLibraries",{})
       algorithm
+        PackageManagement.installCachedPackages();
         files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
       then
         ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
 
     case ("getAvailableLibraryVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1)))})
       algorithm
+        PackageManagement.installCachedPackages();
         files := PackageManagement.getInstalledLibraryVersions(str1);
       then
         ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
@@ -2805,6 +2785,9 @@ algorithm
 
     case ("getNthConnection",_) then ValuesUtil.makeArray({});
 
+    case ("getConnectionList", {Values.CODE(Absyn.C_TYPENAME(path))})
+      then getConnectionList(path);
+
     case ("getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
         absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
@@ -3105,6 +3088,15 @@ algorithm
     case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then NFApi.getModelInstance(classpath, b);
 
+    case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then NFApi.getModelInstanceIcon(classpath, b);
+
+    case ("storeAST", {})
+      then Values.INTEGER(SymbolTable.storeAST());
+
+    case ("restoreAST", {Values.INTEGER(integer = n)})
+      then Values.BOOL(SymbolTable.restoreAST(n));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -3251,7 +3243,7 @@ algorithm
   else
     str := AbsynUtil.pathFirstIdent(className);
     (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
-    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_LOAD_MODEL_DUE_TO_USES,{str,"default"},AbsynUtil.dummyInfo);
+    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_IMPLICIT_LOAD,{str,"default"},AbsynUtil.dummyInfo);
     System.loadModelCallBack(str);
     // print(stringDelimitList(list(AbsynUtil.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
     SymbolTable.setAbsyn(p);
@@ -3264,109 +3256,104 @@ algorithm
 end runFrontEndLoadProgram;
 
 protected function runFrontEndWork
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input output FCore.Cache cache;
+  input output FCore.Graph env;
   input Absyn.Path className;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   input Boolean dumpFlat;
-  output FCore.Cache cache;
-  output FCore.Graph env;
-  output DAE.DAElist dae;
-  output String flatString = "";
+        output DAE.DAElist dae;
+        output String flatString = "";
 protected
   Integer numError = Error.getNumErrorMessages();
-  Absyn.Restriction restriction;
-  Absyn.Program p = SymbolTable.getAbsyn();
+  Boolean graph_inst, nf_inst, nf_inst_actual;
+  SCode.Program scodeP;
+  DAE.FunctionTree funcs;
+  NFFlatModel flat_model;
+  NFFlatten.FunctionTree nf_funcs;
 algorithm
-  (cache,env,dae) := matchcontinue (inCache,inEnv,className)
-    local
-      Absyn.Class absynClass;
-      String str,re;
-      SCode.Program scodeP;
-      DAE.FunctionTree funcs;
-      NFFlatModel flat_model;
-      NFFlatten.FunctionTree nf_funcs;
+  graph_inst := Flags.isSet(Flags.GRAPH_INST);
+  nf_inst := Flags.isSet(Flags.SCODE_INST);
+  nf_inst_actual := nf_inst;
 
-    case (_, _, _)
+  // PDEModelica is not yet supported by the new frontend, switch to the old one
+  // if `-g=PDEModelica` is set.
+  if nf_inst and Flags.getConfigEnum(Flags.GRAMMAR) == Flags.PDEMODELICA then
+    nf_inst := false;
+    FlagsUtil.set(Flags.SCODE_INST, false);
+    Error.addMessage(Error.NF_PDE_NOT_IMPLEMENTED, {});
+  end if;
+
+  (cache,env,dae) := matchcontinue (graph_inst, nf_inst)
+    case (false, true)
       algorithm
-        false := Flags.isSet(Flags.GRAPH_INST);
-        true := Flags.isSet(Flags.SCODE_INST);
-
-        (flat_model, nf_funcs, flatString) := runFrontEndWorkNF(className, dumpFlat);
+        (flat_model, nf_funcs, flatString) := runFrontEndWorkNF(className, relaxedFrontEnd, dumpFlat);
         (dae, funcs) := NFConvertDAE.convert(flat_model, nf_funcs);
 
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
         env := FGraph.new("graph", FCore.dummyTopModel);
-      then (cache, env, dae);
+      then
+        (cache, env, dae);
 
-   case (cache,env,_)
-      equation
-        true = Flags.isSet(Flags.GRAPH_INST);
-        false = Flags.isSet(Flags.SCODE_INST);
-
+   case (true, false)
+      algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        dae = FInst.instPath(className, SymbolTable.getSCode());
-      then (cache,env,dae);
+        dae := FInst.instPath(className, SymbolTable.getSCode());
+      then
+        (cache,env,dae);
 
-    case (cache,env,_)
-      equation
-        false = Flags.isSet(Flags.GRAPH_INST);
-        false = Flags.isSet(Flags.SCODE_INST);
-
-        //System.stopTimer();
-        //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
-
-        //System.startTimer();
-        //print("\nAbsyn->SCode");
-        scodeP = SymbolTable.getSCode();
-
+    case (false, false)
+      algorithm
+        scodeP := SymbolTable.getSCode();
         ExecStat.execStat("FrontEnd - Absyn->SCode");
 
-        //System.stopTimer();
-        //print("\nAbsyn->SCode: " + realString(System.getTimerIntervalTime()));
-
-        //System.startTimer();
-        //print("\nInst.instantiateClass");
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className,true,relaxedFrontEnd);
-
-        dae = DAEUtil.mergeAlgorithmSections(dae);
-
-        //FGraphDump.dumpGraph(env, "F:\\dev\\" + AbsynUtil.pathString(className) + ".graph.graphml");
-
-        //System.stopTimer();
-        //print("\nInst.instantiateClass: " + realString(System.getTimerIntervalTime()));
+        (cache,env,_,dae) := Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className,true,relaxedFrontEnd);
+        dae := DAEUtil.mergeAlgorithmSections(dae);
 
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         DAEUtil.getFunctionList(FCore.getFunctionTree(cache),failOnError=true); // Make sure that the functions are valid before returning success
       then (cache,env,dae);
 
-    else
-      equation
-        str = AbsynUtil.pathString(className);
-        true = Error.getNumErrorMessages() == numError;
-        str = "Instantiation of " + str + " failed with no error message.";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
+    case (_, _)
+      guard Error.getNumErrorMessages() == numError
+      algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Instantiation of " + AbsynUtil.pathString(className) + " failed with no error message."});
+        FlagsUtil.set(Flags.SCODE_INST, nf_inst_actual);
+      then
+        fail();
   end matchcontinue;
+
+  // Switch back to the new frontend in case we changed it at the beginning of the function.
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst_actual);
 end runFrontEndWork;
 
 public function runFrontEndWorkNF
   input Absyn.Path className;
+  input Boolean relaxedFrontend = false;
   input Boolean dumpFlat = false;
   output NFFlatModel flatModel;
   output NFFlatten.FunctionTree functions;
   output String flatString;
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
-  Boolean b;
+  Boolean nf_api, inst_failed;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
+  String obfuscate_mode;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := SymbolTable.getSCode();
 
-  if not Flags.isConfigFlagSet(Flags.OBFUSCATE, "none") then
+  obfuscate_mode := Flags.getConfigString(Flags.OBFUSCATE);
+
+  // Enable obfuscation of encrypted variables if a higher obfuscation hasn't
+  // been chosen and the AST contains encrypted classes.
+  if obfuscate_mode == "none" and Interactive.astContainsEncryptedClass(SymbolTable.getAbsyn()) then
+    FlagsUtil.setConfigString(Flags.OBFUSCATE, "encrypted");
+  end if;
+
+  if obfuscate_mode == "full" then
     (scode_p, cls_name, _, _, obfuscate_map) := Obfuscate.obfuscateProgram(scode_p, cls_name);
   end if;
 
@@ -3378,18 +3365,20 @@ algorithm
 
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
-  b := FlagsUtil.set(Flags.NF_API, false);
+  nf_api := FlagsUtil.set(Flags.NF_API, false);
+  inst_failed := false;
+
   try
     (flatModel, functions, flatString) :=
-      NFInst.instClassInProgram(cls_name, scode_p, annotation_p, dumpFlat);
-    FlagsUtil.set(Flags.NF_API, b);
+      NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
-    FlagsUtil.set(Flags.NF_API, b);
-    fail();
+    inst_failed := true;
   end try;
 
-  if Flags.isConfigFlagSet(Flags.OBFUSCATE, "protected") then
-    flatModel := FlatModel.deobfuscatePublicVars(flatModel, obfuscate_map);
+  FlagsUtil.set(Flags.NF_API, nf_api);
+
+  if inst_failed then
+    fail();
   end if;
 end runFrontEndWorkNF;
 
@@ -3587,21 +3576,20 @@ algorithm
     case {"dynamic"}
       algorithm
         if isWindows then
-          CMAKE_GENERATOR := "-G MSYS Makefiles ";
+          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
         end if;
         buildDir := "build_cmake_dynamic";
-        cmakeCall := "cmake " + CMAKE_GENERATOR +
+        cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                               "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=" + defaultFmiIncludeDirectoy + " " +
                               CMAKE_BUILD_TYPE +
                               " ..";
-        cmd := "cd \"" + fmuSourceDir + "\" && " +
+        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               "cmake --build . --target install && " +
+               Autoconf.cmake + " --build . --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-          System.removeFile(logfile);
           fail();
         end if;
         then();
@@ -3655,7 +3643,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . && make install && " +
+                  "cmake --build . &&  make  install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -3686,7 +3674,9 @@ algorithm
         then();
     else
       algorithm
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build"});
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR,
+                         {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build. " +
+                          "Use platforms={\"dynamic\"} for the default case."});
       then fail();
   end match;
 end configureFMU_cmake;
@@ -3764,7 +3754,7 @@ algorithm
   if System.regularFileExists(logfile) then
     System.removeFile(logfile);
   end if;
-  nozip := Autoconf.make+" -j"+intString(Config.noProc()) + " nozip";
+  nozip := Autoconf.make + " -j" + intString(Config.noProc()) + " nozip";
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
       algorithm
@@ -3907,7 +3897,7 @@ algorithm
   ExecStat.execStat("buildModelFMU: configured platform " + platform + " using " + cmd);
   if not finishedBuild then
     if not isWindows then
-      if 0 <> System.systemCall("cd " + dir + " && make clean > /dev/null 2>&1") then
+      if 0 <> System.systemCall("cd " + dir + " && "+ Autoconf.make + " clean > /dev/null 2>&1") then
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to make clean"});
         fail();
       end if;
@@ -4054,7 +4044,7 @@ algorithm
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
-    if 0 <> System.systemCall("make -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
+    if 0 <> System.systemCall(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
       // do nothing
     end if;
     return;
@@ -4070,12 +4060,7 @@ algorithm
   end if;
 
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
-  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
-  if listLength(fmiFlagsList) >= 1 and not stringEqual(List.first(fmiFlagsList), "none") then
-    needs3rdPartyLibs := true;
-  else
-    needs3rdPartyLibs := false;
-  end if;
+  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
 
   // Use CMake on Windows when cross-compiling with docker
   _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD), needs3rdPartyLibs)
@@ -4138,7 +4123,9 @@ algorithm
   end if;
 
   if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
-    System.removeDirectory(fmutmp);
+    if not System.removeDirectory(fmutmp) then
+      Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
+    end if;
   end if;
 end callBuildModelFMU;
 
@@ -4164,7 +4151,7 @@ algorithm
     ext := if Autoconf.os == "Windows_NT" then ".exe" else "";
     if encrypt then
       // create the path till packagetool
-      packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});
+      packageTool := stringAppendList({omhome,pd,"bin",pd,"omc-semla",pd,"packagetool",ext});
       if System.regularFileExists(packageTool) then
         // create the list of arguments for packagetool
         packageToolArgs := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
@@ -5568,7 +5555,6 @@ algorithm
       String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags;
       Absyn.Path classname;
       Absyn.Program p;
-      Absyn.Class cdef;
       Real edit,build,globalEdit,globalBuild,timeCompile;
       FCore.Graph env;
       SimCode.SimulationSettings simSettings;
@@ -5752,72 +5738,6 @@ algorithm
         (inCache,simValue);
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
-
-protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output String scriptFile;
-algorithm
-  (outCache,scriptFile):= match(inCache,inEnv,vals,inMsg)
-    local
-      String templateFile, str;
-      Absyn.Program p;
-      Absyn.Path className;
-      FCore.Cache cache;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      BackendDAE.BackendDAE dlow;
-      DAE.FunctionTree funcs;
-      Boolean showFlatModelica;
-      String filenameprefix,description;
-
-    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},_)
-      equation
-        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,false, transform = true);
-        //print("instantiated class\n");
-        funcs = FCore.getFunctionTree(cache);
-        if showFlatModelica then
-          print(DAEDump.dumpStr(dae, funcs));
-        end if;
-        // get all the variable names with a distribution
-        // TODO FIXME
-        // sort all variable names in the distribution order
-        // TODO FIXME
-        filenameprefix = AbsynUtil.pathString(className);
-        description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        //print("lowered class\n");
-        //print("calling generateOpenTurnsInterface\n");
-        scriptFile = OpenTURNS.generateOpenTURNSInterface(dlow, className, SymbolTable.getAbsyn(), templateFile);
-      then
-        (cache,scriptFile);
-
-  end match;
-end buildOpenTURNSInterface;
-
-protected function runOpenTURNSPythonScript
-"runs OpenTURNS with the given python script returning the log file"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output String outLogFile;
-algorithm
-  (outCache,outLogFile):= match(inCache,inEnv,vals,inMsg)
-    local
-      String pythonScriptFile, logFile;
-      FCore.Cache cache;
-    case(cache,_,{Values.STRING(pythonScriptFile)},_)
-      equation
-        logFile = OpenTURNS.runPythonScript(pythonScriptFile);
-      then
-        (cache,logFile);
-  end match;
-end runOpenTURNSPythonScript;
 
 public function getFileDir "author: x02lucpo
   returns the dir where class file (.mo) was saved or
@@ -6320,7 +6240,7 @@ algorithm
         allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed = checkAll(cache, env, allClassPaths, msg, 0);
+        failed = checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
         ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
@@ -6363,6 +6283,7 @@ function checkAll
   input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
   input Absyn.Msg inMsg;
+  input Boolean reportTimes;
   input output Integer failed;
 protected
   Absyn.Program p;
@@ -6404,23 +6325,29 @@ algorithm
         s = realString(elapsedTime);
         (smsg, f) = failOrSuccess(str);
         failed = if f then failed + 1 else failed;
-        print (s + " seconds -> " + smsg + "\n\t");
+
+        if reportTimes then
+          print (s + " seconds -> " + smsg + "\n\t");
+        else
+          print(smsg + "\n\t");
+        end if;
+
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
         print ("Error String:\n" + Print.getErrorString() + "\n");
         print ("Error Buffer:\n" + ErrorExt.printMessagesStr(false) + "\n");
         print ("#" + (if f then "[-]" else "[+]") + ", " +
-          realString(elapsedTime) + ", " +
+          (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed = checkAll(cache, env, rest, msg, failed);
+        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
       then ();
 
     case (cache,env,className::rest,msg)
       equation
         c = InteractiveUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... \n");
-        failed = checkAll(cache, env, rest, msg, failed);
+        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
       then
         ();
   end matchcontinue;
@@ -7636,9 +7563,9 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
-  cmt := getClassComment(cdef);
+  cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);
   if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(path)) then
     isProtectedClass := false;
@@ -7690,7 +7617,31 @@ algorithm
   end match;
 end getClassDimensions;
 
-function getClassComment "Returns the class comment of a Absyn.ClassDef"
+function getClassElementComment
+  "Returns the comment on a class element."
+  input Absyn.Element element;
+  output String commentStr;
+protected
+  Absyn.Class cls;
+algorithm
+  commentStr := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls))
+      algorithm
+        // The comment can go either before and/or after the constrainedby clause,
+        // the one after has higher priority.
+        commentStr := InteractiveUtil.getConstrainingClassComment(element.constrainClass);
+
+        if stringEmpty(commentStr) then
+          commentStr := getClassDefComment(cls.body);
+        end if;
+      then
+        commentStr;
+
+    else "";
+  end match;
+end getClassElementComment;
+
+function getClassDefComment "Returns the class comment of a Absyn.ClassDef"
   input Absyn.ClassDef inClassDef;
   output String outString;
 algorithm
@@ -7711,7 +7662,7 @@ algorithm
     case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
     else "";
   end match;
-end getClassComment;
+end getClassDefComment;
 
 protected function getAnnotationInEquation
   "This function takes an `EquationItem\' and returns a comma separated
@@ -8142,25 +8093,25 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     /* a class with parts */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
                       info = file_info), state_)
       equation
         eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
         parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
+      then outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
                       ,info = file_info), state_)
       equation
         eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
         parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
+      then outClass;
   end match;
 end deleteInitialStateInClass;
 
@@ -8662,6 +8613,22 @@ algorithm
 
   result := Values.STRING(str);
 end instantiateModel;
+
+protected function getConnectionList
+"@author: rahulp
+  Returns a list of all connect equations including those in loops"
+  input Absyn.Path className;
+  output Values.Value valList;
+  protected
+    SCode.Program sp, annotation_sp;
+    list<list<String>> connList;
+  algorithm
+    annotation_sp := AbsynToSCode.translateAbsyn2SCode(InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    (_, sp) := FBuiltin.getInitialFunctions();
+    sp := listAppend(SymbolTable.getSCode(), sp);
+    connList := NFInst.instClassForConnection(className, sp, annotation_sp);
+    valList := ValuesUtil.makeArray(list(ValuesUtil.makeArray(List.map(conn, ValuesUtil.makeString)) for conn in connList));
+end getConnectionList;
 
 protected function runConversionScript
   input Absyn.Path clsPath;

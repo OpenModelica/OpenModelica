@@ -108,6 +108,14 @@ public
     output Boolean empty = arrayEmpty(map.gain);
   end isEmpty;
 
+  function isIdentity
+    input SBLinearMap map;
+    output Boolean isIdentity;
+  algorithm
+    isIdentity := Array.all(map.gain, function realEq(x1 = 1.0)) and
+                  Array.all(map.offset, function realEq(x1 = 0.0));
+  end isIdentity;
+
   function isEqual
     input SBLinearMap map1;
     input SBLinearMap map2;
@@ -180,7 +188,9 @@ public
     input SBLinearMap map;
     output SBSet target = SBSet.copy(domain);
   algorithm
-    UnorderedSet.map(target.asets, function applyAtomicSet(map = map));
+    if not isIdentity(map) then
+      UnorderedSet.apply(target.asets, function applyAtomicSet(map = map));
+    end if;
   end apply;
 
   function applyAtomicSet

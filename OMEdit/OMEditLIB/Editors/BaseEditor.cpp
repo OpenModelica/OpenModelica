@@ -685,7 +685,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   pCompleterToolTipLayout->addWidget(mpCompleterToolTipLabel);
   mpCompleterToolTipWidget->setLayout(pCompleterToolTipLayout);
   // intialize the completer with QStandardItemModel
-  mpStandardItemModel = new QStandardItemModel();
+  mpStandardItemModel = new QStandardItemModel(this);
   // sort the StandardItemModel using QSortFilterProxy
   QSortFilterProxyModel *pSortFilterProxyModel = new QSortFilterProxyModel(this);
   pSortFilterProxyModel->setSourceModel(mpStandardItemModel);

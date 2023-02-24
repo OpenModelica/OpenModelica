@@ -37,8 +37,8 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
-  import NBVariable.{VariablePointers, VarData};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
@@ -52,6 +52,7 @@ protected
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -203,6 +204,7 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
+    // expand records to its children. Put behind flag?
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
@@ -219,11 +221,12 @@ public
     list<tuple<String, Real>> postOptClocks;
   algorithm
     // Pre-Partitioning Modules
-    // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
+    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
-      (simplify,           "simplify"),
+      (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
+      (simplify,           "simplify2"),
       (Events.main,        "Events"),
       (DetectStates.main,  "DetectStates")
     };
@@ -357,18 +360,21 @@ protected
     output VarData variableData;
   protected
     Variable lowVar;
+    list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
+    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
-    VariablePointers parameters, constants;
+    VariablePointers parameters, constants, records, artificials;
     Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
+    vars := List.flatten(list(Variable.expandChildren(v) for v in varList));
+
     // instantiate variable data (with one more space for time variable);
-    variables := VariablePointers.empty(listLength(varList) + 1, scalarized);
+    variables := VariablePointers.empty(listLength(vars) + 1, scalarized);
 
     // create dummy and time var and add then
     // needed to make function BVariable.getVarPointer() more universally applicable
@@ -376,9 +382,10 @@ protected
     time_ptr := BVariable.createTimeVar();
     variables := VariablePointers.add(dummy_ptr, variables);
     variables := VariablePointers.add(time_ptr, variables);
+    artificials_lst := {dummy_ptr, time_ptr};
 
     // routine to prepare the lists for pointer arrays
-    for var in listReverse(varList) loop
+    for var in listReverse(vars) loop
       lowVar_ptr := lowerVariable(var);
       lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
@@ -434,6 +441,11 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        case BackendExtension.RECORD() algorithm
+          records_lst := lowVar_ptr :: records_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         /* other cases should not occur up until now */
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
@@ -458,16 +470,22 @@ protected
 
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
+    records         := VariablePointers.fromList(records_lst, scalarized);
+    artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
     variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
     variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
     knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
-    variables       := VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
+    artificials     := VariablePointers.addList(Pointer.access(binding_iter_lst), artificials);
+    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
+
+    /* lower the records to add children */
+    records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, previous, states, parameters, constants);
+                    derivatives, algebraics, discretes, previous, states, parameters, constants, records, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -500,11 +518,6 @@ protected
     end try;
   end lowerVariable;
 
-  function lowerIterator
-    input ComponentRef iterator;
-    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
-  end lowerIterator;
-
   function lowerVariableKind
     "ToDo: Merge this part from old backend conversion:
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
@@ -515,19 +528,17 @@ protected
     input Type ty;
   algorithm
     varKind := match(variability, attributes, ty)
+      local
+        list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
-      // variable -> artificial state if it has stateSelect = StateSelect.prefer
-      /* I WANT TO REMOVE THIS AND CATCH IT PROPERLY IN STATE SELECTION!
-      case (Prefixes.Variability.CONTINUOUS(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-      then BackendExtension.STATE(1, NONE(), false);
-      */
+      // add children pointers for records afterwards
+      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({});
 
-      // is this just a hack? Do we need those cases, or do we need even more?
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.ENUMERATION()) then BackendExtension.DISCRETE();
@@ -548,7 +559,7 @@ protected
 
     // make adjustments to attributes based on variable kind
     attributes := match varKind
-      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixedIfNone(attributes);
+      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixed(attributes, ty, true, false);
       else attributes;
     end match;
   end lowerVariableKind;
@@ -558,31 +569,36 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
   algorithm
-    _ := match var
+    var := match var
       local
         Binding binding;
       case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
         // collect all iterators (only locally known) so that they have a respective variable
+        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
         Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then ();
-      else ();
+      then var;
+      else algorithm
+        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+      then var;
     end match;
   end collectVariableBindingIterators;
 
-  function lowerVariableBinding
+  function lowerRecordChildren
     input output Variable var;
     input VariablePointers variables;
   algorithm
     var := match var
       local
-        Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-        binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
-        var.binding := binding;
+        BackendExtension.BackendInfo binfo;
+        BackendExtension.VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
+        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        binfo.varKind := varKind;
+        var.backendinfo := binfo;
       then var;
       else var;
     end match;
-  end lowerVariableBinding;
+  end lowerRecordChildren;
 
   function lowerEquationData
     "Lowers all equations to backend structure.
@@ -605,7 +621,7 @@ protected
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
-      iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
+      iterators := listAppend(Equation.getForIteratorCrefs(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
     varData := VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
@@ -705,9 +721,9 @@ protected
   end lowerEquationsAndAlgorithms;
 
   function lowerEquation
-    input FEquation frontend_equation         "Original Frontend equation.";
-    input Boolean init                        "True if an initial equation should be created.";
-    output list<Pointer<Equation>> backend_equations   "Resulting Backend equations.";
+    input FEquation frontend_equation                 "Original Frontend equation.";
+    input Boolean init                                "True if an initial equation should be created.";
+    output list<Pointer<Equation>> backend_equations  "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
@@ -723,58 +739,60 @@ protected
         EquationAttributes attr;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty))
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          //ToDo! How to get Record size and replace NONE()?
+        guard(Type.isArray(ty)) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
       // sometimes regular equalities are array equations aswell. Need to update frontend?
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty))
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          //ToDo! How to get Record size and replace NONE()?
+        guard(Type.isArray(ty)) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
-                                          else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
+        attr := lowerEquationAttributes(ty, init);
+        result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
+                                        else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
 
-      case FEquation.FOR(range = SOME(range))
-        algorithm
-        // Treat each body equation individually because they can have different equation attributes
-        // E.g.: DISCRETE, EvalStages
+      case FEquation.FOR(range = SOME(range)) algorithm
+        if Expression.rangeSize(range) > 0 then
+          // Treat each body equation individually because they can have different equation attributes
+          // E.g.: DISCRETE, EvalStages
 
-        iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
-        for eq in frontend_equation.body loop
-          new_body := listAppend(lowerEquation(eq, init), new_body);
-        end for;
-        for body_elem_ptr in new_body loop
-          body_elem := Pointer.access(body_elem_ptr);
-          body_elem := BEquation.FOR_EQUATION(
-            ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
-            iter    = Iterator.SINGLE(iterator, range),
-            body    = {body_elem},
-            source  = frontend_equation.source,
-            attr    = Equation.getAttributes(body_elem)
-          );
+          iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+          for eq in frontend_equation.body loop
+            new_body := listAppend(lowerEquation(eq, init), new_body);
+          end for;
+          for body_elem_ptr in new_body loop
+            body_elem := Pointer.access(body_elem_ptr);
+            body_elem := BEquation.FOR_EQUATION(
+              ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+              iter    = Iterator.SINGLE(iterator, range),
+              body    = {body_elem},
+              source  = frontend_equation.source,
+              attr    = Equation.getAttributes(body_elem)
+            );
 
-          // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
-          Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
-          result := body_elem_ptr :: result;
-        end for;
+            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
+            Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
+            result := body_elem_ptr :: result;
+          end for;
+        else
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
+          end if;
+        end if;
       then result;
 
       // if equation
       case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
-      case FEquation.WHEN()   then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
-      case FEquation.ASSERT() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
+      case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
+      case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -907,17 +925,17 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    // ToDo! inherit findEvents or implement own routine to be applied after lowering
     input FEquation frontend_equation;
     input Boolean init;
-    output Equation backend_equation;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equation := match frontend_equation
+    backend_equations := match frontend_equation
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
+        list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
@@ -925,13 +943,14 @@ protected
           // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
-      then BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(whenEqBody), whenEqBody, source, attr);
+          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
           attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
@@ -1061,8 +1080,7 @@ protected
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
-    // ToDo! get array sizes instead of only list length
-    size := listLength(alg.outputs);
+    size := sum(ComponentRef.size(out) for out in alg.outputs);
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
@@ -1086,7 +1104,7 @@ protected
     equations := EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
   end lowerComponentReferences;
 
-  function lowerComponentReferenceExp
+  public function lowerComponentReferenceExp
     input output Expression exp;
     input VariablePointers variables;
   algorithm
@@ -1094,12 +1112,21 @@ protected
       local
         Type ty;
         ComponentRef cref;
+        Call call;
       case Expression.CREF(ty = ty, cref = cref) then Expression.CREF(ty, lowerComponentReference(cref, variables));
-      else exp;
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        exp.call := call;
+      then exp;
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        exp.call := call;
+      then exp;
+    else exp;
     end match;
   end lowerComponentReferenceExp;
 
-  function lowerComponentReference
+  protected function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
   protected
@@ -1109,6 +1136,7 @@ protected
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
       cref := lowerComponentReferenceInstNode(cref, var);
+      cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables)));
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -1126,12 +1154,52 @@ protected
     _ := match exp
       local
         ComponentRef cref;
+        Call call;
+
       case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
         Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
+      then ();
+
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        for tpl in call.iters loop
+          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+        end for;
       then ();
       else ();
     end match;
   end collectBindingIterators;
+
+  function collectIterator
+    "collects all iterators in bindings and creates variables for them.
+    in bindings they are only known locally but they still need a respective variable"
+    input InstNode iterator;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  protected
+    ComponentRef cref;
+  algorithm
+    cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    if not VariablePointers.containsCref(cref, variables) then
+      Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+    end if;
+  end collectIterator;
+
+  function lowerInstNode
+    input output InstNode node;
+    input VariablePointers variables;
+  protected
+    ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+    Pointer<Variable> var;
+  algorithm
+    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+    node := InstNode.VAR_NODE(InstNode.name(node), var);
+  end lowerInstNode;
 
 public
   function lowerComponentReferenceInstNode
@@ -1154,5 +1222,26 @@ public
     end match;
   end lowerComponentReferenceInstNode;
 
+  function lowerIterator
+    input ComponentRef iterator;
+    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
+  end lowerIterator;
+
+  function lowerIteratorCref
+    input output ComponentRef iterator;
+  algorithm
+    iterator := BVariable.getVarName(lowerIterator(iterator));
+  end lowerIteratorCref;
+
+  function lowerIteratorExp
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() algorithm
+        exp.cref := lowerIteratorCref(exp.cref);
+      then exp;
+      else exp;
+    end match;
+  end lowerIteratorExp;
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

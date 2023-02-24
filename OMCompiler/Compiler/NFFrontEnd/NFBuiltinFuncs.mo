@@ -363,6 +363,11 @@ constant Function SMOOTH = Function.FUNCTION(Path.IDENT("smooth"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function NO_EVENT = Function.FUNCTION(Path.IDENT("noEvent"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),

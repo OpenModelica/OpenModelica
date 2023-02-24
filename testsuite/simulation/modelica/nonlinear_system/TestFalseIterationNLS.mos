@@ -180,26 +180,28 @@ val(h_i[5], 1.0); getErrorString();
 //
 // 	Jacobian idx: 4
 //
+// 	Jacobian idx: 5
+//
 //
 // modelInfo:
 // ========================================
 // algVars (12)
 // ----------------------
-// index: 0: $TMP_pureComponentProperties__pTnc3.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(1) []
-// index: 1: $TMP_pureComponentProperties__pTnc8.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(2) []
-// index: 2: T (no alias)  initial: 288.15	no arrCref index:(3) []
-// index: 3: delta_hd (no alias)  initial: 	no arrCref index:(4) []
-// index: 4: delta_hv (no alias)  initial: 	no arrCref index:(5) []
-// index: 5: h_i[1] (no alias)  initial:  	arrCref:h_i index:(6) [5]
-// index: 6: h_i[2] (no alias)  initial: 	no arrCref index:(7) [5]
-// index: 7: h_i[3] (no alias)  initial: 	no arrCref index:(8) [5]
-// index: 8: h_i[4] (no alias)  initial: 	no arrCref index:(9) [5]
-// index: 9: h_i[5] (no alias)  initial: 	no arrCref index:(10) [5]
-// index: 10: p (no alias)  initial: 	no arrCref index:(11) []
-// index: 11: p_s (no alias)  initial: 0.0	no arrCref index:(12) []
+// index:0: $TMP_pureComponentProperties__pTnc3.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(1) []
+// index:1: $TMP_pureComponentProperties__pTnc8.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(2) []
+// index:2: T (no alias)  initial: 288.15	no arrCref index:(3) []
+// index:3: delta_hd (no alias)  initial: 	no arrCref index:(4) []
+// index:4: delta_hv (no alias)  initial: 	no arrCref index:(5) []
+// index:5: h_i[1] (no alias)  initial: 	arrCref:h_i index:(6) [5]
+// index:6: h_i[2] (no alias)  initial: 	no arrCref index:(7) [5]
+// index:7: h_i[3] (no alias)  initial: 	no arrCref index:(8) [5]
+// index:8: h_i[4] (no alias)  initial: 	no arrCref index:(9) [5]
+// index:9: h_i[5] (no alias)  initial: 	no arrCref index:(10) [5]
+// index:10: p (no alias)  initial: 	no arrCref index:(11) []
+// index:11: p_s (no alias)  initial: 0.0	no arrCref index:(12) []
 // intParamVars
 // ----------------------
-// index: 0: nc (no alias)  initial: 5	no arrCref index:(13) []
+// index:0: nc (no alias)  initial: 5	no arrCref index:(13) []
 // functions:
 // -----------
 //
@@ -220,7 +222,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 6.951844801137586e-310
+// 5.867958387778984e-315
 // ""
 // 0.0
 // ""
@@ -236,7 +238,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 6.951844803621352e-310
+// 5.868509606938736e-315
 // ""
 // 0.0
 // ""

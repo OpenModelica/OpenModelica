@@ -97,13 +97,13 @@ algorithm
   // The other option is to preserve within in OMEdit...
   (t1_updated, t2_updated) := match (within1,within2)
     case (EMPTY(), EMPTY()) then (t1,t2);
-    case (_, EMPTY()) then (t1, within1::t2);
+    case (_, EMPTY()) then (t1, within1::LEAF(newlineToken)::t2);
     case (EMPTY(), _) then (within2::LEAF(newlineToken)::LEAF(newlineToken)::t1, t2);
     else (t1,t2);
   end match;
-  t2_updated := moveComments(t1_updated, t2_updated);
+  // t2_updated := moveComments(t1_updated, t2_updated);
   res := treeDiffWork1(t1_updated, t2_updated, nTokens);
-  res := moveCommentsAfterDiff(res);
+  // res := moveCommentsAfterDiff(res);
 end treeDiff;
 
 partial function CmpParseTreeFunc
@@ -401,6 +401,7 @@ end algorithm_section;
 
 function statement
   extends partialParser;
+  output String label="$statement";
 protected
   TokenId id;
   Boolean b;
@@ -408,13 +409,16 @@ algorithm
   (tokens, tree, id) := peek(tokens, tree);
   if id==TokenId.BREAK or id==TokenId.RETURN then
     (tokens, tree) := consume(tokens, tree);
+    label := "$"+String(id);
   elseif listMember(id, First.component_reference) then
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ASSIGN);
     if b then
       (tokens, tree) := expression(tokens, tree);
+      label := "$assign";
     else
       (tokens, tree) := function_call_args(tokens, tree);
+      label := "$statement_call";
     end if;
   elseif id==TokenId.IF then
     (tokens, tree) := consume(tokens, tree);
@@ -436,6 +440,7 @@ algorithm
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.IF);
+    label := "$if";
   elseif id==TokenId.WHEN then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -452,6 +457,7 @@ algorithm
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHEN);
+    label := "$when";
   elseif id==TokenId.FOR then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := for_indices(tokens, tree);
@@ -459,6 +465,7 @@ algorithm
     (tokens, tree) := statement_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.FOR);
+    label := "$for";
   elseif id==TokenId.WHILE then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -466,12 +473,14 @@ algorithm
     (tokens, tree) := statement_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHILE);
+    label := "$while";
   else
     (tokens, tree) := expression(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ASSIGN);
     if b then
       (tokens, tree) := expression(tokens, tree);
     end if;
+    label := "$assign_expression";
   end if;
   (tokens, tree) := comment(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
@@ -482,6 +491,7 @@ function statement_list
 protected
   TokenId id;
   Boolean b;
+  String label;
 algorithm
   outTree := {};
   while true loop
@@ -489,10 +499,10 @@ algorithm
     if b then
       break;
     end if;
-    (tokens, tree) := statement(tokens, tree);
+    (tokens, tree, label) := statement(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, label)))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
@@ -512,6 +522,7 @@ end equation_section;
 
 function _equation
   extends partialParser;
+  output String label = "$equation";
 protected
   TokenId id;
   Boolean b;
@@ -537,6 +548,7 @@ algorithm
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.IF);
+    label := "$if_equation";
   elseif id==TokenId.WHEN then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression(tokens, tree);
@@ -553,6 +565,7 @@ algorithm
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.WHEN);
+    label := "$when_equation";
   elseif id==TokenId.FOR then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := for_indices(tokens, tree);
@@ -560,6 +573,7 @@ algorithm
     (tokens, tree) := equation_list(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.END);
     (tokens, tree) := scan(tokens, tree, TokenId.FOR);
+    label := "$for_equation";
   elseif id==TokenId.CONNECT then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
@@ -567,11 +581,15 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.COMMA);
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
+    label := "$connect_equation";
   else
     (tokens, tree) := expression(tokens, tree);
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EQUALS);
     if b then
       (tokens, tree) := expression(tokens, tree);
+      label := "$equality_equation";
+    else
+      label := "$singleton_equation";
     end if;
   end if;
   (tokens, tree) := comment(tokens, tree);
@@ -583,6 +601,7 @@ function equation_list
 protected
   TokenId id;
   Boolean b;
+  String label;
 algorithm
   outTree := {};
   while true loop
@@ -590,10 +609,10 @@ algorithm
     if b then
       break;
     end if;
-    (tokens, tree) := _equation(tokens, tree);
+    (tokens, tree, label) := _equation(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, label)))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
@@ -692,6 +711,7 @@ function component_clause
 protected
   TokenId id;
   Boolean b;
+  list<ParseTree> nodeNames;
 algorithm
   (tokens, tree) := type_prefix(tokens, tree);
   (tokens, tree) := type_specifier(tokens, tree);
@@ -700,8 +720,8 @@ algorithm
     (tokens, tree) := array_subscripts(tokens, tree);
   end if;
   tree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$type_specifier")))::{};
-  (tokens, tree) := component_list(tokens, tree);
-  nodeName := LEAF(makeToken(TokenId.IDENT, "$component"));
+  (tokens, tree, nodeNames) := component_list(tokens, tree);
+  nodeName := LEAF(makeToken(TokenId.IDENT, "$component:"+stringDelimitList(list(parseTreeStr(name::{}) for name in nodeNames),",")));
   outTree := makeNodePrependTree(listReverse(tree), inTree, label=nodeName);
 end component_clause;
 
@@ -789,18 +809,21 @@ end subscript;
 
 function component_list
   extends partialParser;
+  output list<ParseTree> nodeNames={};
 protected
   TokenId id;
   Boolean b;
   ParseTree nodeName;
 algorithm
-  (tokens, tree) := component_declaration(tokens, tree);
+  (tokens, tree, nodeName) := component_declaration(tokens, tree);
+  nodeNames := nodeName::nodeNames;
   while true loop
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.COMMA);
     if not b then
       break;
     end if;
-    (tokens, tree) := component_declaration(tokens, tree);
+    (tokens, tree, nodeName) := component_declaration(tokens, tree);
+    nodeNames := nodeName::nodeNames;
   end while;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end component_list;
@@ -1018,6 +1041,7 @@ algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.CONSTRAINEDBY});
   if b then
     (tokens, tree) := constraining_clause(tokens, tree);
+    (tokens, tree) := comment(tokens, tree); // Not standard Modelica, but some libraries have this
   end if;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end element_replaceable;
@@ -1085,12 +1109,18 @@ function expression
 protected
   TokenId id;
   Boolean b;
+  list<ParseTree> ifTrees = inTree;
 algorithm
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.IF);
   if b then
     (tokens, tree) := expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$if_cond"))), ifTrees);
+    tree := {};
+
     (tokens, tree) := scan(tokens, tree, TokenId.THEN);
     (tokens, tree) := expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$then"))), ifTrees);
+    tree := {};
     while true loop
       (tokens, tree, b) := scanOpt(tokens, tree, TokenId.ELSEIF);
       if not b then
@@ -1099,12 +1129,17 @@ algorithm
       (tokens, tree) := expression(tokens, tree);
       (tokens, tree) := scan(tokens, tree, TokenId.THEN);
       (tokens, tree) := expression(tokens, tree);
+      ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$else_if"))), ifTrees);
+      tree := {};
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.ELSE);
     (tokens, tree) := expression(tokens, tree);
-  else
-    (tokens, tree) := simple_expression(tokens, tree);
+    ifTrees := listAppend(makeNodePrependTree(listReverse(tree), {}, label=LEAF(makeToken(TokenId.IDENT, "$else"))), ifTrees);
+    tree := {};
+    outTree := makeNodePrependTree({}, ifTrees);
+    return;
   end if;
+  (tokens, tree) := simple_expression(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end expression;
 
@@ -1249,6 +1284,7 @@ function primary
 protected
   TokenId id;
   Boolean b;
+  String label = "expression";
 algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.UNSIGNED_INTEGER, TokenId.UNSIGNED_REAL, TokenId.FALSE, TokenId.TRUE, TokenId.END, TokenId.STRING});
   if b then
@@ -1259,8 +1295,7 @@ algorithm
   (tokens, tree, id) := peek(tokens, tree);
   if id==TokenId.LPAR then
     (tokens, tree) := output_expression_list(tokens, tree);
-    // outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "parenthesis")))::inTree;
-    // return;
+    label := "$parenthesis";
   elseif id==TokenId.LBRACE then
     (tokens, tree) := scan(tokens, tree, TokenId.LBRACE);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.RBRACE}); // Easier than checking First(expression), etc
@@ -1268,6 +1303,7 @@ algorithm
       (tokens, tree) := function_arguments(tokens, tree);
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACE);
+    label := "$array";
   elseif id==TokenId.LBRACK then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree) := expression_list(tokens, tree);
@@ -1279,12 +1315,14 @@ algorithm
       (tokens, tree) := expression_list(tokens, tree);
     end while;
     (tokens, tree) := scan(tokens, tree, TokenId.RBRACK);
+    label := "$matrix";
   elseif listMember(id, {TokenId.DER, TokenId.INITIAL}) then
     (tokens, tree) := consume(tokens, tree);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
     end if;
+    label := "$initial";
   elseif listMember(id, {TokenId.DOT, TokenId.IDENT, TokenId.FUNCTION}) then
     if id == TokenId.FUNCTION then
       // Function partial applications sort of looks like a normal call
@@ -1294,11 +1332,12 @@ algorithm
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
+      label := "$call";
     end if;
   else
     error(tokens, tree, {});
   end if;
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, label)));
 end primary;
 
 function function_call_args
@@ -1309,10 +1348,12 @@ protected
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.RPAR); // Easier than checking First.expression, etc
+  (tokens, tree) := eatWhitespace(tokens, tree);
   if not b then
     (tokens, tree) := function_arguments(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
   end if;
+  (tokens, tree) := eatWhitespace(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end function_call_args;
 
@@ -1353,7 +1394,7 @@ algorithm
   end while;
   outTree := inTree;
   for tree in listReverse(trees) loop
-    outTree := makeNodePrependTree(listReverse(tree), outTree);
+    outTree := makeNodePrependTree(listReverse(tree), outTree, label=LEAF(makeToken(TokenId.IDENT, "function_arguments")));
   end for;
 end function_arguments;
 
@@ -1400,11 +1441,13 @@ function named_argument
 protected
   TokenId id;
   Boolean b;
+  ParseTree label;
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
+  label := List.first(tree);
   (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   (tokens, tree) := expression(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=label);
 end named_argument;
 
 function for_indices
@@ -1613,8 +1656,9 @@ algorithm
             tree::trees := trees;
             (found,before,foundTree,after,foundComment) := fixDeletedComments(tree, comments);
             if found then
-              acc := (Diff.Add, listAppend(listReverse(acc2),before))::acc;
-              res := listAppend(listReverse(acc),(Diff.Equal,{foundTree})::(Diff.Add, listAppend(after, trees))::lst);
+              acc := (Diff.Delete, listAppend(listReverse(acc2),before))::acc;
+              res := listAppend(listReverse(acc),(Diff.Equal,{foundTree})::(Diff.Delete, listAppend(after, trees))::lst);
+              print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
               res := removeAddedCommentFromDiff(res, foundComment);
               // Continue until we can't fix more comments
               res := moveCommentsAfterDiff(res);
@@ -2002,12 +2046,14 @@ function treeDiffWork
   input CmpParseTreeFunc compare;
   output list<tuple<Diff,list<ParseTree>>> res, resLocal;
 protected
-  list<ParseTree> before, middle, after, addedTrees, deletedTrees;
+  list<ParseTree> t2_strip, before, middle, after, addedTrees, deletedTrees, ts;
+  list<String> addList, delList;
   Integer nadd, ndel;
   ParseTree addedTree, deletedTree, addedLabel, deletedLabel, deleted;
-  Boolean addedBeforeDeleted, joinTrees;
+  Boolean addedBeforeDeleted, joinTrees, tryFind;
   tuple<Diff,list<ParseTree>> diff1;
-  String debugString1="", debugString2="";
+  String str, debugString1="", debugString2="";
+  Diff d;
 algorithm
   // Speed-up. No deep compare for single nodes...
   _ := match (t1, t2)
@@ -2028,6 +2074,11 @@ algorithm
       then ();
     else ();
   end match;
+  if parseTreeIsNewLine(List.first(t2)) then
+    t2_strip := listRest(t2);
+  else
+    t2_strip := t2;
+  end if;
   if debug then
     print("Do diff at depth="+String(depth)+", len(t1)="+String(listLength(t1))+", len(t2)="+String(listLength(t2))+"\n");
     print("top t1="+firstTokenDebugStr(t1)+"\n");
@@ -2041,9 +2092,23 @@ algorithm
     res := fixMoveOperations(res, compare);
     (nadd, ndel) := countDiffAddDelete(res);
   end if;
+  res := filterDiffWhitespace(res);
   if debug then
     print("nadd: " + String(nadd) + " ndel: " + String(ndel) + "\n");
     print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
+    if nadd <> ndel then
+      for r in res loop
+        (d,ts) := r;
+        if d==Diff.Equal then
+          continue;
+        end if;
+        for t in ts loop
+          if isLabeledNode(t) then
+            print(String(d) + " " + parseTreeStr(nodeLabel(t)::{})+"\n");
+          end if;
+        end for;
+      end for;
+    end if;
   end if;
   if depth>300 then
     // Do nothing; it's a diff... Just not perfect and might be really slow to process...
@@ -2127,23 +2192,52 @@ algorithm
       print("number of labeled nodes. add="+String(listLength(addedTrees))+" del="+String(listLength(deletedTrees))+"\n");
       print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
     end if;
+    // We need to know if the labels changed order; if they didn't, we can improve the diff
+    for x in res loop
+      (d,ts) := x;
+      if d==Diff.Equal then
+        continue;
+      end if;
+      addList := {};
+      delList := {};
+      for t in ts loop
+        if isEmpty(t) or parseTreeIsWhitespace(t) or isEmpty(nodeLabel(t))then
+          continue;
+        end if;
+        str := parseTreeStr(nodeLabel(t)::{});
+        if d==Diff.Add then
+          addList := str::addList;
+        else
+          delList := str::delList;
+        end if;
+      end for;
+    end for;
     // O(D*D)
     for added in addedTrees loop
+      tryFind := false;
       try
         (deleted, deletedTrees) := List.findAndRemove1(deletedTrees, function compareNodeLabels(compare=compare), added);
-        resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
-        if debug then
-          debugString1:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
-        end if;
-        res := replaceLabeledDiff(res, resLocal, nodeLabel(added), compare);
-        if debug then
-          debugString2:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
-          print("replaceLabeledDiff change for label:" + parseTreeNodeStr(nodeLabel(added)) + "\n");
-          print("before replaceLabeledDiff: " + debugString1 + "\n");
-          print("after replaceLabeledDiff: " + debugString2 + "\n");
-        end if;
       else
+        try
+          (deleted, deletedTrees) := List.findAndRemove1(deletedTrees, function compareNodeLabelsSpecial(compare=compare,delList=delList), added);
+        else
+          tryFind := true;
+        end try;
       end try;
+      if tryFind then
+        continue;
+      end if;
+      resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
+      if debug then
+        debugString1:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
+      end if;
+      res := replaceLabeledDiff(res, resLocal, nodeLabel(added), nodeLabel(deleted), compare, labelOrderDidNotChange(addList,delList));
+      if debug then
+        debugString2:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
+        print("replaceLabeledDiff change for label:" + parseTreeNodeStr(nodeLabel(added)) + "\n");
+        print("before replaceLabeledDiff: " + debugString1 + "\n");
+        print("after replaceLabeledDiff: " + debugString2 + "\n");
+      end if;
     end for;
   else
     // print(DiffAlgorithm.printDiffXml(res, parseTreeNodeStr) + "\n");
@@ -2170,54 +2264,106 @@ algorithm
   b := compare(nodeLabel(t1),nodeLabel(t2));
 end compareNodeLabels;
 
+function compareNodeLabelsSpecial
+  input ParseTree t1, t2;
+  input CmpParseTreeFunc compare;
+  input list<String> delList;
+  output Boolean b;
+algorithm
+  b := nodeLabelIsComponent(t1) and nodeLabelIsComponent(t2) and not listMember(parseTreeStr(nodeLabel(t1)::{}), delList);
+end compareNodeLabelsSpecial;
+
+function nodeLabelIsComponent
+  input ParseTree t1;
+  output Boolean b;
+protected
+  String contents;
+algorithm
+  b := match nodeLabel(t1)
+    case LEAF(token=Token.TOKEN(id=TokenId.IDENT, fileContents=contents))
+      then 0==System.strncmp(contents, "$component:", 11);
+    else false;
+  end match;
+end nodeLabelIsComponent;
+
 function filterDiffWhitespace
   input list<tuple<Diff,list<ParseTree>>> inDiff;
   output list<tuple<Diff,list<ParseTree>>> diff;
 protected
   list<tuple<Diff,list<ParseTree>>> diffLocal=inDiff;
-  tuple<Diff,list<ParseTree>> diff1;
+  tuple<Diff,list<ParseTree>> diff1, diff2, diff3, diff4;
   Boolean firstIter, lastTokenNewline, hasAddedWS;
-  list<ParseTree> tree, treeLocal, tree1, tree2, tree3;
+  list<ParseTree> tree, treeLocal, tree1, tree2, tree3, tree4, treeLast;
+  ParseTree tree4First,t1,t2,t3,firstTreeSecondLast,firstTreeLast;
   Integer length, level;
   list<Integer> indentation;
   list<Token> tokens;
-  Diff diffEnum;
+  Diff diffEnum, diffEnum1, diffEnum2;
   String indentationStr;
   Token tok;
 algorithm
   diff := {};
   firstIter := true;
   while not listEmpty(diffLocal) loop
-    diffLocal := match diffLocal
-      // ( ... ) is similar to whitespace, and there are some edge cases we can handle here...
-      case ((Diff.Equal,tree1) :: (Diff.Delete, tree2) :: (Diff.Equal,tree3) :: diffLocal)
-        guard min(parseTreeIsWhitespaceOrPar(t) for t in tree1) and
-              min(parseTreeIsWhitespaceOrPar(t) for t in tree3) and
-              1==sum(if parseTreeIsLPar(t) then 1 else 0 for t in tree1) and
-              1==sum(if parseTreeIsRPar(t) then 1 else 0 for t in tree3)
+    // (diffEnum,tree) := List.first(diffLocal);
+    // print(String(diffEnum) + ":\n");
+    // print(parseTreeStr(tree));
+    // print("\n");
+    (diffEnum, treeLast) := List.first(diffLocal);
+    (firstTreeSecondLast, firstTreeLast) := match treeLast
+      case {} then (EMPTY(),EMPTY());
+      case {firstTreeLast} then (EMPTY(),firstTreeLast);
+      else
         algorithm
-          diff := (Diff.Delete, listAppend(tree1, listAppend(tree2, tree3)))::diff;
-        then diffLocal;
+          {firstTreeSecondLast,firstTreeLast} := List.lastN(treeLast,2);
+        then (firstTreeSecondLast,firstTreeLast);
+    end match;
+    diffLocal := match diffLocal
+      // Empty node
+      case (_, {})::diffLocal then diffLocal;
       // Do not delete whitespace in-between two tokens
       case ((Diff.Delete, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard if firstIter then min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree) else false
+        guard if firstIter then min(parseTreeIsWhitespaceNotComment(t) for t in tree) else false
         algorithm
           diff := (Diff.Equal, tree)::diff;
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := (Diff.Equal, tree)::diff1::diff;
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Delete, tree)::{})
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := (Diff.Equal, tree)::diff1::diff;
         then {};
+      // Remove empty sections; they mess with rules further down
+      case ((_, tree)::diffLocal)
+        guard min(isEmpty(t) for t in tree)
+        then diffLocal;
+      case (diff1::(_, tree)::diffLocal)
+        guard min(isEmpty(t) for t in tree)
+        then diff1::diffLocal;
+      case ((diffEnum, tree)::diffLocal)
+        guard max(isEmpty(t) for t in tree)
+        then (diffEnum,list(t for t guard not isEmpty(t) in tree))::diffLocal;
+      case (diff1::(diffEnum, tree)::diffLocal)
+        guard max(isEmpty(t) for t in tree)
+        then diff1::(diffEnum,list(t for t guard not isEmpty(t) in tree))::diffLocal;
+      // Sometimes a comment may move between 2 trees. This can bring it back, keeping the diff smaller.
+      case (Diff.Delete,tree1)::(diff2 as (_, tree2))::(diff3 as (_, tree3))::(Diff.Add, tree4First::tree4)::diffLocal
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree2) and
+              min(parseTreeIsWhitespaceNotComment(t) for t in tree3) and modelicaDiffTokenEq(lastToken(firstTreeLast),firstTokenInTree(tree4First))
+        then (Diff.Delete,removeLastTokenInTrees(tree1))::(Diff.Equal,{LEAF(lastToken(firstTreeLast))})::(Diff.Add,removeFirstTokenInTree(tree4First)::tree4)::diff2::diff3::diffLocal;
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,tree2 as (_::_))::_)))
-        guard needsWhitespaceBetweenTokens(lastToken(List.last(tree1)), firstTokenInTree(listGet(tree2, 1)))
+        guard needsWhitespaceBetweenTokens(lastToken(firstTreeLast), firstTokenInTree(listGet(tree2, 1)))
         algorithm
           diff := (Diff.Equal, {LEAF(makeToken(TokenId.WHITESPACE, " "))})::diff1::diff;
+        then diffLocal;
+      case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(diff2 as (Diff.Add, tree2 as (_::_)))::diffLocal)
+        guard needsWhitespaceBetweenTokens(lastToken(firstTreeLast), firstTokenInTree(listGet(tree2, 1)))
+        algorithm
+          diffLocal := diff1::(Diff.Equal, {LEAF(makeToken(TokenId.WHITESPACE, " "))})::diff2::diffLocal;
         then diffLocal;
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,tree2 as (_::_))::_)))
         algorithm
@@ -2225,13 +2371,66 @@ algorithm
         then (Diff.Delete, tree)::diffLocal;
       // Do not add whitespace for no good reason. Do add whitespace.
       case ((Diff.Add, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard if firstIter then min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree) else false
+        guard if firstIter then min(parseTreeIsWhitespaceNotComment(t) for t in tree) else false
         then diffLocal;
       case ((diff1 as (Diff.Equal,_))::(Diff.Add, tree)::(diffLocal as ((Diff.Equal,_)::_)))
-        guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
+        guard min(parseTreeIsWhitespaceNotComment(t) for t in tree)
         algorithm
           diff := diff1::diff;
         then diffLocal;
+      // DEL(..., NOT(NEWLINE)) ADD(..., NEWLINE) EQUAL(...) => DEL(..., NOT(NEWLINE)) ADD(...) EQUAL(...)
+      case ((diff1 as (Diff.Delete,tree1))::(Diff.Add, tree2)::diffLocal as ((Diff.Equal, tree3)::_))
+        guard (not parseTreeIsNewLine(firstTreeLast)) and parseTreeIsNewLine(List.last(tree2))
+        then diff1::(Diff.Add, List.stripLast(tree2))::diffLocal;
+
+      // DEL(IDENT) + ADD(WS, IDENT) => DEL(IDENT) + ADD(IDENT)
+      case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
+        guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t3) and parseTreeIsWhitespaceNotComment(t2)
+        then diff1::(Diff.Add,{t3})::diffLocal;
+      // DEL(IDENT) + ADD(IDENT, WS) => DEL(IDENT) + ADD(IDENT)
+      case (diff1 as (Diff.Delete,{t1}))::(Diff.Add,{t2,t3})::diffLocal
+        guard parseTreeIsOnlyIdent(t1) and parseTreeIsOnlyIdent(t2) and parseTreeIsWhitespaceNotComment(t3)
+        then diff1::(Diff.Add,{t2})::diffLocal;
+
+      // EQ(...) + ADD(..., NOT(NEWLINE)) + EQ(END, ...) => EQ(...) + ADD(..., NEWLINE) + EQ(END, ...)
+      case (diff1 as (Diff.Equal,_))::(Diff.Add,tree2)::diffLocal as (Diff.Equal,t1::_)::_
+        guard not parseTreeIsNewLine(List.last(tree2)) and parseTreeIsOnlyEnd(t1)
+        then diff1::(Diff.Add,listAppend(tree2, {LEAF(makeToken(TokenId.NEWLINE, "\n"))}))::diffLocal;
+
+      // EQ(...) + ADD(WS, ...) => EQ(...) + ADD(...)
+      case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2 as _::_::_)::diffLocal)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.second(tree2))) and parseTreeIsWhitespaceNotComment(List.first(tree2)) and not parseTreeIsNewLine(firstTreeLast)
+        then diff1::(Diff.Add, listRest(tree2))::diffLocal;
+
+      // ADD(..., WS) EQ(...) => ADD(...) + EQ(...)
+      case ((Diff.Add,tree1 as _::_::_)::(diff2 as (Diff.Equal, tree2))::diffLocal)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.first(tree2))) and not (parseTreeIsNewLine(firstTreeSecondLast) or parseTreeIsLineComment(firstTreeSecondLast)) and parseTreeIsWhitespaceNotCommentOrNewline(firstTreeLast)
+        then (Diff.Add, List.stripLast(tree1))::diff2::diffLocal;
+
+      // EQ(NEWLINE) + ADD(NEWLINE, ...) => EQ(NEWLINE) + ADD(...)
+      case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2)::diffLocal)
+        guard parseTreeIsNewLine(firstTreeLast) and parseTreeIsNewLine(List.first(tree2))
+        then diff1::(Diff.Add, listRest(tree2))::diffLocal;
+      // NEWLINE ADD WS DEL => NEWLINE WS ADD DEL
+      case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
+        guard parseTreeIsNewLine(firstTreeLast) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        then diff1::diff3::diff2::diff4::diffLocal;
+      // NEWLINE DEL WS ADD => NEWLINE WS DEL ADD
+      case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
+        guard parseTreeIsNewLine(firstTreeLast) and min(parseTreeIsWhitespaceNotComment(t) for t in tree3)
+        then diff1::diff3::diff2::diff4::diffLocal;
+
+      case ((diffEnum1,tree1)::(diffEnum2, tree2)::diffLocal)
+        guard diffEnum1==diffEnum2
+        then (diffEnum1, listAppend(tree1, tree2))::diffLocal;
+
+      // ADD(WS) NEWLINE => NEWLINE
+      case (Diff.Add,tree1)::(diffLocal as ((Diff.Equal,tree2)::_))
+        guard tokenId(lastToken(firstTreeLast))==TokenId.WHITESPACE and tokenId(firstToken(tree2))==TokenId.NEWLINE
+        algorithm
+          diff := (Diff.Add,removeLastTokenInTrees(tree1))::diff;
+        then diffLocal;
+
       // A normal tree :)
       case diff1::diffLocal
         algorithm
@@ -2240,7 +2439,6 @@ algorithm
     end match;
     firstIter := false;
   end while;
-
   diff := listReverseInPlace(diff);
   // Look for indentation levels, try to fix added \n+WS to indent at the same level
   lastTokenNewline := false;
@@ -2248,7 +2446,7 @@ algorithm
   hasAddedWS := false;
   for d in diff loop
     _ := match d
-      case (Diff.Add,_)
+      case (Diff.Add,tree)
         algorithm
           for t in tree loop
             _ := match firstNTokensInTree_reverse(t, 2)
@@ -2340,6 +2538,39 @@ algorithm
   diff := listReverseInPlace(diffLocal);
 end filterDiffWhitespace;
 
+function labelOrderDidNotChange
+  input list<String> addList, delList;
+  output Boolean b;
+protected
+  list<String> acc = {}, del = delList;
+  String s;
+algorithm
+  b := false;
+  for item in addList loop
+    if listMember(item, acc) then
+      return;
+    end if;
+    if listMember(item, del) then
+      while item <> List.first(del) loop
+        s::del := del;
+        if listMember(s, acc) then
+          return;
+        end if;
+        acc := s::acc;
+      end while;
+      del := listRest(del);
+    end if;
+    acc := item::acc;
+  end for;
+  for item in delList loop
+    if listMember(item, acc) then
+      return;
+    end if;
+    acc := item::acc;
+  end for;
+  b := true;
+end labelOrderDidNotChange;
+
 function makeToken
   input TokenId id;
   input String str;
@@ -2351,26 +2582,33 @@ end makeToken;
 
 function replaceLabeledDiff
   input list<tuple<Diff,list<ParseTree>>> inDiff, diffedNodes;
-  input ParseTree labelOfDiffedNodes;
+  input ParseTree labelOfDiffedAddedNodes, labelOfDiffedDeletedNodes;
   input CmpParseTreeFunc compare;
+  input Boolean inAllLabelsAreInOrder "If all labels are in order, there are no moves and we can replace the deleted node which keeps whitespace in better positions";
   output list<tuple<Diff,list<ParseTree>>> res={};
 protected
   list<tuple<Diff,list<ParseTree>>> filtered;
-  list<ParseTree> lst, acc;
-  Boolean found=false;
+  list<ParseTree> lst, acc, tmp;
+  Boolean found=false, allLabelsAreInOrder=inAllLabelsAreInOrder;
+  Diff d;
+  Token t1,t2;
 algorithm
+  if parseTreeStr(labelOfDiffedDeletedNodes::{}) == "$equation_section" then
+    allLabelsAreInOrder := false;
+  end if;
   for diff in inDiff loop
     res := match diff
       case (Diff.Equal, _) then diff::res;
-      case (Diff.Add, lst) guard not max(compare(nodeLabel(t), labelOfDiffedNodes) for t in lst) then diff::res;
-      case (Diff.Delete, lst) guard not max(compare(nodeLabel(t), labelOfDiffedNodes) for t in lst) then diff::res;
-      case (Diff.Delete, lst) then (Diff.Delete, list(t for t guard not compare(nodeLabel(t), labelOfDiffedNodes) in lst))::res; // TODO: Handle the deletion better...
-      case (Diff.Add, lst)
+      case (Diff.Add, lst) guard not max(compare(nodeLabel(t), labelOfDiffedAddedNodes) for t in lst) then diff::res;
+      case (Diff.Delete, lst) guard not max(compare(nodeLabel(t), labelOfDiffedDeletedNodes) for t in lst) then diff::res;
+      case (Diff.Add, lst) guard allLabelsAreInOrder then (Diff.Add, list(t for t guard not compare(nodeLabel(t), labelOfDiffedAddedNodes) in lst))::res; // TODO: Handle the deletion better...
+      case (Diff.Delete, lst) guard not allLabelsAreInOrder then (Diff.Delete, list(t for t guard not compare(nodeLabel(t), labelOfDiffedDeletedNodes) in lst))::res; // TODO: Handle the deletion better...
+      case (d, lst)
         algorithm
           acc := {};
           for t in lst loop
             // Assuming adjacent to the delete node
-            if (not found) and compare(nodeLabel(t), labelOfDiffedNodes) then
+            if (not found) and compare(nodeLabel(t), if allLabelsAreInOrder then labelOfDiffedDeletedNodes else labelOfDiffedAddedNodes) then
               if not listEmpty(acc) then
                 res := (Diff.Add, listReverse(acc))::res;
                 acc := {};
@@ -2380,7 +2618,7 @@ algorithm
               res := listAppend(filtered, res);
               found := true;
             else
-              res := (Diff.Add, {t})::res;
+              res := (d, {t})::res;
             end if;
           end for;
           if not listEmpty(acc) then
@@ -2466,7 +2704,7 @@ algorithm
     arrayUpdate(work, arrayLength(work)-commentCount, firstTokenInTree(t));
     commentCount := commentCount + 1;
     return;
-  elseif parseTreeIsWhitespaceOrPar(t) then
+  elseif parseTreeIsWhitespace(t) then
     return;
   end if;
   _ := match t
@@ -2550,12 +2788,50 @@ algorithm
   end match;
 end firstNTokensInTree_reverse;
 
+function removeFirstTokenInTree
+  input output ParseTree t;
+algorithm
+  t := match t
+    local
+      ParseTree node, label;
+      list<ParseTree> nodes;
+    case EMPTY() then fail();
+    case LEAF() then EMPTY();
+    case NODE(label=label, nodes=node::nodes) then makeNode(removeFirstTokenInTree(node) :: nodes, label=label);
+  end match;
+end removeFirstTokenInTree;
+
+function removeLastTokenInTree
+  input output ParseTree t;
+algorithm
+  t := match t
+    local
+      ParseTree node, label;
+      list<ParseTree> nodes, acc;
+    case EMPTY() then fail();
+    case LEAF() then EMPTY();
+    case NODE(label=label, nodes=nodes)
+      algorithm
+        node::nodes := listReverse(nodes);
+      then makeNode(listReverse(removeLastTokenInTree(node) :: nodes), label=label);
+  end match;
+end removeLastTokenInTree;
+
+function removeLastTokenInTrees
+  input output list<ParseTree> ts;
+protected
+  ParseTree t;
+algorithm
+  t :: ts := listReverse(ts);
+  ts := listReverse(removeLastTokenInTree(t)::ts);
+end removeLastTokenInTrees;
+
 function firstTokenInTree
   input ParseTree t;
   output Token token;
 algorithm
   token := match t
-    case EMPTY() then fail();
+    case EMPTY() algorithm print("No first token in tree\n"); then fail();
     case LEAF() then t.token;
     case NODE() then firstTokenInTree(listGet(t.nodes, 1));
   end match;
@@ -2566,7 +2842,7 @@ function lastToken
   output Token token;
 algorithm
   token := match t
-    case EMPTY() then fail();
+    case EMPTY() algorithm if debug then print("lastToken fail\n"); end if; then fail();
     case LEAF() then t.token;
     case NODE() then lastToken(List.last(t.nodes));
   end match;
@@ -2632,12 +2908,9 @@ function makeNode
   input ParseTree label = EMPTY();
   output ParseTree node;
 algorithm
-  node := match nodes
-    case {}
-      algorithm
-        error({}, nodes, {});
-      then fail();
-    case {node} guard match label case EMPTY() then true; else false; end match then node;
+  node := match (list(n for n guard not isEmpty(n) in nodes),label)
+    case ({},EMPTY()) then EMPTY();
+    case ({node},EMPTY()) then node;
     else NODE(label, nodes);
   end match;
 end makeNode;
@@ -2718,8 +2991,6 @@ algorithm
               acc := {tree}::acc;
             elseif parseTreeIsWhitespace(tree) then
               acc := acc;
-            elseif parseTreeIsWhitespaceOrPar(tree) then
-              acc := {tree}::acc;
             else
               if foundAdded then
                 Error.addInternalError("Found multiple Add subtrees", sourceInfo());
@@ -2740,7 +3011,7 @@ algorithm
       case (Diff.Delete, lst)
         algorithm
           for tree in lst loop
-            if parseTreeIsWhitespaceOrPar(tree) then
+            if parseTreeIsWhitespace(tree) then
               acc := {tree}::acc;
             else
               if foundDeleted then
@@ -2809,10 +3080,9 @@ algorithm
   for diff in diffs loop
     (d,l) := diff;
     if d == Diff.Add then
-      // We treat parenthesis similar to whitespace because we need to keep them as before since unparsing adds or removes parentheses
-      nadd := nadd+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
+      nadd := nadd+sum(if parseTreeIsWhitespace(t) then 0 else 1 for t in l);
     elseif d == Diff.Delete then
-      ndel := ndel+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
+      ndel := ndel+sum(if parseTreeIsWhitespace(t) then 0 else 1 for t in l);
     end if;
   end for;
 end countDiffAddDelete;
@@ -2834,13 +3104,6 @@ constant list<TokenId> tokenIdsComment = {
     TokenId.BLOCK_COMMENT
 };
 
-function dummyParseTreeIsWhitespaceFalse
-  // The diff-algorithm will strip leading whitespace, but these are
-  // sort of significant...
-  input ParseTree t1;
-  output Boolean b=false;
-end dummyParseTreeIsWhitespaceFalse;
-
 function parseTreeIsWhitespace
   input ParseTree t1;
   output Boolean b;
@@ -2860,58 +3123,10 @@ protected
   TokenId id;
 algorithm
   b := match t1
-    case LEAF() then listMember(t1.token.id, {TokenId.NEWLINE});
+    case LEAF() then t1.token.id == TokenId.NEWLINE;
     else false;
   end match;
 end parseTreeIsNewLine;
-
-function parseTreeIsLPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then t1.token.id == TokenId.LPAR;
-    else false;
-  end match;
-end parseTreeIsLPar;
-
-function parseTreeIsRPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then t1.token.id == TokenId.RPAR;
-    else false;
-  end match;
-end parseTreeIsRPar;
-
-function parseTreeIsWhitespaceOrPar
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then listMember(t1.token.id, TokenId.LPAR::TokenId.RPAR::whiteSpaceTokenIds);
-    else false;
-  end match;
-end parseTreeIsWhitespaceOrPar;
-
-function parseTreeIsWhitespaceOrParNotComment
-  input ParseTree t1;
-  output Boolean b;
-protected
-  TokenId id;
-algorithm
-  b := match t1
-    case LEAF() then listMember(t1.token.id, TokenId.LPAR::TokenId.RPAR::whiteSpaceTokenIdsNotComment);
-    else false;
-  end match;
-end parseTreeIsWhitespaceOrParNotComment;
 
 function parseTreeIsWhitespaceNotComment
   input ParseTree t1;
@@ -2925,6 +3140,18 @@ algorithm
   end match;
 end parseTreeIsWhitespaceNotComment;
 
+function parseTreeIsWhitespaceNotCommentOrNewline
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.WHITESPACE;
+    else false;
+  end match;
+end parseTreeIsWhitespaceNotCommentOrNewline;
+
 function parseTreeIsComment
   input ParseTree t1;
   output Boolean b;
@@ -2936,6 +3163,42 @@ algorithm
     else false;
   end match;
 end parseTreeIsComment;
+
+function parseTreeIsLineComment
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.LINE_COMMENT;
+    else false;
+  end match;
+end parseTreeIsLineComment;
+
+function parseTreeIsOnlyIdent
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.IDENT;
+    else false;
+  end match;
+end parseTreeIsOnlyIdent;
+
+function parseTreeIsOnlyEnd
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.END;
+    else false;
+  end match;
+end parseTreeIsOnlyEnd;
 
 function parseTreeFilterWhitespace
   input output ParseTree t;
@@ -3147,7 +3410,7 @@ algorithm
   _ := match tree
     // TODO: Normalize line-endings? We can output mixed CRLF/LF now...
     case LEAF() algorithm Print.printBuf(tokenContent(tree.token)); then ();
-    case EMPTY() algorithm Print.printBuf("<EMPTY>"); then ();
+    case EMPTY() then ();
     case NODE()
       algorithm
         for n in tree.nodes loop
@@ -3223,7 +3486,7 @@ protected
     TokenId.SLASH_EW,
     TokenId.STAR,
     TokenId.STAR_EW,
-    TokenId.STRING,
+    // TokenId.STRING, Not OK for string comments
     TokenId.UNSIGNED_INTEGER,
     TokenId.UNSIGNED_REAL,
     TokenId.WHITESPACE

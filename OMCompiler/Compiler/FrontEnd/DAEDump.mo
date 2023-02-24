@@ -524,6 +524,7 @@ algorithm
     case DAE.GIVEN() then "Uncertainty.given";
     case DAE.SOUGHT() then "Uncertainty.sought";
     case DAE.REFINE() then "Uncertainty.refine";
+    case DAE.PROPAGATE() then "Uncertainty.propagate";
   end match;
 end dumpUncertaintyStr;
 

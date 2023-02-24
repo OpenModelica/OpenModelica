@@ -69,9 +69,10 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // create the filter text box
   mpFilterTextBox = new QLineEdit;
   mpFilterTextBox->installEventFilter(this);
+  mpFilterTextBox->setClearButtonEnabled(true);
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
-  mpFilterTimer = new QTimer;
+  mpFilterTimer = new QTimer(this);
   mpFilterTimer->setSingleShot(true);
   mpScrollToActiveButton = new QToolButton;
   QString scrollToActiveButtonText = tr("Scroll to Active");
@@ -409,70 +410,6 @@ ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentL
   setForeground(mColor);
 }
 
-CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
-  : QWidget(pParent)
-{
-  // colors groupbox
-  mpColorsGroupBox = new QGroupBox(Helper::Colors);
-  // Item color label and pick color button
-  mpItemColorLabel = new Label(tr("Item Color:"));
-  mpItemColorPickButton = new QPushButton(Helper::pickColor);
-  mpItemColorPickButton->setAutoDefault(false);
-  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
-  // Items list
-  mpItemsLabel = new Label(tr("Items:"));
-  mpItemsListWidget = new QListWidget;
-  mpItemsListWidget->setItemDelegate(new ItemDelegate(mpItemsListWidget));
-  mpItemsListWidget->setMaximumHeight(90);
-  // text (black)
-  new ListWidgetItem("Text", QColor(0, 0, 0), mpItemsListWidget);
-  // make first item in the list selected
-  mpItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  // preview textbox
-  mpPreviewLabel = new Label(tr("Preview:"));
-  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
-  mpPreviewPlainTextEdit->setTabStopDistance((qreal)Helper::tabWidth);
-#else // QT_VERSION_CHECK
-  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
-#endif // QT_VERSION_CHECK
-  // set colors groupbox layout
-  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
-  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
-  pColorsGroupBoxLayout->addWidget(mpItemsListWidget, 2, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
-  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
-  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
-  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
-  // set the layout
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpColorsGroupBox);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief CodeColorsWidget::pickColor
- * Picks a color for one of the Text Settings rules.
- * This method is called when mpColorPickButton clicked SIGNAL raised.
- */
-void CodeColorsWidget::pickColor()
-{
-  QListWidgetItem *pItem = mpItemsListWidget->currentItem();
-  ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(pItem);
-  if (!pListWidgetItem) {
-    return;
-  }
-  QColor color = QColorDialog::getColor(pListWidgetItem->getColor());
-  if (!color.isValid()) {
-    return;
-  }
-  pListWidgetItem->setColor(color);
-  pListWidgetItem->setForeground(color);
-  emit colorUpdated();
-}
-
 /*!
  * \brief QDetachableProcess::QDetachableProcess
  * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
@@ -502,6 +439,22 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   waitForStarted();
   setProcessState(QProcess::NotRunning);
 }
+
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+/*!
+ * \brief QDetachableProcess::start
+ * Starts a process and detaches from it.
+ * \param command
+ * \param mode
+ */
+void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
+{
+  QProcess::start(command, mode);
+  waitForStarted();
+  setProcessState(QProcess::NotRunning);
+}
+#endif
+
 
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
@@ -604,8 +557,14 @@ QString& Utilities::tempDirectory()
     tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
 #endif
     tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath))
-      QDir().mkpath(tmpPath);
+    if (!QDir().exists(tmpPath)) {
+      if (!QDir().mkpath(tmpPath)) {
+        qDebug() << "Failed to create the tempDirectory" << tmpPath
+                 << "will use" << QDir::tempPath() << "instead.";
+        tmpPath = QDir::tempPath();
+        tmpPath.remove("\"");
+      }
+    }
   }
   return tmpPath;
 }
@@ -1009,9 +968,9 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
   return R;
 }
 
-#if defined(_WIN32)
 QString Utilities::getGDBPath()
 {
+#if defined(_WIN32)
 #if defined(__MINGW32__) && !defined(__MINGW64__)
   const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
 #endif
@@ -1025,8 +984,10 @@ QString Utilities::getGDBPath()
     QString qOMDEV = QString(OMDEV).replace("\\", "/");
     return QString(qOMDEV).append(sgdb);
   }
-}
+#else
+  return "gdb";
 #endif
+}
 
 Utilities::FileIconProvider::FileIconProviderImplementation *instance()
 {
@@ -1291,7 +1252,7 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
  * \param displayUnit
  * \return
  */
-QString Utilities::convertUnitToSymbol(const QString displayUnit)
+QString Utilities::convertUnitToSymbol(const QString &displayUnit)
 {
   if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
     return QChar(937);
@@ -1308,7 +1269,7 @@ QString Utilities::convertUnitToSymbol(const QString displayUnit)
  * \param symbol
  * \return
  */
-QString Utilities::convertSymbolToUnit(const QString symbol)
+QString Utilities::convertSymbolToUnit(const QString &symbol)
 {
   // Greek Omega
   if (symbol.compare(QChar(937)) == 0) {

@@ -230,11 +230,6 @@ protected
           non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
-
-          // if we replaced variables by constants it is possible that new simple equations formed
-          if not listEmpty(const_vars) then
-            (varData, eqData) := aliasDefault(varData, eqData);
-          end if;
       then (varData, eqData);
 
       else algorithm
@@ -304,17 +299,10 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
-
-      case BEquation.SIMPLE_EQUATION() algorithm
-        crefTpl := findCrefs(Expression.fromCref(eq.rhs), crefTpl);
-        crefTpl := findCrefs(Expression.fromCref(eq.lhs), crefTpl);
-      then crefTpl;
-
-      case BEquation.SCALAR_EQUATION() guard(isSimple(eq.lhs) and isSimple(eq.rhs)) algorithm
+      case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs, true) and isSimpleExp(eq.rhs, true)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
-
       // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
       else crefTpl;
     end match;
@@ -335,7 +323,7 @@ protected
           UnorderedMap.add(cr1, Pointer.create(set), map);
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
-          set_ptr := UnorderedMap.getSafe(cr1, map);
+          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
           set := Pointer.access(set_ptr);
           if isSome(set.const_opt) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
@@ -353,8 +341,8 @@ protected
       case CREF_TPL(cr_lst = {cr1, cr2}) algorithm
         if (UnorderedMap.contains(cr1, map) and UnorderedMap.contains(cr2, map)) then
           // Merge sets
-          set1_ptr := UnorderedMap.getSafe(cr1, map);
-          set2_ptr := UnorderedMap.getSafe(cr2, map);
+          set1_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
+          set2_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
           set1 := Pointer.access(set1_ptr);
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_ALIAS_SET;
@@ -400,7 +388,7 @@ protected
 
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr1, map);
+          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
           set.simple_variables := cr2 :: set.simple_variables;
@@ -410,7 +398,7 @@ protected
           UnorderedMap.add(cr2, set_ptr, map);
         elseif UnorderedMap.contains(cr2, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr2, map);
+          set_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
           set.simple_variables := cr1 :: set.simple_variables;
@@ -494,54 +482,89 @@ protected
     end match;
   end findCrefsFail;
 
-  function isSimple
-    "BB start module for detecting simple equation/expressions"
-    input Expression exp;
-    output Boolean isSimple;
-  algorithm
-     //print("Traverse "  + ExpressionDump.printExpStr(inExp) + "\n");
-    isSimple := Expression.fold(exp, checkOperator, true);
-    //print("Simple: " +  boolString(outIsSimple) + "\n");
-  end isSimple;
-
-  function checkOperator "BB
-  check, if left and right expression of an equation are simple:
-  a = b, a = -b, a = not b, a = 2.0, etc.
-  this module will be extended in the future!
-  "
+  function isSimpleExp
+    "checks if an expression can be considered simple."
     input Expression exp;
     input output Boolean simple;
-  protected
-    function checkOp
-      "BB"
-      input Operator op;
-      output Boolean b;
-    algorithm
-      b := match(op)
-        case Operator.OPERATOR(op = NFOperator.Op.ADD)        then true;
-        case Operator.OPERATOR(op = NFOperator.Op.SUB)        then true;
-        case Operator.OPERATOR(op = NFOperator.Op.UMINUS)     then true;
-        case Operator.OPERATOR(op = NFOperator.Op.NOT)        then true;
-                                                              else false;
-      end match;
-    end checkOp;
+    output Integer num_cref = 0;
   algorithm
-    // only check if not previously already found to not be simple
-    if simple then
-      simple := match(exp)
-        case Expression.MULTARY() then checkOp(exp.operator);
-        case Expression.BINARY()  then checkOp(exp.operator);
-        case Expression.UNARY()   then checkOp(exp.operator);
-        case Expression.LUNARY()  then checkOp(exp.operator);
-        case Expression.CREF()    then true;
-        case Expression.INTEGER() then true;
-        case Expression.REAL()    then true;
-        case Expression.BOOLEAN() then true;
-        case Expression.STRING()  then true;
-                                  else false;
-      end match;
-    end if;
-  end checkOperator;
+    if not simple then num_cref := 10; return; end if;
+    (simple, num_cref) := match exp
+      local
+        Integer num_cref_tmp;
+
+      case Expression.INTEGER()   then (true, 0);
+      case Expression.REAL()      then (true, 0);
+      case Expression.BOOLEAN()   then (true, 0);
+      case Expression.STRING()    then (true, 0);
+      case Expression.CREF()      then (true, 1);
+
+      case Expression.CAST() algorithm
+        (simple, num_cref) := isSimpleExp(exp.exp, simple);
+      then (simple, num_cref);
+
+      case Expression.UNARY() algorithm
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
+        num_cref := num_cref + num_cref_tmp;
+        simple := checkOp(exp.operator, num_cref);
+      then (simple, num_cref);
+
+      case Expression.LUNARY() algorithm
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
+        num_cref := num_cref + num_cref_tmp;
+        simple := checkOp(exp.operator, num_cref);
+      then (simple, num_cref);
+
+      case Expression.BINARY() algorithm
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
+        num_cref := num_cref + num_cref_tmp;
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
+        num_cref := num_cref + num_cref_tmp;
+        simple := checkOp(exp.operator, num_cref);
+      then (simple, num_cref);
+
+      case Expression.LBINARY() algorithm
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
+        num_cref := num_cref + num_cref_tmp;
+        (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
+        num_cref := num_cref + num_cref_tmp;
+        simple := checkOp(exp.operator, num_cref);
+      then (simple, num_cref);
+
+      case Expression.MULTARY() algorithm
+        for arg in exp.arguments loop
+          if not simple then num_cref := 10; return; end if;
+          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          num_cref := num_cref + num_cref_tmp;
+        end for;
+        for arg in exp.inv_arguments loop
+          if not simple then num_cref := 10; return; end if;
+          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          num_cref := num_cref + num_cref_tmp;
+        end for;
+        simple := checkOp(exp.operator, num_cref);
+      then (simple, num_cref);
+
+      else (false, 10);
+    end match;
+  end isSimpleExp;
+
+  function checkOp
+    "BB"
+    input Operator op;
+    input Integer cref_num;
+    output Boolean b;
+  algorithm
+    b := match(op)
+      case Operator.OPERATOR(op = NFOperator.Op.ADD)        then true;
+      case Operator.OPERATOR(op = NFOperator.Op.SUB)        then true;
+      case Operator.OPERATOR(op = NFOperator.Op.UMINUS)     then true;
+      case Operator.OPERATOR(op = NFOperator.Op.NOT)        then true;
+      case Operator.OPERATOR(op = NFOperator.Op.MUL)        then cref_num < 2;
+      case Operator.OPERATOR(op = NFOperator.Op.DIV)        then cref_num < 2;
+                                                            else cref_num == 0;
+    end match;
+  end checkOp;
 
   function getSimpleSets
     "extracts all simple sets from the hashTable and avoids duplicates by marking variables"

@@ -52,8 +52,9 @@ extern "C" {
 #ifdef WITH_SUNDIALS
 
 #include <cvode/cvode.h>
+#include "cvode_solver.h"
 #ifndef OMC_FMI_RUNTIME
-#include <ida/ida.h>
+#include "ida_solver.h"
 #include <kinsol/kinsol.h>
 #include "kinsolSolver.h"
 #endif
@@ -68,19 +69,25 @@ typedef enum sundialsFlagType {
   SUNDIALS_CV_FLAG,       /* CVODE main solver module flags */
   SUNDIALS_CVLS_FLAG,     /* CVODE main solver module flags */
 
-  SUNDIALS_IDA_FLAG,      /* IDA main solver module flags */
+  SUNDIALS_IDA_FLAG,      /* IDA/IDAS main solver module flags */
   SUNDIALS_IDALS_FLAG,    /* IDA linear solver module flags */
 
   SUNDIALS_KIN_FLAG,      /* KINSOL main solver module flags */
   SUNDIALS_KINLS_FLAG,    /* KINSOL linear solver interface flags */
 
-  SUNDIALS_SUNLS_FLAG     /* SUNDIALS linear solver flags */
+  SUNDIALS_SUNLS_FLAG,    /* SUNDIALS linear solver flags */
+
+  SUNDIALS_MATRIX_FLAG    /* SUNMatrix module flags */
 } sundialsFlagType;
 
 /* Function prototypes */
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
+void cvodeErrorHandlerFunction(int errorCode, const char *module,
+                               const char *function, char *msg, void *userData);
 #ifndef OMC_FMI_RUNTIME
+void idaErrorHandlerFunction(int errorCode, const char *module,
+                             const char *function, char *msg, void *userData);
 void kinsolErrorHandlerFunction(int errorCode, const char *module,
                                 const char *function, char *msg,
                                 void *userData);

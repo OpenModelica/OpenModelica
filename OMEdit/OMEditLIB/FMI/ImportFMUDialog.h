@@ -53,6 +53,8 @@ private:
   Label *mpFmuFileLabel;
   QLineEdit *mpFmuFileTextBox;
   QPushButton *mpBrowseFileButton;
+  Label *mpModelNameLabel;
+  QLineEdit *mpModelNameTextBox;
   Label *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
   QPushButton *mpBrowseDirectoryButton;
@@ -61,7 +63,6 @@ private:
   QCheckBox *mpDebugLoggingCheckBox;
   QCheckBox *mpGenerateIntputConnectors;
   QCheckBox *mpGenerateOutputConnectors;
-  Label *mpOutputDirectoryNoteLabel;
   QPushButton *mpImportButton;
 private slots:
   void setSelectedFile();

@@ -253,6 +253,7 @@ File Menu
 -  *Load Encrypted Library* - Loads an encrypted library. see :ref:`encryption`
 -  *Open Result File(s)* - Opens a result file.
 -  *Open Transformations File* - Opens a transformational debugger file.
+-  *Unload All* - Unloads all loaded classes.
 -  *New Composite Model* - Creates a new composite model.
 -  *Open Composite Model(s)* - Loads an existing composite model.
 -  *Load External Model(s)* - Loads the external models that can be used within
@@ -674,6 +675,47 @@ Here are some simple examples:
 Please note that all the model variables will still be shown in the Variables Browser tree; however, only those for which results were actually saved
 will have a checkbox to plot them.
 
+CSV-File Data Input
+~~~~~~~~~~~~~~~~~~~
+When simulating Modelica models with top-level inputs (input variables or input connectors), these inputs are assumed to be equal to their start
+value by default. However, it is possible to feed them with input signals obtained from CSV (Comma-Separated Value) input data files, by means of the
+:ref:`-csvInput <simflag-csvInput>` simulation flag, that can be set in the *Additional Simulation Flags (Optional)* field of
+the Simulation Flags tab. For example, setting ``-csvInput=myinput.csv`` causes the runtime executable to read such input data from the ``myinput.csv``
+file.
+
+CSV files should contain the names of the input variables in the first row, beginning with ``time`` on the first column, and the values of such variables
+for each point in time in subsequent rows, with non-decreasing time values. The variable names should be enclosed by quotation marks in case they contain spaces, to avoid ambiguities. The default separator for data items within each row is the comma, but it is also possible to use other separators, e.g., space, tab,
+or semi-colon; in this case, the file should start with the separator specification ``"sep=x"`` (including the quotation marks), where ``x`` is the separator
+character.
+
+For example, assume your model has three top-level inputs named ``u1``, ``u2``, and ``u3``. These are valid CSV input files:
+
+.. code-block:: none
+
+  time, u3, u2, u1
+  0.0, 0.0, 0.0, 0.0
+  1.0, 0.0, 0.0, 0.0
+  2.0, 0.0, 0.0, 1.0
+
+  "sep=;" time; u3; u2; u1
+  0.0; 0.0; 0.0; 0.0
+  1.0; 0.0; 0.0; 0.0
+  2.0; 0.0; 0.0; 1.0
+
+  "sep= " "time" "u3" "u2" "u1"
+  0.0 0.0 0.0 0.0
+  1.0 0.0 0.0 0.0
+  2.0 0.0 0.0 1.0
+
+Note that input labels need not be lexicographically ordered, the association between the columns and the inputs is given by the first row.
+
+The CSV-file provides the values of the top level inputs at the specified points in time; linear interpolation is used to provide intermediate values between
+any two subsequent data points. Discontinuous inputs can be obtained by providing two consecutive rows with the same time value, containing the left
+limit values and the right limit values.
+
+Unless an absolute pathname is provided for the CSV-files, OMEdit will load it from the sub-directory of the working directory which has the same name of the model,
+where all the other input and output data files are located.
+
 Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~
 
@@ -1091,8 +1133,8 @@ reading and writing the options.
 
 .. _omedit-options-general :
 
-General
-~~~~~~~
+General Options
+~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1156,26 +1198,24 @@ General
 
   -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
 
-Libraries
-~~~~~~~~~
+Libraries Options
+~~~~~~~~~~~~~~~~~
 
--  *System Libraries* – The list of system libraries that should be
-   loaded every time OMEdit starts.
+-  General
 
--  *Force loading of Modelica Standard Library* – If true then Modelica
-   and ModelicaReference will always load even if user has removed
-   them from the list of system libraries.
+  -  *MODELICAPATH* – Sets the MODELICAPATH. MODELICAPATH is used to load libraries.
 
--  *Load OpenModelica library on startup* – If true then OpenModelica
-   package will be loaded when OMEdit is started.
+-  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 
--  *User Libraries* – The list of user libraries/files that should be
-   loaded every time OMEdit starts.
+  -  *Load latest Modelica version on startup* - Is true then the latest available version of the
+     Modelica Standard Library is always loaded alongwith its dependencies.
+
+-  User libraries loaded automatically on startup - The list of user libraries/files that are loaded on startup.
 
 .. _omedit-options-text-editor :
 
-Text Editor
-~~~~~~~~~~~
+Text Editor Options
+~~~~~~~~~~~~~~~~~~~
 -  Format
 
   -  *Line Ending* - Sets the file line ending.
@@ -1215,8 +1255,8 @@ Text Editor
 
   -  *Font Size* – Sets the font size for the editor.
 
-Modelica Editor
-~~~~~~~~~~~~~~~
+Modelica Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 -  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
 
@@ -1228,7 +1268,51 @@ Modelica Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
-MetaModelica Editor
+MetaModelica Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+CompositeModel Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+SSP Editor Options
+~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+C/C++ Editor Options
+~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+HTML Editor Options
 ~~~~~~~~~~~~~~~~~~~
 
 -  Colors
@@ -1239,52 +1323,8 @@ MetaModelica Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
-CompositeModel Editor
-~~~~~~~~~~~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-SSP Editor
-~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-C/C++ Editor
-~~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-HTML Editor
-~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* – List of categories used of syntax highlighting the code.
-
-  -  *Item Color* – Sets the color for the selected item.
-
-  -  *Preview* – Shows the demo of the syntax highlighting.
-
-Graphical Views
-~~~~~~~~~~~~~~~
+Graphical Views Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 - General
 
@@ -1331,8 +1371,8 @@ Graphical Views
 
 .. _omedit-options-simulation :
 
-Simulation
-~~~~~~~~~~
+Simulation Options
+~~~~~~~~~~~~~~~~~~
 
 -  Simulation
 
@@ -1356,11 +1396,11 @@ Simulation
        analytical jacobian for non-linear strong components without user-defined
        function calls.
 
-    -  *Enable pedantic debug-mode, to get much more feedback*
-
     -  *Enable parallelization of independent systems of equations (Experimental)*
 
     -  *Enable old frontend for code generation*
+
+    -  *Enable FMU Import* - See :ref:`fmi-import`.
 
     -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
@@ -1374,6 +1414,11 @@ Simulation
 
   -  *Use static linking* – if true then static linking is used for simulation executable.
      The default is dynamic linking. This option is only available on Windows.
+
+  -  *Post compilation command* - if not empty allows to run a command after the compilation step.
+     A possible use-case is to be able to sign the binaries before execution to comply with the security policy.
+     The command is run in the same folder where the simulation executable is created.
+     The interpreter executable must be passed to run shell scripts, eg on Windows: `powershell.exe -File C:\script.ps1`
 
   -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
@@ -1407,8 +1452,8 @@ Simulation
 
 .. _omedit-options-messages :
 
-Messages
-~~~~~~~~
+Messages Options
+~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1434,8 +1479,8 @@ Messages
 
   -  *Error Color* – Sets the text color for error messages.
 
-Notifications
-~~~~~~~~~~~~~
+Notifications Options
+~~~~~~~~~~~~~~~~~~~~~
 
 -  Notifications
 
@@ -1469,8 +1514,8 @@ Notifications
 
     -  *Keep using new frontend*
 
-Line Style
-~~~~~~~~~~
+Line Style Options
+~~~~~~~~~~~~~~~~~~
 
 -  Line Style
 
@@ -1488,8 +1533,8 @@ Line Style
 
   -  *Smooth* – If true then the line is drawn as a Bezier curve.
 
-Fill Style
-~~~~~~~~~~
+Fill Style Options
+~~~~~~~~~~~~~~~~~~
 
 -  Fill Style
 
@@ -1497,8 +1542,8 @@ Fill Style
 
   -  *Pattern* – Sets the fill pattern.
 
-Plotting
-~~~~~~~~
+Plotting Options
+~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1537,8 +1582,8 @@ Plotting
 
   - *Legend*
 
-Figaro
-~~~~~~
+Figaro Options
+~~~~~~~~~~~~~~
 
 -  Figaro
 
@@ -1550,8 +1595,8 @@ Figaro
 
 .. _omedit-options-debugger :
 
-Debugger
-~~~~~~~~
+Debugger Options
+~~~~~~~~~~~~~~~~
 
 -  Algorithmic Debugger
 
@@ -1581,8 +1626,8 @@ Debugger
 
 .. _omedit-options-fmi :
 
-FMI
-~~~
+FMI Options
+~~~~~~~~~~~
 
 -  Export
 
@@ -1630,8 +1675,8 @@ FMI
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
      then the temporary FMU directory that is created for importing the FMU will be deleted.
 
-OMTLMSimulator
-~~~~~~~~~~~~~~
+OMTLMSimulator Options
+~~~~~~~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -1641,8 +1686,8 @@ OMTLMSimulator
 
   -  *Monitor Process* - path to OMTLMSimulator monitor process.
 
-OMSimulator/SSP
-~~~~~~~~~~~~~~~
+OMSimulator/SSP Options
+~~~~~~~~~~~~~~~~~~~~~~~
 
 -  General
 

@@ -78,6 +78,7 @@ public:
   bool addConnectorToBus(QString busCref, QString connectorCref);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
   bool addSubModel(QString cref, QString fmuPath);
+  bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
   bool addExternalTLMModel(QString cref, QString startScript, QString modelPath);
   bool addSystem(QString cref, oms_system_enu_t type);

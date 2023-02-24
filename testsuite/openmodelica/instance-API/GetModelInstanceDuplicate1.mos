@@ -23,31 +23,40 @@ getModelInstance(B, prettyPrint = true);
 // "{
 //   \"name\": \"B\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 14
+//         }
 //       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\"
 //     }
 //   ],
-//   \"components\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//
-//       }
-//     }
-//   ]
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

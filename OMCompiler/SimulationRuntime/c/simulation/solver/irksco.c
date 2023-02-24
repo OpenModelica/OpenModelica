@@ -578,9 +578,9 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   }
 
   /* write stats */
-  solverInfo->solverStatsTmp[0] = userdata->stepsDone;
-  solverInfo->solverStatsTmp[1] = userdata->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = userdata->evalJacobians;
+  solverInfo->solverStatsTmp.nStepsTaken = userdata->stepsDone;
+  solverInfo->solverStatsTmp.nCallsODE = userdata->evalFunctionODE;
+  solverInfo->solverStatsTmp.nCallsJacobian = userdata->evalJacobians;
 
   infoStreamPrint(LOG_SOLVER, 0, "Finished irksco step.");
 

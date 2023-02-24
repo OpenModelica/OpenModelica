@@ -143,6 +143,9 @@ algorithm
         b = serializeVarsHelp(file, vars.stringAliasVars, withOperations, b);
         b = serializeVarsHelp(file, vars.extObjVars, withOperations, b);
         b = serializeVarsHelp(file, vars.constVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.intConstVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.boolConstVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.stringConstVars, withOperations, b);
         b = serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
         b = serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
       then ();
@@ -461,7 +464,43 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_FOR_RESIDUAL() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_GENERIC_RESIDUAL() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -478,6 +517,55 @@ algorithm
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
+      File.write(file, "\"");
+      if (assign_type==1) then
+        File.write(file, ",\"tag\":\"torn\",\"defines\":[\"");
+      elseif (assign_type==2) then
+        File.write(file, ",\"tag\":\"jacobian\",\"defines\":[\"");
+      else
+        File.write(file, ",\"tag\":\"assign\",\"defines\":[\"");
+      end if;
+      writeCref(file,eq.cref,escape=JSON);
+      File.write(file, "\"],\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_GENERIC_ASSIGN() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\"");
+      if (assign_type==1) then
+        File.write(file, ",\"tag\":\"torn\",\"defines\":[\"");
+      elseif (assign_type==2) then
+        File.write(file, ",\"tag\":\"jacobian\",\"defines\":[\"");
+      else
+        File.write(file, ",\"tag\":\"assign\",\"defines\":[\"");
+      end if;
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
+    case SimCode.SES_ENTWINED_ASSIGN() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
       if (assign_type==1) then
         File.write(file, "\",\"tag\":\"torn\",\"defines\":[\"");
       elseif (assign_type==2) then
@@ -485,11 +573,6 @@ algorithm
       else
         File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
       end if;
-      writeCref(file,eq.cref,escape=JSON);
-      File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
-      File.write(file, "],\"equation\":[\"");
-      File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");
@@ -513,7 +596,7 @@ algorithm
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -539,7 +622,7 @@ algorithm
       end if;
       writeCref(file,Expression.expCref(eq.lhs),escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -728,7 +811,7 @@ algorithm
       File.write(file, section + "\",\"tag\":\"algorithm\",\"defines\":[\"");
       writeCref(file, Expression.expCref(stmt.exp1),escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(stmt.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(stmt.exp));
       File.write(file, "],\"equation\":[");
       serializeList(file,eq.statements,serializeStatement);
       File.write(file, "],\"source\":");
@@ -942,7 +1025,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.right)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.right)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.right);
             File.write(file, "],\"source\":");
@@ -953,7 +1036,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeCref(file,whenOp.stateVar);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.value)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.value)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.value);
             File.write(file, "],\"source\":");
@@ -963,7 +1046,7 @@ algorithm
           case whenOp as BackendDAE.ASSERT() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            crefs = listAppend(Expression.extractUniqueCrefsFromExp(whenOp.condition), Expression.extractUniqueCrefsFromExp(whenOp.message));
+            crefs = listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
             serializeUses(file,List.union(eq.conditions,crefs));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
@@ -974,7 +1057,7 @@ algorithm
           case whenOp as BackendDAE.TERMINATE() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.message)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -984,7 +1067,7 @@ algorithm
           case whenOp as BackendDAE.NORETCALL() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.exp)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.exp)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.exp);
             File.write(file, "],\"source\":");
@@ -1019,7 +1102,7 @@ algorithm
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");

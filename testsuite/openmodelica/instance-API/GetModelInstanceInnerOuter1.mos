@@ -23,33 +23,47 @@ getModelInstance(B, prettyPrint=true);
 // "{
 //   \"name\": \"B\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"a\",
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
 //               \"inner\": true
 //             }
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 8
+//         }
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
 //         \"inner\": true
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

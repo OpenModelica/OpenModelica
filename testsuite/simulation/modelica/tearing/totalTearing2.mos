@@ -191,23 +191,6 @@ simulate(totalTearing2); getErrorString();
 // * (Global Indexes)
 // *
 // * No of equations in strong component: 4
-// * No of tVars: 3
-// *
-// * tVars: 2,3,1
-// *
-// * resEq: 3,4,1
-// *
-// * innerEquations ({eqn,vars}):
-// * {2:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
 // * No of tVars: 2
 // *
 // * tVars: 3,1
@@ -244,46 +227,12 @@ simulate(totalTearing2); getErrorString();
 // * No of equations in strong component: 4
 // * No of tVars: 2
 // *
-// * tVars: 3,1
-// *
-// * resEq: 4,1
-// *
-// * innerEquations ({eqn,vars}):
-// * {3:2}, {2:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
-// * No of tVars: 2
-// *
 // * tVars: 2,1
 // *
 // * resEq: 3,2
 // *
 // * innerEquations ({eqn,vars}):
 // * {1:3}, {4:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
-// * No of tVars: 2
-// *
-// * tVars: 2,1
-// *
-// * resEq: 3,4
-// *
-// * innerEquations ({eqn,vars}):
-// * {1:3}, {2:4}
 // *
 // *****************************************
 //
@@ -327,23 +276,6 @@ simulate(totalTearing2); getErrorString();
 // * (Global Indexes)
 // *
 // * No of equations in strong component: 4
-// * No of tVars: 2
-// *
-// * tVars: 2,1
-// *
-// * resEq: 4,1
-// *
-// * innerEquations ({eqn,vars}):
-// * {3:3}, {2:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
 // * No of tVars: 1
 // *
 // * tVars: 1
@@ -369,23 +301,6 @@ simulate(totalTearing2); getErrorString();
 // *
 // * innerEquations ({eqn,vars}):
 // * {1:3}, {4:4}, {3:2}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
-// * No of tVars: 1
-// *
-// * tVars: 1
-// *
-// * resEq: 4
-// *
-// * innerEquations ({eqn,vars}):
-// * {1:3}, {3:2}, {2:4}
 // *
 // *****************************************
 //
@@ -497,23 +412,6 @@ simulate(totalTearing2); getErrorString();
 // * (Global Indexes)
 // *
 // * No of equations in strong component: 4
-// * No of tVars: 2
-// *
-// * tVars: 2,3
-// *
-// * resEq: 3,4
-// *
-// * innerEquations ({eqn,vars}):
-// * {1:1}, {2:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
 // * No of tVars: 1
 // *
 // * tVars: 3
@@ -550,23 +448,6 @@ simulate(totalTearing2); getErrorString();
 // * No of equations in strong component: 4
 // * No of tVars: 1
 // *
-// * tVars: 3
-// *
-// * resEq: 4
-// *
-// * innerEquations ({eqn,vars}):
-// * {1:1}, {3:2}, {2:4}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
-// * No of tVars: 1
-// *
 // * tVars: 2
 // *
 // * resEq: 2
@@ -577,25 +458,8 @@ simulate(totalTearing2); getErrorString();
 // *****************************************
 //
 //
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 4
-// * No of tVars: 1
-// *
-// * tVars: 2
-// *
-// * resEq: 4
-// *
-// * innerEquations ({eqn,vars}):
-// * {3:3}, {1:1}, {2:4}
-// *
-// *****************************************
 //
-//
-//
-// Total number of different tearing sets: 32
+// Total number of different tearing sets: 24
 //
 // record SimulationResult
 //     resultFile = "totalTearing2_res.mat",

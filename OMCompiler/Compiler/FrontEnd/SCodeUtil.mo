@@ -3472,10 +3472,38 @@ algorithm
   end match;
 end isInlineTypeSubMod;
 
+public function appendAnnotationToCommentOption
+  input SCode.Annotation inAnnotation;
+  input Option<SCode.Comment> inComment;
+  input Boolean check_replace = false;
+  output Option<SCode.Comment> outComment;
+algorithm
+  outComment := match inComment
+    local
+      SCode.Comment comment;
+    case SOME(comment) then SOME(appendAnnotationToComment(inAnnotation, comment, check_replace));
+    else SOME(SCode.COMMENT(SOME(inAnnotation), NONE()));
+  end match;
+end appendAnnotationToCommentOption;
+
 public function appendAnnotationToComment
   input SCode.Annotation inAnnotation;
   input SCode.Comment inComment;
+  input Boolean check_replace = false;
   output SCode.Comment outComment;
+protected
+  function isNotElem
+    input SCode.SubMod mod;
+    input list<SCode.SubMod> mods;
+    output Boolean b = true;
+  algorithm
+    for m in mods loop
+      if (mod.ident == m.ident) then
+        b := false;
+        return;
+      end if;
+    end for;
+  end isNotElem;
 algorithm
   outComment := match(inAnnotation, inComment)
     local
@@ -3491,8 +3519,12 @@ algorithm
 
     case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = mods1)),
           SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt))
-      equation
-        mods2 = listAppend(mods1, mods2);
+      algorithm
+        if not check_replace then
+          mods2 := listAppend(mods1, mods2);
+        else
+          mods2 := listAppend(mods1, List.filterOnTrue(mods2, function isNotElem(mods = mods1)));
+        end if;
       then
         SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt);
 
@@ -6141,6 +6173,38 @@ function isNonEmptyAlgorithm
   input SCode.AlgorithmSection alg;
   output Boolean res = not listEmpty(alg.statements);
 end isNonEmptyAlgorithm;
+
+function onlyLiteralsInMod
+  "Checks if the bindings in a modifier only contains literal expressions."
+  input SCode.Mod mod;
+  output Boolean onlyLiterals;
+protected
+  list<Absyn.Exp> lst;
+algorithm
+  onlyLiterals := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        if isSome(mod.binding) then
+          onlyLiterals := AbsynUtil.onlyLiteralsInExp(Util.getOption(mod.binding));
+        else
+          onlyLiterals := true;
+        end if;
+
+        if onlyLiterals then
+          for m in mod.subModLst loop
+            onlyLiterals := onlyLiteralsInMod(m.mod);
+
+            if not onlyLiterals then
+              break;
+            end if;
+          end for;
+        end if;
+      then
+        onlyLiterals;
+
+    else true;
+  end match;
+end onlyLiteralsInMod;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

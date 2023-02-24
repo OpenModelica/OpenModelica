@@ -70,6 +70,7 @@ import Array;
 import Error;
 import FlagsUtil;
 import Flatten = NFFlatten;
+import Connections = NFConnections;
 import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
@@ -109,12 +110,23 @@ import CheckModel = NFCheckModel;
 
 public
 
+uniontype InstSettings
+  record SETTINGS
+    Boolean mergeExtendsSections "Merge sections from extends clauses if true";
+  end SETTINGS;
+end InstSettings;
+
+constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
+    mergeExtendsSections = true
+  );
+
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being
    a DAE."
   input Absyn.Path classPath;
   input SCode.Program program;
   input SCode.Program annotationProgram;
+  input Boolean relaxedFrontend = false;
   input Boolean dumpFlat = false;
   output FlatModel flatModel;
   output FunctionTree functions;
@@ -126,7 +138,7 @@ protected
   Integer var_count, eq_count;
 algorithm
   resetGlobalFlags();
-  context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
+  context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
 
   // Create a top scope from the given top-level classes.
@@ -187,16 +199,22 @@ algorithm
   else
     // Remove empty arrays from variables
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
-    flatModel.variables := list(Flatten.vectorizeVariableBinding(v) for v in flatModel.variables);
+    flatModel.variables := list(Flatten.fillVectorizedVariableBinding(v) for v in flatModel.variables);
   end if;
 
   flatModel := InstUtil.replaceEmptyArrays(flatModel);
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
-  // Combine the binaries to multaries. For now only on new backend
-  // since the old frontend and backend do not support it
+
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // Combine the binaries to multaries. For now only on new backend
+    // since the old frontend and backend do not support it
     flatModel := SimplifyModel.combineBinaries(flatModel);
+    execStat("combineBinaries");
+    // try to replace calls with array constructors for the new backend
+    flatModel.equations := Equation.mapExpList(flatModel.equations, function Expression.wrapCall(fun = Call.toArrayConstructor));
+    flatModel.variables := list(Variable.mapExp(var, function Expression.wrapCall(fun = Call.toArrayConstructor)) for var in flatModel.variables);
+    execStat("replaceArrayConstructors");
   end if;
 
   VerifyModel.verify(flatModel);
@@ -207,13 +225,66 @@ algorithm
 
   flatModel := InstUtil.combineSubscripts(flatModel);
 
+  // propagate hide result attribute
+  // ticket #4346
+  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, var) for var in flatModel.variables);
+
+  if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+     Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+    flatModel := FlatModel.obfuscate(flatModel);
+  end if;
+
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
 
+function instClassForConnection
+  "Instantiates a class given by its fully qualified path, with the result being
+   a list of all connections."
+  input Absyn.Path classPath;
+  input SCode.Program program;
+  input SCode.Program annotationProgram;
+  output list<list<String>> connList = {};
+protected
+  Connections conns;
+  InstNode top, cls, inst_cls;
+  String name;
+  InstContext.Type context;
+algorithm
+  resetGlobalFlags();
+  context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
+    NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
+
+  // Create a top scope from the given top-level classes.
+  top := makeTopNode(program, annotationProgram);
+  name := AbsynUtil.pathString(classPath);
+
+  // Look up the class to instantiate.
+  cls := lookupRootClass(classPath, top, context);
+
+  // Instantiate the class.
+  inst_cls := instantiateRootClass(cls, context);
+
+  // Instantiate expressions (i.e. anything that can contains crefs, like
+  // bindings, dimensions, etc). This is done as a separate step after
+  // instantiation to make sure that lookup is able to find the correct nodes.
+  instExpressions(inst_cls, context = context);
+
+  // Type the class.
+  Typing.typeClass(inst_cls, context);
+
+  // Flatten the model and get connections
+  conns := Flatten.flattenConnection(inst_cls, name);
+  connList := Connections.toStringList(conns);
+end instClassForConnection;
+
 function resetGlobalFlags
   "Resets the global flags that the frontend uses."
 algorithm
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    FlagsUtil.set(Flags.NF_SCALARIZE, false);
+  end if;
+
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
   if not Flags.isSet(Flags.NF_SCALARIZE) then
@@ -292,7 +363,7 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
-  generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq);
+  generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2, stringEq);
   node_ty := InstNodeType.TOP_SCOPE(InstNode.EMPTY_NODE(), generated_inners);
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
@@ -545,7 +616,7 @@ algorithm
         checkReplaceableBaseClass(base_nodes, base_path, info);
         base_node := expand(base_node);
 
-        ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def), base_node);
+        ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def, InstNode.nodeType(base_node)), base_node);
 
         // If the extended class is a builtin class, like Real or any type derived
         // from Real, then return it so we can handle it properly in expandClass.
@@ -1463,7 +1534,7 @@ algorithm
       // Class extends of a normal class.
       case (_, Class.PARTIAL_CLASS())
         algorithm
-          node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node));
+          node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node), InstNode.nodeType(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
           rdcl_cls.modifier := mod;
@@ -2013,6 +2084,7 @@ function instExpressions
   input InstNode scope = node;
   input output Sections sections = Sections.EMPTY();
   input InstContext.Type context;
+  input InstSettings settings = DEFAULT_SETTINGS;
 protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
@@ -2052,9 +2124,15 @@ algorithm
     case Class.EXPANDED_CLASS(elements = cls_tree)
       algorithm
         // Instantiate expressions in the extends nodes.
-        for ext in ClassTree.getExtends(cls_tree) loop
-          sections := instExpressions(ext, ext, sections, context);
-        end for;
+        if settings.mergeExtendsSections then
+          for ext in ClassTree.getExtends(cls_tree) loop
+            sections := instExpressions(ext, ext, sections, context);
+          end for;
+        else
+          for ext in ClassTree.getExtends(cls_tree) loop
+            _ := instExpressions(ext, ext, sections, context);
+          end for;
+        end if;
 
         // Instantiate expressions in the local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -2137,7 +2215,7 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq);
+  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
@@ -2182,11 +2260,9 @@ algorithm
         InstNode.cacheInitFunc(node);
 
         if SCodeUtil.isOperatorRecord(InstNode.definition(node)) then
-          OperatorOverloading.instConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
+          OperatorOverloading.instConstructor(InstNode.fullPath(node), node, context, InstNode.info(node));
         else
-          Record.instDefaultConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
+          Record.instDefaultConstructor(InstNode.fullPath(node), node, context, InstNode.info(node));
         end if;
       then
         ();
@@ -2324,6 +2400,7 @@ algorithm
       Operator op;
       list<Expression> expl;
       list<list<Expression>> expll;
+      Absyn.Exp absynExp1;
       array<Expression> arr;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
@@ -2354,6 +2431,8 @@ algorithm
         e3 := instExp(absynExp.stop, scope, context, info);
       then
         Expression.RANGE(Type.UNKNOWN(), e1, oe, e3);
+
+    case Absyn.Exp.TUPLE(expressions={absynExp1}) then instExp(absynExp1, scope, context, info);
 
     case Absyn.Exp.TUPLE()
       algorithm
@@ -2421,6 +2500,8 @@ algorithm
       then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.END() then Expression.END();
+
+    case Absyn.Exp.EXPRESSIONCOMMENT() then instExp(absynExp.exp, scope, context, info);
 
     else
       algorithm
@@ -2801,7 +2882,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
+        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
@@ -2815,7 +2896,7 @@ algorithm
         exp1 := instConnectorCref(scodeEq.crefLeft, scope, context, info);
         exp2 := instConnectorCref(scodeEq.crefRight, scope, context, info);
       then
-        Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
+        Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_FOR(info = info)
       algorithm
@@ -2825,7 +2906,7 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.FOR);
         eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
-        Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
+        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_IF(info = info)
       algorithm
@@ -2848,7 +2929,7 @@ algorithm
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
+        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_WHEN(info = info)
       algorithm
@@ -2869,7 +2950,7 @@ algorithm
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(listReverse(branches), makeSource(scodeEq.comment, info));
+        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
@@ -2877,13 +2958,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, context, info);
         exp3 := instExp(scodeEq.level, scope, context, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
+        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
-        Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
+        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_REINIT(info = info)
       algorithm
@@ -2895,13 +2976,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, context, info);
         exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
-        Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
+        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
 
     case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
-        Equation.NORETCALL(exp1, makeSource(scodeEq.comment, info));
+        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info));
 
     else
       algorithm
@@ -2957,12 +3038,10 @@ function instAlgorithmSection
   output Algorithm alg;
 protected
   list<Statement> statements;
-  list<ComponentRef> inputs_lst;
-  list<ComponentRef> outputs_lst;
 algorithm
+  // collect inputs and outputs later when types are computed properly
   statements := instStatements(algorithmSection.statements, scope, context);
-  (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
-  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, {}, {}, scope, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements
@@ -3072,9 +3151,20 @@ algorithm
 
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
-        Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
+        if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "reinitInAlgorithms") then
+          Error.addSourceMessage(Error.REINIT_IN_ALGORITHM, {}, info);
+          fail();
+        end if;
+
+        if not InstContext.inWhen(context) then
+          Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
+          fail();
+        end if;
+
+        exp1 := instExp(scodeStmt.cref, scope, context, info);
+        exp2 := instExp(scodeStmt.newValue, scope, context, info);
       then
-        fail();
+        Statement.REINIT(exp1, exp2, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_NORETCALL(info = info)
       algorithm

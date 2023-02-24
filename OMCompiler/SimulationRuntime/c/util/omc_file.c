@@ -137,7 +137,6 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
 }
 
 
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
 /**
  * @brief File attributes
@@ -171,6 +170,44 @@ int omc_stat(const char *filename, omc_stat_t* statbuf)
 }
 #endif
 
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief File attributes
+ *
+ * Using (long) unicode absolute path and `_wstat` on Windows.
+ * Using `stat` on Unix.
+ *
+ * @param filename  File name.
+ * @param statbuf   Pointer to stat structure.
+ * @return int      0 on success, -1 on error.
+ */
+int omc_lstat(const char *filename, omc_stat_t* statbuf)
+{
+  return omc_stat(filename, statbuf);
+}
+#else /* unix */
+int omc_lstat(const char *filename, omc_stat_t* statbuf)
+{
+  int res;
+  res = lstat(filename, statbuf);
+  return res;
+}
+#endif
+
+/**
+ * @brief checks if a file/folder exists on the system.
+ * NOTE: Will return success even for directories, i.e., will not confirm that it is indeed a file.
+ *
+ * @param filename  the filename to check for existence.
+ * @return int  returns 1 if the file/folder exists, 0 otherwise.
+ */
+int omc_file_exists(const char* filename) {
+  omc_stat_t statbuf;
+  return omc_stat(filename, &statbuf) == 0;
+}
+
+
 /**
  * @brief Unlink file.
  *
@@ -180,8 +217,7 @@ int omc_stat(const char *filename, omc_stat_t* statbuf)
  * @param filename  File name
  * @return int      0 on success, -1 on error.
  */
-int omc_unlink(const char *filename)
-{
+int omc_unlink(const char *filename) {
   int result = 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
@@ -202,6 +238,18 @@ int omc_unlink(const char *filename)
   }
   */
   return result;
+}
+
+// zero on success, anything else on failure!
+int omc_rename(const char *source, const char *dest) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // If the function succeeds, the return value is nonzero.
+  // If the function fails, the return value is zero (0). To get extended error information, call GetLastError.
+  return !MoveFileEx(source, dest, MOVEFILE_REPLACE_EXISTING);
+#endif
+  // On success, zero is returned.  On error, -1 is returned, and
+  // errno is set to indicate the error.
+  return rename(source,dest);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)

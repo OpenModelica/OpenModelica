@@ -57,6 +57,11 @@
   #include <omp.h>
 #endif
 
+/* Private function prototypes */
+void* syncTimerListAlloc(const void* data);
+void syncTimerListFree(void* data);
+void syncTimerListCopy(void* dest, const void* src);
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -98,9 +103,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int numEventIterations = 0;
-  int discreteChanged = 0;
-  modelica_boolean relationChanged = 0;
-  data->simulationInfo->needToIterate = 0;
+  modelica_boolean discreteChanged = FALSE;
+  modelica_boolean relationChanged = FALSE;
+  data->simulationInfo->needToIterate = FALSE;
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
@@ -559,7 +564,7 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
   }
   messageClose(stream);
 
@@ -1045,7 +1050,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   if (data->modelData->nBaseClocks > 0) {
     data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(data->modelData->nBaseClocks, sizeof(BASECLOCK_DATA));
-    data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
+    data->simulationInfo->intvlTimers = allocList(syncTimerListAlloc, syncTimerListFree, syncTimerListCopy);
   } else {
     data->simulationInfo->baseClocks = NULL;
     data->simulationInfo->intvlTimers = NULL;
@@ -1106,6 +1111,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
   data->simulationInfo->setcVars = (modelica_real*) calloc(data->modelData->nSetcVars, sizeof(modelica_real));
   data->simulationInfo->datainputVars = (modelica_real*) calloc(data->modelData->ndataReconVars, sizeof(modelica_real));
+  data->simulationInfo->setbVars = (modelica_real*) calloc(data->modelData->nSetbVars, sizeof(modelica_real));
 
 #if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   /* buffer for mixed systems */
@@ -1355,6 +1361,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->outputVars);
   free(data->simulationInfo->setcVars);
   free(data->simulationInfo->datainputVars);
+  free(data->simulationInfo->setbVars);
 
   /* free external objects buffer */
   free(data->simulationInfo->extObjs);
@@ -1614,5 +1621,38 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
   return trunc(value1/value2);
 #endif
 }
+
+
+/**
+ * @brief Allocate memory for syncTimerList elements.
+ *
+ * @param data      Unused.
+ * @return void*    Allocated memory for LIST_NODE data.
+ */
+void* syncTimerListAlloc(const void* data) {
+  void* newElem = malloc(sizeof(SYNC_TIMER));
+  assertStreamPrint(NULL, newElem != NULL, "syncTimerListAlloc: Out of memory");
+  return newElem;
+}
+
+/**
+ * @brief Free memory allocated with syncTimerListAlloc.
+ *
+ * @param data      Void pointer, representing SYNC_TIMER.
+ */
+void syncTimerListFree(void* data) {
+  free(data);
+}
+
+/**
+ * @brief Copy data of syncTimerList elements.
+ *
+ * @param dest    Void pointer of destination data, representing SYNC_TIMER.
+ * @param src     Void pointer of source data, representing SYNC_TIMER.
+ */
+void syncTimerListCopy(void* dest, const void* src) {
+  memcpy(dest, src, sizeof(SYNC_TIMER));
+}
+
 
 int measure_time_flag=0;

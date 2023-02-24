@@ -173,22 +173,29 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
     if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
         && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = QString("%1").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
+      timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
     }
     QString toolTip;
     for (int i = 0 ; i < plotCurves.size() ; i++) {
       PlotCurve *pPlotCurve = plotCurves.at(i);
       int index = indexes.at(i);
-      pPlotCurve->getPointMarker()->setValue(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
+
+      double x = pPlotCurve->mXAxisVector.at(index);
+      double y = pPlotCurve->mYAxisVector.at(index);
+
+      pPlotCurve->getPointMarker()->setValue(x, y);
       pPlotCurve->getPointMarker()->setVisible(true);
+
+      x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
+      y = y / qPow(10, mpPlot->getYScaleDraw()->getExponent());
 
       if (i > 0) {
         toolTip += QString("<br /><br />");
       }
       toolTip += QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3</b> %4<br />Filename: <b>%5</b>")
                  .arg(pPlotCurve->title().text())
-                 .arg(pPlotCurve->mYAxisVector.at(index))
-                 .arg(pPlotCurve->mXAxisVector.at(index))
+                 .arg(y)
+                 .arg(x)
                  .arg(timeUnit)
                  .arg(pPlotCurve->getFileName());
     }

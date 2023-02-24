@@ -46,9 +46,9 @@
 #include "util/simulation_options.h"
 #include "util/context.h"
 
-#define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
+#define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
-#define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
+#define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
 #define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
@@ -65,6 +65,7 @@
 /* Forward declarations */
 struct DATA;
 typedef struct DATA DATA;
+typedef struct VALUES_LIST VALUES_LIST;
 
 /* Model info structures */
 typedef struct VAR_INFO
@@ -327,7 +328,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsxOld;              /* previous x */
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
 
-  void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
+  VALUES_LIST *oldValueList;           /* old values organized in a sorted list for extrapolation and interpolate, respectively */
   modelica_real *resValues;            /* memory space for evaluated residual values */
 
   NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
@@ -577,6 +578,8 @@ typedef struct MODEL_DATA
   long nSensitivityParamVars;
   long nSetcVars;
   long ndataReconVars;
+  long nSetbVars;
+  long nRelatedBoundaryConditions;
 } MODEL_DATA;
 
 /**
@@ -743,6 +746,7 @@ typedef struct SIMULATION_INFO
   modelica_real* outputVars;
   modelica_real* setcVars;
   modelica_real* datainputVars;
+  modelica_real* setbVars;
 
   EXTERNAL_INPUT external_input;
 

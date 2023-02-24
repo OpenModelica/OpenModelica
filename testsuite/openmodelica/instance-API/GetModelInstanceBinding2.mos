@@ -1,0 +1,44 @@
+// name: GetModelInstanceBinding2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x[:];
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \":\"
+//         ]
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

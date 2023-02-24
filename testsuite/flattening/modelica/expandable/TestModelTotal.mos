@@ -13,8 +13,8 @@ checkModel(TestPackage_TestModel); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // "class TestPackage_TestModel
 //   Real OutputFromBus.vehicleVelocity.y;

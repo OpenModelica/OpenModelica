@@ -1,0 +1,144 @@
+// name: GetModelInstanceMod2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+    Real y;
+  end A;
+
+  model M
+    A a1[2](final x = {2.0, 3.0}, each y = 1);
+    A a2[3](x = {1.0, 2.0, 3.0}, each final y = 2);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a1\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": [
+//                 2,
+//                 3
+//               ]
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"y\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 1
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \"2\"
+//         ],
+//         \"typed\": [
+//           \"2\"
+//         ]
+//       },
+//       \"modifiers\": {
+//         \"x\": {
+//           \"final\": true,
+//           \"$value\": \"{2.0, 3.0}\"
+//         },
+//         \"y\": {
+//           \"each\": true,
+//           \"$value\": \"1\"
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a2\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": [
+//                 1,
+//                 2,
+//                 3
+//               ]
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"y\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 2
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \"3\"
+//         ],
+//         \"typed\": [
+//           \"3\"
+//         ]
+//       },
+//       \"modifiers\": {
+//         \"x\": \"{1.0, 2.0, 3.0}\",
+//         \"y\": {
+//           \"final\": true,
+//           \"each\": true,
+//           \"$value\": \"2\"
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

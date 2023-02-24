@@ -120,6 +120,7 @@ uniontype RecordDeclaration
     Option<String> aliasName "alias of struct (record) name ? encoded. Code generators can generate an aliasing typedef using this, and avoid problems when casting a record from one type to another (*(othertype*)(&var)), which only works if you have a lhs value.";
     Absyn.Path defPath "definition path";
     list<Variable> variables "only name and type";
+    Boolean usedExternally "If the record is passed to an external function at any point, we need to generate conversion functions for it (for instance to convert 'modelica_integer' to 'int')";
   end RECORD_DECL_FULL;
 
   record RECORD_DECL_ADD_CONSTRCTOR

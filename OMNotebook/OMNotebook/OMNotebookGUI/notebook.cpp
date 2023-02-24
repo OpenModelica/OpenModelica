@@ -128,7 +128,7 @@ QString NotebookWindow::linkDir_ = QString();
   * Also made som other updates /AF
   */
 NotebookWindow::NotebookWindow(Document *subject,
-                               const QString filename, QWidget *parent)
+                               const QString filename, int isDrModelica, QWidget *parent)
   : DocumentView(parent),
     subject_(subject),
     filename_(filename),
@@ -136,8 +136,17 @@ NotebookWindow::NotebookWindow(Document *subject,
     app_( subject->application() ), //AF
     findForm_( 0 )          //AF
 {
-  if( !filename_.isNull() )
-    qDebug( "%s", filename_.toStdString().c_str() );
+  if(!isDrModelica && !filename_.isNull() ) {
+    saveDir_ = openDir_ = QFileInfo( filename_ ).absolutePath();
+  } else {
+    QString documentsDir = QFileInfo( QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) ).absoluteFilePath();
+    if (saveDir_.isNull()) {
+      saveDir_ = documentsDir;
+    }
+    if (openDir_.isNull()) {
+      openDir_ = documentsDir;
+    }
+  }
 
   //    subject_->attach(this);
   //    setMinimumSize( 150, 220 );    //AF

@@ -1,0 +1,40 @@
+// name: GetModelInstanceConditional1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Real x if false;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"condition\": false,
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

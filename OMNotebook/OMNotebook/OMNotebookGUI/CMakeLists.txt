@@ -88,7 +88,19 @@ set(OMNOTEBOOKLIB_HEADERS application.h
                           indent.h)
 
 
-add_executable(OMNotebook WIN32 MACOSX_BUNDLE ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc)
+
+if(APPLE)
+  set(MACOSX_BUNDLE_ICON_FILE OMNotebook_icon.icns)
+
+  # The following tells CMake where to find and install the file itself.
+  set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/Resources/OMNotebook_icon.icns")
+  set_source_files_properties(${app_icon_macos} PROPERTIES
+       MACOSX_PACKAGE_LOCATION "Resources")
+else()
+  set(app_icon_macos "")
+endif()
+
+add_executable(OMNotebook WIN32 MACOSX_BUNDLE ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc ${app_icon_macos})
 target_compile_definitions(OMNotebook PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 
 target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -100,10 +112,13 @@ target_link_libraries(OMNotebook PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
+if(APPLE)
+  set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+endif()
+
 
 install(TARGETS OMNotebook
         BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
-
 install(FILES stylesheet.xml
               commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)

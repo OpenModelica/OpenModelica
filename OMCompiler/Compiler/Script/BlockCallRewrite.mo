@@ -81,11 +81,11 @@ algorithm
       Absyn.Restriction restriction;
       Absyn.ClassDef    body, nbody;
       SourceInfo       info ;
-    case(Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, body, info))
+    case(out_class as Absyn.CLASS(body=body))
       equation
-        nbody = parseClassDef(body, defs);
+        out_class.body = parseClassDef(body, defs);
       then
-        Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, nbody, info);
+        out_class;
   end match;
 end parseClass;
 

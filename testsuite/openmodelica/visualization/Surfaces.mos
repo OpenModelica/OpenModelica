@@ -534,7 +534,7 @@ getErrorString();
 //       <nu><cref>torus.surface.nu</cref></nu>
 //       <nv><cref>torus.surface.nv</cref></nv>
 //       <wireframe><cref>torus.surface.wireframe</cref></wireframe>
-//       <multiColored><bexp>false</bexp></multiColored>
+//       <multiColored><bconst>false</bconst></multiColored>
 //       <color>
 //           <cref>torus.surface.color[1]</cref>
 //           <cref>torus.surface.color[2]</cref>
@@ -563,8 +563,8 @@ getErrorString();
 //       </r>
 //       <nu><cref>pipeWithScalarField.pipe.surface.nu</cref></nu>
 //       <nv><cref>pipeWithScalarField.pipe.surface.nv</cref></nv>
-//       <wireframe><bexp>false</bexp></wireframe>
-//       <multiColored><bexp>false</bexp></multiColored>
+//       <wireframe><bconst>false</bconst></wireframe>
+//       <multiColored><bconst>false</bconst></multiColored>
 //       <color>
 //           <exp>255.0</exp>
 //           <exp>0.0</exp>
@@ -638,8 +638,8 @@ getErrorString();
 //       </r>
 //       <nu><cref>wheel.torus.nu</cref></nu>
 //       <nv><cref>wheel.torus.nv</cref></nv>
-//       <wireframe><bexp>false</bexp></wireframe>
-//       <multiColored><bexp>false</bexp></multiColored>
+//       <wireframe><bconst>false</bconst></wireframe>
+//       <multiColored><bconst>false</bconst></multiColored>
 //       <color>
 //           <cref>wheel.torus.color[1]</cref>
 //           <cref>wheel.torus.color[2]</cref>
@@ -668,8 +668,8 @@ getErrorString();
 //       </r>
 //       <nu><exp>50</exp></nu>
 //       <nv><exp>50</exp></nv>
-//       <wireframe><bexp>false</bexp></wireframe>
-//       <multiColored><bexp>false</bexp></multiColored>
+//       <wireframe><bconst>false</bconst></wireframe>
+//       <multiColored><bconst>false</bconst></multiColored>
 //       <color>
 //           <exp>255.0</exp>
 //           <exp>0.0</exp>
@@ -878,8 +878,8 @@ getErrorString();
 //       </r>
 //       <nu><exp>2</exp></nu>
 //       <nv><exp>2</exp></nv>
-//       <wireframe><bexp>false</bexp></wireframe>
-//       <multiColored><bexp>false</bexp></multiColored>
+//       <wireframe><bconst>false</bconst></wireframe>
+//       <multiColored><bconst>false</bconst></multiColored>
 //       <color>
 //           <exp>215.0</exp>
 //           <exp>215.0</exp>

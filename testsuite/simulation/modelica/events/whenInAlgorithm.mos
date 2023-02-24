@@ -12,9 +12,9 @@ simulate(whenInAlgorithm, tolerance=1e-6,startTime=0, stopTime=2,numberOfInterva
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from whenInAlgorithm.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
 // "
 // record SimulationResult
 //     resultFile = "whenInAlgorithm_res.mat",

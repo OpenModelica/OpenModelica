@@ -205,6 +205,7 @@ typedef struct {
   QString variableName;
   QString unit;
   QString displayUnit;
+  bool isString;
 } PlotParametricVariable;
 
 typedef struct {
@@ -233,7 +234,7 @@ public:
   void reSimulate(bool showSetup);
   void interactiveReSimulation(QString modelName);
   void updateInitXmlFile(SimulationOptions simulationOptions);
-  void initializeVisualization(SimulationOptions simulationOptions);
+  void initializeVisualization();
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:
@@ -261,7 +262,7 @@ private:
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
-  void openResultFile();
+  void openResultFile(double &startTime, double &stopTime);
   void updateVisualization();
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);

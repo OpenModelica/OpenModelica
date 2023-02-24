@@ -50,7 +50,7 @@ simulate(redundantInitialEquations, startTime=0.0, stopTime=0.0); getErrorString
 // Warning: The following initial equation is inconsistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(p1) = 1.0 -> 0.0 = 1.0
 // Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: p1 = p1
 // Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: p1 * p2 = p2 * p1
-// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          $DER.p3 = 0.0.
 // "
 // endResult

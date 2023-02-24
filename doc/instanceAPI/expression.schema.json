@@ -200,6 +200,10 @@
           "type": "string",
           "const": "record"
         },
+        "name": {
+          "description": "Name of the record type",
+          "type": "string"
+        },
         "elements": {
           "type": "array",
           "items": {
@@ -207,7 +211,7 @@
           }
         }
       },
-      "required": ["$kind", "elements"]
+      "required": ["$kind", "name", "elements"]
     },
     {
       "description": "Function call expression",
@@ -232,46 +236,23 @@
       "required": ["$kind", "name", "arguments"]
     },
     {
-      "description": "Array constructor expression",
+      "description": "Iterator call expression ( fn(x[i] for i in 1:n) )",
       "type": "object",
       "properties": {
         "$kind": {
           "type": "string",
-          "const": "array_constructor"
-        },
-        "exp": {
-          "description": "The expression to be evaluated for each constructed element",
-          "$ref": "#"
-        },
-        "iterators": {
-          "description": "The iterators used to construct the array",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/iterator"
-          },
-          "minItems": 1
-        }
-      },
-      "required": ["$kind", "exp", "iterators"]
-    },
-    {
-      "description": "Reduction expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "reduction"
+          "const": "iterator_call"
         },
         "name": {
-          "description": "Name of the reduction function",
+          "description": "Name of the function ($array for an array constructor)",
           "type": "string"
         },
         "exp": {
-          "description": "The expression of the reduction expression",
+          "description": "The iterated expression",
           "$ref": "#"
         },
         "iterators": {
-          "description": "The iterators of the reduction expression",
+          "description": "The iterators of the call",
           "type": "array",
           "items": {
             "$ref": "#/definitions/iterator"
@@ -280,25 +261,6 @@
         }
       },
       "required": ["$kind", "name", "exp", "iterators"]
-    },
-    {
-      "description": "Size expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "size"
-        },
-        "exp": {
-          "description": "Expression to take the size of",
-          "$ref": "#"
-        },
-        "index": {
-          "description": "Optional dimension index expression",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "exp", "index"]
     },
     {
       "description": "Binary operation expression",
@@ -315,7 +277,7 @@
         "op": {
           "description": "Operator",
           "type": "string",
-          "enum": ["+", ".+", "-", ".-", "*", ".*", "/", "./", "^", ".^", "and", "or"]
+          "enum": ["+", ".+", "-", ".-", "*", ".*", "/", "./", "^", ".^", "and", "or", "<", "<=", ">", ">=", "==", "<>"]
         },
         "rhs": {
           "description": "Right operand",
@@ -345,30 +307,6 @@
       "required": ["$kind", "op", "exp"]
     },
     {
-      "description": "Relation expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "relation"
-        },
-        "lhs": {
-          "description": "Left operand",
-          "$ref": "#"
-        },
-        "op": {
-          "description": "Operator",
-          "type": "string",
-          "enum": ["<", "<=", ">", ">=", "==", "<>"]
-        },
-        "rhs": {
-          "description": "Right operand",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "lhs", "op", "rhs"]
-    },
-    {
       "description": "If-expression",
       "type": "object",
       "properties": {
@@ -390,55 +328,6 @@
         }
       },
       "required": ["$kind", "condition", "true", "false"]
-    },
-    {
-      "description": "Type cast expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "cast"
-        },
-        "type": {
-          "description": "Name of the type to cast to",
-          "type": "string"
-        },
-        "exp": {
-          "description": "Expression to type cast",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "type", "exp"]
-    },
-    {
-      "description": "Box expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "box"
-        },
-        "exp": {
-          "description": "Expression to box",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "exp"]
-    },
-    {
-      "description": "Unbox expression",
-      "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "unbox"
-        },
-        "exp": {
-          "description": "Expression to unbox",
-          "$ref": "#"
-        }
-      },
-      "required": ["$kind", "exp"]
     },
     {
       "description": "Subscripted expression",

@@ -214,22 +214,23 @@ if (QWT_WITH_WIDGETS)
     qwt_wheel.cpp)
 endif ()
 
-add_library(qwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
+add_library(omqwt STATIC ${QWT_HEADERS} ${QWT_SOURCES})
 
-target_compile_definitions(qwt
-	PUBLIC
-		$<$<BOOL:MSVC>:QWT_DLL>
-	PRIVATE
-		$<$<BOOL:MSVC>:QWT_MAKEDLL>
-)
+## We build it as a static library now. Disable dllimport/export attributes.
+# target_compile_definitions(omqwt
+# 	PUBLIC
+# 		$<$<BOOL:MSVC>:QWT_DLL>
+# 	PRIVATE
+# 		$<$<BOOL:MSVC>:QWT_MAKEDLL>
+# )
 
-target_include_directories(qwt
+target_include_directories(omqwt
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include>)
 
 if (USE_QT6)
-  target_link_libraries(qwt
+  target_link_libraries(omqwt
     PUBLIC
       Qt6::Core
       Qt6::OpenGL
@@ -239,7 +240,7 @@ if (USE_QT6)
       Qt6::PrintSupport
       Qt6::Svg)
 else ()
-    target_link_libraries(qwt
+    target_link_libraries(omqwt
     PUBLIC
       Qt5::Core
       Qt5::OpenGL
@@ -249,10 +250,8 @@ else ()
       Qt5::Svg)
 endif ()
 
-set_target_properties(qwt PROPERTIES
+set_target_properties(omqwt PROPERTIES
   VERSION ${QWT_VERSION}
   SOVERSION ${QWT_VER_MAJ}
   AUTOMOC ON)
-target_compile_definitions(qwt PRIVATE QWT_MOC_INCLUDE)
-
-install (TARGETS qwt)
+target_compile_definitions(omqwt PRIVATE QWT_MOC_INCLUDE)

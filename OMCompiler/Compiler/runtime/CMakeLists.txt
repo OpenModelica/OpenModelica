@@ -13,9 +13,6 @@ if(OM_OMC_USE_LAPACK)
   set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_OLD})
 endif()
 
-
-# find_package(ZLIB REQUIRED) # Not needed. We use the minizip lib from 3rdParty/FMIL instead
-
 # On Win32 we use system UUID lib which is one of the default libs that cmake adds to any target on Win32. On non Win32
 # systems we need to link explicitly to uuid. However, there is no FindUUID yet. We can add one later. Instead we use
 # find library for now. It should be okay for now since I am guessing uuid headers should be in the default include dirs
@@ -196,14 +193,6 @@ if(LAPACK_FOUND)
 endif()
 
 
-find_package(Git)
-execute_process(COMMAND
-  ${GIT_EXECUTABLE} describe --match "v*.*" --always
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  OUTPUT_VARIABLE SOURCE_REVISION
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
 if(OpenMP_FOUND)
   set(CONFIG_WITH_OPENMP 1)
 else()
@@ -235,7 +224,20 @@ else()
   set(BSTATIC "false")
 endif()
 
-set(MAKE ${CMAKE_MAKE_PROGRAM})
+# For now assume mingw32-make is available here. It should be because it is what we use
+# to compile generated simulation code on Windows when omc is issuing the compilation.
+# This variable will substitute @ Autoconf.make.
+# Autoconf.make inturn (at least so far) is used to issue compilation of FMU sources.
+# For anything that is issued through SystemCall use this mingw32-make (instead of just 'make'
+# which is the MSYS make.) since the latter is not supposed to be used on Windows shells.
+# (systemCall uses 'cmd \c' to issue commands.)
+if (MINGW)
+  set(OMC_MAKE_EXE "mingw32-make")
+else()
+  set(OMC_MAKE_EXE "make")
+endif()
+
+set(OMC_CMAKE_EXE "${CMAKE_COMMAND}")
 
 string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
 

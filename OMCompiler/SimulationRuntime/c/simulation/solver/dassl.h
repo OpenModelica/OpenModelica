@@ -44,7 +44,7 @@ typedef struct DASSL_DATA{
   unsigned int dasslStepsFreq;  /* value specifies the output frequency regarding to time steps. Used in dasslSteps mode. */
   double dasslStepsTime;        /* value specifies the time increment when output happens. Used in dasslSteps mode. */
   int dasslRootFinding;         /* if TRUE then the internal root finding is used */
-  int dasslJacobian;            /* specifices the method to calculate the jacobian matrix */
+  int dasslJacobian;            /* specifies the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
 
   long N;
@@ -73,8 +73,8 @@ typedef struct DASSL_DATA{
   double *states;
 
   /* function pointer of provided functions */
-  int (*residualFunction)(double *t, double *x, double *xprime, double *cj,
-                          double *delta, int *ires, double *rpar, int* ipar);
+  int (*residualFunction)(double *t, double *y, double *yd, double *cj,
+                         double *delta, int *ires, double *rpar, int *ipar);
   int (*jacobianFunction)(double *t, double *y, double *yprime, double *deltaD,
                           double *pd, double *cj, double *h, double *wt,
                           double *rpar, int* ipar);
@@ -87,14 +87,14 @@ typedef struct DASSL_DATA{
 } DASSL_DATA;
 
 /* main dassl function to make a step */
-int dassl_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 /* initial main dassl Data */
-int dassl_initial(DATA* simData, threadData_t *threadData,
+int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
-int dassl_deinitial(DASSL_DATA *dasslData);
+int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);
 
 int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time);
 int printVector(int logLevel, const char* name,  double* vec, int n, double time);

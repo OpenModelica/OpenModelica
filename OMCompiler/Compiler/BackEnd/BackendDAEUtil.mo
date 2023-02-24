@@ -1229,9 +1229,9 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
   if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
   else
-    (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
   end if;
   eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in statevarindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
@@ -1745,9 +1745,9 @@ algorithm
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
         if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-          (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
         else
-          (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
         end if;
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
@@ -5167,7 +5167,7 @@ algorithm
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow,trytosolve);
 */
-      case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
+    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
       guard
         intGt(r,0)
       equation
@@ -5427,21 +5427,26 @@ algorithm
         false = intEq(rowmark[rabs],-mark);
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
-        e = Expression.expSub(e1,e2);
-        e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
-        (de,solved,derived,cons) = tryToSolveOrDerive(e_derAlias, cr, vars, SOME(shared.functionTree),trytosolve);
-        if not solved then
-          (de,_) = ExpressionSimplify.simplify(de);
-          (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
-          solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+        if CommonSubExpression.isCSECref(cr) then
+          solvab = BackendDAE.SOLVABILITY_UNSOLVABLE();
+          cons = {};
         else
-          if derived then
+          e = Expression.expSub(e1,e2);
+          e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
+          (de,solved,derived,cons) = tryToSolveOrDerive(e_derAlias, cr, vars, SOME(shared.functionTree),trytosolve);
+          if not solved then
             (de,_) = ExpressionSimplify.simplify(de);
             (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
             solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
-            solvab = transformSolvabilityForCasualTearingSet(solvab);
           else
-            solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+            if derived then
+              (de,_) = ExpressionSimplify.simplify(de);
+              (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
+              solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+              solvab = transformSolvabilityForCasualTearingSet(solvab);
+            else
+              solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+            end if;
           end if;
         end if;
       then
@@ -7553,15 +7558,14 @@ algorithm
   (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
-      DAE.Exp relation1, relation2;
-      list<Integer> occurEquLst;
+      DAE.Exp relation1;
       Type_a arg;
       BackendDAE.ZeroCrossing zc;
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case((zc as BackendDAE.ZERO_CROSSING(relation1,occurEquLst))::zeroCrossing,_,_,_)
+    case((zc as BackendDAE.ZERO_CROSSING())::zeroCrossing,_,_,_)
       equation
-        (relation2,arg) = Expression.traverseExpBottomUp(relation1,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,(if referenceEq(relation1,relation2) then zc else BackendDAE.ZERO_CROSSING(relation2,occurEquLst))::iAcc);
+        (relation1,arg) = Expression.traverseExpBottomUp(zc.relation_,func,inTypeA);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,(if referenceEq(relation1,zc.relation_) then zc else BackendDAE.ZERO_CROSSING(zc.index,relation1,zc.occurEquLst,zc.iter))::iAcc);
       then
         (zeroCrossing,arg);
   end match;
@@ -7628,7 +7632,6 @@ algorithm
   end if;
 
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
-    // prepare the equations
     dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
   end if;
 
@@ -8338,6 +8341,7 @@ public function allPreOptimizationModules
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),
+    (DataReconciliation.stateEstimation, "dataReconciliationStateEstimation"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),
@@ -9368,6 +9372,7 @@ algorithm
 end setFunctionTree;
 
 public function setEqSystEqs
+  "Set ordered equations of input equation system to given equations."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray inEqs;
   output BackendDAE.EqSystem syst = inSyst;

@@ -71,7 +71,6 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
-  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -107,7 +106,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,printExpSourceTplStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,printExpSourceTplStr));
 end emptyHashTableSized;
 
 public function printExpSourceTplStr

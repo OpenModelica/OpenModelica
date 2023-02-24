@@ -10,12 +10,12 @@ OMHOME=@OMBUILDDIR@
 OMBUILDDIR=@OMBUILDDIR@
 EXE_EXT=@EXE@
 EXE_SUFFIX=
-OMENCRYPTION=@OMENCRYPTION@
+OM_ENABLE_ENCRYPTION=@OM_ENABLE_ENCRYPTION@
 
 LIB_OMC=lib/@host_short@/omc
 
-ifeq ($(OMENCRYPTION),yes)
-OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto
+ifeq ($(OM_ENABLE_ENCRYPTION),yes)
+OMENCRYPTIONLIBS=../../../OMEncryption/3rdParty/SEMLA/build/libtool.a ../../../OMEncryption/3rdParty/SEMLA/build/openssl/lib/libcrypto.a ../../../OMEncryption/3rdParty/SEMLA/build/openssl/lib/libssl.a
 else
 OMENCRYPTIONLIBS=
 endif

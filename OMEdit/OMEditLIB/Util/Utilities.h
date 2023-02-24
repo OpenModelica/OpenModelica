@@ -387,34 +387,6 @@ private:
   QColor mColor;
 };
 
-class CodeColorsWidget : public QWidget
-{
-  Q_OBJECT
-public:
-  CodeColorsWidget(QWidget *pParent = 0);
-  QListWidget* getItemsListWidget() {return mpItemsListWidget;}
-  PreviewPlainTextEdit* getPreviewPlainTextEdit() {return mpPreviewPlainTextEdit;}
-private:
-  QGroupBox *mpColorsGroupBox;
-  Label *mpItemsLabel;
-  QListWidget *mpItemsListWidget;
-  Label *mpItemColorLabel;
-  QPushButton *mpItemColorPickButton;
-  Label *mpPreviewLabel;
-  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
-  ListWidgetItem *mpTextItem;
-  ListWidgetItem *mpNumberItem;
-  ListWidgetItem *mpKeywordItem;
-  ListWidgetItem *mpTypeItem;
-  ListWidgetItem *mpFunctionItem;
-  ListWidgetItem *mpQuotesItem;
-  ListWidgetItem *mpCommentItem;
-signals:
-  void colorUpdated();
-private slots:
-  void pickColor();
-};
-
 /*!
  * \brief The VerticalScrollArea class
  * A scroll area with vertical bar and adjustment of width
@@ -445,7 +417,11 @@ class QDetachableProcess : public QProcess
   Q_OBJECT
 public:
   QDetachableProcess(QObject *pParent = 0);
+
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+  void start(const QString &command, OpenMode mode = ReadWrite);
+#endif
 };
 
 class JsonDocument : public QObject
@@ -514,9 +490,7 @@ namespace Utilities {
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
-#if defined(_WIN32)
   QString getGDBPath();
-#endif
 
   namespace FileIconProvider {
     class FileIconProviderImplementation : public QFileIconProvider
@@ -543,8 +517,8 @@ namespace Utilities {
   qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
   QStringList variantListToStringList(const QVariantList lst);
   void addDefaultDisplayUnit(const QString &unit, QStringList &displayUnit);
-  QString convertUnitToSymbol(const QString displayUnit);
-  QString convertSymbolToUnit(const QString symbol);
+  QString convertUnitToSymbol(const QString &displayUnit);
+  QString convertSymbolToUnit(const QString &symbol);
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
 } // namespace Utilities

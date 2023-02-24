@@ -1749,7 +1749,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
         s2 = equationString(eqn);
-        res = stringAppendList({"for ", s1, " loop \n    ", s2, "; end for; "});
+        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
         res;
   end match;
@@ -2820,6 +2820,7 @@ algorithm
     case(SOME(DAE.GIVEN())) then "uncertain=Uncertainty.given";
     case(SOME(DAE.SOUGHT())) then "uncertain=Uncertainty.sought";
     case(SOME(DAE.REFINE())) then "uncertain=Uncertainty.refine";
+    case(SOME(DAE.PROPAGATE())) then "uncertain=Uncertainty.propagate";
   end match;
 end optUncertainty;
 

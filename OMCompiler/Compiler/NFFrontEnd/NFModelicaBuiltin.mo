@@ -40,7 +40,8 @@ type StateSelect = enumeration(
 type Uncertainty = enumeration(
   given,
   sought,
-  refine
+  refine,
+  propagate
 ) annotation(__OpenModelica_builtin = true);
 
 partial class Clock
@@ -578,21 +579,31 @@ function backSample<__Any> "First activation of clock is shifted in time before 
 </html>"));
 end backSample;
 
-function transition "Define state machine transition"
+function transition<__Block> "Define state machine transition"
+  input __Block from;
+  input __Block to;
+  input Boolean condition;
+  input Boolean immediate = true;
+  input Boolean reset = true;
+  input Boolean synchronize = false;
+  input Integer priority = 1;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'transition()'\">transition()</a>
 </html>"));
 end transition;
 
-function initialState "Define inital state of a state machine"
+function initialState<__Block> "Define inital state of a state machine"
+  input __Block state;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initialState()'\">initialState()</a>
 </html>"));
 end initialState;
 
-function activeState "Return true if instance of a state machine is active, otherwise false"
+function activeState<__Block> "Return true if instance of a state machine is active, otherwise false"
+  input __Block state;
+  output Boolean active;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'activeState()'\">activeState()</a>
@@ -615,7 +626,7 @@ function size "Returns dimensions of an array"
 </html>"));
 end size;
 
-function DynamicSelect<__Any> "select static or dynamic expressions in the annotations"
+impure function DynamicSelect<__Any> "select static or dynamic expressions in the annotations"
   input __Any static;
   input __Any dynamic;
   output __Any selected;
@@ -2311,20 +2322,6 @@ external "builtin";
 annotation(preferredView="text");
 end instantiateModel;
 
-function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
-  input TypeName className;
-  input String pythonTemplateFile;
-  input Boolean showFlatModelica = false;
-  output String outPythonScript;
-  external "builtin";
-end buildOpenTURNSInterface;
-
-function runOpenTURNSPythonScript "runs OpenTURNS with the given python script returning the log file"
-  input String pythonScriptFile;
-  output String logOutputFile;
-  external "builtin";
-end runOpenTURNSPythonScript;
-
 function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
   input TypeName className;
   output Boolean success;
@@ -2712,6 +2709,7 @@ function importFMU "Imports the Functional Mockup Unit
   input Boolean debugLogging = false "When true the FMU's debug output is printed.";
   input Boolean generateInputConnectors = true "When true creates the input connector pins.";
   input Boolean generateOutputConnectors = true "When true creates the output connector pins.";
+  input TypeName modelName = $TypeName(Default) "Name of the generated model. If default then the name is auto generated using FMU information.";
   output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");
@@ -3464,7 +3462,7 @@ function getInstantiatedParametersAndValues
 external "builtin";
 annotation(
   Documentation(info="<html>
-  <p>Returns the parameter names and values from the DAE.</p>
+  <p>Returns the top-level parameter names and values from the DAE.</p>
 </html>"),
   preferredView="text");
 end getInstantiatedParametersAndValues;
@@ -3535,6 +3533,18 @@ function getNthConnection "Returns the Nth connection.
 external "builtin";
 annotation(preferredView="text");
 end getNthConnection;
+
+function getConnectionList "returns an array of all connections including those within loops"
+  input TypeName className;
+  output String[:,:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Returns a list of all connect equations including those in loops. For example:
+<pre>{{\"connection1.lhs\",\"connection1.rhs\"}, {\"connection2.lhs\",\"connection2.rhs\"}}</pre>
+</html>"),
+  preferredView="text");
+end getConnectionList;
 
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
@@ -4642,11 +4652,38 @@ annotation(preferredView="text",Documentation(info="<html>
 end convertPackageToLibrary;
 
 function getModelInstance
+  "Dumps a model instance as a JSON string."
   input TypeName className;
   input Boolean prettyPrint = false;
   output String result;
 external "builtin";
 end getModelInstance;
+
+function getModelInstanceIcon
+  "Dumps only the Icon and IconMap annotations of a model, using the same JSON
+   format as getModelInstance."
+  input TypeName className;
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+end getModelInstanceIcon;
+
+function storeAST
+  output Integer id;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Stores the AST and returns an id that can be used to restore it with restoreAST.</p>
+</html>"));
+end storeAST;
+
+function restoreAST
+  input Integer id;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Restores an AST that was previously stored with storeAST.</p>
+</html>"));
+end restoreAST;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);

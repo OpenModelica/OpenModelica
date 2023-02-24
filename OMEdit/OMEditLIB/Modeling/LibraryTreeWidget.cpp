@@ -58,7 +58,8 @@
  * \brief LibraryTreeItem::LibraryTreeItem
  * Used for creating the root item.
  */
-LibraryTreeItem::LibraryTreeItem()
+LibraryTreeItem::LibraryTreeItem(QAbstractItemModel *pParent)
+  : QObject(pParent)
 {
   mIsRootItem = true;
   mpParentLibraryTreeItem = 0;
@@ -107,7 +108,7 @@ LibraryTreeItem::LibraryTreeItem()
  */
 LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                                  QString fileName, bool isSaved, LibraryTreeItem *pParent)
-  : mComponentsLoaded(false), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
+  : QObject(pParent), mComponentsLoaded(false), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
 {
   mIsRootItem = false;
   mpParentLibraryTreeItem = pParent;
@@ -147,7 +148,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
  */
 LibraryTreeItem::~LibraryTreeItem()
 {
-  qDeleteAll(mChildren);
+  if (mpModelWidget) {
+    delete mpModelWidget;
+  }
   mChildren.clear();
 }
 
@@ -1137,8 +1140,8 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
       return false;
     }
     // filter the dummy tree item "All" created for search functionality to be at the top
-    if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
-         return false;
+    if (pLibraryTreeItem && pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
+      return false;
     }
     // if any of children matches the filter, then current index matches the filter as well
     int rows = sourceModel()->rowCount(index);
@@ -1176,7 +1179,7 @@ LibraryTreeModel::LibraryTreeModel(LibraryWidget *pLibraryWidget)
   : QAbstractItemModel(pLibraryWidget)
 {
   mpLibraryWidget = pLibraryWidget;
-  mpRootLibraryTreeItem = new LibraryTreeItem;
+  mpRootLibraryTreeItem = new LibraryTreeItem(this);
 }
 
 /*!
@@ -1408,15 +1411,16 @@ QModelIndex LibraryTreeModel::libraryTreeItemIndex(const LibraryTreeItem *pLibra
 
 /*!
  * \brief LibraryTreeModel::addModelicaLibraries
- * Loads the user defined Modelica Libraries.
+ * Loads the system and user defined Modelica Libraries.
  * Automatically loads the OpenModelica as system library.
+ * \param libraries
  */
-void LibraryTreeModel::addModelicaLibraries()
+void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString> > libraries)
 {
   // load Modelica System Libraries.
   mpLibraryWidget->setLoadingLibraries(true);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  pOMCProxy->loadSystemLibraries();
+  pOMCProxy->loadSystemLibraries(libraries);
   QStringList systemLibs = pOMCProxy->getClassNames();
   /*! @note OpenModelica is needed for the auto completion to work. Do not remove/move the following line. */
   systemLibs.prepend("OpenModelica");
@@ -1787,7 +1791,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {
     pLibraryTreeItem->setPixmap(QPixmap());
-    pLibraryTreeItem->setDragPixmap(QPixmap());
+    pLibraryTreeItem->setDragPixmap(pLibraryTreeItem->getLibraryTreeItemIcon().pixmap(QSize(50, 50)));
   }
 }
 
@@ -1834,7 +1838,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
       && ((pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() && pLibraryTreeItem->isDocumentationClass()) ||
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
-           OptionsDialog::instance()->getGraphicalViewsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
+           OptionsDialog::instance()->getGraphicalViewsPage()->getDefaultView().compare(Helper::documentationViewForSettings) == 0))) {
     bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
     MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
@@ -2595,8 +2599,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     }
     updateLibraryTreeItem(pLibraryTreeItem);
   } else {
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
+    OMCInterface::getClassInformation_res classInformation = MainWindow::instance()->getOMCProxy()->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
     pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
@@ -2621,8 +2624,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
  * \param isSaved
  * \param row
  */
-void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem,
-                                                        bool isSaved, int row)
+void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved, int row)
 {
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -2796,12 +2798,11 @@ void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem 
 }
 
 /*!
- * \brief LibraryTreeModel::unloadClassHelper
- * Helper function for unloading/deleting the LibraryTreeItem.
+ * \brief unloadHelper
+ * Helper function for LibraryTreeModel::unloadClassHelper and LibraryTreeModel::unloadFileHelper
  * \param pLibraryTreeItem
- * \param pParentLibraryTreeItem
  */
-void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
+void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
@@ -2827,6 +2828,17 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
+}
+
+/*!
+ * \brief LibraryTreeModel::unloadClassHelper
+ * Helper function for unloading/deleting the LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param pParentLibraryTreeItem
+ */
+void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
+{
+  unloadHelper(pLibraryTreeItem);
   // make the class non existing
   pLibraryTreeItem->setNonExisting(true);
   pLibraryTreeItem->setClassText("");
@@ -2862,15 +2874,7 @@ void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-  // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
-  if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
-    if (pMdiSubWindow) {
-      pMdiSubWindow->close();
-      pMdiSubWindow->deleteLater();
-    }
-    pLibraryTreeItem->getModelWidget()->deleteLater();
-  }
+  unloadHelper(pLibraryTreeItem);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
   pLibraryTreeItem->deleteLater();
 }
@@ -3336,7 +3340,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
             menu.addAction(mpCallFunctionAction);
           }
-          /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
+          /* If item is OpenModelica or part of it then don't show the duplicate and unload/delete menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
             menu.addAction(mpDuplicateClassAction);
@@ -3347,21 +3351,21 @@ void LibraryTreeView::showContextMenu(QPoint point)
             } else {
               mpDuplicateClassAction->setEnabled(false);
             }
+            if (pLibraryTreeItem->isTopLevel()) {
+              mpUnloadClassAction->setText(Helper::unloadClass);
+              mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+            } else {
+              mpUnloadClassAction->setText(Helper::deleteStr);
+              mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+            }
+            // only add unload/delete option for top level system libraries
+            if (!pLibraryTreeItem->isSystemLibrary()) {
+              menu.addAction(mpUnloadClassAction);
+            } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
+              menu.addAction(mpUnloadClassAction);
+            }
+            menu.addSeparator();
           }
-          if (pLibraryTreeItem->isTopLevel()) {
-            mpUnloadClassAction->setText(Helper::unloadClass);
-            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-          } else {
-            mpUnloadClassAction->setText(Helper::deleteStr);
-            mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-          }
-          // only add unload/delete option for top level system libraries
-          if (!pLibraryTreeItem->isSystemLibrary()) {
-            menu.addAction(mpUnloadClassAction);
-          } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
-            menu.addAction(mpUnloadClassAction);
-          }
-          menu.addSeparator();
           // add actions to Export menu
           exportMenu.addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
@@ -3429,6 +3433,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
     menu.addSeparator();
     menu.addAction(mpNewFileEmptyAction);
     menu.addAction(mpNewFolderEmptyAction);
+    menu.addSeparator();
+    menu.addAction(MainWindow::instance()->getUnloadAllAction());
   }
   menu.exec(viewport()->mapToGlobal(point));
 }
@@ -4020,7 +4026,12 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       copyClassPathHelper(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
-        unloadClass();
+        // If item is OpenModelica or part of it then don't unload it.
+        // If item is system library and not a toplevel then don't unload it.
+        if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)
+            && (!isSystemLibrary || (isSystemLibrary && isTopLevel))) {
+          unloadClass();
+        }
       } else if (isTopLevel && isOMSimulatorLibraryType) {
         unloadOMSModel();
       } else if (isTopLevel) {
@@ -4161,8 +4172,9 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  * \param fileName
  * \param encoding
  * \param showProgress
+ * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  */
-void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress)
+void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -4202,8 +4214,18 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       // load the file in OMC
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
         if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
-          if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
-            openModelicaFile(fileName, encoding, showProgress);
+          if (secondAttempt) {
+            // clear loadModelCallback classes
+            mAutoLoadedLibrariesList.clear();
+            // cancel loading the library
+            LibraryWidget::cancelLoadingLibraries(classes);
+            // show error message
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to load %1. See messages above for more details.").arg(classesList.join(",")), Helper::scriptingKind,
+                                                                  Helper::errorLevel));
+          } else {
+            if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
+              openModelicaFile(fileName, encoding, showProgress, true);
+            }
           }
         } else {
           // create library tree nodes for loaded models
@@ -4616,8 +4638,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
         .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
              .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                          Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }
@@ -5221,15 +5242,15 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
       }
       QFile::copy(modelFileInfo.absoluteFilePath(), newModelFilePath);
       // copy the geomtry file to the created directory
-      if (pComponent && !pComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
-        QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
+      if (pComponent && !pComponent->getElementInfo()->getGeometryFile().isEmpty()) {
+        QFileInfo geometryFileInfo(pComponent->getElementInfo()->getGeometryFile());
         QString newGeometryFilePath = directoryPath + "/" + geometryFileInfo.fileName();
         if (geometryFileInfo.absoluteFilePath().compare(newGeometryFilePath) != 0) {
           // first try to remove the file because QFile::copy will not override the file.
           QFile::remove(newGeometryFilePath);
         }
         QFile::copy(geometryFileInfo.absoluteFilePath(), newGeometryFilePath);
-        pComponent->getComponentInfo()->setGeometryFile(newGeometryFilePath);
+        pComponent->getElementInfo()->setGeometryFile(newGeometryFilePath);
       }
     }
   } else {
@@ -5266,8 +5287,6 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
    * If the library required is already loaded with some other version.
    * Then allow the user to cancel the operation or unload everything and reload the class again.
    */
-  QStringList classes1;
-  LibraryTreeItem *pLibraryTreeItem = 0;
   // clear loadModelCallback classes
   mAutoLoadedLibrariesList.clear();
 
@@ -5285,23 +5304,26 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
   switch (answer) {
     case 0: // cancel operation
     default:
-      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
-      if (classes1.size() > classes.size()) {
-        foreach (QString loadedClass, classes1) {
-          if (!classes.contains(loadedClass)) {
-            pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
-            if (pLibraryTreeItem) {
-              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
-            } else {
-              MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
-            }
-          }
-        }
-      }
+      LibraryWidget::cancelLoadingLibraries(classes);
       return false;
     case 1: // unload all and reload
-      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
-      foreach (QString loadedClass, classes1) {
+      MainWindow::instance()->unloadAll(true);
+      // Just return true and the calling function will load the library.
+      return true;
+  }
+}
+
+/*!
+ * \brief LibraryWidget::cancelLoadingLibraries
+ * \param classes
+ */
+void LibraryWidget::cancelLoadingLibraries(const QStringList classes)
+{
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  QStringList classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
+  if (classes1.size() > classes.size()) {
+    foreach (QString loadedClass, classes1) {
+      if (!classes.contains(loadedClass)) {
         pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
         if (pLibraryTreeItem) {
           MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
@@ -5309,8 +5331,7 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
           MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
         }
       }
-      // Just return true and the calling function will load the library.
-      return true;
+    }
   }
 }
 
@@ -5348,8 +5369,9 @@ void LibraryWidget::loadSystemLibrary()
  * Loads a system library.
  * \param library
  * \param version
+ * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  */
-void LibraryWidget::loadSystemLibrary(const QString &library, QString version)
+void LibraryWidget::loadSystemLibrary(const QString &library, QString version, bool secondAttempt)
 {
   /* check if library is already loaded. */
   if (mpLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
@@ -5375,8 +5397,18 @@ void LibraryWidget::loadSystemLibrary(const QString &library, QString version)
     QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
     if (MainWindow::instance()->getOMCProxy()->loadModel(library, version)) {
       if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
-        if (resolveConflictWithLoadedLibraries(library, classes)) {
-          loadSystemLibrary(library, version);
+        if (secondAttempt) {
+          // clear loadModelCallback classes
+          mAutoLoadedLibrariesList.clear();
+          // cancel loading the library
+          LibraryWidget::cancelLoadingLibraries(classes);
+          // show error message
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to load %1. See messages above for more details.").arg(library), Helper::scriptingKind,
+                                                                Helper::errorLevel));
+        } else {
+          if (resolveConflictWithLoadedLibraries(library, classes)) {
+            loadSystemLibrary(library, version, true);
+          }
         }
       } else {
         mpLibraryTreeModel->createLibraryTreeItem(library, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);

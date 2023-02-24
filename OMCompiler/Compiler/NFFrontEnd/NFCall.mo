@@ -65,6 +65,7 @@ import NFFunction.TypedArg;
 import NFInstNode.CachedData;
 import Operator = NFOperator;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
 import SCodeUtil;
 import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
@@ -392,6 +393,11 @@ public
     // and subscripting it with an iterator for each dim and creating a map call.
     if MatchedFunction.isVectorized(matchedFunc) then
       call := vectorizeCall(call, matchedFunc.mk, scope, info);
+    end if;
+
+    if Function.isExternal(func) then
+      updateExternalRecordArgs(args);
+      updateExternalRecordArgsInType(ty);
     end if;
   end matchTypedNormalCall;
 
@@ -756,7 +762,7 @@ public
           else
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
             arg_str := Expression.toFlatString(call.exp);
-            c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+            c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
               Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
             str := stringAppendList({"{", arg_str, " for ", c, "}"});
           end if;
@@ -767,7 +773,7 @@ public
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := Expression.toFlatString(call.exp);
-          c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+          c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
             Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
         then
           if Function.isBuiltin(call.fn) then
@@ -845,7 +851,8 @@ public
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          json := JSON.addPair("$kind", JSON.makeString("array_constructor"), json);
+          json := JSON.addPair("$kind", JSON.makeString("iterator_call"), json);
+          json := JSON.addPair("name", JSON.makeString("$array"), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
         then
@@ -854,7 +861,7 @@ public
       case TYPED_REDUCTION()
         algorithm
           path := Function.nameConsiderBuiltin(call.fn);
-          json := JSON.addPair("$kind", JSON.makeString("reduction"), json);
+          json := JSON.addPair("$kind", JSON.makeString("iterator_call"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
@@ -1123,6 +1130,13 @@ public
               algorithm
                 call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
                 call.ty := cast_ty;
+              then
+                Expression.CALL(call);
+
+            // For DynamicSelect we type cast both of the arguments.
+            case "DynamicSelect"
+              algorithm
+                call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
               then
                 Expression.CALL(call);
 
@@ -1994,6 +2008,73 @@ public
       then fail();
     end match;
   end getNameAndArgs;
+
+  function updateExternalRecordArgs
+    input list<Expression> args;
+  algorithm
+    for arg in args loop
+      updateExternalRecordArgsInType(Expression.typeOf(arg));
+    end for;
+  end updateExternalRecordArgs;
+
+  function updateExternalRecordArgsInType
+    input Type ty;
+  protected
+    InstNode node;
+    Class cls;
+    Restriction res;
+  algorithm
+    if Type.isRecord(ty) then
+      node := Type.complexNode(ty);
+      cls := InstNode.getClass(node);
+      res := Restriction.setExternalRecord(Class.restriction(cls));
+      cls := Class.setRestriction(res, cls);
+      InstNode.updateClass(cls, node);
+    end if;
+  end updateExternalRecordArgsInType;
+
+  function toArrayConstructor
+    "tries to make an array constructor from any call"
+    input Call iCall;
+    output Call oCall;
+  algorithm
+    oCall := match iCall
+      local
+        InstNode iter_name;
+        Expression start, body, iter_range;
+        Option<Expression> step;
+        list<Expression> rest;
+        list<tuple<InstNode, Expression>> iterators = {};
+        Integer index = 1;
+
+      case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
+        case "fill" algorithm
+          body :: rest  := iCall.arguments;
+          start         := Expression.INTEGER(1);
+          step          := NONE();
+          for stop in rest loop
+            iter_name   := InstNode.newIndexedIterator(index);
+            iter_range  := Expression.RANGE(Type.INTEGER(), start, step, stop);
+            iterators   := (iter_name, iter_range) :: iterators;
+            index       := index + 1;
+          end for;
+        then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, listReverse(iterators));
+        else iCall;
+      end match;
+      else iCall;
+    end match;
+  end toArrayConstructor;
+
+  function isConnectionsOperator
+    input Call call;
+    output Boolean isOp;
+  algorithm
+    isOp := match call
+      case TYPED_CALL()
+        then Function.isBuiltin(call.fn) and functionNameFirst(call) == "Connections";
+      else false;
+    end match;
+  end isConnectionsOperator;
 
 protected
   function instNormalCall

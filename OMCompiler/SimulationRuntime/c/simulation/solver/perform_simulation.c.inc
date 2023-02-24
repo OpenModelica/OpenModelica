@@ -81,6 +81,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   }
   data->callback->output_function(data, threadData);
   data->callback->setc_function(data, threadData);
+  data->callback->setb_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);
@@ -364,13 +365,9 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
 
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
-  int ui;
   if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep)
   {
-    for(ui=0; ui<numStatistics; ui++)
-    {
-      solverInfo->solverStats[ui] += solverInfo->solverStatsTmp[ui];
-    }
+    addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
   }
 }
 

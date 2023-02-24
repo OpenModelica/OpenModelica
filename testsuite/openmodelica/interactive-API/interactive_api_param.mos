@@ -125,7 +125,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierNames(D2, B2)
 // {a.x, f}
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
-// 2 * y
+// 2*y
 // Evaluating: setExtendsModifierValue(D2, B2, a.x, $Code( = 10))
 // Ok
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)

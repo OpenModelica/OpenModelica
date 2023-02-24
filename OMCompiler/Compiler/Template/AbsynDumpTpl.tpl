@@ -8,12 +8,12 @@ match program
   case PROGRAM(classes = {}) then ""
   case PROGRAM(__) then
     let within_str = dumpWithin(within_)
-    let cls_str = (classes |> cls => dumpClass(cls, options) ;separator=";\n\n")
-    '<%within_str%><%cls_str%>;'
+    let cls_str = (classes |> cls => dumpClass(cls, ";", options) ;separator="\n\n")
+    '<%within_str%><%cls_str%>'
 end dump;
 
-template dumpClass(Absyn.Class cls, DumpOptions options)
-::= dumpClassElement(cls, "", "", "" , "", options)
+template dumpClass(Absyn.Class cls, String sc, DumpOptions options)
+::= dumpClassElement(cls, "", "", "" , "", sc, options)
 end dumpClass;
 
 template dumpWithin(Absyn.Within within)
@@ -40,16 +40,16 @@ match cls
 end dumpClassHeader;
 
 template dumpClassElement(Absyn.Class cls, String final_str,
-    String redecl_str, String repl_str, String io_str, DumpOptions options)
+    String redecl_str, String repl_str, String io_str, String sc, DumpOptions options)
 ::=
 match cls
   case CLASS(__) then
     let header_str = dumpClassHeader(cls, final_str, redecl_str, repl_str, io_str)
-    let body_str = dumpClassDef(body, name, options)
-    '<%header_str%> <%body_str%>'
+    let body_str = dumpClassDef(body, name, commentsBeforeEnd, options)
+    '<%header_str%> <%body_str%><%sc%><%if commentsAfterEnd then "\n" + commentsAfterEnd |> cmt => cmt%>'
 end dumpClassElement;
 
-template dumpClassDef(Absyn.ClassDef cdef, String cls_name, DumpOptions options)
+template dumpClassDef(Absyn.ClassDef cdef, String cls_name, list<String> commentsBeforeEnd, DumpOptions options)
 ::=
 match cdef
   case PARTS(__) then
@@ -62,40 +62,42 @@ match cdef
     <%cls_name%><%tvs_str%><%cmt_str%><%\n%>
     <%body_str%>
       <%if ann_str then '<%ann_str%>;'%>
+      <%commentsBeforeEnd |> cmt => cmt%>
     end <%cls_name%>
     >>
   case DERIVED(__) then
     let attr_str = dumpElementAttr(attributes)
     let ty_str = dumpTypeSpec(typeSpec)
     let mod_str = if arguments then
-      '(<%(arguments |> arg => dumpElementArg(arg) ;separator=", ")%>)'
+      '(<%dumpElementArgList(arguments, ', ')%>)'
     let cmt_str = dumpCommentOpt(comment)
-    '<%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>'
+    '<%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%><%commentsBeforeEnd |> cmt => cmt%>'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
       dumpClassPart(class_part, idx, options) ;separator="\n")
     let mod_str = if modifications then
-      '(<%(modifications |> mod => dumpElementArg(mod) ;separator=", ")%>)'
+      '(<%dumpElementArgList(modifications, ', ')%>)'
     let cmt_str = dumpStringCommentOption(comment)
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
     <<
     extends <%baseClassName%><%mod_str%><%cmt_str%>
       <%body_str%>
       <%if ann_str then '<%ann_str%>;'%>
+      <%commentsBeforeEnd |> cmt => cmt%>
     end <%cls_name%>
     >>
   case ENUMERATION(__) then
     let enum_str = dumpEnumDef(enumLiterals)
     let cmt_str = dumpCommentOpt(comment)
-    '<%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%>'
+    '<%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%><%commentsBeforeEnd |> cmt => cmt%>'
   case OVERLOAD(__) then
     let funcs_str = (functionNames |> fn => dumpPath(fn) ;separator=", ")
     let cmt_str = dumpCommentOpt(comment)
-    '<%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%>'
+    '<%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%><%commentsBeforeEnd |> cmt => cmt%>'
   case PDER(__) then
     let fn_str = dumpPath(functionName)
     let vars_str = (vars |> var => var ;separator=", ")
-    '<%cls_name%> = der(<%fn_str%>, <%vars_str%>)'
+    '<%cls_name%> = der(<%fn_str%>, <%vars_str%>)<%commentsBeforeEnd |> cmt => cmt%>'
 end dumpClassDef;
 
 template dumpEnumDef(Absyn.EnumDef enum_def)
@@ -296,7 +298,7 @@ match ann
   case ANNOTATION(__) then
     <<
     annotation(
-      <%(elementArgs |> earg => dumpElementArg(earg) ;separator=',<%\n%>')%>)
+      <%dumpElementArgList(elementArgs, ',<%\n%>')%>)
     >>
 end dumpAnnotation;
 
@@ -319,9 +321,14 @@ template dumpCommentOpt(Option<Absyn.Comment> ocmt)
 ::= match ocmt case SOME(cmt) then dumpComment(cmt)
 end dumpCommentOpt;
 
+template dumpElementArgList(list<Absyn.ElementArg> elementArgs, Text separator)
+::=
+  shouldSeparateAfterElementArg(elementArgs) |> (earg,b) => (dumpElementArg(earg) + (if b then separator))
+end dumpElementArgList;
+
 template dumpElementArg(Absyn.ElementArg earg)
 ::=
-match earg
+  match earg
   case MODIFICATION(__) then
     let each_str = dumpEach(eachPrefix)
     let final_str = dumpFinal(finalPrefix)
@@ -338,6 +345,7 @@ match earg
     let elem_str = dumpElementSpec(elementSpec, final_str, eredecl_str, repl_str, "", defaultDumpOptions)
     let cc_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
     '<%elem_str%><%cc_str%>'
+  case ELEMENTARGCOMMENT(__) then (" " + comment ; absIndent=0)
 end dumpElementArg;
 
 template dumpEach(Absyn.Each each)
@@ -375,7 +383,7 @@ template dumpModification(Absyn.Modification mod)
 match mod
   case CLASSMOD(__) then
     let arg_str = if elementArgLst then
-      '(<%(elementArgLst |> earg => dumpElementArg(earg) ;separator=", ")%>)'
+      '(<%dumpElementArgList(elementArgLst, ", ")%>)'
     let eq_str = dumpEqMod(eqMod)
     '<%arg_str%><%eq_str%>'
 end dumpModification;
@@ -388,10 +396,10 @@ template dumpElementSpec(Absyn.ElementSpec elem, String final, String redecl,
     String repl, String io, DumpOptions options)
 ::=
 match elem
-  case CLASSDEF(__) then dumpClassElement(class_, final, redecl, repl, io, options)
+  case CLASSDEF(__) then dumpClassElement(class_, final, redecl, repl, io, "", options)
   case EXTENDS(__) then
     let bc_str = dumpPath(path)
-    let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
+    let args_str = dumpElementArgList(elementArg, ', ')
     let mod_str = if args_str then '(<%args_str%>)'
     let ann_str = dumpAnnotationOptSpace(annotationOpt)
     'extends <%bc_str%><%mod_str%><%ann_str%>'
@@ -404,7 +412,7 @@ match elem
     '<%prefix_str%><%attr_str%><%ty_str%><%dim_str%> <%comps_str%>'
   case IMPORT(__) then
     let imp_str = dumpImport(import_)
-    'import <%imp_str%>'
+    'import <%imp_str%><%dumpCommentOpt(comment)%>'
 end dumpElementSpec;
 
 template dumpElementAttr(Absyn.ElementAttributes attr)
@@ -462,7 +470,7 @@ template dumpConstrainClass(Absyn.ConstrainClass cc)
 match cc
   case CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p, elementArg = el)) then
     let path_str = dumpPath(p)
-    let el_str = if el then '(<%(el |> e => dumpElementArg(e) ;separator=", ")%>)'
+    let el_str = if el then '(<%dumpElementArgList(el, ', ')%>)'
     let cmt_str = dumpCommentOpt(comment)
     ' constrainedby <%path_str%><%el_str%><%cmt_str%>'
 end dumpConstrainClass;
@@ -769,7 +777,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case e as UNARY(__) then
     let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
@@ -778,7 +786,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case e as LUNARY(__) then
     let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
@@ -787,7 +795,7 @@ match exp
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%lhs_str%> <%op_str%> <%rhs_str%>'
+    '<%lhs_str%><%op_str%><%rhs_str%>'
   case IFEXP(__) then dumpIfExp(exp)
   case CALL(function_=Absyn.CREF_IDENT(name="$array")) then
     let args_str = dumpFunctionArgs(functionArgs)
@@ -835,6 +843,8 @@ match exp
     '{<%list_str%>}'
   case DOT(__) then
     '<%dumpExp(exp)%>.<%dumpExp(index)%>'
+  case EXPRESSIONCOMMENT(__) then
+    ((commentsBefore |> cmt => cmt ; absIndent=0) + dumpExp(exp) + (commentsAfter |> cmt => cmt ; absIndent=0))
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 
@@ -848,9 +858,9 @@ end dumpLhsExp;
 template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs)
 ::=
   let op_str = dumpExp(operand)
-  if shouldParenthesize(operand, operation, lhs) then
+  /* if shouldParenthesize(operand, operation, lhs) then
     '(<%op_str%>)'
-  else
+  else */
     op_str
 end dumpOperand;
 
@@ -994,29 +1004,29 @@ end dumpMatchCase;
 template dumpOperator(Absyn.Operator op)
 ::=
 match op
-  case ADD(__) then '+'
-  case SUB(__) then '-'
+  case ADD(__) then ' + '
+  case SUB(__) then ' - '
   case MUL(__) then '*'
   case DIV(__) then '/'
   case POW(__) then '^'
   case UPLUS(__) then '+'
   case UMINUS(__) then '-'
-  case ADD_EW(__) then '.+'
-  case SUB_EW(__) then '.-'
+  case ADD_EW(__) then ' .+ '
+  case SUB_EW(__) then ' .- '
   case MUL_EW(__) then '.*'
   case DIV_EW(__) then './'
   case POW_EW(__) then '.^'
-  case UPLUS_EW(__) then '.+'
-  case UMINUS_EW(__) then '.-'
-  case AND(__) then 'and'
-  case OR(__) then 'or'
+  case UPLUS_EW(__) then ' .+ '
+  case UMINUS_EW(__) then ' .- '
+  case AND(__) then ' and '
+  case OR(__) then ' or '
   case NOT(__) then 'not'
-  case LESS(__) then '<'
-  case LESSEQ(__) then '<='
-  case GREATER(__) then '>'
-  case GREATEREQ(__) then '>='
-  case EQUAL(__) then '=='
-  case NEQUAL(__) then '<>'
+  case LESS(__) then ' < '
+  case LESSEQ(__) then ' <= '
+  case GREATER(__) then ' > '
+  case GREATEREQ(__) then ' >= '
+  case EQUAL(__) then ' == '
+  case NEQUAL(__) then ' <> '
 end dumpOperator;
 
 template dumpCref(Absyn.ComponentRef cref)

@@ -55,7 +55,7 @@ public
     Integer prev_size = 0;
   algorithm
     // Create a new table and add each identifier in the path of the class.
-    used := UnorderedSet.new(stringHashDjb2Mod, stringEq);
+    used := UnorderedSet.new(stringHashDjb2, stringEq);
     analysePath(classPath, used);
 
     // Add some identifiers which can be implicitly used.

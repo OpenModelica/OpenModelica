@@ -54,7 +54,8 @@ elseif(MSVC)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
-install(TARGETS OpenModelicaRuntimeC)
+install(TARGETS OpenModelicaRuntimeC
+        COMPONENT omc)
 
 
 # ######################################################################################################################

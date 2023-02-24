@@ -36,7 +36,7 @@
 
 #include "Simulation/SimulationOutputWidget.h"
 
-#include <QXmlDefaultHandler>
+#include <QXmlStreamReader>
 
 class SimulationMessage
 {
@@ -90,7 +90,7 @@ private:
   QModelIndex simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage, const QModelIndex &parentIndex) const;
 };
 
-class SimulationOutputHandler : private QXmlDefaultHandler
+class SimulationOutputHandler
 {
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
@@ -100,19 +100,16 @@ private:
   SimulationMessage* mpSimulationMessage;
   QMap<int, SimulationMessage*> mSimulationMessagesLevelMap;
   SimulationMessageModel *mpSimulationMessageModel;
-  QXmlSimpleReader mXmlSimpleReader;
-  QXmlInputSource *mpXmlInputSource;
+  QXmlStreamReader mXmlStreamReader;
   FILE *mpSimulationLogFile;
 
   bool isMaximumDisplayLimitReached() const;
-  bool startElement(const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts);
-  bool endElement(const QString &namespaceURI, const QString &localName, const QString &qName);
-  bool fatalError(const QXmlParseException &exception);
+  void endElement();
 public:
   SimulationOutputHandler(SimulationOutputWidget *pSimulationOutputWidget, QString simulationOutput);
   ~SimulationOutputHandler();
   SimulationMessageModel* getSimulationMessageModel() {return mpSimulationMessageModel;}
-  void parseSimulationOutput(QString output);
+  void parseSimulationOutput(const QString &output);
   void writeSimulationLog(const QString &text);
   void addSimulationMessage(SimulationMessage *pSimulationMessage);
   void simulationProcessFinished();

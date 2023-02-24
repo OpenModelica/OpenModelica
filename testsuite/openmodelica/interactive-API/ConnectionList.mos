@@ -1,0 +1,69 @@
+// name: ConnectionList
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the getConnectionList API function.
+//
+
+loadString("
+  model M
+    connector A
+    end A;
+    connector B
+    end B;
+
+    parameter Integer n = 3;
+    A a[n], c;
+    B b[n], d;
+  equation
+    connect(a,b);
+    connect(c,d);
+  end M;
+"); getErrorString();
+
+getConnectionList(M); getErrorString();
+
+deleteClass(M); getErrorString();
+
+
+
+// Testing complex loop structure
+
+loadString("
+  model M
+    connector A
+    end A;
+    connector B
+    end B;
+
+    parameter Integer n = 5;
+    A a[n];
+    B b[n];
+  equation
+    for i in n-2:(n-2)*2-3 loop
+      for j in 1:n loop
+        if j <> i then
+          connect(a[j],b[j]);
+        end if;
+      end for;
+
+      connect(a[i],b[i]);
+    end for;
+  end M;
+"); getErrorString();
+
+getConnectionList(M); getErrorString();
+
+
+// Result:
+// true
+// ""
+// {{"c","d"},{"a[3]","b[3]"},{"a[2]","b[2]"},{"a[1]","b[1]"}}
+// ""
+// true
+// ""
+// true
+// ""
+// {{"a[3]","b[3]"},{"a[5]","b[5]"},{"a[4]","b[4]"},{"a[2]","b[2]"},{"a[1]","b[1]"}}
+// ""
+// endResult

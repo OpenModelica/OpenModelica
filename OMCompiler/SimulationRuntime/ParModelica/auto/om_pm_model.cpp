@@ -33,6 +33,9 @@
  Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
+// We need this to get the flag/option values passed to a simulation executable.
+#include "simulation/options.h"
+
 #include "om_pm_model.hpp"
 
 #include <cstring>
@@ -126,11 +129,9 @@ inline void check_container_dispaly(int index, const std::string& disp) {
 
 void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
 
-#ifndef NDEBUG
     if (json_eq["defines"].size() != 1) {
         utility::eq_index_fatal(current_node.index, "Assign with more than one define!");
     }
-#endif
 
     current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
 
@@ -141,11 +142,9 @@ void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
 
 void load_algorithm(Equation& current_node, const nlohmann::json& json_eq) {
 
-    if (json_eq["defines"].size() != 1) {
-        utility::eq_index_error(current_node.index, "Algorithm with more than one define!");
+    for (auto def : json_eq["defines"]) {
+        current_node.lhs.insert(def.get<std::string>());
     }
-
-    current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
 
     for (auto use : json_eq["uses"]) {
         current_node.rhs.insert(use.get<std::string>());
@@ -154,17 +153,15 @@ void load_algorithm(Equation& current_node, const nlohmann::json& json_eq) {
 
 void load_simple_assign_check_local_define(Equation& current_node, const nlohmann::json& int_eq) {
 
-#ifndef NDEBUG
     if (int_eq["defines"].size() != 1) {
         utility::eq_index_error(current_node.index, "Assign with more than one define!");
     }
-#endif
 
     current_node.lhs.insert(int_eq["defines"].front().get<std::string>());
 
     for (auto& use : int_eq["uses"]) {
         auto var_s = use.get<std::string>();
-        utility::indexed_dlog(current_node.index, "Checking if " + var_s + " is defined localy");
+        utility::indexed_dlog(current_node.index, "Checking if " + var_s + " is defined locally");
         auto local_defined = current_node.lhs.find(var_s) != current_node.lhs.end();
 
         // Disable me and see if graphs look different.
@@ -265,9 +262,19 @@ void load_equation(Equation& current_node, const nlohmann::json& json_eq) {
 
 void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
     std::string json_file = this->name + "_ode.json";
+
+    if (omc_flag[FLAG_INPUT_PATH]) {
+      json_file = std::string(omc_flagValue[FLAG_INPUT_PATH]) + "/" + json_file;
+    }
+
     // utility::log("") << "Loading " << json_file << std::endl;
 
     std::ifstream  f_s(json_file);
+    if (!f_s.is_open()) {
+        utility::error("Fatal") << "Could not open dependency json file '" << json_file << "'. Please make sure the file is generated in the correct place and is readable." << std::endl;
+    }
+
+
     nlohmann::json jmodel_info;
 
     jmodel_info << f_s;

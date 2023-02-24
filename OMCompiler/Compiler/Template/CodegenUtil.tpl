@@ -45,8 +45,8 @@
 
 package CodegenUtil
 
-import ExpressionDumpTpl.*;
 import interface SimCodeTV;
+import ExpressionDumpTpl.*;
 
 /* public */ template symbolName(String modelNamePrefix, String symbolName)
   "Creates a unique name for the function"
@@ -65,7 +65,6 @@ template replaceDotAndUnderscore(String str)
 end replaceDotAndUnderscore;
 
 template getGeneralTarget(String str)
- "Replace _ with __ and dot in identifiers with _"
 ::=
   match str
   case "msvc10"
@@ -160,7 +159,6 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-
 /*********************** Comments ************************/
 
 template escapeCComments(String stringWithCComments)
@@ -168,13 +166,33 @@ template escapeCComments(String stringWithCComments)
 ::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'
 end escapeCComments;
 
+template crefCComment(SimVar v, String vName)
+"write the C comment for a cref, if it is not to be obfuscated"
+::=
+  match v
+  case SIMVAR(isProtected = true) then
+    if stringEq(getConfigString(OBFUSCATE), "none")
+    then '<%escapeCComments(vName)%>'
+    else 'OBFUSCATED'
+  case SIMVAR(__) then
+    if not stringEq(getConfigString(OBFUSCATE), "full")
+    then '<%escapeCComments(vName)%>'
+    else 'OBFUSCATED'
+end crefCComment;
+
+template crefCCommentWithVariability(SimVar v)
+"write the C comment for a cref with variability"
+::=
+  match v
+  case SIMVAR(isProtected = true) then
+    if stringEq(getConfigString(OBFUSCATE), "none")
+    then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+  case SIMVAR(__) then
+    if not stringEq(getConfigString(OBFUSCATE), "full")
+    then ' /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+end crefCCommentWithVariability;
+
 /*********************************************************/
-
-
-
-
-
-
 
 template initDefaultValXml(DAE.Type type_)
 ::=

@@ -2,29 +2,39 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources resources modelDescription.xml FMUResourceTest_Test* FMUResourceTest.Test* output.log
-// cflags: -d=-newInst
+// cflags: -d=newInst
 //
 
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("./FMUResourceTest/package.mo"); getErrorString();
+mkdir("@");
+echo(false);
+cd("@");
+echo(true);
 translateModelFMU(FMUResourceTest.TestResource, version="2.0"); getErrorString();
 importFMU("FMUResourceTest.TestResource.fmu"); getErrorString();
 loadFile("FMUResourceTest_TestResource_me_FMU.mo"); getErrorString();
-buildModel(FMUResourceTest_TestResource_me_FMU); getErrorString();
-
+echo(false);
+res := simulate(FMUResourceTest_TestResource_me_FMU);
+echo(true);
+getErrorString();
+res.resultFile;
 
 // Result:
 // true
 // ""
 // true
 // ""
+// true
+// true
 // "FMUResourceTest.TestResource.fmu"
 // ""
 // "FMUResourceTest_TestResource_me_FMU.mo"
 // ""
 // true
 // ""
-// {"FMUResourceTest_TestResource_me_FMU","FMUResourceTest_TestResource_me_FMU_init.xml"}
+// true
 // ""
+// "FMUResourceTest_TestResource_me_FMU_res.mat"
 // endResult

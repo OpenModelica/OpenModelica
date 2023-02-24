@@ -1,0 +1,71 @@
+// name: issue7969
+// status: correct
+
+// target: inputs attribute are set via parameters
+
+setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model component
+  input Real v1;
+  input Real v2;
+  output Real limit(min=0) annotation(isConstraint=true);
+  equation
+    limit = v2 - v1;
+end component;
+
+model issue9366
+  final parameter Integer n = 5;
+  input Real [n]u_set(each start = -2, each min=-2, each max = 2);
+  component c[n];
+  Real Z annotation(isLagrange = true);
+equation
+  Z = sum(c.limit);
+  for i in 1:n loop
+    u_set[i] = c[i].v1;
+    c[i].v2 = 1 - time;
+  end for;
+end issue9366;
+");
+getErrorString();
+
+optimize(issue9366, numberOfIntervals=4, tolerance = 1e-8, stopTime = 2);
+getErrorString();
+
+val(Z, {0.5,1.0, 2});
+val(u_set[1], {0.5,1.0, 2});
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "issue9366_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 4, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'issue9366', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// Input[0]:u_set[1](start = -2, nominal = 2, min = -2, max = 2)
+// Input[1]:u_set[2](start = -2, nominal = 2, min = -2, max = 2)
+// Input[2]:u_set[3](start = -2, nominal = 2, min = -2, max = 2)
+// Input[3]:u_set[4](start = -2, nominal = 2, min = -2, max = 2)
+// Input[4]:u_set[5](start = -2, nominal = 2, min = -2, max = 2)
+// --------------------------------------------------------
+// number of nonlinear constraints: 5
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit https://github.com/coin-or/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {-4.910006401459555e-08,-4.910000797820002e-08,-4.910019335557791e-08}
+// {0.5000000098200128,9.820001595640004e-09,-0.9999999901799613}
+// endResult

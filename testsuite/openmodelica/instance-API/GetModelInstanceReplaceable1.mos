@@ -1,4 +1,4 @@
-// name: GetModelInstanceAttributes1
+// name: GetModelInstanceReplaceable1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -24,8 +24,9 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifiers\": \"1.0\",
@@ -37,31 +38,51 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"class\",
+//       \"name\": \"M\",
+//       \"prefixes\": {
+//         \"replaceable\": true
+//       },
+//       \"source\": {
+//         \"filename\": \"<interactive>\",
+//         \"lineStart\": 5,
+//         \"columnStart\": 17,
+//         \"lineEnd\": 7,
+//         \"columnEnd\": 10
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
 //       \"name\": \"m\",
 //       \"type\": {
 //         \"name\": \"M\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"prefixes\": {
+//           \"replaceable\": true
+//         },
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"x\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           }
-//         ]
-//       },
-//       \"prefixes\": {
-//
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 5,
+//           \"columnStart\": 17,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 10
+//         }
 //       }
 //     }
 //   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\"
-//     },
-//     \"M\"
-//   ]
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

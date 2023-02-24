@@ -252,13 +252,17 @@ struct csv_data* read_csv(const char *filename)
   struct csv_data *res;
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
+  size_t len;
+
   FILE *fin = omc_fopen(filename, "r");
   if (!fin) {
     return NULL;
   }
 
   /* determine delim */
-  omc_fread(buf, 1, 5, fin, 0);
+  len = omc_fread(buf, 1, 5, fin, 0);
+  // Terminate the string in the buffer to make sure strcmp works as expected.
+  buf[len] = '\0';
   if (0 == strcmp(buf, "\"sep="))
   {
     omc_fread(&delim, 1, 1, fin, 0);
@@ -277,7 +281,7 @@ struct csv_data* read_csv(const char *filename)
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
-    size_t len = omc_fread(buf, 1, buf_size, fin, 1);
+    len = omc_fread(buf, 1, buf_size, fin, 1);
     if (len != buf_size && !feof(fin)) {
       csv_free(&p);
       fclose(fin);

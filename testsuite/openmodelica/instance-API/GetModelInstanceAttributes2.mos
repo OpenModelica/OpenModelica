@@ -35,13 +35,39 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"final\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"direction\": \"input\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"w\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -51,46 +77,25 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"z\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
 //               \"inner\": true
 //             }
 //           }
-//         ]
-//       }
-//     }
-//   ],
-//   \"components\": [
-//     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"outer\": true
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 17,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 17,
+//           \"columnEnd\": 14
+//         }
 //       }
 //     },
 //     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"final\": true
-//       }
-//     },
-//     {
-//       \"name\": \"y\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"direction\": \"input\"
-//       }
-//     },
-//     {
-//       \"name\": \"z\",
-//       \"type\": \"Real\",
-//       \"prefixes\": {
-//         \"inner\": true
-//       }
-//     },
-//     {
+//       \"$kind\": \"component\",
 //       \"name\": \"w\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
@@ -100,19 +105,19 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     },
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"c\",
 //       \"type\": {
 //         \"name\": \"C\",
 //         \"restriction\": \"connector\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"e\",
-//             \"type\": \"Real\",
-//             \"prefixes\": {
-//
-//             }
+//             \"type\": \"Real\"
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
@@ -120,13 +125,21 @@ getModelInstance(M, prettyPrint = true);
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"s\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
 //               \"connector\": \"stream\"
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 8
+//         }
 //       },
 //       \"prefixes\": {
 //         \"public\": false,
@@ -134,11 +147,12 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     }
 //   ],
-//   \"replaceable\": [
-//     {
-//       \"name\": \"w\",
-//       \"type\": \"Real\"
-//     }
-//   ]
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 13,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 21,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

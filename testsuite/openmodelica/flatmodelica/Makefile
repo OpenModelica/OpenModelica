@@ -12,7 +12,8 @@ TESTFILES = DoublePendulum.mos \
   Tables.mos \
 	SD.mo \
 	SimpleCoolingCycle.mo \
-	Comments.mo
+	Comments.mo \
+	Expression1.mo
 
 
 # test that currently fail. Move up when fixed.

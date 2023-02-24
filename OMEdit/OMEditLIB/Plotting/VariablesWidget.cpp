@@ -182,7 +182,7 @@ void VariablesTreeItem::setActive()
   }
   // set VariablesTreeView to active.
   mActive = true;
-  MainWindow::instance()->getVariablesWidget()->initializeVisualization(mSimulationOptions);
+  MainWindow::instance()->getVariablesWidget()->initializeVisualization();
 }
 
 QIcon VariablesTreeItem::getVariableTreeItemIcon(QString name) const
@@ -776,8 +776,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   // create hash based VariableNode
   VariableNode *pTopVariableNode = new VariableNode(variabledata);
-  // sort the variables using natural sort
-  std::sort(variablesList.begin(), variablesList.end(), StringHandler::naturalSortForResultVariables);
   // remove time from variables list
   variablesList.removeOne("time");
   /* Fixes issue #7551
@@ -1847,18 +1845,19 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
 
 /*!
  * \brief VariablesWidget::initializeVisualization
- * Initializes the TimeManager with SimulationOptions for Visualization.
- * \param simulationOptions
+ * Initializes the TimeManager for Visualization.
  */
-void VariablesWidget::initializeVisualization(SimulationOptions simulationOptions)
+void VariablesWidget::initializeVisualization()
 {
   // close any result file before opening a new one
   closeResultFile();
   // Open the file for reading
-  openResultFile();
+  double startTime = 0.0;
+  double stopTime = 0.0;
+  openResultFile(startTime, stopTime);
   // Initialize the time manager
-  mpTimeManager->setStartTime(simulationOptions.getStartTime().toDouble());
-  mpTimeManager->setEndTime(simulationOptions.getStopTime().toDouble());
+  mpTimeManager->setStartTime(startTime);
+  mpTimeManager->setEndTime(stopTime);
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setPause(true);
   // reset the visualization controls
@@ -2031,7 +2030,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           } else {
-            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
+            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
           }
         }
         // update the time values if time unit is different then s
@@ -2091,6 +2090,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           plotParametricCurve.xVariable.variableName = pVariablesTreeItem->getPlotVariable();
           plotParametricCurve.xVariable.unit = pVariablesTreeItem->getUnit();
           plotParametricCurve.xVariable.displayUnit = pVariablesTreeItem->getDisplayUnit();
+          plotParametricCurve.xVariable.isString = pVariablesTreeItem->isString();
           mPlotParametricCurves.append(plotParametricCurve);
         } else {
           if (mPlotParametricCurves.isEmpty()) {
@@ -2107,6 +2107,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             plotParametricVariable.variableName = pVariablesTreeItem->getPlotVariable();
             plotParametricVariable.unit = pVariablesTreeItem->getUnit();
             plotParametricVariable.displayUnit = pVariablesTreeItem->getDisplayUnit();
+            plotParametricVariable.isString = pVariablesTreeItem->isString();
             plotParametricCurve.yVariables.append(plotParametricVariable);
             // Put the updated PlotParametricCurve to mPlotParametricCurves vector
             mPlotParametricCurves.append(plotParametricCurve);
@@ -2131,6 +2132,33 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             } else { /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/
               double timePercent = mpTimeTextBox->text().toDouble();
               pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
+            }
+            if (!pPlotCurve) {
+              pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
+            }
+            // convert x value
+            if (pPlotCurve && !plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
+              if (convertUnit.unitsCompatible) {
+                for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+                  pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                }
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              } else {
+                pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
+              }
+            }
+            // convert y value
+            if (pPlotCurve && !plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
+              if (convertUnit.unitsCompatible) {
+                for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+                  pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+                }
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              } else {
+                pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
+              }
             }
 
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
@@ -2306,14 +2334,26 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       }
       /* update plots */
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        QString curveTitle = pPlotCurve->getNameStructure();
-        if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0) {
+        const QString yVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getYVariable());
+        if (yVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
           for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-          break;
+          if (!(pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+            break;
+          }
+        }
+        if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+          const QString xVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getXVariable());
+          if (xVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
+            for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+              pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+            }
+            pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+            pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+          }
         }
       }
       if (pPlotWindow->getAutoScaleButton()->isChecked()) {
@@ -2445,7 +2485,7 @@ void VariablesWidget::closeResultFile()
  * \brief VariablesWidget::openResultFile
  * Opens the result file.
  */
-void VariablesWidget::openResultFile()
+void VariablesWidget::openResultFile(double &startTime, double &stopTime)
 {
   if (mpVariablesTreeModel->getActiveVariablesTreeItem()) {
     // read filename
@@ -2455,18 +2495,64 @@ void VariablesWidget::openResultFile()
     QString errorString = "";
     if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".mat")) {
       const char *msg[] = {""};
-      if (0 != (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
+      if (0 == (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
+        startTime = omc_matlab4_startTime(&mModelicaMatReader);
+        stopTime = omc_matlab4_stopTime(&mModelicaMatReader);
+      } else {
         errorOpeningFile = true;
         errorString = msg[0];
       }
     } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".csv")) {
       mpCSVData = read_csv(fileName.toUtf8().constData());
-      if (!mpCSVData) {
+      if (mpCSVData) {
+        //Read in timevector
+        double *timeVals = read_csv_dataset(mpCSVData, "time");
+        if (timeVals == NULL) {
+          errorOpeningFile = true;
+          errorString = "Error reading time from CSV file.";
+        } else {
+          startTime = timeVals[0];
+          stopTime = timeVals[mpCSVData->numsteps-1];
+        }
+      } else {
         errorOpeningFile = true;
+        errorString = "Error reading CSV file.";
       }
     } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".plt")) {
       mPlotFileReader.setFileName(fileName);
-      if (!mPlotFileReader.open(QIODevice::ReadOnly)) {
+      if (mPlotFileReader.open(QIODevice::ReadOnly)) {
+        QTextStream textStream(&mPlotFileReader);
+        // read the interval size from the file
+        int intervalSize = 0;
+        QString currentLine;
+        while (!textStream.atEnd()) {
+          currentLine = textStream.readLine();
+          if (currentLine.startsWith("#IntervalSize")) {
+            intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
+            break;
+          }
+        }
+        // Read start and stop time
+        while (!textStream.atEnd()) {
+          currentLine = textStream.readLine();
+          QString currentVariable;
+          if (currentLine.contains("DataSet:")) {
+            currentVariable = currentLine.remove("DataSet: ");
+            if (currentVariable == "time") {
+              // read the variable values now
+              currentLine = textStream.readLine();
+              QStringList values = currentLine.split(",");
+              startTime = QString(values[0]).toDouble();
+              for(int j = 0; j < intervalSize-1; j++) {
+                currentLine = textStream.readLine();
+              }
+              values = currentLine.split(",");
+              stopTime = QString(values[0]).toDouble();
+              break;
+            }
+          }
+        }
+      } else {
         errorOpeningFile = true;
         errorString = mPlotFileReader.errorString();
       }
@@ -2624,9 +2710,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     QAction *pSetResultActiveAction = new QAction(tr("Set Active"), this);
     pSetResultActiveAction->setData(pVariablesTreeItem->getVariableName());
     pSetResultActiveAction->setStatusTip(tr("An active item is used for the visualization"));
-    pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid()
-                                       && !pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()
-                                       && !pVariablesTreeItem->isActive());
+    pSetResultActiveAction->setEnabled(!pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation() && !pVariablesTreeItem->isActive());
     connect(pSetResultActiveAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(setVariableTreeItemActive()));
 
     QMenu menu(this);
@@ -2751,11 +2835,11 @@ void VariablesWidget::pauseVisualization()
 void VariablesWidget::visulizationTimeChanged()
 {
   QString time = mpTimeTextBox->text();
-  bool isFloat = true;
+  bool isDouble = true;
   double start = mpTimeManager->getStartTime();
   double end = mpTimeManager->getEndTime();
-  double value = time.toFloat(&isFloat);
-  if (isFloat && value >= 0.0) {
+  double value = time.toDouble(&isDouble);
+  if (isDouble && value >= 0.0) {
     if (value < start) {
       value = start;
     } else if (value > end) {
@@ -2774,9 +2858,9 @@ void VariablesWidget::visulizationTimeChanged()
 void VariablesWidget::visualizationSpeedChanged()
 {
   QString speed = mpSpeedComboBox->lineEdit()->text();
-  bool isFloat = true;
-  double value = speed.toFloat(&isFloat);
-  if (isFloat && value > 0.0) {
+  bool isDouble = true;
+  double value = speed.toDouble(&isDouble);
+  if (isDouble && value > 0.0) {
     mpTimeManager->setSpeedUp(value);
   }
 }

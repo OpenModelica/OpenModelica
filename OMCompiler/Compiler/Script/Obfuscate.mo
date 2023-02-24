@@ -81,7 +81,7 @@ encapsulated package Obfuscate
   algorithm
     // The mapping table is used to keep track of which obfuscated name each
     // original name is mapped to.
-    mapping := UnorderedMap.new<String>(stringHashDjb2Mod, stringEqual);
+    mapping := UnorderedMap.new<String>(stringHashDjb2, stringEqual);
     // We don't want to obfuscate builtin names, so we keep track of them in a
     // separate table.
     builtins := makeBuiltins();
@@ -103,7 +103,7 @@ encapsulated package Obfuscate
     SCode.Program builtin_scode;
     ElementType etype;
   algorithm
-    builtins := UnorderedMap.new<ElementType>(stringHashDjb2Mod, stringEqual);
+    builtins := UnorderedMap.new<ElementType>(stringHashDjb2, stringEqual);
 
     (_, builtin_scode) := FBuiltin.getInitialFunctions();
 
@@ -489,7 +489,7 @@ encapsulated package Obfuscate
     if isSome(oldId) then
       SOME(id) := oldId;
     else
-      id := "n" + String(index);
+      id := "$n" + String(index);
     end if;
   end makeId;
 

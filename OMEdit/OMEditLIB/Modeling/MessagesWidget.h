@@ -37,6 +37,9 @@
 
 #include "Util/StringHandler.h"
 
+#include <QQueue>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QTextBrowser>
 
 class SimulationOutputWidget;
@@ -128,6 +131,9 @@ private:
   QVector<QWidget*> mSimulationWidgetsVector;
 
   QStringList mSuppressMessagesList;
+  QQueue<MessageItem> mPendingMessagesQueue;
+  QMutex mPendingMessagesMutex;
+  bool mShowingPendingMessages;
 public:
   static MessagesWidget* instance() {return mpInstance;}
   MessageWidget* getAllMessageWidget() {return mpAllMessageWidget;}
@@ -145,6 +151,8 @@ private slots:
   bool closeTab(int index);
 public slots:
   void addGUIMessage(MessageItem messageItem);
+  void addPendingMessage(MessageItem messageItem);
+  void showPendingMessages();
   void clearMessages();
 };
 

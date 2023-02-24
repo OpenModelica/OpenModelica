@@ -676,6 +676,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
       mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
+      mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEnableFMUImportCheckBox()->isChecked());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -703,6 +704,26 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             if (currentIndex > -1) {
               mpTranslationFlagsWidget->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
             }
+          } else if (commandLineOptionKeyFiltered.compare("parmodauto") == 0) {
+            if (commandLineOptionValues.compare(QStringLiteral("false")) == 0) {
+              mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(false);
+            } else {
+              mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
+            }
+          } else if (commandLineOptionKeyFiltered.compare("allowNonStandardModelica") == 0) { // check allowNonStandardModelica flags i.e., -allowNonStandardModelica=protectedAccess,reinitInAlgorithms etc.
+            QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
+            QStringList additionalNonStandardModelicaFlagsList;
+            foreach (QString commandLineOptionValue, commandLineOptionValuesList) {
+              commandLineOptionValue = commandLineOptionValue.trimmed();
+              if (commandLineOptionValue.compare("reinitInAlgorithms") == 0) {
+                mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(true);
+              } else {
+                additionalNonStandardModelicaFlagsList.append(commandLineOptionValue);
+              }
+            }
+            if (!additionalNonStandardModelicaFlagsList.isEmpty()) {
+              additionalTranslationFlagsList.append(QString("--allowNonStandardModelica=%1").arg(additionalNonStandardModelicaFlagsList.join(",")));
+            }
           } else if (commandLineOptionKeyFiltered.compare("d") == 0) { // check debug flags i.e., -d=evaluateAllParameters,initialization etc.
             QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
             QStringList additionalDebugFlagsList;
@@ -714,8 +735,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
                 mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("NLSanalyticJacobian") == 0) {
                 mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(true);
-              } else if (commandLineOptionValue.compare("parmodauto") == 0) {
-                mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("newInst") == 0) {
                 mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(false);
               } else {
@@ -811,7 +830,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
               i++;
             }
-          } else if (simulationFlag.compare("reconcile") == 0)  {
+          } else if (simulationFlag.compare("reconcileState") == 0)  {
             //do not set the data Reconciliation algorithm from __OpenModelica_simulationFlags, as the users can choose different algorithm from ComboBox
             //mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliation");
           } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
@@ -1084,7 +1103,12 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
 #endif
   if (mpLibraryTreeItem->mSimulationOptions.getEnableDataReconciliation()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm()));
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0) {
+      MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationBoundaryConditions"));
+    } else {
+      // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
+      MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
+    }
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
@@ -1310,7 +1334,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // setup data reconciliation
   if (simulationOptions.getEnableDataReconciliation()) {
     if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-      simulationFlags.append("-reconcile");
+      simulationFlags.append("-reconcileState");
       if (!simulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()) {
         simulationFlags.append(QString("-sx=%1").arg(simulationOptions.getDataReconciliationMeasurementInputFile()));
       }
@@ -1564,7 +1588,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     }
   }
   if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-    simulationFlags.insert("reconcile", "()");
+    simulationFlags.insert("reconcileState", "()");
   }else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0 ) {
     simulationFlags.insert("reconcileBoundaryConditions", "()");
   }
@@ -2302,7 +2326,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
       QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags");
       foreach (QString simulationFlag, simulationFlags) {
         QString value = MainWindow::instance()->getOMCProxy()->getAnnotationModifierValue(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags", simulationFlag);
-        if (simulationFlag.compare("reconcile") == 0) {
+        if (simulationFlag.compare("reconcileState") == 0) {
           mpDataReconciliationAlgorithmComboBox->setCurrentIndex(0);
         } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
           mpDataReconciliationAlgorithmComboBox->setCurrentIndex(1);

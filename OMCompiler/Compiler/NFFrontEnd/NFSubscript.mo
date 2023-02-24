@@ -131,6 +131,44 @@ public
     end match;
   end toInteger;
 
+  function toIndexList
+    input Subscript subscript;
+    input Integer length;
+    input Boolean baseZero = true;
+    output list<Integer> indices;
+  protected
+    Integer shift = if baseZero then 1 else 0;
+  algorithm
+    indices := match subscript
+      local
+        array<Expression> elems;
+        Integer start, step, stop;
+
+      case INDEX() then {toInteger(subscript)-shift};
+
+      case WHOLE() then List.intRange2(1-shift,length-shift);
+
+      case SLICE(slice = Expression.ARRAY(elements = elems))
+      then list(Expression.toInteger(e) for e in elems);
+
+      case SLICE(slice = Expression.RANGE(
+        start = Expression.INTEGER(start),
+        step  = SOME(Expression.INTEGER(step)),
+        stop  = Expression.INTEGER(stop)))
+      then List.intRange3(start-shift, step, stop-shift);
+
+      case SLICE(slice = Expression.RANGE(
+        start = Expression.INTEGER(start),
+        step  = NONE(),
+        stop  = Expression.INTEGER(stop)))
+      then List.intRange2(start-shift, stop-shift);
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
+      then fail();
+    end match;
+  end toIndexList;
+
   protected function isValidIndexType
     input Type ty;
     output Boolean b = Type.isInteger(ty) or Type.isBoolean(ty) or Type.isEnumeration(ty);
@@ -222,7 +260,7 @@ public
     end match;
   end isScalarLiteral;
 
-  function isIterator
+  function equalsIterator
     input Subscript sub;
     input InstNode iterator;
     output Boolean res;
@@ -238,7 +276,53 @@ public
 
       else false;
     end match;
+  end equalsIterator;
+
+  function isIterator
+    input Subscript sub;
+    output Boolean res;
+  protected
+    ComponentRef cref;
+  algorithm
+    res := match sub
+      case UNTYPED() then Expression.isIterator(sub.exp);
+      case INDEX() then Expression.isIterator(sub.index);
+      else false;
+    end match;
   end isIterator;
+
+  function toIterator
+    input Subscript sub;
+    output InstNode iterator;
+  protected
+    ComponentRef cref;
+  algorithm
+    iterator := match sub
+      case UNTYPED(exp = Expression.CREF(cref = cref))
+        guard ComponentRef.isIterator(cref)
+        then ComponentRef.node(cref);
+
+      case INDEX(index = Expression.CREF(cref = cref))
+        guard ComponentRef.isIterator(cref)
+        then ComponentRef.node(cref);
+
+      else InstNode.EMPTY_NODE();
+    end match;
+  end toIterator;
+
+  function isBackendIterator
+    input Subscript sub;
+    output Boolean res;
+  protected
+    ComponentRef cref;
+  algorithm
+    res := match sub
+      case INDEX(index = Expression.CREF(cref = cref))
+        then ComponentRef.isIterator(cref);
+
+      else false;
+    end match;
+  end isBackendIterator;
 
   function isEqual
     input Subscript subscript1;
@@ -882,6 +966,7 @@ public
         then list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice)));
       case WHOLE()
         then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
+      else {subscript};
     end match;
   end scalarize;
 
@@ -1063,13 +1148,9 @@ public
     Boolean merged = true;
   algorithm
     // discard an index for backend if it is exactly one for scalars
-    if backend and dimensions == 0 and not listEmpty(newSubs) then
-      outSubs := {};
-      new_sub :: remainingSubs := newSubs;
-      remainingSubs := match new_sub
-        case INDEX(index = Expression.INTEGER(1)) then remainingSubs;
-        else newSubs;
-      end match;
+    if backend and listLength(oldSubs) >= dimensions and List.all(List.firstN(oldSubs, dimensions), isBackendIterator) then
+      (_, remainingSubs) := List.split(newSubs, dimensions);
+      (outSubs, _) := List.split(oldSubs, dimensions);
       return;
     end if;
 
@@ -1155,6 +1236,17 @@ public
     end match;
   end first;
 
+  function isSplit
+    input Subscript sub;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case SPLIT_PROXY() then true;
+      case SPLIT_INDEX() then true;
+      else false;
+    end match;
+  end isSplit;
+
   function isSplitIndex
     input Subscript sub;
     output Boolean res;
@@ -1203,13 +1295,12 @@ public
 
   function hash
     input Subscript sub;
-    input Integer mod;
     output Integer hash;
   algorithm
     hash := match sub
-      case SPLIT_PROXY() then intMod(InstNode.hash(sub.origin, 1) + InstNode.hash(sub.parent, 1), mod);
-      case SPLIT_INDEX() then intMod(InstNode.hash(sub.node, 1) + sub.dimIndex, mod);
-      else stringHashDjb2Mod(toString(sub), mod);
+      case SPLIT_PROXY() then InstNode.hash(sub.origin) + InstNode.hash(sub.parent);
+      case SPLIT_INDEX() then InstNode.hash(sub.node) + sub.dimIndex;
+      else stringHashDjb2(toString(sub));
     end match;
   end hash;
 

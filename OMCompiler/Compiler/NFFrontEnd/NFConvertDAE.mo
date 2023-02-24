@@ -44,6 +44,7 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import Call = NFCall;
 import ComponentReference;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -459,13 +460,22 @@ function convertStateSelectAttribute
   input Binding binding;
   output Option<DAE.StateSelect> stateSelect;
 protected
-  InstNode node;
   String name;
-  Expression exp = Binding.getTypedExp(binding);
+algorithm
+  name := getStateSelectName(Binding.getTypedExp(binding));
+  stateSelect := SOME(lookupStateSelectMember(name));
+end convertStateSelectAttribute;
+
+function getStateSelectName
+  input Expression exp;
+  output String name;
+protected
+  Expression e;
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
-    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+    case Expression.CREF() then InstNode.name(ComponentRef.node(exp.cref));
+    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
         Error.assertion(false, getInstanceName() +
@@ -473,9 +483,7 @@ algorithm
       then
         fail();
   end match;
-
-  stateSelect := SOME(lookupStateSelectMember(name));
-end convertStateSelectAttribute;
+end getStateSelectName;
 
 function lookupStateSelectMember
   input String name;
@@ -525,6 +533,7 @@ algorithm
     case "given" then DAE.Uncertainty.GIVEN();
     case "sought" then DAE.Uncertainty.SOUGHT();
     case "refine" then DAE.Uncertainty.REFINE();
+    case "propagate" then DAE.Uncertainty.PROPAGATE();
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
@@ -837,6 +846,13 @@ algorithm
     case Statement.TERMINATE()
       then DAE.Statement.STMT_TERMINATE(Expression.toDAE(stmt.message), stmt.source);
 
+    case Statement.REINIT()
+      algorithm
+        e1 := Expression.toDAE(stmt.cref);
+        e2 := Expression.toDAE(stmt.reinitExp);
+      then
+        DAE.Statement.STMT_REINIT(e1, e2, stmt.source);
+
     case Statement.NORETCALL()
       then DAE.Statement.STMT_NORETCALL(Expression.toDAE(stmt.exp), stmt.source);
 
@@ -929,7 +945,7 @@ protected
 algorithm
   Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
-  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
+  ty := InstNode.getType(iterator);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()
@@ -1281,7 +1297,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
-  binding := Flatten.flattenBinding(binding, ComponentRef.EMPTY());
+  binding := Flatten.flattenBinding(binding, NFFlatten.EMPTY_PREFIX);
   bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);

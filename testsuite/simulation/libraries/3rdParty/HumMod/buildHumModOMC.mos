@@ -16,9 +16,9 @@ buildModel(HumModTest); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
-// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation from HumModTest.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // {"HumModTest","HumModTest_init.xml"}
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

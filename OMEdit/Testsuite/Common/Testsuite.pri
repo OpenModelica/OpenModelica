@@ -35,20 +35,20 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   CONFIG += qtestlib
 }
 
-LIBS += -L../../bin -lOMEdit
-
 OMEDIT_ROOT = ../../
+
+LIBS += -L$$OMEDIT_ROOT/bin -lOMEdit
 
 # Windows libraries and includes
 win32 {
-  include(../../OMEditGUI/OMEditGUI.win.config.pri)
+  include($$OMEDIT_ROOT/OMEditGUI/OMEditGUI.win.config.pri)
 } else { # Unix libraries and includes
-  include(../../OMEditGUI/OMEditGUI.unix.config.pri)
+  include($$OMEDIT_ROOT/OMEditGUI/OMEditGUI.unix.config.pri)
 }
 
-INCLUDEPATH += ../../ \
-  ../../OMEditLIB \
-  ../Common \
+INCLUDEPATH += $$OMEDIT_ROOT \
+  $$OMEDIT_ROOT/OMEditLIB \
+  ../Util \
   $$OPENMODELICAHOME/include \
   $$OPENMODELICAHOME/include/omplot \
   $$OPENMODELICAHOME/include/omplot/qwt \
@@ -61,7 +61,7 @@ for(path, INCLUDEPATH) {
   QMAKE_CXXFLAGS += -isystem $${path}
 }
 
-DESTDIR = ../../bin/tests
+DESTDIR = $$OMEDIT_ROOT/bin/tests
 
 MOC_DIR = generatedfiles/moc
 

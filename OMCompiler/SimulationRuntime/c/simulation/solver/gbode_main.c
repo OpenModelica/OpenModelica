@@ -202,9 +202,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
       } else {
         if (omc_flag[FLAG_JACOBIAN]) {
-          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0)
-          infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
-          gbfData->symJacAvailable = TRUE;
+          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
+            infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
+            gbfData->symJacAvailable = TRUE;
+          }
         } else {
           gbfData->symJacAvailable = FALSE;
         }
@@ -384,9 +385,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
       if (omc_flag[FLAG_JACOBIAN]) {
-        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0)
-        infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
-        gbData->symJacAvailable = TRUE;
+        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
+          infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
+          gbData->symJacAvailable = TRUE;
+        }
       } else {
         gbData->symJacAvailable = FALSE;
       }
@@ -929,11 +931,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       memcpy(gbfData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gbfData->stats.nStepsTaken;
-      solverInfo->solverStatsTmp[1] = gbfData->stats.nCallsODE;
-      solverInfo->solverStatsTmp[2] = gbfData->stats.nCallsJacobian;
-      solverInfo->solverStatsTmp[3] = gbfData->stats.nErrorTestFailures;
-      solverInfo->solverStatsTmp[4] = gbfData->stats.nConvergenveTestFailures;
+      memcpy(&solverInfo->solverStatsTmp, &gbfData->stats, sizeof(SOLVERSTATS));
 
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1419,7 +1417,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         memcpy(gbData->gbfData->yOld, sData->realVars, nStates * sizeof(double));
 
         /* write statistics to the solverInfo data structure */
-        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+        memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1540,7 +1538,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
-  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+  memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(LOG_SOLVER);
   return 0;
@@ -1788,7 +1786,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
         /* write statistics to the solverInfo data structure */
-        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+        memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1907,7 +1905,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
-  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+  memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(LOG_SOLVER);
   return 0;

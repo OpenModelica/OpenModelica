@@ -55,6 +55,7 @@ public:
   TextAnnotation(Element *pParent);
   // Used for transition text
   TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation);
+  TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLineAnnotation);
   // Used for OMSimulator FMU
   TextAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
@@ -67,8 +68,10 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+  ModelInstance::Extend *getExtend() const override;
+  void setText(ModelInstance::Text *pText) {mpText = pText;}
 private:
-  Element *mpComponent;
+  Element *mpElement;
   ModelInstance::Text *mpText;
 
   void initUpdateTextString();

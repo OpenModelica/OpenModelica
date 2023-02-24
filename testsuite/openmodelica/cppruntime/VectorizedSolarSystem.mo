@@ -39,6 +39,7 @@ package Vectorized
     connect(plant.term, grid.terms);
   end SolarSystem;
 
+  annotation(uses(Modelica(version="3.2.3")));
 end Vectorized;
 
 model VectorizedSolarSystemTest = Vectorized.SolarSystem;

@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+compositeEvent.mos \
 eventSystem.mos \
 hybridSys.mos \
 

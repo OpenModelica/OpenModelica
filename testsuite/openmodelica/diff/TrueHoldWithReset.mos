@@ -1,0 +1,34 @@
+// Check that there is no extra space added after modification
+// depends: TrueHoldWithResetBefore.mo
+// status: correct
+
+before:=readFile("TrueHoldWithResetBefore.mo");
+loadFile("TrueHoldWithResetAfter.mo");
+after:=list();
+getErrorString();
+diffModelicaFileListings(
+  before,
+  after,
+  OpenModelica.Scripting.DiffFormat.plain,
+  failOnSemanticsChange=true);
+getErrorString();
+// Result:
+// "within;
+// block TrueHoldWithReset
+//   Modelica.StateGraph.InitialStep initialStep
+//     \"Initial step\";
+// end TrueHoldWithReset;
+// "
+// true
+// "block TrueHoldWithReset
+//   Modelica.StateGraph.InitialStep initialStep(nIn = 1, nOut = 1) \"Initial step\";
+// end TrueHoldWithReset;"
+// ""
+// "within;
+// block TrueHoldWithReset
+//   Modelica.StateGraph.InitialStep initialStep(nIn = 1, nOut = 1)
+//     \"Initial step\";
+// end TrueHoldWithReset;
+// "
+// ""
+// endResult

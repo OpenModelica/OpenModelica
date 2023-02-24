@@ -949,10 +949,12 @@ protected function checkTupleCallEquationMessage
   input Absyn.Exp right;
   input SourceInfo info;
 algorithm
-  _ := match (left, right)
+  _ := match (AbsynUtil.stripCommentExpressions(left), AbsynUtil.stripCommentExpressions(right))
     local
       list<Absyn.Exp> crefs;
       String left_str, right_str;
+
+    case (Absyn.TUPLE({_}), _) then ();
 
     case (Absyn.TUPLE(crefs), Absyn.CALL())
       algorithm
@@ -3106,7 +3108,7 @@ algorithm
       equation
         vars = List.sort(vars, connectorCompGt);
       then
-        DAE.T_COMPLEX(ci_state, vars, ec);
+        DAE.T_COMPLEX(ci_state, vars, ec, inType.usedExternally);
 
     else inType;
 
@@ -4971,8 +4973,22 @@ protected function instAssignment2
   input Integer numError;
   output FCore.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
+protected
+  Absyn.Exp varNoComment, inRhsNoComment;
 algorithm
-  (outCache,stmts) := matchcontinue (inCache,var,value,props)
+  varNoComment := AbsynUtil.stripCommentExpressions(var);
+  inRhsNoComment := AbsynUtil.stripCommentExpressions(inRhs);
+  _ := match varNoComment
+    local
+      Absyn.Exp lhs;
+    case Absyn.TUPLE({lhs})
+      algorithm
+        (outCache,stmts) := instAssignment2(inCache,inEnv,inIH,inPre,lhs,inRhsNoComment,value,props,info,inSource,initial_,inImpl,unrollForLoops,numError);
+        return;
+      then ();
+    else ();
+  end match;
+  (outCache,stmts) := matchcontinue (inCache,varNoComment,value,props)
     local
       DAE.ComponentRef ce,ce_1;
       DAE.Properties cprop,eprop,prop,prop1,prop2;
@@ -5000,7 +5016,7 @@ algorithm
           Static.elabCrefNoEval(cache, inEnv, cr, inImpl, false, inPre, info);
         DAE.T_ARRAY( dims = {_}) = t;
         rhs = e_1;
-        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
+        Static.checkAssignmentToInput(varNoComment, attr, inEnv, false, info);
         DAE.T_ARRAY(dims = lhs_dim :: _) = Expression.typeof(lhs);
         DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
         {} = expandArrayDimension(lhs_dim, lhs);
@@ -5013,7 +5029,7 @@ algorithm
       equation
         (cache,DAE.CREF(ce,t),cprop,attr) =
           Static.elabCrefNoEval(cache, inEnv, cr, inImpl, false, inPre, info);
-        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
+        Static.checkAssignmentToInput(varNoComment, attr, inEnv, false, info);
         (cache, ce_1) = Static.canonCref(cache, inEnv, ce, inImpl);
         (cache, ce_1) = PrefixUtil.prefixCrefInnerOuter(cache, inEnv, inIH, ce_1, inPre);
 
@@ -5055,7 +5071,7 @@ algorithm
       equation
         (cache,cre,cprop,attr) =
           Static.elabCrefNoEval(cache,inEnv, cr, inImpl,false,inPre,info);
-        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
+        Static.checkAssignmentToInput(varNoComment, attr, inEnv, false, info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, inEnv, inIH, cre, inPre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
@@ -5134,7 +5150,7 @@ algorithm
 
     case (cache,e1 as Absyn.TUPLE(expressions = expl),_,prop2)
       equation
-        Absyn.CALL() = inRhs;
+        Absyn.CALL() = inRhsNoComment;
         true = List.all(expl, AbsynUtil.isCref);
         (cache,e_1,prop1) = Static.elabExpLHS(cache,inEnv,e1,inImpl,false,inPre,info);
         lt = Types.getPropType(prop1);
@@ -5153,7 +5169,7 @@ algorithm
     case (_,Absyn.TUPLE(expressions = expl),e_1,_)
       equation
         true = List.all(expl, AbsynUtil.isCref);
-        failure(Absyn.CALL() = inRhs);
+        failure(Absyn.CALL() = inRhsNoComment);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then

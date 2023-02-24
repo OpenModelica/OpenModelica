@@ -54,9 +54,8 @@
 GDBBacktrace::GDBBacktrace(QObject *parent)
   : QObject(parent)
 {
-  QString program = QLatin1String("gdb");
+  QString program = Utilities::getGDBPath();
 #if defined(_WIN32)
-  program = Utilities::getGDBPath();
   const qint64 processId = GetCurrentProcessId();
 #else
   const qint64 processId = getpid();

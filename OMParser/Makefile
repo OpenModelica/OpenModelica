@@ -26,7 +26,7 @@ libOMParser.a: $(OBJS)
 	$(AR) -s -r $@ $(OBJS)
 	mkdir -p $(OMBUILDDIR)/lib/$(host_short)/omc/ $(OMBUILDDIR)/include/omc/
 	cp -pR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
-	cp install/lib/libantlr4-runtime.a $(OMBUILDDIR)/lib/$(host_short)/omc/
+	cp 3rdParty/antlr4/runtime/Cpp/build/runtime/libantlr4-runtime.a $(OMBUILDDIR)/lib/$(host_short)/omc/
 
 $(OBJS): $(CPP_FILES) install/lib/libantlr4-runtime.a
 
@@ -36,8 +36,7 @@ $(OBJS): $(CPP_FILES) install/lib/libantlr4-runtime.a
 install/lib/libantlr4-runtime.a: 3rdParty/antlr4/runtime/Cpp/CMakeLists.txt
 	mkdir -p 3rdParty/antlr4/runtime/Cpp/build
 	$(MAKE) 3rdParty/antlr4/runtime/Cpp/build/Makefile
-	$(MAKE) -C 3rdParty/antlr4/runtime/Cpp/build/ install
-	if test -d "./install/lib64"; then ln -sf ./lib64 ./install/lib; fi
+	$(MAKE) -C 3rdParty/antlr4/runtime/Cpp/build/
 
 $(CPP_FILES): runtool
 

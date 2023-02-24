@@ -13,7 +13,7 @@ simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
 // "
 // true
 // ""

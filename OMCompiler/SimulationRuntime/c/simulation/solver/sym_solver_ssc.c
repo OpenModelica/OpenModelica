@@ -458,8 +458,8 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     data->callback->symbolicInlineSystems(data, threadData);
 
 
-    solverInfo->solverStatsTmp[0] += 1;
-    solverInfo->solverStatsTmp[1] += 2;
+    solverInfo->solverStatsTmp.nStepsTaken += 1;
+    solverInfo->solverStatsTmp.nCallsODE += 2;
 
     /* save values in y2 */
     memcpy(userdata->y2, sData->realVars, data->modelData->nStates*sizeof(double));
@@ -522,8 +522,8 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     data->callback->symbolicInlineSystems(data, threadData);
 
 
-    solverInfo->solverStatsTmp[0] += 1;
-    solverInfo->solverStatsTmp[1] += 2;
+    solverInfo->solverStatsTmp.nStepsTaken += 1;
+    solverInfo->solverStatsTmp.nCallsODE += 2;
 
     /* save values in y2 */
     memcpy(userdata->y2, sData->realVars, data->modelData->nStates*sizeof(double));

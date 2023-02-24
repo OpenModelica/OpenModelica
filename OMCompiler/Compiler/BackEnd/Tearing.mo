@@ -1015,21 +1015,6 @@ algorithm
       Integer tvar;
       Integer size,varsize;
       array<Integer> points;
-    // if vars there with no linear occurrence in any equation use all of them
-/*    case(_,_,_,_)
-      equation
-      then
-
-    // if states there use them as tearing variables
-    case(_,_,_,_)
-      equation
-        (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
-        states = List.removeOnTrue(ass1, isAssigned, states);
-        false = listEmpty(states);
-        tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
-      then
-        tvar;
-*/
 
     // if there is a variable unsolvable select it
     case(_,_,_,_,_,_,_,_)
@@ -1695,7 +1680,7 @@ end omcTearing4_1;
 // ============================================================================
 // Section for minimal tearing
 //   Tear only the minimal amount of variables from strong components which are
-//   all discrete variables.
+//   all discrete variables and CSE variables.
 // ============================================================================
 protected function minimalTearing
   "Tears discrete variables from Loops.

@@ -425,7 +425,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->resValues = (double*) malloc(size*sizeof(double));
 
   /* allocate value list*/
-  nonlinsys->oldValueList = (void*) allocValueList(1);
+  nonlinsys->oldValueList = allocValueList(1, nonlinsys->size);
 
   nonlinsys->lastTimeSolved = 0.0;
 
@@ -870,9 +870,9 @@ void printNonLinearFinishInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *no
 int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
 {
   /* value extrapolation */
-  printValuesListTimes((VALUES_LIST*)nonlinsys->oldValueList);
+  printValuesListTimes(nonlinsys->oldValueList->valueList);
   /* if list is empty use current start values */
-  if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)==0)
+  if (listLen(nonlinsys->oldValueList->valueList)==0)
   {
     /* use old value if no values are stored in the list */
     memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
@@ -880,7 +880,7 @@ int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
   else
   {
     /* get extrapolated values */
-    getValues((VALUES_LIST*)nonlinsys->oldValueList, time, nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld);
+    getValues(nonlinsys->oldValueList->valueList, time, nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld);
     memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
   }
 
@@ -898,27 +898,34 @@ int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
  */
 int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, EVAL_CONTEXT context)
 {
+  /* Variables */
+  VALUE* tmpNode;
+
   /* write solution to oldValue list for extrapolation */
   if (nonlinsys->solved == NLS_SOLVED)
   {
     /* do not use solution of jacobian for next extrapolation */
     if (context == CONTEXT_ODE || context == CONTEXT_ALGEBRAIC || context == CONTEXT_EVENTS)
     {
-      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-                     createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+      tmpNode = createValueElement(nonlinsys->size, time, nonlinsys->nlsx);
+      addListElement(nonlinsys->oldValueList->valueList,
+                     tmpNode);
+      freeValue(tmpNode);
     }
   }
   else if (nonlinsys->solved == NLS_SOLVED_LESS_ACCURACY)
   {
-    if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)>0)
+    if (listLen((nonlinsys->oldValueList)->valueList)>0)
     {
-      cleanValueList((VALUES_LIST*)nonlinsys->oldValueList, NULL);
+      cleanValueList(nonlinsys->oldValueList->valueList, NULL);
     }
     /* do not use solution of jacobian for next extrapolation */
     if (context == CONTEXT_ODE || context == CONTEXT_ALGEBRAIC || context == CONTEXT_EVENTS)
     {
-      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-                     createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+      tmpNode = createValueElement(nonlinsys->size, time, nonlinsys->nlsx);
+      addListElement(nonlinsys->oldValueList->valueList,
+                     tmpNode);
+      freeValue(tmpNode);
     }
   }
   return 0;
@@ -1430,7 +1437,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   {
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
     if (!printFailingSystems) return 1;
-    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
     if(data->simulationInfo->initial)
     {
       warningStreamPrint(LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
@@ -1484,7 +1491,7 @@ void cleanUpOldValueListAfterEvent(DATA *data, double time)
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
-    cleanValueListbyTime(nonlinsys[i].oldValueList, time);
+    cleanValueListbyTime(nonlinsys[i].oldValueList->valueList, time);
   }
 }
 

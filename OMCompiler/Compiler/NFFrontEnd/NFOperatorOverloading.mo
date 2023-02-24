@@ -72,7 +72,7 @@ public
       // If it has an overloaded constructor, instantiate it and add the
       // function(s) to the record node.
       (_, ctor_node) := Function.instFunctionRef(ctor_ref, context, info);
-      ctor_path := InstNode.scopePath(ctor_node, includeRoot = true);
+      ctor_path := InstNode.fullPath(ctor_node);
 
       for f in Function.getCachedFuncs(ctor_node) loop
         checkOperatorConstructorOutput(f, Class.lastBaseClass(recordNode), ctor_path, info);
@@ -124,7 +124,7 @@ public
   algorithm
     if not SCodeUtil.isElementEncapsulated(InstNode.definition(operatorNode)) then
       Error.addSourceMessage(Error.OPERATOR_NOT_ENCAPSULATED,
-        {AbsynUtil.pathString(InstNode.scopePath(operatorNode, includeRoot = true))},
+        {AbsynUtil.pathString(InstNode.fullPath(operatorNode))},
         InstNode.info(operatorNode));
       fail();
     end if;

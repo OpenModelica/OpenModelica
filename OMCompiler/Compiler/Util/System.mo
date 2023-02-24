@@ -1119,7 +1119,7 @@ public function fileContentsEqual
   external "C" result = SystemImpl__fileContentsEqual(file1,file2) annotation(Library = {"omcruntime"});
 end fileContentsEqual;
 
-public function rename
+public function rename "returns true if success, false otherwise"
   input String source;
   input String dest;
   output Boolean result;

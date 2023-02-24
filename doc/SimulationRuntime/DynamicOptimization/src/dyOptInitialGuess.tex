@@ -73,13 +73,13 @@ Initial Guess For Dynamic Optimization In \\ \OpenModelica{}
 
 \maketitle
 \abstract{
-The initial guess is (any other nonlinear problem) important to find the soulation. The optimizer need for each time point an initial guess. Currently it's not possible formulate a initial guess/start value for each time point with Modelica. The following notes help to make a initial guess for dyn. optimization with \OpenModelica{}.\\
+The initial guess is (any other nonlinear problem) important to find the solution. The optimizer need for each time point an initial guess. Currently it's not possible formulate a initial guess/start value for each time point with Modelica. The following notes help to make a initial guess for dyn. optimization with \OpenModelica{}.\\
 
 tip: see \url{https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html} for \OpenModelica{} scripting.
 }
 
 \section{prior simulator}
-\OpenModelica{} automaticly done a prior simulatn and use the simulation as intial guess.
+\OpenModelica{} automatically done a prior simulation and use the simulation as initial guess.
 \begin{lstlisting}[language=Pascal, caption={initial guess with simulation},frame=single,
            label=lst:init]
 optimize(modelxxx, simflags="-ipopt_init SIM");
@@ -91,14 +91,14 @@ optimize(modelxxx, simflags="-ipopt_init SIM");
 \subsection{prior simulator with external inputs}
 \OpenModelica{} fetch the inputs around the prior simulation from a file.
 \begin{lstlisting}[language=Pascal, caption={external inputs},frame=single]
-optimize(modelxxx, simflags="-exInputFile xxx.csv -ipopt_init SIM");
+optimize(modelxxx, simflags="-csvInput xxx.csv -ipopt_init SIM");
 \end{lstlisting}
-\begin{lstlisting}[language=Pascal, caption={example xxx.csv},frame=single,label=lst:exInputFile2]
-time input1 input2 input3
-0 -1 2 3
-0.2 -0.9 2.3 3.5
-0.6 -0.5 2.0 2.9
-1.1 0.3 1.6 3.1);
+\begin{lstlisting}[language=Pascal, caption={example xxx.csv},frame=single,label=lst:csvInput2]
+time, input1, input2, input3
+0, -1, 2, 3
+0.2, -0.9, 2.3, 3.5
+0.6, -0.5, 2.0, 2.9
+1.1, 0.3, 1.6, 3.1);
 \end{lstlisting}
 
 \section{file}

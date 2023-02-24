@@ -18,13 +18,11 @@ getModelInstance(M, prettyPrint=true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"prefixes\": {
-//
-//       },
 //       \"annotation\": {
 //         \"HideResult\": {
 //           \"$error\": \"[<interactive>:3:24-3:38:writable] Error: Variable b not found in scope M.\\n\",
@@ -32,6 +30,13 @@ getModelInstance(M, prettyPrint=true);
 //         }
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

@@ -54,6 +54,7 @@ protected
 public
   function expand
     input output Expression exp;
+    input Boolean backend = false;
           output Boolean expanded;
   algorithm
     (exp, expanded) := match exp
@@ -66,7 +67,7 @@ public
       case Expression.BOOLEAN()      then (exp, true);
       case Expression.ENUM_LITERAL() then (exp, true);
 
-      case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp);
+      case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp, backend);
 
       // One-dimensional arrays are already expanded.
       case Expression.ARRAY() guard Type.isVector(exp.ty) then (exp, true);

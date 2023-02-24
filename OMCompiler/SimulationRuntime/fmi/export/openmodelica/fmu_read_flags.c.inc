@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -34,6 +34,7 @@
 #include "../util/simulation_options.h"
 #include "../simulation/solver/cvode_solver.h"
 #include "../util/omc_mmap.h"
+#include "../util/omc_file.h"
 
 /**
  * @ Skips to a given character or end of file
@@ -167,8 +168,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->solverStats = NULL;
-  solverInfo->solverStatsTmp = NULL;
 
   /* read fmu flags from flags.json */
   char* flags_filename = functions->allocateMemory(strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 20, sizeof(char));
@@ -178,7 +177,8 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   strcat(flags_filename, comp->fmuData->modelData->modelFilePrefix);
   strcat(flags_filename, "_flags.json");
   FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename)
-  if( access( flags_filename, 0 ) != -1 )
+
+  if( omc_file_exists( flags_filename) )
   {
     FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename)
     omc_mmap_read mmap_reader = {0};

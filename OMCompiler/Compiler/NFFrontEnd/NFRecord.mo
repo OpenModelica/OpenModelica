@@ -280,7 +280,7 @@ algorithm
   tree := Class.classTree(InstNode.getClass(recNode));
   field_lst := ClassTree.foldComponents(tree, collectRecordField, {});
   fields := listArray(listReverseInPlace(field_lst));
-  indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
+  indexMap := UnorderedMap.new<Integer>(stringHashDjb2, stringEq, arrayLength(fields));
   Type.updateRecordFieldsIndexMap(fields, indexMap);
 end collectRecordFields;
 

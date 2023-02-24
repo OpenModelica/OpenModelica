@@ -17,10 +17,12 @@ Bug3974.mos \
 Bug3979.mos \
 Bug4209.mos \
 Bug4248.mos \
+checkAllModelsRecursive1.mos \
+choicesAllMatching.mos \
 ConvertUnits.mos \
 ConversionVersions.mos \
+ConnectionList.mos \
 CopyClass.mos \
-choicesAllMatching.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 DialogAnnotation.mos \
@@ -33,6 +35,7 @@ ForStatement5fail.mos \
 ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
+getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \
@@ -52,6 +55,7 @@ interactive_api_simulations.mos \
 interactive_test.mos \
 ListAnnotation.mos \
 ListExpressions.mos \
+ListImport.mos \
 ListMultilineComment.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
@@ -70,9 +74,11 @@ saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
+setElementModifierValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
+StoreAST.mos \
 stringSplit.mos \
 strings.mos  \
 variables.mos \

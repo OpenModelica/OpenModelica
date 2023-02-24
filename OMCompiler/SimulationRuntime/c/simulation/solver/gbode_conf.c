@@ -40,42 +40,6 @@
 
 void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs);
 
-const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
-  /* GB_CTRL_UNKNOWN */   "unknown",
-  /* GB_CTRL_I */         "i",
-  /* GB_CTRL_PI */        "pi",
-  /* GB_CTRL_CNST */      "const"
-};
-
-const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
-  /* GB_CTRL_UNKNOWN */   "unknown",
-  /* GB_CTRL_I */         "I controller for step size",
-  /* GB_CTRL_PI */        "PI controller for step size",
-  /* GB_CTRL_CNST */      "Constant step size"
-};
-
-const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
-  /* GB_INTERPOL_UNKNOWN */           "unknown",
-  /* GB_INTERPOL_LIN */               "linear",
-  /* GB_INTERPOL_HERMITE */           "hermite",
-  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
-  /* GB_INTERPOL_HERMITE_b */         "hermite_b",
-  /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
-  /* GB_DENSE_OUTPUT */               "dense_output",
-  /* GB_DENSE_OUTPUT_ERRCTRL */       "dense_output_errctrl"
-};
-
-const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
-  /* GB_INTERPOL_UNKNOWN */         "unknown",
-  /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
-  /* GB_INTERPOL_HERMITE */         "Hermite interpolation (3rd order)",
-  /* GB_INTERPOL_HERMITE_a */       "Hermite interpolation (only for left hand side)",
-  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for right hand side)",
-  /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
-  /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
-  /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
-};
-
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR or FLAG_MR.
  *

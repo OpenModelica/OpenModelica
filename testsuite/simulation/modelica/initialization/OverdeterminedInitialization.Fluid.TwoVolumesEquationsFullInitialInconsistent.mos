@@ -1,9 +1,9 @@
 // name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent
 // keywords: initialization, over-determined
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
 setCommandLineOptions("-d=initialization"); getErrorString();
@@ -18,7 +18,7 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInco
 // ""
 // {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent_init.xml"}
 // "Error: The initialization problem is inconsistent due to the following equation: p1 = 100000.0 (200000.0 = 100000.0)
-// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          p1 = 100000.0.
 // "
 // endResult

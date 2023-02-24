@@ -34,157 +34,179 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
-//   \"components\": [
+//   \"elements\": [
 //     {
+//       \"$kind\": \"component\",
 //       \"name\": \"c\",
 //       \"type\": {
 //         \"name\": \"C\",
 //         \"restriction\": \"model\",
-//         \"components\": [
+//         \"elements\": [
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"b1\",
 //             \"type\": {
 //               \"name\": \"B\",
 //               \"restriction\": \"model\",
-//               \"components\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"a1\",
 //                   \"type\": {
 //                     \"name\": \"A\",
 //                     \"restriction\": \"model\",
-//                     \"components\": [
+//                     \"elements\": [
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"x\",
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 1
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"y\",
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 2
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
+//                     }
 //                   }
 //                 },
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"a2\",
 //                   \"type\": {
 //                     \"name\": \"A\",
 //                     \"restriction\": \"model\",
-//                     \"components\": [
+//                     \"elements\": [
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"x\",
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 3
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"y\",
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 4
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
+//                     }
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 8
+//               }
 //             }
 //           },
 //           {
+//             \"$kind\": \"component\",
 //             \"name\": \"b2\",
 //             \"type\": {
 //               \"name\": \"B\",
 //               \"restriction\": \"model\",
-//               \"components\": [
+//               \"elements\": [
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"a1\",
 //                   \"type\": {
 //                     \"name\": \"A\",
 //                     \"restriction\": \"model\",
-//                     \"components\": [
+//                     \"elements\": [
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"x\",
 //                         \"type\": \"Real\",
 //                         \"value\": {
 //                           \"binding\": 5
-//                         },
-//                         \"prefixes\": {
-//
 //                         }
 //                       },
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"y\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
+//                     }
 //                   }
 //                 },
 //                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"a2\",
 //                   \"type\": {
 //                     \"name\": \"A\",
 //                     \"restriction\": \"model\",
-//                     \"components\": [
+//                     \"elements\": [
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"x\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       },
 //                       {
+//                         \"$kind\": \"component\",
 //                         \"name\": \"y\",
-//                         \"type\": \"Real\",
-//                         \"prefixes\": {
-//
-//                         }
+//                         \"type\": \"Real\"
 //                       }
-//                     ]
-//                   },
-//                   \"prefixes\": {
-//
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 5,
+//                       \"columnEnd\": 8
+//                     }
 //                   }
 //                 }
-//               ]
-//             },
-//             \"prefixes\": {
-//
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 8
+//               }
 //             }
 //           }
-//         ]
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 12,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 15,
+//           \"columnEnd\": 8
+//         }
 //       },
 //       \"modifiers\": {
 //         \"b1\": {
@@ -202,11 +224,15 @@ getModelInstance(M, prettyPrint = true);
 //             \"x\": \"5.0\"
 //           }
 //         }
-//       },
-//       \"prefixes\": {
-//
 //       }
 //     }
-//   ]
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 17,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 20,
+//     \"columnEnd\": 8
+//   }
 // }"
 // endResult

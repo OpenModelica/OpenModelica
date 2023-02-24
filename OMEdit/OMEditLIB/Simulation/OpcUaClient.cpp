@@ -402,15 +402,15 @@ void OpcUaWorker::setVariablesTreeItemRoot(VariablesTreeItem * pVariablesTreeIte
  */
 void OpcUaWorker::setSpeed(QString value)
 {
-  bool isFloat = true;
-  double speedValue = value.toFloat(&isFloat);
-  if (isFloat && speedValue > 0.0) {
+  bool isDouble = true;
+  double speedValue = value.toDouble(&isDouble);
+  if (isDouble && speedValue > 0.0) {
     mSpeedValue = speedValue;
     setInterval(mSampleInterval / speedValue);
-  } else if (isFloat && speedValue == 0.0) {
+  } else if (isDouble && speedValue == 0.0) {
     mSpeedValue = 0.0;
   }
-  if (isFloat) {
+  if (isDouble) {
     writeReal(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10002), mSpeedValue);
   }
 }

@@ -5464,6 +5464,6 @@ end InnerOuterSamePrefix;// Result:
 //   pendulum.revolute.frame_a.r_0[2] = pendulum.world.frame_b.r_0[2];
 //   pendulum.revolute.frame_a.r_0[3] = pendulum.world.frame_b.r_0[3];
 // end InnerOuterSamePrefix;
-// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
 //
 // endResult

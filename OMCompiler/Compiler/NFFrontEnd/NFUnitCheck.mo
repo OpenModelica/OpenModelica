@@ -15,6 +15,7 @@ import FunctionTree = NFFlatten.FunctionTree;
 
 protected
 import ComponentRef = NFComponentRef;
+import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
@@ -60,10 +61,10 @@ algorithm
     htCr2U1 := Unit.newCrefUnitTable(Util.nextPrime(integer(10 + 1.4*listLength(flatModel.variables))));
     htS2U := Unit.getKnownUnits();
     htU2S := Unit.getKnownUnitsInverse();
-    fn_cache := UnorderedMap.new<Functionargs>(stringHashDjb2Mod, stringEq);
+    fn_cache := UnorderedMap.new<Functionargs>(stringHashDjb2, stringEq);
 
     for v in flatModel.variables loop
-      convertUnitString2unit(v, htCr2U1, htS2U, htU2S);
+      convertUnitStringToUnit(v, htCr2U1, htS2U, htU2S);
     end for;
 
     htCr2U2 := UnorderedMap.copy(htCr2U1);
@@ -222,7 +223,7 @@ algorithm
   if Type.isReal(var.ty) and Binding.isBound(var.binding) then
     binding_exp := Binding.getTypedExp(var.binding);
     eq := Equation.makeEquality(Expression.fromCref(var.name), binding_exp, var.ty,
-      ElementSource.createElementSource(var.info));
+      InstNode.EMPTY_NODE(), ElementSource.createElementSource(var.info));
     foldEquation(eq, htCr2U, htS2U, htU2S, fnCache, dumpEqInitStruct);
   end if;
 end foldBindingExp;
@@ -562,7 +563,7 @@ algorithm
         (unit1 as Unit.UNIT(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
         i := realInt(exp2.value);
         true := realEq(exp2.value, i);
-        op_unit := Unit.unitPow(unit, i);
+        op_unit := Unit.unitPow(unit1, i);
         insertUnitString(op_unit, htS2U, htU2S);
       then
         (op_unit, icu1);
@@ -983,7 +984,7 @@ algorithm
   UnorderedMap.tryAdd(unit, name, htU2S);
 end addUnit2HtU2S;
 
-function convertUnitString2unit
+function convertUnitStringToUnit
   "converts String to unit"
   input Variable var;
   input Unit.CrefToUnitTable htCr2U;
@@ -997,25 +998,51 @@ protected
 algorithm
   unit_binding := Variable.lookupTypeAttribute("unit", var);
   unit_exp := Binding.typedExp(unit_binding);
+  unit_string := if isSome(unit_exp) then getUnitStringFromExp(Util.getOption(unit_exp)) else "";
 
-  () := match unit_exp
-    case SOME(Expression.STRING(value = unit_string))
-      guard not stringEmpty(unit_string)
-      algorithm
-        unit := parse(unit_string, var.name, htS2U, htU2S, var.info);
-        UnorderedMap.add(var.name, unit, htCr2U);
-      then
-        ();
+  if stringEmpty(unit_string) then
+    UnorderedMap.add(var.name, Unit.MASTER({var.name}), htCr2U);
+    addUnit2HtS2U("-", Unit.MASTER({var.name}), htS2U);
+    addUnit2HtU2S("-", Unit.MASTER({var.name}), htU2S);
+  else
+    unit := parse(unit_string, var.name, htS2U, htU2S, var.info);
+    UnorderedMap.add(var.name, unit, htCr2U);
+  end if;
+end convertUnitStringToUnit;
 
-    else
+function getUnitStringFromExp
+  input Expression unitExp;
+  output String unitString;
+protected
+  Expression exp;
+algorithm
+  unitString := match unitExp
+    // A literal string expression, return the string.
+    case Expression.STRING() then unitExp.value;
+
+    // A literal array. This happens for array variables, assume each variable
+    // has the same unit for now.
+    case Expression.ARRAY(literal = true)
+      guard Expression.isLiteral(unitExp) and not Type.isEmptyArray(Expression.typeOf(unitExp))
+      then getUnitStringFromExp(Expression.arrayFirstScalar(unitExp));
+
+    // A fill call. Will generate an array where all elements are the same, so
+    // no need to evaluate it.
+    case Expression.CALL(Call.TYPED_CALL(arguments = exp :: _))
+      guard Call.isNamed(unitExp.call, "fill")
+      then getUnitStringFromExp(exp);
+
+    // A non-literal expression, evaluate it and try again if it could be evaluated.
+    case _
+      guard not Expression.isLiteral(unitExp)
       algorithm
-        UnorderedMap.add(var.name, Unit.MASTER({var.name}), htCr2U);
-        addUnit2HtS2U("-", Unit.MASTER({var.name}), htS2U);
-        addUnit2HtU2S("-", Unit.MASTER({var.name}), htU2S);
+        exp := Ceval.tryEvalExp(unitExp);
       then
-        ();
+        if Expression.isLiteral(exp) then getUnitStringFromExp(exp) else "";
+
+    else "";
   end match;
-end convertUnitString2unit;
+end getUnitStringFromExp;
 
 protected function parse "author: lochel"
   input String unitString;

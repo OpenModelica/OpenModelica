@@ -17,9 +17,9 @@ simulate(STest1, tolerance=1e-5, numberOfIntervals=100);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'STest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: STest1
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | info    | The following assertion has been violated at time 0.110000
-// |                 | |       | x < 0.1
-// assert            | info    | x reached 0.11 at time 0.11 b =true i =     66
+// assert            | info    | [simulation/modelica/others/StringTest.mo:8:1-14:56:writable]
+// |                 | |       | The following assertion has been violated at time 0.110000
+// |                 | |       | ((x < 0.1)) --> \"x reached 0.11 at time 0.11 b =true i =     66\"
 // assert            | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;

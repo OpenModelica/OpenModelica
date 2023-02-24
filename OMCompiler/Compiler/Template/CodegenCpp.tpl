@@ -2416,7 +2416,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             %>
             <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
               <<
-              simulation.first->StartReduceDAE(simulation.second,"<%identOfPathDot(modelInfo.name)%>", "<%lastIdentOfPath(modelInfo.name)%>", <%Flags.getConfigBool(Flags.LOAD_MSL_MODEL)%>,<%Flags.getConfigBool(Flags.Load_PACKAGE_FILE)%>);
+              simulation.first->StartReduceDAE(simulation.second,"<%identOfPathDot(modelInfo.name)%>", "<%lastIdentOfPath(modelInfo.name)%>", <%Flags.getConfigBool(Flags.LOAD_MSL_MODEL)%>,<%Flags.getConfigBool(Flags.LOAD_PACKAGE_FILE)%>);
               >>
             else
               <<

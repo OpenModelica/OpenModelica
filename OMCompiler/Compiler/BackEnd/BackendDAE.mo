@@ -189,9 +189,12 @@ end BackendDAEType;
 
 uniontype DataReconciliationData
   record DATA_RECON
-    Jacobian symbolicJacobian "SET_S w.r.t ...";
+    Jacobian symbolicJacobian "jacobians for set-C and set-S";
     Variables setcVars "setc solved vars";
     Variables datareconinputs;
+    Option<Variables> setBVars "setB solved vars which computes boundary conditions";
+    Option<Jacobian> symbolicJacobianH "For solving state estimation we need two Jacobians F for data Reconciliation and H for boundary conditions set-B and set-Sprime";
+    Integer relatedBoundaryConditions "count number of boundary conditions which failed the extraction algorithm";
     // ... maybe more DATA for the code generation
   end DATA_RECON;
 end DataReconciliationData;
@@ -653,10 +656,21 @@ end ZeroCrossingSet;
 public
 uniontype ZeroCrossing
   record ZERO_CROSSING
-    .DAE.Exp relation_         "function";
-    list<Integer> occurEquLst  "list of equations where the function occurs";
+    Integer index                           "zero crossing index";
+    .DAE.Exp relation_                      "function";
+    list<Integer> occurEquLst               "list of equations where the function occurs";
+    Option<list<SimIterator>> iter  "optional iterator for for-loops";
   end ZERO_CROSSING;
 end ZeroCrossing;
+
+public uniontype SimIterator
+  record SIM_ITERATOR
+    .DAE.ComponentRef name;
+    Integer start;
+    Integer step;
+    Integer size;
+  end SIM_ITERATOR;
+end SimIterator;
 
 public
 uniontype TimeEvent

@@ -17,12 +17,12 @@ dockerpull:
 	docker pull multiarch/crossbuild:latest
 
 fmuExportCrossCompile:
-	HOME=$(CURDIR)/../../libraries-for-testing/ $(OMC) fmuExportCrossCompile.mos
+	HOME=$(CURDIR)/../../../libraries/ $(OMC) fmuExportCrossCompile.mos
 	unzip -q FmuExportCrossCompile.fmu -d FmuExportCrossCompile.fmutmp
 	$(MAKE) check-FmuExportCrossCompile-files
 
 CMakeCrossCompile:
-	HOME=$(CURDIR)/../../libraries-for-testing/ $(OMC) CMakeCrossCompile.mos
+	HOME=$(CURDIR)/../../../libraries/ $(OMC) CMakeCrossCompile.mos
 	unzip -qq CMakeCrossCompile/Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu -d CMakeCrossCompile/Pendulum_FMU/
 	$(MAKE) check-CMakeCrossCompile-files
 

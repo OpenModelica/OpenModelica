@@ -1,4 +1,6 @@
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omsimulator)
+
 
 include(ExternalProject)
 include(ProcessorCount)
@@ -15,7 +17,7 @@ ExternalProject_Add(OMSimulator_external
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 CERES=OFF
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
-                                                CMAKE=${CMAKE_COMMAND}
+                                                CMAKE="${CMAKE_COMMAND}"
                       COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 config-OMSimulator
@@ -23,7 +25,7 @@ ExternalProject_Add(OMSimulator_external
                                                 OMSYSIDENT=OFF
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
-                                                CMAKE=${CMAKE_COMMAND}
+                                                CMAKE="${CMAKE_COMMAND}"
     #--Build step-----------------
     BUILD_COMMAND COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
@@ -31,7 +33,7 @@ ExternalProject_Add(OMSimulator_external
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
-                                                CMAKE=${CMAKE_COMMAND}
+                                                CMAKE="${CMAKE_COMMAND}"
     #--Install step---------------
     INSTALL_COMMAND ""
 )
@@ -50,20 +52,31 @@ if(MINGW)
     IMPORTED_IMPLIB ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/libOMSimulator.dll.a
   )
 
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/
+          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          # There is a libOMSimulator.dll.a in the bin dir. It should go in lib.
+          PATTERN *.dll.a EXCLUDE)
 
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/
-          DESTINATION ${CMAKE_INSTALL_PREFIX}
-          USE_SOURCE_PERMISSIONS
-          # Exclude the directories created by CMake's ExternalProject
-          PATTERN src EXCLUDE
-          PATTERN tmp EXCLUDE)
+
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/include/
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/
+          DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+  # There is a libOMSimulator.dll.a in the bin dir. It should go in lib.
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/libOMSimulator.dll.a
+          DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/share/
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR})
 
 elseif(MSVC)
   # For now print error and bail out. It should be the same as Mingw except we need to check where the .lib file is located.
   message(FATAL_ERROR "Importing of OMSimulator is not implemented correctly for MSVC. Adjust the MINGW implementation to where the dll and lib files are expected.")
 else()
 
-  # if host_short (= CMAKE_LIBRARY_ARCHITECTURE) is empty, OMSimulator does not
+  # if host_short (= CMAKE_LIBRARY_ARCHITECTURE) is empty (e.g on Arch Linux systems or macOS), OMSimulator does not
   # add the omc/ part to the library location. (See OMSimulator/Makefile:88-93)
   if(CMAKE_LIBRARY_ARCHITECTURE)
     set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
@@ -78,28 +91,37 @@ else()
   )
 
 
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/
-          DESTINATION ${CMAKE_INSTALL_PREFIX}
-          USE_SOURCE_PERMISSIONS
-          # Exclude the lib dir. We handle it differently below.
-          PATTERN lib EXCLUDE
-          # Exclude the directories created by CMake's ExternalProject
-          PATTERN src EXCLUDE
-          PATTERN tmp EXCLUDE)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/
+          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          USE_SOURCE_PERMISSIONS)
 
-  # Copy the libs from the location (based on existence of CMAKE_LIBRARY_ARCHITECTURE)
-  # to the correct installation lib dir (i.e., either lib/<arch>/omc or lib/omc. Instead of them
-  # ending up in just lib/ when arch is empty)
+
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/include/
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
   install(DIRECTORY ${OMSIMULATORLIB_LOCATION}
           DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-  # There is another folder called OMSimulator inside the lib folder that
-  # contains some python files as well some duplicate .so libs.
-  # I am guessing they are expected to be in <actual_lib_dir>/OMSimulator.
-  # So copy them as they are for now.
+  # There is another folder called OMSimulator inside the lib (just lib/ not lib/<arch>/..) folder that
+  # contains some python files as well some duplicate shared libs.
+  # I am guessing the python files are expected to be in <actual_lib_dir>/OMSimulator/.
+  # So copy them there (only the python files though. No point in having duplicate shared libs)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/OMSimulator/
           DESTINATION ${CMAKE_INSTALL_LIBDIR}/OMSimulator
-         )
+          FILES_MATCHING
+            PATTERN "*.py"
+            # # if ${CMAKE_LIBRARY_ARCHITECTURE} is not an empty string OMSimulator will create a dedicated
+            # # folder for the shared libs. We have excluded them with the *.py pattern so avoid creating the
+            # # empty directory on install.
+            ## Unfortunately, when it is actually empty this will result in an invalid CMake command.
+            # PATTERN ${CMAKE_LIBRARY_ARCHITECTURE} EXCLUDE
+          )
+
+
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/share/
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR})
+
+
 endif()
 
 set_target_properties(libOMSimulator PROPERTIES
