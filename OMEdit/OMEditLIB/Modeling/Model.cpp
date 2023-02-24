@@ -253,8 +253,8 @@ namespace ModelInstance
 
   Extend *Shape::getParentExtend() const
   {
-    if (mpParentModel && mpParentModel->getParentElement() && mpParentModel->getParentElement()->isExtend()) {
-      return dynamic_cast<ModelInstance::Extend*>(mpParentModel->getParentElement());
+    if (mpParentModel) {
+      return mpParentModel->getParentExtend();
     }
     return 0;
   }
@@ -950,6 +950,24 @@ namespace ModelInstance
     }
   }
 
+  Extend *Model::getParentExtend() const
+  {
+    if (mpParentElement && mpParentElement->isExtend()) {
+      return dynamic_cast<ModelInstance::Extend*>(mpParentElement);
+    } else {
+      return 0;
+    }
+  }
+
+  Component *Model::getParentComponent() const
+  {
+    if (mpParentElement && mpParentElement->isComponent()) {
+      return dynamic_cast<ModelInstance::Component*>(mpParentElement);
+    } else {
+      return 0;
+    }
+  }
+
   bool Model::isConnector() const
   {
     if (isExpandableConnector() || (mRestriction.compare(QStringLiteral("connector")) == 0)) {
@@ -1468,6 +1486,20 @@ namespace ModelInstance
     return modifierValue;
   }
 
+  /*!
+   * \brief Component::getQualifiedName
+   * Returns the qualified name of the component.
+   * \return
+   */
+  QString Component::getQualifiedName() const
+  {
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+    } else {
+      return mName;
+    }
+  }
+
   Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
@@ -1487,6 +1519,20 @@ namespace ModelInstance
 
     if (jsonObject.contains("baseClass")) {
       mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
+    }
+  }
+
+  /*!
+   * \brief Extend::getQualifiedName
+   * Returns the qualified name of component.
+   * \return
+   */
+  QString Extend::getQualifiedName() const
+  {
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getQualifiedName();
+    } else {
+      return "";
     }
   }
 
@@ -1515,7 +1561,7 @@ namespace ModelInstance
     if (mSubScripts.isEmpty()) {
       return mName;
     } else {
-      return QString("%1[%2]").arg(mName, mSubScripts.join(","));
+      return mName % "[" % mSubScripts.join(",") % "]";
     }
   }
 

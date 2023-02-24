@@ -479,6 +479,7 @@ private:
   };
 
   class Element;
+  class Component;
   class Connection;
   class Transition;
   class InitialState;
@@ -490,6 +491,8 @@ private:
     void deserialize();
 
     Element *getParentElement() const {return mpParentElement;}
+    Extend *getParentExtend() const;
+    Component *getParentComponent() const;
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
@@ -569,6 +572,7 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
 
+    virtual QString getQualifiedName() const = 0;
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
   protected:
@@ -634,6 +638,7 @@ private:
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);
     // Element interface
   public:
+    virtual QString getQualifiedName() const override;
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
   };
@@ -651,6 +656,7 @@ private:
     Modifier mExtendsModifier;
     // Element interface
   public:
+    virtual QString getQualifiedName() const override;
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
   };
