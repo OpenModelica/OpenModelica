@@ -631,7 +631,7 @@ public
       input Pointer<Equation> eqn;
       input list<Frame> frames = {};
     algorithm
-      _ := match stmt
+      () := match stmt
         local
           ComponentRef name;
           Expression range;

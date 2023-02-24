@@ -353,7 +353,7 @@ public
       input array<Integer> location                               "zero based location";
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
     algorithm
-      _ := match iter
+      () := match iter
         local
           Integer start, step;
 
@@ -1063,7 +1063,7 @@ public
       input filterCref filter;
       input Pointer<list<ComponentRef>> acc;
     algorithm
-      _ := match exp
+      () := match exp
         case Expression.CREF() algorithm filter(exp.cref, acc); then ();
         else ();
       end match;
@@ -1593,7 +1593,7 @@ public
       input Pointer<Boolean> b_ptr;
     algorithm
       if Pointer.access(b_ptr) then
-        _ := match exp
+        () := match exp
           // set b_ptr to false on impure functions
           case Expression.CREF() algorithm
             crefIsParamOrConst(exp.cref, b_ptr);
@@ -2344,7 +2344,7 @@ public
       if Util.isSome(body_opt) then
         body := Util.getOption(body_opt);
         for stmt in body.when_stmts loop
-          _ := match stmt
+          () := match stmt
             local
               ComponentRef cref;
             case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref)) algorithm
@@ -2373,7 +2373,7 @@ public
       output Option<WhenStatement> assign = NONE();
     algorithm
       for stmt in stmts loop
-        _ := match stmt
+        () := match stmt
           local
             ComponentRef lhs;
           case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs))
@@ -2392,7 +2392,7 @@ public
       output Option<WhenStatement> assign = NONE();
     algorithm
       for stmt in stmts loop
-        _ := match stmt
+        () := match stmt
           case WhenStatement.REINIT()
           guard(ComponentRef.isEqual(cref, stmt.stateVar)) algorithm
             assign := SOME(stmt); break;
@@ -2848,7 +2848,7 @@ public
       Integer index;
     algorithm
       name := Equation.getEqnName(eqn);
-      _ := match UnorderedMap.get(name, equations.map)
+      () := match UnorderedMap.get(name, equations.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.update(index, eqn, equations.eqArr);
         then ();
@@ -2868,7 +2868,7 @@ public
       Integer index;
     algorithm
       name := Equation.getEqnName(eqn);
-      _ := match UnorderedMap.get(name, equations.map)
+      () := match UnorderedMap.get(name, equations.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.delete(index, equations.eqArr);
           // set the index to -1 to avoid removing entries
@@ -3097,7 +3097,7 @@ public
       // delete all empty equations
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          _ := match Pointer.access(ExpandableArray.get(i, equations.eqArr))
+          () := match Pointer.access(ExpandableArray.get(i, equations.eqArr))
             case Equation.DUMMY_EQUATION() algorithm
               equations.eqArr := ExpandableArray.delete(i, equations.eqArr);
             then ();

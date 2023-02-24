@@ -392,7 +392,7 @@ protected
     input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
-    _ := match eqn
+    () := match eqn
       case Equation.WHEN_EQUATION() algorithm
         collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
@@ -408,7 +408,7 @@ protected
     input Boolean scalarized;
   algorithm
     for body_stmt in body.when_stmts loop
-      _ := match body_stmt
+      () := match body_stmt
         local
           ComponentRef state_cref, pre_cref;
           Pointer<Variable> state_var;

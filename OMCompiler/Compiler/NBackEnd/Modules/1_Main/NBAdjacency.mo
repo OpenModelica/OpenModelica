@@ -838,7 +838,7 @@ public
     algorithm
       unique_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in dependencies);
       unique_dependencies := UnorderedSet.unique_list(unique_dependencies, ComponentRef.hash, ComponentRef.isEqual);
-      _ := match eqn
+      () := match eqn
         local
           list<Integer> row;
 

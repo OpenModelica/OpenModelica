@@ -431,7 +431,7 @@ public
     input Boolean pseudo                                      "true if arrays are unscalarized";
     input JacobianType jacType                                "sets the context";
   algorithm
-    _ := match comp
+    () := match comp
       local
         Pointer<Equation> eqn_ptr;
         ComponentRef cref;

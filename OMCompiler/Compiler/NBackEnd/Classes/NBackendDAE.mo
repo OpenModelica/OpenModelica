@@ -309,7 +309,7 @@ public
     input output BackendDAE bdae;
   algorithm
     // no output needed, all pointers
-    _ := match bdae
+    () := match bdae
       local
         EquationPointers equations;
       case MAIN(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
@@ -389,7 +389,7 @@ protected
       lowVar_ptr := lowerVariable(var);
       lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
-      _ := match lowVar.backendinfo.varKind
+      () := match lowVar.backendinfo.varKind
 
         case BackendExtension.ALGEBRAIC() guard(Variable.isTopLevelInput(var)) algorithm
           algebraics_lst := lowVar_ptr :: algebraics_lst;
@@ -1151,7 +1151,7 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
   algorithm
-    _ := match exp
+    () := match exp
       local
         ComponentRef cref;
         Call call;
