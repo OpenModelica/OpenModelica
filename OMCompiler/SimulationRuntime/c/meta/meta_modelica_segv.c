@@ -253,7 +253,7 @@ void init_metamodelica_segv_handler()
 
 void mmc_init_stackoverflow(threadData_t *threadData)
 {
-  threadData->stackBottom = 0x1; /* Dummy until Windows detects the stack bottom */
+  threadData->stackBottom = (void *)0x1; /* Dummy until Windows detects the stack bottom */
 }
 #endif
 
