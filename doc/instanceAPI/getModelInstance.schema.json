@@ -486,7 +486,7 @@
           "description": "Whether the source file is readable or not"
         }
       },
-      "required": ["filename", "location"]
+      "required": ["filename", "lineStart", "columnStart", "lineEnd", "columnEnd"]
     }
   }
 }
