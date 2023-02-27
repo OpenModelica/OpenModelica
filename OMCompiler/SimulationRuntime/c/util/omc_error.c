@@ -117,9 +117,9 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional information about dynamic tearing (local and global constraints)",/* LOG_DT_CONS */
   "additional information during event iteration",                              /* LOG_EVENTS */
   "verbose logging of event system",                                            /* LOG_EVENTS_V */
-  "information about GBODE solver"                                              /* LOG_GBODE */
+  "information about GBODE solver",                                             /* LOG_GBODE */
   "verbose information about GBODE solver",                                     /* LOG_GBODE_V */
-  "log non-linear solver process of GBODE solver"                               /* LOG_GBODE_NLS */
+  "log non-linear solver process of GBODE solver",                              /* LOG_GBODE_NLS */
   "verbose log non-linear solver process of GBODE solver",                      /* LOG_GBODE_NLS_V */
   "output states at every GBODE call",                                          /* LOG_GBODE_STATES */
   "additional information during initialization",                               /* LOG_INIT */
