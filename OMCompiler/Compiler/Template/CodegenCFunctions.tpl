@@ -532,8 +532,10 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
     let copy_to_vars_name_p = '<%copy_to_vars_name%>_p'
     let copy_to_vars_inputs = r.variables |> var as VARIABLE(__) => (", " + varType(var) + "* in_" + crefStr(var.name))
 
-    let create_from_vars_name = '<%rec_name%>_create_from_vars'
-    let modelica_ctor_inputs = r.variables |> var as VARIABLE(__) => (", " + varType(var) + " in_" + crefStr(var.name))
+    let wrap_vars_macro_name = '<%rec_name%>_wrap_vars'
+    let wrap_vars_func_name = '<%wrap_vars_macro_name%>_p'
+    let wrap_vars_macro_inputs = r.variables |> var as VARIABLE(__) => (", " + "in_" + crefStr(var.name))
+    let wrap_vars_func_inputs = r.variables |> var as VARIABLE(__) => (", " + varType(var) + " in_" + crefStr(var.name))
 
       <<
       <% match aliasName
@@ -575,7 +577,9 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
         #define <%cpy_from_external_macro_name%>(src,dst) <%cpy_from_external_func_name%>(&src, &dst)
         >>
       %>
-      <%rec_name%> <%create_from_vars_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
+
+      void <%wrap_vars_func_name%>(threadData_t *threadData , void* v_dst <%wrap_vars_func_inputs%>);
+      #define <%wrap_vars_macro_name%>(td, dst <%wrap_vars_macro_inputs%>) <%wrap_vars_func_name%>(td, &dst <%wrap_vars_macro_inputs%>)
 
       // This function is not needed anymore. If you want to know how a record
       // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
@@ -643,33 +647,39 @@ template recordCopyExternalDefs(String rec_name, list<Variable> variables)
 end recordCopyExternalDefs;
 
 template recordCreateFromVarsDef(String rec_name, list<Variable> variables)
- "Generates code for creating and initializing a record given values for
+ "Generates code for creating and initializing (shallow copies) a record given values for
   ALL its members. This is used internally by the generated code to reconstruct
   records from (the scattered) simulation member variables of the record. We do
   this when we have to send a record used in equation context to a function.
 
-  Note that this is defferent from the constructors we have. This is the function
-  to be used when you do R(...). not for cases where you have
-
-  This function creates and returns a NEW record instance.
+  Note that this is defferent from the constructors we have. This one expects
+  all the memebers to be already created (allocated and given values whatever the value is).
+  Its job is to 'wrap' these variables by a given record instance, e.g., so it can be sent to
+  functions from simulation code.
   "
 ::=
-  let &varCopies = buffer ""
   let &auxFunction = buffer ""
-  let dst_pref = 'dst.'
-  let src_pref = ' in'
-  let _ = (variables |> var => recordMemberCopy(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
-  let inputs = (variables |> var as VARIABLE(__) =>
+  let dst_pref = 'dst->'
+  let src_pref = 'in'
+
+  let varCopies = (variables |> var => match var
+    case var as VARIABLE(__) then
+      let dstName = dst_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
+      let srcName = src_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
+      '<%dstName%> = <%srcName%>;<%\n%>'
+    else error(sourceInfo(), "recordCreateFromVarsDef: Unhandled variable type"))
+
+  let fn_inputs = (variables |> var as VARIABLE(__) =>
                             (", " + varType(var) + " " + src_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction))
                 )
+
+  let ctor_additional_inputs = (variables |> var as VARIABLE(__) => if var.bind_from_outside
+                                  then (", " + "in_" + crefStr(var.name))
+                                  )
   <<
-  <%rec_name%> <%rec_name%>_create_from_vars(threadData_t *threadData <%inputs%>) {
-    <%rec_name%> dst;
-    // TODO Improve me. No need to initialize the record members with defaults in <%rec_name%>_construct
-    // We should just do the allocs here and then copy the input parameters as default values instead.
-    <%rec_name%>_construct(threadData, dst);
+  void <%rec_name%>_wrap_vars_p(threadData_t *threadData, void* v_dst <%fn_inputs%>) {
+    <%rec_name%>* dst = (<%rec_name%>*)(v_dst);
     <%varCopies%>
-    return dst;
   }
   >>
 end recordCreateFromVarsDef;
@@ -5380,7 +5390,9 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + constVarOrDaeExp(v, cr, context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-    '<%record_type_name%>_create_from_vars(threadData<%vars%>)'
+    let tmpRec = tempDecl(record_type_name, &varDecls)
+    let &preExp += '<%record_type_name%>_wrap_vars(threadData,<%tmpRec%><%vars%>);<%\n%>'
+    '<%tmpRec%>'
 
   case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
     let type = expTypeShort(aty)
