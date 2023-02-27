@@ -92,7 +92,7 @@ public
         algorithm
           // ToDo: check if when equation is active during initialization
           equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
-          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
+          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in partitioningNone(systemType, variables, equations));
         then bdae;
 
       else algorithm
@@ -372,17 +372,21 @@ protected
     Pointer<Integer> index = Pointer.create(1);
     // remove this!
     Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
+    list<Pointer<Variable>> single_vars;
   algorithm
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       eqn := EquationPointers.getEqnAt(equations, eq_idx);
       var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
       // collect all crefs in equation
       _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
       var_cref_list := UnorderedSet.toList(var_crefs);
+
       // find minimal partition index for current equation and all connected variables
-      local_indices := list(var_map[VariablePointers.getVarIndex(variables, cref)] for cref in var_cref_list);
-      part_idx := intMax(i for i in eq_idx :: local_indices);
+      local_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in var_cref_list);
+      part_idx := intMax(i for i in eq_idx :: list(var_map[j] for j in local_indices));
       eqn_map[eq_idx] := part_idx;
+
       // update connected variable partition indices and further connected equation partition indices
       for i in local_indices loop
         if var_map[i] > 0 then
@@ -394,15 +398,27 @@ protected
 
     // resolve coloring and collect in clusters
     for eq_idx in UnorderedMap.valueList(equations.map) loop
-      name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
-      UnorderedMap.addUpdate(eqn_map[eq_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+      if eq_idx > 0 then
+        name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
+        UnorderedMap.addUpdate(eqn_map[eq_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+      end if;
     end for;
     for var_idx in UnorderedMap.valueList(variables.map) loop
-      name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
-      UnorderedMap.addUpdate(var_map[var_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+      if var_idx > 0 then
+        name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
+        UnorderedMap.addUpdate(var_map[var_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+      end if;
     end for;
 
     systems := list(Cluster.toSystem(cl, variables, equations, systemType, marked_vars_ptr, index) for cl in UnorderedMap.valueList(cluster_map));
+
+    single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
+    if not listEmpty(single_vars) then
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
+        + ") failed because the following variables could not be assigned to a partition:\n  {"
+        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), ", ") + "}"});
+      fail();
+    end if;
   end partitioningClocked;
 
   function collectPartitioningCrefs
@@ -664,16 +680,8 @@ protected
     // discrete states and there pre value also
     // todo: difference between pre and previous for clocked
     if BVariable.isState(var_ptr) then
-      UnorderedSet.add(cref, set);
       UnorderedSet.add(BVariable.getDerCref(cref), set);
-    elseif BVariable.isStateDerivative(var_ptr) then
-      UnorderedSet.add(cref, set);
-      UnorderedSet.add(BVariable.getStateCref(cref), set);
-    elseif BVariable.isDiscreteState(var_ptr) then
-      UnorderedSet.add(cref, set);
-      UnorderedSet.add(BVariable.getPreCref(cref), set);
     elseif BVariable.isPrevious(var_ptr) then
-      UnorderedSet.add(cref, set);
       UnorderedSet.add(BVariable.getStateCref(cref), set);
     else
       UnorderedSet.add(cref, set);
