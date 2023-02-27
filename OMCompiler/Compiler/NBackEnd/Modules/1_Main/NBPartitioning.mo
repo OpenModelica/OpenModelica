@@ -414,10 +414,10 @@ protected
         Expression newExp;
         Call call;
         Expression arg;
-      case Expression.CREF() algorithm
-        // todo, if state add derivative?
-        UnorderedSet.add(exp.cref, var_crefs);
-      then exp;
+        list<ComponentRef> children;
+        ComponentRef stripped;
+
+      // clocked partitioning special rules
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
           case "previous" then Expression.EMPTY(Type.INTEGER());
@@ -429,6 +429,27 @@ protected
           else exp;
         end match;
       then newExp;
+
+      // get all variable crefs for this cref and add to set
+      case Expression.CREF() algorithm
+        // extract potential record children
+        children := match BVariable.getVar(exp.cref)
+          local
+            list<Pointer<Variable>> children_vars;
+          case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
+          then list(BVariable.getVarName(var) for var in children_vars);
+          else {exp.cref};
+        end match;
+
+        for child in children loop
+          // check if cref has to be considered as a dependency
+          stripped := ComponentRef.stripSubscriptsAll(child);
+          if not BVariable.checkCref(stripped, BVariable.isParamOrConst) then
+            addCrefToSet(stripped, var_crefs);
+          end if;
+        end for;
+      then exp;
+
       else exp;
     end match;
   end collectPartitioningCrefs;
@@ -632,6 +653,32 @@ protected
       UnorderedMap.add(cref2, clusterPointer, map);
     end if;
   end addCrefToMap;
+
+  function addCrefToSet
+    input ComponentRef cref;
+    input UnorderedSet<ComponentRef> set;
+  protected
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref);
+  algorithm
+    // states and there derivatives belong to one partition
+    // discrete states and there pre value also
+    // todo: difference between pre and previous for clocked
+    if BVariable.isState(var_ptr) then
+      UnorderedSet.add(cref, set);
+      UnorderedSet.add(BVariable.getDerCref(cref), set);
+    elseif BVariable.isStateDerivative(var_ptr) then
+      UnorderedSet.add(cref, set);
+      UnorderedSet.add(BVariable.getStateCref(cref), set);
+    elseif BVariable.isDiscreteState(var_ptr) then
+      UnorderedSet.add(cref, set);
+      UnorderedSet.add(BVariable.getPreCref(cref), set);
+    elseif BVariable.isPrevious(var_ptr) then
+      UnorderedSet.add(cref, set);
+      UnorderedSet.add(BVariable.getStateCref(cref), set);
+    else
+      UnorderedSet.add(cref, set);
+    end if;
+  end addCrefToSet;
 
 annotation(__OpenModelica_Interface="backend");
 end NBPartitioning;
