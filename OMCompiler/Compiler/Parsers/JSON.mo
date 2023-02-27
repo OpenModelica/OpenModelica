@@ -40,12 +40,16 @@ protected
 
 import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
+import Util;
 
 public
 
 record OBJECT
   UnorderedMap<String, JSON> values;
 end OBJECT;
+record LIST_OBJECT
+  list<tuple<String, JSON>> values;
+end LIST_OBJECT;
 record ARRAY
   Vector<JSON> values;
 end ARRAY;
@@ -80,6 +84,10 @@ function emptyObject
 algorithm
   obj := OBJECT(UnorderedMap.new<JSON>(stringHashDjb2, stringEq));
 end emptyObject;
+
+function emptyListObject
+  output JSON obj = LIST_OBJECT({});
+end emptyListObject;
 
 function fromPair
   input String key;
@@ -176,6 +184,9 @@ algorithm
       then
         obj;
 
+    case LIST_OBJECT()
+      then LIST_OBJECT((key, value) :: obj.values);
+
     case NULL()
       then addPair(key, value, emptyObject());
   end match;
@@ -210,7 +221,6 @@ protected
   list<JSON> stack = {value};
   JSON v;
   list<String> strl = {};
-  Integer len = 0;
 algorithm
   while not listEmpty(stack) loop
     v :: stack := stack;
@@ -235,6 +245,12 @@ algorithm
         then
           strl;
 
+      case LIST_OBJECT()
+        algorithm
+          stack := appendStackListObject(v.values, stack);
+        then
+          strl;
+
       case TOKEN() then v.str :: strl;
     end match;
   end while;
@@ -246,9 +262,7 @@ function appendStackString
   input String str;
   input output list<String> strl;
 algorithm
-  strl := "\"" :: strl;
-  strl := System.escapedString(str, true) :: strl;
-  strl := "\"" :: strl;
+  strl := "\"" + System.escapedString(str, true) + "\"" :: strl;
 end appendStackString;
 
 function appendStackArray
@@ -279,14 +293,38 @@ algorithm
       stack := TOKEN(", ") :: stack;
     end if;
 
-    stack := TOKEN("\"") :: stack;
-    stack := TOKEN(UnorderedMap.keyAt(map, i)) :: stack;
-    stack := TOKEN("\":") :: stack;
+    stack := TOKEN("\"" + UnorderedMap.keyAt(map, i) + "\":") :: stack;
     stack := UnorderedMap.valueAt(map, i) :: stack;
   end for;
 
   stack := TOKEN("}") :: stack;
 end appendStackObject;
+
+function appendStackListObject
+  input list<tuple<String, JSON>> object;
+  input output list<JSON> stack;
+protected
+  Boolean first = true;
+  String key;
+  JSON value;
+algorithm
+  stack := TOKEN("{") :: stack;
+
+  for entry in listReverse(object) loop
+    (key, value) := entry;
+
+    if first then
+      first := false;
+    else
+      stack := TOKEN(", ") :: stack;
+    end if;
+
+    stack := TOKEN("\"" + key + "\":") :: stack;
+    stack := value :: stack;
+  end for;
+
+  stack := TOKEN("}") :: stack;
+end appendStackListObject;
 
 function toStringPP_work
   input JSON value;
@@ -318,6 +356,12 @@ algorithm
       case OBJECT()
         algorithm
           stack := appendStackObjectPP(v.values, stack);
+        then
+          strl;
+
+      case LIST_OBJECT()
+        algorithm
+          stack := appendStackListObjectPP(v.values, stack);
         then
           strl;
 
@@ -394,6 +438,39 @@ algorithm
   stack := TOKEN("}") :: stack;
 end appendStackObjectPP;
 
+function appendStackListObjectPP
+  input list<tuple<String, JSON>> object;
+  input output list<JSON> stack;
+protected
+  Boolean first = true;
+  String key;
+  JSON value;
+algorithm
+  stack := POP_INDENT() :: stack;
+  stack := TOKEN("{\n") :: stack;
+
+  for entry in listReverse(object) loop
+    (key, value) := entry;
+
+    if first then
+      first := false;
+    else
+      stack := TOKEN(",\n") :: stack;
+    end if;
+
+    stack := INDENT() :: stack;
+    stack := TOKEN("\"") :: stack;
+    stack := TOKEN(key) :: stack;
+    stack := TOKEN("\": ") :: stack;
+    stack := value :: stack;
+  end for;
+
+  stack := TOKEN("\n") :: stack;
+  stack := PUSH_INDENT() :: stack;
+  stack := INDENT() :: stack;
+  stack := TOKEN("}") :: stack;
+end appendStackListObjectPP;
+
 partial function partialParser
   input list<Token> inTokens;
   output JSON value;
@@ -420,6 +497,16 @@ function hasKey
 algorithm
   b := match obj
     case OBJECT() then UnorderedMap.contains(str, obj.values);
+    case LIST_OBJECT()
+      algorithm
+        b := false;
+        for entry in obj.values loop
+          if Util.tuple21(entry) == str then
+            b := true;
+          end if;
+        end for;
+      then
+        b;
   end match;
 end hasKey;
 
@@ -430,6 +517,16 @@ function get
 algorithm
   out := match obj
     case OBJECT() then UnorderedMap.getOrFail(str, obj.values);
+    case LIST_OBJECT()
+      algorithm
+        for entry in obj.values loop
+          if Util.tuple21(entry) == str then
+            out := Util.tuple22(entry);
+            return;
+          end if;
+        end for;
+      then
+        fail();
   end match;
 end get;
 
@@ -441,6 +538,16 @@ function getOrDefault
 algorithm
   out := match obj
     case OBJECT() then UnorderedMap.getOrDefault(str, obj.values, default);
+    case LIST_OBJECT()
+      algorithm
+        for entry in obj.values loop
+          if Util.tuple21(entry) == str then
+            out := Util.tuple22(entry);
+            return;
+          end if;
+        end for;
+      then
+        default;
     else default;
   end match;
 end getOrDefault;
@@ -468,6 +575,7 @@ function getStringList
 algorithm
   strl := match obj
     case OBJECT() then list(getString(v) for v in UnorderedMap.valueList(obj.values));
+    case LIST_OBJECT() then listReverse(getString(Util.tuple22(v)) for v in obj.values);
     case ARRAY() then Vector.mapToList(obj.values, getString);
   end match;
 end getStringList;
@@ -478,6 +586,7 @@ function getKeys
 algorithm
   keys := match obj
     case OBJECT() then UnorderedMap.keyList(obj.values);
+    case LIST_OBJECT() then listReverse(Util.tuple21(e) for e in obj.values);
   end match;
 end getKeys;
 
@@ -497,6 +606,7 @@ function size
 algorithm
   sz := match obj
     case OBJECT() then UnorderedMap.size(obj.values);
+    case LIST_OBJECT() then listLength(obj.values);
     case ARRAY() then Vector.size(obj.values);
     else 1;
   end match;

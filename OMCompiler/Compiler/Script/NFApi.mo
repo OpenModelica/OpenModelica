@@ -855,6 +855,7 @@ protected
   InstContext.Type context;
   InstanceTree inst_tree;
   InstSettings inst_settings;
+  String str;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
   context := InstContext.set(context, NFInstContext.INSTANCE_API);
@@ -1014,7 +1015,7 @@ function dumpJSONInstanceTree
   input InstNode scope;
   input Boolean root = true;
   input Boolean isDeleted = false;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   InstNode node;
   list<InstanceTree> elems;
@@ -1051,7 +1052,7 @@ end dumpJSONInstanceTree;
 
 function dumpJSONInstanceIcon
   input InstNode node;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   Option<SCode.Comment> cmt;
   SCode.Annotation ann;
@@ -1110,7 +1111,7 @@ end dumpJSONInstanceIcon;
 
 function dumpJSONInstanceIconExtends
   input InstNode ext;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
@@ -1160,7 +1161,7 @@ end dumpJSONElements;
 function dumpJSONExtends
   input InstanceTree ext;
   input Boolean isDeleted;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   InstNode node;
   SCode.Element cls_def, ext_def;
@@ -1183,7 +1184,7 @@ end dumpJSONExtends;
 function dumpJSONReplaceableClass
   input InstNode cls;
   input InstNode scope;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   SCode.Element elem;
   SCode.ClassDef cdef;
@@ -1322,7 +1323,7 @@ protected
 algorithm
   def := InstNode.definition(node);
 
-  json := JSON.emptyObject();
+  json := JSON.makeNull();
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction", JSON.makeString("enumeration"), json);
@@ -1347,7 +1348,7 @@ end dumpJSONEnumTypeLiterals;
 function dumpJSONEnumTypeLiteral
   input InstNode node;
   input InstNode scope;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("$kind", JSON.makeString("component"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
@@ -1364,7 +1365,7 @@ end dumpJSONTypeName;
 function dumpJSONBinding
   input Binding binding;
   input Boolean evaluate = true;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   Expression exp;
 algorithm
@@ -1526,7 +1527,7 @@ algorithm
   json := match repl
     case SCode.Replaceable.REPLACEABLE(cc = SOME(cc))
       algorithm
-        json := JSON.emptyObject();
+        json := JSON.makeNull();
         json := JSON.addPair("constrainedby", dumpJSONPath(cc.constrainingClass), json);
         json := dumpJSONSCodeMod(cc.modifier, json);
         json := dumpJSONCommentOpt(SOME(cc.comment), scope, json);
@@ -1636,7 +1637,7 @@ algorithm
             fail();
           end if;
 
-          j := JSON.emptyObject();
+          j := JSON.makeNull();
           j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
           j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
           json := JSON.addPair(name, j, json);
@@ -1658,7 +1659,7 @@ end dumpJSONAnnotationSubMod;
 
 function dumpJSONSourceInfo
   input SourceInfo info;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
 
@@ -1694,7 +1695,7 @@ algorithm
 
     case Absyn.Exp.CALL()
       algorithm
-        json := JSON.emptyObject();
+        json := JSON.makeNull();
         json := JSON.addPair("$kind", JSON.makeString("call"), json);
         json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
         json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
@@ -1835,7 +1836,7 @@ end dumpJSONConnections;
 function dumpJSONConnection
   input Equation connEq;
   input InstNode scope;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   Expression lhs, rhs;
   DAE.ElementSource src;
@@ -1859,7 +1860,7 @@ end dumpJSONStateCalls;
 function dumpJSONStateCall
   input Equation callEq;
   input InstNode scope;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.makeNull();
 protected
   Call call;
   list<Expression> args;
@@ -1893,7 +1894,7 @@ algorithm
 
   for c in ClassTree.getComponents(cls_tree) loop
     if InstNode.isReplaceable(c) then
-      j := JSON.emptyObject();
+      j := JSON.makeNull();
       j := JSON.addPair("name", JSON.makeString(InstNode.name(c)), j);
       j := JSON.addPair("type", dumpJSONTypeName(InstNode.getType(c)), j);
       json := JSON.addElement(j, json);
