@@ -40,14 +40,17 @@ public
 protected
   // NF
   import NFBackendExtension.{BackendInfo, VariableKind};
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFFunction.Function;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers};
+  import NBEquation.{Equation, EquationPointer, EquationPointers};
   import Initialization = NBInitialization;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
@@ -102,10 +105,11 @@ public
     "Returns the module function that was chosen by the user."
     output Module.partitioningInterface func;
   protected
-    String flag = "default"; //Flags.getConfigString(Flags.PARTITIONING)
+    String flag = "clocked"; //Flags.getConfigString(Flags.PARTITIONING)
   algorithm
     (func) := match flag
       case "default"  then (partitioningDefault);
+      case "clocked"  then (partitioningClocked);
       case "none"     then (partitioningNone);
       /* ... New detect states modules have to be added here */
       else fail();
@@ -142,6 +146,8 @@ public
   end categorize;
 
 protected
+  type ClusterElementType = enumeration(EQUATION, VARIABLE);
+
   uniontype Cluster
     record CLUSTER
       UnorderedSet<ComponentRef> variables    "list of all variables in this set";
@@ -155,6 +161,29 @@ protected
       str := "### Cluster Variables:\n" + UnorderedSet.toString(cluster.variables, ComponentRef.toString)
         + "### Cluster Equation Identifiers:\n" + UnorderedSet.toString(cluster.eqn_idnts, ComponentRef.toString);
     end toString;
+
+    function addElement
+      input Option<Cluster> cluster_opt;
+      input ComponentRef cref;
+      input ClusterElementType ty;
+      output Cluster cluster;
+    algorithm
+      cluster := match cluster_opt
+        case SOME(cluster)  then cluster;
+        else CLUSTER(
+          variables = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual),
+          eqn_idnts = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      end match;
+
+      cluster := match ty
+        case ClusterElementType.VARIABLE algorithm
+          UnorderedSet.add(cref, cluster.variables);
+        then cluster;
+        case ClusterElementType.EQUATION algorithm
+          UnorderedSet.add(cref, cluster.eqn_idnts);
+        then cluster;
+      end match;
+    end addElement;
 
     function merge
       input ClusterPointer cluster1;
@@ -303,7 +332,6 @@ protected
       Pointer.update(index, Pointer.access(index) + 1);
     end toSystem;
   end Cluster;
-
   // needed for unordered map
   type ClusterPointer = Pointer<Cluster>;
 
@@ -328,6 +356,82 @@ protected
       jacobian          = NONE()
     )};
   end partitioningNone;
+
+  function partitioningClocked extends Module.partitioningInterface;
+  protected
+    array<Integer> eqn_map = arrayCreate(equations.eqArr.lastUsedIndex[1], -1);
+    array<Integer> var_map = arrayCreate(variables.varArr.lastUsedIndex[1], -1);
+    Pointer<Equation> eqn;
+    UnorderedSet<ComponentRef> var_crefs;
+    list<ComponentRef> var_cref_list;
+    list<Integer> local_indices;
+    Integer part_idx;
+    UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
+    ComponentRef name_cref;
+    Cluster cluster;
+    Pointer<Integer> index = Pointer.create(1);
+    // remove this!
+    Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
+  algorithm
+    for eq_idx in UnorderedMap.valueList(equations.map) loop
+      eqn := EquationPointers.getEqnAt(equations, eq_idx);
+      var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      // collect all crefs in equation
+      _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
+      var_cref_list := UnorderedSet.toList(var_crefs);
+      // find minimal partition index for current equation and all connected variables
+      local_indices := list(var_map[VariablePointers.getVarIndex(variables, cref)] for cref in var_cref_list);
+      part_idx := intMax(i for i in eq_idx :: local_indices);
+      eqn_map[eq_idx] := part_idx;
+      // update connected variable partition indices and further connected equation partition indices
+      for i in local_indices loop
+        if var_map[i] > 0 then
+          eqn_map[var_map[i]] := part_idx;
+        end if;
+        var_map[i] := part_idx;
+      end for;
+    end for;
+
+    // resolve coloring and collect in clusters
+    for eq_idx in UnorderedMap.valueList(equations.map) loop
+      name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
+      UnorderedMap.addUpdate(eqn_map[eq_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+    end for;
+    for var_idx in UnorderedMap.valueList(variables.map) loop
+      name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
+      UnorderedMap.addUpdate(var_map[var_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+    end for;
+
+    systems := list(Cluster.toSystem(cl, variables, equations, systemType, marked_vars_ptr, index) for cl in UnorderedMap.valueList(cluster_map));
+  end partitioningClocked;
+
+  function collectPartitioningCrefs
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> var_crefs;
+  algorithm
+    exp := match exp
+      local
+        Expression newExp;
+        Call call;
+        Expression arg;
+      case Expression.CREF() algorithm
+        // todo, if state add derivative?
+        UnorderedSet.add(exp.cref, var_crefs);
+      then exp;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
+          case "previous" then Expression.EMPTY(Type.INTEGER());
+          case "hold"     then Expression.EMPTY(Type.INTEGER());
+          case "sample" algorithm
+            {_, arg} := Call.arguments(exp.call);
+            _ := collectPartitioningCrefs(arg, var_crefs);
+          then Expression.EMPTY(Type.INTEGER());
+          else exp;
+        end match;
+      then newExp;
+      else exp;
+    end match;
+  end collectPartitioningCrefs;
 
   function partitioningDefault extends Module.partitioningInterface;
   protected
