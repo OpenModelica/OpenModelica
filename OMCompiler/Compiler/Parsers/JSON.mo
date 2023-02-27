@@ -41,6 +41,7 @@ protected
 import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Util;
+import Print;
 
 public
 
@@ -68,16 +69,6 @@ record FALSE
 end FALSE;
 record NULL
 end NULL;
-// Used by the toString methods.
-record TOKEN
-  String str;
-end TOKEN;
-record INDENT
-end INDENT;
-record PUSH_INDENT
-end PUSH_INDENT;
-record POP_INDENT
-end POP_INDENT;
 
 function emptyObject
   output JSON obj;
@@ -188,7 +179,7 @@ algorithm
       then LIST_OBJECT((key, value) :: obj.values);
 
     case NULL()
-      then addPair(key, value, emptyObject());
+      then addPair(key, value, emptyListObject());
   end match;
 end addPair;
 
@@ -206,109 +197,128 @@ function toString
   input JSON value;
   input Boolean prettyPrint = false;
   output String str;
+protected
+  Integer handle;
 algorithm
+  handle := Print.saveAndClearBuf();
+
   if prettyPrint then
-    str := toStringPP_work(value);
+    toStringPP_work(value);
   else
-    str := toString_work(value);
+    toString_work(value);
   end if;
+
+  str := Print.getString();
+  Print.restoreBuf(handle);
 end toString;
 
 function toString_work
   input JSON value;
-  output String str;
-protected
-  list<JSON> stack = {value};
-  JSON v;
-  list<String> strl = {};
 algorithm
-  while not listEmpty(stack) loop
-    v :: stack := stack;
+  () := match value
+    case STRING()
+      algorithm
+        Print.printBuf("\"");
+        Print.printBuf(System.escapedString(value.str, true));
+        Print.printBuf("\"");
+      then
+        ();
 
-    strl := match v
-      case STRING() then appendStackString(v.str, strl);
-      case TRUE() then "true" :: strl;
-      case FALSE() then "false" :: strl;
-      case NULL() then "null" :: strl;
-      case INTEGER() then String(v.i) :: strl;
-      case NUMBER() then String(v.r) :: strl;
+    case TRUE()
+      algorithm
+        Print.printBuf("true");
+      then
+        ();
 
-      case ARRAY()
-        algorithm
-          stack := appendStackArray(v.values, stack);
-        then
-          strl;
+    case FALSE()
+      algorithm
+        Print.printBuf("false");
+      then
+        ();
 
-      case OBJECT()
-        algorithm
-          stack := appendStackObject(v.values, stack);
-        then
-          strl;
+    case NULL()
+      algorithm
+        Print.printBuf("null");
+      then
+        ();
 
-      case LIST_OBJECT()
-        algorithm
-          stack := appendStackListObject(v.values, stack);
-        then
-          strl;
+    case INTEGER()
+      algorithm
+        Print.printBuf(String(value.i));
+      then
+        ();
 
-      case TOKEN() then v.str :: strl;
-    end match;
-  end while;
+    case NUMBER()
+      algorithm
+        Print.printBuf(String(value.r));
+      then
+        ();
 
-  str := stringAppendList(strl);
+    case ARRAY()
+      algorithm
+        toString_array(value.values);
+      then
+        ();
+
+    case OBJECT()
+      algorithm
+        toString_object(value.values);
+      then
+        ();
+
+    case LIST_OBJECT()
+      algorithm
+        toString_listObject(value.values);
+      then
+        ();
+
+    else ();
+  end match;
 end toString_work;
 
-function appendStackString
-  input String str;
-  input output list<String> strl;
-algorithm
-  strl := "\"" + System.escapedString(str, true) + "\"" :: strl;
-end appendStackString;
-
-function appendStackArray
+function toString_array
   input Vector<JSON> values;
-  input output list<JSON> stack;
 algorithm
-  stack := TOKEN("[") :: stack;
+  Print.printBuf("[");
 
   for i in 1:Vector.size(values) loop
     if i <> 1 then
-      stack := TOKEN(", ") :: stack;
+      Print.printBuf(", ");
     end if;
 
-    stack := Vector.getNoBounds(values, i) :: stack;
+    toString_work(Vector.getNoBounds(values, i));
   end for;
 
-  stack := TOKEN("]") :: stack;
-end appendStackArray;
+  Print.printBuf("]");
+end toString_array;
 
-function appendStackObject
+function toString_object
   input UnorderedMap<String, JSON> map;
-  input output list<JSON> stack;
 algorithm
-  stack := TOKEN("{") :: stack;
+  Print.printBuf("{");
 
   for i in 1:UnorderedMap.size(map) loop
     if i <> 1 then
-      stack := TOKEN(", ") :: stack;
+      Print.printBuf(", ");
     end if;
 
-    stack := TOKEN("\"" + UnorderedMap.keyAt(map, i) + "\":") :: stack;
-    stack := UnorderedMap.valueAt(map, i) :: stack;
+    Print.printBuf("\"");
+    Print.printBuf(UnorderedMap.keyAt(map, i));
+    Print.printBuf("\":");
+    toString_work(UnorderedMap.valueAt(map, i));
   end for;
 
-  stack := TOKEN("}") :: stack;
-end appendStackObject;
+  Print.printBuf("}");
+end toString_object;
 
-function appendStackListObject
+function toString_listObject
   input list<tuple<String, JSON>> object;
-  input output list<JSON> stack;
 protected
   Boolean first = true;
   String key;
   JSON value;
 algorithm
-  stack := TOKEN("{") :: stack;
+  Print.printBuf("{");
 
   for entry in listReverse(object) loop
     (key, value) := entry;
@@ -316,138 +326,140 @@ algorithm
     if first then
       first := false;
     else
-      stack := TOKEN(", ") :: stack;
+      Print.printBuf(", ");
     end if;
 
-    stack := TOKEN("\"" + key + "\":") :: stack;
-    stack := value :: stack;
+    Print.printBuf("\"");
+    Print.printBuf(key);
+    Print.printBuf("\":");
+    toString_work(value);
   end for;
 
-  stack := TOKEN("}") :: stack;
-end appendStackListObject;
+  Print.printBuf("}");
+end toString_listObject;
 
 function toStringPP_work
   input JSON value;
-  output String str;
-protected
-  list<JSON> stack = {value};
-  JSON v;
-  list<String> strl = {};
-  String indent = "";
-  Integer indent_len;
+  input String indent = "";
 algorithm
-  while not listEmpty(stack) loop
-    v :: stack := stack;
+  () := match value
+    case STRING()
+      algorithm
+        Print.printBuf("\"");
+        Print.printBuf(System.escapedString(value.str, true));
+        Print.printBuf("\"");
+      then
+        ();
 
-    strl := match v
-      case STRING() then appendStackString(v.str, strl);
-      case TRUE() then "true" :: strl;
-      case FALSE() then "false" :: strl;
-      case NULL() then "null" :: strl;
-      case INTEGER() then String(v.i) :: strl;
-      case NUMBER() then String(v.r) :: strl;
+    case TRUE()
+      algorithm
+        Print.printBuf("true");
+      then
+        ();
 
-      case ARRAY()
-        algorithm
-          stack := appendStackArrayPP(v.values, stack);
-        then
-          strl;
+    case FALSE()
+      algorithm
+        Print.printBuf("false");
+      then
+        ();
 
-      case OBJECT()
-        algorithm
-          stack := appendStackObjectPP(v.values, stack);
-        then
-          strl;
+    case NULL()
+      algorithm
+        Print.printBuf("null");
+      then
+        ();
 
-      case LIST_OBJECT()
-        algorithm
-          stack := appendStackListObjectPP(v.values, stack);
-        then
-          strl;
+    case INTEGER()
+      algorithm
+        Print.printBuf(String(value.i));
+      then
+        ();
 
-      case TOKEN() then v.str :: strl;
-      case INDENT() then indent :: strl;
+    case NUMBER()
+      algorithm
+        Print.printBuf(String(value.r));
+      then
+        ();
 
-      case PUSH_INDENT()
-        algorithm
-          indent := indent + "  ";
-        then
-          strl;
+    case ARRAY()
+      algorithm
+        toStringPP_array(value.values, indent);
+      then
+        ();
 
-      case POP_INDENT()
-        algorithm
-          indent_len := stringLength(indent) - 2;
+    case OBJECT()
+      algorithm
+        toStringPP_object(value.values, indent);
+      then
+        ();
 
-          if indent_len == 0 then
-            indent := "";
-          else
-            indent := substring(indent, 1,  indent_len);
-          end if;
-        then
-          strl;
-    end match;
-  end while;
+    case LIST_OBJECT()
+      algorithm
+        toStringPP_listObject(value.values, indent);
+      then
+        ();
 
-  str := stringAppendList(strl);
+    else ();
+  end match;
 end toStringPP_work;
 
-function appendStackArrayPP
+function toStringPP_array
   input Vector<JSON> values;
-  input output list<JSON> stack;
+  input String indent;
+protected
+  String next_indent = indent + "  ";
 algorithm
-  stack := POP_INDENT() :: stack;
-  stack := TOKEN("[\n") :: stack;
+  Print.printBuf("[\n");
 
   for i in 1:Vector.size(values) loop
     if i <> 1 then
-      stack := TOKEN(",\n") :: stack;
+      Print.printBuf(",\n");
     end if;
 
-    stack := INDENT() :: stack;
-    stack := Vector.getNoBounds(values, i) :: stack;
+    Print.printBuf(next_indent);
+    toStringPP_work(Vector.getNoBounds(values, i), next_indent);
   end for;
 
-  stack := TOKEN("\n") :: stack;
-  stack := PUSH_INDENT() :: stack;
-  stack := INDENT() :: stack;
-  stack := TOKEN("]") :: stack;
-end appendStackArrayPP;
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("]");
+end toStringPP_array;
 
-function appendStackObjectPP
+function toStringPP_object
   input UnorderedMap<String, JSON> map;
-  input output list<JSON> stack;
+  input String indent;
+protected
+  String next_indent = indent + "  ";
 algorithm
-  stack := POP_INDENT() :: stack;
-  stack := TOKEN("{\n") :: stack;
+  Print.printBuf("{\n");
 
   for i in 1:UnorderedMap.size(map) loop
     if i <> 1 then
-      stack := TOKEN(",\n") :: stack;
+      Print.printBuf(",\n");
     end if;
 
-    stack := INDENT() :: stack;
-    stack := TOKEN("\"") :: stack;
-    stack := TOKEN(UnorderedMap.keyAt(map, i)) :: stack;
-    stack := TOKEN("\": ") :: stack;
-    stack := UnorderedMap.valueAt(map, i) :: stack;
+    Print.printBuf(next_indent);
+    Print.printBuf("\"");
+    Print.printBuf(UnorderedMap.keyAt(map, i));
+    Print.printBuf("\": ");
+    toStringPP_work(UnorderedMap.valueAt(map, i), next_indent);
   end for;
 
-  stack := TOKEN("\n") :: stack;
-  stack := PUSH_INDENT() :: stack;
-  stack := INDENT() :: stack;
-  stack := TOKEN("}") :: stack;
-end appendStackObjectPP;
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("}");
+end toStringPP_object;
 
-function appendStackListObjectPP
+function toStringPP_listObject
   input list<tuple<String, JSON>> object;
-  input output list<JSON> stack;
+  input String indent;
 protected
   Boolean first = true;
   String key;
   JSON value;
+  String next_indent = indent + "  ";
 algorithm
-  stack := POP_INDENT() :: stack;
-  stack := TOKEN("{\n") :: stack;
+  Print.printBuf("{\n");
 
   for entry in listReverse(object) loop
     (key, value) := entry;
@@ -455,21 +467,20 @@ algorithm
     if first then
       first := false;
     else
-      stack := TOKEN(",\n") :: stack;
+      Print.printBuf(",\n");
     end if;
 
-    stack := INDENT() :: stack;
-    stack := TOKEN("\"") :: stack;
-    stack := TOKEN(key) :: stack;
-    stack := TOKEN("\": ") :: stack;
-    stack := value :: stack;
+    Print.printBuf(next_indent);
+    Print.printBuf("\"");
+    Print.printBuf(key);
+    Print.printBuf("\": ");
+    toStringPP_work(value, next_indent);
   end for;
 
-  stack := TOKEN("\n") :: stack;
-  stack := PUSH_INDENT() :: stack;
-  stack := INDENT() :: stack;
-  stack := TOKEN("}") :: stack;
-end appendStackListObjectPP;
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("}");
+end toStringPP_listObject;
 
 partial function partialParser
   input list<Token> inTokens;
