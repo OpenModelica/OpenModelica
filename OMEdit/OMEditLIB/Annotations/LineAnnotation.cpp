@@ -1852,7 +1852,8 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstan
   if (pModelComponent->getModel()) {
     restriction = StringHandler::getModelicaClassType(pModelComponent->getModel()->getRestriction());
   }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelComponent->getName(), pModelComponent->isArray(), pModelComponent->getTypedDimensions(),
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelComponent->getName(), pModelComponent->getDimensions().isArray(),
+                                                                                              pModelComponent->getDimensions().getTypedDimensions(),
                                                                                               restriction, false, pParentExpandableConnectorTreeItem);
   int row = pParentExpandableConnectorTreeItem->getChildren().size();
   QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
