@@ -305,7 +305,7 @@ function lookupRootClass
   input InstContext.Type context;
   output InstNode clsNode;
 algorithm
-  clsNode := Lookup.lookupClassName(path, topScope, NFInstContext.RELAXED,
+  clsNode := Lookup.lookupClassName(path, topScope, InstContext.set(context, NFInstContext.RELAXED),
     AbsynUtil.dummyInfo, checkAccessViolations = false);
   clsNode := InstUtil.mergeScalars(clsNode, path);
   checkInstanceRestriction(clsNode, path, context);
@@ -1143,16 +1143,21 @@ algorithm
 
     case CachedData.NO_CACHE()
       algorithm
-        // Cache the package node itself first, to avoid instantiation loops if
-        // the package uses itself somehow.
-        InstNode.setPackageCache(node, CachedData.PACKAGE(node));
-        // Instantiate the node.
-        inst := instantiate(node, context = context);
+        if InstContext.inFastLookup(context) then
+          inst := expand(node);
+        else
+          // Cache the package node itself first, to avoid instantiation loops if
+          // the package uses itself somehow.
+          InstNode.setPackageCache(node, CachedData.PACKAGE(node));
 
-        // Cache the instantiated node and instantiate expressions in it too.
-        if not InstNode.isPartial(inst) or InstContext.inRelaxed(context) then
-          InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
-          instExpressions(inst, context = context);
+          // Instantiate the node.
+          inst := instantiate(node, context = context);
+
+          // Cache the instantiated node and instantiate expressions in it too.
+          if not InstNode.isPartial(inst) or InstContext.inRelaxed(context) then
+            InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
+            instExpressions(inst, context = context);
+          end if;
         end if;
       then
         inst;

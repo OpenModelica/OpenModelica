@@ -504,6 +504,7 @@ protected
   SCode.Program program;
   String name, id1, id2;
   Boolean b, s;
+  InstContext.Type context;
 algorithm
   // do some quick checks
   // classPath is already fully qualified
@@ -526,11 +527,13 @@ algorithm
     // run the front-end front
     (program, name, expanded_cls) := frontEndLookup(absynProgram, classPath);
 
+    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
+
     // if is derived qualify in the parent
     if InstNode.isDerivedClass(expanded_cls) then
-      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), context, AbsynUtil.dummyInfo, checkAccessViolations = false);
     else // qualify in the class
-      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
     end if;
 
     qualPath := InstNode.fullPath(cls);
@@ -794,7 +797,7 @@ algorithm
   name := AbsynUtil.pathString(classPath);
 
   (program, top) := mkTop(absynProgram, name);
-  cls := Inst.lookupRootClass(classPath, top, NFInstContext.RELAXED);
+  cls := Inst.lookupRootClass(classPath, top, InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP));
 
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
