@@ -450,7 +450,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
                   pIconGraphicsView->addItem(pIconElement->getOriginItem());
                   pIconGraphicsView->addElementToList(pIconElement);
                   pIconGraphicsView->deleteElementFromOutOfSceneList(pIconElement);
-                  pIconElement->setVisible(pModelInstanceComponent->isPublic());
+                  pIconElement->setVisible(pModelInstanceComponent->getPrefixes()->isPublic());
                 }
               }
             }
@@ -1047,7 +1047,7 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
       pIconGraphicsView->addElementToList(pIconElement);
     }
     // hide the element if it is connector and is protected
-    pIconElement->setVisible(pComponent->isPublic());
+    pIconElement->setVisible(pComponent->getPrefixes()->isPublic());
   }
 
   if (pDiagramElement->mTransformation.isValid() && pDiagramElement->mTransformation.getVisible()) {

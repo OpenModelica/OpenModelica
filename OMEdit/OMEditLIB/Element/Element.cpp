@@ -1487,7 +1487,7 @@ bool Element::isExpandableConnector() const
 bool Element::isArray() const
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    return mpModelComponent->isArray();
+    return mpModelComponent->getDimensions().isArray();
   } else {
     return (mpElementInfo && mpElementInfo->isArray());
   }
@@ -1501,7 +1501,7 @@ bool Element::isArray() const
 QStringList Element::getAbsynArrayIndexes() const
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    return mpModelComponent->getAbsynDimensions();
+    return mpModelComponent->getDimensions().getAbsynDimensions();
   } else if (mpElementInfo) {
     return QStringList() << mpElementInfo->getArrayIndex();
   } else {
@@ -1517,7 +1517,7 @@ QStringList Element::getAbsynArrayIndexes() const
 QStringList Element::getTypedArrayIndexes() const
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    return mpModelComponent->getTypedDimensions();
+    return mpModelComponent->getDimensions().getTypedDimensions();
   } else if (mpElementInfo) {
     return QStringList() << mpElementInfo->getArrayIndex();
   } else {
@@ -1554,7 +1554,7 @@ bool Element::isConnectorSizing()
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     if (isArray()) {
       // connectorSizing is only done on the single dimensional array.
-      QString parameter = mpModelComponent->getAbsynDimensions().at(0);
+      QString parameter = mpModelComponent->getDimensions().getAbsynDimensions().at(0);
       bool ok;
       parameter.toInt(&ok);
       // if the array index is not a number then look for parameter
@@ -2719,7 +2719,7 @@ void Element::createClassShapes()
       } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
         mShapesList.append(new TextAnnotation(pText, this));
       } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
-        mShapesList.append(new BitmapAnnotation(pBitmap, mpModel->getFileName(), this));
+        mShapesList.append(new BitmapAnnotation(pBitmap, mpModel->getSource().getFileName(), this));
       }
     }
   } else {
