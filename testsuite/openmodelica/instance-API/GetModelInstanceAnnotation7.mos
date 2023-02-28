@@ -1,0 +1,108 @@
+// name: GetModelInstanceAnnotation7
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  record R
+  end R;
+
+  model A
+    parameter Integer x = 1;
+    replaceable R r constrainedby R annotation(Dialog(enable=x > 1));
+  end A;
+
+  model M
+    A a;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Integer\",
+//             \"modifiers\": \"1\",
+//             \"value\": {
+//               \"binding\": 1
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"r\",
+//             \"type\": {
+//               \"name\": \"R\",
+//               \"restriction\": \"record\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 3,
+//                 \"columnEnd\": 8
+//               }
+//             },
+//             \"prefixes\": {
+//               \"replaceable\": {
+//                 \"constrainedby\": \"R\",
+//                 \"annotation\": {
+//                   \"Dialog\": {
+//                     \"enable\": {
+//                       \"$kind\": \"binary_op\",
+//                       \"lhs\": {
+//                         \"$kind\": \"cref\",
+//                         \"parts\": [
+//                           {
+//                             \"name\": \"a\"
+//                           },
+//                           {
+//                             \"name\": \"x\"
+//                           }
+//                         ]
+//                       },
+//                       \"op\": \">\",
+//                       \"rhs\": 1
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 5,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 10,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 12,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

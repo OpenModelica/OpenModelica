@@ -1234,7 +1234,7 @@ function dumpJSONComponent
   input InstanceTree cls;
   output JSON json = JSON.makeNull();
 protected
-  InstNode node;
+  InstNode node, scope;
   Component comp;
   SCode.Element elem;
   Boolean is_constant;
@@ -1251,6 +1251,7 @@ algorithm
 
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
+  scope := InstNode.parent(node);
 
   () := match (comp, elem)
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
@@ -1261,8 +1262,8 @@ algorithm
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty, isDeleted = true), json);
         json := dumpJSONSCodeMod(elem.modifications, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
-        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
-        json := dumpJSONCommentOpt(SOME(elem.comment), InstNode.parent(node), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
+        json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
       then
         ();
 
@@ -1288,8 +1289,8 @@ algorithm
           json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
         end if;
 
-        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, node), json);
-        json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
+        json := dumpJSONCommentOpt(comp.comment, scope, json);
       then
         ();
 
