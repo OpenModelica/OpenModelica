@@ -197,7 +197,7 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
     }
   } else if (mpModelInstanceComponent->getModel() && mpModelInstanceComponent->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
-  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpModelInstanceComponent->getPrefixes()->getReplaceable()) {
+  } else if (mpModelInstanceComponent->getPrefixes()->getReplaceable()) {
     // replaceable component or short element definition
     if (mpModelInstanceComponent->getModel()) {
       mValueType = Parameter::ReplaceableClass;

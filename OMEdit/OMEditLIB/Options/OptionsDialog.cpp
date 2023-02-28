@@ -314,6 +314,13 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableNewInstantiationAPI);
   }
+  // read instance API
+  if (mpSettings->contains("simulation/instanceAPI")) {
+    mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(mpSettings->value("simulation/instanceAPI").toBool());
+  } else {
+    mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
+  }
+  MainWindow::instance()->setNewApi(mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked());
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -1702,6 +1709,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->remove("replaceableSupport");
   } else {
     mpSettings->setValue("replaceableSupport", replaceableSupport);
+  }
+  // save instance API
+  bool enableInstanceAPI = mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked();
+  if (enableInstanceAPI == OptionsDefaults::GeneralSettings::enableInstanceAPI) {
+    mpSettings->remove("simulation/instanceAPI");
+  } else {
+    mpSettings->setValue("simulation/instanceAPI", enableInstanceAPI);
   }
 }
 
@@ -3702,11 +3716,15 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   /* Enable new instantiation use in OMC API */
   mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
   mpEnableNewInstantiationAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableNewInstantiationAPI);
+  // Enable instance api
+  mpEnableInstanceAPICheckBox = new QCheckBox(tr("Enable instance API *"));
+  mpEnableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pOptionalFeaturesLayout->addWidget(mpReplaceableSupport, 0, 0);
   pOptionalFeaturesLayout->addWidget(mpEnableNewInstantiationAPICheckBox, 1, 0);
+  pOptionalFeaturesLayout->addWidget(mpEnableInstanceAPICheckBox, 2, 0);
   mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
