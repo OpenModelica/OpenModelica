@@ -1194,9 +1194,7 @@ General Options
 
 -  Optional Features
 
-  -  *Enable replaceable support* - Enables/disables the replaceable support.
-
-  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
+  -  *Enable instance API* - Enables/disables the instance API support.
 
 Libraries Options
 ~~~~~~~~~~~~~~~~~

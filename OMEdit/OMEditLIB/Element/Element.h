@@ -67,7 +67,6 @@ public:
   ElementInfo(QObject *pParent = 0);
   ElementInfo(ElementInfo *pElementInfo, QObject *pParent = 0);
   void updateElementInfo(const ElementInfo *pElementInfo);
-  void parseComponentInfoString(QString value);
   void parseElementInfoString(QString value);
   void fetchParameterValue(OMCProxy *pOMCProxy, const QString &className);
   void applyDefaultPrefixes(QString defaultPrefixes);
