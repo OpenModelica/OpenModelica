@@ -733,7 +733,7 @@ const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
     return mpModelWidget->getComponentsList();
   } else {
     if (!mComponentsLoaded) {
-      mComponents = MainWindow::instance()->getOMCProxy()->getComponents(getNameStructure());
+      mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure());
       mComponentsLoaded = true;
     }
     return mComponents;

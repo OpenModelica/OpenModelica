@@ -302,18 +302,6 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
   }
-  // replaceable support
-  if (mpSettings->contains("replaceableSupport")) {
-    mpGeneralSettingsPage->setReplaceableSupport(mpSettings->value("replaceableSupport").toBool());
-  } else {
-    mpGeneralSettingsPage->setReplaceableSupport(OptionsDefaults::GeneralSettings::replaceableSupport);
-  }
-  // read nfAPI
-  if (mpSettings->contains("simulation/nfAPI")) {
-    mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
-  } else {
-    mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableNewInstantiationAPI);
-  }
   // read instance API
   if (mpSettings->contains("simulation/instanceAPI")) {
     mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(mpSettings->value("simulation/instanceAPI").toBool());
@@ -1703,13 +1691,6 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/recentFilesSize", recentFilesAndLatestNewsSize);
   }
   MainWindow::instance()->updateRecentFileActionsAndList();
-  // save replaceable support
-  bool replaceableSupport = mpGeneralSettingsPage->getReplaceableSupport();
-  if (replaceableSupport == OptionsDefaults::GeneralSettings::replaceableSupport) {
-    mpSettings->remove("replaceableSupport");
-  } else {
-    mpSettings->setValue("replaceableSupport", replaceableSupport);
-  }
   // save instance API
   bool enableInstanceAPI = mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked();
   if (enableInstanceAPI == OptionsDefaults::GeneralSettings::enableInstanceAPI) {
@@ -1733,16 +1714,6 @@ void OptionsDialog::saveNFAPISettings()
   }
   if (displayNFAPIErrorsWarnings) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
-  }
-  // save nfAPI
-  bool enableNewInstantiationAPI = mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked();
-  if (enableNewInstantiationAPI == OptionsDefaults::GeneralSettings::enableNewInstantiationAPI) {
-    mpSettings->remove("simulation/nfAPI");
-  } else {
-    mpSettings->setValue("simulation/nfAPI", enableNewInstantiationAPI);
-  }
-  if (enableNewInstantiationAPI) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
   }
 }
 
@@ -3710,21 +3681,13 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
   // Optional Features Box
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
-  // handle replaceable support
-  mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support *"));
-  //! @todo Remove this once we enable this bydefault in OMC.
-  /* Enable new instantiation use in OMC API */
-  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
-  mpEnableNewInstantiationAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableNewInstantiationAPI);
   // Enable instance api
   mpEnableInstanceAPICheckBox = new QCheckBox(tr("Enable instance API *"));
   mpEnableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOptionalFeaturesLayout->addWidget(mpReplaceableSupport, 0, 0);
-  pOptionalFeaturesLayout->addWidget(mpEnableNewInstantiationAPICheckBox, 1, 0);
-  pOptionalFeaturesLayout->addWidget(mpEnableInstanceAPICheckBox, 2, 0);
+  pOptionalFeaturesLayout->addWidget(mpEnableInstanceAPICheckBox, 0, 0);
   mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

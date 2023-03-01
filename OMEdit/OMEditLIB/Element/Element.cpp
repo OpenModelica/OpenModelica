@@ -156,103 +156,6 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mDomain = pElementInfo->getDomain();
 }
 
-
-/*!
- * \brief ElementInfo::parseElementInfoString
- * Parses the component info string.
- * \param value
- */
-void ElementInfo::parseComponentInfoString(QString value)
-{
-  if (value.isEmpty()) {
-    return;
-  }
-  QStringList list = StringHandler::unparseStrings(value);
-  // read the class name
-  if (list.size() > 0) {
-    mClassName = list.at(0);
-    if (mClassName.startsWith(".")) {
-      mClassName.remove(0, 1);
-    }
-  } else {
-    return;
-  }
-  // read the name
-  if (list.size() > 1) {
-    mName = list.at(1);
-  } else {
-    return;
-  }
-  // read the class comment
-  if (list.size() > 2) {
-    mComment = list.at(2);
-  } else {
-    return;
-  }
-  // read the class access
-  if (list.size() > 3) {
-    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
-  } else {
-    return;
-  }
-  // read the final attribute
-  if (list.size() > 4) {
-    mIsFinal = list.at(4).contains("true");
-  } else {
-    return;
-  }
-  // read the flow attribute
-  if (list.size() > 5) {
-    mIsFlow = list.at(5).contains("true");
-  } else {
-    return;
-  }
-  // read the stream attribute
-  if (list.size() > 6) {
-    mIsStream = list.at(6).contains("true");
-  } else {
-    return;
-  }
-  // read the replaceable attribute
-  if (list.size() > 7) {
-    mIsReplaceable = list.at(7).contains("true");
-  } else {
-    return;
-  }
-  // read the variability attribute
-  if (list.size() > 8) {
-    QMap<QString, QString>::iterator variability_it;
-    for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it) {
-      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(8))) == 0) {
-        mVariability = variability_it.value();
-        break;
-      }
-    }
-  }
-  // read the inner attribute
-  if (list.size() > 9) {
-    mIsInner = list.at(9).contains("inner");
-    mIsOuter = list.at(9).contains("outer");
-  } else {
-    return;
-  }
-  // read the casuality attribute
-  if (list.size() > 10) {
-    QMap<QString, QString>::iterator casuality_it;
-    for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it) {
-      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(10))) == 0) {
-        mCasuality = casuality_it.value();
-        break;
-      }
-    }
-  }
-  // read the array index value
-  if (list.size() > 11) {
-    setArrayIndex(list.at(11));
-  }
-}
-
-
 /*!
  * \brief ElementInfo::parseElementInfoString
  * Parses the component info string.
@@ -541,7 +444,7 @@ QString ElementInfo::getHTMLDescription() const
 void ElementInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Element *pElement)
 {
   mModifiersMap.clear();
-  QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mName);
+  QStringList componentModifiersList = pOMCProxy->getElementModifierNames(className, mName);
   foreach (QString componentModifier, componentModifiersList) {
     QString modifierName = StringHandler::getFirstWordBeforeDot(componentModifier);
     // if we have already read the record modifier then continue
@@ -559,11 +462,11 @@ void ElementInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Element
      */
     if (isModiferClassRecord(modifierName, pElement)) {
       QString originalModifierName = QString(mName).append(".").append(modifierName);
-      QString componentModifierValue = pOMCProxy->getComponentModifierValues(className, originalModifierName);
+      QString componentModifierValue = pOMCProxy->getElementModifierValues(className, originalModifierName);
       mModifiersMap.insert(modifierName, componentModifierValue);
     } else {
       QString originalModifierName = QString(mName).append(".").append(componentModifier);
-      QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
+      QString componentModifierValue = pOMCProxy->getElementModifierValue(className, originalModifierName);
       mModifiersMap.insert(componentModifier, componentModifierValue);
     }
   }
