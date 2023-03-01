@@ -15625,7 +15625,7 @@ algorithm
   end matchcontinue;
 end generateRunnerBatScript;
 
-protected function getDirectoriesForDLLsFromLinkLibs
+function getDirectoriesForDLLsFromLinkLibs
   " Parse the makefileParams.libs and extract the necessary directories
    to be added to the PATH for finding dependenncy libraries (DLLs on Windows).
    NOTE: this function expects the 'link command' as the second argument. This will

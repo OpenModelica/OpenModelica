@@ -3539,6 +3539,7 @@ protected function configureFMU_cmake
   input String fmutmp;
   input String fmuTargetName;
   input String logfile;
+  input list<String> externalLibLocations;
   input Boolean isWindows;
 protected
   String fmuSourceDir;
@@ -3573,6 +3574,7 @@ algorithm
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      list<String> locations, libraries;
     case {"dynamic"}
       algorithm
         if isWindows then
@@ -3600,6 +3602,10 @@ algorithm
 
         // Temp log file outside of Docker volume
         dockerLogFile := crossTriple + ".tmp.log";
+        // Remove old log file
+        if System.regularFileExists(dockerLogFile) then
+          System.removeFile(dockerLogFile);
+        end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
@@ -3623,6 +3629,17 @@ algorithm
         // Copy the FMI headers to the container
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Copy the external library files to the container
+        (locations, libraries) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        print("libs:\n");
+        for loc in locations loop
+          print(loc + "\n");
+          if System.directoryExists(loc) then
+            cmd := "docker cp " + dquote + loc + dquote + " " + containerID + ":" + dquote + loc + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+          end if;
+        end for;
 
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
@@ -3715,6 +3732,7 @@ protected function configureFMU
   input String platform;
   input String fmutmp;
   input String logfile;
+  input list<String> externalLibLocations;
   input Boolean isWindows;
   input Boolean needs3rdPartyLibs;
 protected
@@ -3973,6 +3991,7 @@ protected
   String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
+  SimCode.SimCode simCode;
   list<String> libs;
   Boolean isWindows;
   Boolean useCrossCompileCmake = false;
@@ -4094,9 +4113,9 @@ algorithm
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
     if useCrossCompileCmake then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     else
-      configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+      configureFMU(platform, fmutmp, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
