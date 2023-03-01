@@ -290,9 +290,6 @@ public:
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
   QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
-  void setReplaceableSupport(bool value) {mpReplaceableSupport->setChecked(value);}
-  bool getReplaceableSupport() {return mpReplaceableSupport->isChecked();}
-  QCheckBox* getEnableNewInstantiationAPICheckBox() {return mpEnableNewInstantiationAPICheckBox;}
   QCheckBox* getEnableInstanceAPICheckBox() {return mpEnableInstanceAPICheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
@@ -333,8 +330,6 @@ private:
   QCheckBox *mpShowLatestNewsCheckBox;
   QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
   QGroupBox *mpOptionalFeaturesGroupBox;
-  QCheckBox *mpReplaceableSupport;
-  QCheckBox *mpEnableNewInstantiationAPICheckBox;
   QCheckBox *mpEnableInstanceAPICheckBox;
 public slots:
   void selectWorkingDirectory();

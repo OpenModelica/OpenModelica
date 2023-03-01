@@ -2994,7 +2994,7 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
         return true;
       } else {
         QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
-        MainWindow::instance()->getOMCProxy()->setComponentModifierValue(className, modifierKey, QString::number(numberOfElementConnections));
+        MainWindow::instance()->getOMCProxy()->setElementModifierValue(className, modifierKey, QString::number(numberOfElementConnections));
         return true;
       }
     }
@@ -8062,10 +8062,10 @@ void ModelWidget::getModelElements()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   // get the components
-  mElementsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
+  mElementsList = pMainWindow->getOMCProxy()->getElements(mpLibraryTreeItem->getNameStructure());
   // get the components annotations
   if (!mElementsList.isEmpty()) {
-    mElementsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
+    mElementsAnnotationsList = pMainWindow->getOMCProxy()->getElementAnnotations(mpLibraryTreeItem->getNameStructure());
   }
 }
 

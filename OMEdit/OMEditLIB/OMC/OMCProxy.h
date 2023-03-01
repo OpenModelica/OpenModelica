@@ -131,11 +131,11 @@ public:
   StringHandler::ModelicaClasses getClassRestriction(QString className);
   bool setParameterValue(const QString &className, const QString &parameter, const QString &value);
   QString getParameterValue(const QString &className, const QString &parameter);
-  QStringList getComponentModifierNames(QString className, QString name);
-  QString getComponentModifierValue(QString className, QString name);
-  bool setComponentModifierValue(QString className, QString name, QString modifierValue);
-  bool removeComponentModifiers(QString className, QString name);
-  QString getComponentModifierValues(QString className, QString name);
+  QStringList getElementModifierNames(QString className, QString name);
+  QString getElementModifierValue(QString className, QString name);
+  bool setElementModifierValue(QString className, QString name, QString modifierValue);
+  bool removeElementModifiers(QString className, QString name);
+  QString getElementModifierValues(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
@@ -153,9 +153,7 @@ public:
   QList<QString> getInheritedClasses(QString className);
   QString getNthInheritedClassIconMapAnnotation(QString className, int num);
   QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
-  QList<ElementInfo*> getComponents(QString className);
   QList<ElementInfo*> getElements(QString className);
-  QStringList getComponentAnnotations(QString className);
   QStringList getElementAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
   QString getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem);

@@ -1049,56 +1049,42 @@ QString OMCProxy::getParameterValue(const QString &className, const QString &par
 }
 
 /*!
-  Gets the list of component modifier names.
+  Gets the list of element modifier names.
   \param className - is the name of the class whose modifier names are retrieved.
-  \param name - is the name of the component.
+  \param name - is the name of the element.
   \return the list of modifier names
   */
-QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
+QStringList OMCProxy::getElementModifierNames(QString className, QString name)
 {
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    return mpOMCInterface->getElementModifierNames(className, name);
-  }
-  return mpOMCInterface->getComponentModifierNames(className, name);
+  return mpOMCInterface->getElementModifierNames(className, name);
 }
 
 /*!
- * \brief OMCProxy::getComponentModifierValue
- * Gets the component modifier value excluding the submodifiers. Only returns the binding.
+ * \brief OMCProxy::getElementModifierValue
+ * Gets the element modifier value excluding the submodifiers. Only returns the binding.
  * \param className - is the name of the class whose modifier value is retrieved.
- * \param name - is the name of the component.
+ * \param name - is the name of the element.
  * \return the value of modifier.
  */
-QString OMCProxy::getComponentModifierValue(QString className, QString name)
+QString OMCProxy::getElementModifierValue(QString className, QString name)
 {
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    return mpOMCInterface->getElementModifierValue(className, name);
-  }
-  return mpOMCInterface->getComponentModifierValue(className, name);
+  return mpOMCInterface->getElementModifierValue(className, name);
 }
 
 /*!
-  Sets the component modifier value.
+  Sets the element modifier value.
   \param className - is the name of the class whose modifier value is set.
   \param name - is the name of the modifier whose value is set.
   \param value - is the value to set.
   \return true on success.
   */
-bool OMCProxy::setComponentModifierValue(QString className, QString modifierName, QString modifierValue)
+bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  QString expression, sapi = QString("setComponentModifierValue");
-  bool redeclareSupport = OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport();
-
-  if (redeclareSupport)
-  {
-    sapi = QString("setElementModifierValue");
-  }
+  QString expression, sapi = QString("setElementModifierValue");
 
   if (modifierValue.isEmpty()) {
     expression = QString("%1(%2, %3, $Code(()))").arg(sapi).arg(className).arg(modifierName);
-  } else if (redeclareSupport && modifierValue.startsWith("redeclare")) {
+  } else if (modifierValue.startsWith("redeclare")) {
     expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   } else if (modifierValue.startsWith("(") && modifierValue.contains("=")) {
     expression = QString("%1(%2, %3, $Code(%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
@@ -1109,7 +1095,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
   if (getResult().toLower().compare("ok") == 0) {
     return true;
   } else {
-    QString msg = tr("Unable to set the component modifier value using command <b>%1</b>").arg(expression);
+    QString msg = tr("Unable to set the element modifier value using command <b>%1</b>").arg(expression);
     MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
     MessagesWidget::instance()->addGUIMessage(messageItem);
     return false;
@@ -1117,39 +1103,27 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
 }
 
 /*!
- * \brief OMCProxy::removeComponentModifiers
+ * \brief OMCProxy::removeElementModifiers
  * Removes all the modifiers of a component.
  * \param className
  * \param name
  * \return
  */
-bool OMCProxy::removeComponentModifiers(QString className, QString name)
+bool OMCProxy::removeElementModifiers(QString className, QString name)
 {
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    return mpOMCInterface->removeElementModifiers(className, name, false /* do not keep redeclares */);
-  }
-  return mpOMCInterface->removeComponentModifiers(className, name, true);
+  return mpOMCInterface->removeElementModifiers(className, name, false /* do not keep redeclares */);
 }
 
 /*!
- * \brief OMCProxy::getComponentModifierValues
- * Gets the component modifier value including the submodifiers. Used to get the modifier values of record.
+ * \brief OMCProxy::getElementModifierValues
+ * Gets the element modifier value including the submodifiers. Used to get the modifier values of record.
  * \param className - is the name of the class whose modifier value is retrieved.
  * \param name - is the name of the component.
  * \return the value of modifier.
  */
-QString OMCProxy::getComponentModifierValues(QString className, QString name)
+QString OMCProxy::getElementModifierValues(QString className, QString name)
 {
-  QString values;
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    values = mpOMCInterface->getElementModifierValues(className, name);
-  }
-  else
-  {
-    values = mpOMCInterface->getComponentModifierValues(className, name);
-  }
+  QString values = mpOMCInterface->getElementModifierValues(className, name);
   if (values.startsWith(" = ")) {
     return values.mid(3);
   } else {
@@ -1404,76 +1378,25 @@ QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, in
  * \param className - is the name of the model.
  * \return the list of components
  */
-QList<ElementInfo*> OMCProxy::getComponents(QString className)
-{
-
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    return getElements(className);
-  }
-
-  QString expression = "getComponents(" + className + ", useQuotes = true)";
-  sendCommand(expression);
-  QString result = getResult();
-  QList<ElementInfo*> componentInfoList;
-  QStringList list = StringHandler::unparseArrays(result);
-
-  for (int i = 0 ; i < list.size() ; i++) {
-    if (list.at(i) == "Error") {
-      continue;
-    }
-    ElementInfo *pComponentInfo = new ElementInfo();
-    pComponentInfo->setParentClassName(className);
-    pComponentInfo->parseComponentInfoString(list.at(i));
-    componentInfoList.append(pComponentInfo);
-  }
-
-  return componentInfoList;
-}
-
-/*!
- * \brief OMCProxy::getComponents
- * Returns the components of a model with their attributes.\n
- * Creates an object of ElementInfo for each component.
- * \param className - is the name of the model.
- * \return the list of components
- */
 QList<ElementInfo*> OMCProxy::getElements(QString className)
 {
   QString expression = "getElements(" + className + ", useQuotes = true)";
   sendCommand(expression);
   QString result = getResult();
-  QList<ElementInfo*> componentInfoList;
+  QList<ElementInfo*> elementInfoList;
   QStringList list = StringHandler::unparseArrays(result);
 
   for (int i = 0 ; i < list.size() ; i++) {
     if (list.at(i) == "Error") {
       continue;
     }
-    ElementInfo *pComponentInfo = new ElementInfo();
-    pComponentInfo->setParentClassName(className);
-    pComponentInfo->parseElementInfoString(list.at(i));
-    componentInfoList.append(pComponentInfo);
+    ElementInfo *pElementInfo = new ElementInfo();
+    pElementInfo->setParentClassName(className);
+    pElementInfo->parseElementInfoString(list.at(i));
+    elementInfoList.append(pElementInfo);
   }
 
-  return componentInfoList;
-}
-
-/*!
-  Returns the component annotations of a model.
-  \param className - is the name of the model.
-  \return the list of component annotations.
-  */
-QStringList OMCProxy::getComponentAnnotations(QString className)
-{
-
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
-  {
-    return getElementAnnotations(className);
-  }
-  QString expression = "getComponentAnnotations(" + className + ")";
-  sendCommand(expression);
-  return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
+  return elementInfoList;
 }
 
 /*!
@@ -1499,7 +1422,6 @@ QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibrary
     return infoHeader;
   }
 }
-
 
 /*!
  * \brief OMCProxy::getDocumentationAnnotation

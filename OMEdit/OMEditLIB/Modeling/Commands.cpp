@@ -562,7 +562,7 @@ void UpdateElementAttributesCommand::updateComponentModifiers(Element *pComponen
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString modifierName = QString(pComponent->getName()).append(".").append(modifiersIterator.key());
     QString modifierValue = modifiersIterator.value();
-    if (MainWindow::instance()->getOMCProxy()->setComponentModifierValue(modelName, modifierName, modifierValue)) {
+    if (MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, modifierValue)) {
       modifierValueChanged = true;
     }
   }
@@ -596,13 +596,13 @@ void UpdateElementParametersCommand::redoInternal()
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   if (!mpComponent->getReferenceElement()) {
     // remove all the modifiers of a component.
-    pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
+    pOMCProxy->removeElementModifiers(className, mpComponent->getName());
     // apply the new Component modifiers if any
     QMap<QString, QString>::iterator componentModifier;
     for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);
@@ -631,13 +631,13 @@ void UpdateElementParametersCommand::undo()
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   if (!mpComponent->getReferenceElement()) {
     // remove all the modifiers of a component.
-    pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
+    pOMCProxy->removeElementModifiers(className, mpComponent->getName());
     // apply the old Component modifiers if any
     QMap<QString, QString>::iterator componentModifier;
     for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);

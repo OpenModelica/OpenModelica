@@ -85,9 +85,9 @@ Parameter::Parameter(Element *pElement, bool showStartAttribute, QString tab, QS
     mValueType = Parameter::Normal;
   } else if (pOMCProxy->isWhat(StringHandler::Enumeration, mpElement->getElementInfo()->getClassName())) {
     mValueType = Parameter::Enumeration;
-  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpElement->getElementInfo()->getReplaceable()) { // replaceable component or short element definition
+  } else if (mpElement->getElementInfo()->getReplaceable()) { // replaceable component or short element definition
     mValueType = mpElement->getElementInfo()->getIsElement() ? Parameter::ReplaceableClass : Parameter::ReplaceableComponent;
-  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpElement->getElementInfo()->getIsElement()) { // non replaceable short element definition
+  } else if (mpElement->getElementInfo()->getIsElement()) { // non replaceable short element definition
     mValueType = Parameter::ReplaceableClass;
   } else {
     mValueType = Parameter::Normal;
@@ -1564,7 +1564,7 @@ void ElementParameters::updateElementParameters()
         if (mInherited) {
           pOMCProxy->setExtendsModifierValue(className, mpElement->getParentModel()->getName(), modifierKey, modifierValue);
         } else {
-          pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
+          pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
         }
       }
       ModelInfo newModelInfo = pModelWidget->createModelInfo();
