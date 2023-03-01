@@ -1,5 +1,5 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst,-nfAPI
 
 loadFile("IllegalGraphics.mo"); getErrorString();
 getIconAnnotation(IllegalGraphics); getErrorString();
