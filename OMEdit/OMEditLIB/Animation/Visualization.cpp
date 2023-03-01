@@ -47,6 +47,7 @@
 #include <osg/ShapeDrawable>
 #include <osg/StateAttribute>
 #include <osg/Texture2D>
+#include <osgDB/Options>
 #include <osgDB/ReadFile>
 #include <osgGA/OrbitManipulator>
 #include <osgUtil/CullVisitor>
@@ -1284,7 +1285,9 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
     if (shape._type.compare("stl") == 0)
     { //cad node
       //std::cout<<"It's a stl and the filename is "<<shape._fileName<<std::endl;
-      osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
+      // Disable mesh optimization because it is too expensive (see OSG commit a082b57)
+      osg::ref_ptr<osgDB::Options> options = new osgDB::Options("noTriStripPolygons");
+      osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName, options.get());
       if (node.valid())
       {
         osg::ref_ptr<osg::Material> material = new osg::Material();
