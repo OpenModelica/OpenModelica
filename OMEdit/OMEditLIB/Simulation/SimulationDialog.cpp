@@ -771,6 +771,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpRootFindingCheckBox->setChecked(false);
           } else if (simulationFlag.compare("single") == 0) {
             mpSinglePrecisionCheckBox->setChecked(true);
+          } else if (simulationFlag.compare("variableFilter") == 0) {
+            mpVariableFilterTextBox->setText(value);
           } else if (simulationFlag.compare("emit_protected") == 0) {
             mpProtectedVariablesCheckBox->setChecked(true);
           } else if (simulationFlag.compare("ignoreHideResult") == 0) {
@@ -1485,27 +1487,27 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   QString oldSimulationFlags = QString("annotate=%1").arg(MainWindow::instance()->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
   // new simulation flags
   QMap<QString, QString> simulationFlags;
-  if (!mpClockComboBox->currentText().isEmpty()) {
-    simulationFlags.insert("clock", mpClockComboBox->currentText());
-  }
-  if (mpCPUTimeCheckBox->isChecked()) {
-    simulationFlags.insert("cpu", "()");
-  }
-  if (!mpRestartAfterEventCheckBox->isChecked()) {
-    simulationFlags.insert("noRestart", "()");
+
+  // Flags from General tab
+  if (!mpJacobianComboBox->currentText().isEmpty()) {
+    simulationFlags.insert("jacobian", mpJacobianComboBox->currentText());
   }
   if (!mpRootFindingCheckBox->isChecked()) {
     simulationFlags.insert("noRootFinding", "()");
   }
-  if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
-    simulationFlags.insert("single", "()");
+  if (!mpRestartAfterEventCheckBox->isChecked()) {
+    simulationFlags.insert("noRestart", "()");
   }
-  if (mpProtectedVariablesCheckBox->isChecked()) {
-    simulationFlags.insert("emit_protected", "()");
+  if (!mpInitialStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.insert("initialStepSize", mpInitialStepSizeTextBox->text());
   }
-  if (mpIgnoreHideResultCheckBox->isChecked()) {
-    simulationFlags.insert("ignoreHideResult", "()");
+  if (mpMaxIntegrationOrderSpinBox->value() != 5) {
+    simulationFlags.insert("maxIntegrationOrder", QString::number(mpMaxIntegrationOrderSpinBox->value()));
   }
+  if (!mpMaxStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.insert("maxStepSize", mpMaxStepSizeTextBox->text());
+  }
+  // Flags from Simulation Flags tab
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
     simulationFlags.insert("f", mpModelSetupFileTextBox->text());
   }
@@ -1518,40 +1520,24 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty()) {
     simulationFlags.insert("iit", mpEquationSystemInitializationTimeTextBox->text());
   }
-  if (!mpInitialStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.insert("initialStepSize", mpInitialStepSizeTextBox->text());
-  }
-  if (!mpJacobianComboBox->currentText().isEmpty()) {
-    simulationFlags.insert("jacobian", mpJacobianComboBox->currentText());
-  }
-  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.insert("l", mpLinearizationTimeTextBox->text());
+  if (!mpClockComboBox->currentText().isEmpty()) {
+    simulationFlags.insert("clock", mpClockComboBox->currentText());
   }
   if (!mpLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.insert("ls", mpLinearSolverComboBox->currentText());
   }
-  if (mpMaxIntegrationOrderSpinBox->value() != 5) {
-    simulationFlags.insert("maxIntegrationOrder", QString::number(mpMaxIntegrationOrderSpinBox->value()));
-  }
-  if (!mpMaxStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.insert("maxStepSize", mpMaxStepSizeTextBox->text());
-  }
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.insert("nls", mpNonLinearSolverComboBox->currentText());
   }
-  if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
-    simulationFlags.insert("noEquidistantTimeGrid", "()");
-  }
-  if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
-    simulationFlags.insert("noEventEmit", "()");
+  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
+    simulationFlags.insert("l", mpLinearizationTimeTextBox->text());
   }
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.insert("output", mpOutputVariablesTextBox->text());
   }
-  if (!mpResultFileNameTextBox->text().isEmpty()) {
-    simulationFlags.insert("r", mpResultFileNameTextBox->text());
+  if (mpCPUTimeCheckBox->isChecked()) {
+    simulationFlags.insert("cpu", "()");
   }
-  simulationFlags.insert("s", mpMethodComboBox->currentText());
   QStringList logStreams;
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
@@ -1587,6 +1573,30 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
       simulationFlags.insert(nameValueList.at(0), nameValueList.at(1));
     }
   }
+  // Flags from Output tab
+  simulationFlags.insert("s", mpMethodComboBox->currentText());
+  if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+    simulationFlags.insert("single", "()");
+  }
+  if (!mpResultFileNameTextBox->text().isEmpty()) {
+    simulationFlags.insert("r", mpResultFileNameTextBox->text());
+  }
+  if (!mpVariableFilterTextBox->text().isEmpty()) {
+    simulationFlags.insert("variableFilter", mpVariableFilterTextBox->text());
+  }
+  if (mpProtectedVariablesCheckBox->isChecked()) {
+    simulationFlags.insert("emit_protected", "()");
+  }
+  if (mpIgnoreHideResultCheckBox->isChecked()) {
+    simulationFlags.insert("ignoreHideResult", "()");
+  }
+  if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
+    simulationFlags.insert("noEquidistantTimeGrid", "()");
+  }
+  if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
+    simulationFlags.insert("noEventEmit", "()");
+  }
+
   if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
     simulationFlags.insert("reconcileState", "()");
   }else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0 ) {
