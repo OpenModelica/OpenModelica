@@ -72,7 +72,7 @@ extern int Print_hasBufNewLineAtEnd(threadData_t *threadData)
   return PrintImpl__hasBufNewLineAtEnd(threadData);
 }
 
-extern int Print_getBufLength(threadData_t *threadData)
+extern modelica_integer Print_getBufLength(threadData_t *threadData)
 {
   return PrintImpl__getBufLength(threadData);
 }
@@ -105,7 +105,7 @@ extern void Print_clearBuf(threadData_t *threadData)
   PrintImpl__clearBuf(threadData);
 }
 
-extern void Print_printBufSpace(threadData_t *threadData,int numSpace)
+extern void Print_printBufSpace(threadData_t *threadData, modelica_integer numSpace)
 {
   if (PrintImpl__printBufSpace(threadData,numSpace))
     MMC_THROW();

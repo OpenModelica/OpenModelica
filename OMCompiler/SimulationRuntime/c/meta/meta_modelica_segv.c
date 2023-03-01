@@ -104,7 +104,7 @@ void printStacktraceMessages() {
   free(messages);
 }
 
-void mmc_setStacktraceMessages(int numSkip, int numFrames) {
+void mmc_setStacktraceMessages(mmc_sint_t numSkip, mmc_sint_t numFrames) {
   trace_size = 0;
   trace_size = backtrace(trace, numFrames == 0 ? MMC_SEGV_TRACE_NFRAMES : numFrames > MMC_SEGV_TRACE_NFRAMES ? MMC_SEGV_TRACE_NFRAMES : numFrames);
   trace_size_skip = numSkip;
@@ -114,7 +114,7 @@ void mmc_setStacktraceMessages(int numSkip, int numFrames) {
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT_OOM,45,_OMC_LIT_OOM_data);
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT_OOM_LST,2,1) {MMC_REFSTRINGLIT(_OMC_LIT_STRUCT_OOM),MMC_REFSTRUCTLIT(mmc_nil)}};
 
-void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, mmc_sint_t numSkip, mmc_sint_t numFrames)
 {
   assert(numFrames > 0);
   void **trace;
@@ -238,7 +238,7 @@ void mmc_init_stackoverflow(threadData_t *threadData)
 
 #else
 
-void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, mmc_sint_t numSkip, mmc_sint_t numFrames)
 {
   threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = mmc_mk_cons(mmc_mk_scon("[... unsupported platform for backtraces]"), mmc_mk_nil());
 }

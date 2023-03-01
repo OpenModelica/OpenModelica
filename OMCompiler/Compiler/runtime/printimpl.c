@@ -50,13 +50,13 @@ extern char* _replace(const char* source_str, const char* search_str, const char
 typedef struct print_members_s {
   char *buf;
   char *errorBuf;
-  int nfilled;
-  int cursize;
-  int errorNfilled;
-  int errorCursize;
+  modelica_integer nfilled;
+  modelica_integer cursize;
+  modelica_integer errorNfilled;
+  modelica_integer errorCursize;
   char** savedBuffers;
-  long* savedCurSize;
-  long* savedNfilled;
+  modelica_integer* savedCurSize;
+  modelica_integer* savedNfilled;
 } print_members;
 
 static void free_printimpl(void *data)
@@ -132,15 +132,15 @@ static int increase_buffer(threadData_t *threadData)
 {
   print_members* members = getMembers(threadData);
   char *new_buf;
-  int new_size;
+  modelica_integer new_size;
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
     if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
-    //fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
-    new_buf = (char*)malloc((new_size =(int) (cursize * GROWTH_FACTOR))*sizeof(char));
+    //fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((modelica_integer)(cursize * GROWTH_FACTOR)));
+    new_buf = (char*)malloc((new_size = (modelica_integer) (cursize * GROWTH_FACTOR))*sizeof(char));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
     cursize = new_size;
@@ -152,11 +152,11 @@ static int increase_buffer(threadData_t *threadData)
   return 0;
 }
 
-static int increase_buffer_fixed(threadData_t *threadData,int increase)
+static int increase_buffer_fixed(threadData_t *threadData, modelica_integer increase)
 {
   print_members* members = getMembers(threadData);
   char * new_buf;
-  int new_size;
+  modelica_integer new_size;
 
   if (cursize == 0) {
     new_buf = (char*)malloc(increase*sizeof(char));
@@ -164,7 +164,7 @@ static int increase_buffer_fixed(threadData_t *threadData,int increase)
     new_buf[0]='\0';
     cursize = increase;
   } else {
-  new_size = (int)(cursize+increase);
+  new_size = (modelica_integer)(cursize+increase);
     //fprintf(stderr,"increasing buffer_FIXED_ from %d to %d \n",cursize,new_size);
     new_buf = (char*)malloc(new_size*sizeof(char));
     if (new_buf == NULL) { return -1; }
@@ -183,7 +183,7 @@ static int error_increase_buffer(threadData_t *threadData)
 {
   print_members* members = getMembers(threadData);
   char * new_buf;
-  int new_size;
+  modelica_integer new_size;
 
   if (errorCursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
@@ -191,7 +191,7 @@ static int error_increase_buffer(threadData_t *threadData)
     new_buf[0]='\0';
     errorCursize = INITIAL_BUFSIZE;
   } else {
-    new_buf = (char*)malloc((new_size =(int) (errorCursize * GROWTH_FACTOR))*sizeof(char));
+    new_buf = (char*)malloc((new_size =(modelica_integer) (errorCursize * GROWTH_FACTOR))*sizeof(char));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,errorBuf,errorCursize);
     errorCursize = new_size;
@@ -223,7 +223,7 @@ static int print_error_buf_impl(threadData_t *threadData,const char *str)
   return 0;
 }
 
-static void PrintImpl__setBufSize(threadData_t *threadData,long newSize)
+static void PrintImpl__setBufSize(threadData_t *threadData,modelica_integer newSize)
 {
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
@@ -280,7 +280,7 @@ static const char* PrintImpl__getErrorString(threadData_t *threadData)
 static int PrintImpl__printBuf(threadData_t *threadData,const char* str)
 {
   print_members* members = getMembers(threadData);
-  long len = strlen(str);
+  modelica_integer len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
   while (nfilled + len + 1 > cursize) {
@@ -519,14 +519,14 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   return 0;
 }
 
-static long PrintImpl__getBufLength(threadData_t *threadData)
+static modelica_integer PrintImpl__getBufLength(threadData_t *threadData)
 {
   print_members* members = getMembers(threadData);
   return nfilled;
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBufSpace(threadData_t *threadData,long nSpaces)
+static int PrintImpl__printBufSpace(threadData_t *threadData,modelica_integer nSpaces)
 {
   print_members* members = getMembers(threadData);
   if (nSpaces > 0) {
@@ -563,7 +563,7 @@ static int PrintImpl__hasBufNewLineAtEnd(threadData_t *threadData)
   return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }
 
-static int PrintImpl__restoreBuf(threadData_t *threadData,long handle)
+static int PrintImpl__restoreBuf(threadData_t *threadData, int handle)
 {
   print_members* members = getMembers(threadData);
   if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
@@ -585,10 +585,10 @@ static int PrintImpl__restoreBuf(threadData_t *threadData,long handle)
   }
 }
 
-static long PrintImpl__saveAndClearBuf(threadData_t *threadData)
+static int PrintImpl__saveAndClearBuf(threadData_t *threadData)
 {
   print_members* members = getMembers(threadData);
-  long freeHandle,foundHandle=0;
+  int freeHandle,foundHandle=0;
   if (!buf) {
     increase_buffer(threadData);
   }
@@ -600,14 +600,14 @@ static long PrintImpl__saveAndClearBuf(threadData_t *threadData)
     }
   }
   if (! savedCurSize) {
-    savedCurSize = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long));
+    savedCurSize = (modelica_integer*)calloc(MAXSAVEDBUFFERS,sizeof(modelica_integer));
     if (!savedCurSize) {
       fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
       return -1;
     }
   }
   if (! savedNfilled) {
-    savedNfilled = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long));
+    savedNfilled = (modelica_integer*)calloc(MAXSAVEDBUFFERS,sizeof(modelica_integer));
     if (!savedNfilled) {
       fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
       return -1;

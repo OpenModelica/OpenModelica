@@ -248,9 +248,9 @@ modelica_string alloc_modelica_string(int length)
     return mmc_alloc_scon(length);
 }
 
-extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
+extern modelica_integer omc__escapedStringLength(const char* str, int nl, int *hasEscape)
 {
-  int i=0;
+  modelica_integer i=0;
   while(*str) {
     switch (*str) {
       case '"':
@@ -274,10 +274,10 @@ extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
  */
 extern char* omc__escapedString(const char* str, int nl)
 {
-  int len;
+  modelica_integer len;
   char *res;
   const char *origstr = str;
-  int i=0;
+  modelica_integer i=0;
   int hasEscape = 0;
   len = omc__escapedStringLength(str,nl,&hasEscape);
   if (!hasEscape) {
@@ -302,8 +302,8 @@ extern char* omc__escapedString(const char* str, int nl)
   return res;
 }
 
-int GC_vasprintf(const char **strp, const char *fmt, va_list ap) {
-  int len;
+modelica_integer GC_vasprintf(const char **strp, const char *fmt, va_list ap) {
+  modelica_integer len;
   char *tmp;
   if (0==strstr(fmt, "%")) {
     /* A no-op; we don't actually create a copy of the string which might be unexpected... */
@@ -312,15 +312,16 @@ int GC_vasprintf(const char **strp, const char *fmt, va_list ap) {
   }
   va_list ap2;
   va_copy(ap2, ap);
+  // vsnprintf returns int?! that means that very large strings are not supported!
   len = vsnprintf(NULL, 0, fmt, ap);
-  tmp = mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(len+1));
+  tmp = mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(len + 1));
   len = vsnprintf(tmp, len+1, fmt, ap2);
   *strp = tmp;
   return len;
 }
 
-int GC_asprintf(const char **strp, const char *fmt, ...) {
-  int len;
+modelica_integer GC_asprintf(const char **strp, const char *fmt, ...) {
+  modelica_integer len;
   va_list ap;
   va_start(ap, fmt);
 
@@ -332,7 +333,7 @@ int GC_asprintf(const char **strp, const char *fmt, ...) {
 
 modelica_string stringAppend(modelica_string s1, modelica_string s2)
 {
-  unsigned len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
+  modelica_integer len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
   void *res = NULL;
   struct mmc_string *p = NULL;
   MMC_CHECK_STRING(s1);
@@ -364,7 +365,7 @@ modelica_integer mmc_stringCompare(const void *str1, const void *str2)
   int res;
   MMC_CHECK_STRING(str1);
   MMC_CHECK_STRING(str2);
-  res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
+  res = strcmp(MMC_STRINGDATA(str1), MMC_STRINGDATA(str2));
   if (res < 0)
     return -1;
   if (res > 0)

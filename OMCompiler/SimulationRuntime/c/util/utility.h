@@ -119,9 +119,9 @@ extern modelica_real real_int_pow(threadData_t *threadData, modelica_real base,m
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 /* Returns 0 on failure. The first element in nmatches contains the error-message. */
-extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int sensitive, void*(*)(const char*), void **result);
+extern modelica_integer OpenModelica_regexImpl(const char* str, const char* re, const modelica_integer maxn, int extended, int sensitive, void*(*)(const char*), void **result);
 /* Wrapper for the builtin call */
-extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **result);
+extern modelica_integer OpenModelica_regex(const char* str, const char* re, modelica_integer maxn, int extended, int sensitive, const char **result);
 #endif
 
 extern void OpenModelica_decode_uri_inplace(char *uri);

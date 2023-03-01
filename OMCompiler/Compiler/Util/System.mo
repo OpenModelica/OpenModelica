@@ -306,7 +306,7 @@ public function appendFile
 end appendFile;
 
 public function readFile
-"Does not fail. Returns strings describing the error instead."
+"Fails if the file is longer than the max supported MM string"
   input String inString;
   output String outString;
   external "C" outString = System_readFile(inString) annotation(Library = "omcruntime");
@@ -413,7 +413,7 @@ public function setEnv ""
   input String value;
   input Boolean overwrite "is always true on Windows, so recommended to always call it using true";
   output Integer outInteger;
-  external "C" outInteger=setenv(varName,value,overwrite) annotation(Library = "omcruntime");
+  external "C" outInteger=SystemImpl__setenv(varName,value,overwrite) annotation(Library = "omcruntime");
 end setEnv;
 
 public function subDirectories

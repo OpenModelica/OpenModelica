@@ -394,7 +394,7 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 struct LINEAR_SYSTEM_DATA;
 typedef struct LINEAR_SYSTEM_DATA LINEAR_SYSTEM_DATA;
-typedef struct LINEAR_SYSTEM_DATA
+struct LINEAR_SYSTEM_DATA
 {
   void (*setA)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData); /* set matrix A */
   void (*setb)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData); /* set vector b (rhs) */

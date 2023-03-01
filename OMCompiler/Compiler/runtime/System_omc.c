@@ -86,7 +86,7 @@ extern const char* System_stringReplace(const char* str, const char* source, con
 
 extern const char* System_makeC89Identifier(const char* str)
 {
-  int i=0, len=strlen(str);
+  modelica_integer i=0, len=strlen(str);
   char *res = omc_alloc_interface.malloc_strdup(str);
   if (!((res[0]>='a' && res[0]<='z') || (res[0]>='A' && res[0]<='Z'))) {
     res[0] = '_';
@@ -99,7 +99,7 @@ extern const char* System_makeC89Identifier(const char* str)
   return res;
 }
 
-extern int System_stringFind(const char* str, const char* searchStr)
+extern modelica_integer System_stringFind(const char* str, const char* searchStr)
 {
   const char *found = strstr(str, searchStr);
   if (found == NULL)
@@ -116,25 +116,25 @@ extern const char* System_stringFindString(const char* str, const char* searchSt
   return strcpy(ModelicaAllocateString(strlen(found)), found);
 }
 
-extern void System_realtimeTick(int ix)
+extern void System_realtimeTick(modelica_integer ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   rt_tick(ix);
 }
 
-extern double System_realtimeTock(int ix)
+extern double System_realtimeTock(modelica_integer ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   return rt_tock(ix);
 }
 
-extern void System_realtimeClear(int ix)
+extern void System_realtimeClear(modelica_integer ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   rt_clear(ix);
 }
 
-extern int System_realtimeNtick(int ix)
+extern modelica_integer System_realtimeNtick(modelica_integer ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   return rt_ncall(ix);
@@ -208,28 +208,28 @@ extern const char* System_dirname(const char* str)
   return res;
 }
 
-extern int System_strncmp(const char *str1, const char *str2, int len)
+extern modelica_integer System_strncmp(const char *str1, const char *str2, modelica_integer len)
 {
-  int res= strncmp(str1,str2,len);
+  modelica_integer res= strncmp(str1,str2,len);
   /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
   if      (res>0) res =  1;
   else if (res<0) res = -1;
   return res;
 }
 
-extern int System_strcmp(const char *str1, const char *str2)
+extern modelica_integer System_strcmp(const char *str1, const char *str2)
 {
-  int res = strcmp(str1,str2);
+  modelica_integer res = strcmp(str1,str2);
   /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
   if      (res>0) res =  1;
   else if (res<0) res = -1;
   return res;
 }
 
-extern int System_strcmp_offset(const char *str1, int offset1, int length1, const char *str2, int offset2, int length2)
+extern modelica_integer System_strcmp_offset(const char *str1, modelica_integer offset1, modelica_integer length1, const char *str2, modelica_integer offset2, modelica_integer length2)
 {
-  int n = length1 > length2 ? length1 : length2;
-  int res = strncmp(str1+offset1-1, str2+offset2-1, n);
+  modelica_integer n = length1 > length2 ? length1 : length2;
+  modelica_integer res = strncmp(str1+offset1-1, str2+offset2-1, n);
   if (res>0) res = 1;
   else if (res<0) res = -1;
   return res;
@@ -295,7 +295,7 @@ extern void System_setUsesCardinality(int b)
   usesCardinality = b;
 }
 
-extern void* System_strtok(const char *str0, const char *delimit)
+extern modelica_metatype System_strtok(const char *str0, const char *delimit)
 {
   char *s;
   void *res = mmc_mk_nil();
@@ -312,13 +312,13 @@ extern void* System_strtok(const char *str0, const char *delimit)
   return listReverse(res);
 }
 
-extern char* System_substring(const char *str, int start, int stop)
+extern char* System_substring(const char *str, modelica_integer start, modelica_integer stop)
 {
   char* substring = NULL;
-  int startIndex = start;
-  int stopIndex = stop;
-  int len1 = strlen(str);
-  int len2 = 0;
+  modelica_integer startIndex = start;
+  modelica_integer stopIndex = stop;
+  modelica_integer len1 = strlen(str);
+  modelica_integer len2 = 0;
   void *res = NULL;
 
   /* Check arguments */
@@ -346,7 +346,7 @@ extern char* System_substring(const char *str, int start, int stop)
 
 extern char* System_toupper(const char *str)
 {
-  int i;
+  modelica_integer i;
   char* strToUpper = strcpy(ModelicaAllocateString(strlen(str)),str);
   for (i = 0; i < strlen(strToUpper); i++)
   {
@@ -357,7 +357,7 @@ extern char* System_toupper(const char *str)
 
 extern char* System_tolower(const char *str)
 {
-  int i;
+  modelica_integer i;
   char* strToLower = strcpy(ModelicaAllocateString(strlen(str)),str);
   for (i = 0; i < strlen(strToLower); i++)
   {
@@ -379,7 +379,7 @@ void System_setClassnamesForSimulation(const char *class_names)
   class_names_for_simulation = omc_alloc_interface.malloc_strdup(class_names);
 }
 
-extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
+extern double System_getVariableValue(double _timeStamp, modelica_metatype _timeValues, modelica_metatype _varValues)
 {
   double res = 0;
   if (SystemImpl__getVariableValue(_timeStamp,_timeValues,_varValues,&res))
@@ -387,11 +387,9 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
   return res;
 }
 
-extern void* System_getFileModificationTime(const char *fileName)
+extern modelica_metatype System_getFileModificationTime(const char *fileName)
 {
   omc_stat_t attrib;
-  double elapsedTime;    // the time elapsed as double
-  int result;            // the result of the function call
 
   if (omc_stat( fileName, &attrib ) != 0) {
     return mmc_mk_none();
@@ -404,14 +402,14 @@ extern void* System_getFileModificationTime(const char *fileName)
 /**
  * @brief Scan directory for package files with given pattern except for packageName.
  *
- * @param directory     Directory to search in
- * @param pattern       Pattern to search for, e.g. "*.mo" or "*.moc".
- * @param packageName   Name of packages, e.g. "package.mo" or "package.moc"
- * @return void*        List of file names matching pattern.
+ * @param directory          Directory to search in
+ * @param pattern            Pattern to search for, e.g. "*.mo" or "*.moc".
+ * @param packageName        Name of packages, e.g. "package.mo" or "package.moc"
+ * @return modelica_metatype List of file names matching pattern.
  */
-void* omc_scanDirForPackagePattern(const char* directory, const char* pattern, const wchar_t* packageName)
+modelica_metatype omc_scanDirForPackagePattern(const char* directory, const char* pattern, const wchar_t* packageName)
 {
-  void *res;
+  modelica_metatype res;
   WIN32_FIND_DATAW FileData;
   BOOL more = TRUE;
   HANDLE sh;
@@ -447,10 +445,10 @@ void* omc_scanDirForPackagePattern(const char* directory, const char* pattern, c
 /**
  * @brief Scan directory for .mo files excluding package.mo.
  *
- * @param directory   Directory to search in.
- * @return void*      List of file names.
+ * @param directory          Directory to search in.
+ * @return modelica_metatype List of file names.
  */
-void* System_moFiles(const char *directory)
+modelica_metatype System_moFiles(const char *directory)
 #if defined(__MINGW32__) || defined(_MSC_VER)
 {
   return omc_scanDirForPackagePattern(directory, "*.mo", L"package.mo");
@@ -476,10 +474,10 @@ void* System_moFiles(const char *directory)
 /**
  * @brief Scan directory for .moc files excluding package.moc.
  *
- * @param directory   Directory to search in.
- * @return void*      List of file names.
+ * @param directory          Directory to search in.
+ * @return modelica_metatype List of file names.
  */
-void* System_mocFiles(const char *directory)
+modelica_metatype System_mocFiles(const char *directory)
 #if defined(__MINGW32__) || defined(_MSC_VER)
 {
   return omc_scanDirForPackagePattern(directory, "*.moc", L"package.moc");
@@ -487,7 +485,7 @@ void* System_mocFiles(const char *directory)
 #else
 {
   int i,count;
-  void *res;
+  modelica_metatype res;
   struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_moc, NULL);
@@ -502,19 +500,19 @@ void* System_mocFiles(const char *directory)
 }
 #endif
 
-extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
+extern modelica_integer System_lookupFunction(modelica_integer _inLibHandle, const char* _inFunc)
 {
-  int res = SystemImpl__lookupFunction(_inLibHandle, _inFunc);
+  modelica_integer res = SystemImpl__lookupFunction(_inLibHandle, _inFunc);
   if (res == -1) MMC_THROW();
   return res;
 }
 
-extern void System_freeFunction(int _inFuncHandle, int printDebug)
+extern void System_freeFunction(modelica_integer _inFuncHandle, int printDebug)
 {
   if (SystemImpl__freeFunction(_inFuncHandle, printDebug)) MMC_THROW();
 }
 
-extern void System_freeLibrary(int _inLibHandle, int printDebug)
+extern void System_freeLibrary(modelica_integer _inLibHandle, int printDebug)
 {
   if (SystemImpl__freeLibrary(_inLibHandle, printDebug)) MMC_THROW();
 }
@@ -524,7 +522,7 @@ extern int System_userIsRoot()
   return CONFIG_USER_IS_ROOT;
 }
 
-extern int System_getuid()
+extern modelica_integer System_getuid()
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   return 0;
@@ -540,7 +538,7 @@ extern const char* System_readEnv(const char *envname)
   return strcpy(ModelicaAllocateString(strlen(envvalue)),envvalue);
 }
 
-extern void System_getCurrentDateTime(int* sec, int* min, int* hour, int* mday, int* mon, int* year)
+extern void System_getCurrentDateTime(modelica_integer* sec, modelica_integer* min, modelica_integer* hour, modelica_integer* mday, modelica_integer* mon, modelica_integer* year)
 {
   time_t t;
   struct tm* localTime;
@@ -560,9 +558,9 @@ extern const char* System_getUUIDStr()
   return strcpy(ModelicaAllocateString(strlen(res)),res);
 }
 
-extern int System_loadLibrary(const char *name, int relativePath, int printDebug)
+extern modelica_integer System_loadLibrary(const char *name, int relativePath, int printDebug)
 {
-  int res = SystemImpl__loadLibrary(name, relativePath, printDebug);
+  modelica_integer res = SystemImpl__loadLibrary(name, relativePath, printDebug);
   if (res == -1) MMC_THROW();
   return res;
 }
@@ -619,10 +617,10 @@ void* System_subDirectories(const char *directory)
 }
 #endif
 
-extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
+extern void* System_regex(const char* str, const char* re, modelica_integer maxn, int extended, int sensitive, modelica_integer *nmatch)
 {
   void *res;
-  int i = 0;
+  modelica_integer i = 0;
   void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
   *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)matches);
   res = mmc_mk_nil();
@@ -744,7 +742,7 @@ extern void System_getGCStatus(double *used, double *allocated)
   *used = *allocated - GC_get_free_bytes();
 }
 
-extern const char* System_snprintff(const char *fmt, int len, double d)
+extern const char* System_snprintff(const char *fmt, modelica_integer len, double d)
 {
   char *buf;
   if (len < 0) {
