@@ -511,7 +511,7 @@ constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(169, "nfEvalConstArgFunc
   Gettext.gettext("Evaluate all functions with constant arguments in the new frontend."));
 constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(170, "nfExpandOperations", true,
   Gettext.gettext("Expand all unary/binary operations to scalar expressions in the new frontend."));
-constant DebugFlag NF_API = DEBUG_FLAG(171, "nfAPI", false,
+constant DebugFlag NF_API = DEBUG_FLAG(171, "nfAPI", true,
   Gettext.gettext("Enables experimental new instantiation use in the OMC API."));
 constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(172, "nfAPIDynamicSelect", false,
   Gettext.gettext("Show DynamicSelect(static, dynamic) in annotations. Default to false and will select the first (static) expression"));

@@ -50,7 +50,7 @@ simulate(simple_der_for); getErrorString();
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[i] = x[i] + $DER.x[1 + i] + sin(CAST(Real, i) * time) ($RES_SIM_2)
+// 	[----]   [SCAL] (1) $DER.x[i] = x[i] + $DER.x[1 + i] + sin(i * time) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1}
 //
@@ -62,7 +62,7 @@ simulate(simple_der_for); getErrorString();
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[1 + i] = -(x[i] + sin(CAST(Real, i) * time) - $DER.x[i]) ($RES_SIM_2)
+// 	[----]   [SCAL] (1) $DER.x[1 + i] = -(x[i] + sin(i * time) - $DER.x[i]) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
 //
