@@ -58,6 +58,7 @@ public:
   Parameter(ModelInstance::Component *pComponent, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
   ModelInstance::Component* getModelInstanceComponent() {return mpModelInstanceComponent;}
+  bool isParameter() const;
   void setTab(QString tab) {mTab = tab;}
   StringAnnotation getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}

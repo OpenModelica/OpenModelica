@@ -169,9 +169,8 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
 
   QString start = "";
-  bool isParameter = (mpModelInstanceComponent->getPrefixes()->getVariability().compare(QStringLiteral("parameter")) == 0);
   // If mShowStartAttribute is not set then check for start modifier
-  if (!mShowStartAndFixed) {
+  if (!mShowStartAndFixed && !isParameter()) {
     start = mpModelInstanceComponent->getModifier().getModifierValue(QStringList() << "start");
     mShowStartAndFixed = !start.isEmpty();
   }
@@ -180,7 +179,7 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
    */
   if (mShowStartAndFixed && mGroup.isEmpty()) {
     mGroup = "Initialization";
-  } else if (mGroup.isEmpty() && (isParameter || mpModelInstanceComponent->getAnnotation()->hasDialogAnnotation() || mpModelInstanceComponent->getPrefixes()->getReplaceable())) {
+  } else if (mGroup.isEmpty() && (isParameter() || mpModelInstanceComponent->getAnnotation()->hasDialogAnnotation() || mpModelInstanceComponent->getPrefixes()->getReplaceable())) {
     mGroup = "Parameters";
   }
 
@@ -272,6 +271,13 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
     setValueWidget(start, true, mUnit);
   }
   update();
+}
+
+bool Parameter::isParameter() const
+{
+  if (mpModelInstanceComponent) {
+    return mpModelInstanceComponent->getPrefixes()->getVariability().compare(QStringLiteral("parameter")) == 0;
+  }
 }
 
 /*!
@@ -1265,7 +1271,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
             if (subModifier.getName().compare(QStringLiteral("start")) == 0 || subModifier.getName().compare(QStringLiteral("fixed")) == 0) {
               QString startOrFixed = subModifier.getValueWithoutQuotes();
               if (!startOrFixed.isEmpty()) {
-                if (!pParameter->isGroupDefined()) {
+                if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
                   pParameter->setGroup("Initialization");
                 }
                 pParameter->setShowStartAndFixed(true);
@@ -1315,7 +1321,7 @@ void ElementParameters::fetchElementModifiers()
         if (subModifier.getName().compare(QStringLiteral("start")) == 0 || subModifier.getName().compare(QStringLiteral("fixed")) == 0) {
           QString startOrFixed = subModifier.getValueWithoutQuotes();
           if (!startOrFixed.isEmpty()) {
-            if (!pParameter->isGroupDefined()) {
+            if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
               pParameter->setGroup("Initialization");
             }
             pParameter->setShowStartAndFixed(true);
@@ -1370,7 +1376,7 @@ void ElementParameters::fetchClassExtendsModifiers()
                   if (subSubModifier.getName().compare(QStringLiteral("start")) == 0 || subSubModifier.getName().compare(QStringLiteral("fixed")) == 0) {
                     QString startOrFixed = subSubModifier.getValueWithoutQuotes();
                     if (!startOrFixed.isEmpty()) {
-                      if (!pParameter->isGroupDefined()) {
+                      if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
                         pParameter->setGroup("Initialization");
                       }
                       pParameter->setShowStartAndFixed(true);
