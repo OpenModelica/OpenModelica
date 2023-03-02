@@ -1193,7 +1193,7 @@ protected
   SCode.ClassDef cdef;
   InstNode node, derivedNode;
   Absyn.Path path;
-  list<Absyn.Subscript> dims;
+  Option<list<Absyn.Subscript>> odims;
 algorithm
   elem := InstNode.definition(cls);
 
@@ -1204,7 +1204,7 @@ algorithm
   SCode.Element.CLASS(classDef = cdef) := elem;
 
   () := match cdef
-    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = SOME(dims)))
+    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
       algorithm
         try
           derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
@@ -1212,7 +1212,10 @@ algorithm
         else
         end try;
 
-        json := JSON.addPairNotNull("dims", dumpJSONDims(dims, {}), json);
+        if isSome(odims) then
+          json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
+        end if;
+
         json := dumpJSONSCodeMod(cdef.modifications, json);
       then
         ();

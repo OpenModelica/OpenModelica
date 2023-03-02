@@ -113,6 +113,10 @@ getModelInstance(M, prettyPrint = true);
 //             \"prefixes\": {
 //               \"redeclare\": true
 //             },
+//             \"baseClass\": \"C\",
+//             \"modifiers\": {
+//               \"y\": \"2.0\"
+//             },
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 17,
@@ -132,6 +136,7 @@ getModelInstance(M, prettyPrint = true);
 //                 }
 //               }
 //             },
+//             \"baseClass\": \"C\",
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 13,
