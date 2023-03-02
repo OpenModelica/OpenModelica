@@ -219,7 +219,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       if (jacobianMethod == SYMJAC) {
         warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
                                           " Colored symbolical Jacobian will be used.");
-      } else if(jacobianMethod == NUMJAC || jacobianMethod == INTERNALNUMJAC) {
+      } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
         warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
                                           " Colored numerical Jacobian will be used.");
         gbfData->symJacAvailable = FALSE;
@@ -412,7 +412,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     if (jacobianMethod == SYMJAC) {
       warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
                                         " Colored symbolical Jacobian will be used.");
-    } else if(jacobianMethod == NUMJAC || jacobianMethod == INTERNALNUMJAC) {
+    } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
       warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
                                         " Colored numerical Jacobian will be used.");
       gbData->symJacAvailable = FALSE;
