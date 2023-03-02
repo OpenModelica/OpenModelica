@@ -197,22 +197,32 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     // Free is done in gbode_freeData
     if (gbData->isExplicit) {
       jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-      if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-        gbfData->symJacAvailable = FALSE;
-        infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
-      } else {
-        if (omc_flag[FLAG_JACOBIAN]) {
-          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
-            infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
-            gbfData->symJacAvailable = TRUE;
-          }
-        } else {
-          gbfData->symJacAvailable = FALSE;
-        }
-        infoStreamPrint(LOG_SOLVER, 1, "Initialized colored sparsity pattern of the jacobian:");
+      data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+      if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+        infoStreamPrint(LOG_SOLVER, 1, "Initialized Jacobian:");
         infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
         messageClose(LOG_SOLVER);
+      }
+
+      // Compare user flag to availabe Jacobian methods
+      const char* flagValue;
+      if(omc_flag[FLAG_JACOBIAN]){
+        flagValue = omc_flagValue[FLAG_JACOBIAN];
+      } else {
+        flagValue = NULL;
+      }
+      enum JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
+      gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+      // change GBODE specific jacobian method
+      if (jacobianMethod == SYMJAC) {
+        warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
+                                          " Colored symbolical Jacobian will be used.");
+      } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
+        warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
+                                          " Colored numerical Jacobian will be used.");
+        gbfData->symJacAvailable = FALSE;
       }
     } else {
       gbfData->symJacAvailable = gbData->symJacAvailable;
@@ -380,22 +390,32 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-      gbData->symJacAvailable = FALSE;
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
-    } else {
-      if (omc_flag[FLAG_JACOBIAN]) {
-        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[COLOREDSYMJAC]) == 0) {
-          infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
-          gbData->symJacAvailable = TRUE;
-        }
-      } else {
-        gbData->symJacAvailable = FALSE;
-      }
-      infoStreamPrint(LOG_SOLVER, 1, "Initialized colored sparsity pattern of the jacobian:");
+    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+    if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+      infoStreamPrint(LOG_SOLVER, 1, "Initialized Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(LOG_SOLVER);
+    }
+
+    // Compare user flag to availabe Jacobian methods
+    const char* flagValue;
+    if(omc_flag[FLAG_JACOBIAN]){
+      flagValue = omc_flagValue[FLAG_JACOBIAN];
+    } else {
+      flagValue = NULL;
+    }
+    enum JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
+    gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+    // change GBODE specific jacobian method
+    if (jacobianMethod == SYMJAC) {
+      warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
+                                        " Colored symbolical Jacobian will be used.");
+    } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
+      warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
+                                        " Colored numerical Jacobian will be used.");
+      gbData->symJacAvailable = FALSE;
     }
 
     /* Allocate memory for the nonlinear solver */
