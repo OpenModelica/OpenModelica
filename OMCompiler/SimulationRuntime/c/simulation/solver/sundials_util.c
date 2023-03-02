@@ -269,7 +269,7 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
         Ci[nz] = Ai[p];
         Cx[nz++] = x[Ai[p]];
       }
-      if (Ai[p] != j) {
+      if (Ai[p] != j || Ap[j] == Ap[j+1]) {
         Ci[nz] = j;
         Cx[nz++] = x[j];
       }
