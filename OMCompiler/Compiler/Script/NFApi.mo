@@ -1194,6 +1194,7 @@ protected
   InstNode node, derivedNode;
   Absyn.Path path;
   Option<list<Absyn.Subscript>> odims;
+  SCode.Comment cmt;
 algorithm
   elem := InstNode.definition(cls);
 
@@ -1201,7 +1202,7 @@ algorithm
   json := JSON.addPair("name", JSON.makeString(InstNode.name(cls)), json);
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
 
-  SCode.Element.CLASS(classDef = cdef) := elem;
+  SCode.Element.CLASS(classDef = cdef, cmt = cmt) := elem;
 
   () := match cdef
     case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
@@ -1229,6 +1230,8 @@ algorithm
     else ();
   end match;
 
+  json := dumpJSONCommentAnnotation(SOME(cmt), scope, json,
+    {"Dialog", "choices", "choicesAllMatching"});
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(cls)), json);
 end dumpJSONReplaceableClass;
 
@@ -1564,14 +1567,30 @@ algorithm
     end if;
 
     if dumpAnnotation then
-      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, failOnError, json);
+      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, {}, failOnError, json);
     end if;
   end if;
 end dumpJSONCommentOpt;
 
+function dumpJSONCommentAnnotation
+  input Option<SCode.Comment> cmtOpt;
+  input InstNode scope;
+  input output JSON json;
+  input list<String> filter = {};
+  input Boolean failOnError = false;
+protected
+  SCode.Comment cmt;
+algorithm
+  if isSome(cmtOpt) then
+    SOME(cmt) := cmtOpt;
+    json := dumpJSONAnnotationOpt(cmt.annotation_, scope, filter, failOnError, json);
+  end if;
+end dumpJSONCommentAnnotation;
+
 function dumpJSONAnnotationOpt
   input Option<SCode.Annotation> annOpt;
   input InstNode scope;
+  input list<String> filter;
   input Boolean failOnError;
   input output JSON json;
 protected
@@ -1579,19 +1598,20 @@ protected
 algorithm
   if isSome(annOpt) then
     SOME(ann) := annOpt;
-    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope, failOnError), json);
+    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification, scope, filter, failOnError), json);
   end if;
 end dumpJSONAnnotationOpt;
 
 function dumpJSONAnnotationMod
   input SCode.Mod mod;
   input InstNode scope;
+  input list<String> filter;
   input Boolean failOnError;
   output JSON json;
 algorithm
   json := match mod
     case SCode.Mod.MOD()
-      then dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError);
+      then dumpJSONAnnotationSubMods(mod.subModLst, scope, filter, failOnError);
 
     else JSON.makeNull();
   end match;
@@ -1600,11 +1620,14 @@ end dumpJSONAnnotationMod;
 function dumpJSONAnnotationSubMods
   input list<SCode.SubMod> subMods;
   input InstNode scope;
+  input list<String> filter;
   input Boolean failOnError;
   output JSON json = JSON.makeNull();
 algorithm
   for m in subMods loop
-    json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+    if listEmpty(filter) or List.contains(filter, m.ident, stringEq) then
+      json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
+    end if;
   end for;
 end dumpJSONAnnotationSubMods;
 
@@ -1656,7 +1679,7 @@ algorithm
 
     case (_, SCode.Mod.MOD())
       algorithm
-        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, failOnError), json);
+        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, {}, failOnError), json);
       then
         ();
 
@@ -1851,7 +1874,7 @@ algorithm
   Equation.CONNECT(lhs = lhs, rhs = rhs, source = src) := connEq;
   json := JSON.addPair("lhs", Expression.toJSON(lhs), json);
   json := JSON.addPair("rhs", Expression.toJSON(rhs), json);
-  json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
+  json := dumpJSONCommentAnnotation(ElementSource.getOptComment(src), scope, json);
 end dumpJSONConnection;
 
 function dumpJSONStateCalls
@@ -1882,7 +1905,7 @@ algorithm
           j := JSON.addElement(Expression.toJSON(arg), j);
         end for;
         json := JSON.addPair("arguments", j, json);
-        json := dumpJSONCommentOpt(ElementSource.getOptComment(src), scope, json, dumpComment = false);
+        json := dumpJSONCommentAnnotation(ElementSource.getOptComment(src), scope, json);
       then
         ();
 

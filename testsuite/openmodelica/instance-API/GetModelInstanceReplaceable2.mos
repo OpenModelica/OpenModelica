@@ -7,7 +7,7 @@
 
 loadString("
   model M
-    replaceable Real x \"definition comment\" constrainedby Real(start = 1);
+    replaceable Real x \"definition comment\" annotation(choicesAllMatching = false) constrainedby Real(start = 1);
     replaceable Real y constrainedby Real(start = 2) \"constrainedby comment\";
     replaceable Real z \"definition comment\" constrainedby Real \"constrainedby comment\" annotation(choicesAllMatching = true);
   end M;
@@ -33,7 +33,10 @@ getModelInstance(M, prettyPrint = true);
 //           }
 //         }
 //       },
-//       \"comment\": \"definition comment\"
+//       \"comment\": \"definition comment\",
+//       \"annotation\": {
+//         \"choicesAllMatching\": false
+//       }
 //     },
 //     {
 //       \"$kind\": \"component\",
