@@ -511,7 +511,7 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
   char row_to_print[40960];
   unsigned int bufSize = 40960;
   unsigned int ct;
-  ct += snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
+  ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++) {
     ct += snprintf(row_to_print+ct, bufSize-ct, "%18.12g", a[i]);
   }
