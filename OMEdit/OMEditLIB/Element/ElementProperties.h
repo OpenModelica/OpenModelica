@@ -52,7 +52,8 @@ public:
     Enumeration,
     ReplaceableComponent,
     ReplaceableClass,
-    Choices
+    Choices,
+    ChoicesAllMatching
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
   Parameter(ModelInstance::Component *pComponent, ElementParameters *pElementParameters);

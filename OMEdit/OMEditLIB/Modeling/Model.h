@@ -389,14 +389,9 @@ private:
 
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
-    bool isDocumentationClass() const {return mDocumentationClass;}
-    QString getVersion() const {return mVersion;}
-    QString getVersionDate() const {return mVersionDate;}
-    QString getDateModified() const {return mDateModified;}
-    QString getPreferredView() const {return mPreferredView;}
-    bool isState() const {return mState;}
-    QString getAccess() const {return mAccess;}
+    BooleanAnnotation isState() const {return mState;}
     // Element annotation
+    BooleanAnnotation isChoicesAllMatching() const {return mChoicesAllMatching;}
     PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
     bool hasDialogAnnotation() const {return mHasDialogAnnotation;}
     DialogAnnotation getDialogAnnotation() const {return mDialogAnnotation;}

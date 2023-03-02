@@ -209,6 +209,8 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
     }
   } else if (!mpModelInstanceComponent->getAnnotation()->getChoices().getChoices().isEmpty()) {
     mValueType = Parameter::Choices;
+  } else if (mpModelInstanceComponent->getAnnotation()->isChoicesAllMatching()) {
+    mValueType = Parameter::ChoicesAllMatching;
   } else {
     mValueType = Parameter::Normal;
   }
@@ -273,10 +275,17 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
   update();
 }
 
+/*!
+ * \brief Parameter::isParameter
+ * Returns true if parameter
+ * \return
+ */
 bool Parameter::isParameter() const
 {
   if (mpModelInstanceComponent) {
     return mpModelInstanceComponent->getPrefixes()->getVariability().compare(QStringLiteral("parameter")) == 0;
+  } else {
+    return mpElement->getElementInfo()->getVariablity().compare("parameter") == 0;
   }
 }
 
@@ -341,6 +350,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
     case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       if (defaultValue) {
         mpValueComboBox->lineEdit()->setPlaceholderText(value);
       } else {
@@ -404,6 +414,7 @@ QWidget* Parameter::getValueWidget()
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
     case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       return mpValueComboBox;
     case Parameter::CheckBox:
       return mpValueCheckBox;
@@ -426,6 +437,7 @@ bool Parameter::isValueModified()
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
     case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       return mpValueComboBox->lineEdit()->isModified();
     case Parameter::CheckBox:
       return mValueCheckBoxModified;
@@ -448,6 +460,7 @@ QString Parameter::getValue()
     case Parameter::ReplaceableClass:
     case Parameter::ReplaceableComponent:
     case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       return mpValueComboBox->lineEdit()->text().trimmed();
     case Parameter::CheckBox:
       return mpValueCheckBox->isChecked() ? "true" : "false";
@@ -484,6 +497,7 @@ void Parameter::setEnabled(bool enable)
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
     case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       mpValueComboBox->setEnabled(enable);
       break;
     case Parameter::CheckBox:
@@ -559,10 +573,14 @@ void Parameter::createValueWidget()
 
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
+    case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
       if (MainWindow::instance()->isNewApi()) {
-        constrainedByClassName = mpModelInstanceComponent->getPrefixes()->getReplaceable()->getConstrainedby();
-        if (constrainedByClassName.isEmpty()) {
-          constrainedByClassName = mpModelInstanceComponent->getType();
+        if (mValueType == Parameter::ReplaceableComponent || mValueType == Parameter::ReplaceableClass) {
+          constrainedByClassName = mpModelInstanceComponent->getPrefixes()->getReplaceable()->getConstrainedby();
+          if (constrainedByClassName.isEmpty()) {
+            constrainedByClassName = mpModelInstanceComponent->getType();
+          }
         }
         choices = mpModelInstanceComponent->getAnnotation()->getChoices().getChoices();
         parentClassName = mpModelInstanceComponent->getParentModel()->getName();
@@ -582,24 +600,35 @@ void Parameter::createValueWidget()
         elementName = mpElement->getName();
       }
 
-      mpValueComboBox = new QComboBox;
-      mpValueComboBox->setEditable(true);
-      mpValueComboBox->addItem("", "");
-
       if (constrainedByClassName.contains(QStringLiteral("$Any"))) {
         constrainedByClassName = className;
       }
 
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
       // add choices if there are any
       for (i = 0; i < choices.size(); i++) {
         QString choice = choices[i];
-        QString comment = StringHandler::getModelicaComment(choice);
+        QString comment;
+        if (MainWindow::instance()->isNewApi()) {
+          comment = choice;
+        } else {
+          comment = StringHandler::getModelicaComment(choice);
+        }
         mpValueComboBox->addItem(comment, choice);
       }
 
-      // do replaceable only if not choicesAllMatching=false
-      // if choicesAllMatching is not defined, consider choicesAllMatching=true
-      replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
+      // choicesAllMatching
+      if (MainWindow::instance()->isNewApi()) {
+        if (mpModelInstanceComponent->getAnnotation()->isChoicesAllMatching()) {
+          replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
+        }
+      } else {
+        // do replaceable only if not choicesAllMatching=false
+        // if choicesAllMatching is not defined, consider choicesAllMatching=true
+        replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
+      }
       for (i = 0; i < replaceableChoices.size(); i++) {
         replaceableChoice = replaceableChoices[i];
         // if replaceableChoices points to a class in this scope, remove scope
@@ -614,22 +643,14 @@ void Parameter::createValueWidget()
           }
           replaceableText = replaceableChoices[i] + str;
           mpValueComboBox->addItem(replaceableText, replaceable);
-        } else {
+        } else if (mValueType == Parameter::ReplaceableComponent) {
           replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
           mpValueComboBox->addItem(replaceable, replaceable);
+        } else {
+          mpValueComboBox->addItem(replaceableChoice, replaceableChoice);
         }
       }
 
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
-      break;
-
-    case Parameter::Choices:
-      mpValueComboBox = new QComboBox;
-      mpValueComboBox->setEditable(true);
-      mpValueComboBox->addItem("", "");
-      foreach (QString choice, mpModelInstanceComponent->getAnnotation()->getChoices().getChoices()) {
-        mpValueComboBox->addItem(choice, choice);
-      }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
 
