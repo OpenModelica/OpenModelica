@@ -370,7 +370,7 @@ public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   output list<list<Integer>> loopsOut = {};
   output list<Integer> crossEqsOut = {};
   output list<Integer> crossVarsOut = {};
-  output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping;
+  output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping = NONE();
 protected
   list<list<Integer>> loops, eqVars;
   list<Integer> eqCrossLst, varCrossLst, partitionVars;
