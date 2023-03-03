@@ -83,7 +83,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
  *
  * @param A           Sparse matrix in CSC.
  * @param vScale      Vector for scaling
- * @return *SUNMatrix Returns the scaled sparse matrix
+ * @return SUNMatrix  Returns the scaled sparse matrix
  */
 SUNMatrix _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
 {
