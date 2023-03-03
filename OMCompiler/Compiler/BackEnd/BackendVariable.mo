@@ -1254,7 +1254,7 @@ public function makeParamOutputsOnly
   input output Boolean fixed; // also output for traversing
 algorithm
   var.varKind := BackendDAE.PARAM();
-  var := setVarFixed(var, fixed);
+  var := setHideResult(var, SOME(DAE.BCONST(true)));
   var.values := if isSome(var.values) then var.values else SOME(getVariableAttributefromType(var.varType));
   if isNone(DAEUtil.getFixedAttr(var.values)) then
     var.values := DAEUtil.setFixedAttr(var.values, SOME(DAE.BCONST(fixed)));
