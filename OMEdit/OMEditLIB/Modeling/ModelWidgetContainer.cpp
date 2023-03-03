@@ -5542,7 +5542,7 @@ bool ModelWidget::isNewApi()
 QString ModelWidget::getModelTextForOMCUndoCommand()
 {
   QString oldModelText = mpEditor->getPlainTextEdit()->toPlainText();
-  if (!mpLibraryTreeItem->isTopLevel()) {
+  if (!oldModelText.trimmed().startsWith("within") && !mpLibraryTreeItem->isTopLevel()) {
     oldModelText = "within " % mpLibraryTreeItem->parent()->getNameStructure() % ";\n" % oldModelText;
   }
   return oldModelText;
