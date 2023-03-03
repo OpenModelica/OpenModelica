@@ -852,13 +852,21 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
       spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
-      if (nlsData->analyticalJacobianColumn != NULL) {
-        nlsSparseSymJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
-      } else {
-        /* Update f(x) for the numerical jacobian matrix */
-        nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
-        nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
+      if (kinsolData->solved != NLS_SOLVED) {
+        kinsolData->nominalJac = 0;
+        if (nlsData->analyticalJacobianColumn != NULL) {
+          /* Calculate the sparse Jacobian symbolically  */
+          nlsSparseSymJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
+        } else {
+          /* Update f(x) for the numerical jacobian matrix */
+          nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
+          nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
+        }
+        /* Copy the sparse Jacobian into the kinsol data structure for later use*/
+        SUNMatCopy_Sparse(spJac, kinsolData->J);
       }
+      /* Scale the current Jacobian */
+      spJac = _omc_SUNSparseMatrixVecScaling(kinsolData->J, kinsolData->xScale);
     } else {
       /* Update f(x) for the numerical jacobian matrix */
       nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);

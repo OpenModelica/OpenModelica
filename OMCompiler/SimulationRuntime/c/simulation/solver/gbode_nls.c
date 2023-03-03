@@ -485,7 +485,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10);
+    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNTRUE, 10);
     solved = solveNLS(data, threadData, nlsData);
     if (ACTIVE_STREAM(LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {

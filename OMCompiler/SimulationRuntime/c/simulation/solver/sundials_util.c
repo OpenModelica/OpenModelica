@@ -78,6 +78,36 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   SM_DATA_S(A)[nth] = value;
 }
 
+/**
+ * @brief             Scaling of a sparse matrix column-wise by a vector
+ *
+ * @param A           Sparse matrix in CSC.
+ * @param vScale      Vector for scaling
+ * @return *SUNMatrix Returns the scaled sparse matrix
+ */
+SUNMatrix _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
+{
+  sunindextype i, j;
+  char *matrixtype;
+  char *indexname;
+  realtype *vScaling = N_VGetArrayPointer(vScale), value;
+  SUNMatrix B = SUNMatClone_Sparse(A);
+  SUNMatCopy_Sparse(A, B);
+
+   /* should not be called unless A is a sparse matrix in CSC format;
+     otherwise return immediately */
+  if (SUNMatGetID(A) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(A) == CSR_MAT)
+    return(A);
+
+  for (j=0; j<SM_NP_S(A); j++) {
+    for (i=(SM_INDEXPTRS_S(A))[j]; i<(SM_INDEXPTRS_S(A))[j+1]; i++) {
+      value = (SM_DATA_S(A))[i]/vScaling[(SM_INDEXVALS_S(A))[i]];
+      (SM_DATA_S(B))[i] = (SM_DATA_S(A))[i]/vScaling[(SM_INDEXVALS_S(A))[i]];
+    }
+  }
+
+  return(B);
+}
 
 /**
  * @brief Calculates A+c*I and stores the result in A.
