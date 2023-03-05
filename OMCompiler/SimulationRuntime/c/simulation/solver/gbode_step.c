@@ -98,7 +98,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS");
+    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
     return -1;
   }
 
@@ -193,7 +193,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR");
+    warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
     return -1;
   }
 
@@ -298,7 +298,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
+        warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_, gbData->time);
         return -1;
       }
 
@@ -427,7 +427,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d", stage_);
+        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_, gbfData->time);
         return -1;
       }
 
@@ -511,7 +511,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenveTestFailures++;
-    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
+    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
     return -1;
   }
 

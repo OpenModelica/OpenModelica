@@ -682,24 +682,27 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->fastStatesIdx  = gbData->fastStatesIdx;
 
+  // check if number of fast states changed
   if (gbfData->nFastStates_old != gbData->nFastStates) {
-    if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
-    {
-      printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-      printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
-    }
-    gbfData->nFastStates_old = gbData->nFastStates;
     fastStatesChange = TRUE;
   }
 
+  // look for changes in the ordering
   for (int k = 0; k < gbData->nFastStates; k++) {
     if (gbfData->fastStates_old[k] != gbData->fastStatesIdx[k]) {
-      if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
-      {
-        printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-        printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
-      }
       fastStatesChange = TRUE;
+    }
+  }
+
+  if (ACTIVE_STREAM(LOG_SOLVER) && fastStatesChange)
+  {
+    printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
+    printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
+  }
+  // Update indices for the current fast states and corresponding counting
+  if (fastStatesChange) {
+    gbfData->nFastStates_old = gbData->nFastStates;
+    for (int k = 0; k < gbData->nFastStates; k++) {
       gbfData->fastStates_old[k] = gbData->fastStatesIdx[k];
     }
   }
