@@ -829,7 +829,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
 
     do {
-        if (ACTIVE_STREAM(LOG_SOLVER_V)) {
+      if (ACTIVE_STREAM(LOG_SOLVER_V)) {
         infoStreamPrint(LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
         for (int i=0; i<gbfData->ringBufferSize; i++) {
           printVector_gbf(LOG_SOLVER_V, "y", gbfData->yv + i * nStates, nStates, gbfData->tv[i], gbData->nFastStates, gbData->fastStatesIdx);
