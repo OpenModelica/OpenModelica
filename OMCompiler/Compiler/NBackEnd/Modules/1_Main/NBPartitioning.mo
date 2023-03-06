@@ -365,7 +365,7 @@ protected
     UnorderedSet<ComponentRef> var_crefs;
     list<ComponentRef> var_cref_list;
     list<Integer> local_indices;
-    Integer part_idx;
+    Integer part_idx, root_idx;
     UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
     ComponentRef name_cref;
     Cluster cluster;
@@ -382,7 +382,7 @@ protected
       _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
       var_cref_list := UnorderedSet.toList(var_crefs);
 
-      // find minimal partition index for current equation and all connected variables
+      // find maximal partition index for current equation and all connected variables
       local_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in var_cref_list);
       // filter indices of non existant variables (e.g. time)
       local_indices := list(i for i guard(i > 0) in local_indices);
@@ -392,13 +392,29 @@ protected
       // update connected variable partition indices and further connected equation partition indices
       for i in local_indices loop
         if var_map[i] > 0 then
+          // find root index and connect to part_idx
+          root_idx := var_map[i];
+          while root_idx <> eqn_map[root_idx] loop
+            root_idx := eqn_map[root_idx];
+          end while;
+          eqn_map[root_idx] := part_idx;
+          // also connect eqn_map to keep tree shallow
           eqn_map[var_map[i]] := part_idx;
         end if;
         var_map[i] := part_idx;
       end for;
     end for;
 
-    // resolve coloring and collect in clusters
+    // canonicalize eqn_map
+    for eq_idx in UnorderedMap.valueList(equations.map) loop
+      root_idx := eq_idx;
+      while root_idx <> eqn_map[root_idx] loop
+        root_idx := eqn_map[root_idx];
+      end while;
+      eqn_map[eq_idx] := root_idx;
+    end for;
+
+    // collect clusters
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
@@ -408,7 +424,7 @@ protected
     for var_idx in UnorderedMap.valueList(variables.map) loop
       if var_idx > 0 then
         name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
-        UnorderedMap.addUpdate(var_map[var_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+        UnorderedMap.addUpdate(eqn_map[var_map[var_idx]], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
       end if;
     end for;
 

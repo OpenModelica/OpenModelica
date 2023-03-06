@@ -3090,18 +3090,18 @@ public
     end getEqnIndex;
 
     function compress "O(n)
-      Reorders the elements in order to remove all the gaps.
+      Recollects the elements in order to remove all the gaps.
       Be careful: This changes the indices of the elements."
       input output EquationPointers equations;
     protected
       Pointer<Equation> eqn;
       list<Pointer<Equation>> eqns = {};
     algorithm
-      // collect non empty equations
+      // collect non-empty equations
       for i in ExpandableArray.getLastUsedIndex(equations.eqArr):-1:1 loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eqn := ExpandableArray.get(i, equations.eqArr);
-          _ := match Pointer.access(eqn)
+          () := match Pointer.access(eqn)
             case Equation.DUMMY_EQUATION() then ();
             else algorithm
               eqns := eqn :: eqns;
