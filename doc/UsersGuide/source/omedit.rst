@@ -601,19 +601,28 @@ Simulation Flags
   -  *LOG_DASSL* - additional information about dassl solver.
   -  *LOG_DASSL_STATES* - outputs the states at every dassl call.
   -  *LOG_DEBUG* - additional debug information.
+  -  *LOG_DELAY* - Debug information for delay operator.
+  -  *LOG_DIVISION* - Log division by zero.
   -  *LOG_DSS* - outputs information about dynamic state selection.
   -  *LOG_DSS_JAC* - outputs jacobian of the dynamic state selection.
   -  *LOG_DT* - additional information about dynamic tearing.
   -  *LOG_DT_CONS* - additional information about dynamic tearing (local and global constraints).
   -  *LOG_EVENTS* - additional information during event iteration.
   -  *LOG_EVENTS_V* - verbose logging of event system.
+  -  *LOG_GBODE* - Information about GBODE solver.
+  -  *LOG_GBODE_V* - Verbose information about GBODE solver.
+  -  *LOG_GBODE_NLS* - Log non-linear solver process of GBODE solver.
+  -  *LOG_GBODE_NLS_V* - Verbose log non-linear solver process of GBODE solver.
+  -  *LOG_GBODE_STATES* - Output states at every GBODE call.
   -  *LOG_INIT* - additional information during initialization.
+  -  *LOG_INIT_HOMOTOPY* - Log homotopy initialization.
+  -  *LOG_INIT_V* - Verbose information during initialization.
   -  *LOG_IPOPT* - information from Ipopt.
   -  *LOG_IPOPT_FULL* - more information from Ipopt.
   -  *LOG_IPOPT_JAC* - check jacobian matrix with Ipopt.
   -  *LOG_IPOPT_HESSE* - check hessian matrix with Ipopt.
   -  *LOG_IPOPT_ERROR* - print max error in the optimization.
-  -  *LOG_JAC* - outputs the jacobian matrix used by dassl.
+  -  *LOG_JAC* - Outputs the jacobian matrix used by ODE solvers.
   -  *LOG_LS* - logging for linear systems.
   -  *LOG_LS_V* - verbose logging of linear systems.
   -  *LOG_NLS* - logging for nonlinear systems.
@@ -621,6 +630,7 @@ Simulation Flags
   -  *LOG_NLS_HOMOTOPY* - logging of homotopy solver for nonlinear systems.
   -  *LOG_NLS_JAC* - outputs the jacobian of nonlinear systems.
   -  *LOG_NLS_JAC_TEST* - tests the analytical jacobian of nonlinear systems.
+  -  *LOG_NLS_NEWTON_DIAG* - Log Newton diagnostics. A Diagnostic method to figure out which individual initial guess values are more likely to be causing the convergence failure of Newton-type iterative nonlinear solvers.
   -  *LOG_NLS_RES* - outputs every evaluation of the residual function.
   -  *LOG_NLS_EXTRAPOLATE* - outputs debug information about extrapolate process.
   -  *LOG_RES_INIT* - outputs residuals of the initialization.
@@ -630,10 +640,11 @@ Simulation Flags
   -  *LOG_SOLVER_V* - verbose information about the integration process.
   -  *LOG_SOLVER_CONTEXT* - context information during the solver process.
   -  *LOG_SOTI* - final solution of the initialization.
+  -  *LOG_SPATIALDISTR* - logging of internal operations for spatialDistribution.
   -  *LOG_STATS* - additional statistics about timer/events/solver.
   -  *LOG_STATS_V* - additional statistics for LOG_STATS.
   -  *LOG_SUCCESS* - This stream is always active, can be disabled with -lv=-LOG_SUCCESS.
-  -  *LOG_UTIL*.
+  -  *LOG_SYNCHRONOUS* - Log clocks and sub-clocks for synchronous features.
   -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
 -  *Additional Simulation Flags (Optional)* – specify any other simulation flag.
@@ -645,7 +656,7 @@ Output
 
 -  *Single Precision* - Output results in single precision (only for mat output format).
 
--  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
+-  *File Name Prefix (Optional)* - the name is used as a prefix for the output files.
 
 -  *Result File (Optional)* - the simulation result file name.
 

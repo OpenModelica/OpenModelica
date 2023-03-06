@@ -46,7 +46,7 @@ int valid_number(double a)
 modelica_real division_error_equation_time(threadData_t *threadData, modelica_real a, modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow)
 {
   if(noThrow){
-    warningStreamPrintWithEquationIndexes(LOG_UTIL, omc_dummyFileInfo, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
+    warningStreamPrintWithEquationIndexes(LOG_DIVISION, omc_dummyFileInfo, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
   } else {
     throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "division by zero at time %.16g, (a=%.16g) / (b=%.16g), where divisor b expression is: %s", time, a, b, msg);
   }
@@ -56,7 +56,7 @@ modelica_real division_error_equation_time(threadData_t *threadData, modelica_re
 modelica_real division_error_time(threadData_t *threadData, modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow)
 {
   if(noThrow){
-    warningStreamPrint(LOG_UTIL, 0,
+    warningStreamPrint(LOG_DIVISION, 0,
       "division by zero in partial equation: %s\n"
       "at Time=%f\n"
       "solver will try to handle that.", division_str, time);
