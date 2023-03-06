@@ -375,6 +375,7 @@ protected
     list<Pointer<Variable>> single_vars;
   algorithm
     for eq_idx in UnorderedMap.valueList(equations.map) loop
+      eqn_map[eq_idx] := eq_idx;
       eqn := EquationPointers.getEqnAt(equations, eq_idx);
       var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
