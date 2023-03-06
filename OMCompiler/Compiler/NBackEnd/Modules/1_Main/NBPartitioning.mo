@@ -375,53 +375,53 @@ protected
     list<Pointer<Variable>> single_vars;
   algorithm
     for eq_idx in UnorderedMap.valueList(equations.map) loop
-      eqn_map[eq_idx] := eq_idx;
-      eqn := EquationPointers.getEqnAt(equations, eq_idx);
-      var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      if eq_idx > 0 then
+        eqn_map[eq_idx] := eq_idx;
+        eqn := EquationPointers.getEqnAt(equations, eq_idx);
+        var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
-      // collect all crefs in equation
-      _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
-      var_cref_list := UnorderedSet.toList(var_crefs);
+        // collect all crefs in equation
+        _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
+        var_cref_list := UnorderedSet.toList(var_crefs);
 
-      // find minimal partition index for current equation and all connected variables
-      local_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in var_cref_list);
-      // filter indices of non existant variables (e.g. time)
-      local_indices := list(i for i guard(i > 0) in local_indices);
-      part_idx := intMin(i for i in eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in local_indices));
-      // find root index
-      while part_idx <> eqn_map[part_idx] loop
-        part_idx := eqn_map[part_idx];
-      end while;
-      eqn_map[eq_idx] := part_idx;
+        // find minimal partition index for current equation and all connected variables
+        local_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in var_cref_list);
+        // filter indices of non existant variables (e.g. time)
+        local_indices := list(i for i guard(i > 0) in local_indices);
+        part_idx := intMin(i for i in eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in local_indices));
+        // find root index
+        while part_idx <> eqn_map[part_idx] loop
+          part_idx := eqn_map[part_idx];
+        end while;
+        eqn_map[eq_idx] := part_idx;
 
-      // update connected variable partition indices and further connected equation partition indices
-      for i in local_indices loop
-        if var_map[i] > 0 then
-          // find root index and connect the whole path to part_idx
-          root_idx := var_map[i];
-          while root_idx <> eqn_map[root_idx] loop
-            idx := root_idx;
-            root_idx := eqn_map[root_idx];
-            eqn_map[idx] := part_idx;
-          end while;
-          eqn_map[root_idx] := part_idx;
-        end if;
-        var_map[i] := part_idx;
-      end for;
-    end for;
-
-    // canonicalize eqn_map
-    for eq_idx in UnorderedMap.valueList(equations.map) loop
-      root_idx := eq_idx;
-      while root_idx <> eqn_map[root_idx] loop
-        root_idx := eqn_map[root_idx];
-      end while;
-      eqn_map[eq_idx] := root_idx;
+        // update connected variable partition indices and further connected equation partition indices
+        for i in local_indices loop
+          if var_map[i] > 0 then
+            // find root index and connect the whole path to part_idx
+            root_idx := var_map[i];
+            while root_idx <> eqn_map[root_idx] loop
+              idx := root_idx;
+              root_idx := eqn_map[root_idx];
+              eqn_map[idx] := part_idx;
+            end while;
+            eqn_map[root_idx] := part_idx;
+          end if;
+          var_map[i] := part_idx;
+        end for;
+      end if;
     end for;
 
     // collect clusters
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
+        // canonicalize eqn_map
+        root_idx := eq_idx;
+        while root_idx <> eqn_map[root_idx] loop
+          root_idx := eqn_map[root_idx];
+        end while;
+        eqn_map[eq_idx] := root_idx;
+
         name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
         UnorderedMap.addUpdate(eqn_map[eq_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
       end if;
