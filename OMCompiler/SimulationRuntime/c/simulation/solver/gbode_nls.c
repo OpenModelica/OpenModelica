@@ -487,6 +487,11 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
     set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNTRUE, 10);
     solved = solveNLS(data, threadData, nlsData);
+    /* Retry solution process with updated Jacobian */
+    if (!solved) {
+      set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10);
+      solved = solveNLS(data, threadData, nlsData);
+    }
     if (ACTIVE_STREAM(LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);
