@@ -1536,31 +1536,16 @@ public
       Be careful: This changes the indices of the elements.
       Cannot use ExpandableArray.compress since it needs to
       update the UnorderedMap."
-      input output VariablePointers vars;
+      input output VariablePointers variables;
     protected
-      Integer numberOfElements = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.numberOfElements, 1);
-      Integer lastUsedIndex = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.lastUsedIndex, 1);
-      array<Option<Pointer<Variable>>> data = ExpandableArray.getData(vars.varArr);
-      Integer i = 0;
-      Pointer<Variable> moved_var;
+      list<Pointer<Variable>> vars = {};
     algorithm
-      while lastUsedIndex > numberOfElements loop
-        i := i + 1;
-        if isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, i)) then
-          // update the array element which is NONE()
-          SOME(moved_var) := MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex);
-          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, i, SOME(moved_var));
-          // update the last element which got moved
-          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
-          // update the last used index until an element is found
-          while isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
-            lastUsedIndex := lastUsedIndex-1;
-          end while;
-          // udpate hash table element
-          UnorderedMap.add(getVarName(moved_var), i, vars.map);
+      for i in ExpandableArray.getLastUsedIndex(variables.varArr):-1:1 loop
+        if ExpandableArray.occupied(i, variables.varArr) then
+          vars := ExpandableArray.get(i, variables.varArr) :: vars;
         end if;
-      end while;
-      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(vars.varArr.lastUsedIndex, 1, lastUsedIndex);
+      end for;
+      variables := fromList(vars);
     end compress;
 
     function sort

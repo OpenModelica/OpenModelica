@@ -3097,7 +3097,7 @@ public
       Pointer<Equation> eqn;
       list<Pointer<Equation>> eqns = {};
     algorithm
-      // delete all empty equations
+      // collect non empty equations
       for i in ExpandableArray.getLastUsedIndex(equations.eqArr):-1:1 loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eqn := ExpandableArray.get(i, equations.eqArr);
