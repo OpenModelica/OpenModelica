@@ -127,8 +127,10 @@ public:
   ~CADFile() = default;
   void scaleVertices(osg::Geode& geode, bool scaling, float scaleX, float scaleY, float scaleZ);
 
-public:
+private:
   std::unordered_map<const osg::ref_ptr<osg::Geometry>, osg::ref_ptr<osg::Vec3Array>> unscaledGeometryVertices;
+
+  friend class CADVisitor;
 };
 
 class CADVisitor : public osg::NodeVisitor
