@@ -435,7 +435,7 @@ protected
 
     systems := list(Cluster.toSystem(cl, variables, equations, systemType, marked_vars_ptr, index) for cl in UnorderedMap.valueList(cluster_map));
 
-    // we can get unassigned variables from var_idx < 0 if we can get variables from their indices
+    // TODO we can get unassigned variables from var_idx < 0 if we can get variables from their indices
     single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
