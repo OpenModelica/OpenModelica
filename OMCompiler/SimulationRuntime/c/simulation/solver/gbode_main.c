@@ -452,7 +452,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->sortedStatesIdx[i] = i;
   }
 
-  gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+
+  if (gbData->multi_rate && omc_flagValue[FLAG_SR_INT]==NULL) {
+    gbData->interpolation = GB_DENSE_OUTPUT_ERRCTRL;
+  } else {
+    gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+  }
+
   if (!gbData->tableau->withDenseOutput) {
     if (gbData->interpolation == GB_DENSE_OUTPUT) gbData->interpolation = GB_INTERPOL_HERMITE;
     if (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL) gbData->interpolation = GB_INTERPOL_HERMITE_ERRCTRL;
