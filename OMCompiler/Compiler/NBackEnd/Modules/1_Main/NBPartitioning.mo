@@ -387,6 +387,10 @@ protected
       // filter indices of non existant variables (e.g. time)
       local_indices := list(i for i guard(i > 0) in local_indices);
       part_idx := intMin(i for i in eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in local_indices));
+      // find root index
+      while part_idx <> eqn_map[part_idx] loop
+        part_idx := eqn_map[part_idx];
+      end while;
       eqn_map[eq_idx] := part_idx;
 
       // update connected variable partition indices and further connected equation partition indices
