@@ -365,7 +365,7 @@ protected
     UnorderedSet<ComponentRef> var_crefs;
     list<ComponentRef> var_cref_list;
     list<Integer> local_indices;
-    Integer part_idx, root_idx;
+    Integer part_idx, root_idx, idx;
     UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
     ComponentRef name_cref;
     Cluster cluster;
@@ -392,15 +392,14 @@ protected
       // update connected variable partition indices and further connected equation partition indices
       for i in local_indices loop
         if var_map[i] > 0 then
-          // find root index and connect to part_idx
+          // find root index and connect the whole path to part_idx
           root_idx := var_map[i];
           while root_idx <> eqn_map[root_idx] loop
-            eqn_map[root_idx] := eqn_map[eqn_map[root_idx]]; // Use path halving
+            idx := root_idx;
             root_idx := eqn_map[root_idx];
+            eqn_map[idx] := part_idx;
           end while;
           eqn_map[root_idx] := part_idx;
-          // also connect eqn_map to keep tree shallow
-          eqn_map[var_map[i]] := part_idx;
         end if;
         var_map[i] := part_idx;
       end for;
@@ -410,7 +409,6 @@ protected
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       root_idx := eq_idx;
       while root_idx <> eqn_map[root_idx] loop
-        eqn_map[root_idx] := eqn_map[eqn_map[root_idx]]; // Use path halving
         root_idx := eqn_map[root_idx];
       end while;
       eqn_map[eq_idx] := root_idx;
