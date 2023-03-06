@@ -3326,6 +3326,16 @@ int SystemImpl__relocateFunctions(const char *fileName, void *names)
 }
 #endif
 
+int SystemImpl__fputs(const char *str, int stream)
+{
+  switch (stream) {
+    case 1: return fputs(str, stdout); break;
+    case 2: return fputs(str, stderr); break;
+  }
+
+  return -1;
+}
+
 #ifdef __cplusplus
 }
 #endif
