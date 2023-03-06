@@ -176,7 +176,13 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
     return GB_CTRL_UNKNOWN;
   } else {
-    return GB_CTRL_I;
+    // Default value
+    if (flag == FLAG_MR_CTRL) {
+      return getControllerMethod(FLAG_SR_CTRL);
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
+      return GB_CTRL_I;
+    }
   }
 }
 
@@ -205,7 +211,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
           warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
-          method = GB_INTERPOL_HERMITE;
+          method = GB_DENSE_OUTPUT;
         }
         infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
         return method;
@@ -214,7 +220,19 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
     return GB_INTERPOL_UNKNOWN;
   } else {
-    return GB_INTERPOL_HERMITE;
+    // Default value
+    if (flag == FLAG_MR_INT) {
+      method = getInterpolationMethod(FLAG_SR_INT);
+      if (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL) {
+        warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+        method = GB_DENSE_OUTPUT;
+      }
+      return method;
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+      return GB_DENSE_OUTPUT;
+    }
   }
 }
 

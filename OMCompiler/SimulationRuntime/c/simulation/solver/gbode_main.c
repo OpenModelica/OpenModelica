@@ -264,7 +264,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for emitting results, otherwise hermite");
+    infoStreamPrint(LOG_SOLVER, 0, "Dense output is used for emitting results");
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
@@ -478,7 +478,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results%s", buffer);
+    infoStreamPrint(LOG_SOLVER, 0, "Dense output is used  for emitting results%s", buffer);
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
