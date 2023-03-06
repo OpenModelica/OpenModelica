@@ -438,7 +438,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   gbData->percentage = getGBRatio();
-  gbData->multi_rate = gbData->percentage > 0;
+  gbData->multi_rate = gbData->percentage > 0 && gbData->percentage < 1;
 
   gbData->fastStatesIdx   = malloc(sizeof(int) * gbData->nStates);
   gbData->slowStatesIdx   = malloc(sizeof(int) * gbData->nStates);
