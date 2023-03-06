@@ -395,6 +395,7 @@ protected
           // find root index and connect to part_idx
           root_idx := var_map[i];
           while root_idx <> eqn_map[root_idx] loop
+            eqn_map[root_idx] := eqn_map[eqn_map[root_idx]]; // Use path halving
             root_idx := eqn_map[root_idx];
           end while;
           eqn_map[root_idx] := part_idx;
@@ -409,6 +410,7 @@ protected
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       root_idx := eq_idx;
       while root_idx <> eqn_map[root_idx] loop
+        eqn_map[root_idx] := eqn_map[eqn_map[root_idx]]; // Use path halving
         root_idx := eqn_map[root_idx];
       end while;
       eqn_map[eq_idx] := root_idx;
