@@ -57,7 +57,8 @@
 // In addition, the extra parameter is not always considered, in particular for cone and cylinder shapes.
 // See documentation of Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape model.
 // Also, the spring shape is implemented but has an undesired torsion near the end of each winding,
-// and it should be drawn with more facets for a nicer animation.
+// and it should be drawn with more facets for a nicer animation
+// (moreover, it misses normals and texture coordinates).
 
 class Pipecylinder : public osg::Geometry
 {
