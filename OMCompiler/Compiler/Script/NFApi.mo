@@ -1196,10 +1196,11 @@ protected
   Option<list<Absyn.Subscript>> odims;
   SCode.Comment cmt;
 algorithm
-  elem := InstNode.definition(cls);
+  node := InstNode.getRedeclaredNode(cls);
+  elem := InstNode.definition(node);
 
   json := JSON.addPair("$kind", JSON.makeString("class"), json);
-  json := JSON.addPair("name", JSON.makeString(InstNode.name(cls)), json);
+  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
 
   SCode.Element.CLASS(classDef = cdef, cmt = cmt) := elem;
@@ -1232,7 +1233,7 @@ algorithm
 
   json := dumpJSONCommentAnnotation(SOME(cmt), scope, json,
     {"Dialog", "choices", "choicesAllMatching"});
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(cls)), json);
+  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
 function dumpJSONComponent

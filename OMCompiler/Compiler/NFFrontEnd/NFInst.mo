@@ -996,7 +996,7 @@ algorithm
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
-        redeclareClasses(cls_tree, par);
+        redeclareClasses(cls_tree, par, context);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
@@ -1400,6 +1400,7 @@ end applyModifier;
 function redeclareClasses
   input output ClassTree tree;
   input InstNode parent;
+  input InstContext.Type context;
 protected
   InstNode cls_node, redecl_node;
   Class cls;
@@ -1416,7 +1417,7 @@ algorithm
           if Modifier.isRedeclare(mod) then
             Modifier.REDECLARE(element = redecl_node, outerMod = mod, constrainingMod = cc_mod) := mod;
             cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod);
-            cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod);
+            cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod, context);
             Mutable.update(cls_ptr, cls_node);
           end if;
         end for;
@@ -1440,7 +1441,7 @@ algorithm
 
   if InstNode.isClass(node) then
     for cls_ptr in listRest(chain) loop
-      node_ptr := redeclareClassElement(cls_ptr, node_ptr);
+      node_ptr := redeclareClassElement(cls_ptr, node_ptr, context);
     end for;
     node := Mutable.access(node_ptr);
   else
@@ -1458,13 +1459,14 @@ end redeclareElements;
 function redeclareClassElement
   input Mutable<InstNode> redeclareCls;
   input Mutable<InstNode> replaceableCls;
+  input InstContext.Type context;
   output Mutable<InstNode> outCls;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
   rdcl_node := Mutable.access(redeclareCls);
   repl_node := Mutable.access(replaceableCls);
-  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD());
+  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), context);
   outCls := Mutable.create(rdcl_node);
 end redeclareClassElement;
 
@@ -1489,6 +1491,7 @@ function redeclareClass
   input InstNode originalNode;
   input Modifier outerMod;
   input Modifier constrainingMod;
+  input InstContext.Type context;
   output InstNode redeclaredNode;
 protected
   InstNode orig_node;
@@ -1496,6 +1499,7 @@ protected
   Class.Prefixes prefs;
   InstNodeType node_ty;
   Modifier mod;
+  Option<InstNode> orig_opt;
 algorithm
   // Check that the redeclare element is actually a class.
   if not InstNode.isClass(redeclareNode) then
@@ -1575,8 +1579,10 @@ algorithm
     end match;
   end if;
 
+  orig_opt := if InstContext.inInstanceAPI(context) then SOME(originalNode) else NONE();
+
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
-  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode));
+  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode), orig_opt);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
 
