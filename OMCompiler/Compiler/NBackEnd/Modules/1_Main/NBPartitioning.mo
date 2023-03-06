@@ -382,11 +382,11 @@ protected
       _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
       var_cref_list := UnorderedSet.toList(var_crefs);
 
-      // find maximal partition index for current equation and all connected variables
+      // find minimal partition index for current equation and all connected variables
       local_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in var_cref_list);
       // filter indices of non existant variables (e.g. time)
       local_indices := list(i for i guard(i > 0) in local_indices);
-      part_idx := intMax(i for i in eq_idx :: list(var_map[j] for j in local_indices));
+      part_idx := intMin(i for i in eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in local_indices));
       eqn_map[eq_idx] := part_idx;
 
       // update connected variable partition indices and further connected equation partition indices
