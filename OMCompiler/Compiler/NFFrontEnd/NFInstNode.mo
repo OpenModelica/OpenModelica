@@ -102,6 +102,7 @@ uniontype InstNodeType
   record REDECLARED_CLASS
     InstNode parent;
     InstNodeType originalType;
+    Option<InstNode> originalNode;
   end REDECLARED_CLASS;
 
   record GENERATED_INNER
@@ -1568,6 +1569,16 @@ uniontype InstNode
       else false;
     end match;
   end isRedeclared;
+
+  function getRedeclaredNode
+    input InstNode node;
+    output InstNode outNode;
+  algorithm
+    outNode := match node
+      case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(outNode))) then outNode;
+      else node;
+    end match;
+  end getRedeclaredNode;
 
   function isReplaceable
     input InstNode node;
