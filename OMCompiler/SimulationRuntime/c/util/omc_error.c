@@ -130,7 +130,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "check jacobian matrix with Ipopt",                                           /* LOG_IPOPT_JAC*/
   "check hessian matrix with Ipopt",                                            /* LOG_IPOPT_HESSE*/
   "print max error in the optimization",                                        /* LOG_IPOPT_ERROR*/
-  "outputs the jacobian matrix used by dassl",                                  /* LOG_JAC */
+  "outputs the jacobian matrix used by ODE solvers",                            /* LOG_JAC */
   "logging for linear systems",                                                 /* LOG_LS */
   "verbose logging of linear systems",                                          /* LOG_LS_V */
   "logging for nonlinear systems",                                              /* LOG_NLS */
@@ -138,6 +138,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "logging of homotopy solver for nonlinear systems",                           /* LOG_NLS_HOMOTOPY */
   "outputs the jacobian of nonlinear systems",                                  /* LOG_NLS_JAC */
   "tests the analytical jacobian of nonlinear systems",                         /* LOG_NLS_JAC_TEST */
+  "Log Newton diagnostic",                                                      /* LOG_NLS_NEWTON_DIAG */
   "outputs every evaluation of the residual function",                          /* LOG_NLS_RES */
   "outputs debug information about extrapolate process",                        /* LOG_NLS_EXTRAPOLATE */
   "outputs residuals of the initialization",                                    /* LOG_RES_INIT */
