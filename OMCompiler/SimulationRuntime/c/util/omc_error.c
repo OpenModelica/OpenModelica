@@ -53,6 +53,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_DASSL_STATES",
   "LOG_DEBUG",
   "LOG_DELAY",
+  "LOG_DIVISION",
   "LOG_DSS",
   "LOG_DSS_JAC",
   "LOG_DT",
@@ -98,7 +99,6 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
 #ifdef USE_DEBUG_TRACE
   "LOG_TRACE",
 #endif
-  "LOG_UTIL",
   "LOG_ZEROCROSSINGS",
 };
 
@@ -111,6 +111,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "outputs the states at every dassl call",                                     /* LOG_DASSL_STATES */
   "additional debug information",                                               /* LOG_DEBUG */
   "debug information for delay operator",                                       /* LOG_DELAY */
+  "Log division by zero",                                                       /* LOG_DIVISION */
   "outputs information about dynamic state selection",                          /* LOG_DSS */
   "outputs jacobian of the dynamic state selection",                            /* LOG_DSS_JAC */
   "additional information about dynamic tearing",                               /* LOG_DT */
@@ -123,8 +124,8 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "verbose log non-linear solver process of GBODE solver",                      /* LOG_GBODE_NLS_V */
   "output states at every GBODE call",                                          /* LOG_GBODE_STATES */
   "additional information during initialization",                               /* LOG_INIT */
-  "filter for LOG_INIT to log only homotopy initialization",                    /* LOG_INIT_HOMOTOPY */
-  "verbose information during initialziation",                                  /* LOG_INIT_V */
+  "log homotopy initialization",                                                /* LOG_INIT_HOMOTOPY */
+  "verbose information during initialization",                                  /* LOG_INIT_V */
   "information from Ipopt",                                                     /* LOG_IPOPT */
   "more information from Ipopt",                                                /* LOG_IPOPT_FULL*/
   "check jacobian matrix with Ipopt",                                           /* LOG_IPOPT_JAC*/
@@ -156,7 +157,6 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* LOG_TRACE */
 #endif
-  "???",                                                                        /* LOG_UTIL*/
   "additional information about the zerocrossings"                              /* LOG_ZEROCROSSINGS */
 };
 

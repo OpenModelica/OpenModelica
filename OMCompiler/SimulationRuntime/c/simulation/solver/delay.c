@@ -85,7 +85,7 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
       *foundEvent = 1 /* true */;
-      printRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
+      printRingBuffer(delayStruct, LOG_DEBUG, printDelayBuffer);
     }
     if (curTime > time) {
       pos--;

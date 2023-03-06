@@ -224,26 +224,26 @@ void lookupRingBuffer(RINGBUFFER *rb, void **lookup)
 }
 
 /**
- * @brief Dumps information about ring buffer to LOG_UTIL.
+ * @brief Dumps information about ring buffer to stream.
  *
  * @param rb    Pointer to ring buffer.
  */
-void infoRingBuffer(RINGBUFFER *rb)
+void infoRingBuffer(RINGBUFFER *rb, int stream)
 {
-  if (ACTIVE_STREAM(LOG_UTIL)) {
-    infoStreamPrint(LOG_UTIL, 1, "RingBuffer-Info");
-    infoStreamPrint(LOG_UTIL, 0, "itemSize: %d [size of one item in bytes]", rb->itemSize);
-    infoStreamPrint(LOG_UTIL, 0, "firstElement: %d [position of first element in buffer]", rb->firstElement);
-    infoStreamPrint(LOG_UTIL, 0, "nElements: %d [number of elements in buffer]", rb->nElements);
-    infoStreamPrint(LOG_UTIL, 0, "bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
-    messageClose(LOG_UTIL);
+  if (ACTIVE_STREAM(stream)) {
+    infoStreamPrint(stream, 1, "RingBuffer-Info");
+    infoStreamPrint(stream, 0, "itemSize: %d [size of one item in bytes]", rb->itemSize);
+    infoStreamPrint(stream, 0, "firstElement: %d [position of first element in buffer]", rb->firstElement);
+    infoStreamPrint(stream, 0, "nElements: %d [number of elements in buffer]", rb->nElements);
+    infoStreamPrint(stream, 0, "bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
+    messageClose(stream);
   }
 }
 
 /**
- * @brief Print a ringbuffer with provided print function.
+ * @brief Print a ring buffer with provided print function.
  *
- * @param rb                Ringbuffer to print.
+ * @param rb                Ring buffer to print.
  * @param stream            Stream of type LOG_STREAM.
  * @param printDataFunc     Function to print address of buffer element and its data to stream.
  */
@@ -253,7 +253,7 @@ void printRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int
 
   if (useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing ring buffer:");
-    infoRingBuffer(rb);
+    infoRingBuffer(rb, stream);
 
     for(i = 0; i < rb->nElements; ++i) {
       bufferElemData = getRingData(rb, i);

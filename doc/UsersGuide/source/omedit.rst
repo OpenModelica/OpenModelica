@@ -601,6 +601,8 @@ Simulation Flags
   -  *LOG_DASSL* - additional information about dassl solver.
   -  *LOG_DASSL_STATES* - outputs the states at every dassl call.
   -  *LOG_DEBUG* - additional debug information.
+  -  *LOG_DELAY* - Debug information for delay operator.
+  -  *LOG_DIVISION* - Log division by zero.
   -  *LOG_DSS* - outputs information about dynamic state selection.
   -  *LOG_DSS_JAC* - outputs jacobian of the dynamic state selection.
   -  *LOG_DT* - additional information about dynamic tearing.
@@ -613,6 +615,8 @@ Simulation Flags
   -  *LOG_GBODE_NLS_V* - Verbose log non-linear solver process of GBODE solver.
   -  *LOG_GBODE_STATES* - Output states at every GBODE call.
   -  *LOG_INIT* - additional information during initialization.
+  -  *LOG_INIT_HOMOTOPY* - Log homotopy initialization.
+  -  *LOG_INIT_V* - Verbose information during initialization.
   -  *LOG_IPOPT* - information from Ipopt.
   -  *LOG_IPOPT_FULL* - more information from Ipopt.
   -  *LOG_IPOPT_JAC* - check jacobian matrix with Ipopt.
@@ -636,10 +640,11 @@ Simulation Flags
   -  *LOG_SOLVER_V* - verbose information about the integration process.
   -  *LOG_SOLVER_CONTEXT* - context information during the solver process.
   -  *LOG_SOTI* - final solution of the initialization.
+  -  *LOG_SPATIALDISTR* - logging of internal operations for spatialDistribution.
   -  *LOG_STATS* - additional statistics about timer/events/solver.
   -  *LOG_STATS_V* - additional statistics for LOG_STATS.
   -  *LOG_SUCCESS* - This stream is always active, can be disabled with -lv=-LOG_SUCCESS.
-  -  *LOG_UTIL*.
+  -  *LOG_SYNCHRONOUS* - Log clocks and sub-clocks for synchronous features.
   -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
 -  *Additional Simulation Flags (Optional)* – specify any other simulation flag.
@@ -651,7 +656,7 @@ Output
 
 -  *Single Precision* - Output results in single precision (only for mat output format).
 
--  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
+-  *File Name Prefix (Optional)* - the name is used as a prefix for the output files.
 
 -  *Result File (Optional)* - the simulation result file name.
 

@@ -376,7 +376,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
   plotCommands = popen("gnuplot", "w");
 #endif
   if (!plotCommands) {
-    warningStreamPrint(LOG_UTIL, 0, "Plots of profiling data were disabled: %s\n", strerror(errno));
+    warningStreamPrint(LOG_DIVISION, 0, "Plots of profiling data were disabled: %s\n", strerror(errno));
   }
 
   assertStreamPrint(threadData, 0 != fout, "Failed to open %s%s: %s\n", outputPath, filename, strerror(errno));
@@ -401,7 +401,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
   ]>\n");
   if(time(&t) < 0)
   {
-    warningStreamPrint(LOG_UTIL, 0, "time() failed: %s", strerror(errno));
+    warningStreamPrint(LOG_DIVISION, 0, "time() failed: %s", strerror(errno));
     fclose(fout);
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
       fclose(plotCommands);
@@ -412,7 +412,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
   }
   if(!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t)))
   {
-    warningStreamPrint(LOG_UTIL, 0, "strftime() failed");
+    warningStreamPrint(LOG_DIVISION, 0, "strftime() failed");
     fclose(fout);
     return 1;
   }
@@ -503,12 +503,12 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
 #endif
       fclose(plotCommands);
       if (measure_time_flag & 4 && 0 != system(buf)) {
-        warningStreamPrint(LOG_UTIL, 0, "Plot command failed: %s\n", buf);
+        warningStreamPrint(LOG_DIVISION, 0, "Plot command failed: %s\n", buf);
       }
     }
 #else
     if(0 != pclose(plotCommands)) {
-      warningStreamPrint(LOG_UTIL, 0, "Warning: Plot command failed\n");
+      warningStreamPrint(LOG_DIVISION, 0, "Warning: Plot command failed\n");
     }
 #endif
     if(omhome)
