@@ -260,6 +260,31 @@ double getGBRatio() {
 }
 
 /**
+ * @brief Get information on richardson extrapolation.
+ *
+ * Read flag FLAG_ERR to get percentage.
+ * Defaults to 0.
+ *
+ * @return int  0: default, depending on the RK method
+ *              1: richardson extrapolation
+ *              2: embedded scheme
+ **/
+int getGBErr(enum _FLAG flag) {
+  double richardson;
+  const char *flag_value = omc_flagValue[flag];
+
+  if (flag_value) {
+    richardson = atof(omc_flagValue[flag]);
+    if (richardson != 0 && richardson != 1 && richardson != 2) {
+      throwStreamPrint(NULL, "Flag -gberr and -gbferr has to be 0, 1 or 2.");
+    }
+  } else {
+    richardson = 0;
+  }
+  return (int) richardson;
+}
+
+/**
  * @brief Dump available flag options to stdout.
  *
  * @param flagName    Name of flag

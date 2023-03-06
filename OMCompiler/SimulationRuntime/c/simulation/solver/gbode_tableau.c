@@ -34,6 +34,7 @@
  */
 
 #include "gbode_tableau.h"
+#include "gbode_conf.h"
 
 #include <string.h>
 
@@ -1398,11 +1399,10 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
  */
 BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ERR) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
-  const char* flag_value = omc_flagValue[FLAG_ERR];
-  int richardson = 0;
+  int richardson;
 
-  if (flag_value != NULL) richardson = atoi(flag_value);
-  if (richardson) {
+  richardson = getGBErr(FLAG_ERR);
+  if (richardson == 1) {
     tableau->richardson = TRUE;
     infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   } else {
@@ -1493,54 +1493,71 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       getButcherTableau_ESDIRK4(tableau);
       break;
     case RK_RADAU_IA_2:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_2(tableau);
       break;
     case RK_RADAU_IA_3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_3(tableau);
       break;
     case RK_RADAU_IA_4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_4(tableau);
       break;
     case RK_RADAU_IIA_2:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_2(tableau);
       break;
     case RK_RADAU_IIA_3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_3(tableau);
       break;
     case RK_RADAU_IIA_4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_4(tableau);
       break;
     case RK_LOBA_IIIA_3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_3(tableau);
       break;
     case RK_LOBA_IIIA_4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_4(tableau);
       break;
     case RK_LOBA_IIIB_3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_3(tableau);
       break;
     case RK_LOBA_IIIB_4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_4(tableau);
       break;
     case RK_LOBA_IIIC_3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_3(tableau);
       break;
     case RK_LOBA_IIIC_4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_4(tableau);
       break;
     case RK_GAUSS2:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_GAUSS2(tableau);
       break;
     case RK_GAUSS3:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_GAUSS3(tableau);
       break;
     case RK_GAUSS4:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_GAUSS4(tableau);
       break;
     case RK_GAUSS5:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_GAUSS5(tableau);
       break;
     case RK_GAUSS6:
+      if (richardson == 0) tableau->richardson = TRUE;
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
