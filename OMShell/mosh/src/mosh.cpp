@@ -135,7 +135,11 @@ void doOMCCommunication(const string *scriptname)
       if (!done) add_history(line);
       env->evalExpression(line);
       string res = env->getResult();
-      cout << res << endl;
+      cout << res;
+      string error = env->getError();
+      if (error.size() > 3) {
+        cout << error;
+      }
     }
     free(line);
   }

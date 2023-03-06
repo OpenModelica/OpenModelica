@@ -177,10 +177,8 @@ namespace IAEX
     if( error_.size() > 2 ) {
       if (error_.contains("Error:")) {
         severity = 2;
-        error_ = QString( "OMC-ERROR: \n" ) + error_;
       } else if (error_.contains("Warning:")) {
         severity = 1;
-        error_ = QString( "OMC-WARNING: \n" ) + error_;
       } else {
         severity = 0;
       }
