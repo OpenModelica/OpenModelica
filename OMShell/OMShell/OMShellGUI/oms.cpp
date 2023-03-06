@@ -525,25 +525,15 @@ void OMS::returnPressed()
       cursor_.insertText( "\n" + res + "\n", textFormat_ );
 
     // get Error text
-    try
+    QString error = delegate_->getError();
+    if(error.size() > 2)
     {
-      QString getErrorString = "getErrorString()";
-      delegate_->evalExpression(getErrorString);
-    }
-    catch( exception &e )
-    {
-      exceptionInEval(e);
-      return;
-    }
-    QString error = delegate_->getResult();
-    if( error.size() > 2 )
-    {
-      cursor_.insertText( error.mid( 1, error.size() - 2 ) );
+      cursor_.insertText(error);
     }
   }
   else
   {
-    cursor_.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
+    cursor_.insertText("[ERROR] No OMC server started - unable to restart OMC\n" );
   }
 
   // add new command line

@@ -162,10 +162,8 @@ static bool contains(std::string s1, std::string s2);
     if( error_.size() > 2 ) {
       if (contains(error_,"Error:")) {
         severity = 2;
-        error_ = "OMC-ERROR: \n" + error_;
       } else if (contains(error_,"Warning:")) {
         severity = 1;
-        error_ = "OMC-WARNING: \n" + error_;
       } else {
         severity = 0;
       }
