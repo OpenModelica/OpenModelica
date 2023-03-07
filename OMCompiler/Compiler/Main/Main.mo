@@ -329,11 +329,15 @@ protected function showErrors
   input String errorMessages;
 algorithm
   if errorString <> "" then
-    print(errorString); print("\n");
+    System.fflush();
+    System.fputs(errorString, System.StreamType.STDERR);
+    System.fputs("\n", System.StreamType.STDERR);
   end if;
 
   if errorMessages <> "" then
-    print(errorMessages); print("\n");
+    System.fflush();
+    System.fputs(errorMessages, System.StreamType.STDERR);
+    System.fputs("\n", System.StreamType.STDERR);
   end if;
 end showErrors;
 

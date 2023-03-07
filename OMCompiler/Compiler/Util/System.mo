@@ -1316,5 +1316,16 @@ Includes constant data and handles cycles.
 </html>"));
 end getSizeOfData;
 
+type StreamType = enumeration(STDOUT, STDERR);
+
+function fputs
+  input String str;
+  input StreamType streamType;
+  output Integer res "Nonnegative on success, EOF on error";
+  external "C" res=SystemImpl__fputs(str, streamType) annotation(Library = "omcruntime", Documentation(info="<html>
+Outputs a string using the C function fputs.
+</html>"));
+end fputs;
+
 annotation(__OpenModelica_Interface="util");
 end System;
