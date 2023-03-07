@@ -108,7 +108,7 @@ public
     String flag = "clocked"; //Flags.getConfigString(Flags.PARTITIONING)
   algorithm
     (func) := match flag
-      case "default"  then (partitioningDefault);
+      case "default"  then (partitioningClocked);
       case "clocked"  then (partitioningClocked);
       case "none"     then (partitioningNone);
       /* ... New detect states modules have to be added here */
@@ -185,117 +185,16 @@ protected
       end match;
     end addElement;
 
-    function merge
-      input ClusterPointer cluster1;
-      input ClusterPointer cluster2;
-      input UnorderedMap<ComponentRef, ClusterPointer> map;
-    protected
-      Cluster c1 = Pointer.access(cluster1);
-      Cluster c2 = Pointer.access(cluster2);
-      Integer c1v = UnorderedSet.size(c1.variables);
-      Integer c1e = UnorderedSet.size(c1.eqn_idnts);
-      Integer c2v = UnorderedSet.size(c2.variables);
-      Integer c2e = UnorderedSet.size(c2.eqn_idnts);
-    algorithm
-      c1.variables := UnorderedSet.union(c1.variables, c2.variables);
-      c1.eqn_idnts := UnorderedSet.union(c1.eqn_idnts, c2.eqn_idnts);
-
-      // find the lowest number of pointers needed to be changed
-      if (c1v + c1e) > (c2v + c2e) then
-        Pointer.update(cluster1, c1);
-        for var in UnorderedSet.toList(c2.variables) loop
-          UnorderedMap.add(var, cluster1, map);
-        end for;
-        for var in UnorderedSet.toList(c2.eqn_idnts) loop
-          UnorderedMap.add(var, cluster1, map);
-        end for;
-      else
-        Pointer.update(cluster2, c1);
-        for var in UnorderedSet.toList(c1.variables) loop
-          UnorderedMap.add(var, cluster2, map);
-        end for;
-        for var in UnorderedSet.toList(c1.eqn_idnts) loop
-          UnorderedMap.add(var, cluster2, map);
-        end for;
-      end if;
-    end merge;
-
-    function getClusters
-      "extracts all clusters from the unordered map and avoids duplicates by marking variables"
-      input UnorderedMap<ComponentRef, ClusterPointer> map;
-      input Integer size;
-      output list<Cluster> clusters = {};
-    protected
-      UnorderedSet<ComponentRef> cref_marks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, size);
-      list<tuple<ComponentRef, ClusterPointer>> entry_lst;
-      ComponentRef cref;
-      ClusterPointer cluster_ptr;
-      Cluster cluster;
-      Option<Pointer<Cluster>> err_cluster;
-      String errStr;
-    algorithm
-      entry_lst := UnorderedMap.toList(map);
-      for entry in entry_lst loop
-        (cref, cluster_ptr) := entry;
-        if not UnorderedSet.contains(cref, cref_marks) then
-          cluster := Pointer.access(cluster_ptr);
-          clusters := cluster :: clusters;
-          for var in UnorderedSet.toList(cluster.variables) loop
-            try
-              UnorderedSet.addUnique(var, cref_marks);
-            else
-              errStr := getInstanceName()
-                + " failed while trying to add the cluster for " + ComponentRef.toString(cref)
-                + ", because the cluster for variable " + ComponentRef.toString(var) + " was already added.\n"
-                + StringUtil.headline_4("Conflicting cluster 1 (" + ComponentRef.toString(cref) + ")")
-                + Cluster.toString(cluster) + "\n"
-                + StringUtil.headline_4("Conflicting cluster 2 (" + ComponentRef.toString(var) + ")");
-              err_cluster := UnorderedMap.get(var, map);
-              if Util.isSome(err_cluster) then
-                errStr := errStr + Cluster.toString(Pointer.access(Util.getOption(err_cluster))) + "\n";
-              else
-                errStr := errStr + "<CLUSTER NOT FOUND>\n";
-              end if;
-              Error.addMessage(Error.INTERNAL_ERROR,{errStr});
-              fail();
-            end try;
-          end for;
-          for var in UnorderedSet.toList(cluster.eqn_idnts) loop
-            try
-              UnorderedSet.addUnique(var, cref_marks);
-            else
-              errStr := getInstanceName()
-                + " failed while trying to add the cluster for " + ComponentRef.toString(cref)
-                + ", because the cluster for variable " + ComponentRef.toString(var) + " was already added.\n"
-                + StringUtil.headline_4("Conflicting cluster 1 (" + ComponentRef.toString(cref) + ")")
-                + Cluster.toString(cluster) + "\n"
-                + StringUtil.headline_4("Conflicting cluster 2 (" + ComponentRef.toString(var) + ")");
-              err_cluster := UnorderedMap.get(var, map);
-              if Util.isSome(err_cluster) then
-                errStr := errStr + Cluster.toString(Pointer.access(Util.getOption(err_cluster))) + "\n";
-              else
-                errStr := errStr + "<CLUSTER NOT FOUND>\n";
-              end if;
-              Error.addMessage(Error.INTERNAL_ERROR,{errStr});
-              fail();
-            end try;
-          end for;
-        end if;
-      end for;
-    end getClusters;
-
     function toSystem
       input Cluster cluster;
       input VariablePointers variables;
       input EquationPointers equations;
       input System.SystemType systemType;
-      input Pointer<array<Boolean>> marked_vars_ptr;
       input Pointer<Integer> index;
       output System.System system;
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
-      array<Boolean> marked_vars = Pointer.access(marked_vars_ptr);
       Boolean isInit = systemType == System.SystemType.INI;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
@@ -303,12 +202,6 @@ protected
       EquationPointers systEquations;
       Integer var_idx;
     algorithm
-      for cref in cvars loop
-        var_idx := VariablePointers.getVarIndex(variables, cref);
-        if var_idx > 0 then
-          marked_vars[var_idx] := false;
-        end if;
-      end for;
       var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
       filtered_vars := list(var for var guard(VariablePointers.contains(var, variables)) in var_lst);
       eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cidnt);
@@ -328,12 +221,9 @@ protected
         partitionIndex    = Pointer.access(index),
         jacobian          = NONE()
       );
-      Pointer.update(marked_vars_ptr, marked_vars);
       Pointer.update(index, Pointer.access(index) + 1);
     end toSystem;
   end Cluster;
-  // needed for unordered map
-  type ClusterPointer = Pointer<Cluster>;
 
   function partitioningNone extends Module.partitioningInterface;
   protected
@@ -370,8 +260,7 @@ protected
     ComponentRef name_cref;
     Cluster cluster;
     Pointer<Integer> index = Pointer.create(1);
-    // remove this!
-    Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
+    array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
   algorithm
     for eq_idx in UnorderedMap.valueList(equations.map) loop
@@ -412,20 +301,36 @@ protected
       end if;
     end for;
 
-    // collect clusters
+    // canonicalize eqn_map
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
-        // canonicalize eqn_map
         root_idx := eq_idx;
         while root_idx <> eqn_map[root_idx] loop
           root_idx := eqn_map[root_idx];
         end while;
         eqn_map[eq_idx] := root_idx;
+      end if;
+    end for;
 
+    // find and report variables that could not be assigned to a partition
+    marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
+    single_vars := VariablePointers.getMarkedVars(variables, marked_vars);
+
+    if not listEmpty(single_vars) then
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
+        + ") failed because the following variables could not be assigned to a partition:\n  {"
+        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), ", ") + "}"});
+      fail();
+    end if;
+
+    // collect clusters
+    for eq_idx in UnorderedMap.valueList(equations.map) loop
+      if eq_idx > 0 then
         name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
         UnorderedMap.addUpdate(eqn_map[eq_idx], function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
       end if;
     end for;
+
     for var_idx in UnorderedMap.valueList(variables.map) loop
       if var_idx > 0 then
         name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
@@ -433,16 +338,7 @@ protected
       end if;
     end for;
 
-    systems := list(Cluster.toSystem(cl, variables, equations, systemType, marked_vars_ptr, index) for cl in UnorderedMap.valueList(cluster_map));
-
-    // TODO we can get unassigned variables from var_idx < 0 if we can get variables from their indices
-    single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
-    if not listEmpty(single_vars) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
-        + ") failed because the following variables could not be assigned to a partition:\n  {"
-        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), ", ") + "}"});
-      fail();
-    end if;
+    systems := list(Cluster.toSystem(cl, variables, equations, systemType, index) for cl in UnorderedMap.valueList(cluster_map));
   end partitioningClocked;
 
   function collectPartitioningCrefs
@@ -493,206 +389,6 @@ protected
       else exp;
     end match;
   end collectPartitioningCrefs;
-
-  function partitioningDefault extends Module.partitioningInterface;
-  protected
-    UnorderedMap<ComponentRef, ClusterPointer> map;
-    Integer size = VariablePointers.size(variables) + EquationPointers.size(equations);
-    list<Cluster> clusters;
-    Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
-    list<Pointer<Variable>> single_vars, unfixable_vars;
-    Pointer<Integer> index = Pointer.create(1);
-  algorithm
-    // collect partitions in clusters
-    map := UnorderedMap.new<ClusterPointer>(ComponentRef.hash, ComponentRef.isEqual);
-    collectPartitions(equations, systemType, map);
-    // extract unique clusters from the unordered map
-    clusters := Cluster.getClusters(map, size);
-    // create systems from clusters by filtering the variables for relevant ones
-    systems := list(Cluster.toSystem(cluster, variables, equations, systemType, marked_vars_ptr, index) for cluster in clusters);
-
-    single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
-    if systemType <> System.SystemType.INI then
-      if not listEmpty(single_vars) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
-          + ") failed because the following variables could not be assigned to a partition:\n  {"
-          + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), ", ") + "}"});
-        fail();
-      end if;
-    else
-      (single_vars, unfixable_vars) := List.extractOnTrue(single_vars, BVariable.isFixable);
-      if not listEmpty(unfixable_vars) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
-          + ") failed because the following unfixable variables could not be assigned to a partition:\n  {"
-          + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in unfixable_vars), ", ") + "}"});
-        fail();
-      end if;
-      systems := System.SYSTEM(
-        systemType        = systemType,
-        unknowns          = VariablePointers.fromList(single_vars),
-        daeUnknowns       = NONE(),
-        equations         = EquationPointers.empty(),
-        adjacencyMatrix   = NONE(),
-        matching          = NONE(),
-        strongComponents  = NONE(),
-        partitionKind     = System.PartitionKind.CONTINUOUS,
-        partitionIndex    = Pointer.access(index),
-        jacobian          = NONE()
-      ) :: systems;
-    end if;
-  end partitioningDefault;
-
-  function collectPartitions
-    input EquationPointers equations;
-    input System.SystemType systemType;
-    input UnorderedMap<ComponentRef, ClusterPointer> map;
-  algorithm
-    EquationPointers.mapPtr(equations, function collectPartitionsEquation(systemType=systemType,map=map));
-  end collectPartitions;
-
-  function collectPartitionsEquation
-    input output Pointer<Equation> eqn;
-    input System.SystemType systemType;
-    input UnorderedMap<ComponentRef, ClusterPointer> map;
-  protected
-    ComponentRef eqCref = BVariable.getVarName(Equation.getResidualVar(eqn));
-  algorithm
-    _ := Equation.map(
-      eq          = Pointer.access(eqn),
-      funcExp     = function collectPartitionsExpression(eqCref=eqCref,systemType=systemType,map=map),
-      funcCrefOpt = SOME(function collectPartitionsCref(eqCref=eqCref,systemType=systemType,map=map))
-    );
-  end collectPartitionsEquation;
-
-  function collectPartitionsExpression
-    input output Expression exp;
-    input ComponentRef eqCref;
-    input System.SystemType systemType;
-    input UnorderedMap<ComponentRef, ClusterPointer> map;
-  algorithm
-    () := match exp
-      case Expression.CREF() guard(not ComponentRef.isTime(exp.cref)) algorithm
-        _ := collectPartitionsCref(exp.cref, eqCref, systemType, map);
-      then ();
-      else ();
-    end match;
-  end collectPartitionsExpression;
-
-  function collectPartitionsCref
-    input output ComponentRef varCref;
-    input ComponentRef eqCref;
-    input System.SystemType systemType;
-    input UnorderedMap<ComponentRef, ClusterPointer> map;
-  protected
-    ComponentRef stripped;
-    list<ComponentRef> children;
-    Boolean b;
-  algorithm
-    // extract potential record children
-    children := match BVariable.getVar(varCref)
-      local
-        list<Pointer<Variable>> children_vars;
-
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
-      then list(BVariable.getVarName(var) for var in children_vars);
-
-      else {varCref};
-    end match;
-
-    for child in children loop
-      stripped := ComponentRef.stripSubscriptsAll(child);
-
-      // check if cref has to be considered as a dependency
-      b := match systemType
-        case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
-        case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
-        then fail();
-      end match;
-
-      if not b then
-        () := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
-          local
-            ClusterPointer cluster1, cluster2;
-            Cluster c;
-
-          // neither equation nor variable already have a cluster
-          case (NONE(), NONE()) algorithm
-            cluster1 := Pointer.create(CLUSTER(
-              variables = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual),
-              eqn_idnts = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)));
-            addCrefToMap(stripped, cluster1, map);
-            addCrefToMap(eqCref, cluster1, map);
-          then ();
-
-         // equation does not have a cluster, but variable has one
-          case (NONE(), SOME(cluster2)) algorithm
-            addCrefToMap(eqCref, cluster2, map);
-          then ();
-
-          // variable does not have a cluster, but equation has one
-          case (SOME(cluster1), NONE()) algorithm
-            addCrefToMap(stripped, cluster1, map);
-          then ();
-
-          // both already have a different cluster
-          case (SOME(cluster1), SOME(cluster2))
-          guard(not referenceEq(cluster1, cluster2)) algorithm
-            Cluster.merge(cluster1, cluster2, map);
-          then ();
-
-          // both already have the same cluster
-          else ();
-        end match;
-      end if;
-    end for;
-  end collectPartitionsCref;
-
-  function addCrefToMap
-    input ComponentRef cref;
-    input ClusterPointer clusterPointer;
-    input UnorderedMap<ComponentRef, ClusterPointer> map;
-  protected
-    Cluster cluster = Pointer.access(clusterPointer);
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref);
-    ComponentRef cref2;
-    Boolean addSecond = false;
-  algorithm
-    // add residuals to eqn identificators
-    // states and there derivatives belong to one partition
-    // discrete states and there previous value also
-    if BVariable.isDAEResidual(var_ptr) then
-      UnorderedSet.add(cref, cluster.eqn_idnts);
-    elseif BVariable.isState(var_ptr) then
-      cref2 := BVariable.getDerCref(cref);
-      UnorderedSet.add(cref, cluster.variables);
-      UnorderedSet.add(cref2, cluster.variables);
-      addSecond := true;
-    elseif BVariable.isStateDerivative(var_ptr) then
-      cref2 := BVariable.getStateCref(cref);
-      UnorderedSet.add(cref, cluster.variables);
-      UnorderedSet.add(cref2, cluster.variables);
-      addSecond := true;
-    elseif BVariable.isDiscreteState(var_ptr) then
-      cref2 := BVariable.getPreCref(cref);
-      UnorderedSet.add(cref, cluster.variables);
-      UnorderedSet.add(cref2, cluster.variables);
-      addSecond := true;
-    elseif BVariable.isPrevious(var_ptr) then
-      cref2 := BVariable.getStateCref(cref);
-      UnorderedSet.add(cref, cluster.variables);
-      UnorderedSet.add(cref2, cluster.variables);
-      addSecond := true;
-    else
-      UnorderedSet.add(cref, cluster.variables);
-    end if;
-    Pointer.update(clusterPointer, cluster);
-    UnorderedMap.add(cref, clusterPointer, map);
-    if addSecond then
-      UnorderedMap.add(cref2, clusterPointer, map);
-    end if;
-  end addCrefToMap;
 
   function addCrefToSet
     input ComponentRef cref;
