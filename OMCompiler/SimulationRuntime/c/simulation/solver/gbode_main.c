@@ -370,6 +370,21 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->maxStepSize = -1;
     infoStreamPrint(LOG_SOLVER, 0, "maximum step size not set");
   }
+    /* Initial step size */
+  if (omc_flag[FLAG_INITIAL_STEP_SIZE])
+  {
+    gbData->initialStepSize = atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]);
+    if (gbData->initialStepSize < GB_MINIMAL_STEP_SIZE || gbData->initialStepSize > DBL_MAX/2) {
+      throwStreamPrint(NULL, "initial step size %g is not allowed, minimal step size is %g", gbData->initialStepSize, GB_MINIMAL_STEP_SIZE);
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "initial step size %g", gbData->initialStepSize);
+    }
+  }
+  else
+  {
+    gbData->initialStepSize = -1; /* use default */
+    infoStreamPrint(LOG_SOLVER, 0, "initial step size not set");
+  }
   gbData->isFirstStep = TRUE;
 
   /* Allocate internal memory */
