@@ -1158,7 +1158,7 @@ constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(94, "ig
   Gettext.gettext("Ignores the command line options specified as annotation in the class."));
 constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(95, "calculateSensitivities",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Generates sensitivities variables and matrixes."));
+  Gettext.gettext("Generates sensitivities variables and matrices."));
 constant ConfigFlag ALARM = CONFIG_FLAG(96, "alarm",
   SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes."));

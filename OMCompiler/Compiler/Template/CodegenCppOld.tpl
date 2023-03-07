@@ -74,7 +74,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationFactoryFile(simCode, &extraFuncs, &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
         let()= textFile(simulationMainRunScript(simCode, &extraFuncs, &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode, &extraFuncs, &extraFuncsDecl, "")%>')
 
-        let jac = (jacobianMatrixes |> JAC_MATRIX(columns=mat, partitionIndex=partIdx) =>
+        let jac = (jacobianMatrices |> JAC_MATRIX(columns=mat, partitionIndex=partIdx) =>
           (mat |> JAC_COLUMN(columnEqns=eqs) => algloopfiles(eqs, simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, partIdx, stateDerVectorName, false) ;separator="")
          ;separator="")
         let alg = algloopfiles(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, 0, stateDerVectorName, false)
@@ -242,7 +242,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   class <%lastIdentOfPath(modelInfo.name)%>Jacobian : public <%lastIdentOfPath(modelInfo.name)%>
   {
-  <% (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+  <% (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
        (mat |> JAC_COLUMN(columnEqns=eqs) => generatefriendAlgloops(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
      ;separator="")
   %>
@@ -254,7 +254,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   protected:
     void initialize();
     <%
-    let jacobianfunctions = (jacobianMatrixes |> JAC_MATRIX(matrixName=name) hasindex index0 =>
+    let jacobianfunctions = (jacobianMatrices |> JAC_MATRIX(matrixName=name) hasindex index0 =>
     <<
 
     void calc<%name%>JacobianColumn();
@@ -266,7 +266,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
     <%
-    let jacobianvars = (jacobianMatrixes |> JAC_MATRIX(matrixName=name) hasindex index0 =>
+    let jacobianvars = (jacobianMatrices |> JAC_MATRIX(matrixName=name) hasindex index0 =>
       <<
 
       <%matrixreturntype%> _<%name%>jacobian;
@@ -290,7 +290,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians_skip(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
+    <%variableDefinitionsJacobians_skip(jacobianMatrices, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -639,12 +639,12 @@ template simulationJacobianCppFile(SimCode simCode, Text& extraFuncs, Text& extr
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-   let initialjacMats = (jacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, jacobianIndex=jacIndex) =>
+   let initialjacMats = (jacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, jacobianIndex=jacIndex) =>
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
     ;separator="\n";empty)
    <<
 
-   <% (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+   <% (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
        (mat |> JAC_COLUMN(columnEqns=eqs) =>  algloopfilesInclude(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="")
      ;separator="")
    %>
@@ -680,7 +680,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        delete [] _ADependenciesOfColumn;
    }
 
-   <%functionAnalyticJacobians(modelInfo,jacobianMatrixes, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+   <%functionAnalyticJacobians(modelInfo,jacobianMatrices, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
    //testmaessig aus der cruntime
    /* Jacobians */
@@ -688,7 +688,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    void <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA()
    {
-   <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+   <%functionAnalyticJacobians2(jacobianMatrices, lastIdentOfPath(modelInfo.name),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
    }
    <%\n%>
    >>
@@ -976,7 +976,7 @@ template simulationMixedSystemCppFile(SimCode simCode , Text updateResidualFunct
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 
-  let getJacobianForIndexMethods =   (jacobianMatrixes |> JAC_MATRIX(columns=mat, matrixName=name, coloredCols=colorList, jacobianIndex=jacIndex) =>
+  let getJacobianForIndexMethods =   (jacobianMatrices |> JAC_MATRIX(columns=mat, matrixName=name, coloredCols=colorList, jacobianIndex=jacIndex) =>
           generateJacobianForIndex(simCode, mat, colorList, jacIndex, name, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n\n";empty)
   let classname = lastIdentOfPath(modelInfo.name)
@@ -1182,7 +1182,7 @@ end simulationMixedSystemCppFile;
 
 
 template generateJacobianForIndex(SimCode simCode, list<JacobianColumn> jacobianColumn, list<list<Integer>> colorList,Integer indexJacobian, String matrixName,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,                                Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates Matrixes for Linear Model."
+ "Generates Matrices for Linear Model."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -6817,7 +6817,7 @@ let friendclasses = generatefriendAlgloops(listAppend(listAppend(allEquations, i
 let algloopsolvers = generateAlgloopsolverVariables(modelInfo,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
 
 let algloopsystems = generateAlgloopsSystemVariables(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace )
-let jacalgloopsystems =  (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+let jacalgloopsystems =  (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
                         (mat |> JAC_COLUMN(columnEqns=eqs) =>  generateAlgloopsSystemVariables(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
                         ;separator="")
 
@@ -10329,7 +10329,7 @@ template generateAlgloopSystems2(SimEqSystem eq, Context context, Text &varDecls
     ""
  end generateAlgloopSystems2;
 /*
-let jacAlgloopsolver = (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
+let jacAlgloopsolver = (jacobianMatrices |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generateAlgloopsSystemVariables(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
      ;separator="")
 */
@@ -10367,7 +10367,7 @@ template generateAlgloopsolverVariables2( SimCode simCode ,Text& extraFuncs,Text
   match simCode
     case SIMCODE(__) then
    let algloopsolvers = generateAlgloopsolverVariables3(modelInfo,listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
-   let jacalgloopsolver =  (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+   let jacalgloopsolver =  (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
                        (mat |> JAC_COLUMN(columnEqns=eqs) =>  generateAlgloopsolverVariables3(modelInfo,eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
                     ;separator="")
   <<
@@ -10719,7 +10719,7 @@ template algloopMainfile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl
     let filename = fileNamePrefix
     let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>'
 
-    let jacfiles = (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 => (mat |> JAC_COLUMN(columnEqns=eqs) =>  algloopMainfile1(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, filename) ;separator="") ;separator="")
+    let jacfiles = (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 => (mat |> JAC_COLUMN(columnEqns=eqs) =>  algloopMainfile1(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, filename) ;separator="") ;separator="")
     let algloopfiles = (listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))) |> eqs => algloopMainfile2(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, filename) ;separator="\n")
 
     <<
@@ -12672,15 +12672,15 @@ then
 end setVariables;
 
 
-template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) "template functionAnalyticJacobians
+template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let initialjacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
     initialAnalyticJacobians2(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 
    /*
-  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+  let jacMats = (JacobianMatrices |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
@@ -12757,13 +12757,13 @@ template symbolName(String modelNamePrefix, String symbolName)
 end symbolName;
 
 
-template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
     initialAnalyticJacobiansHeader(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 /*
-  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+  let jacMats = (JacobianMatrices |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
@@ -12853,9 +12853,9 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
 end initialAnalyticJacobians;
 
 
-template functionAnalyticJacobians(ModelInfo modelInfo, list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs,
+template functionAnalyticJacobians(ModelInfo modelInfo, list<JacobianMatrix> JacobianMatrices, SimCode simCode, Text& extraFuncs,
                                    Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates Matrixes for Linear Model."
+ "Generates Matrices for Linear Model."
 ::=
 
   match modelInfo
@@ -12863,23 +12863,23 @@ template functionAnalyticJacobians(ModelInfo modelInfo, list<JacobianMatrix> Jac
   let classname = lastIdentOfPath(name)
   let &varDecls = buffer "" /*BUFD*/
 
-  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex, partitionIndex=partIdx) =>
+  let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex, partitionIndex=partIdx) =>
     generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor, partIdx, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n\n";empty)
  /*let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
               match jacobianMatrix case (_,_,name,_,_,_,_) then
             'initialAnalytic<%name%>Jacobian();') ;separator="\n")
-   let initialJacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, jacIndex) =>
+   let initialJacMats = (JacobianMatrices |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, jacIndex) =>
     'initialAnalytic<%name%>Jacobian();'
     ;separator="\n";empty)
   */
 
- let jacalgloopsystems =  (JacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+ let jacalgloopsystems =  (JacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
        (mat |> JAC_COLUMN(columnEqns=eqs) =>  generateAlgloopSystems(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
       ;separator="")
 
- let jacalgloopsolvers=  (JacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex index0 =>
+ let jacalgloopsolvers=  (JacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
        (mat |> JAC_COLUMN(columnEqns=eqs) =>  generateAlgloopSolvers(modelInfo,eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
       ;separator="")
 
@@ -12924,7 +12924,7 @@ end functionJac;
 template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname,
                         SparsityPattern sparsepattern, list<list<Integer>>colorList, Integer maxColor, Integer partIdx,
                         SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates Matrixes for Linear Model."
+ "Generates Matrices for Linear Model."
 ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -12937,7 +12937,7 @@ template generateJacobianMatrix(ModelInfo modelInfo, Integer indexJacobian, list
                                 String matrixName, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer partIdx,
                                 Integer maxColor, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
                                 Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates Matrixes for Linear Model."
+ "Generates Matrices for Linear Model."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -13022,17 +13022,17 @@ case _ then
 end generateJacobianMatrix;
 
 
-template variableDefinitionsJacobians_skip(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
+template variableDefinitionsJacobians_skip(list<JacobianMatrix> JacobianMatrices, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Skips generation of defines for jacobian vars."
 ::=
  ''
 end variableDefinitionsJacobians_skip;
 
 
-template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
+template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrices, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=vars, matrixName=name, jacobianIndex=jacIndex)  =>
+  let analyticVars = (JacobianMatrices |> JAC_MATRIX(columns=jacColumn, seedVars=vars, matrixName=name, jacobianIndex=jacIndex)  =>
     let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
     <<
     <%varsDef%>
@@ -13046,7 +13046,7 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, Sim
 end variableDefinitionsJacobians;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
- "Generates Matrixes for Linear Model."
+ "Generates Matrices for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
     jacobianVarDefine(var, indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)

@@ -770,7 +770,7 @@ algorithm
       makefileParams              = makefileParams,
       delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
       spatialInfo                 = spatialInfo,
-      jacobianMatrixes            = SymbolicJacs,
+      jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
       fileNamePrefix              = filenamePrefix,
       fullPathPrefix              = fullPathPrefix,
@@ -4968,11 +4968,11 @@ public function createSymbolicJacobianssSimCode
   input SimCode.HashTableCrefToSimVar inSimVarHT;
   input Integer iuniqueEqIndex;
   input list<String> inNames;
-  input list<SimCode.JacobianMatrix> inJacobianMatrixes;
-  output list<SimCode.JacobianMatrix> outJacobianMatrixes;
+  input list<SimCode.JacobianMatrix> inJacobianMatrices;
+  output list<SimCode.JacobianMatrix> outJacobianMatrices;
   output Integer ouniqueEqIndex;
 algorithm
-  (outJacobianMatrixes, ouniqueEqIndex) :=
+  (outJacobianMatrices, ouniqueEqIndex) :=
   matchcontinue (inSymJacobians, inSimVarHT, iuniqueEqIndex, inNames)
     local
       BackendDAE.EqSystems systs;
@@ -5011,14 +5011,14 @@ algorithm
       SimCode.JacobianMatrix tmpJac;
       HashTableCrefSimVar.HashTable crefToSimVarHTJacobian;
 
-    case (_, _, _, {}) then (inJacobianMatrixes, iuniqueEqIndex);
+    case (_, _, _, {}) then (inJacobianMatrices, iuniqueEqIndex);
 
     // if nothing is generated
     case ({}, _, _, name::restnames)
       equation
         tmpJac = SimCode.emptyJacobian;
         tmpJac.matrixName = name;
-        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode({}, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
      then
         (linearModelMatrices, uniqueEqIndex);
@@ -5028,7 +5028,7 @@ algorithm
       equation
         tmpJac = SimCode.emptyJacobian;
         tmpJac.matrixName = name;
-        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
      then
         (linearModelMatrices, uniqueEqIndex);
@@ -5090,7 +5090,7 @@ algorithm
         seedVars = List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
         tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, NONE());
-        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
         then
@@ -5197,7 +5197,7 @@ algorithm
         end if;
 
         tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian));
-        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
        (linearModelMatrices, uniqueEqIndex);
@@ -9399,7 +9399,7 @@ algorithm
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
   print("\njacobianMatrices:\n" + UNDERLINE + "\n");
-  jacObs := List.map(simCode.jacobianMatrixes,Util.makeOption);
+  jacObs := List.map(simCode.jacobianMatrices,Util.makeOption);
   List.map_0(jacObs,dumpJacobianMatrix);
   print("\nmodelInfo:\n" + UNDERLINE + "\n");
   dumpModelInfo(simCode.modelInfo);
@@ -11419,12 +11419,12 @@ algorithm
   (_, outFiles) := List.mapFold(inExtObjInfo.vars, getFilesFromSimVar, inFiles);
 end getFilesFromExtObjInfo;
 
-protected function getFilesFromJacobianMatrixes
-  input list<SimCode.JacobianMatrix> inJacobianMatrixes;
+protected function getFilesFromJacobianMatrices
+  input list<SimCode.JacobianMatrix> inJacobianMatrices;
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
-  outFiles := match(inJacobianMatrixes, inFiles)
+  outFiles := match(inJacobianMatrices, inFiles)
     local
       SimCode.Files files;
       list<SimCode.JacobianMatrix> rest;
@@ -11439,19 +11439,19 @@ algorithm
     case (SimCode.JAC_MATRIX(columns=onemat)::rest, files)
       equation
         files = getFilesFromJacobianMatrix(onemat, files);
-        files = getFilesFromJacobianMatrixes(rest, files);
+        files = getFilesFromJacobianMatrices(rest, files);
       then
         files;
 
   end match;
-end getFilesFromJacobianMatrixes;
+end getFilesFromJacobianMatrices;
 
 protected function getFilesFromJacobianMatrix
-  input list<SimCode.JacobianColumn> inJacobianMatrixes;
+  input list<SimCode.JacobianColumn> inJacobianMatrices;
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
-  outFiles := match(inJacobianMatrixes, inFiles)
+  outFiles := match(inJacobianMatrices, inFiles)
     local
       SimCode.Files files;
       list<SimCode.JacobianColumn> rest;
@@ -11490,7 +11490,7 @@ algorithm
                                        :: outSimCode.odeEquations, files );
     files := getFilesFromSimEqSystems(outSimCode.algebraicEquations, files);
     files := getFilesFromExtObjInfo(outSimCode.extObjInfo, files);
-    files := getFilesFromJacobianMatrixes(outSimCode.jacobianMatrixes, files);
+    files := getFilesFromJacobianMatrices(outSimCode.jacobianMatrices, files);
     files := List.sort(files, greaterFileInfo);
     outSimCode.modelInfo := modelInfo;
   end if;
@@ -13854,7 +13854,7 @@ end createFMISimulationFlags;
 
 public function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
-  by analyzing the symbolic jacobian matrixes and sparsity pattern"
+  by analyzing the symbolic jacobian matrices and sparsity pattern"
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer inUniqueEqIndex;
@@ -13896,9 +13896,9 @@ algorithm
     SOME((optcontPartDer, spPattern as (_, spTA, (diffCrefsA, diffedCrefsA),_), spColors, nlPattern)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "FMIDER");
 
     crefSimVarHT := createCrefToSimVarHT(inModelInfo);
-    //print("-- Got matrixes\n");
+    //print("-- Got matrices\n");
     (spTA, derdiffCrefsA) := translateSparsePatterCref2DerCref(spTA, crefSimVarHT, {}, {});
-    //print("-- translateSparsePatterCref2DerCref matrixes AB\n");
+    //print("-- translateSparsePatterCref2DerCref matrices AB\n");
 
     // collect all variable
     varsA := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);

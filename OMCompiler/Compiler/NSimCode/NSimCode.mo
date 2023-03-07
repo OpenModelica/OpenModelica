@@ -490,7 +490,7 @@ public
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
         spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
-        jacobianMatrixes              = jacobians,
+        jacobianMatrices              = jacobians,
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = simCode.fileNamePrefix,
         fullPathPrefix                = "", // FMI stuff

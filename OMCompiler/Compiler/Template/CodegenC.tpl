@@ -743,7 +743,7 @@ template simulationFile_inz(SimCode simCode)
     <%functionInitialEquations_lambda0(initialEquations_lambda0, modelNamePrefix(simCode))%>
     <%functionRemovedInitialEquations(removedInitialEquations, modelNamePrefix(simCode))%>
 
-    <%if intGt(varInfo.numMixedSystems,0) then functionInitialMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
+    <%if intGt(varInfo.numMixedSystems,0) then functionInitialMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrices, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -883,7 +883,7 @@ template simulationFile_mix(SimCode simCode, Text &header)
     /* Mixed Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
-    <%functionSetupMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrixes, &header, modelNamePrefixStr)%>
+    <%functionSetupMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrices, &header, modelNamePrefixStr)%>
 
     <%\n%>
     >>
@@ -897,11 +897,11 @@ template simulationFile_jac(SimCode simCode)
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    /* Jacobians <%listLength(jacobianMatrixes)%> */
+    /* Jacobians <%listLength(jacobianMatrices)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
     #include "util/jacobian_util.h"
-    <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
+    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode))%>
 
     <%\n%>
     >>
@@ -917,7 +917,7 @@ template simulationFile_jac_header(SimCode simCode)
     <<
     /* Jacobians */
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
-    <%symJacDefinition(jacobianMatrixes, modelNamePrefix(simCode))%>
+    <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%>
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -1764,10 +1764,10 @@ template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
   end match
 end globalDataAliasVarArray;
 
-template symJacDefinition(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
+template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let symbolicJacsDefine = (JacobianMatrixes |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
+  let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     <<
     #if defined(__cplusplus)
     extern "C" {
@@ -2059,14 +2059,14 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
 end functionInitSample;
 
 
-template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
+template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrices, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialMixedSystemsTemp(initialEquations)
   let initbody_lambda0 = functionInitialMixedSystemsTemp(initialEquations_lambda0)
   let parambody = functionInitialMixedSystemsTemp(parameterEquations)
   let body = functionInitialMixedSystemsTemp(allEquations)
-  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialMixedSystemsTemp(cEqns);separator="\n") ;separator="\n"))
+  let jacobianbody = ((jacobianMatrices |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialMixedSystemsTemp(cEqns);separator="\n") ;separator="\n"))
   <<
   /* funtion initialize mixed systems */
   void <%symbolName(modelNamePrefix,"initialMixedSystem")%>(int nMixedSystems, MIXED_SYSTEM_DATA* mixedSystemData)
@@ -2103,14 +2103,14 @@ template functionInitialMixedSystemsTemp(list<SimEqSystem> allEquations)
 end functionInitialMixedSystemsTemp;
 
 
-template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, Text &header, String modelNamePrefixStr)
+template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrices, Text &header, String modelNamePrefixStr)
   "Generates functions in simulation file."
 ::=
   let initbody = functionSetupMixedSystemsTemp(initialEquations, &header,modelNamePrefixStr)
   let initbody_lambda0 = functionSetupMixedSystemsTemp(initialEquations_lambda0, &header,modelNamePrefixStr)
   let parambody = functionSetupMixedSystemsTemp(parameterEquations,&header,modelNamePrefixStr)
   let body = functionSetupMixedSystemsTemp(allEquations,&header,modelNamePrefixStr)
-  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionSetupMixedSystemsTemp(cEqns,&header,modelNamePrefixStr);separator="\n") ;separator="\n"))
+  let jacobianbody = ((jacobianMatrices |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionSetupMixedSystemsTemp(cEqns,&header,modelNamePrefixStr);separator="\n") ;separator="\n"))
   <<
   /* initial mixed systems */
   <%initbody%>
@@ -3221,7 +3221,7 @@ template generateStaticEmptySparseData(String indexName, String systemType)
   void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
   {
     /* no sparsity pattern available */
-    inSysData->isPatternAvailable = 0;
+    inSysData->isPatternAvailable = FALSE;
   }
   >>
 end generateStaticEmptySparseData;
@@ -3236,11 +3236,11 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
       {
         /* no sparsity pattern available */
-        inSysData->isPatternAvailable = 0;
+        inSysData->isPatternAvailable = FALSE;
       }
       >>
   case _ then
-      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
+      let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
       let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
@@ -3254,7 +3254,7 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         <%colPtr%>
         <%rowIndex%>
         /* sparsity pattern available */
-        inSysData->isPatternAvailable = 1;
+        inSysData->isPatternAvailable = TRUE;
         inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
         /* write lead index of compressed sparse column */
@@ -5456,14 +5456,14 @@ template genVector(String name, String num, Integer numI, Integer flag) "templat
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
-  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
+  let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
     generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
-  let jacGenericCalls = (JacobianMatrixes |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
+  let jacGenericCalls = (JacobianMatrices |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
 
   <<
   <%jacMats%>

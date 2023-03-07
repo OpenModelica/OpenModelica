@@ -438,7 +438,7 @@ package SimCode
       SimCodeFunction.MakefileParams makefileParams;
       DelayedExpression delayedExps;
       SpatialDistributionInfo spatialInfo;
-      list<JacobianMatrix> jacobianMatrixes;
+      list<JacobianMatrix> jacobianMatrices;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       String fullPathPrefix; // Used for FMI where code is not generated in the same directory
@@ -1193,7 +1193,7 @@ package SimCodeUtil
 
   function getFMIModelStructure
     input SimCode.SimCode simCode;
-    input list<SimCode.JacobianMatrix> jacobianMatrixes;
+    input list<SimCode.JacobianMatrix> jacobianMatrices;
     output SimCode.FmiModelStructure outFmiModelStructure;
   end getFMIModelStructure;
 

@@ -686,7 +686,7 @@ uniontype TimeEvent
 end TimeEvent;
 
 //
-// AdjacencyMatrixes
+// AdjacencyMatrices
 //
 public
 type AdjacencyMatrixElementEntry = Integer;
