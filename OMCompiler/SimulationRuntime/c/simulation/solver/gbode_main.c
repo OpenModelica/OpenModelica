@@ -355,7 +355,21 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
   gbData->stepSize_control = getControllFunc(gbData->ctrl_method);
-
+   /* define maximum step size gbode is allowed to go */
+  if (omc_flag[FLAG_MAX_STEP_SIZE])
+  {
+    gbData->maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
+    if (gbData->maxStepSize < 0 || gbData->maxStepSize > DBL_MAX/2) {
+      throwStreamPrint(NULL, "maximum step size %g is not allowed", gbData->maxStepSize);
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", gbData->maxStepSize);
+    }
+  }
+  else
+  {
+    gbData->maxStepSize = -1;
+    infoStreamPrint(LOG_SOLVER, 0, "maximum step size not set");
+  }
   gbData->isFirstStep = TRUE;
 
   /* Allocate internal memory */
@@ -1290,6 +1304,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
+        gbData->stepSize = gbData->maxStepSize;
 
       // reject step, if error is too large
       if ((err > 1 ) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1340,6 +1356,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (gbData->err_int> err) {
           gbData->errValues[0] = gbData->err_int;
           gbData->stepSize = gbData->lastStepSize * gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+          if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
+            gbData->stepSize = gbData->maxStepSize;
         }
       }
       // reject step, if interpolaton error is too large
@@ -1722,6 +1740,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
+        gbData->stepSize = gbData->maxStepSize;
 
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1759,6 +1779,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         if (gbData->err_int> err) {
           gbData->errValues[0] = gbData->err_int;
           gbData->stepSize = gbData->lastStepSize * gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+          if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
+            gbData->stepSize = gbData->maxStepSize;
         }
       }
       // reject step, if interpolaton error is too large

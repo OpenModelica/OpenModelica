@@ -147,6 +147,7 @@ typedef struct DATA_GBODE{
   double percentage, err_threshold;                 /* percentage of fast states and the corresponding error threshold */
   double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
+  double maxStepSize;                               /* maximal step size of integration */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
   int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
