@@ -34,6 +34,7 @@
  */
 
 #include "gbode_tableau.h"
+#include "gbode_conf.h"
 
 #include <string.h>
 
@@ -1393,23 +1394,26 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
 /**
  * @brief Allocate memory and initialize Butcher tableau for given method.
  *
- * @param GM_method           Runge-Kutta method.
+ * @param method              Runge-Kutta method.
+ * @param flag                Flag specifying error estimation.
+ *                            Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
  * @return BUTCHER_TABLEAU*   Return pointer to Butcher tableau on success, NULL on failure.
  */
-BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ERR) {
+BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
-  const char* flag_value = omc_flagValue[FLAG_ERR];
-  int richardson = 0;
+  enum GB_EXTRAPOL_METHOD extrapolMethod;
 
-  if (flag_value != NULL) richardson = atoi(flag_value);
-  if (richardson) {
+  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to initButcherTableau!");
+
+  extrapolMethod = getGBErr(flag);
+  if (extrapolMethod == GB_EXT_RICHARDSON) {
     tableau->richardson = TRUE;
     infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   } else {
     tableau->richardson = FALSE;
   }
 
-  switch(GM_method)
+  switch(method)
   {
     case MS_ADAMS_MOULTON:
       getButcherTableau_MS(tableau);
@@ -1493,58 +1497,75 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       getButcherTableau_ESDIRK4(tableau);
       break;
     case RK_RADAU_IA_2:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_2(tableau);
       break;
     case RK_RADAU_IA_3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_3(tableau);
       break;
     case RK_RADAU_IA_4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_4(tableau);
       break;
     case RK_RADAU_IIA_2:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_2(tableau);
       break;
     case RK_RADAU_IIA_3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_3(tableau);
       break;
     case RK_RADAU_IIA_4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_4(tableau);
       break;
     case RK_LOBA_IIIA_3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_3(tableau);
       break;
     case RK_LOBA_IIIA_4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_4(tableau);
       break;
     case RK_LOBA_IIIB_3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_3(tableau);
       break;
     case RK_LOBA_IIIB_4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_4(tableau);
       break;
     case RK_LOBA_IIIC_3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_3(tableau);
       break;
     case RK_LOBA_IIIC_4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_4(tableau);
       break;
     case RK_GAUSS2:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS2(tableau);
       break;
     case RK_GAUSS3:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS3(tableau);
       break;
     case RK_GAUSS4:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS4(tableau);
       break;
     case RK_GAUSS5:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS5(tableau);
       break;
     case RK_GAUSS6:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
-      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method %i.", GM_method);
+      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method %i.", method);
   }
 
   return tableau;

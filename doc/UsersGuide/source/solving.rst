@@ -138,7 +138,7 @@ adjust the behavior of the solver for specific simulation problems:
 :ref:`gbfctrl <simflag-gbctrl>`,
 :ref:`gbfnls <simflag-gbnls>`,
 :ref:`gbfint <simflag-gbint>`,
-:ref:`gbferr <simflag-gberr>`.
+:ref:`gbferr <simflag-gbferr>`.
 
 This solver will replace obsolete and no longer maintained solvers providing a
 lot more using the following simulation flags:

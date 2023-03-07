@@ -176,7 +176,13 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
     return GB_CTRL_UNKNOWN;
   } else {
-    return GB_CTRL_I;
+    // Default value
+    if (flag == FLAG_MR_CTRL) {
+      return getControllerMethod(FLAG_SR_CTRL);
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
+      return GB_CTRL_I;
+    }
   }
 }
 
@@ -205,7 +211,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
           warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
-          method = GB_INTERPOL_HERMITE;
+          method = GB_DENSE_OUTPUT;
         }
         infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
         return method;
@@ -214,7 +220,19 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
     return GB_INTERPOL_UNKNOWN;
   } else {
-    return GB_INTERPOL_HERMITE;
+    // Default value
+    if (flag == FLAG_MR_INT) {
+      method = getInterpolationMethod(FLAG_SR_INT);
+      if (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL) {
+        warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+        method = GB_DENSE_OUTPUT;
+      }
+      return method;
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+      return GB_DENSE_OUTPUT;
+    }
   }
 }
 
@@ -239,6 +257,44 @@ double getGBRatio() {
     percentage = 0;
   }
   return percentage;
+}
+
+/**
+ * @brief Get extrapolation method from user flag.
+ *
+ * Reads flag FLAG_SR_ERR, FLAG_MR_ERR.
+ * Defaults to GB_EXT_DEFAULT.
+ *
+ * @param flag                      Flag specifying error estimation.
+ *                                  Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
+ * @return enum GB_EXTRAPOL_METHOD  Extrapolation method.
+ */
+enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
+  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to getGBErr!");
+
+  enum GB_EXTRAPOL_METHOD extrapolationMethod;
+  const char *flag_value = omc_flagValue[flag];
+
+  if (flag_value != NULL) {
+    if (strcmp(flag_value, "default")==0) {
+      extrapolationMethod = GB_EXT_DEFAULT;
+    } else if (strcmp(flag_value, "richardson")==0) {
+      extrapolationMethod = GB_EXT_RICHARDSON;
+    } else if (strcmp(flag_value, "embedded")==0) {
+      extrapolationMethod = GB_EXT_EMBEDDED;
+    } else {
+      errorStreamPrint(LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
+      infoStreamPrint(LOG_STDOUT, 1, "Allowed values are:");
+      infoStreamPrint(LOG_STDOUT, 0, "default");
+      infoStreamPrint(LOG_STDOUT, 0, "richardson");
+      infoStreamPrint(LOG_STDOUT, 0, "embedded");
+      messageClose(LOG_STDOUT);
+      omc_throw(NULL);
+    }
+  } else {
+    extrapolationMethod = GB_EXT_DEFAULT;
+  }
+  return extrapolationMethod;
 }
 
 /**

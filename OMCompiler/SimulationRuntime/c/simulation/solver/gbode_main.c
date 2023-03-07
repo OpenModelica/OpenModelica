@@ -264,7 +264,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for emitting results, otherwise hermite");
+    infoStreamPrint(LOG_SOLVER, 0, "Dense output is used for emitting results");
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
@@ -467,7 +467,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   gbData->percentage = getGBRatio();
-  gbData->multi_rate = gbData->percentage > 0;
+  gbData->multi_rate = gbData->percentage > 0 && gbData->percentage < 1;
 
   gbData->fastStatesIdx   = malloc(sizeof(int) * gbData->nStates);
   gbData->slowStatesIdx   = malloc(sizeof(int) * gbData->nStates);
@@ -481,7 +481,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->sortedStatesIdx[i] = i;
   }
 
-  gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+
+  if (gbData->multi_rate && omc_flagValue[FLAG_SR_INT]==NULL) {
+    gbData->interpolation = GB_DENSE_OUTPUT_ERRCTRL;
+  } else {
+    gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+  }
+
   if (!gbData->tableau->withDenseOutput) {
     if (gbData->interpolation == GB_DENSE_OUTPUT) gbData->interpolation = GB_INTERPOL_HERMITE;
     if (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL) gbData->interpolation = GB_INTERPOL_HERMITE_ERRCTRL;
@@ -507,7 +513,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results%s", buffer);
+    infoStreamPrint(LOG_SOLVER, 0, "Dense output is used  for emitting results%s", buffer);
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");

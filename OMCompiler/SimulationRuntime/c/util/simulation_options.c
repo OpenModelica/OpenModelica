@@ -273,12 +273,12 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
-  /* FLAG_SR_ERR */                       "Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_MR */                           "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_CTRL */                      "Step size control of solver gbode (multi-rate, fast states integrator)",
-  /* FLAG_MR_ERR */                       "Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_ERR */                       "Error estimation method for gbode solver (multi-rate, fast states integrator).",
   /* FLAG_MR_INT */                       "Interpolation method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_NLS */                       "Non-linear solver method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_PAR */                       "Define percentage of states for the fast states selection of solver gbode",
@@ -579,8 +579,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_CTRL */
   "  Step size control of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_ERR */
-  "  Error estimation done by Richardson extrapolation (-gberr=1) of solver gbode\n"
-  "  (single-rate, slow states integrator).",
+  "  Error estimation method for solver gbode (single-rate, slow states integrator)\n"
+  "  Possible values:\n\n"
+  "    * default    - depending on the Runge-Kutta method\n"
+  "    * richardson - Richardson extrapolation\n"
+  "    * embedded   - Embedded scheme\n",
   /* FLAG_SR_INT */
   "  Interpolation method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_NLS */
@@ -591,8 +594,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_MR_CTRL */
   "  Step size control of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_ERR */
-  "  Error estimation done by Richardson extrapolation  (-gberr=1) of solver gbode\n"
-  "  (multi-rate, fast states integrator).",
+  "  Error estimation method for solver gbode (multi-rate, fast states integrator)\n"
+  "  Possible values:\n\n"
+  "    * default    - depending on the Runge-Kutta method\n"
+  "    * richardson - Richardson extrapolation\n"
+  "    * embedded   - Embedded scheme\n",
   /* FLAG_MR_INT */
   "  Interpolation method of solver gbode (multi-rate, fast states integrator).",
   /* FLAG_MR_NLS */
