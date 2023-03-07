@@ -430,14 +430,14 @@ algorithm
   local
     BackendDAE.EqSystems eqs;
     BackendDAE.Shared shared;
-    BackendDAE.SymbolicJacobians linearModelMatrixes;
+    BackendDAE.SymbolicJacobians linearModelMatrices;
     DAE.FunctionTree funcs, functionTree;
     list< .DAE.Constraint> constraints;
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
-    shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
+    (linearModelMatrices, funcs) = createLinearModelMatrices(inBackendDAE, Config.acceptOptimicaGrammar());
+    shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrices);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
     shared = BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
@@ -1729,7 +1729,7 @@ public function createFMIModelDerivatives
  partial derivatives for FMI, which are basically the jacobian matrices.
  author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
+  output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
   output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE backendDAE,emptyBDAE;
@@ -1792,7 +1792,7 @@ try
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
-    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDER",{},{},{}, {})), sparsePattern, sparseColoring, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
+    outJacobianMatrices := (SOME((emptyBDAE,"FMIDER",{},{},{}, {})), sparsePattern, sparseColoring, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
     outFunctionTree := inBackendDAE.shared.functionTree;
   else
     // prepare more needed variables
@@ -1806,12 +1806,12 @@ try
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
-    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring, nonlinearPattern)::outJacobianMatrixes;
+    outJacobianMatrices := (outJacobian, sparsePattern, sparseColoring, nonlinearPattern)::outJacobianMatrices;
     outFunctionTree := DAE.AvlTreePathFunction.join(inBackendDAE.shared.functionTree, outFunctionTree);
   end if;
 else
   Error.addInternalError("function createFMIModelDerivatives failed", sourceInfo());
-  outJacobianMatrixes := {};
+  outJacobianMatrices := {};
   outFunctionTree := inBackendDAE.shared.functionTree;
 end try;
 end createFMIModelDerivatives;
@@ -1826,7 +1826,7 @@ public function createFMIModelDerivativesForInitialization
   input BackendDAE.Variables orderedVars;
   input BackendDAE.SparsePattern sparsePattern_;
   input BackendDAE.SparseColoring sparseColoring_;
-  output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
+  output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
 protected
   BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
   BackendDAE.EqSystem eqSyst, currentSystem;
@@ -1940,7 +1940,7 @@ try
     graph := initDAE.shared.graph;
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
+    outJacobianMatrices := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
   else
     // prepare more needed variables
     paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1956,23 +1956,23 @@ try
       BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
     end if;
     // kabdelhak: maybe also pass nonlinearity pattern to add it here
-    outJacobianMatrixes := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
+    outJacobianMatrices := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
   end if;
 else
   Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());
-  outJacobianMatrixes := {};
+  outJacobianMatrices := {};
 end try;
 end createFMIModelDerivativesForInitialization;
 
-protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
+protected function createLinearModelMatrices "This function creates the linear model matrices column-wise
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   input Boolean useOptimica;
-  output BackendDAE.SymbolicJacobians outJacobianMatrixes;
+  output BackendDAE.SymbolicJacobians outJacobianMatrices;
   output DAE.FunctionTree outFunctionTree;
 
 algorithm
-  (outJacobianMatrixes, outFunctionTree) :=
+  (outJacobianMatrices, outFunctionTree) :=
   match (inBackendDAE, useOptimica)
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2,emptyBDAE;
@@ -2056,7 +2056,7 @@ algorithm
       then
         (listReverse(linearModelMatrices), functionTree);
 
-    case (backendDAE, true) //  created linear model (matrixes) for optimization
+    case (backendDAE, true) //  created linear model (matrices) for optimization
       equation
         // A := der(x)
         // B := {der(x), con(x), L(x)}
@@ -2145,7 +2145,7 @@ algorithm
       then
         fail();
   end match;
-end createLinearModelMatrixes;
+end createLinearModelMatrices;
 
 protected function generateGenericJacobian "author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
@@ -2602,11 +2602,11 @@ algorithm
 end deriveAll;
 
 public function getJacobianMatrixbyName
-  input BackendDAE.SymbolicJacobians injacobianMatrixes;
+  input BackendDAE.SymbolicJacobians injacobianMatrices;
   input String inJacobianName;
   output Option<tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring, BackendDAE.NonlinearPattern>> outMatrix;
 algorithm
-  outMatrix := match(injacobianMatrixes)
+  outMatrix := match(injacobianMatrices)
     local
       tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring, BackendDAE.NonlinearPattern> matrix;
       BackendDAE.SymbolicJacobians rest;

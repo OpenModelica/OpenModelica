@@ -139,7 +139,7 @@ uniontype SimCode
     SimCodeFunction.MakefileParams makefileParams;
     DelayedExpression delayedExps;
     SpatialDistributionInfo spatialInfo;
-    list<JacobianMatrix> jacobianMatrixes;
+    list<JacobianMatrix> jacobianMatrices;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
     String fmuTargetName;

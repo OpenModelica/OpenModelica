@@ -3130,7 +3130,7 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT1275,8,3) {&Flags_ConfigFlag_CONFIG
 #define _OMC_LIT1276_data "calculateSensitivities"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1276,22,_OMC_LIT1276_data);
 #define _OMC_LIT1276 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1276)
-#define _OMC_LIT1277_data "Generates sensitivities variables and matrixes."
+#define _OMC_LIT1277_data "Generates sensitivities variables and matrices."
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1277,47,_OMC_LIT1277_data);
 #define _OMC_LIT1277 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1277)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT1278,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT1277}};

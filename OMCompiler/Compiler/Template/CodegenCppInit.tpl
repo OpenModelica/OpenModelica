@@ -15,7 +15,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let variables = modelVariablesXML(simCode, modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', '<%numStringVars%> - 1', generateFMUModelDescription, complexStartExpressions, stateDerVectorName)
       //let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
-      //let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
+      //let jacobianMatrices = jacobianMatricesXML(simCode.jacobianMatrices)
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
       let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(simCode, FMUVersion)
@@ -39,7 +39,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
           <%algLoops%>
         </AlgLoops>
         <Jacobian>
-          <%jacobianMatrixes%>
+          <%jacobianMatrices%>
         </Jacobian>
         >>
         %>
@@ -233,15 +233,15 @@ template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.Hash
   >>
 end algLoopXML;
 
-template jacobianMatrixesXML(list<JacobianMatrix> JacobianMatrixes)
+template jacobianMatricesXML(list<JacobianMatrix> JacobianMatrices)
 ::=
-  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex) =>
+  let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex) =>
     jacobianMatrixXML(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor)
     ;separator="\n";empty)
   <<
   <%jacMats%>
   >>
-end jacobianMatrixesXML;
+end jacobianMatricesXML;
 
 template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor)
 ::=

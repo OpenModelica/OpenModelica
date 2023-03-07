@@ -8637,7 +8637,7 @@ algorithm
     case (DAE.ARRAY(array = elst))
       then
         List.mapBoolOr(elst, containVectorFunctioncall);
-    // matrixes
+    // matrices
     case (DAE.MATRIX(matrix = explst))
       equation
         flatexplst = List.flatten(explst);
