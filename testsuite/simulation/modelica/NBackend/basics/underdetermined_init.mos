@@ -29,15 +29,6 @@ simulate(underdetermined_init); getErrorString();
 //
 // ################################################################################
 //
-// Not underdetermined.
-// Not overdetermined.
-// (0) Unmatched variables:
-// ****************************************
-//
-//
-// (0) Unmatched equations:
-// ****************************************
-//
 // Stage 1 underdetermined.
 // Not overdetermined.
 // (1) Unmatched variables:

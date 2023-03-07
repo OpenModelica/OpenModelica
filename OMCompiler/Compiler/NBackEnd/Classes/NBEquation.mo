@@ -3090,27 +3090,26 @@ public
     end getEqnIndex;
 
     function compress "O(n)
-      Reorders the elements in order to remove all the gaps.
+      Recollects the elements in order to remove all the gaps.
       Be careful: This changes the indices of the elements."
       input output EquationPointers equations;
+    protected
+      Pointer<Equation> eqn;
+      list<Pointer<Equation>> eqns = {};
     algorithm
-      // delete all empty equations
-      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+      // collect non-empty equations
+      for i in ExpandableArray.getLastUsedIndex(equations.eqArr):-1:1 loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          () := match Pointer.access(ExpandableArray.get(i, equations.eqArr))
-            case Equation.DUMMY_EQUATION() algorithm
-              equations.eqArr := ExpandableArray.delete(i, equations.eqArr);
+          eqn := ExpandableArray.get(i, equations.eqArr);
+          () := match Pointer.access(eqn)
+            case Equation.DUMMY_EQUATION() then ();
+            else algorithm
+              eqns := eqn :: eqns;
             then ();
-            else ();
           end match;
         end if;
       end for;
-      // compress the array
-      equations.eqArr := ExpandableArray.compress(equations.eqArr);
-      // fix the mapping. ToDo: can this be done more efficiently?
-      for i in 1:ExpandableArray.getNumberOfElements(equations.eqArr) loop
-        UnorderedMap.add(Equation.getEqnName(ExpandableArray.get(i, equations.eqArr)), i, equations.map);
-      end for;
+      equations := fromList(eqns);
     end compress;
 
     function sort

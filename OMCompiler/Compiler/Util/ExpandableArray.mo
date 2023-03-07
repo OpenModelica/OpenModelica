@@ -38,7 +38,7 @@ also possible to delete an element from any position."
 
 record EXPANDABLE_ARRAY
   array<Integer> numberOfElements "This is an array of one Integer, to make numberOfElements mutable";
-  array<Integer> lastUsedIndex "This is an array of one Integer, to make numberOfElements mutable";
+  array<Integer> lastUsedIndex "This is an array of one Integer, to make lastUsedIndex mutable";
   array<Integer> capacity "This is an array of one Integer, to make capacity mutable";
   array<array<Option<T>>> data "This is an array of one array<Option<T>>, to make data mutable";
 end EXPANDABLE_ARRAY;
