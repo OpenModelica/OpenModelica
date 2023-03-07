@@ -187,58 +187,63 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   gbData->time = sData->timeValue;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-  memcpy(gbData->f, fODE, nStates*sizeof(double));
 
-  for (i=0; i<nStates; i++) {
-    sc = absTol + fabs(sDataOld->realVars[i])*relTol;
-    d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
-    d1 += ((fODE[i] * fODE[i]) / (sc*sc));
-  }
-  d0 /= nStates;
-  d1 /= nStates;
+  if (gbData->initialStepSize < 0) {
+    memcpy(gbData->f, fODE, nStates*sizeof(double));
+    for (i=0; i<nStates; i++) {
+      sc = absTol + fabs(sDataOld->realVars[i])*relTol;
+      d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
+      d1 += ((fODE[i] * fODE[i]) / (sc*sc));
+    }
+    d0 /= nStates;
+    d1 /= nStates;
 
-  d0 = sqrt(d0);
-  d1 = sqrt(d1);
+    d0 = sqrt(d0);
+    d1 = sqrt(d1);
 
-  /* calculate first guess of the initial step size */
-  if (d0 < 1e-5 || d1 < 1e-5) {
-    h0 = 1e-6;
+    /* calculate first guess of the initial step size */
+    if (d0 < 1e-5 || d1 < 1e-5) {
+      h0 = 1e-6;
+    } else {
+      h0 = 0.01 * d0/d1;
+    }
+    if (gbData->initialFailures>0)
+      h0 /= pow(10,gbData->initialFailures);
+
+    for (i=0; i<nStates; i++) {
+      sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
+    }
+    sData->timeValue += h0;
+
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+
+    for (i=0; i<nStates; i++) {
+      sc = absTol + fabs(gbData->yOld[i])*relTol;
+      d2 += ((fODE[i]-gbData->f[i])*(fODE[i]-gbData->f[i])/(sc*sc));
+    }
+
+    d2 /= h0;
+    d2 = sqrt(d2);
+
+
+    d = fmax(d1,d2);
+
+    if (d > 1e-15) {
+      h1 = sqrt(0.01/d);
+    } else {
+      h1 = fmax(1e-6, h0*1e-3);
+    }
+
+    gbData->stepSize = 0.5*fmin(100*h0,h1);
+    gbData->lastStepSize = 0.0;
+
+    sData->timeValue = gbData->time;
+    memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
+    memcpy(fODE, gbData->f, nStates*sizeof(double));
   } else {
-    h0 = 0.01 * d0/d1;
+    gbData->stepSize = gbData->initialStepSize;
+    gbData->lastStepSize = 0.0;
   }
-  if (gbData->initialFailures>0)
-    h0 /= pow(10,gbData->initialFailures);
-
-  for (i=0; i<nStates; i++) {
-    sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
-  }
-  sData->timeValue += h0;
-
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-
-  for (i=0; i<nStates; i++) {
-    sc = absTol + fabs(gbData->yOld[i])*relTol;
-    d2 += ((fODE[i]-gbData->f[i])*(fODE[i]-gbData->f[i])/(sc*sc));
-  }
-
-  d2 /= h0;
-  d2 = sqrt(d2);
-
-
-  d = fmax(d1,d2);
-
-  if (d > 1e-15) {
-    h1 = sqrt(0.01/d);
-  } else {
-    h1 = fmax(1e-6, h0*1e-3);
-  }
-
-  gbData->stepSize = 0.5*fmin(100*h0,h1);
-  gbData->lastStepSize = 0.0;
-
-  sData->timeValue = gbData->time;
-  memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-  memcpy(fODE, gbData->f, nStates*sizeof(double));
 
   infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
 
