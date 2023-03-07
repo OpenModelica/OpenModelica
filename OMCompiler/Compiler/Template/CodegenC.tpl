@@ -5494,8 +5494,7 @@ match sparsepattern
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
-      let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
+      let fileName = '<%modelNamePrefix%>_sparsityPatterns/<%matrixname%>.bin'
       let colorString = genSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
@@ -5509,25 +5508,23 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        <%colPtr%>
-        <%rowIndex%>
+        FILE* pFile = fopen("<%fileName%>", "rb");
         int i = 0;
 
         initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
         jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
         jacobian->availability = <%availability%>;
 
-        /* write lead index of compressed sparse column */
-        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
+        /* read lead index of compressed sparse column */
+        fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile);
 
-        for(i=2;i<<%sizeleadindex%>+1;++i)
-          jacobian->sparsePattern->leadindex[i] += jacobian->sparsePattern->leadindex[i-1];
-
-        /* call sparse index */
-        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
+        /* read sparse index */
+        fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile);
 
         /* write color array */
         <%colorString%>
+
+        fclose(pFile);
         TRACE_POP
         return 0;
       }

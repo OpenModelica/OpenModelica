@@ -92,8 +92,9 @@ import HashTableCrILst;
 import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import RuntimeSources;
-import SerializeModelInfo;
 import SerializeInitXML;
+import SerializeModelInfo;
+import SerializeSparsityPattern;
 import SimCodeUtil;
 import StackOverflow;
 import StringUtil;
@@ -613,6 +614,7 @@ algorithm
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=""), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions, a_genericCalls=simCode.generic_loop_calls), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
+        SerializeSparsityPattern.serialize(simCode);
         codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
 
         if Flags.getConfigBool(Flags.PARMODAUTO) then
@@ -683,6 +685,7 @@ algorithm
       Tpl.tplNoret(CodegenC.translateModel, simCode);
       SerializeInitXML.simulationInitFile(simCode, guid);
       System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
+        SerializeSparsityPattern.serialize(simCode);
       SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();
@@ -798,6 +801,7 @@ algorithm
             then();
           end match;
 
+        SerializeSparsityPattern.serialize(simCode);
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         str := fmutmp + "/sources/" + simCode.fileNamePrefix;
         if FMUVersion == "1.0" then
@@ -961,6 +965,7 @@ algorithm
         end if;
 
         SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid);
+        SerializeSparsityPattern.serialize(simCode);
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
 
         runTpl(func = function CodegenOMSI_common.generateFMUModelDescriptionFile(a_simCode=simCode, a_guid=guid, a_FMUVersion=FMUVersion, a_FMUType=FMUType, a_sourceFiles={}, a_fileName=simCode.fullPathPrefix+"/"+"modelDescription.xml"));

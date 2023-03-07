@@ -180,15 +180,15 @@ typedef struct NONLINEAR_PATTERN
 typedef struct ANALYTIC_JACOBIAN
 {
   JACOBIAN_AVAILABILITY availability;  /* Availability status */
-  unsigned int sizeCols;              /* Number of columns of Jacobian */
-  unsigned int sizeRows;              /* Number of rows of Jacobian */
-  unsigned int sizeTmpVars;           /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;      /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;            /* Seed vector for specifying which columns to evaluate */
+  unsigned int sizeCols;               /* Number of columns of Jacobian */
+  unsigned int sizeRows;               /* Number of rows of Jacobian */
+  unsigned int sizeTmpVars;            /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;       /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;             /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;          /* Result column for given seed vector */
-  modelica_real dae_cj;               /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
+  modelica_real* resultVars;           /* Result column for given seed vector */
+  modelica_real dae_cj;                /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independend of seed vector */
 } ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT
