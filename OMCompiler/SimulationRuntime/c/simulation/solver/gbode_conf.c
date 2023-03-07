@@ -260,28 +260,41 @@ double getGBRatio() {
 }
 
 /**
- * @brief Get information on richardson extrapolation.
+ * @brief Get extrapolation method from user flag.
  *
- * Read flag FLAG_ERR to get percentage.
- * Defaults to 0.
+ * Reads flag FLAG_SR_ERR, FLAG_MR_ERR.
+ * Defaults to GB_EXT_DEFAULT.
  *
- * @return int  0: default, depending on the RK method
- *              1: richardson extrapolation
- *              2: embedded scheme
- **/
-int getGBErr(enum _FLAG flag) {
-  double richardson;
+ * @param flag                      Flag specifying error estimation.
+ *                                  Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
+ * @return enum GB_EXTRAPOL_METHOD  Extrapolation method.
+ */
+enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
+  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to getGBErr!");
+
+  enum GB_EXTRAPOL_METHOD extrapolationMethod;
   const char *flag_value = omc_flagValue[flag];
 
-  if (flag_value) {
-    richardson = atof(omc_flagValue[flag]);
-    if (richardson != 0 && richardson != 1 && richardson != 2) {
-      throwStreamPrint(NULL, "Flag -gberr and -gbferr has to be 0, 1 or 2.");
+  if (flag_value != NULL) {
+    if (strcmp(flag_value, "default")==0) {
+      extrapolationMethod = GB_EXT_DEFAULT;
+    } else if (strcmp(flag_value, "richardson")==0) {
+      extrapolationMethod = GB_EXT_RICHARDSON;
+    } else if (strcmp(flag_value, "embedded")==0) {
+      extrapolationMethod = GB_EXT_EMBEDDED;
+    } else {
+      errorStreamPrint(LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
+      infoStreamPrint(LOG_STDOUT, 1, "Allowed values are:");
+      infoStreamPrint(LOG_STDOUT, 0, "default");
+      infoStreamPrint(LOG_STDOUT, 0, "richardson");
+      infoStreamPrint(LOG_STDOUT, 0, "embedded");
+      messageClose(LOG_STDOUT);
+      omc_throw(NULL);
     }
   } else {
-    richardson = 0;
+    extrapolationMethod = GB_EXT_DEFAULT;
   }
-  return (int) richardson;
+  return extrapolationMethod;
 }
 
 /**
