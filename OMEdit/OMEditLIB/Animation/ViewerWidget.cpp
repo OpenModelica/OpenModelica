@@ -323,7 +323,7 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
 
 /*!
  * \brief ViewerWidget::changeVisualizerTransparency
- * changes the transparency selection of a visualizer
+ * opens a number dialog and selects a new transparency for the visualizer
  */
 void ViewerWidget::changeVisualizerTransparency()
 {
