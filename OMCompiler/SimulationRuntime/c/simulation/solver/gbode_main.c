@@ -385,6 +385,18 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->initialStepSize = -1; /* use default */
     infoStreamPrint(LOG_SOLVER, 0, "initial step size not set");
   }
+
+ /* if FLAG_NO_RESTART is set, configure gbode */
+  if (omc_flag[FLAG_NO_RESTART])
+  {
+    gbData->noRestart = TRUE;
+  }
+  else
+  {
+    gbData->noRestart = FALSE;
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
+
   gbData->isFirstStep = TRUE;
 
   /* Allocate internal memory */
@@ -730,6 +742,56 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
+/**
+ * @brief Initialize ring buffer and interpolation arrays, when event occured and
+ *        simulation flag -noRestart is activated.
+ *
+ * Called after an event occurred.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ */
+void gbode_init_noRestart(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = &sData->realVars[gbData->nStates];
+  int nStates = gbData->nStates;
+  int i;
+
+  // initialize ring buffer for error and step size control
+  for (i=0; i<gbData->ringBufferSize; i++) {
+    gbData->errValues[i] = 0;
+    gbData->stepSizeValues[i] = 0;
+  }
+
+  /* reset statistics, because it is accumulated in solver_main.c */
+  if (!gbData->isExplicit)
+    gbData->nlsData->numberOfJEval = 0;
+  resetSolverStats(&gbData->stats);
+
+  // initialize vector used for interpolation (equidistant time grid)
+  // and for the birate inner integration
+  gbData->time = sData->timeValue;
+  gbData->timeRight = gbData->time;
+  memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
+  memcpy(gbData->kRight, fODE, nStates*sizeof(double));
+
+  // Rotate ring buffer
+  for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
+    gbData->tv[i] = gbData->tv[i - 1];
+    memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
+    memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
+  }
+
+  gbData->tv[0] = gbData->timeRight;
+  memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
+  memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
+}
+
 /*! \fn gbodef_main
  *
  *  function does one integration step and calculates
@@ -1025,6 +1087,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->tv[0] = gbfData->timeRight;
     memcpy(gbfData->yv, gbfData->yRight, nStates * sizeof(double));
     memcpy(gbfData->kv, gbfData->kRight, nStates * sizeof(double));
+
+    debugRingBufferSteps(LOG_GBODE, gbfData->yv, gbfData->kv, gbfData->tv, nStates,  gbfData->ringBufferSize);
 
     /* step is accepted and yOld needs to be updated */
     //  copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbData->fastStates);
@@ -1517,6 +1581,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
 
+    debugRingBufferSteps(LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, gbData->nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
@@ -1661,11 +1727,18 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   if (solverInfo->didEventStep || gbData->isFirstStep) {
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
-    getInitStepSize(data, threadData, gbData);
-    gbode_init(data, threadData, solverInfo);
+    if (gbData->noRestart && !gbData->isFirstStep) {
+      infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
+      gbode_init_noRestart(data, threadData, solverInfo);
+    } else {
+      getInitStepSize(data, threadData, gbData);
+      gbode_init(data, threadData, solverInfo);
+    }
     gbData->isFirstStep = FALSE;
     solverInfo->didEventStep = FALSE;
   }
+
+  debugRingBufferSteps(LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
   // Constant step size
   if (gbData->ctrl_method == GB_CTRL_CNST) {
@@ -1911,6 +1984,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     gbData->tv[0] = gbData->timeRight;
     memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
+
+    debugRingBufferSteps(LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
