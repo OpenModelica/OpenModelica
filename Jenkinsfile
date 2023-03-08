@@ -55,7 +55,7 @@ pipeline {
         stage('gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -66,15 +66,14 @@ pipeline {
             QTDIR = "/usr/lib/qt4"
           }
           steps {
-            // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
+            script { common.buildOMC('gcc', 'g++', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
         stage('clang') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -118,12 +117,11 @@ pipeline {
             }
           }
         }
-        stage('cmake-bionic-gcc') {
+        stage('cmake-gcc') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+            docker {
               label 'linux'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
@@ -138,7 +136,7 @@ pipeline {
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                         + " -DOM_USE_CCACHE=OFF"
                                         + " -DCMAKE_INSTALL_PREFIX=build"
-                                    , "/opt/cmake-3.17.2/bin/cmake")
+                                    , "cmake")
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
@@ -201,7 +199,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -479,7 +477,7 @@ pipeline {
         stage('build-gui-clang-qt5') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -536,7 +534,7 @@ pipeline {
         stage('testsuite-clang-parmod') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
@@ -558,7 +556,7 @@ pipeline {
         stage('testsuite-clang-metamodelica') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
             }
           }
@@ -576,7 +574,7 @@ pipeline {
         stage('testsuite-matlab-translator') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
             }
@@ -598,7 +596,7 @@ pipeline {
         stage('test-clang-icon-generator') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -709,7 +707,7 @@ pipeline {
         stage('clang-qt5-omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -732,7 +730,7 @@ pipeline {
         stage('fmuchecker-results') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
             }
@@ -760,7 +758,7 @@ pipeline {
         stage('upload-compliance') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
             }
@@ -778,7 +776,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.21.1'
               label 'linux'
               alwaysPull true
             }
