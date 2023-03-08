@@ -109,7 +109,7 @@ public slots:
   void applyCheckerTexture();
   void applyCustomTexture();
   void removeTexture();
-  void resetTransparencyAndTextureForAllVisualizers();
+  void resetVisualPropertiesForAllVisualizers();
 };
 
 #endif
