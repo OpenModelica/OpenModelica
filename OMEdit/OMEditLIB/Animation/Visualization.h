@@ -48,8 +48,9 @@
 #include <osg/Transform>
 #include <osg/AutoTransform>
 #include <osg/MatrixTransform>
-#include <osg/StateSet>
 #include <osg/Image>
+#include <osg/Material>
+#include <osg/StateSet>
 #include <osg/Geode>
 #include <osg/Group>
 #include <osg/Node>
@@ -96,8 +97,8 @@ public:
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
-  void changeColor(osg::StateSet* ss, const QColor color);
-  void changeTransparency(osg::StateSet* ss, const float transparency);
+  void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color);
+  void changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency);
 public:
   AbstractVisualizerObject* _visualizer;
   bool _changeMaterialProperties;

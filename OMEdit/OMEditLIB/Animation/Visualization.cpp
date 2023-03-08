@@ -42,7 +42,6 @@
 #include <osg/GL> // for having direct access to glClear()
 
 #include <osg/Drawable>
-#include <osg/Material>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
 #include <osg/StateAttribute>
@@ -1401,6 +1400,9 @@ void UpdateVisitor::apply(osg::MatrixTransform& node)
 void UpdateVisitor::apply(osg::Geode& node)
 {
   //std::cout<<"GEODE "<<_visualizer->_id<<std::endl;
+  bool changeMaterial = _changeMaterialProperties;
+  bool changeTexture = false;
+
   switch (_visualizer->getStateSetAction())
   {
   case StateSetAction::update:
@@ -1413,9 +1415,10 @@ void UpdateVisitor::apply(osg::Geode& node)
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
       {
         //it's a cad file so we have to rescale the underlying geometry vertices
-        if (shape->getTransformNode().valid() && shape->getTransformNode()->getNumChildren() > 0)
+        osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
+        if (transformNode.valid() && transformNode->getNumChildren() > 0)
         {
-          osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(shape->getTransformNode()->getChild(0));
+          osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid())
           {
             cad->scaleVertices(node, shape->_extra.exp, shape->_length.exp, shape->_width.exp, shape->_height.exp);
@@ -1530,9 +1533,8 @@ void UpdateVisitor::apply(osg::Geode& node)
 
   case StateSetAction::modify:
    {
-     //apply texture
-     applyTexture(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTextureImagePath().get());
-     break;
+    changeTexture = true;
+    break;
    }//end case action modify
 
   default:
@@ -1540,13 +1542,42 @@ void UpdateVisitor::apply(osg::Geode& node)
 
   }//end switch action
 
-  if (_changeMaterialProperties) {
-    if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0) {
+  if (changeMaterial || changeTexture) {
+    osg::ref_ptr<osg::StateSet> stateSet = nullptr;
+    bool geometryColors = false;
+
+    if (_visualizer->isShape()) {
+      ShapeObject* shape = _visualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
+        if (transformNode.valid() && transformNode->getNumChildren() > 0) {
+          osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
+          if (cad.valid()) {
+            stateSet = cad->getOrCreateStateSet();
+            geometryColors = !shape->getVisualProperties()->getColor().custom();
+          }
+        }
+      }
+    }
+
+    osg::ref_ptr<osg::StateSet> ss = stateSet.valid() ? stateSet.get() : node.getOrCreateStateSet();
+    osg::Material::ColorMode mode = geometryColors ? osg::Material::AMBIENT_AND_DIFFUSE : osg::Material::OFF;
+
+    AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
+    QColor      color            = visualProperties->getColor().get();
+    float       transparency     = visualProperties->getTransparency().get();
+    std::string textureImagePath = visualProperties->getTextureImagePath().get();
+
+    if (changeMaterial) {
       //set color
-      changeColor(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getColor().get());
+      changeColorOfMaterial(ss, mode, color);
 
       //set transparency
-      changeTransparency(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTransparency().get());
+      changeTransparencyOfMaterial(ss, transparency);
+    }
+    if (changeTexture) {
+      //set texture
+      applyTexture(ss, textureImagePath);
     }
   }
 
@@ -1580,7 +1611,7 @@ osg::Image* UpdateVisitor::convertImage(const QImage& iImage)
 
 /*!
  * \brief UpdateVisitor::applyTexture
- * sets a texture for a geode
+ * sets a texture on a geode
  */
 void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath)
 {
@@ -1613,7 +1644,7 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
         texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
         texture->setImage(image.get());
         texture->setResizeNonPowerOfTwoHint(false);// don't output console message about scaling
-        ss->setTextureAttributeAndModes(0, texture.get(), osg::StateAttribute::ON);
+        ss->setTextureAttributeAndModes(0, texture.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
       }
     }
     else
@@ -1625,33 +1656,34 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
 }
 
 /*!
- * \brief UpdateVisitor::changeColor
- * changes color for a geode
+ * \brief UpdateVisitor::changeColorOfMaterial
+ * changes color of a material
  */
-void UpdateVisitor::changeColor(osg::StateSet* ss, const QColor color)
+void UpdateVisitor::changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color)
 {
   if (ss)
   {
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     if (!material.valid()) material = new osg::Material();
+    material->setColorMode(mode);
     material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
     material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
-    ss->setAttribute(material.get());
+    ss->setAttributeAndModes(material.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
   }
 }
 
 /*!
- * \brief UpdateVisitor::changeTransparency
- * changes transparency for a geode
+ * \brief UpdateVisitor::changeTransparencyOfMaterial
+ * changes transparency of a material
  */
-void UpdateVisitor::changeTransparency(osg::StateSet* ss, const float transparency)
+void UpdateVisitor::changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency)
 {
   if (ss)
   {
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     if (!material.valid()) material = new osg::Material();
     material->setTransparency(osg::Material::FRONT_AND_BACK, transparency);
-    ss->setAttributeAndModes(material.get(), osg::StateAttribute::OVERRIDE);
+    ss->setAttributeAndModes(material.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     ss->setMode(GL_BLEND, transparency ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
     ss->setRenderingHint(transparency ? osg::StateSet::TRANSPARENT_BIN : osg::StateSet::OPAQUE_BIN);
   }
