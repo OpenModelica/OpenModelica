@@ -328,16 +328,6 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
 void ViewerWidget::changeVisualizerTransparency()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0) {
-        QString msg = tr("Transparency is not applicable for DXF files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     bool ok;
     const int min = 0, max = 100, step = 1; // Unit: [%]
     const int currentTransparency = mpSelectedVisualizer->getVisualProperties()->getTransparency().get() * (max - min) + min;
@@ -358,16 +348,6 @@ void ViewerWidget::changeVisualizerTransparency()
 void ViewerWidget::makeVisualizerInvisible()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0) {
-        QString msg = tr("Invisibility is not applicable for DXF files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     mpSelectedVisualizer->getVisualProperties()->getTransparency().set(1.0);
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
@@ -381,16 +361,6 @@ void ViewerWidget::makeVisualizerInvisible()
 void ViewerWidget::changeVisualizerColor()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0) {
-        QString msg = tr("Changing the color is not applicable for DXF files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     const QColor currentColor = mpSelectedVisualizer->getVisualProperties()->getColor().get();
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
