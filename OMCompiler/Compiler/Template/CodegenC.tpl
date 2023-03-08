@@ -5495,7 +5495,7 @@ match sparsepattern
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
       let fileName = '<%modelNamePrefix%>_sparsityPatterns/<%matrixname%>.bin'
-      let colorString = genSPColors(colorList, "jacobian->sparsePattern->colorCols")
+      let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
       let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
@@ -5656,6 +5656,25 @@ template genSPColors(list<list<Integer>> colorList, String arrayName)
     let ind_name = 'indices_<%index%>'
   <<
   /* color <%index%> with <%length%> columns */
+  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
+    '<%i_index%>' ;separator=", ")%>};
+  for(i=0; i<<%length%>; i++)
+    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
+  >>;separator="\n\n")
+  <<
+  <%colorArray%>
+  >>
+end genSPColors;
+
+template readSPColors(list<list<Integer>> colorList, String arrayName)
+"This template generates row of the CRS format"
+::=
+  let colorArray = (colorList |> (indices) hasindex index0 =>
+    let length = '<%listLength(indices)%>'
+    let index = '<%intAdd(index0,1)%>'
+    let ind_name = 'indices_<%index%>'
+  <<
+  /* color <%index%> with <%length%> columns */
   unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
   fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile);
   for(i=0; i<<%length%>; i++)
@@ -5665,7 +5684,7 @@ template genSPColors(list<list<Integer>> colorList, String arrayName)
   <<
   <%colorArray%>
   >>
-end genSPColors;
+end readSPColors;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &eqArray, Text &eqfuncs, String modelNamePrefix, Boolean init)
  "Generates an equation.
