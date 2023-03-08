@@ -329,8 +329,9 @@ void ViewerWidget::changeVisualizerTransparency()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Transparency is not applicable for DXF-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0) {
+        QString msg = tr("Transparency is not applicable for DXF files.");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -358,8 +359,9 @@ void ViewerWidget::makeVisualizerInvisible()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Invisibility is not applicable for DXF-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0) {
+        QString msg = tr("Invisibility is not applicable for DXF files.");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -380,8 +382,9 @@ void ViewerWidget::changeVisualizerColor()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Changing the color is not applicable for DXF-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0) {
+        QString msg = tr("Changing the color is not applicable for DXF files.");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -406,8 +409,9 @@ void ViewerWidget::applyCheckerTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -428,8 +432,9 @@ void ViewerWidget::applyCustomTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -455,8 +460,9 @@ void ViewerWidget::removeTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
