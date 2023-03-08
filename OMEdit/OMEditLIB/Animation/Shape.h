@@ -37,7 +37,7 @@
 
 #include "AbstractVisualizer.h"
 
-class ShapeObject : public AbstractVisualizerObject
+class ShapeObject final : public AbstractVisualizerObjectWithVisualProperties<ShapeObject>
 {
 public:
   ShapeObject();
@@ -45,7 +45,7 @@ public:
   ShapeObject(const ShapeObject&) = default;
   ShapeObject& operator=(const ShapeObject&) = default;
   ShapeObject* asShape() override final {return this;}
-  void dumpVisualizerAttributes() const override;
+  void dumpVisualizerAttributes() override;
 public:
   std::string _type;
   std::string _fileName;

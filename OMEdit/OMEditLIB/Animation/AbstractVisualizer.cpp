@@ -77,6 +77,11 @@ std::ostream& operator<<(std::ostream& os, const StateSetAction action)
   }
 }
 
+std::ostream& operator<<(std::ostream& os, const QColor color)
+{
+  return os << "[" << color.red() << ", " << color.green() << ", " << color.blue() << ", " << color.alpha() << "]";
+}
+
 VisualizerAttribute::VisualizerAttribute()
     : isConst(true),
       exp(0.0),
@@ -98,12 +103,60 @@ std::string VisualizerAttribute::getValueString() const
   return std::to_string(exp) + " (" + std::to_string(fmuValueRef) + ") " + std::to_string(isConst);
 }
 
+template<typename VisualizerObject>
+AbstractVisualProperties::Color::Type VisualProperties<VisualizerObject>::Color::getDefault() const
+{
+  return QColor(0.0, 0.0, 0.0, 0.0);
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::Specular::Type VisualProperties<VisualizerObject>::Specular::getDefault() const
+{
+  return 0.7;
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::Transparency::Type VisualProperties<VisualizerObject>::Transparency::getDefault() const
+{
+  return 0.0;
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::TextureImagePath::Type VisualProperties<VisualizerObject>::TextureImagePath::getDefault() const
+{
+  return "";
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::Color::Type VisualProperties<VisualizerObject>::Color::get() const
+{
+  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
+  return mCustom ? mProperty : QColor(visualizer->_color[0].exp, visualizer->_color[1].exp, visualizer->_color[2].exp);
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::Specular::Type VisualProperties<VisualizerObject>::Specular::get() const
+{
+  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
+  return mCustom ? mProperty : visualizer->_specCoeff.exp;
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::Transparency::Type VisualProperties<VisualizerObject>::Transparency::get() const
+{
+  return AbstractVisualProperties::Transparency::get();
+}
+
+template<typename VisualizerObject>
+AbstractVisualProperties::TextureImagePath::Type VisualProperties<VisualizerObject>::TextureImagePath::get() const
+{
+  return AbstractVisualProperties::TextureImagePath::get();
+}
+
 AbstractVisualizerObject::AbstractVisualizerObject(const VisualizerType type)
     : mVisualizerType(type),
       mStateSetAction(StateSetAction::update),
       mTransformNode(nullptr),
-      mTextureImagePath(""),
-      mTransparency(0.0),
       _id(""),
       _mat(osg::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
       _specCoeff(VisualizerAttribute(0.7))
@@ -130,15 +183,12 @@ AbstractVisualizerObject::~AbstractVisualizerObject()
   /* A function body is required for a pure virtual destructor. */
 }
 
-void AbstractVisualizerObject::dumpVisualizerAttributes() const
+void AbstractVisualizerObject::dumpVisualizerAttributes()
 {
   std::cout << "id " << _id << std::endl;
   std::cout << "visualizerType " << mVisualizerType << std::endl;
   std::cout << "stateSetAction " << mStateSetAction << std::endl;
-  std::cout << "textureImagePath " << mTextureImagePath << std::endl;
-  std::cout << "transparency " << mTransparency << std::endl;
-  std::cout << "color " << _color[0].getValueString() << " , " << _color[1].getValueString() << " , " << _color[2].getValueString() << std::endl;
-  std::cout << "specCoeff " << _specCoeff.getValueString() << std::endl;
+  std::cout << "transformNode " << mTransformNode << std::endl;
   std::cout << "mat " << _mat(0, 0) << " , " << _mat(0, 1) << " , " << _mat(0, 2) << " , " << _mat(0, 3) << std::endl;
   std::cout << "    " << _mat(1, 0) << " , " << _mat(1, 1) << " , " << _mat(1, 2) << " , " << _mat(1, 3) << std::endl;
   std::cout << "    " << _mat(2, 0) << " , " << _mat(2, 1) << " , " << _mat(2, 2) << " , " << _mat(2, 3) << std::endl;
@@ -147,7 +197,38 @@ void AbstractVisualizerObject::dumpVisualizerAttributes() const
   std::cout << "  " << _T[3].getValueString() << " , " << _T[4].getValueString() << " , " << _T[5].getValueString() << std::endl;
   std::cout << "  " << _T[6].getValueString() << " , " << _T[7].getValueString() << " , " << _T[8].getValueString() << std::endl;
   std::cout << "r " << _r[0].getValueString() << " , " << _r[1].getValueString() << " , " << _r[2].getValueString() << std::endl;
+  std::cout << "color " << _color[0].getValueString() << " , " << _color[1].getValueString() << " , " << _color[2].getValueString() << std::endl;
+  std::cout << "specCoeff " << _specCoeff.getValueString() << std::endl;
 }
+
+template<typename VisualizerObject>
+AbstractVisualizerObjectWithVisualProperties<VisualizerObject>::AbstractVisualizerObjectWithVisualProperties(const VisualizerType type)
+    : AbstractVisualizerObject(type),
+      VisualProperties<VisualizerObject>()
+{
+}
+
+template<typename VisualizerObject>
+AbstractVisualizerObjectWithVisualProperties<VisualizerObject>::~AbstractVisualizerObjectWithVisualProperties()
+{
+  /* A function body is required for a pure virtual destructor. */
+}
+
+template<typename VisualizerObject>
+void AbstractVisualizerObjectWithVisualProperties<VisualizerObject>::dumpVisualizerAttributes()
+{
+  AbstractVisualizerObject::dumpVisualizerAttributes();
+  std::cout << "visual property color " << VisualProperties<VisualizerObject>::mColor.get() << std::endl;
+  std::cout << "visual property specular " << VisualProperties<VisualizerObject>::mSpecular.get() << std::endl;
+  std::cout << "visual property transparency " << VisualProperties<VisualizerObject>::mTransparency.get() << std::endl;
+  std::cout << "visual property textureImagePath " << VisualProperties<VisualizerObject>::mTextureImagePath.get() << std::endl;
+}
+
+// Avoid linker errors (see https://isocpp.org/wiki/faq/templates#separate-template-class-defn-from-decl)
+#include "Shape.h"
+#include "Vector.h"
+template class AbstractVisualizerObjectWithVisualProperties<ShapeObject>;
+template class AbstractVisualizerObjectWithVisualProperties<VectorObject>;
 
 VisualizerAttribute getVisualizerAttributeForNode(const rapidxml::xml_node<>* node)
 {
