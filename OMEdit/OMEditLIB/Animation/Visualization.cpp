@@ -1574,6 +1574,9 @@ void UpdateVisitor::apply(osg::Geode& node)
 
       //set transparency
       changeTransparencyOfMaterial(ss, transparency);
+      if (geometryColors) {
+        changeTransparencyOfGeometry(node, transparency);
+      }
     }
     if (changeTexture) {
       //set texture
@@ -1686,6 +1689,32 @@ void UpdateVisitor::changeTransparencyOfMaterial(osg::StateSet* ss, const float 
     ss->setAttributeAndModes(material.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     ss->setMode(GL_BLEND, transparency ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
     ss->setRenderingHint(transparency ? osg::StateSet::TRANSPARENT_BIN : osg::StateSet::OPAQUE_BIN);
+  }
+}
+
+/*!
+ * \brief UpdateVisitor::changeTransparencyOfGeometry
+ * changes transparency of a geode's geometry
+ */
+void UpdateVisitor::changeTransparencyOfGeometry(osg::Geode& geode, const float transparency)
+{
+  osg::Vec4::value_type opacity = 1.0 - transparency;
+  unsigned int num = geode.getNumDrawables();
+  for (unsigned int i = 0; i < num; i++) {
+    osg::Drawable* drawable = geode.getDrawable(i);
+    if (drawable) {
+      osg::Geometry* geometry = drawable->asGeometry();
+      if (geometry) {
+        osg::Vec4Array* colors = dynamic_cast<osg::Vec4Array*>(geometry->getColorArray());
+        if (colors) {
+          for (osg::Vec4& color : colors->asVector()) {
+            color.a() = opacity;
+          }
+          colors->dirty();
+          drawable->dirtyDisplayList();
+        }
+      }
+    }
   }
 }
 

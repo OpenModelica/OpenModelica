@@ -99,6 +99,7 @@ public:
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
   void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color);
   void changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency);
+  void changeTransparencyOfGeometry(osg::Geode& geode, const float transparency);
 public:
   AbstractVisualizerObject* _visualizer;
   bool _changeMaterialProperties;
