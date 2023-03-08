@@ -455,6 +455,9 @@ private:
     void setName(const QString &name) {mName = name;}
     QString getValue() const {return mValue;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
+    QString getValueWithSubModifiers() const;
+    QString getModifier(const QString &m) const;
+    bool hasModifier(const QString &m) const;
     QList<Modifier> getModifiers() const {return mModifiers;}
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
@@ -507,7 +510,6 @@ private:
     bool mFinal;
     bool mInner;
     bool mOuter;
-    bool mReplaceable;
     std::unique_ptr<Replaceable> mpReplaceable;
     bool mRedeclare;
     bool mPartial;
@@ -602,6 +604,7 @@ private:
     Model *getModel() const {return mpModel;}
 
     virtual QString getQualifiedName() const = 0;
+    virtual QString getRootType() const = 0;
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
@@ -621,9 +624,11 @@ private:
   private:
     std::unique_ptr<Annotation> mpExtendsAnnotation;
     Modifier mExtendsModifier;
+    QString mBaseClass;
     // Element interface
   public:
     virtual QString getQualifiedName() const override;
+    virtual QString getRootType() const override;
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
@@ -668,6 +673,7 @@ private:
     // Element interface
   public:
     virtual QString getQualifiedName() const override;
+    virtual QString getRootType() const override;
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
@@ -688,6 +694,7 @@ private:
     // Element interface
   public:
     virtual QString getQualifiedName() const override;
+    virtual QString getRootType() const override;
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}

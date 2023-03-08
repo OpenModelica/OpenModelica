@@ -189,8 +189,8 @@ public:
   ~ElementParameters();
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
-  bool isNested() const {return mNested;}
   QString getModification() const {return mModification;}
+  static void applyStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
   void updateParameters();
 private:
   ModelInstance::Component *mpElement;
