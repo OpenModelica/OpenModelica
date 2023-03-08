@@ -1037,7 +1037,7 @@ algorithm
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
-  json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), scope, json);
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
 
@@ -1174,7 +1174,7 @@ algorithm
   ext_def := InstNode.extendsDefinition(node);
 
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
-  json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), json);
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), node, json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
   if Class.isOnlyBuiltin(InstNode.getClass(node)) then
@@ -1218,13 +1218,13 @@ algorithm
           json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
         end if;
 
-        json := dumpJSONSCodeMod(cdef.modifications, json);
+        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
       then
         ();
 
     case SCode.ClassDef.CLASS_EXTENDS()
       algorithm
-        json := dumpJSONSCodeMod(cdef.modifications, json);
+        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
       then
         ();
 
@@ -1267,7 +1267,7 @@ algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty, isDeleted = true), json);
-        json := dumpJSONSCodeMod(elem.modifications, json);
+        json := dumpJSONSCodeMod(elem.modifications, scope, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
         json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
@@ -1285,7 +1285,7 @@ algorithm
             dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
         end if;
 
-        json := dumpJSONSCodeMod(elem.modifications, json);
+        json := dumpJSONSCodeMod(elem.modifications, scope, json);
 
         is_constant := comp.attributes.variability <= Variability.PARAMETER;
         if Binding.isExplicitlyBound(comp.binding) then
@@ -1540,7 +1540,7 @@ algorithm
       algorithm
         json := JSON.makeNull();
         json := JSON.addPair("constrainedby", dumpJSONPath(cc.constrainingClass), json);
-        json := dumpJSONSCodeMod(cc.modifier, json);
+        json := dumpJSONSCodeMod(cc.modifier, scope, json);
         json := dumpJSONCommentOpt(SOME(cc.comment), scope, json);
       then
         json;
@@ -1941,16 +1941,18 @@ end dumpJSONReplaceableElements;
 
 function dumpJSONSCodeMod
   input SCode.Mod mod;
+  input InstNode scope;
   input output JSON json;
 protected
   JSON j;
 algorithm
-  j := dumpJSONSCodeMod_impl(mod);
+  j := dumpJSONSCodeMod_impl(mod, scope);
   json := JSON.addPairNotNull("modifiers", j, json);
 end dumpJSONSCodeMod;
 
 function dumpJSONSCodeMod_impl
   input SCode.Mod mod;
+  input InstNode scope;
   output JSON json = JSON.makeNull();
 protected
   JSON binding_json;
@@ -1959,7 +1961,7 @@ algorithm
     case SCode.Mod.MOD()
       algorithm
         for m in mod.subModLst loop
-          json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod), json);
+          json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod, scope), json);
         end for;
 
         if SCodeUtil.finalBool(mod.finalPrefix) then
@@ -1994,12 +1996,36 @@ algorithm
 
         binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
         json := JSON.addPair("$value", binding_json, json);
+        json := dumpJSONRedeclareType(mod.element, scope, json);
       then
         ();
 
     else ();
   end match;
 end dumpJSONSCodeMod_impl;
+
+function dumpJSONRedeclareType
+  input SCode.Element element;
+  input InstNode scope;
+  input output JSON json;
+protected
+  Absyn.Path path;
+  InstContext.Type context;
+  InstNode cls;
+algorithm
+  () := matchcontinue element
+    case SCode.Element.COMPONENT()
+      algorithm
+        path := AbsynUtil.typeSpecPath(element.typeSpec);
+        context := InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
+        cls := Lookup.lookupName(path, scope, context, checkAccessViolations = false);
+        json := JSON.addPair("$type", dumpJSONNodePath(cls), json);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end dumpJSONRedeclareType;
 
 function dumpJSONChoicesAnnotation
   input list<SCode.SubMod> mods;
@@ -2025,7 +2051,7 @@ algorithm
         else m;
       end match;
 
-      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod), j);
+      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod, scope), j);
     end for;
 
     json := JSON.addPair("choice", j, json);
