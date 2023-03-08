@@ -97,7 +97,7 @@ public:
   virtual void apply(osg::MatrixTransform& node) override;
   osg::Image* convertImage(const QImage& iImage);
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
-  void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color);
+  void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color, const float specular);
   void changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency);
   void changeTransparencyOfGeometry(osg::Geode& geode, const float transparency);
 public:

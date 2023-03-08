@@ -1565,12 +1565,13 @@ void UpdateVisitor::apply(osg::Geode& node)
 
     AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
     QColor      color            = visualProperties->getColor().get();
+    float       specular         = visualProperties->getSpecular().get();
     float       transparency     = visualProperties->getTransparency().get();
     std::string textureImagePath = visualProperties->getTextureImagePath().get();
 
     if (changeMaterial) {
-      //set color
-      changeColorOfMaterial(ss, mode, color);
+      //set color and specular coefficient
+      changeColorOfMaterial(ss, mode, color, specular);
 
       //set transparency
       changeTransparencyOfMaterial(ss, transparency);
@@ -1662,15 +1663,17 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, const std::string& imagePath
  * \brief UpdateVisitor::changeColorOfMaterial
  * changes color of a material
  */
-void UpdateVisitor::changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color)
+void UpdateVisitor::changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color, const float specular)
 {
   if (ss)
   {
     osg::ref_ptr<osg::Material> material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     if (!material.valid()) material = new osg::Material();
     material->setColorMode(mode);
-    material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
+    material->setAmbient  (osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
+    material->setDiffuse  (osg::Material::FRONT_AND_BACK, osg::Vec4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
+    material->setSpecular (osg::Material::FRONT_AND_BACK, osg::Vec4f(specular, specular, specular, 1.0));
+    material->setShininess(osg::Material::FRONT_AND_BACK, 8.0); // Material shininess in range [0., 128.]
     ss->setAttributeAndModes(material.get(), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
   }
 }
