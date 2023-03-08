@@ -31,78 +31,87 @@
 
 encapsulated package SerializeSparsityPattern
 
-//import Absyn;
-//import BackendDAE;
-//import DAE;
 import SimCode;
-
-//protected
-//import Algorithm;
-//import Autoconf;
-//import Config;
-//import DAEDump;
-//import Error;
-//import Expression;
-//import File;
-//import File.Escape.JSON;
-//import writeCref = ComponentReference.writeCref;
-//import expStr = ExpressionDump.printExpStr;
 import List;
-//import PrefixUtil;
-//import SimCodeUtil;
-//import SimCodeFunctionUtil;
-//import SCodeDump;
 import System;
 import Util;
 
 function serialize
   input SimCode.SimCode code;
 protected
-  array<Integer> columnPointers, rowIndices;
+  array<Integer> columnPointers, rowIndices, columns;
   String path = code.fileNamePrefix + "_sparsityPatterns/";
+  String fname;
 algorithm
   System.systemCall("mkdir -p '" + path + "'");
   for jac in code.jacobianMatrices loop
+    fname := path + jac.matrixName + ".bin";
     columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
     rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
-    serializeJacobian(path + jac.matrixName + ".bin", arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
+    serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
+    for color in jac.coloredCols loop
+      columns := listArray(color);
+      serializeColor(fname, arrayLength(columns), columns);
+    end for;
   end for;
 end serialize;
 
-function serializeJacobian
-  input String name;
-  input Integer numCols;
-  input Integer nnz;
-  input array<Integer> colPtrs;
-  input array<Integer> rowInds;
+// *********************
+// write to binary stuff
+// *********************
+
 protected
-external "C" serializeC(name, numCols, nnz, colPtrs, rowInds) annotation(Include="
-static void serializeC(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
-{
-  FILE * pFile;
-  unsigned int i, j;
+  function serializeJacobian
+    input String name;
+    input Integer numCols;
+    input Integer nnz;
+    input array<Integer> colPtrs;
+    input array<Integer> rowInds;
+  external "C" serializeJ(name, numCols, nnz, colPtrs, rowInds) annotation(Include="
+  static void serializeJ(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
+  {
+    unsigned int i, j;
+    FILE* pFile = fopen(name, \"wb\");
 
-  pFile = fopen(name, \"wb\");
 
-  /* compute and write sparsePattern->leadindex */
-  j = 0;
-  for (i = 0; i < numCols; i++) {
-    j += MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
-    fwrite(&j, sizeof(unsigned int), 1, pFile);
+    /* compute and write sparsePattern->leadindex */
+    j = 0;
+    for (i = 0; i < numCols; i++) {
+      j += MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
+      fwrite(&j, sizeof(unsigned int), 1, pFile);
+    }
+
+    /* write sparsePattern->index */
+    for (i = 0; i < nnz; i++) {
+      j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
+      fwrite(&j, sizeof(unsigned int), 1, pFile);
+    }
+
+    fclose(pFile);
   }
+  ");
+  end serializeJacobian;
 
-  /* write sparsePattern->index */
-  for (i = 0; i < nnz; i++) {
-    j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
-    fwrite(&j, sizeof(unsigned int), 1, pFile);
+  function serializeColor
+    input String name;
+    input Integer size;
+    input array<Integer> columns;
+  external "C" serializeC(name, size, columns) annotation(Include="
+  static void serializeC(const char* name, int size, modelica_metatype columns)
+  {
+    unsigned int i, j;
+    FILE* pFile = fopen(name, \"ab\");
+
+    /* write sparsePattern->colorCols */
+    for (i = 0; i < size; i++) {
+      j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
+      fwrite(&j, sizeof(unsigned int), 1, pFile);
+    }
+
+    fclose(pFile);
   }
-
-  /* TODO write sparsePattern->colorCols */
-
-  fclose(pFile);
-}
-");
-end serializeJacobian;
+  ");
+  end serializeColor;
 
 annotation(__OpenModelica_Interface="backend");
 end SerializeSparsityPattern;

@@ -5656,10 +5656,11 @@ template genSPColors(list<list<Integer>> colorList, String arrayName)
     let ind_name = 'indices_<%index%>'
   <<
   /* color <%index%> with <%length%> columns */
-  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
-    '<%i_index%>' ;separator=", ")%>};
+  unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
+  fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile);
   for(i=0; i<<%length%>; i++)
     <%arrayName%>[<%ind_name%>[i]] = <%index%>;
+  free(<%ind_name%>);
   >>;separator="\n\n")
   <<
   <%colorArray%>
