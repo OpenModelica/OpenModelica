@@ -771,8 +771,7 @@ void gbode_init_noRestart(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
     gbData->nlsData->numberOfJEval = 0;
   resetSolverStats(&gbData->stats);
 
-  // initialize vector used for interpolation (equidistant time grid)
-  // and for the birate inner integration
+  // correct yOld and yRight/kRight with respect to the event time
   gbData->time = sData->timeValue;
   gbData->timeRight = gbData->time;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
