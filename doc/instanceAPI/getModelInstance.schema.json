@@ -214,6 +214,18 @@
                 {
                   "description": "Builtin type",
                   "type": "string"
+                },
+                {
+                  "description": "Missing type",
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "missing": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               ]
             },

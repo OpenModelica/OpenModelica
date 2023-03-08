@@ -904,7 +904,7 @@ function lookupCrefInNode
   input InstContext.Type context;
 protected
   InstNode scope;
-  InstNode n;
+  InstNode n, cls_node;
   String name;
   Class cls;
   Boolean is_import;
@@ -929,7 +929,14 @@ algorithm
   end if;
 
   name := AbsynUtil.crefFirstIdent(cref);
-  cls := InstNode.getClass(scope);
+  cls_node := InstNode.classScope(scope);
+
+  if InstNode.isEmpty(cls_node) then
+    foundCref := ComponentRef.fromAbsynCref(cref, foundCref);
+    return;
+  end if;
+
+  cls := InstNode.getClass(cls_node);
 
   try
     (n, is_import) := Class.lookupElement(name, cls);

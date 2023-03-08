@@ -1,0 +1,72 @@
+// name: GetModelInstanceMissingClass1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    MissingClass x = 1.0;
+    AlsoMissing y[:] = {1, 2, 3};
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": {
+//         \"name\": \"MissingClass\",
+//         \"missing\": true
+//       },
+//       \"modifiers\": \"1.0\",
+//       \"value\": {
+//         \"binding\": 1
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": {
+//         \"name\": \"AlsoMissing\",
+//         \"missing\": true
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \"3\"
+//         ]
+//       },
+//       \"modifiers\": \"{1, 2, 3}\",
+//       \"value\": {
+//         \"binding\": [
+//           1,
+//           2,
+//           3
+//         ]
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// "[<interactive>:3:5-3:25:writable] Error: Class MissingClass not found in scope M.
+// [<interactive>:4:5-4:33:writable] Error: Class AlsoMissing not found in scope M.
+// "
+// endResult
