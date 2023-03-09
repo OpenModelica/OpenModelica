@@ -421,7 +421,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * iterativ - default, sparse iterativ linear solver with fallback case to dense solver\n"
   "  * dense - dense linear solver, SUNDIALS default method",
   /* FLAG_INITIAL_STEP_SIZE */
-  "  Value specifies an initial step size, used by the methods: dassl, ida",
+  "  Value specifies an initial step size, used by the methods: dassl, ida, gbode",
   /* FLAG_INPUT_CSV */
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */
@@ -481,7 +481,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */
   "  Value specifies maximum integration order, used by the methods: dassl, ida.",
   /* FLAG_MAX_STEP_SIZE */
-  "  Value specifies maximum absolute step size, used by the methods: dassl, ida.",
+  "  Value specifies maximum absolute step size, used by the methods: dassl, ida, gbode.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
   "  Value specifies the output format of the measure time functionality:\n\n"
   "  * svg\n"
