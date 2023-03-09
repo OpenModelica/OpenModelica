@@ -1953,6 +1953,7 @@ end dumpJSONSCodeMod;
 function dumpJSONSCodeMod_impl
   input SCode.Mod mod;
   input InstNode scope;
+  input Boolean isChoices = false;
   output JSON json = JSON.makeNull();
 protected
   JSON binding_json;
@@ -1996,7 +1997,10 @@ algorithm
 
         binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
         json := JSON.addPair("$value", binding_json, json);
-        json := dumpJSONRedeclareType(mod.element, scope, json);
+
+        if isChoices then
+          json := dumpJSONRedeclareType(mod.element, scope, json);
+        end if;
       then
         ();
 
@@ -2051,7 +2055,7 @@ algorithm
         else m;
       end match;
 
-      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod, scope), j);
+      j := JSON.addElement(dumpJSONSCodeMod_impl(m.mod, scope, isChoices = true), j);
     end for;
 
     json := JSON.addPair("choice", j, json);
