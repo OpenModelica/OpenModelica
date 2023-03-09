@@ -3546,7 +3546,7 @@ algorithm
       list<SimCodeVar.SimVar> vars;
       String name;
       SimCode.SparsityPattern sparsity,sparsityT;
-      SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;//TS//
+      SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
       list<list<Integer>> colCols;
       array<Integer> ass;
       Integer newIdx;

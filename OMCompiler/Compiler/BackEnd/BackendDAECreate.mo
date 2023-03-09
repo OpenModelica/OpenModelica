@@ -152,10 +152,6 @@ algorithm
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
   einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
-  //TS,org//symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}),
-  //TS,org//  (NONE(), ({}, {}, ({}, {}), -1), {}),
-  //TS,org//  (NONE(), ({}, {}, ({}, {}), -1), {}),
-  //TS,org//  (NONE(), ({}, {}, ({}, {}), -1), {})};
   symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
               (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
               (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),

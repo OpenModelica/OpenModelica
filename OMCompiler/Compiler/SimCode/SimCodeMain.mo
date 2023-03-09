@@ -1407,7 +1407,6 @@ protected
   list<list<SimCode.SimEqSystem>> daeEquations;
   list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
 
-  //TS,org//tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJacobian;
   tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring, BackendDAE.NonlinearPattern> daeModeJacobian;
   Option<BackendDAE.SymbolicJacobian> daeModeJac;
   Option<BackendDAE.Jacobian> jacH;
