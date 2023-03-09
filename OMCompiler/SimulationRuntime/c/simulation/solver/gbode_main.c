@@ -1727,6 +1727,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
     if (gbData->noRestart && !gbData->isFirstStep) {
+      gbData->stepSize = gbData->optStepSize;
       infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
       gbode_init_noRestart(data, threadData, solverInfo);
     } else {
@@ -1835,6 +1836,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
+      gbData->optStepSize = gbData->stepSize;
 
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1875,6 +1877,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
           if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
             gbData->stepSize = gbData->maxStepSize;
         }
+        gbData->optStepSize = gbData->stepSize;
       }
       // reject step, if interpolaton error is too large
       if ((gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
@@ -2022,11 +2025,13 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     solverInfo->currentTime = sData->timeValue;
 
     // use chosen interpolation for emitting equidistant output (default hermite)
-    gb_interpolation(gbData->interpolation,
+    if (solverInfo->currentStepSize > 0) {
+      gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
                     sData->timeValue,  sData->realVars,
                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+    }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
