@@ -71,7 +71,9 @@ protected
     input array<Integer> colPtrs;
     input array<Integer> rowInds;
   external "C" serializeJ(name, numCols, nnz, colPtrs, rowInds) annotation(Include="
-  #include \"../../SimulationRuntime/c/util/omc_file.h\"
+  extern FILE* omc_fopen(const char *filename, const char *mode);
+  extern size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream);
+
   static void serializeJ(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
   {
     unsigned int i, j;
@@ -101,7 +103,9 @@ protected
     input Integer size;
     input array<Integer> columns;
   external "C" serializeC(name, size, columns) annotation(Include="
-  #include \"../../SimulationRuntime/c/util/omc_file.h\"
+  extern FILE* omc_fopen(const char *filename, const char *mode);
+  extern size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream);
+
   static void serializeC(const char* name, int size, modelica_metatype columns)
   {
     unsigned int i, j;
