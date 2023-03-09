@@ -4838,6 +4838,7 @@ public function syncDAEandSimJac
 algorithm
   if symJac.matrixName == "A" then
     daeJac.columns := list(updateSimVarIndex(col, daeJac.crefsHT) for col in symJac.columns);
+    daeJac.jacobianIndex := symJac.jacobianIndex;
   else
     daeJac := symJac;
   end if;

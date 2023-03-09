@@ -917,6 +917,7 @@ template simulationFile_jac_header(SimCode simCode)
     <<
     /* Jacobians */
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
+
     <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%>
     <%\n%>
     >>
@@ -1769,23 +1770,24 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
 ::=
   let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     <<
-    #if defined(__cplusplus)
-    extern "C" {
-    #endif
-      #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
-      int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-      <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
-    #if defined(__cplusplus)
-    }
-    #endif
+    #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%> /* PH */
+    int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
     >>
-    ;separator="\n";empty)
+    ;separator="\n\n";empty)
 
   <<
+  #if defined(__cplusplus)
+  extern "C" {
+  #endif
+
   /* Jacobian Variables */
   <%symbolicJacsDefine%>
 
+  #if defined(__cplusplus)
+  }
+  #endif
   >>
 end symJacDefinition;
 
