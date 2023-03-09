@@ -41,6 +41,7 @@
 #include <QOpenGLContext> // must be included before OSG headers
 #include <osg/GL> // for having direct access to glClear()
 
+#include <osg/Array>
 #include <osg/Drawable>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
@@ -331,6 +332,10 @@ void OMVisualBase::initVisObjects()
         shape._type = "dxf";
       } else if (stlFileType(shape._fileName)) {
         shape._type = "stl";
+      } else if (objFileType(shape._fileName)) {
+        shape._type = "obj";
+      } else if (tdsFileType(shape._fileName)) {
+        shape._type = "3ds";
       }
     }
 
@@ -791,7 +796,8 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         // Store the radius of relevant shapes
         for (ShapeObject& shape : relevantShapes) {
           // Consider OpenSceneGraph shape drawables only
-          if (shape._type.compare("dxf") == 0 || shape._type.compare("stl") == 0) {
+          if (shape._type.compare("dxf") == 0 || shape._type.compare("stl") == 0 ||
+              shape._type.compare("obj") == 0 || shape._type.compare("3ds") == 0) {
             continue;
           }
 
@@ -1281,8 +1287,19 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
     transf->setName(shape._id);
 
-    if (shape._type.compare("stl") == 0)
-    { //cad node
+    if (shape._type.compare("obj") == 0 or shape._type.compare("3ds") == 0)
+    { //advanced cad node
+      //std::cout<<"It's an advanced cad and the filename is "<<shape._fileName<<std::endl;
+      osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
+      if (node.valid())
+      {
+        osg::ref_ptr<CADFile> cad = new CADFile(node.get());
+
+        transf->addChild(cad.get());
+      }
+    }
+    else if (shape._type.compare("stl") == 0)
+    { //stl node
       //std::cout<<"It's a stl and the filename is "<<shape._fileName<<std::endl;
       // Disable mesh optimization because it is too expensive (see OSG commit a082b57)
       osg::ref_ptr<osgDB::Options> options = new osgDB::Options("noTriStripPolygons");
@@ -1412,7 +1429,8 @@ void UpdateVisitor::apply(osg::Geode& node)
     case VisualizerType::shape:
      {
       ShapeObject* shape = _visualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0 or
+          shape->_type.compare("obj") == 0 or shape->_type.compare("3ds") == 0)
       {
         //it's a cad file so we have to rescale the underlying geometry vertices
         osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
@@ -1545,16 +1563,19 @@ void UpdateVisitor::apply(osg::Geode& node)
   if (changeMaterial || changeTexture) {
     osg::ref_ptr<osg::StateSet> stateSet = nullptr;
     bool geometryColors = false;
+    bool is3DSShape = false;
 
     if (_visualizer->isShape()) {
       ShapeObject* shape = _visualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0 or
+          shape->_type.compare("obj") == 0 or shape->_type.compare("3ds") == 0) {
         osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
         if (transformNode.valid() && transformNode->getNumChildren() > 0) {
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid()) {
             stateSet = cad->getOrCreateStateSet();
             geometryColors = !shape->getVisualProperties()->getColor().custom();
+            is3DSShape = shape->_type.compare("3ds") == 0;
           }
         }
       }
@@ -1576,9 +1597,14 @@ void UpdateVisitor::apply(osg::Geode& node)
       //set transparency
       changeTransparencyOfMaterial(ss, transparency);
       if (geometryColors) {
-        changeTransparencyOfGeometry(node, transparency);
+        if (is3DSShape) {
+          changeTransparencyOfGeometry<osg::Vec4ubArray, 255>(node, transparency);
+        } else {
+          changeTransparencyOfGeometry<osg::Vec4Array, 1>    (node, transparency);
+        }
       }
     }
+
     if (changeTexture) {
       //set texture
       applyTexture(ss, textureImagePath);
@@ -1699,18 +1725,21 @@ void UpdateVisitor::changeTransparencyOfMaterial(osg::StateSet* ss, const float 
  * \brief UpdateVisitor::changeTransparencyOfGeometry
  * changes transparency of a geode's geometry
  */
+template<typename Vec4Array, unsigned int scale>
 void UpdateVisitor::changeTransparencyOfGeometry(osg::Geode& geode, const float transparency)
 {
-  osg::Vec4::value_type opacity = 1.0 - transparency;
+  using Vec4 = typename Vec4Array::ElementDataType;
+  using type = typename Vec4::value_type;
+  type opacity = (1.0 - transparency) * scale;
   unsigned int num = geode.getNumDrawables();
   for (unsigned int i = 0; i < num; i++) {
     osg::Drawable* drawable = geode.getDrawable(i);
     if (drawable) {
       osg::Geometry* geometry = drawable->asGeometry();
       if (geometry) {
-        osg::Vec4Array* colors = dynamic_cast<osg::Vec4Array*>(geometry->getColorArray());
+        Vec4Array* colors = dynamic_cast<Vec4Array*>(geometry->getColorArray());
         if (colors) {
-          for (osg::Vec4& color : colors->asVector()) {
+          for (Vec4& color : colors->asVector()) {
             color.a() = opacity;
           }
           colors->dirty();
@@ -1861,7 +1890,7 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::
   //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
 
   osg::Matrix3 T0;
-  if (type == "stl" || type == "dxf")
+  if (type == "dxf" || type == "stl" || type == "obj" || type == "3ds")
   {
     T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
                       dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],

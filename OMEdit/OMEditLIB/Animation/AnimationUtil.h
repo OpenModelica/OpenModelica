@@ -139,10 +139,19 @@ inline bool dxfFileType(const std::string& typeName)
   return typeName.substr(typeName.size()-3) == std::string("dxf");
 }
 
-
 inline bool stlFileType(const std::string& typeName)
 {
   return typeName.substr(typeName.size()-3) == std::string("stl");
+}
+
+inline bool objFileType(const std::string& typeName)
+{
+  return typeName.substr(typeName.size()-3) == std::string("obj");
+}
+
+inline bool tdsFileType(const std::string& typeName)
+{
+  return typeName.substr(typeName.size()-3) == std::string("3ds");
 }
 
 
