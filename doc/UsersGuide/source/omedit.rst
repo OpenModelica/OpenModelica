@@ -1205,7 +1205,8 @@ General Options
 
 -  Optional Features
 
-  -  *Enable instance API* - Enables/disables the instance API support.
+  -  *Enable instance API* - Enables/disables the use of json based instance api. The instance API enables the features
+     like conditional connectors, dialog enable, replaceable etc.
 
 Libraries Options
 ~~~~~~~~~~~~~~~~~

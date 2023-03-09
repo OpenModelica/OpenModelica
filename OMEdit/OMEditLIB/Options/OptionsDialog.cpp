@@ -48,6 +48,8 @@
 #include "Simulation/TranslationFlagsWidget.h"
 #include <limits>
 
+#include <QStringBuilder>
+
 /*!
  * \class OptionsDialog
  * \brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
@@ -308,7 +310,9 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
   }
-  MainWindow::instance()->setNewApi(mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked());
+  if (!MainWindow::instance()->isNewApiCommandLine()) {
+    MainWindow::instance()->setNewApi(mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked());
+  }
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -3683,6 +3687,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
   // Enable instance api
   mpEnableInstanceAPICheckBox = new QCheckBox(tr("Enable instance API *"));
+  const QString newAPI = MainWindow::instance()->isNewApi() ? "true" : "false";
+  if (MainWindow::instance()->isNewApiCommandLine()) {
+    mpEnableInstanceAPICheckBox->setText(mpEnableInstanceAPICheckBox->text() % " (You are using command line option --NAPI=" % newAPI % " so this option will be ignored.)");
+  }
   mpEnableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
