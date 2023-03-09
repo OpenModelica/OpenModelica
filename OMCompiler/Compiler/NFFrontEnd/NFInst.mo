@@ -1143,13 +1143,13 @@ algorithm
 
     case CachedData.NO_CACHE()
       algorithm
+        // Cache the package node itself first, to avoid instantiation loops if
+        // the package uses itself somehow.
+        InstNode.setPackageCache(node, CachedData.PACKAGE(node));
+
         if InstContext.inFastLookup(context) then
           inst := expand(node);
         else
-          // Cache the package node itself first, to avoid instantiation loops if
-          // the package uses itself somehow.
-          InstNode.setPackageCache(node, CachedData.PACKAGE(node));
-
           // Instantiate the node.
           inst := instantiate(node, context = context);
 
