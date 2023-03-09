@@ -43,7 +43,10 @@ protected
   String path = code.fileNamePrefix + "_sparsityPatterns/";
   String fname;
 algorithm
-  System.systemCall("mkdir -p '" + path + "'");
+  if 0 <> System.systemCall("mkdir -p '" + path + "'") then
+    Error.addInternalError(getInstanceName() + " failed to create directory " + path, sourceInfo());
+    fail();
+  end if;
   for jac in code.jacobianMatrices loop
     fname := path + jac.matrixName + ".bin";
     columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
@@ -71,7 +74,7 @@ protected
   static void serializeJ(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
   {
     unsigned int i, j;
-    FILE* pFile = fopen(name, \"wb\");
+    FILE* pFile = omc_fopen(name, \"wb\");
 
 
     /* compute and write sparsePattern->leadindex */

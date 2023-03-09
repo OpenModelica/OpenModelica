@@ -5508,7 +5508,7 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        FILE* pFile = fopen("<%fileName%>", "rb");
+        FILE* pFile = omc_fopen("<%fileName%>", "rb");
         int i = 0;
 
         initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
@@ -5516,10 +5516,10 @@ match sparsepattern
         jacobian->availability = <%availability%>;
 
         /* read lead index of compressed sparse column */
-        fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile);
+        omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
 
         /* read sparse index */
-        fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile);
+        omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
 
         /* write color array */
         <%colorString%>
@@ -5676,7 +5676,7 @@ template readSPColors(list<list<Integer>> colorList, String arrayName)
   <<
   /* color <%index%> with <%length%> columns */
   unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
-  fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile);
+  omc_fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile, FALSE);
   for(i=0; i<<%length%>; i++)
     <%arrayName%>[<%ind_name%>[i]] = <%index%>;
   free(<%ind_name%>);

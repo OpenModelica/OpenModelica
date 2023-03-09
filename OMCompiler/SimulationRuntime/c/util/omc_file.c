@@ -111,7 +111,7 @@ FILE* omc_fopen(const char *filename, const char *mode)
 /**
  * @brief Read data from stream.
  *
- * @param buffer            Pointer to block of memory with a minimum size of `size`.
+ * @param buffer            Pointer to block of memory with a minimum size of `size*count`.
  * @param size              Size in bytes of each element to read.
  * @param count             Number of elements to read, each with size `size` bytes.
  * @param stream            Pointer to FILE object with input stream.
