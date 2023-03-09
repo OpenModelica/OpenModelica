@@ -1336,6 +1336,7 @@ namespace ModelInstance
   {
     mCheckBox = false;
     mDymolaCheckBox = false;
+    mChoices.clear();
   }
 
   void Choices::deserialize(const QJsonObject &jsonObject)
@@ -1351,16 +1352,37 @@ namespace ModelInstance
     if (jsonObject.contains("choice")) {
       QJsonArray choices = jsonObject.value("choice").toArray();
       foreach (auto choice, choices) {
+        QString type = "";
         if (choice.isObject()) {
           QJsonObject choiceObject = choice.toObject();
+          if (choiceObject.contains("$type")) {
+            type = choiceObject.value("$type").toString();
+          }
           if (choiceObject.contains("$value")) {
-            mChoice.append(choiceObject.value("$value").toString());
+            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
           }
         } else {
-          mChoice.append(choice.toString());
+          mChoices.append(qMakePair(choice.toString(), type));
         }
       }
     }
+  }
+
+  QStringList Choices::getChoices() const
+  {
+    QStringList choices;
+    foreach (Choice choice, mChoices) {
+      choices.append(choice.first);
+    }
+    return choices;
+  }
+
+  QString Choices::getType(int index) const
+  {
+    if (0 <= index && index < mChoices.size()) {
+      return mChoices.at(index).second;
+    }
+    return "";
   }
 
   Element::Element(Model *pParentModel)

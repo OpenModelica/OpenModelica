@@ -38,6 +38,7 @@
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
 #include "OMPlot.h"
+#include "FlatModelica/Parser.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -200,11 +201,11 @@ Parameter::Parameter(ModelInstance::Component *pComponent, ElementParameters *pE
     // For now we only handle replaceable component. Enable the line below once we start handling the replaceable class.
     //mValueType = Parameter::ReplaceableClass;
     if (mpModelInstanceComponent->getModel()) {
-      mpModifyReplaceableButton = new QToolButton;
-      mpModifyReplaceableButton->setIcon( QIcon(":/Resources/icons/edit-icon.svg"));
-      mpModifyReplaceableButton->setToolTip(tr("Edit"));
-      mpModifyReplaceableButton->setAutoRaise(true);
-      connect(mpModifyReplaceableButton, SIGNAL(clicked()), SLOT(modifyReplaceableButtonClicked()));
+      mpEditRedeclareClassButton = new QToolButton;
+      mpEditRedeclareClassButton->setIcon( QIcon(":/Resources/icons/edit-icon.svg"));
+      mpEditRedeclareClassButton->setToolTip(tr("Edit"));
+      mpEditRedeclareClassButton->setAutoRaise(true);
+      connect(mpEditRedeclareClassButton, SIGNAL(clicked()), SLOT(editRedeclareClassButtonClicked()));
     }
   } else if (!mpModelInstanceComponent->getAnnotation()->getChoices().getChoices().isEmpty()) {
     mValueType = Parameter::Choices;
@@ -515,8 +516,8 @@ void Parameter::setEnabled(bool enable)
   if (enable) {
     enableDisableUnitComboBox(getValue());
   }
-  if (mpModifyReplaceableButton) {
-    mpModifyReplaceableButton->setEnabled(enable);
+  if (mpEditRedeclareClassButton) {
+    mpEditRedeclareClassButton->setEnabled(enable);
   }
 }
 
@@ -624,7 +625,7 @@ void Parameter::createValueWidget()
         if (MainWindow::instance()->isNewApi()) {
           comment = choice;
         } else {
-          comment = StringHandler::getModelicaComment(choice);
+          comment = StringHandler::removeFirstLastQuotes(FlatModelica::Parser::getModelicaComment(choice));
         }
         mpValueComboBox->addItem(comment, choice);
       }
@@ -717,22 +718,50 @@ void Parameter::updateValueBinding(const FlatModelica::Expression expression)
   }
 }
 
-void Parameter::modifyReplaceableButtonClicked()
+/*!
+ * \brief Parameter::editRedeclareClassButtonClicked
+ * Slot activate when mpEditRedeclareClassButton clicked signal is raised.
+ * Opens ElementParameters dialog for the redeclare class.
+ */
+void Parameter::editRedeclareClassButtonClicked()
 {
-//  QString className = mpModelInstanceComponent->getType();
-//  qDebug() << className;
-  MainWindow::instance()->getProgressBar()->setRange(0, 0);
-  MainWindow::instance()->showProgressBar();
-  ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceComponent, mpElementParameters->getGraphicsView(),
-                                                                mpElementParameters->isInherited(), true, mpElementParameters);
-  MainWindow::instance()->hideProgressBar();
-  MainWindow::instance()->getStatusBar()->clearMessage();
-  if (pElementParameters->exec() == QDialog::Accepted) {
-    if (!pElementParameters->getModification().isEmpty()) {
-      setValueWidget(pElementParameters->getModification(), false, mUnit, true);
+  QString type;
+  if (mpValueComboBox->currentIndex() == 0) {
+    type = mpModelInstanceComponent->getType();
+  } else {
+    type = mpModelInstanceComponent->getAnnotation()->getChoices().getType(mpValueComboBox->currentIndex() - 1);
+  }
+
+  // if type is empty then try to parse the Modelica code of redeclare to get the type
+  if (type.isEmpty()) {
+    type = FlatModelica::Parser::getTypeFromElementRedeclaration(mpValueComboBox->lineEdit()->text());
+  }
+
+  if (type.isEmpty()) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Unable to find the redeclare class %1.").arg(type), Helper::ok);
+  } else {
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    ModelInstance::Model *pCurrentModel = mpModelInstanceComponent->getModel();
+    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(type);
+    if (!newModelJSON.isEmpty()) {
+      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
+      mpModelInstanceComponent->setModel(pNewModel);
+      ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceComponent, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(), true, mpElementParameters);
+      MainWindow::instance()->hideProgressBar();
+      MainWindow::instance()->getStatusBar()->clearMessage();
+      if (pElementParameters->exec() == QDialog::Accepted) {
+        if (!pElementParameters->getModification().isEmpty()) {
+          setValueWidget(pElementParameters->getModification(), false, mUnit, true);
+        }
+      }
+      pElementParameters->deleteLater();
+      // reset the actual model of the element
+      mpModelInstanceComponent->setModel(pCurrentModel);
+      delete pNewModel;
     }
   }
-  pElementParameters->deleteLater();
 }
 
 /*!
@@ -1201,8 +1230,8 @@ void ElementParameters::setUpDialog()
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
 
-          if (pParameter->getModifyReplaceableButton()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getModifyReplaceableButton(), layoutIndex, columnIndex++);
+          if (pParameter->getEditRedeclareClassButton()) {
+            pGroupBoxGridLayout->addWidget(pParameter->getEditRedeclareClassButton(), layoutIndex, columnIndex++);
           } else {
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
@@ -1715,12 +1744,6 @@ void ElementParametersOld::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
-
-          if (pParameter->getModifyReplaceableButton()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getModifyReplaceableButton(), layoutIndex, columnIndex++);
-          } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
-          }
 
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
