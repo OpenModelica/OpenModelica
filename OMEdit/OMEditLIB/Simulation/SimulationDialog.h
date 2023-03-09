@@ -92,7 +92,7 @@ private:
   QLineEdit *mpToleranceTextBox;
   Label *mpJacobianLabel;
   QComboBox *mpJacobianComboBox;
-  QGroupBox *mpDasslIdaOptionsGroupBox;
+  QGroupBox *mpOptionsGroupBox;
   QCheckBox *mpRootFindingCheckBox;
   QCheckBox *mpRestartAfterEventCheckBox;
   Label *mpInitialStepSizeLabel;
@@ -213,7 +213,7 @@ public:
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
-  void enableDasslIdaOptions(QString method);
+  void enableDisableOptions(QString method);
   void showIntegrationHelp();
   void buildOnly(bool checked);
   void interactiveSimulation(bool checked);
