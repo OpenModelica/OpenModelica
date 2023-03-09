@@ -71,6 +71,7 @@ protected
     input array<Integer> colPtrs;
     input array<Integer> rowInds;
   external "C" serializeJ(name, numCols, nnz, colPtrs, rowInds) annotation(Include="
+  #include \"../../SimulationRuntime/c/util/omc_file.h\"
   static void serializeJ(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
   {
     unsigned int i, j;
@@ -81,13 +82,13 @@ protected
     j = 0;
     for (i = 0; i < numCols; i++) {
       j += MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
-      fwrite(&j, sizeof(unsigned int), 1, pFile);
+      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
     /* write sparsePattern->index */
     for (i = 0; i < nnz; i++) {
       j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
-      fwrite(&j, sizeof(unsigned int), 1, pFile);
+      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
     fclose(pFile);
@@ -100,6 +101,7 @@ protected
     input Integer size;
     input array<Integer> columns;
   external "C" serializeC(name, size, columns) annotation(Include="
+  #include \"../../SimulationRuntime/c/util/omc_file.h\"
   static void serializeC(const char* name, int size, modelica_metatype columns)
   {
     unsigned int i, j;
@@ -108,7 +110,7 @@ protected
     /* write sparsePattern->colorCols */
     for (i = 0; i < size; i++) {
       j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
-      fwrite(&j, sizeof(unsigned int), 1, pFile);
+      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
     fclose(pFile);

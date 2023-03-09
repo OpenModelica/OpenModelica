@@ -136,6 +136,26 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
   return read_len;
 }
 
+/**
+ * @brief Write data to stream.
+ *
+ * @param buffer            Pointer to block of memory with a minimum size of `size*count`.
+ * @param size              Size in bytes of each element to write.
+ * @param count             Number of elements to write, each with size `size` bytes.
+ * @param stream            Pointer to FILE object with output stream.
+ * @return size_t           Total number of elements written.
+ */
+size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream) {
+  size_t write_len = fwrite(buffer, size, count, stream);
+  if (ferror(stream)) {
+    fprintf(stderr, "Error: omc_fwrite() failed to write file.\n");
+    if(write_len != count)  {
+      fprintf(stderr, "Expected to write %ld. Wrote only %ld\n", count, write_len);
+    }
+  }
+
+  return write_len;
+}
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 /**
