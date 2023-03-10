@@ -86,8 +86,8 @@ uniontype JacobianMatrix
     String matrixName;                  // unique matrix name
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
-    NonlinearPattern nonlinear;//TS//
-    NonlinearPattern nonlinearT;//TS//
+    NonlinearPattern nonlinear;
+    NonlinearPattern nonlinearT;
     list<list<Integer>> coloredCols;
     Integer maxColorCols;
     Integer jacobianIndex;
