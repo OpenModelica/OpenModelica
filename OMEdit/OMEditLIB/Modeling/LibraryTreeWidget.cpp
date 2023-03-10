@@ -2807,6 +2807,11 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
   MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
+    // if ModelWidget is used by DiagramWindow
+    if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()
+        && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget() == pLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeVisualizationDiagram();
+    }
     QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
       pMdiSubWindow->close();
@@ -2820,10 +2825,6 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
     if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()) {
       pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->deleteLater();
       pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
-    }
-    // if ModelWidget is used by DiagramWindow
-    if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeVisualizationDiagram();
     }
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);

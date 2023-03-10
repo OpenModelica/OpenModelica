@@ -86,6 +86,7 @@ void DiagramWindow::removeVisualizationDiagram()
     setWindowTitle("Diagram");
     disconnect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
     mpMainLayout->removeWidget(mpModelWidget->getDiagramGraphicsView());
+    mpModelWidget = 0;
   }
 }
 
