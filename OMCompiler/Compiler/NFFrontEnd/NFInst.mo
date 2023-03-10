@@ -1748,21 +1748,24 @@ algorithm
         mod := Modifier.propagate(mod, node, node);
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
-        ty := InstNode.getClass(ty_node);
-        res := Class.restriction(ty);
 
-        if not InstContext.inRedeclared(context) then
-          checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
-        end if;
+        if not InstNode.isEmpty(ty_node) then
+          ty := InstNode.getClass(ty_node);
+          res := Class.restriction(ty);
 
-        checkBindingRestriction(res, binding, node, info);
+          if not InstContext.inRedeclared(context) then
+            checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
+          end if;
 
-        // Update some of the attributes now that we now the type of the component.
-        ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
-        ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
+          checkBindingRestriction(res, binding, node, info);
 
-        if not referenceEq(attr, ty_attr) then
-          InstNode.componentApply(node, Component.setAttributes, ty_attr);
+          // Update some of the attributes now that we now the type of the component.
+          ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
+          ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
+
+          if not referenceEq(attr, ty_attr) then
+            InstNode.componentApply(node, Component.setAttributes, ty_attr);
+          end if;
         end if;
       then
         ();
@@ -2000,7 +2003,7 @@ function instTypeSpec
   output InstNode node;
   output Attributes outAttributes;
 algorithm
-  node := match typeSpec
+  node := matchcontinue typeSpec
     case Absyn.TPATH()
       algorithm
         node := Lookup.lookupClassName(typeSpec.path, scope, context, info);
@@ -2014,13 +2017,20 @@ algorithm
       then
         node;
 
+    case Absyn.TPATH()
+      guard InstContext.inInstanceAPI(context)
+      algorithm
+        outAttributes := attributes;
+      then
+        InstNode.EMPTY_NODE();
+
     case Absyn.TCOMPLEX()
       algorithm
         print("NFInst.instTypeSpec: TCOMPLEX not implemented.\n");
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end instTypeSpec;
 
 function checkRecursiveDefinition
@@ -2321,7 +2331,10 @@ algorithm
       algorithm
         c.binding := instBinding(c.binding, context);
         c.condition := instBinding(c.condition, context);
-        instExpressions(c.classInst, node, context = context);
+
+        if not InstNode.isEmpty(c.classInst) then
+          instExpressions(c.classInst, node, context = context);
+        end if;
 
         for i in 1:arrayLength(dims) loop
           dims[i] := instDimension(dims[i], context, c.info);
@@ -3490,7 +3503,9 @@ algorithm
           Structural.markExp(Binding.getUntypedExp(condition));
         end if;
 
-        updateImplicitVariability(c.classInst, eval or parentEval);
+        if not InstNode.isEmpty(c.classInst) then
+          updateImplicitVariability(c.classInst, eval or parentEval);
+        end if;
       then
         ();
 

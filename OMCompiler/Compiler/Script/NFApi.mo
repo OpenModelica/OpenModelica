@@ -1005,11 +1005,18 @@ function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
   output InstanceTree tree;
 protected
-  InstNode node;
+  InstNode node, cls_node;
   InstanceTree cls;
 algorithm
   node := Mutable.access(compNode);
-  cls := buildInstanceTree(InstNode.classScope(InstNode.resolveInner(node)));
+  cls_node := InstNode.classScope(InstNode.resolveInner(node));
+
+  if InstNode.isEmpty(cls_node) then
+    cls := InstanceTree.EMPTY();
+  else
+    cls := buildInstanceTree(cls_node);
+  end if;
+
   tree := InstanceTree.COMPONENT(node, cls);
 end buildInstanceTreeComponent;
 
@@ -1317,12 +1324,29 @@ function dumpJSONComponentType
   input Boolean isDeleted = false;
   output JSON json;
 algorithm
-  json := match (cls, ty)
+  json := match (cls, Type.arrayElementType(ty))
     case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
+    case (_, Type.UNKNOWN()) then dumpJSONSCodeElementType(InstNode.definition(node));
     case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, node, isDeleted = isDeleted);
     else dumpJSONTypeName(ty);
   end match;
 end dumpJSONComponentType;
+
+function dumpJSONSCodeElementType
+  input SCode.Element elem;
+  output JSON json = JSON.makeNull();
+algorithm
+  () := match elem
+    case SCode.Element.COMPONENT()
+      algorithm
+        json := JSON.addPair("name", dumpJSONPath(AbsynUtil.typeSpecPath(elem.typeSpec)), json);
+        json := JSON.addPair("missing", JSON.makeBoolean(true), json);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONSCodeElementType;
 
 function dumpJSONEnumType
   input InstNode enumNode;

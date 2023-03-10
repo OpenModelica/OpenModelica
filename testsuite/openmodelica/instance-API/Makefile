@@ -35,6 +35,8 @@ GetModelInstanceIcon4.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
+GetModelInstanceMissingClass1.mos \
+GetModelInstanceMissingClass2.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceReplaceable1.mos \

@@ -433,7 +433,11 @@ algorithm
         typeDimensions(c.dimensions, node, c.binding, context, c.info);
 
         // Construct the type of the component and update the node with it.
-        ty := typeClassType(c.classInst, c.binding, context, component);
+        if InstNode.isEmpty(c.classInst) then
+          ty := Type.UNKNOWN();
+        else
+          ty := typeClassType(c.classInst, c.binding, context, component);
+        end if;
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
 
         if Binding.isBound(c.condition) then
@@ -447,7 +451,7 @@ algorithm
           c_typed := Component.setType(ty, c);
           InstNode.updateComponent(c_typed, node);
 
-          if not is_deleted then
+          if not is_deleted and not InstNode.isEmpty(c.classInst) then
             // Check that flow/stream variables are Real.
             checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
 
@@ -943,7 +947,8 @@ algorithm
         try
           binding := typeBinding(binding, InstContext.set(context, NFInstContext.BINDING));
 
-          if not (InstContext.inAnnotation(context) and stringEq(name, "graphics")) then
+          if not (InstContext.inAnnotation(context) and stringEq(name, "graphics") or
+                  InstNode.isEmpty(c.classInst)) then
             binding := TypeCheck.matchBinding(binding, c.ty, name, node, context);
           end if;
 
@@ -967,7 +972,7 @@ algorithm
 
         InstNode.updateComponent(c, node);
 
-        if typeChildren then
+        if typeChildren and not InstNode.isEmpty(c.classInst) then
           typeBindings(c.classInst, context);
         end if;
       then
@@ -981,7 +986,7 @@ algorithm
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
         end if;
 
-        if typeChildren then
+        if typeChildren and not InstNode.isEmpty(c.classInst) then
           typeBindings(c.classInst, context);
         end if;
       then
