@@ -225,7 +225,7 @@ public
         // phase 2 tarjan
         (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
 
-        // kabdelhak: this matching is superfluous, SuperNode.create always returns these types.
+        // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
         // it is just safer if something is changed in the future
         () := match phase2_adj
           case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
@@ -379,7 +379,7 @@ public
           buckets := list(bucket_tpl for bucket_tpl guard(not PseudoBucket.emptyBucketTpl(bucket_tpl)) in buckets);
           shift := listLength(algebraic_loops) + listLength(buckets);
 
-          //### 2. initialize super nodes ###
+          // ### 2. initialize super nodes ###
           super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:arrayLength(phase2_adj.m) + shift));
 
           // ### 3. expand matching ###
@@ -395,7 +395,7 @@ public
             phase2_matching.var_to_eqn[i] := i;
           end for;
 
-          //### 4. adjust transposed matrix ###
+          // ### 4. adjust transposed matrix ###
           // 4.1. enlarge transposed matrix by the maximum possible amount of new nodes
           index := arrayLength(phase2_adj.mT) + 1;
           phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
@@ -441,7 +441,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
       end match;
-    /*
+      /*
       print(Adjacency.Matrix.toString(adj, "before"));
       print(Matching.toString(matching, "before"));
       print(Adjacency.Matrix.toString(phase2_adj, "after"));

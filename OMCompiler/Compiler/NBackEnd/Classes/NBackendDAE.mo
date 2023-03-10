@@ -241,6 +241,7 @@ public
       mainModules := (DAEMode.main, "DAE-Mode") :: mainModules;
     end if;
 
+    // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
       (Partitioning.categorize,                                       "Categorize"),
