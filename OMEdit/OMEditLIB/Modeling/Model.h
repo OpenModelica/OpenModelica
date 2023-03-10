@@ -353,6 +353,7 @@ private:
     BooleanAnnotation mConnectorSizing;
   };
 
+  typedef QPair<QString, QString> Choice;
   class Choices
   {
   public:
@@ -361,11 +362,12 @@ private:
 
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
-    QStringList getChoices() const {return mChoice;}
+    QStringList getChoices() const;
+    QString getType(int index) const;
   private:
     BooleanAnnotation mCheckBox;
     BooleanAnnotation mDymolaCheckBox;
-    QStringList mChoice;
+    QVector<Choice> mChoices;
   };
 
   class IconDiagramMap
@@ -786,7 +788,8 @@ private:
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Annotation> mpAnnotation;
   };
+} // namespace ModelInstance
 
-}
+Q_DECLARE_METATYPE(ModelInstance::Choice)
 
 #endif // MODEL_H

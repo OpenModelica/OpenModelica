@@ -127,6 +127,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/NetworkAccessManager.cpp
                       FlatModelica/Expression.cpp
                       FlatModelica/ExpressionFuncs.cpp
+                      FlatModelica/Parser.cpp
                       Animation/OpenGLWidget.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
@@ -259,6 +260,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/NetworkAccessManager.h
                       FlatModelica/Expression.h
                       FlatModelica/ExpressionFuncs.h
+                      FlatModelica/Parser.h
                       Animation/OpenGLWidget.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h
