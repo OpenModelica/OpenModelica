@@ -56,11 +56,11 @@ val(cost,1.0);
 // LOG_IPOPT_ERROR   | info    | max error is 0.00499703 for the approximation of the state x1(time = 3.2)
 // LOG_IPOPT_ERROR   | info    | max error is 2.88615e-16 for the approximation of the state x1(time = 2.2)
 // LOG_IPOPT_ERROR   | info    | max error is 4.88541e-16 for the approximation of the state x1(time = 2.8)
-// LOG_IPOPT_ERROR   | info    | max error is 3.77519e-16 for the approximation of the state x1(time = 2.3)
-// LOG_IPOPT_ERROR   | info    | max error is 3.99637e-16 for the approximation of the state x1(time = 4.5)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27356e-16 for the approximation of the state x1(time = 3.4)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27356e-16 for the approximation of the state x1(time = 3.1)
-// LOG_IPOPT_ERROR   | info    | max error is 4.10696e-16 for the approximation of the state x1(time = 2.9)
+// LOG_IPOPT_ERROR | info    | max error is 3.55185e-16 for the approximation of the state x1(time = 2.3)
+// LOG_IPOPT_ERROR | info    | max error is 2.66497e-16 for the approximation of the state x1(time = 2.4)
+// LOG_IPOPT_ERROR | info    | max error is 3.99637e-16 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR | info    | max error is 4.21971e-16 for the approximation of the state x1(time = 3.4)
+// LOG_IPOPT_ERROR | info    | max error is 5.57714e-16 for the approximation of the state x1(time = 3.1)
 // LOG_IPOPT_ERROR   | info    | max error is 5.52509e-16 for the approximation of the state x1(time = 3.1)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
