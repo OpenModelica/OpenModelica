@@ -102,7 +102,7 @@ SUNMatrix _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
 
   for (j=0; j<SM_NP_S(A); j++) {
     for (i=(SM_INDEXPTRS_S(A))[j]; i<(SM_INDEXPTRS_S(A))[j+1]; i++) {
-      (SM_DATA_S(B))[i] = (SM_DATA_S(A))[i]/vScaling[(SM_INDEXVALS_S(A))[i]];
+      (SM_DATA_S(B))[i] = (SM_DATA_S(A))[i]/vScaling[j];
     }
   }
 
