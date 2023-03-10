@@ -742,55 +742,6 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
-/**
- * @brief Initialize ring buffer and interpolation arrays, when event occured and
- *        simulation flag -noRestart is activated.
- *
- * Called after an event occurred.
- *
- * @param data              Runtime data struct.
- * @param threadData        Thread data for error handling.
- * @param solverInfo        Storing Runge-Kutta solver data.
- */
-void gbode_init_noRestart(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
-{
-  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* fODE = &sData->realVars[gbData->nStates];
-  int nStates = gbData->nStates;
-  int i;
-
-  // initialize ring buffer for error and step size control
-  for (i=0; i<gbData->ringBufferSize; i++) {
-    gbData->errValues[i] = 0;
-    gbData->stepSizeValues[i] = 0;
-  }
-
-  /* reset statistics, because it is accumulated in solver_main.c */
-  if (!gbData->isExplicit)
-    gbData->nlsData->numberOfJEval = 0;
-  resetSolverStats(&gbData->stats);
-
-  // correct yOld and yRight/kRight with respect to the event time
-  gbData->time = sData->timeValue;
-  gbData->timeRight = gbData->time;
-  memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-  memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
-  memcpy(gbData->kRight, fODE, nStates*sizeof(double));
-
-  // Rotate ring buffer
-  for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
-    gbData->tv[i] = gbData->tv[i - 1];
-    memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
-    memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
-  }
-
-  gbData->tv[0] = gbData->timeRight;
-  memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
-  memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
-}
-
 /*! \fn gbodef_main
  *
  *  function does one integration step and calculates
@@ -1724,12 +1675,14 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   // (Re-)initialize after events or at first call of gbode_sinlerate
   if (solverInfo->didEventStep || gbData->isFirstStep) {
-    // calculate initial step size and reset ring buffer and statistic counters
-    // initialize gbData->timeRight, gbData->yRight and gbData->kRight
     if (gbData->noRestart && !gbData->isFirstStep) {
+      // just continue, if -noRestart is set
+      gbData->time = gbData->timeRight;
+      gbData->stepSize = gbData->optStepSize;
       infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
-      gbode_init_noRestart(data, threadData, solverInfo);
     } else {
+      // calculate initial step size and reset ring buffer and statistic counters
+      // initialize gbData->timeRight, gbData->yRight and gbData->kRight
       getInitStepSize(data, threadData, gbData);
       gbode_init(data, threadData, solverInfo);
     }
@@ -1835,6 +1788,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
+      gbData->optStepSize = gbData->stepSize;
 
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1875,6 +1829,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
           if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
             gbData->stepSize = gbData->maxStepSize;
         }
+        gbData->optStepSize = gbData->stepSize;
       }
       // reject step, if interpolaton error is too large
       if ((gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
@@ -1917,6 +1872,26 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       messageClose(LOG_GBODE);
     }
 
+    /* update time with performed stepSize */
+    gbData->time += gbData->lastStepSize;
+
+    /* step is accepted and yOld needs to be updated */
+    memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+
+    // Rotate buffer
+    for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
+      gbData->tv[i] =  gbData->tv[i - 1];
+      memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
+      memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
+    }
+
+    // update new values
+    gbData->tv[0] = gbData->timeRight;
+    memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
+    memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
+
+    debugRingBufferSteps(LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+
     // check for events, if event is detected stop integrator and trigger event iteration
     eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
     if (foundEvent) {
@@ -1926,8 +1901,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         sData->timeValue = eventTime;
 
         // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
-        gbData->time = eventTime;
-        memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
+        if (!gbData->noRestart) {
+          gbData->time = eventTime;
+          memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
+        }
 
         /* write statistics to the solverInfo data structure */
         memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
@@ -1964,27 +1941,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       }
     }
 
-    /* update time with performed stepSize */
-    gbData->time += gbData->lastStepSize;
-
-    /* step is accepted and yOld needs to be updated */
-    memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
                     gbData->time - gbData->lastStepSize, gbData->time, err, gbData->err_int, gbData->stepSize);
-
-    // Rotate buffer
-    for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
-      gbData->tv[i] =  gbData->tv[i - 1];
-      memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
-      memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
-    }
-
-    // update new values
-    gbData->tv[0] = gbData->timeRight;
-    memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
-    memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
-
-    debugRingBufferSteps(LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
@@ -2010,8 +1968,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       break;
     }
 
-    // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
-    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
+    // reduce step size with respect to the simulation stop time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
   }
   // end of while-loop (gbData->time < targetTime)
@@ -2022,11 +1979,13 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     solverInfo->currentTime = sData->timeValue;
 
     // use chosen interpolation for emitting equidistant output (default hermite)
-    gb_interpolation(gbData->interpolation,
+    if (solverInfo->currentStepSize > 0) {
+      gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
                     sData->timeValue,  sData->realVars,
                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+    }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
