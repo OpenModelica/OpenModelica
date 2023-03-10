@@ -46,7 +46,6 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.imgmath',
     'sphinxcontrib.bibtex',
-    'sphinxcontrib.inlinesyntaxhighlight',
     'sphinxcontrib.programoutput',
     'sphinxcontribopenmodelica'
 ]
@@ -129,7 +128,7 @@ open("omreleaselink.inc", "w").write(releaselink)
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -439,3 +438,5 @@ numfig_format = {'figure': "Figure %s", 'table': "Table %s", 'code-block': "List
 
 highlight_language = 'modelica'
 imgmath_image_format = 'svg'
+
+bibtex_bibfiles = ['openmodelica.bib', 'extrarefs.bib']
