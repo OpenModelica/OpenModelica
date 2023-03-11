@@ -1980,11 +1980,23 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // use chosen interpolation for emitting equidistant output (default hermite)
     if (solverInfo->currentStepSize > 0) {
-      gb_interpolation(gbData->interpolation,
+      if (gbData->time > gbData->timeRight && (gbData->interpolation == GB_DENSE_OUTPUT || gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))
+      {
+        /* This case is needed, if an event has been detected during a large step (gbData->time) of the integration
+        * and the integrator (gbData->timeRight) has been set back to the time just before the event. In this case the
+        * values in gbData->x and gbData->k are correct for the overall time intervall from gbData->timeLeft to gbData->time */
+        gb_interpolation(gbData->interpolation,
+                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                    gbData->time, gbData->yRight, gbData->kRight,
+                    sData->timeValue,  sData->realVars,
+                    nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+      } else {
+        gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
                     sData->timeValue,  sData->realVars,
                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+      }
     }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
