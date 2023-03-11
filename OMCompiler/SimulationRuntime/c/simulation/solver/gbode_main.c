@@ -1874,6 +1874,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     /* update time with performed stepSize */
     gbData->time += gbData->lastStepSize;
+    gbData->timeDense = gbData->time;
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
@@ -1924,25 +1925,24 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         // Current solution: Step back to the communication interval before the event and event detection
         // needs to be repeated
         listClear(solverInfo->eventLst);
-        gbData->lastStepSize = (eventTime - solverInfo->currentStepSize/2) - gbData->time;
+        gbData->lastStepSize = (eventTime - solverInfo->currentStepSize/2) - gbData->timeLeft;
         sData->timeValue = (eventTime - solverInfo->currentStepSize/2);
         gb_interpolation(gbData->interpolation,
                         gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                                 sData->timeValue,  sData->realVars,
                         nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-        memcpy(gbData->y, sData->realVars, gbData->nStates * sizeof(double));
-
+        memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
         gbData->timeRight = sData->timeValue;
+        gbData->time = gbData->timeRight;
         memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
         memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-
       }
     }
 
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, err, gbData->err_int, gbData->stepSize);
+                    gbData->timeLeft, gbData->timeRight, err, gbData->err_int, gbData->stepSize);
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
@@ -1980,11 +1980,23 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // use chosen interpolation for emitting equidistant output (default hermite)
     if (solverInfo->currentStepSize > 0) {
-      gb_interpolation(gbData->interpolation,
+      if (gbData->timeDense > gbData->timeRight && (gbData->interpolation == GB_DENSE_OUTPUT || gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))
+      {
+        /* This case is needed, if an event has been detected during a large step (gbData->timeDense) of the integration
+        * and the integrator (gbData->timeRight) has been set back to the time just before the event. In this case the
+        * values in gbData->x and gbData->k are correct for the overall time intervall from gbData->timeLeft to gbData->timeDense */
+        gb_interpolation(gbData->interpolation,
+                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                    gbData->timeDense, gbData->yRight, gbData->kRight,
+                    sData->timeValue,  sData->realVars,
+                    nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+      } else {
+        gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
                     sData->timeValue,  sData->realVars,
                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+      }
     }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
