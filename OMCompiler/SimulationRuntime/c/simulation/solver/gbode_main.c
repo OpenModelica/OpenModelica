@@ -1938,7 +1938,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
         memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-
       }
     }
 
