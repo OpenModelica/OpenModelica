@@ -145,7 +145,7 @@ typedef struct DATA_GBODE{
   double *stepSizeValues;                           /* ring buffer for step size control */
   double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
   double percentage, err_threshold;                 /* percentage of fast states and the corresponding error threshold */
-  double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
+  double time, timeLeft, timeRight, timeDense;      /* actual time values and the time values of the current interpolation interval and for dense output */
   double stepSize, lastStepSize, optStepSize;       /* actual, last, and optimal step size of integration */
   double maxStepSize;                               /* maximal step size of integration */
   double initialStepSize;                           /* initial step size of integration */
