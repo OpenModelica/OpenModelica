@@ -275,7 +275,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   *foundEvent = checkForStateEvent(data, solverInfo->eventLst);
 
   if (*foundEvent) {
-     if(omc_flag[FLAG_NO_ROOTFINDING]) {
+     if (omc_flag[FLAG_NO_ROOTFINDING]) {
        eventTime = timeRight;
        infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g (rootfinding is disabled)", eventTime);
      } else {
