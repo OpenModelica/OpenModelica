@@ -283,7 +283,6 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
        infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
     }
   }
-
   // re-store the pre values of the zeroCrossings for comparison
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
