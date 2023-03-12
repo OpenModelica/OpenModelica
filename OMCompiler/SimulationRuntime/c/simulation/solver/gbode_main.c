@@ -1843,7 +1843,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         }
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->err_int, gbData->stepSize);
-
         // count failed steps and output information on the solver status
         // gbData->errorTestFailures++;
         continue;
