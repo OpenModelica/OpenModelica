@@ -10294,7 +10294,8 @@ protected function markNonlinearIterationVariablesStrongComponent
   input BackendDAE.StrongComponent comp;
   input output BackendDAE.Variables vars;
 protected
-  list<BackendDAE.Var> nonlinear_iteration_vars;
+  list<BackendDAE.Var> nonlinear_iteration_vars, tmp;
+  list<list<BackendDAE.Var>> new_vars = {};
 algorithm
   nonlinear_iteration_vars := match comp
     local
@@ -10303,6 +10304,11 @@ algorithm
     case BackendDAE.EQUATIONSYSTEM(jac=jac, jacType=BackendDAE.JAC_GENERIC())                   then SymbolicJacobian.getNonLinearVariables(jac);
                                                                                                 else {};
   end match;
+  for var in nonlinear_iteration_vars loop
+    (tmp, _) := BackendVariable.getVar(var.varName, vars);
+    new_vars := tmp :: new_vars;
+  end for;
+  nonlinear_iteration_vars := list(BackendVariable.setVarInitNonlinear(var, true) for var in List.flatten(new_vars));
   vars := BackendVariable.addVars(nonlinear_iteration_vars, vars);
 end markNonlinearIterationVariablesStrongComponent;
 

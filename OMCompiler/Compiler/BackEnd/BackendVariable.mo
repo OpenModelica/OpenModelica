@@ -213,6 +213,14 @@ algorithm
   outVar.unreplaceable:= value;
 end setVarUnreplaceable;
 
+public function setVarInitNonlinear
+  "sets the unreplaceable attribute of a variable to be false or true"
+  input output BackendDAE.Var var;
+  input Boolean value;
+algorithm
+  var.initNonlinear:= value;
+end setVarInitNonlinear;
+
 public function varStartValueFail "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
