@@ -426,7 +426,8 @@ void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
     flag = KINSetMaxSetupCalls(kin_mem, maxJacUpdate);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
-
+    flag = KINSetFuncNormTol(kin_mem, 100*DBL_EPSILON);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
 }
 
 /**
