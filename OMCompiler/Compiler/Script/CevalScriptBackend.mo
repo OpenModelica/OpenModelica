@@ -3632,11 +3632,13 @@ algorithm
 
         // Copy the external library files to the container
         (locations, libraries) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
-        print("libs:\n");
         for loc in locations loop
-          print(loc + "\n");
           if System.directoryExists(loc) then
-            cmd := "docker cp " + dquote + loc + dquote + " " + containerID + ":" + dquote + loc + dquote;
+            // Create path
+            cmd := "docker run --rm --hostname=" + containerID + " --volume=" + volumeID + ":/data busybox mkdir -p " + dquote + "/data" + loc + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+            // Copy files
+            cmd := "docker cp -a -L " + dquote + loc + dquote + " " + containerID + dquote + ":/data" + System.dirname(loc)  + dquote;
             runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
           end if;
         end for;
@@ -3652,6 +3654,7 @@ algorithm
           fmiTarget := "";
         end if;
         cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+                            "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";

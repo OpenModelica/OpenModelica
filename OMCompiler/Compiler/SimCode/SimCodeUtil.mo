@@ -15662,14 +15662,14 @@ public function getCmakeLinkLibrariesCode
 protected
   list<String> locations;
   list<String> libraries;
-  function addQuotationMarks
+  function addDockerVol
     input String istring;
-    output String ostring = "\""+istring+"\"";
-  end addQuotationMarks;
+    output String ostring = "\"${DOCKER_VOL_DIR}"+istring+"\"";
+  end addDockerVol;
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
-  locations := List.map(locations, addQuotationMarks);
+  locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
   cmakecode := cmakecode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
   for lib in libraries loop
