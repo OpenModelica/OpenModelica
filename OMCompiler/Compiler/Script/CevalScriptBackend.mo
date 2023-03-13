@@ -3735,7 +3735,6 @@ protected function configureFMU
   input String platform;
   input String fmutmp;
   input String logfile;
-  input list<String> externalLibLocations;
   input Boolean isWindows;
   input Boolean needs3rdPartyLibs;
 protected
@@ -3994,7 +3993,6 @@ protected
   String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
-  SimCode.SimCode simCode;
   list<String> libs;
   Boolean isWindows;
   Boolean useCrossCompileCmake = false;
@@ -4118,7 +4116,7 @@ algorithm
     if useCrossCompileCmake then
       configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     else
-      configureFMU(platform, fmutmp, configureLogFile, libs, isWindows, needs3rdPartyLibs);
+      configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
