@@ -39,6 +39,7 @@ GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
+GetModelInstanceMod3.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
