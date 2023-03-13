@@ -980,14 +980,14 @@ algorithm
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
+        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par, context = context));
 
         // Propagate the visibility of extends to their elements.
         ClassTree.mapExtends(cls_tree,
           function applyExtendsVisibility(visibility = ExtendsVisibility.PUBLIC));
 
         // Apply the modifiers of this scope.
-        applyModifier(mod, cls_tree, node);
+        applyModifier(mod, cls_tree, node, context);
 
         // Apply element redeclares.
         ClassTree.mapRedeclareChains(cls_tree,
@@ -1063,7 +1063,7 @@ algorithm
         mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
-        applyModifier(mod, cls_tree, node);
+        applyModifier(mod, cls_tree, node, context);
 
         inst_cls := Class.INSTANCED_BUILTIN(ty, cls_tree, res);
         node := InstNode.updateClass(inst_cls, node);
@@ -1174,6 +1174,7 @@ end instPackage;
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
+  input InstContext.Type context;
 protected
   SCode.Element elem;
   Modifier ext_mod;
@@ -1191,7 +1192,7 @@ algorithm
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
-    ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
+    ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode, context = context));
 
     () := match elem
       case SCode.EXTENDS()
@@ -1216,7 +1217,7 @@ algorithm
     end match;
   end if;
 
-  applyModifier(ext_mod, cls_tree, extendsNode);
+  applyModifier(ext_mod, cls_tree, extendsNode, context);
 end modifyExtends;
 
 type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
@@ -1320,6 +1321,7 @@ function applyModifier
   input Modifier modifier;
   input output ClassTree cls;
   input InstNode parent;
+  input InstContext.Type context;
 protected
   list<Modifier> mods;
   list<Mutable<InstNode>> node_ptrs;
@@ -1339,13 +1341,15 @@ algorithm
         for mod in mods loop
           try
             node := ClassTree.lookupElement(Modifier.name(mod), cls);
+            InstNode.componentApply(node, Component.mergeModifier, mod);
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
               {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-            fail();
-          end try;
 
-          InstNode.componentApply(node, Component.mergeModifier, mod);
+            if not InstContext.inInstanceAPI(context) then
+              fail();
+            end if;
+          end try;
         end for;
       then
         ();
@@ -1359,7 +1363,12 @@ algorithm
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
               {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-            fail();
+
+            if InstContext.inInstanceAPI(context) then
+              node_ptrs := {};
+            else
+              fail();
+            end if;
           end try;
 
           // Apply the modifier to each found node.
