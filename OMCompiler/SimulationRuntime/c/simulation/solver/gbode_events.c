@@ -275,10 +275,14 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   *foundEvent = checkForStateEvent(data, solverInfo->eventLst);
 
   if (*foundEvent) {
-    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
-    infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
+     if (omc_flag[FLAG_NO_ROOTFINDING]) {
+       eventTime = timeRight;
+       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g (rootfinding is disabled)", eventTime);
+     } else {
+       eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
+       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
+    }
   }
-
   // re-store the pre values of the zeroCrossings for comparison
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
