@@ -879,6 +879,8 @@ public constant ErrorTypes.Message INVALID_SPECIALIZATION_IN_ASSIGNMENT = ErrorT
   Gettext.gettext("Component ‘%s‘ may not be assigned to due to class specialization ‘%s‘."));
 public constant ErrorTypes.Message NF_PDE_NOT_IMPLEMENTED = ErrorTypes.MESSAGE(402, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("PDEModelica is not yet supported by the new front-end, using the old front-end instead."));
+public constant ErrorTypes.Message NON_CONSTANT_IN_ENCLOSING_SCOPE = ErrorTypes.MESSAGE(403, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component ‘%s‘ was found in an enclosing scope but is not a constant."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

@@ -777,6 +777,7 @@ function lookupSimpleCref
 protected
   Boolean is_import, require_builtin = false;
   Boolean loaded = false;
+  Boolean is_enclosing = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -810,8 +811,14 @@ algorithm
           foundScope := InstNode.parent(node);
         end if;
 
+        // A component found in an enclosing scope must be a constant.
+        if is_enclosing and not InstContext.inRelaxed(context) and isNonConstantComponent(node) then
+          state := LookupState.ERROR(LookupState.NON_CONSTANT());
+        else
+          state := LookupState.nodeState(node);
+        end if;
+
         // We found a node, return it.
-        state := LookupState.nodeState(node);
         cref := ComponentRef.fromAbsyn(node, subs);
         return;
       else
@@ -838,6 +845,7 @@ algorithm
             end if;
           else
             // Look in the next enclosing scope.
+            is_enclosing := not InstNode.isImplicit(foundScope);
             foundScope := InstNode.parentScope(foundScope);
           end if;
         end if;
@@ -849,6 +857,25 @@ algorithm
     fail();
   end try;
 end lookupSimpleCref;
+
+function isNonConstantComponent
+  input InstNode node;
+  output Boolean res;
+protected
+  SCode.Element def;
+algorithm
+  if InstNode.isComponent(node) then
+    def := InstNode.definition(node);
+
+    res := match def
+      case SCode.Element.COMPONENT()
+        then not SCodeUtil.isConstant(SCodeUtil.attrVariability(def.attributes));
+      else false;
+    end match;
+  else
+    res := false;
+  end if;
+end isNonConstantComponent;
 
 function lookupLocalSimpleCref
   "This function look up a simple name as a cref in a given component, without
