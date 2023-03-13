@@ -680,7 +680,13 @@ void ShapeAnnotation::applyTransformation()
   // Don't apply it also on shapes inside Element
   // if the extends have some new coordinate extents then use it to scale the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  GraphicsView *pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
+  GraphicsView *pGraphicsView = 0;
+  if (mpGraphicsView) {
+    pGraphicsView = mpGraphicsView;
+  } else if (mpReferenceShapeAnnotation) {
+    pGraphicsView = mpReferenceShapeAnnotation->getGraphicsView();
+  }
+
   if (!mpParentComponent && pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
       && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (pGraphicsView->getModelWidget()->isNewApi() && mIsInheritedShape))) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
