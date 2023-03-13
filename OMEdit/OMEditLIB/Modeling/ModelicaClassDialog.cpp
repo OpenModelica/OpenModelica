@@ -995,7 +995,7 @@ void DuplicateClassDialog::syncDuplicatedModelWithOMC(LibraryTreeItem *pLibraryT
       syncDuplicatedModelWithOMC(pLibraryTreeItem->childAt(i));
     }
   }
-  pLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pLibraryTreeItem->getNameStructure()));
+  pLibraryTreeItem->updateClassInformation();
 }
 
 /*!

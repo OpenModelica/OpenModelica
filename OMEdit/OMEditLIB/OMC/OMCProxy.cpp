@@ -1482,19 +1482,28 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   }
 
   QString version = pLibraryTreeItem->getVersion();
-  QString versionDate = pLibraryTreeItem->getVersionDate();
-  QString versionBuild = pLibraryTreeItem->getVersionBuild();
-  QString dateModified = pLibraryTreeItem->getDateModified();
   if (!version.isEmpty()) {
-    if (!versionDate.isEmpty()) {
-      version = version % ", " % versionDate;
-    }
-    if (!versionBuild.isEmpty()) {
-      version = version % ", build " % versionBuild;
-      if (!dateModified.isEmpty()) {
-        version = version % " (" % dateModified % ")";
-      }
-    }
+    version = "Version: " % version % "<br />";
+  }
+
+  QString versionDate = pLibraryTreeItem->getVersionDate();
+  if (!versionDate.isEmpty()) {
+    versionDate = "Version Date: " % versionDate % "<br />";
+  }
+
+  QString versionBuild = pLibraryTreeItem->getVersionBuild();
+  if (!versionBuild.isEmpty()) {
+    versionBuild = "Version Build: " % versionBuild % "<br />";
+  }
+
+  QString dateModified = pLibraryTreeItem->getDateModified();
+  if (!dateModified.isEmpty()) {
+    dateModified = "Date Modified: " % dateModified % "<br />";
+  }
+
+  QString revisionId = pLibraryTreeItem->getRevisionId();
+  if (!revisionId.isEmpty()) {
+    revisionId = "RevisionId: " % revisionId % "<br />";
   }
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
@@ -1510,7 +1519,11 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
                                   "    " % doc % "\n"
                                   "    <hr />"
                                   "    Filename: " % pLibraryTreeItem->getFileName() % "<br />"
-                                  "    Version: " % version % "<br />"
+                                  "   " % version %
+                                  "   " % versionDate %
+                                  "   " % versionBuild %
+                                  "   " % dateModified %
+                                  "   " % revisionId %
                                   "  </body>\n"
                                   "</html>");
   documentation = makeDocumentationUriToFileName(documentation);

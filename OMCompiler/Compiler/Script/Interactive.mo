@@ -10622,6 +10622,45 @@ algorithm
   end matchcontinue;
 end getNamedAnnotation;
 
+public function getStringNamedAnnotation
+"Calls getNamedAnnotation and makes sure we don't fail if annotation is not String type."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Absyn.Path id;
+  output String outString;
+algorithm
+  try
+    Absyn.STRING(outString) := getNamedAnnotation(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
+  else
+    outString := "";
+  end try;
+end getStringNamedAnnotation;
+
+public function getIntegerNamedAnnotation
+"Reads the Integer annotation and converts it to String."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Absyn.Path id;
+  output String outString;
+protected
+  Absyn.Class cdef;
+  Option<Absyn.Exp> exp;
+  Integer ann;
+algorithm
+  try
+    cdef := InteractiveUtil.getPathedClassInProgram(inPath, inProgram);
+    exp := AbsynUtil.getNamedAnnotationInClass(cdef,id,getAnnotationExp);
+    if isSome(exp) then
+      SOME(Absyn.INTEGER(ann)) := exp;
+      outString := intString(ann);
+    else
+      outString := "";
+    end if;
+  else
+    outString := "";
+  end try;
+end getIntegerNamedAnnotation;
+
 constant Absyn.Path USES_PATH = Absyn.Path.IDENT("uses");
 
 public function getUsesAnnotation
