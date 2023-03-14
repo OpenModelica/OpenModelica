@@ -33,6 +33,7 @@
 
 #include "jacobian_util.h"
 #include "../simulation/options.h"
+#include "omc_file.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -129,6 +130,28 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
     free(spp->index); spp->index = NULL;
     free(spp->colorCols); spp->colorCols = NULL;
     free(spp->leadindex); spp->leadindex = NULL;
+  }
+}
+
+/**
+ * @brief Reads one color of sparsity pattern and sets colorCols.
+ *
+ * @param threadData    Used for error handling.
+ * @param pFile         Pointer to file stream.
+ * @param colorCols     Array of column coloring.
+ * @param color         Current color index.
+ * @param length        Number of columns in color `color`.
+ */
+void readColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length) {
+  unsigned int i, index;
+  size_t count;
+
+  for (i = 0; i < length; i++) {
+    count = omc_fread(&index, sizeof(unsigned int), 1, pFile, FALSE);
+    if (count != 1) {
+      throwStreamPrint(threadData, "Error while reading color %d of sparsity pattern.", color);
+    }
+    colorCols[index] = color;
   }
 }
 

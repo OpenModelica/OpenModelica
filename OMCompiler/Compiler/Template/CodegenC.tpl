@@ -5688,15 +5688,8 @@ template readSPColors(list<list<Integer>> colorList, String arrayName)
     let ind_name = 'indices_<%index%>'
   <<
   /* color <%index%> with <%length%> columns */
-  unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
-  count = omc_fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile, FALSE);
-  if (count != <%length%>) {
-    throwStreamPrint(threadData, "Error while reading color <%index%> of sparsity pattern. Expected %d, got %ld\", <%length%>, count");
-  }
-  for(i=0; i<<%length%>; i++)
-    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
-  free(<%ind_name%>);
-  >>;separator="\n\n")
+  readColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>);
+  >>;separator="\n")
   <<
   <%colorArray%>
   >>
