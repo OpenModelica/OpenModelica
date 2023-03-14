@@ -5508,23 +5508,34 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
+        int i = 0, position;
         FILE* pFile = omc_fopen("<%fileName%>", "rb");
-        int i = 0;
 
-        initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
-        jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
-        jacobian->availability = <%availability%>;
+        if (pFile == NULL || ferror(pFile)) {
+          perror("GEEEEE"); fflush(stderr);
+        } else {
+          initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+          jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
+          jacobian->availability = <%availability%>;
 
-        /* read lead index of compressed sparse column */
-        omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
+          /* read lead index of compressed sparse column */
+          printf("reading lead index\n"); fflush(stdout);
+          fgetpos(pFile, &position);
+          fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile);
+          printf("reading lead index 2\n"); fflush(stdout);
+          fsetpos(pFile, &position);
+          omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
 
-        /* read sparse index */
-        omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
+          /* read sparse index */
+          printf("reading index\n"); fflush(stdout);
+          omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
 
-        /* write color array */
-        <%colorString%>
+          /* write color array */
+          <%colorString%>
 
-        fclose(pFile);
+          fclose(pFile);
+        }
+
         TRACE_POP
         return 0;
       }
@@ -5676,6 +5687,7 @@ template readSPColors(list<list<Integer>> colorList, String arrayName)
   <<
   /* color <%index%> with <%length%> columns */
   unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
+  printf("reading color <%index%>"); fflush(stdout);
   omc_fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile, FALSE);
   for(i=0; i<<%length%>; i++)
     <%arrayName%>[<%ind_name%>[i]] = <%index%>;

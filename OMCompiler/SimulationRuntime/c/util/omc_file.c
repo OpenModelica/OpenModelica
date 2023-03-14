@@ -105,6 +105,10 @@ FILE* omc_fopen(const char *filename, const char *mode)
 #else /* unix */
   FILE *f = fopen(filename, mode);
 #endif
+  if (f == NULL) {
+    fprintf(stderr, "Error: omc_fopen() failed to open file.\n");
+  }
+  fflush(stderr);
   return f;
 }
 
@@ -122,6 +126,11 @@ FILE* omc_fopen(const char *filename, const char *mode)
  * @return size_t           Total number of elements read.
  */
 size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allow_early_eof) {
+  if (stream == NULL) {
+    fprintf(stderr, "Error: omc_fread() got invalid file pointer.\n");
+    fflush(stderr);
+    return 0;
+  }
   size_t read_len = fread(buffer, size, count, stream);
   if(read_len != count)  {
     if (feof(stream) && !allow_early_eof) {
@@ -131,6 +140,7 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
     else if (ferror(stream)) {
       fprintf(stderr, "Error: omc_fread() failed to read file.\n");
     }
+    fflush(stderr);
   }
 
   return read_len;
@@ -152,6 +162,7 @@ size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream) {
     if(write_len != count)  {
       fprintf(stderr, "Expected to write %ld. Wrote only %ld\n", count, write_len);
     }
+    fflush(stderr);
   }
 
   return write_len;

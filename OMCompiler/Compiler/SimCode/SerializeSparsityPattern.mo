@@ -83,13 +83,13 @@ protected
     /* compute and write sparsePattern->leadindex */
     j = 0;
     for (i = 0; i < numCols; i++) {
-      j += MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
+      j += (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
       omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
     /* write sparsePattern->index */
     for (i = 0; i < nnz; i++) {
-      j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
+      j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
       omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
@@ -113,7 +113,7 @@ protected
 
     /* write sparsePattern->colorCols */
     for (i = 0; i < size; i++) {
-      j = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
+      j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
       omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
     }
 
