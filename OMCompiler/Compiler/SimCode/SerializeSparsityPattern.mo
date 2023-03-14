@@ -40,15 +40,10 @@ function serialize
   input SimCode.SimCode code;
 protected
   array<Integer> columnPointers, rowIndices, columns;
-  String path = code.fileNamePrefix + "_sparsityPatterns/";
   String fname;
 algorithm
-  if 0 <> System.systemCall("mkdir -p '" + path + "'") then
-    Error.addInternalError(getInstanceName() + " failed to create directory " + path, sourceInfo());
-    fail();
-  end if;
   for jac in code.jacobianMatrices loop
-    fname := path + jac.matrixName + ".bin";
+    fname := "Jac" + jac.matrixName + ".bin";
     columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
     rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
     serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
@@ -89,7 +84,7 @@ protected
       j += (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->leadindex. Expected %ld, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->leadindex. Expected %d, got %ld\", 1, count);
       }
     }
 
@@ -98,7 +93,7 @@ protected
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->index. Expected %ld, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->index. Expected %d, got %ld\", 1, count);
       }
     }
 
@@ -129,7 +124,7 @@ protected
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %ld, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %d, got %ld\", 1, count);
       }
     }
 
