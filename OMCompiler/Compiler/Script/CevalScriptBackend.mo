@@ -3539,6 +3539,7 @@ protected function configureFMU_cmake
   input String fmutmp;
   input String fmuTargetName;
   input String logfile;
+  input list<String> externalLibLocations;
   input Boolean isWindows;
 protected
   String fmuSourceDir;
@@ -3573,6 +3574,7 @@ algorithm
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      list<String> locations, libraries;
     case {"dynamic"}
       algorithm
         if isWindows then
@@ -3600,6 +3602,10 @@ algorithm
 
         // Temp log file outside of Docker volume
         dockerLogFile := crossTriple + ".tmp.log";
+        // Remove old log file
+        if System.regularFileExists(dockerLogFile) then
+          System.removeFile(dockerLogFile);
+        end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
@@ -3624,6 +3630,19 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
+        // Copy the external library files to the container
+        (locations, libraries) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        for loc in locations loop
+          if System.directoryExists(loc) then
+            // Create path
+            cmd := "docker run --rm --hostname=" + containerID + " --volume=" + volumeID + ":/data busybox mkdir -p " + dquote + "/data" + loc + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+            // Copy files
+            cmd := "docker cp -a -L " + dquote + loc + dquote + " " + containerID + dquote + ":/data" + System.dirname(loc)  + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+          end if;
+        end for;
+
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
         buildDir := "build_cmake_" + crossTriple;
@@ -3635,6 +3654,7 @@ algorithm
           fmiTarget := "";
         end if;
         cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+                            "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
@@ -4094,7 +4114,7 @@ algorithm
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
     if useCrossCompileCmake then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
