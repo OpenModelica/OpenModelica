@@ -5224,9 +5224,9 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
-      "  stateVars  = {<%getVarNameMatlab(vars.stateVars, "x0")%>}\n"
-      "  inputVars  = {<%getVarNameMatlab(vars.inputVars, "u0")%>}\n"
-      "  outputVars = {<%getVarNameMatlab(vars.outputVars, "y0")%>}\n"
+      "  stateVars  = {<%getVarNameMatlab(vars.stateVars, "x0")%>};\n"
+      "  inputVars  = {<%getVarNameMatlab(vars.inputVars, "u0")%>};\n"
+      "  outputVars = {<%getVarNameMatlab(vars.outputVars, "y0")%>};\n"
       "  Ts = %g; %% stop time\n\n"
       "end";
     }
