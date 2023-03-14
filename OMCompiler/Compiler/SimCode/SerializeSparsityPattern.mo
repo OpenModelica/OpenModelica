@@ -43,7 +43,7 @@ protected
   String fname;
 algorithm
   for jac in code.jacobianMatrices loop
-    fname := "Jac" + jac.matrixName + ".bin";
+    fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
     columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
     rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
     serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
