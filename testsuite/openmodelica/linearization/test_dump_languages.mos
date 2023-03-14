@@ -109,9 +109,9 @@ readFile("linearized_model.py"); getErrorString();
 //
 //   D =	[4.007476581092785];
 //
-//   stateVars  = {'num_x(1)','num_x(2)'}
-//   inputVars  = {'u'}
-//   outputVars = {'y'}
+//   stateVars  = {'num_x(1)','num_x(2)'};
+//   inputVars  = {'u'};
+//   outputVars = {'y'};
 //   Ts = 0.5; % stop time
 //
 // end"
