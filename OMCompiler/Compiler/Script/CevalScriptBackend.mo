@@ -7575,7 +7575,7 @@ protected function getClassInformation
   input Absyn.Program p;
   output Values.Value res_1;
 protected
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView,access;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView,access,versionDate,versionBuild,dateModified,revisionId;
   String dim_str,lastIdent;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass,isState;
   Absyn.Restriction restr;
@@ -7596,9 +7596,13 @@ algorithm
   end if;
   isDocClass := Interactive.getDocumentationClassAnnotation(path, p);
   version := CevalScript.getPackageVersion(path, p);
-  Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+  preferredView := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("preferredView"));
   isState := getDymolaStateAnnotation(path, p);
   access := Interactive.getAccessAnnotation(path, p);
+  versionDate := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("versionDate"));
+  versionBuild := Interactive.getIntegerNamedAnnotation(path, p, Absyn.IDENT("versionBuild"));
+  dateModified := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("dateModified"));
+  revisionId := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("revisionId"));
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -7617,7 +7621,11 @@ algorithm
     Values.STRING(version),
     Values.STRING(preferredView),
     Values.BOOL(isState),
-    Values.STRING(access)
+    Values.STRING(access),
+    Values.STRING(versionDate),
+    Values.STRING(versionBuild),
+    Values.STRING(dateModified),
+    Values.STRING(revisionId)
   });
 end getClassInformation;
 
