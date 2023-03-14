@@ -5212,7 +5212,7 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "function [sys, x0, u0, n, m, p, Ts] = linearized_model()\n"
+      return "function [A, B, C, D, stateVars, inputVars, outputVars] = linearized_model()\n"
       "%% <%modelNamePrefix%>\n"
       "%% der(x) = A * x + B * u\n%% y = C * x + D * u\n"
       "  n = <%varInfo.numStateVars%>; %% number of states\n  m = <%varInfo.numInVars%>; %% number of inputs\n  p = <%varInfo.numOutVars%>; %% number of outputs\n"
@@ -5224,9 +5224,10 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "  stateVars  = {<%getVarNameMatlab(vars.stateVars, "x0")%>}\n"
+      "  inputVars  = {<%getVarNameMatlab(vars.inputVars, "u0")%>}\n"
+      "  outputVars = {<%getVarNameMatlab(vars.outputVars, "y0")%>}\n"
       "  Ts = %g; %% stop time\n\n"
-      "  %% The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.\n"
-      "  sys = ss(A,B,C,D,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -5334,7 +5335,7 @@ template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getV
 <<
 <%simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
-      <<'<%arrayName%>_<%crefStrMatlabSafe(name)%>'>>
+      <<'<%crefStrMatlabSafe(name)%>'>>
     end match) ;separator=","%>
 >>
 end getVarNameMatlab;
