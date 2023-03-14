@@ -4,7 +4,7 @@
 // cflags: -d=newInst
 //
 
-model PackageConstant4
+model PackageConstant5
   Real x;
 
   model A
@@ -12,7 +12,7 @@ model PackageConstant4
   end A;
 
   A a;
-end PackageConstant4;
+end PackageConstant5;
 
 // Result:
 // Error processing file: PackageConstant5.mo
