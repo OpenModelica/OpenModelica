@@ -901,6 +901,7 @@ template simulationFile_jac(SimCode simCode)
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
     #include "util/jacobian_util.h"
+    #include "util/omc_file.h"
     <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode))%>
 
     <%\n%>
@@ -5508,33 +5509,34 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        int i = 0, position;
+        int i = 0;
+        size_t count;
+
         FILE* pFile = omc_fopen("<%fileName%>", "rb");
-
-        if (pFile == NULL || ferror(pFile)) {
-          perror("GEEEEE"); fflush(stderr);
-        } else {
-          initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
-          jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
-          jacobian->availability = <%availability%>;
-
-          /* read lead index of compressed sparse column */
-          printf("reading lead index\n"); fflush(stdout);
-          fgetpos(pFile, &position);
-          fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile);
-          printf("reading lead index 2\n"); fflush(stdout);
-          fsetpos(pFile, &position);
-          omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
-
-          /* read sparse index */
-          printf("reading index\n"); fflush(stdout);
-          omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
-
-          /* write color array */
-          <%colorString%>
-
-          fclose(pFile);
+        if (pFile == NULL) {
+          throwStreamPrint(threadData, "Could not open sparsity pattern file \"<%fileName%>\".");
         }
+
+        initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+        jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
+        jacobian->availability = <%availability%>;
+
+        /* read lead index of compressed sparse column */
+        count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
+        if (count != <%sizeleadindex%>+1) {
+          throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+        }
+
+        /* read sparse index */
+        count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
+        if (count != <%sp_size_index%>) {
+          throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+        }
+
+        /* write color array */
+        <%colorString%>
+
+        omc_fclose(pFile);
 
         TRACE_POP
         return 0;
@@ -5687,8 +5689,10 @@ template readSPColors(list<list<Integer>> colorList, String arrayName)
   <<
   /* color <%index%> with <%length%> columns */
   unsigned int* <%ind_name%> = malloc(<%length%>*sizeof(unsigned int));
-  printf("reading color <%index%>"); fflush(stdout);
-  omc_fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile, FALSE);
+  count = omc_fread(<%ind_name%>, sizeof(unsigned int), <%length%>, pFile, FALSE);
+  if (count != <%length%>) {
+    throwStreamPrint(threadData, "Error while reading color <%index%> of sparsity pattern. Expected %d, got %ld\", <%length%>, count");
+  }
   for(i=0; i<<%length%>; i++)
     <%arrayName%>[<%ind_name%>[i]] = <%index%>;
   free(<%ind_name%>);

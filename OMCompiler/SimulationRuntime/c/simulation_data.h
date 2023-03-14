@@ -188,7 +188,7 @@ typedef struct ANALYTIC_JACOBIAN
   modelica_real* tmpVars;
   modelica_real* resultVars;           /* Result column for given seed vector */
   modelica_real dae_cj;                /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independend of seed vector */
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independent of seed vector */
 } ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT

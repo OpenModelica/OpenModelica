@@ -31,8 +31,8 @@
 
 encapsulated package SerializeSparsityPattern
 
-import SimCode;
 import List;
+import SimCode;
 import System;
 import Util;
 
@@ -77,20 +77,29 @@ protected
   static void serializeJ(const char* name, int numCols, int nnz, modelica_metatype colPtrs, modelica_metatype rowInds)
   {
     unsigned int i, j;
+    size_t count;
     FILE* pFile = omc_fopen(name, \"wb\");
-
+    if (pFile == NULL) {
+      throwStreamPrint(NULL, \"Could not open sparsity pattern file %s.\", name);
+    }
 
     /* compute and write sparsePattern->leadindex */
     j = 0;
     for (i = 0; i < numCols; i++) {
       j += (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
-      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      if (count != 1) {
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->leadindex. Expected %ld, got %ld\", 1, count);
+      }
     }
 
     /* write sparsePattern->index */
     for (i = 0; i < nnz; i++) {
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
-      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      if (count != 1) {
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->index. Expected %ld, got %ld\", 1, count);
+      }
     }
 
     fclose(pFile);
@@ -109,12 +118,19 @@ protected
   static void serializeC(const char* name, int size, modelica_metatype columns)
   {
     unsigned int i, j;
+    size_t count;
     FILE* pFile = fopen(name, \"ab\");
+    if (pFile == NULL) {
+      throwStreamPrint(NULL, \"Could not open sparsity pattern file %s.\", name);
+    }
 
     /* write sparsePattern->colorCols */
     for (i = 0; i < size; i++) {
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
-      omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      if (count != 1) {
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %ld, got %ld\", 1, count);
+      }
     }
 
     fclose(pFile);

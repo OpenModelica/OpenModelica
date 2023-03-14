@@ -108,14 +108,31 @@ FILE* omc_fopen(const char *filename, const char *mode)
   if (f == NULL) {
     fprintf(stderr, "Error: omc_fopen() failed to open file.\n");
   }
-  fflush(stderr);
+  else if (ferror(f)) {
+    perror("omc_fopen() got corrupt file.");
+    f = NULL;
+  }
   return f;
+}
+
+/**
+ * @brief Close a file.
+ *
+ * @param FILE*    Pointer to opened file.
+ */
+int omc_fclose(FILE* stream)
+{
+  int err = fclose(stream);
+  if (0 != err) {
+    fprintf(stderr, "Error: omc_fclose() failed to close file.\n");
+  }
+  return err;
 }
 
 /**
  * @brief Read data from stream.
  *
- * @param buffer            Pointer to block of memory with a minimum size of `size*count`.
+ * @param buffer            Pointer to block of memory with a minimum size of `size`.
  * @param size              Size in bytes of each element to read.
  * @param count             Number of elements to read, each with size `size` bytes.
  * @param stream            Pointer to FILE object with input stream.
@@ -126,11 +143,6 @@ FILE* omc_fopen(const char *filename, const char *mode)
  * @return size_t           Total number of elements read.
  */
 size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allow_early_eof) {
-  if (stream == NULL) {
-    fprintf(stderr, "Error: omc_fread() got invalid file pointer.\n");
-    fflush(stderr);
-    return 0;
-  }
   size_t read_len = fread(buffer, size, count, stream);
   if(read_len != count)  {
     if (feof(stream) && !allow_early_eof) {
@@ -140,7 +152,6 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
     else if (ferror(stream)) {
       fprintf(stderr, "Error: omc_fread() failed to read file.\n");
     }
-    fflush(stderr);
   }
 
   return read_len;
@@ -149,7 +160,7 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
 /**
  * @brief Write data to stream.
  *
- * @param buffer            Pointer to block of memory with a minimum size of `size*count`.
+ * @param buffer            Pointer to block of memory with a minimum size of `size*count` bytes.
  * @param size              Size in bytes of each element to write.
  * @param count             Number of elements to write, each with size `size` bytes.
  * @param stream            Pointer to FILE object with output stream.
@@ -159,10 +170,10 @@ size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream) {
   size_t write_len = fwrite(buffer, size, count, stream);
   if (ferror(stream)) {
     fprintf(stderr, "Error: omc_fwrite() failed to write file.\n");
-    if(write_len != count)  {
-      fprintf(stderr, "Expected to write %ld. Wrote only %ld\n", count, write_len);
-    }
-    fflush(stderr);
+  }
+  if (write_len != count) {
+    fprintf(stderr, "Error writing stream: unexpected end of file.\n");
+    fprintf(stderr, "Expected to write %ld. Wrote only %ld\n", count, write_len);
   }
 
   return write_len;
