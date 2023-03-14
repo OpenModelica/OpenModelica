@@ -33,6 +33,7 @@ encapsulated package NFLookupState
 
 import Absyn;
 import AbsynUtil;
+import ComponentRef = NFComponentRef;
 import SCode;
 import NFInstNode.InstNode;
 import InstContext = NFInstContext;
@@ -43,6 +44,7 @@ import Error;
 import SCodeUtil;
 import System;
 import Class = NFClass;
+import Component = NFComponent;
 
 public
 uniontype LookupStateName
@@ -617,6 +619,27 @@ uniontype LookupState
   //  true := SCodeUtil.isValidPackageElement(el);
   //  outEntry := inEntry;
   //end isValidPackageElement;
+
+  function checkCrefVariability
+    "Checks that a variable found in an enclosing scope is a constant, and if
+     not sets the state to an error."
+    input ComponentRef cref;
+    input Boolean inEnclosingScope;
+    input InstContext.Type context;
+    input output LookupState state;
+  algorithm
+    if inEnclosingScope and not InstContext.inRelaxed(context) and
+       isNonConstantComponent(ComponentRef.node(cref)) then
+      state := ERROR(NON_CONSTANT());
+    end if;
+  end checkCrefVariability;
+
+  function isNonConstantComponent
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := InstNode.isComponent(node) and not Component.isConst(InstNode.component(node));
+  end isNonConstantComponent;
 end LookupState;
 
 annotation(__OpenModelica_Interface="frontend");

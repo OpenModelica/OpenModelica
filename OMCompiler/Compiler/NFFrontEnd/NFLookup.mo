@@ -311,19 +311,22 @@ function lookupCref
   output LookupState state;
 protected
   InstNode node;
+  Boolean in_enclosing;
 algorithm
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (_, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (_, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (node, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
         (foundCref, foundScope, state) :=
           lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state, context);
+        state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
@@ -773,6 +776,7 @@ function lookupSimpleCref
   output InstNode node;
   output ComponentRef cref;
   output InstNode foundScope = scope;
+  output Boolean inEnclosingScope = false;
   output LookupState state;
 protected
   Boolean is_import, require_builtin = false;
@@ -811,14 +815,8 @@ algorithm
           foundScope := InstNode.parent(node);
         end if;
 
-        // A component found in an enclosing scope must be a constant.
-        if is_enclosing and not InstContext.inRelaxed(context) and isNonConstantComponent(node) then
-          state := LookupState.ERROR(LookupState.NON_CONSTANT());
-        else
-          state := LookupState.nodeState(node);
-        end if;
-
         // We found a node, return it.
+        state := LookupState.nodeState(node);
         cref := ComponentRef.fromAbsyn(node, subs);
         return;
       else
@@ -845,7 +843,7 @@ algorithm
             end if;
           else
             // Look in the next enclosing scope.
-            is_enclosing := not InstNode.isImplicit(foundScope);
+            inEnclosingScope := not InstNode.isImplicit(foundScope);
             foundScope := InstNode.parentScope(foundScope);
           end if;
         end if;
@@ -857,25 +855,6 @@ algorithm
     fail();
   end try;
 end lookupSimpleCref;
-
-function isNonConstantComponent
-  input InstNode node;
-  output Boolean res;
-protected
-  SCode.Element def;
-algorithm
-  if InstNode.isComponent(node) then
-    def := InstNode.definition(node);
-
-    res := match def
-      case SCode.Element.COMPONENT()
-        then not SCodeUtil.isConstant(SCodeUtil.attrVariability(def.attributes));
-      else false;
-    end match;
-  else
-    res := false;
-  end if;
-end isNonConstantComponent;
 
 function lookupLocalSimpleCref
   "This function look up a simple name as a cref in a given component, without
