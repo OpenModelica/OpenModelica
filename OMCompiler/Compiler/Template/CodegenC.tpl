@@ -5495,7 +5495,7 @@ match sparsepattern
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let fileName = 'Jac<%matrixname%>.bin'
+      let fileName = '<%modelNamePrefix%>_Jac<%matrixname%>.bin'
       let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
