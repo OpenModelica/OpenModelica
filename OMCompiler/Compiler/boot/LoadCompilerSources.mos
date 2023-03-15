@@ -303,6 +303,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBSolve.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
+    "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",

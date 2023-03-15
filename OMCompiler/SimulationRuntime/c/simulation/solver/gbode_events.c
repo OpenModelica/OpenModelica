@@ -77,17 +77,17 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     c = 0.5 * (*a + *b);
 
     if (gbData->eventSearch == 0) {
-      /*calculates states at time c using hermite interpolation */
+      /*calculates states at time c using interpolation */
       if (isInnerIntegration) {
         gbfData = gbData->gbfData;
-        gb_interpolation(GB_INTERPOL_HERMITE,
+        gb_interpolation(gbfData->interpolation,
                     gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
                     gbfData->timeRight, gbfData->yRight, gbfData->kRight,
                     c, gbfData->y1,
                     gbData->nStates, NULL,  gbData->nStates, gbfData->tableau, gbfData->x, gbfData->k);
         y = gbfData->y1;
       } else {
-        gb_interpolation(GB_INTERPOL_HERMITE,
+        gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
                     c, gbData->y1,
@@ -97,10 +97,16 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     } else {
       /*calculates states at time c using integration */
       if (isInnerIntegration) {
+        gbData->gbfData->time = gbData->gbfData->timeLeft;
+        memcpy(gbData->gbfData->yOld, gbData->gbfData->yLeft, gbData->nStates * sizeof(double));
+
         gbData->gbfData->stepSize = c - gbData->gbfData->time;
         gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
         y = gbData->gbfData->y;
       } else {
+        gbData->time = gbData->timeLeft;
+        memcpy(gbData->yOld, gbData->yLeft, gbData->nStates * sizeof(double));
+
         gbData->stepSize = c - gbData->time;
         gb_step_info = gbData->step_fun(data, threadData, solverInfo);
         y = gbData->y;
@@ -275,10 +281,14 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   *foundEvent = checkForStateEvent(data, solverInfo->eventLst);
 
   if (*foundEvent) {
-    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
-    infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
+     if (omc_flag[FLAG_NO_ROOTFINDING]) {
+       eventTime = timeRight;
+       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g (rootfinding is disabled)", eventTime);
+     } else {
+       eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
+       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
+    }
   }
-
   // re-store the pre values of the zeroCrossings for comparison
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
 

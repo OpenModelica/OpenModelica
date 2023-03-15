@@ -421,7 +421,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * iterativ - default, sparse iterativ linear solver with fallback case to dense solver\n"
   "  * dense - dense linear solver, SUNDIALS default method",
   /* FLAG_INITIAL_STEP_SIZE */
-  "  Value specifies an initial step size, used by the methods: dassl, ida",
+  "  Value specifies an initial step size, used by the methods: dassl, ida, gbode",
   /* FLAG_INPUT_CSV */
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */
@@ -481,7 +481,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */
   "  Value specifies maximum integration order, used by the methods: dassl, ida.",
   /* FLAG_MAX_STEP_SIZE */
-  "  Value specifies maximum absolute step size, used by the methods: dassl, ida.",
+  "  Value specifies maximum absolute step size, used by the methods: dassl, ida, gbode.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
   "  Value specifies the output format of the measure time functionality:\n\n"
   "  * svg\n"
@@ -1005,6 +1005,7 @@ const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
   /* GB_CTRL_I */         "i",
   /* GB_CTRL_PI */        "pi",
+  /* GB_CTRL_PID */       "pid",
   /* GB_CTRL_CNST */      "const"
 };
 
@@ -1012,6 +1013,7 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
   /* GB_CTRL_I */         "I controller for step size",
   /* GB_CTRL_PI */        "PI controller for step size",
+  /* GB_CTRL_PID */       "PID controller for step size",
   /* GB_CTRL_CNST */      "Constant step size"
 };
 

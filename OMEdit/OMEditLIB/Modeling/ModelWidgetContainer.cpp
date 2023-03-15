@@ -6641,7 +6641,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * we need to remove the inherited classes connect signal/slot of all classes.
      */
     ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
-    mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
+    mpLibraryTreeItem->updateClassInformation();
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
@@ -6713,7 +6713,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
     if (pChildLibraryTreeItem) {
       if (pChildLibraryTreeItem->isInPackageOneFile()) {
         // update the class information
-        pChildLibraryTreeItem->setClassInformation(pMainWindow->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
+        pChildLibraryTreeItem->updateClassInformation();
         if (pLibraryTreeItem->isExpanded()) {
           if (pChildLibraryTreeItem->getModelWidget()) {
             pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget();

@@ -18,6 +18,7 @@ GetModelInstanceComment1.mos \
 GetModelInstanceConditional1.mos \
 GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
+GetModelInstanceConnection2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDuplicate1.mos \
@@ -35,8 +36,11 @@ GetModelInstanceIcon4.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
+GetModelInstanceMissingClass1.mos \
+GetModelInstanceMissingClass2.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
+GetModelInstanceMod3.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \

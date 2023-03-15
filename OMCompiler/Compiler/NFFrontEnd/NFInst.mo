@@ -980,14 +980,14 @@ algorithm
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
+        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par, context = context));
 
         // Propagate the visibility of extends to their elements.
         ClassTree.mapExtends(cls_tree,
           function applyExtendsVisibility(visibility = ExtendsVisibility.PUBLIC));
 
         // Apply the modifiers of this scope.
-        applyModifier(mod, cls_tree, node);
+        applyModifier(mod, cls_tree, node, context);
 
         // Apply element redeclares.
         ClassTree.mapRedeclareChains(cls_tree,
@@ -1063,7 +1063,7 @@ algorithm
         mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
-        applyModifier(mod, cls_tree, node);
+        applyModifier(mod, cls_tree, node, context);
 
         inst_cls := Class.INSTANCED_BUILTIN(ty, cls_tree, res);
         node := InstNode.updateClass(inst_cls, node);
@@ -1143,13 +1143,13 @@ algorithm
 
     case CachedData.NO_CACHE()
       algorithm
+        // Cache the package node itself first, to avoid instantiation loops if
+        // the package uses itself somehow.
+        InstNode.setPackageCache(node, CachedData.PACKAGE(node));
+
         if InstContext.inFastLookup(context) then
           inst := expand(node);
         else
-          // Cache the package node itself first, to avoid instantiation loops if
-          // the package uses itself somehow.
-          InstNode.setPackageCache(node, CachedData.PACKAGE(node));
-
           // Instantiate the node.
           inst := instantiate(node, context = context);
 
@@ -1174,6 +1174,7 @@ end instPackage;
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
+  input InstContext.Type context;
 protected
   SCode.Element elem;
   Modifier ext_mod;
@@ -1191,7 +1192,7 @@ algorithm
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
-    ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
+    ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode, context = context));
 
     () := match elem
       case SCode.EXTENDS()
@@ -1216,7 +1217,7 @@ algorithm
     end match;
   end if;
 
-  applyModifier(ext_mod, cls_tree, extendsNode);
+  applyModifier(ext_mod, cls_tree, extendsNode, context);
 end modifyExtends;
 
 type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
@@ -1320,6 +1321,7 @@ function applyModifier
   input Modifier modifier;
   input output ClassTree cls;
   input InstNode parent;
+  input InstContext.Type context;
 protected
   list<Modifier> mods;
   list<Mutable<InstNode>> node_ptrs;
@@ -1339,13 +1341,15 @@ algorithm
         for mod in mods loop
           try
             node := ClassTree.lookupElement(Modifier.name(mod), cls);
+            InstNode.componentApply(node, Component.mergeModifier, mod);
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
               {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-            fail();
-          end try;
 
-          InstNode.componentApply(node, Component.mergeModifier, mod);
+            if not InstContext.inInstanceAPI(context) then
+              fail();
+            end if;
+          end try;
         end for;
       then
         ();
@@ -1359,7 +1363,12 @@ algorithm
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
               {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-            fail();
+
+            if InstContext.inInstanceAPI(context) then
+              node_ptrs := {};
+            else
+              fail();
+            end if;
           end try;
 
           // Apply the modifier to each found node.
@@ -1748,21 +1757,24 @@ algorithm
         mod := Modifier.propagate(mod, node, node);
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
-        ty := InstNode.getClass(ty_node);
-        res := Class.restriction(ty);
 
-        if not InstContext.inRedeclared(context) then
-          checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
-        end if;
+        if not InstNode.isEmpty(ty_node) then
+          ty := InstNode.getClass(ty_node);
+          res := Class.restriction(ty);
 
-        checkBindingRestriction(res, binding, node, info);
+          if not InstContext.inRedeclared(context) then
+            checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
+          end if;
 
-        // Update some of the attributes now that we now the type of the component.
-        ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
-        ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
+          checkBindingRestriction(res, binding, node, info);
 
-        if not referenceEq(attr, ty_attr) then
-          InstNode.componentApply(node, Component.setAttributes, ty_attr);
+          // Update some of the attributes now that we now the type of the component.
+          ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
+          ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
+
+          if not referenceEq(attr, ty_attr) then
+            InstNode.componentApply(node, Component.setAttributes, ty_attr);
+          end if;
         end if;
       then
         ();
@@ -2000,7 +2012,7 @@ function instTypeSpec
   output InstNode node;
   output Attributes outAttributes;
 algorithm
-  node := match typeSpec
+  node := matchcontinue typeSpec
     case Absyn.TPATH()
       algorithm
         node := Lookup.lookupClassName(typeSpec.path, scope, context, info);
@@ -2014,13 +2026,20 @@ algorithm
       then
         node;
 
+    case Absyn.TPATH()
+      guard InstContext.inInstanceAPI(context)
+      algorithm
+        outAttributes := attributes;
+      then
+        InstNode.EMPTY_NODE();
+
     case Absyn.TCOMPLEX()
       algorithm
         print("NFInst.instTypeSpec: TCOMPLEX not implemented.\n");
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end instTypeSpec;
 
 function checkRecursiveDefinition
@@ -2112,7 +2131,7 @@ algorithm
         // Instantiate expressions in the extends nodes.
         exts := ClassTree.getExtends(cls_tree);
         for ext in exts loop
-          instExpressions(ext, ext, sections, context);
+          instExpressions(ext, ext, sections, context, settings);
         end for;
 
         // A type must extend a basic type.
@@ -2137,11 +2156,11 @@ algorithm
         // Instantiate expressions in the extends nodes.
         if settings.mergeExtendsSections then
           for ext in ClassTree.getExtends(cls_tree) loop
-            sections := instExpressions(ext, ext, sections, context);
+            sections := instExpressions(ext, ext, sections, context, settings);
           end for;
         else
           for ext in ClassTree.getExtends(cls_tree) loop
-            _ := instExpressions(ext, ext, sections, context);
+            _ := instExpressions(ext, ext, sections, context, settings);
           end for;
         end if;
 
@@ -2169,7 +2188,7 @@ algorithm
 
     case Class.EXPANDED_DERIVED(dims = dims)
       algorithm
-        sections := instExpressions(cls.baseClass, scope, sections, context);
+        sections := instExpressions(cls.baseClass, scope, sections, context, settings);
 
         info := InstNode.info(node);
 
@@ -2321,7 +2340,10 @@ algorithm
       algorithm
         c.binding := instBinding(c.binding, context);
         c.condition := instBinding(c.condition, context);
-        instExpressions(c.classInst, node, context = context);
+
+        if not InstNode.isEmpty(c.classInst) then
+          instExpressions(c.classInst, node, context = context);
+        end if;
 
         for i in 1:arrayLength(dims) loop
           dims[i] := instDimension(dims[i], context, c.info);
@@ -3490,7 +3512,9 @@ algorithm
           Structural.markExp(Binding.getUntypedExp(condition));
         end if;
 
-        updateImplicitVariability(c.classInst, eval or parentEval);
+        if not InstNode.isEmpty(c.classInst) then
+          updateImplicitVariability(c.classInst, eval or parentEval);
+        end if;
       then
         ();
 

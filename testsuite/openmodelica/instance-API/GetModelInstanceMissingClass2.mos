@@ -1,0 +1,206 @@
+// name: GetModelInstanceMissingClass2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+  end C;
+
+  model A
+  end A;
+
+  model M
+    MissingConnector c1, c2;
+    MissingClass m;
+    C c;
+    A a;
+  equation
+    connect(c1, c2);
+    connect(m.c, c);
+    connect(a.c, c);
+    connect(c1.c, c2.c);
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c1\",
+//       \"type\": {
+//         \"name\": \"MissingConnector\",
+//         \"missing\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c2\",
+//       \"type\": {
+//         \"name\": \"MissingConnector\",
+//         \"missing\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"m\",
+//       \"type\": {
+//         \"name\": \"MissingClass\",
+//         \"missing\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c\",
+//       \"type\": {
+//         \"name\": \"C\",
+//         \"restriction\": \"connector\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"e\",
+//             \"type\": \"Real\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"f\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"connector\": \"flow\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     }
+//   ],
+//   \"connections\": [
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c1\"
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c2\"
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"m\"
+//           },
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"a\"
+//           },
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c1\"
+//           },
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c2\"
+//           },
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 10,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 20,
+//     \"columnEnd\": 8
+//   }
+// }"
+// "[<interactive>:11:5-11:28:writable] Error: Class MissingConnector not found in scope M.
+// [<interactive>:12:5-12:19:writable] Error: Class MissingClass not found in scope M.
+// "
+// endResult

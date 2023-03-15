@@ -216,7 +216,7 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(solverMethods);
   Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslIdaOptions(QString)));
+  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDisableOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpMehtodHelpButton->setToolTip(tr("Integration help"));
@@ -234,8 +234,8 @@ void SimulationDialog::setUpForm()
   jacobianMethodsDesc.prepend("");
   mpJacobianComboBox->addItems(jacobianMethods);
   Utilities::setToolTip(mpJacobianComboBox, "Jacobians", jacobianMethodsDesc);
-  // dassl/ida options
-  mpDasslIdaOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
+  // options
+  mpOptionsGroupBox = new QGroupBox(Helper::options);
   // no root finding
   mpRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
   mpRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of methods: dassl and ida."));
@@ -251,18 +251,18 @@ void SimulationDialog::setUpForm()
   // max integration order
   mpMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
   mpMaxIntegrationOrderSpinBox = new QSpinBox;
-  // set the layout for DASSL/Ida options groupbox
-  QGridLayout *pDasslIdaOptionsGridLayout = new QGridLayout;
-  pDasslIdaOptionsGridLayout->setColumnStretch(1, 1);
-  pDasslIdaOptionsGridLayout->addWidget(mpRootFindingCheckBox, 0, 0, 1, 2);
-  pDasslIdaOptionsGridLayout->addWidget(mpRestartAfterEventCheckBox, 1, 0, 1, 2);
-  pDasslIdaOptionsGridLayout->addWidget(mpInitialStepSizeLabel, 2, 0);
-  pDasslIdaOptionsGridLayout->addWidget(mpInitialStepSizeTextBox, 2, 1);
-  pDasslIdaOptionsGridLayout->addWidget(mpMaxStepSizeLabel, 3, 0);
-  pDasslIdaOptionsGridLayout->addWidget(mpMaxStepSizeTextBox, 3, 1);
-  pDasslIdaOptionsGridLayout->addWidget(mpMaxIntegrationOrderLabel, 4, 0);
-  pDasslIdaOptionsGridLayout->addWidget(mpMaxIntegrationOrderSpinBox, 4, 1);
-  mpDasslIdaOptionsGroupBox->setLayout(pDasslIdaOptionsGridLayout);
+  // set the layout for options groupbox
+  QGridLayout *pOptionsGridLayout = new QGridLayout;
+  pOptionsGridLayout->setColumnStretch(1, 1);
+  pOptionsGridLayout->addWidget(mpRootFindingCheckBox, 0, 0, 1, 2);
+  pOptionsGridLayout->addWidget(mpRestartAfterEventCheckBox, 1, 0, 1, 2);
+  pOptionsGridLayout->addWidget(mpInitialStepSizeLabel, 2, 0);
+  pOptionsGridLayout->addWidget(mpInitialStepSizeTextBox, 2, 1);
+  pOptionsGridLayout->addWidget(mpMaxStepSizeLabel, 3, 0);
+  pOptionsGridLayout->addWidget(mpMaxStepSizeTextBox, 3, 1);
+  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderLabel, 4, 0);
+  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderSpinBox, 4, 1);
+  mpOptionsGroupBox->setLayout(pOptionsGridLayout);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
   pIntegrationGridLayout->setColumnStretch(1, 1);
@@ -273,7 +273,7 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1, 1, 2);
   pIntegrationGridLayout->addWidget(mpJacobianLabel, 2, 0);
   pIntegrationGridLayout->addWidget(mpJacobianComboBox, 2, 1, 1, 2);
-  pIntegrationGridLayout->addWidget(mpDasslIdaOptionsGroupBox, 3, 0, 1, 3);
+  pIntegrationGridLayout->addWidget(mpOptionsGroupBox, 3, 0, 1, 3);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("C/C++ Compiler Flags (Optional):"));
@@ -1246,15 +1246,21 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpJacobianComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
   }
-  // dassl/ida options
-  if (mpDasslIdaOptionsGroupBox->isEnabled()) {
-    // root finding
-    if (!mpRootFindingCheckBox->isChecked()) {
-      simulationFlags.append("-noRootFinding");
-    }
-    // restart after event
-    if (!mpRestartAfterEventCheckBox->isChecked()) {
-      simulationFlags.append("-noRestart");
+  // options
+  if (mpOptionsGroupBox->isEnabled()) {
+    if (simulationOptions.getMethod().compare(QStringLiteral("gbode")) != 0) {
+      // root finding
+      if (!mpRootFindingCheckBox->isChecked()) {
+        simulationFlags.append("-noRootFinding");
+      }
+      // restart after event
+      if (!mpRestartAfterEventCheckBox->isChecked()) {
+        simulationFlags.append("-noRestart");
+      }
+      // max step size
+      if (mpMaxIntegrationOrderSpinBox->value() != 5) {
+        simulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpMaxIntegrationOrderSpinBox->value())));
+      }
     }
     // initial step size
     if (!mpInitialStepSizeTextBox->text().isEmpty()) {
@@ -1263,10 +1269,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     // max step size
     if (!mpMaxStepSizeTextBox->text().isEmpty()) {
       simulationFlags.append(QString("-maxStepSize=").append(mpMaxStepSizeTextBox->text()));
-    }
-    // max step size
-    if (mpMaxIntegrationOrderSpinBox->value() != 5) {
-      simulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpMaxIntegrationOrderSpinBox->value())));
     }
   }
   // single precision
@@ -1492,20 +1494,24 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpJacobianComboBox->currentText().isEmpty()) {
     simulationFlags.insert("jacobian", mpJacobianComboBox->currentText());
   }
-  if (!mpRootFindingCheckBox->isChecked()) {
-    simulationFlags.insert("noRootFinding", "()");
-  }
-  if (!mpRestartAfterEventCheckBox->isChecked()) {
-    simulationFlags.insert("noRestart", "()");
-  }
-  if (!mpInitialStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.insert("initialStepSize", mpInitialStepSizeTextBox->text());
-  }
-  if (mpMaxIntegrationOrderSpinBox->value() != 5) {
-    simulationFlags.insert("maxIntegrationOrder", QString::number(mpMaxIntegrationOrderSpinBox->value()));
-  }
-  if (!mpMaxStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.insert("maxStepSize", mpMaxStepSizeTextBox->text());
+  if (mpOptionsGroupBox->isEnabled()) {
+    if (mpMethodComboBox->currentText().compare(QStringLiteral("gbode")) != 0) {
+      if (!mpRootFindingCheckBox->isChecked()) {
+        simulationFlags.insert("noRootFinding", "()");
+      }
+      if (!mpRestartAfterEventCheckBox->isChecked()) {
+        simulationFlags.insert("noRestart", "()");
+      }
+      if (mpMaxIntegrationOrderSpinBox->value() != 5) {
+        simulationFlags.insert("maxIntegrationOrder", QString::number(mpMaxIntegrationOrderSpinBox->value()));
+      }
+    }
+    if (!mpInitialStepSizeTextBox->text().isEmpty()) {
+      simulationFlags.insert("initialStepSize", mpInitialStepSizeTextBox->text());
+    }
+    if (!mpMaxStepSizeTextBox->text().isEmpty()) {
+      simulationFlags.insert("maxStepSize", mpMaxStepSizeTextBox->text());
+    }
   }
   // Flags from Simulation Flags tab
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
@@ -2072,18 +2078,23 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 }
 
 /*!
- * \brief SimulationDialog::enableDasslOptions
+ * \brief SimulationDialog::enableDisableOptions
  * Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
- * Enables/disables the Dassl options group box
+ * Enables/disables the options group box
  * \param method
  */
-void SimulationDialog::enableDasslIdaOptions(QString method)
+void SimulationDialog::enableDisableOptions(QString method)
 {
-  if (method.compare("dassl") == 0 || method.compare("ida") == 0) {
-    mpDasslIdaOptionsGroupBox->setEnabled(true);
+  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
+    mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
+    // gbode doesn't handle following options yet
+    bool isGbode = method.compare(QStringLiteral("gbode")) == 0;
+    mpRootFindingCheckBox->setEnabled(!isGbode);
+    mpRestartAfterEventCheckBox->setEnabled(!isGbode);
+    mpMaxIntegrationOrderSpinBox->setEnabled(!isGbode);
   } else {
-    mpDasslIdaOptionsGroupBox->setEnabled(false);
+    mpOptionsGroupBox->setEnabled(false);
     mpEquidistantTimeGridCheckBox->setEnabled(false);
   }
 }

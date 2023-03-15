@@ -918,6 +918,7 @@ template simulationFile_jac_header(SimCode simCode)
     <<
     /* Jacobians */
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
+
     <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%>
     <%\n%>
     >>
@@ -1770,23 +1771,24 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
 ::=
   let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     <<
-    #if defined(__cplusplus)
-    extern "C" {
-    #endif
-      #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
-      int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-      <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
-    #if defined(__cplusplus)
-    }
-    #endif
+    #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
+    int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
     >>
-    ;separator="\n";empty)
+    ;separator="\n\n";empty)
 
   <<
+  #if defined(__cplusplus)
+  extern "C" {
+  #endif
+
   /* Jacobian Variables */
   <%symbolicJacsDefine%>
 
+  #if defined(__cplusplus)
+  }
+  #endif
   >>
 end symJacDefinition;
 
@@ -2958,19 +2960,17 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,
         coloredCols=colorList,maxColorCols=maxColor))),
         alternativeTearing=NONE()) then
-        //TS,org//jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
-        //TS,org//alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT) //TS//
+      let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
-      <%nonlinearData%> //TS//
+      <%nonlinearData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       >>
@@ -2978,20 +2978,19 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')  //TS//
+      let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
-      <%nonlinearData%> //TS//
+      <%nonlinearData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       >>
     // dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
-        //TS,org//jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,coloredCols=colorList,maxColorCols=maxColor))),
         alternativeTearing = SOME(at as NONLINEARSYSTEM(
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern2,coloredCols=colorList2,maxColorCols=maxColor2))))
@@ -3000,14 +2999,14 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)  //TS//
+      let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)  //TS//
+      let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
@@ -3016,13 +3015,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       /* strict tearing set */
       <%residualFunction%>
       <%sparseData%>
-      <%nonlinearData%>  //TS//
+      <%nonlinearData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       /* casual tearing set */
       <%residualFunctionCasual%>
       <%sparseDataCasual%>
-      <%nonlinearDataCasual%>  //TS//
+      <%nonlinearDataCasual%>
       <%bodyStaticDataCasual%>
       <%updateIterationVarsCasual%>
       /* end residuals for dynamic tearing sets */
@@ -3274,7 +3273,6 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
    end match
 end generateStaticSparseData;
 
-//TS,start//
 template generateStaticEmptyNonlinearData(String indexName, String systemType)
 "template generateStaticEmptyNonlinearData
   This template generates source code for functions that initialize the nonlinear-pattern."
@@ -3338,7 +3336,6 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
       >>
    end match
 end generateStaticNonlinearData;
-//TS,end//
 
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   "Generates initial function for nonlinear loops."
@@ -5216,7 +5213,7 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "function [sys, x0, u0, n, m, p, Ts] = linearized_model()\n"
+      return "function [A, B, C, D, stateVars, inputVars, outputVars] = linearized_model()\n"
       "%% <%modelNamePrefix%>\n"
       "%% der(x) = A * x + B * u\n%% y = C * x + D * u\n"
       "  n = <%varInfo.numStateVars%>; %% number of states\n  m = <%varInfo.numInVars%>; %% number of inputs\n  p = <%varInfo.numOutVars%>; %% number of outputs\n"
@@ -5228,9 +5225,10 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "  stateVars  = {<%getVarNameMatlab(vars.stateVars, "x0")%>};\n"
+      "  inputVars  = {<%getVarNameMatlab(vars.inputVars, "u0")%>};\n"
+      "  outputVars = {<%getVarNameMatlab(vars.outputVars, "y0")%>};\n"
       "  Ts = %g; %% stop time\n\n"
-      "  %% The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.\n"
-      "  sys = ss(A,B,C,D,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -5338,7 +5336,7 @@ template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getV
 <<
 <%simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
-      <<'<%arrayName%>_<%crefStrMatlabSafe(name)%>'>>
+      <<'<%crefStrMatlabSafe(name)%>'>>
     end match) ;separator=","%>
 >>
 end getVarNameMatlab;

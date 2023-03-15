@@ -218,7 +218,8 @@ SOURCES += Util/Helper.cpp \
   Util/ResourceCache.cpp \
   Util/NetworkAccessManager.cpp \
   FlatModelica/Expression.cpp \
-  FlatModelica/ExpressionFuncs.cpp
+  FlatModelica/ExpressionFuncs.cpp \
+  FlatModelica/Parser.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -334,7 +335,8 @@ HEADERS  += Util/Helper.h \
   Util/ResourceCache.h \
   Util/NetworkAccessManager.h \
   FlatModelica/Expression.h \
-  FlatModelica/ExpressionFuncs.h
+  FlatModelica/ExpressionFuncs.h \
+  FlatModelica/Parser.h
 
 CONFIG(osg) {
 

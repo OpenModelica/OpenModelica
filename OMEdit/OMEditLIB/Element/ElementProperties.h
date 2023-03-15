@@ -81,7 +81,7 @@ public:
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
-  QToolButton *getModifyReplaceableButton() const {return mpModifyReplaceableButton;}
+  QToolButton *getEditRedeclareClassButton() const {return mpEditRedeclareClassButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
   QString getLoadSelectorFilter() {return mLoadSelectorFilter;}
@@ -127,7 +127,7 @@ private:
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
-  QToolButton *mpModifyReplaceableButton = 0;
+  QToolButton *mpEditRedeclareClassButton = 0;
   QToolButton *mpFileSelectorButton;
   QString mUnit;
   QString mDisplayUnit;
@@ -139,7 +139,7 @@ private:
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
 public slots:
-  void modifyReplaceableButtonClicked();
+  void editRedeclareClassButtonClicked();
   void fileSelectorButtonClicked();
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
@@ -189,8 +189,8 @@ public:
   ~ElementParameters();
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
-  bool isNested() const {return mNested;}
   QString getModification() const {return mModification;}
+  static void applyStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
   void updateParameters();
 private:
   ModelInstance::Component *mpElement;

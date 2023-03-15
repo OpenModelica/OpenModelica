@@ -114,8 +114,8 @@ double PIController(double* err_values, double* stepSize_values, unsigned int er
   double facmax = 3.5;
   double facmin = 0.5;
   double beta  = 1./(err_order+1);
-  double beta1 = 1./(err_order+1);
-  double beta2 = 1./(err_order+1);
+  double beta1 = 0.7/(err_order+1);
+  double beta2 = -0.4/(err_order+1);
 
   double estimate;
 
@@ -125,7 +125,43 @@ double PIController(double* err_values, double* stepSize_values, unsigned int er
   if (err_values[1] < DBL_EPSILON)
     estimate = pow(1./err_values[0], beta);
   else
-    estimate = stepSize_values[0]/stepSize_values[1]*pow(1./err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2);
+    estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
+
+  return fmin(facmax, fmax(facmin, fac*estimate));
+}
+
+/**
+ * @brief PID step size control (see Hairer, etc.)
+ *
+ * @param err_values
+ * @param stepSize_values
+ * @param err_order
+ * @return double
+ */
+double PIDController(double* err_values, double* stepSize_values, unsigned int err_order)
+{
+  double fac = 0.9;
+  double facmax = 3.5;
+  double facmin = 0.5;
+  double beta  = 1./(err_order+1);
+  double beta1 = 0.7/(err_order+1);
+  double beta2 = -0.4/(err_order+1);
+  double alpha1 = 1./18/(err_order+1);
+  double alpha2 = 1./9/(err_order+1);
+  double alpha3 = 1./18/(err_order+1);
+
+  double estimate;
+
+  if (err_values[0] < DBL_EPSILON)
+    return facmax;
+
+  if (err_values[1] < DBL_EPSILON)
+    estimate = pow(1./err_values[0], beta);
+  else
+    if (err_values[2] < DBL_EPSILON)
+      estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
+    else
+      estimate = pow(1./err_values[0], alpha1)*pow(1./err_values[1], alpha2)*pow(1./err_values[2], alpha3);
 
   return fmin(facmax, fmax(facmin, fac*estimate));
 }
@@ -143,6 +179,8 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
     return IController;
   case GB_CTRL_PI:
     return PIController;
+  case GB_CTRL_PID:
+    return PIDController;
   case GB_CTRL_CNST:
     return CController;
   default:
@@ -235,6 +273,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     }
 
     gbData->stepSize = 0.5*fmin(100*h0,h1);
+    gbData->optStepSize = gbData->stepSize;
     gbData->lastStepSize = 0.0;
 
     sData->timeValue = gbData->time;

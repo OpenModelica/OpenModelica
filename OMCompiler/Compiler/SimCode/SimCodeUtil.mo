@@ -4838,6 +4838,7 @@ public function syncDAEandSimJac
 algorithm
   if symJac.matrixName == "A" then
     daeJac.columns := list(updateSimVarIndex(col, daeJac.crefsHT) for col in symJac.columns);
+    daeJac.jacobianIndex := symJac.jacobianIndex;
   else
     daeJac := symJac;
   end if;
@@ -15624,7 +15625,7 @@ algorithm
   end matchcontinue;
 end generateRunnerBatScript;
 
-protected function getDirectoriesForDLLsFromLinkLibs
+function getDirectoriesForDLLsFromLinkLibs
   " Parse the makefileParams.libs and extract the necessary directories
    to be added to the PATH for finding dependenncy libraries (DLLs on Windows).
    NOTE: this function expects the 'link command' as the second argument. This will
@@ -15661,14 +15662,14 @@ public function getCmakeLinkLibrariesCode
 protected
   list<String> locations;
   list<String> libraries;
-  function addQuotationMarks
+  function addDockerVol
     input String istring;
-    output String ostring = "\""+istring+"\"";
-  end addQuotationMarks;
+    output String ostring = "\"${DOCKER_VOL_DIR}"+istring+"\"";
+  end addDockerVol;
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
-  locations := List.map(locations, addQuotationMarks);
+  locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
   cmakecode := cmakecode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
   for lib in libraries loop

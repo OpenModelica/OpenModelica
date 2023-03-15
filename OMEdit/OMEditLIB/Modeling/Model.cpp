@@ -721,6 +721,43 @@ namespace ModelInstance
     }
   }
 
+  QString Modifier::getValueWithSubModifiers() const
+  {
+    if (mModifiers.isEmpty()) {
+      return mValue;
+    } else {
+      QStringList modifiers;
+      foreach (auto subModifier, mModifiers) {
+        if (subModifier.getModifiers().isEmpty()) {
+          modifiers.append(subModifier.getName() % "=" % subModifier.getValue());
+        } else {
+          modifiers.append(subModifier.getName() % subModifier.getValueWithSubModifiers());
+        }
+      }
+      return "(" % modifiers.join(",") % ")";
+    }
+  }
+
+  QString Modifier::getModifier(const QString &m) const
+  {
+    foreach (auto modifier, mModifiers) {
+      if (modifier.getName().compare(m) == 0) {
+        return modifier.getValue();
+      }
+    }
+    return "";
+  }
+
+  bool Modifier::hasModifier(const QString &m) const
+  {
+    foreach (auto modifier, mModifiers) {
+      if (modifier.getName().compare(m) == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   QString Modifier::getModifierValue(QStringList qualifiedModifierName)
   {
     if (qualifiedModifierName.isEmpty()) {
@@ -1299,6 +1336,7 @@ namespace ModelInstance
   {
     mCheckBox = false;
     mDymolaCheckBox = false;
+    mChoices.clear();
   }
 
   void Choices::deserialize(const QJsonObject &jsonObject)
@@ -1314,16 +1352,37 @@ namespace ModelInstance
     if (jsonObject.contains("choice")) {
       QJsonArray choices = jsonObject.value("choice").toArray();
       foreach (auto choice, choices) {
+        QString type = "";
         if (choice.isObject()) {
           QJsonObject choiceObject = choice.toObject();
+          if (choiceObject.contains("$type")) {
+            type = choiceObject.value("$type").toString();
+          }
           if (choiceObject.contains("$value")) {
-            mChoice.append(choiceObject.value("$value").toString());
+            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
           }
         } else {
-          mChoice.append(choice.toString());
+          mChoices.append(qMakePair(choice.toString(), type));
         }
       }
     }
+  }
+
+  QStringList Choices::getChoices() const
+  {
+    QStringList choices;
+    foreach (Choice choice, mChoices) {
+      choices.append(choice.first);
+    }
+    return choices;
+  }
+
+  QString Choices::getType(int index) const
+  {
+    if (0 <= index && index < mChoices.size()) {
+      return mChoices.at(index).second;
+    }
+    return "";
   }
 
   Element::Element(Model *pParentModel)
@@ -1342,6 +1401,7 @@ namespace ModelInstance
     : Element(pParentModel)
   {
     mpExtendsAnnotation = std::make_unique<Annotation>(pParentModel);
+    mBaseClass = "";
     deserialize(jsonObject);
   }
 
@@ -1356,7 +1416,12 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("baseClass")) {
-      mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
+      if (jsonObject.value("baseClass").isString()) {
+        mBaseClass = jsonObject.value("baseClass").toString();
+      } else if (jsonObject.value("baseClass").isObject()) {
+        mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
+        mBaseClass = mpModel->getName();
+      }
     }
   }
 
@@ -1372,6 +1437,14 @@ namespace ModelInstance
     } else {
       return "";
     }
+  }
+
+  QString Extend::getRootType() const
+  {
+    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+      return mpModel->getElements().at(0)->getRootType();
+    }
+    return mBaseClass;
   }
 
   Component::Component(Model *pParentModel)
@@ -1543,6 +1616,14 @@ namespace ModelInstance
     }
   }
 
+  QString Component::getRootType() const
+  {
+    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+      return mpModel->getElements().at(0)->getRootType();
+    }
+    return mType;
+  }
+
   ReplaceableClass::ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
@@ -1587,6 +1668,11 @@ namespace ModelInstance
     } else {
       return mName;
     }
+  }
+
+  QString ReplaceableClass::getRootType() const
+  {
+    return mName;
   }
 
   Part::Part()

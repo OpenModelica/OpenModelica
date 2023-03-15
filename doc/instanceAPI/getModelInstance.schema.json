@@ -214,6 +214,18 @@
                 {
                   "description": "Builtin type",
                   "type": "string"
+                },
+                {
+                  "description": "Missing type",
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "missing": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               ]
             },
@@ -419,6 +431,10 @@
               "type": "string",
               "description": "The string representation of the binding equation"
             },
+            "$type": {
+              "type": "string",
+              "description": "The fully qualified type name of a redeclare element"
+            }
             "final": {
               "type": "boolean",
               "description": "Whether the modifier is final or not"

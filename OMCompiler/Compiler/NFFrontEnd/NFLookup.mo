@@ -311,19 +311,22 @@ function lookupCref
   output LookupState state;
 protected
   InstNode node;
+  Boolean in_enclosing;
 algorithm
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (_, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (_, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (node, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
         (foundCref, foundScope, state) :=
           lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state, context);
+        state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
@@ -773,10 +776,12 @@ function lookupSimpleCref
   output InstNode node;
   output ComponentRef cref;
   output InstNode foundScope = scope;
+  output Boolean inEnclosingScope = false;
   output LookupState state;
 protected
   Boolean is_import, require_builtin = false;
   Boolean loaded = false;
+  Boolean is_enclosing = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -838,6 +843,7 @@ algorithm
             end if;
           else
             // Look in the next enclosing scope.
+            inEnclosingScope := not InstNode.isImplicit(foundScope);
             foundScope := InstNode.parentScope(foundScope);
           end if;
         end if;
@@ -904,7 +910,7 @@ function lookupCrefInNode
   input InstContext.Type context;
 protected
   InstNode scope;
-  InstNode n;
+  InstNode n, cls_node;
   String name;
   Class cls;
   Boolean is_import;
@@ -929,13 +935,20 @@ algorithm
   end if;
 
   name := AbsynUtil.crefFirstIdent(cref);
-  cls := InstNode.getClass(scope);
+  cls_node := InstNode.classScope(scope);
+
+  if InstNode.isEmpty(cls_node) then
+    foundCref := ComponentRef.fromAbsynCref(cref, foundCref);
+    return;
+  end if;
+
+  cls := InstNode.getClass(cls_node);
 
   try
     (n, is_import) := Class.lookupElement(name, cls);
   else
     true := InstNode.isComponent(node);
-    true := Class.isExpandableConnectorClass(cls);
+    true := Class.isExpandableConnectorClass(cls) or InstContext.inInstanceAPI(context);
     foundCref := ComponentRef.fromAbsynCref(cref, foundCref);
     return;
   end try;

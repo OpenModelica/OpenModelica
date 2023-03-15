@@ -417,7 +417,7 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
  * @param jacUpdate     Update of jacobian necessary (SUNFALSE => yes)
  * @param maxJacUpdate  Maximal number of constant jacobian
  */
-void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate, int maxJacUpdate) {
+void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate, int maxJacUpdate, double tolerance) {
     int flag;
 
     flag = KINSetNumMaxIters(kin_mem, numIter);
@@ -426,7 +426,8 @@ void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
     flag = KINSetMaxSetupCalls(kin_mem, maxJacUpdate);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
-
+    flag = KINSetFuncNormTol(kin_mem, tolerance);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
 }
 
 /**
@@ -485,12 +486,18 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNTRUE, 10);
+    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNTRUE, 10, 100*DBL_EPSILON);
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
-      set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10);
+      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian.");
+      set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10, 100*DBL_EPSILON);
       solved = solveNLS(data, threadData, nlsData);
+      if (!solved) {
+        infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
+        set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10, 1000*DBL_EPSILON);
+        solved = solveNLS(data, threadData, nlsData);
+      }
     }
     if (ACTIVE_STREAM(LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {

@@ -6,21 +6,29 @@
 //
 
 loadString("
-  model M
-    replaceable Real x annotation(
-      choices(
-        choice(redeclare Real x = 1.0 \"A\"),
-        choice(redeclare Real x = 2.0 \"B\")));
-  end M;
+  package P
+    package P2
+      type OtherReal = Real;
+    end P2;
+
+    model M
+      replaceable Real x annotation(
+        choices(
+          choice(redeclare Real x = 1.0 \"A\"),
+          choice(redeclare Real x = 2.0 \"B\"),
+          choice(redeclare P2.OtherReal x = 3.0 \"C\"),
+          choice(redeclare MissingReal x = 4.0 \"D\")));
+    end M;
+  end P;
 ");
 
-getModelInstance(M, prettyPrint=true);
+getModelInstance(P.M, prettyPrint=true);
 getErrorString();
 
 // Result:
 // true
 // "{
-//   \"name\": \"M\",
+//   \"name\": \"P.M\",
 //   \"restriction\": \"model\",
 //   \"elements\": [
 //     {
@@ -34,10 +42,19 @@ getErrorString();
 //         \"choices\": {
 //           \"choice\": [
 //             {
-//               \"$value\": \"redeclare Real x = 1.0 \\\"A\\\"\"
+//               \"$value\": \"redeclare Real x = 1.0 \\\"A\\\"\",
+//               \"$type\": \"Real\"
 //             },
 //             {
-//               \"$value\": \"redeclare Real x = 2.0 \\\"B\\\"\"
+//               \"$value\": \"redeclare Real x = 2.0 \\\"B\\\"\",
+//               \"$type\": \"Real\"
+//             },
+//             {
+//               \"$value\": \"redeclare P2.OtherReal x = 3.0 \\\"C\\\"\",
+//               \"$type\": \"P.P2.OtherReal\"
+//             },
+//             {
+//               \"$value\": \"redeclare MissingReal x = 4.0 \\\"D\\\"\"
 //             }
 //           ]
 //         }
@@ -46,10 +63,10 @@ getErrorString();
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 2,
-//     \"columnStart\": 3,
-//     \"lineEnd\": 7,
-//     \"columnEnd\": 8
+//     \"lineStart\": 7,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 14,
+//     \"columnEnd\": 10
 //   }
 // }"
 // ""

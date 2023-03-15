@@ -3539,6 +3539,7 @@ protected function configureFMU_cmake
   input String fmutmp;
   input String fmuTargetName;
   input String logfile;
+  input list<String> externalLibLocations;
   input Boolean isWindows;
 protected
   String fmuSourceDir;
@@ -3573,6 +3574,7 @@ algorithm
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      list<String> locations, libraries;
     case {"dynamic"}
       algorithm
         if isWindows then
@@ -3600,6 +3602,10 @@ algorithm
 
         // Temp log file outside of Docker volume
         dockerLogFile := crossTriple + ".tmp.log";
+        // Remove old log file
+        if System.regularFileExists(dockerLogFile) then
+          System.removeFile(dockerLogFile);
+        end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
@@ -3624,6 +3630,19 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
+        // Copy the external library files to the container
+        (locations, libraries) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        for loc in locations loop
+          if System.directoryExists(loc) then
+            // Create path
+            cmd := "docker run --rm --hostname=" + containerID + " --volume=" + volumeID + ":/data busybox mkdir -p " + dquote + "/data" + loc + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+            // Copy files
+            cmd := "docker cp -a -L " + dquote + loc + dquote + " " + containerID + dquote + ":/data" + System.dirname(loc)  + dquote;
+            runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+          end if;
+        end for;
+
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
         buildDir := "build_cmake_" + crossTriple;
@@ -3635,6 +3654,7 @@ algorithm
           fmiTarget := "";
         end if;
         cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+                            "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
@@ -4094,7 +4114,7 @@ algorithm
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
     if useCrossCompileCmake then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
@@ -7555,7 +7575,7 @@ protected function getClassInformation
   input Absyn.Program p;
   output Values.Value res_1;
 protected
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView,access;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView,access,versionDate,versionBuild,dateModified,revisionId;
   String dim_str,lastIdent;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass,isState;
   Absyn.Restriction restr;
@@ -7576,9 +7596,13 @@ algorithm
   end if;
   isDocClass := Interactive.getDocumentationClassAnnotation(path, p);
   version := CevalScript.getPackageVersion(path, p);
-  Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+  preferredView := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("preferredView"));
   isState := getDymolaStateAnnotation(path, p);
   access := Interactive.getAccessAnnotation(path, p);
+  versionDate := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("versionDate"));
+  versionBuild := Interactive.getIntegerNamedAnnotation(path, p, Absyn.IDENT("versionBuild"));
+  dateModified := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("dateModified"));
+  revisionId := Interactive.getStringNamedAnnotation(path, p, Absyn.IDENT("revisionId"));
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -7597,7 +7621,11 @@ algorithm
     Values.STRING(version),
     Values.STRING(preferredView),
     Values.BOOL(isState),
-    Values.STRING(access)
+    Values.STRING(access),
+    Values.STRING(versionDate),
+    Values.STRING(versionBuild),
+    Values.STRING(dateModified),
+    Values.STRING(revisionId)
   });
 end getClassInformation;
 

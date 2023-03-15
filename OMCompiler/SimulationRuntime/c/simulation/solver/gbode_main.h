@@ -145,10 +145,11 @@ typedef struct DATA_GBODE{
   double *stepSizeValues;                           /* ring buffer for step size control */
   double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
   double percentage, err_threshold;                 /* percentage of fast states and the corresponding error threshold */
-  double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
-  double stepSize, lastStepSize;                    /* actual and last step size of integration */
+  double time, timeLeft, timeRight, timeDense;      /* actual time values and the time values of the current interpolation interval and for dense output */
+  double stepSize, lastStepSize, optStepSize;       /* actual, last, and optimal step size of integration */
   double maxStepSize;                               /* maximal step size of integration */
   double initialStepSize;                           /* initial step size of integration */
+  modelica_boolean noRestart;                       /* Flag for omitting re-start after an event occured */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
   int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
