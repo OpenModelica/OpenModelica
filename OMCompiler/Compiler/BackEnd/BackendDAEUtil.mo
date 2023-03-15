@@ -76,6 +76,7 @@ import Config;
 import DAEDump;
 import DAEMode;
 import DAEUtil;
+import DataReconciliation;
 import Debug;
 import DoubleEnded;
 import Differentiate;
@@ -117,7 +118,7 @@ import SynchronousFeatures;
 import System;
 import Tearing;
 import Types;
-import DataReconciliation;
+import UnorderedSet;
 import Values;
 import XMLDump;
 import ZeroCrossings;
@@ -10294,8 +10295,8 @@ protected function markNonlinearIterationVariablesStrongComponent
   input BackendDAE.StrongComponent comp;
   input output BackendDAE.Variables vars;
 protected
-  list<BackendDAE.Var> nonlinear_iteration_vars, tmp;
-  list<list<BackendDAE.Var>> new_vars = {};
+  list<BackendDAE.Var> nonlinear_iteration_vars;
+  UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
 algorithm
   nonlinear_iteration_vars := match comp
     local
@@ -10305,12 +10306,20 @@ algorithm
                                                                                                 else {};
   end match;
   for var in nonlinear_iteration_vars loop
-    (tmp, _) := BackendVariable.getVar(var.varName, vars);
-    new_vars := tmp :: new_vars;
+    UnorderedSet.add(var.varName, set);
   end for;
-  nonlinear_iteration_vars := list(BackendVariable.setVarInitNonlinear(var, true) for var in List.flatten(new_vars));
-  vars := BackendVariable.addVars(nonlinear_iteration_vars, vars);
+
+  (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, markNonlinearIterationVariable, set);
 end markNonlinearIterationVariablesStrongComponent;
+
+protected function markNonlinearIterationVariable
+  input output BackendDAE.Var var;
+  input output UnorderedSet<DAE.ComponentRef> set;
+algorithm
+  if UnorderedSet.contains(var.varName, set) then
+    var := BackendVariable.setVarInitNonlinear(var, true);
+  end if;
+end markNonlinearIterationVariable;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;
