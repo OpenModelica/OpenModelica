@@ -2131,7 +2131,7 @@ algorithm
         // Instantiate expressions in the extends nodes.
         exts := ClassTree.getExtends(cls_tree);
         for ext in exts loop
-          instExpressions(ext, ext, sections, context);
+          instExpressions(ext, ext, sections, context, settings);
         end for;
 
         // A type must extend a basic type.
@@ -2156,11 +2156,11 @@ algorithm
         // Instantiate expressions in the extends nodes.
         if settings.mergeExtendsSections then
           for ext in ClassTree.getExtends(cls_tree) loop
-            sections := instExpressions(ext, ext, sections, context);
+            sections := instExpressions(ext, ext, sections, context, settings);
           end for;
         else
           for ext in ClassTree.getExtends(cls_tree) loop
-            _ := instExpressions(ext, ext, sections, context);
+            _ := instExpressions(ext, ext, sections, context, settings);
           end for;
         end if;
 
@@ -2188,7 +2188,7 @@ algorithm
 
     case Class.EXPANDED_DERIVED(dims = dims)
       algorithm
-        sections := instExpressions(cls.baseClass, scope, sections, context);
+        sections := instExpressions(cls.baseClass, scope, sections, context, settings);
 
         info := InstNode.info(node);
 
