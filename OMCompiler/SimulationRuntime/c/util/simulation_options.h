@@ -276,7 +276,8 @@ enum GB_CTRL_METHOD {
   GB_CTRL_UNKNOWN = 0,  /* Unknown controller */
   GB_CTRL_I = 1,        /* I controller */
   GB_CTRL_PI = 2,       /* PI controller */
-  GB_CTRL_CNST = 3,     /* Constant step size */
+  GB_CTRL_PID = 3,       /* PID controller */
+  GB_CTRL_CNST = 4,     /* Constant step size */
 
   GB_CTRL_MAX
 };

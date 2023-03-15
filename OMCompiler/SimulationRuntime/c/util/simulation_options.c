@@ -1005,6 +1005,7 @@ const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
   /* GB_CTRL_I */         "i",
   /* GB_CTRL_PI */        "pi",
+  /* GB_CTRL_PID */       "pid",
   /* GB_CTRL_CNST */      "const"
 };
 
@@ -1012,6 +1013,7 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
   /* GB_CTRL_I */         "I controller for step size",
   /* GB_CTRL_PI */        "PI controller for step size",
+  /* GB_CTRL_PID */       "PID controller for step size",
   /* GB_CTRL_CNST */      "Constant step size"
 };
 
