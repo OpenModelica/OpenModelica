@@ -18,6 +18,7 @@ GetModelInstanceComment1.mos \
 GetModelInstanceConditional1.mos \
 GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
+GetModelInstanceConnection2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDuplicate1.mos \
