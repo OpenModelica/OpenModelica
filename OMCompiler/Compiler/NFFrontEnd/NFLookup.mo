@@ -948,7 +948,7 @@ algorithm
     (n, is_import) := Class.lookupElement(name, cls);
   else
     true := InstNode.isComponent(node);
-    true := Class.isExpandableConnectorClass(cls);
+    true := Class.isExpandableConnectorClass(cls) or InstContext.inInstanceAPI(context);
     foundCref := ComponentRef.fromAbsynCref(cref, foundCref);
     return;
   end try;

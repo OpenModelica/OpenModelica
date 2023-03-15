@@ -11,13 +11,18 @@ loadString("
     flow Real f;
   end C;
 
+  model A
+  end A;
+
   model M
     MissingConnector c1, c2;
     MissingClass m;
     C c;
+    A a;
   equation
     connect(c1, c2);
     connect(m.c, c);
+    connect(a.c, c);
     connect(c1.c, c2.c);
   end M;
 ");
@@ -84,6 +89,21 @@ getErrorString();
 //           \"columnEnd\": 8
 //         }
 //       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 8,
+//           \"columnEnd\": 8
+//         }
+//       }
 //     }
 //   ],
 //   \"connections\": [
@@ -131,6 +151,27 @@ getErrorString();
 //         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
+//             \"name\": \"a\"
+//           },
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c\"
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
 //             \"name\": \"c1\"
 //           },
 //           {
@@ -153,13 +194,13 @@ getErrorString();
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 7,
+//     \"lineStart\": 10,
 //     \"columnStart\": 3,
-//     \"lineEnd\": 15,
+//     \"lineEnd\": 20,
 //     \"columnEnd\": 8
 //   }
 // }"
-// "[<interactive>:8:5-8:28:writable] Error: Class MissingConnector not found in scope M.
-// [<interactive>:9:5-9:19:writable] Error: Class MissingClass not found in scope M.
+// "[<interactive>:11:5-11:28:writable] Error: Class MissingConnector not found in scope M.
+// [<interactive>:12:5-12:19:writable] Error: Class MissingClass not found in scope M.
 // "
 // endResult
