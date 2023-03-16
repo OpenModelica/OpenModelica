@@ -33,7 +33,6 @@ encapsulated package SerializeSparsityPattern
 
 import List;
 import SimCode;
-import System;
 import Util;
 
 function serialize
