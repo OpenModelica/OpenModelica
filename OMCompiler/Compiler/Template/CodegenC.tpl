@@ -902,7 +902,7 @@ template simulationFile_jac(SimCode simCode)
     #include "<%fileNamePrefix%>_12jac.h"
     #include "util/jacobian_util.h"
     #include "util/omc_file.h"
-    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode))%>
+    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode), simCode.fileNamePrefix)%>
 
     <%\n%>
     >>
@@ -5455,11 +5455,11 @@ template genVector(String name, String num, Integer numI, Integer flag) "templat
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
   let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
+    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix, fileNamePrefix); separator="\n")
   let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
     generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
@@ -5473,7 +5473,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String 
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -5493,7 +5493,7 @@ match sparsepattern
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let fileName = '<%modelNamePrefix%>_Jac<%matrixname%>.bin'
+      let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
       let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
