@@ -3156,25 +3156,6 @@ void MainWindow::enableReSimulationToolbar(bool visible)
   }
 }
 
-void MainWindow::updateModel(const QString &modelName)
-{
-  updateModelHelper(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem(), modelName);
-}
-
-void MainWindow::updateModelHelper(LibraryTreeItem *pLibraryTreeItem, const QString &modelName)
-{
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem
-        && !pChildLibraryTreeItem->isSystemLibrary()
-        && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-        && pChildLibraryTreeItem->getModelWidget()) {
-      pChildLibraryTreeItem->getModelWidget()->updateModelIfDependsOn(modelName);
-      updateModelHelper(pChildLibraryTreeItem, modelName);
-    }
-  }
-}
-
 /*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.

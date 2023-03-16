@@ -598,7 +598,7 @@ public:
 
   bool isNewApi();
   QString getModelTextForOMCUndoCommand();
-  void addDependsOnModel(const QString &dependsOnModel) {mDependsOnModelsList.append(dependsOnModel);}
+  void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
 
   void fetchExtendsModifiers(QString extendsClass);
@@ -649,8 +649,6 @@ public:
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
-  void emitUpdateModel();
-  void updateModelIfDependsOn(const QString &modelName);
   ModelInfo createModelInfo() const;
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
@@ -693,15 +691,13 @@ private:
   QStringList mElementsAnnotationsList;
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
+  bool mHasMissingType = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-
-
-
 
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
@@ -725,8 +721,7 @@ private:
   void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
-signals:
-  void updateModel(const QString &modelName);
+  bool dependsOnModel(const QString &modelName);
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
@@ -738,6 +733,7 @@ public slots:
   bool compositeModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
+  void updateModelIfDependsOn(const QString &modelName);
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
 };
