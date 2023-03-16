@@ -592,12 +592,14 @@ algorithm
       list<list<DAE.Exp>> matrix, dmatrix;
       DAE.ComponentRef cref;
 
+    // types that are not differentiated
+    case DAE.BCONST()       then (inExp, inFunctionTree);
+    case DAE.SCONST()       then (inExp, inFunctionTree);
+    case DAE.ENUM_LITERAL() then (inExp, inFunctionTree);
+
     // constants => results in zero
-    case DAE.BCONST(bool=b) then (DAE.BCONST(b), inFunctionTree);
     case DAE.ICONST() then (DAE.ICONST(0), inFunctionTree);
     case DAE.RCONST() then (DAE.RCONST(0.0), inFunctionTree);
-    case DAE.SCONST() then (inExp, inFunctionTree);
-
 
     case DAE.RECORD(path = p, exps = expl, comp = strLst, ty=tp)
       algorithm
