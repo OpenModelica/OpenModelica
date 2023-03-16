@@ -85,6 +85,8 @@ char* omc_wchar_to_multibyte_str(const wchar_t* in_wc_str) {
  * Using (long) unicode absolute path and `_wfopen` on Windows.
  * Using `fopen` on Unix.
  *
+ * Returns NULL on failure
+ *
  * @param filename  File name.
  * @param mode      Kind of access to file.
  * @return FILE*    Pointer to opened file.
@@ -105,12 +107,8 @@ FILE* omc_fopen(const char *filename, const char *mode)
 #else /* unix */
   FILE *f = fopen(filename, mode);
 #endif
-  if (f == NULL) {
-    fprintf(stderr, "Error: omc_fopen() failed to open file %s.\n", filename);
-  }
-  else if (ferror(f)) {
-    perror("omc_fopen() got corrupt file.");
-    f = NULL;
+  if (f == NULL || ferror(f)) {
+    return NULL;
   }
   return f;
 }

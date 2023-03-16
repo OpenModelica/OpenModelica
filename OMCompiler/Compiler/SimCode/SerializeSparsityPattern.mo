@@ -37,6 +37,7 @@ import Util;
 
 function serialize
   input SimCode.SimCode code;
+  output String dummy = "";
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
