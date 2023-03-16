@@ -4405,6 +4405,7 @@ end convertPackageToLibrary;
 function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
+  input String modifier = "";
   input Boolean prettyPrint = false;
   output String result;
 external "builtin";

@@ -315,8 +315,9 @@ end lookupRootClass;
 function instantiateRootClass
   input output InstNode clsNode;
   input InstContext.Type context;
+  input Modifier mod = Modifier.NOMOD();
 algorithm
-  clsNode := instantiate(clsNode, context = context);
+  clsNode := instantiate(clsNode, mod, context = context);
   checkPartialClass(clsNode, context);
 
   insertGeneratedInners(clsNode, InstNode.topScope(clsNode), context);
@@ -324,6 +325,7 @@ end instantiateRootClass;
 
 function instantiate
   input output InstNode node;
+  input Modifier mod = Modifier.NOMOD();
   input InstNode parent = InstNode.EMPTY_NODE();
   input InstContext.Type context;
   input Boolean instPartial = false "Whether to instantiate a partial class or not.";
@@ -331,7 +333,7 @@ algorithm
   node := expand(node);
 
   if instPartial or not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
-    node := instClass(node, Modifier.NOMOD(), NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
+    node := instClass(node, mod, NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
 
