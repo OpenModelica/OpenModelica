@@ -106,7 +106,7 @@ FILE* omc_fopen(const char *filename, const char *mode)
   FILE *f = fopen(filename, mode);
 #endif
   if (f == NULL) {
-    fprintf(stderr, "Error: omc_fopen() failed to open file.\n");
+    fprintf(stderr, "Error: omc_fopen() failed to open file %s.\n", filename);
   }
   else if (ferror(f)) {
     perror("omc_fopen() got corrupt file.");
