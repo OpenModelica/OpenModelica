@@ -1898,6 +1898,10 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
         updateLibraryTreeItem(pLibraryTreeItem->parent());
       }
     }
+    emit modelStateChanged(pLibraryTreeItem->getNameStructure());
+    if (MainWindow::instance()->isNewApi()) {
+      pLibraryTreeItem->deleteLater();
+    }
     return true;
   } else {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
@@ -1938,6 +1942,7 @@ bool LibraryTreeModel::unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryT
     }
   }
   removeLibraryTreeItem(pLibraryTreeItem);
+  pLibraryTreeItem->deleteLater();
   return true;
 }
 
@@ -1975,6 +1980,7 @@ bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool do
   // unload OMSimulator model
   if (!doDelete || OMSProxy::instance()->omsDelete(pLibraryTreeItem->getNameStructure())) {
     removeLibraryTreeItem(pLibraryTreeItem);
+    pLibraryTreeItem->deleteLater();
     return true;
   } else {
     return false;
@@ -2101,16 +2107,18 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
       unloadClassChildren(pLibraryTreeItem->child(i));
       i = 0;  //Restart iteration
     }
-    // make the class non existing
-    pLibraryTreeItem->setNonExisting(true);
-    pLibraryTreeItem->setClassText("");
-    // make the class non expanded
-    pLibraryTreeItem->setExpanded(false);
-    pLibraryTreeItem->removeInheritedClasses();
-    // notify the inherits classes
-    pLibraryTreeItem->emitUnLoaded();
-    addNonExistingLibraryTreeItem(pLibraryTreeItem);
     pLibraryTreeItem->parent()->removeChild(pLibraryTreeItem);
+    if (!MainWindow::instance()->isNewApi()) {
+      // make the class non existing
+      pLibraryTreeItem->setNonExisting(true);
+      pLibraryTreeItem->setClassText("");
+      // make the class non expanded
+      pLibraryTreeItem->setExpanded(false);
+      pLibraryTreeItem->removeInheritedClasses();
+      // notify the inherits classes
+      pLibraryTreeItem->emitUnLoaded();
+      addNonExistingLibraryTreeItem(pLibraryTreeItem);
+    }
     endRemoveRows();
     /* Update the model switcher toolbar button. */
     MainWindow::instance()->updateModelSwitcherMenu(0);
@@ -2347,6 +2355,78 @@ QString LibraryTreeModel::getUniqueTopLevelItemName(QString name, int number)
 }
 
 /*!
+ * \brief LibraryTreeModel::createLibraryTreeItems
+ * Creates all the nested Library items.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    QStringList libs = pOMCProxy->getClassNames(pLibraryTreeItem->getNameStructure(), true, true);
+    if (!libs.isEmpty()) {
+      libs.removeFirst();
+    }
+    LibraryTreeItem *pParentLibraryTreeItem = 0;
+    foreach (QString lib, libs) {
+      /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
+      if (lib.contains("$Code")) {
+        continue;
+      }
+      QString name = StringHandler::getLastWordAfterDot(lib);
+      QString parentName = StringHandler::removeLastWordAfterDot(lib);
+      if (!(pParentLibraryTreeItem && pParentLibraryTreeItem->getNameStructure().compare(parentName) == 0)) {
+        pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
+      }
+      if (pParentLibraryTreeItem) {
+        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
+      }
+    }
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // we only call oms_getElements on the model
+    if (pLibraryTreeItem->isTopLevel()) {
+      oms_element_t** pElements = NULL;
+      if (OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
+        for (int i = 0 ; pElements[i] ; i++) {
+          QString name = QString(pElements[i]->name);
+          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
+        }
+      }
+    } else if (pLibraryTreeItem->getOMSElement()) {
+      if (pLibraryTreeItem->getOMSElement()->elements) {
+        for (int i = 0 ; pLibraryTreeItem->getOMSElement()->elements[i] ; i++) {
+          QString name = QString(pLibraryTreeItem->getOMSElement()->elements[i]->name);
+          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem,
+                                pLibraryTreeItem->getOMSElement()->elements[i]);
+        }
+      }
+      createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
+      createOMSBusConnectorLibraryTreeItems(pLibraryTreeItem);
+      createOMSTLMBusConnectorLibraryTreeItems(pLibraryTreeItem);
+    }
+  } else {
+    qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::unloadFileChildren
+ * Unloads the LibraryTreeItem childrens.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::unloadFileChildren(LibraryTreeItem *pLibraryTreeItem)
+{
+  int i = 0;
+  while (i < pLibraryTreeItem->childrenSize()) {
+    unloadFileChildren(pLibraryTreeItem->child(i));
+    i = 0;  //Restart iteration
+  }
+  unloadFileHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
+}
+
+/*!
  * \brief LibraryTreeModel::libraryTreeItemIndexHelper
  * Helper function for LibraryTreeModel::libraryTreeItemIndex()
  * \param pLibraryTreeItem
@@ -2486,63 +2566,6 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
 }
 
 /*!
- * \brief LibraryTreeModel::createLibraryTreeItems
- * Creates all the nested Library items.
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    QStringList libs = pOMCProxy->getClassNames(pLibraryTreeItem->getNameStructure(), true, true);
-    if (!libs.isEmpty()) {
-      libs.removeFirst();
-    }
-    LibraryTreeItem *pParentLibraryTreeItem = 0;
-    foreach (QString lib, libs) {
-      /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
-      if (lib.contains("$Code")) {
-        continue;
-      }
-      QString name = StringHandler::getLastWordAfterDot(lib);
-      QString parentName = StringHandler::removeLastWordAfterDot(lib);
-      if (!(pParentLibraryTreeItem && pParentLibraryTreeItem->getNameStructure().compare(parentName) == 0)) {
-        pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
-      }
-      if (pParentLibraryTreeItem) {
-        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
-      }
-    }
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    // we only call oms_getElements on the model
-    if (pLibraryTreeItem->isTopLevel()) {
-      oms_element_t** pElements = NULL;
-      if (OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
-        for (int i = 0 ; pElements[i] ; i++) {
-          QString name = QString(pElements[i]->name);
-          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
-        }
-      }
-    } else if (pLibraryTreeItem->getOMSElement()) {
-      if (pLibraryTreeItem->getOMSElement()->elements) {
-        for (int i = 0 ; pLibraryTreeItem->getOMSElement()->elements[i] ; i++) {
-          QString name = QString(pLibraryTreeItem->getOMSElement()->elements[i]->name);
-          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem,
-                                pLibraryTreeItem->getOMSElement()->elements[i]);
-        }
-      }
-      createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
-      createOMSBusConnectorLibraryTreeItems(pLibraryTreeItem);
-      createOMSTLMBusConnectorLibraryTreeItems(pLibraryTreeItem);
-    }
-  } else {
-    qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::createLibraryTreeItemImpl
  * Creates a LibraryTreeItem.
  * \param name
@@ -2584,6 +2607,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
       // load the LibraryTreeItem pixmap
       loadLibraryTreeItemPixmap(pLibraryTreeItem);
     }
+    emit modelStateChanged(nameStructure);
   }
   return pLibraryTreeItem;
 }
@@ -2808,15 +2832,17 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
   unloadHelper(pLibraryTreeItem);
-  // make the class non existing
-  pLibraryTreeItem->setNonExisting(true);
-  pLibraryTreeItem->setClassText("");
-  // make the class non expanded
-  pLibraryTreeItem->setExpanded(false);
-  pLibraryTreeItem->removeInheritedClasses();
-  // notify the inherits classes
-  pLibraryTreeItem->emitUnLoaded();
-  addNonExistingLibraryTreeItem(pLibraryTreeItem);
+  if (!MainWindow::instance()->isNewApi()) {
+    // make the class non existing
+    pLibraryTreeItem->setNonExisting(true);
+    pLibraryTreeItem->setClassText("");
+    // make the class non expanded
+    pLibraryTreeItem->setExpanded(false);
+    pLibraryTreeItem->removeInheritedClasses();
+    // notify the inherits classes
+    pLibraryTreeItem->emitUnLoaded();
+    addNonExistingLibraryTreeItem(pLibraryTreeItem);
+  }
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
 }
 
@@ -2845,22 +2871,6 @@ void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
 {
   unloadHelper(pLibraryTreeItem);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
-  pLibraryTreeItem->deleteLater();
-}
-
-/*!
- * \brief LibraryTreeModel::unloadFileChildren
- * Unloads the LibraryTreeItem childrens.
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::unloadFileChildren(LibraryTreeItem *pLibraryTreeItem)
-{
-  int i = 0;
-  while (i < pLibraryTreeItem->childrenSize()) {
-    unloadFileChildren(pLibraryTreeItem->child(i));
-    i = 0;  //Restart iteration
-  }
-  unloadFileHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
 }
 
 /*!

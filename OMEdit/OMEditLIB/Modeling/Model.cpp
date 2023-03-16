@@ -939,6 +939,10 @@ namespace ModelInstance
       mName = mModelJson.value("name").toString();
     }
 
+    if (mModelJson.contains("missing")) {
+      mMissing = mModelJson.value("missing").toBool();
+    }
+
     if (mModelJson.contains("dims")) {
       mDims.deserialize(mModelJson.value("dims").toObject());
     }
@@ -1196,6 +1200,8 @@ namespace ModelInstance
   void Model::initialize()
   {
     mModelJson = QJsonObject();
+    mName = "";
+    mMissing = false;
     mRestriction = "";
     mpPrefixes = std::make_unique<Prefixes>(this);
     mComment = "";

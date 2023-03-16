@@ -423,7 +423,6 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
       if (pModelInstanceElement->isComponent() && pModelInstanceElement->getModel()) {
         auto pModelInstanceComponent = dynamic_cast<ModelInstance::Component*>(pModelInstanceElement);
         elementIndex++;
-        mpModelWidget->addDependsOnModel(pModelInstanceComponent->getModel()->getName());
         if (pModelInstanceComponent->getModel()->isConnector()) {
           connectorIndex++;
         }
@@ -498,8 +497,8 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
         if (pStartElement) {
           // if a element type is connector then we only get one item in startElementList
           // check the startElementlist
-          // if conditional connector and condition is false then connect with the red cross box
-          if (startElementList.size() < 2 || pStartElement->isExpandableConnector() || !pStartElement->getModelComponent()->getCondition()) {
+          // if conditional connector or condition is false or if type is missing then connect with the red cross box
+          if (startElementList.size() < 2 || pStartElement->isExpandableConnector() || !pStartElement->getModelComponent()->getCondition() || pStartElement->getModel()->isMissing()) {
             pStartConnectorElement = pStartElement;
           } else {
             // look for port from the parent element
@@ -530,8 +529,8 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
         if (pEndElement) {
           // if a element type is connector then we only get one item in endElementList
           // check the endElementList
-          // if conditional connector and condition is false then connect with the red cross box
-          if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelComponent()->getCondition()) {
+          // if conditional connector or condition is false or if type is missing then connect with the red cross box
+          if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelComponent()->getCondition() || pStartElement->getModel()->isMissing()) {
             pEndConnectorElement = pEndElement;
           } else {
             QString endElementName = endElementList.at(1);
@@ -5401,7 +5400,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     createUndoStack();
 
     if (isNewApi()) {
-      connect(this, SIGNAL(updateModel(QString)), MainWindow::instance(), SLOT(updateModel(QString)));
       loadModelInstance(true, ModelInfo());
     } else {
 
@@ -5546,6 +5544,12 @@ QString ModelWidget::getModelTextForOMCUndoCommand()
     oldModelText = "within " % mpLibraryTreeItem->parent()->getNameStructure() % ";\n" % oldModelText;
   }
   return oldModelText;
+}
+
+void ModelWidget::addDependsOnModel(const QString &dependsOnModel)
+{
+  mDependsOnModelsList.append(dependsOnModel);
+  connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), SLOT(updateModelIfDependsOn(QString)), Qt::UniqueConnection);
 }
 
 /*!
@@ -5774,6 +5778,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   mpIconGraphicsView->drawCoordinateSystem();
   mpDiagramGraphicsView->drawCoordinateSystem();
   clearDependsOnModels();
+  disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
   drawModelIconDiagram(mpModelInstance, false, modelInfo);
 }
 
@@ -6676,6 +6681,10 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     // update class text
     pNewLibraryTreeItem->setModelWidget(this);
     pNewLibraryTreeItem->setClassText(modelicaText);
+    // delete the LibraryTreeItem when using NAPI its only needed for Old API
+    if (isNewApi()) {
+      mpLibraryTreeItem->deleteLater();
+    }
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
@@ -6813,7 +6822,7 @@ void ModelWidget::updateModelText()
     mUpdateModelTimer.start();
     if (isNewApi()) {
       // announce the change.
-      emitUpdateModel();
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
     }
   }
 #if !defined(WITHOUT_OSG)
@@ -7725,14 +7734,15 @@ void ModelWidget::processPendingModelUpdate()
   }
 }
 
-void ModelWidget::emitUpdateModel()
-{
-  emit updateModel(mpLibraryTreeItem->getNameStructure());
-}
-
+/*!
+ * \brief ModelWidget::updateModelIfDependsOn
+ * Updates the model if it depends on modelName.\n
+ * Slot activated when modelStateChanged SIGNAL of LibraryTreeModel is raised.
+ * \param modelName
+ */
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
-  if (mDependsOnModelsList.contains(modelName)) {
+  if (dependsOnModel(modelName)) {
     reDrawModelWidget(createModelInfo());
   }
 }
@@ -8775,6 +8785,23 @@ void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
       ModelWidget::removeInheritedClasses(pChildLibraryTreeItem);
     }
   }
+}
+
+/*!
+ * \brief ModelWidget::dependsOnModel
+ * Checks if modelName exists in dependsOnModel list
+ * We check for complete name OR if the name ends with same name.
+ * \param modelName
+ * \return
+ */
+bool ModelWidget::dependsOnModel(const QString &modelName)
+{
+  foreach (QString model, mDependsOnModelsList) {
+    if ((model.compare(modelName) == 0) || (StringHandler::getLastWordAfterDot(modelName).compare(StringHandler::getLastWordAfterDot(model)) == 0)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /*!

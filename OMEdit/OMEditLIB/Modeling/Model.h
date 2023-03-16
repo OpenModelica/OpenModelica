@@ -555,6 +555,7 @@ private:
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
+    bool isMissing() const {return mMissing;}
     QString getRestriction() const {return mRestriction;}
     Modifier getModifier() const {return mModifier;}
     bool isConnector() const;
@@ -582,6 +583,7 @@ private:
     Element *mpParentElement;
     QJsonObject mModelJson;
     QString mName;
+    bool mMissing;
     Dimensions mDims;
     QString mRestriction;
     std::unique_ptr<Prefixes> mpPrefixes;
