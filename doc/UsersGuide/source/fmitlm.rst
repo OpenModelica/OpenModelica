@@ -21,10 +21,15 @@ To export the FMU use the OpenModelica command
 or `buildModelFMU(ModelName)` <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
 from command line interface, OMShell, OMNotebook or MDT.
 The export FMU command is also integrated with OMEdit.
-Select `File > Export > FMU` the FMU package is generated in the
-current directory of omc. You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the
+Select `File > Export > FMU`. Or alternatively, right click a model to obtain the export command.
+The FMU package is generated in the current directory of omc. The location of the generated FMU is indicated in the Messages Browser.
+You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the
 current location. You can set which version of FMI to export through
 OMEdit settings, see section :ref:`omedit-options-fmi`.
+
+.. figure :: media/fmiExport.png
+
+  FMI Export.
 
 To export the bouncing ball example to an FMU, use the following commands:
 
