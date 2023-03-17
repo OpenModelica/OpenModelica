@@ -89,7 +89,7 @@ public function getEqSystemDAEmode "Run the equation system pipeline."
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.Variables globalKnownVars;
-  Integer numCheckpoints;
+  Integer numCheckpoints, oldSize;
   BackendDAE.EqSystem eqSyst;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
@@ -121,7 +121,9 @@ algorithm
     end if;
 
     if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
+      oldSize := BackendDAEUtil.daeSize(dae);
       dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
+      execStat("evaluateOutputsOnly (n=" + intString(oldSize) + " -> n=" + intString(BackendDAEUtil.daeSize(dae)) + ")");
     end if;
 
     if Flags.isSet(Flags.BLT_DUMP) then
