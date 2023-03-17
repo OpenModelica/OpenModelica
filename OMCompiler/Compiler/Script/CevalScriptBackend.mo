@@ -3085,8 +3085,8 @@ algorithm
     case ("convertPackageToLibrary", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
       then convertPackageToLibrary(classpath, path, str);
 
-    case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
-      then NFApi.getModelInstance(classpath, b);
+    case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
+      then NFApi.getModelInstance(classpath, str, b);
 
     case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then NFApi.getModelInstanceIcon(classpath, b);

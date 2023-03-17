@@ -15,7 +15,7 @@ loadString("
   end M;
 ");
 
-getModelInstance(M, true);
+getModelInstance(M, prettyPrint = true);
 getErrorString();
 
 // Result:

@@ -35,6 +35,7 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import DAE;
+import NFModifier.Modifier;
 
 protected
 
@@ -47,7 +48,6 @@ import Expression = NFExpression;
 import NFClass.Class;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
-import NFModifier.Modifier;
 import NFModifier.ModifierScope;
 import Equation = NFEquation;
 import NFType.Type;
@@ -82,6 +82,7 @@ import NFFlatten.FunctionTree;
 import NFPrefixes.{Variability};
 import NFSections.Sections;
 import Package = NFPackage;
+import Parser;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
@@ -850,6 +851,7 @@ end InstanceTree;
 
 function getModelInstance
   input Absyn.Path classPath;
+  input String modifier;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
@@ -859,14 +861,16 @@ protected
   InstanceTree inst_tree;
   InstSettings inst_settings;
   String str;
+  Modifier mod;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
   context := InstContext.set(context, NFInstContext.INSTANCE_API);
   inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false);
 
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  mod := parseModifier(modifier, top);
   cls_node := Inst.lookupRootClass(classPath, top, context);
-  cls_node := Inst.instantiateRootClass(cls_node, context);
+  cls_node := Inst.instantiateRootClass(cls_node, context, mod);
   inst_tree := buildInstanceTree(cls_node);
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
   Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
@@ -898,6 +902,32 @@ algorithm
   json := dumpJSONInstanceIcon(cls_node);
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstanceIcon;
+
+function parseModifier
+  input String modifierValue;
+  input InstNode scope;
+  output Modifier outMod;
+protected
+  Absyn.Modification amod;
+  SCode.Mod smod;
+algorithm
+  try
+    // stringMod parses a single modifier ("x(start = 1) = 2"), but here we want
+    // to parse just a class modifier ("(x = 1, y = 2)"). So we add a dummy name
+    // to the string and then extract the modifier from the ElementArg.
+    Absyn.ElementArg.MODIFICATION(modification = SOME(amod)) :=
+      Parser.stringMod("dummy" + modifierValue);
+
+    // Then translate the Absyn mod to a Modifier, using the given scope (it
+    // doesn't matter much which scope it is, it just needs some scope or the
+    // instantiation will fail later).
+    smod := AbsynToSCode.translateMod(SOME(amod),
+      SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), AbsynUtil.dummyInfo);
+    outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope);
+  else
+    outMod := Modifier.NOMOD();
+  end try;
+end parseModifier;
 
 function buildInstanceTree
   input InstNode node;

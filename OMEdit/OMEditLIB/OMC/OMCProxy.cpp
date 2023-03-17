@@ -3417,10 +3417,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, QString(), prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, QString(), prettyPrint);
   }
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
