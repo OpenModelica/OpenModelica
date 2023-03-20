@@ -2488,7 +2488,7 @@ algorithm
         e1 := instExp(absynExp.exp, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
-        Expression.UNARY(op, e1);
+        Expression.makeUnary(op, e1);
 
     case Absyn.Exp.LBINARY()
       algorithm
