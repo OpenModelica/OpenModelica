@@ -836,6 +836,7 @@ end getInheritedClasses;
 uniontype InstanceTree
   record COMPONENT
     InstNode node;
+    Option<Binding> binding;
     InstanceTree cls;
   end COMPONENT;
 
@@ -1035,11 +1036,14 @@ function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
   output InstanceTree tree;
 protected
-  InstNode node, cls_node;
+  InstNode node, inner_node, cls_node;
   InstanceTree cls;
+  Binding binding;
+  Option<Binding> opt_binding;
 algorithm
   node := Mutable.access(compNode);
-  cls_node := InstNode.classScope(InstNode.resolveInner(node));
+  inner_node := InstNode.resolveInner(node);
+  cls_node := InstNode.classScope(inner_node);
 
   if InstNode.isEmpty(cls_node) then
     cls := InstanceTree.EMPTY();
@@ -1047,7 +1051,14 @@ algorithm
     cls := buildInstanceTree(cls_node);
   end if;
 
-  tree := InstanceTree.COMPONENT(node, cls);
+  if InstNode.isComponent(inner_node) then
+    binding := Component.getBinding(InstNode.component(inner_node));
+    opt_binding := if Binding.isBound(binding) then SOME(binding) else NONE();
+  else
+    opt_binding := NONE();
+  end if;
+
+  tree := InstanceTree.COMPONENT(node, opt_binding, cls);
 end buildInstanceTreeComponent;
 
 function dumpJSONInstanceTree
@@ -1189,7 +1200,7 @@ algorithm
       j := match e
         case InstanceTree.CLASS(isExtends = true) then dumpJSONExtends(e, isDeleted);
         case InstanceTree.CLASS() then dumpJSONReplaceableClass(e.node, scope);
-        case InstanceTree.COMPONENT() then dumpJSONComponent(e.node, e.cls);
+        case InstanceTree.COMPONENT() then dumpJSONComponent(e.node, e.binding, e.cls);
         else JSON.makeNull();
       end match;
 
@@ -1275,6 +1286,7 @@ end dumpJSONReplaceableClass;
 
 function dumpJSONComponent
   input InstNode component;
+  input Option<Binding> originalBinding;
   input InstanceTree cls;
   output JSON json = JSON.makeNull();
 protected
@@ -1326,7 +1338,7 @@ algorithm
 
         is_constant := comp.attributes.variability <= Variability.PARAMETER;
         if Binding.isExplicitlyBound(comp.binding) then
-          json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
+          json := JSON.addPair("value", dumpJSONBinding(comp.binding, originalBinding, evaluate = is_constant), json);
         end if;
 
         if Binding.isBound(comp.condition) then
@@ -1429,12 +1441,26 @@ end dumpJSONTypeName;
 
 function dumpJSONBinding
   input Binding binding;
+  input Option<Binding> originalBinding = NONE();
   input Boolean evaluate = true;
   output JSON json = JSON.makeNull();
 protected
   Expression exp;
+  Binding bind = binding;
 algorithm
-  exp := Binding.getExp(binding);
+  // If the binding has been evaluated by the frontend, try to use the original
+  // binding that we saved when building the instance tree instead.
+  if isSome(originalBinding) and Binding.isEvaluated(binding) then
+    try
+      // Instantiating the binding should be enough, we don't really care about
+      // what the type of it is.
+      bind := Inst.instBinding(Util.getOption(originalBinding),
+        InstContext.set(NFInstContext.RELAXED, NFInstContext.INSTANCE_API));
+    else
+    end try;
+  end if;
+
+  exp := Binding.getExp(bind);
   exp := Expression.map(exp, Expression.expandSplitIndices);
   json := JSON.addPair("binding", Expression.toJSON(exp), json);
 
