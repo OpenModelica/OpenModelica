@@ -1233,7 +1233,7 @@ algorithm
     case ("translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_})
       equation
         (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
-        (b,outCache) = translateModel(outCache, inEnv, className, filenameprefix, true, SOME(simSettings));
+        (b,outCache) = translateModel(outCache, inEnv, className, filenameprefix, true, true, SOME(simSettings));
       then
         Values.BOOL(b);
 
@@ -3183,7 +3183,7 @@ algorithm
 end getAdjacencyMatrix;
 
 /* -------------------------------------------------------------------
-                         RUN OLD FRONTEND
+                         RUN FRONTEND
    ------------------------------------------------------------------- */
 public function runFrontEnd
   input output FCore.Cache cache;
@@ -3382,22 +3382,22 @@ algorithm
   end if;
 end runFrontEndWorkNF;
 
-protected function translateModel " author: x02lucpo
- translates a model into cpp code and writes also a makefile"
+public function translateModel
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input String inFileNamePrefix;
-  input Boolean addDummy "if true, add a dummy state";
+  input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
+  input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Boolean success;
   output FCore.Cache outCache;
-  output list<String> outStringLst;
+  output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outStringLst,outFileDir,resultValues):=
-  match (inCache,inEnv,className,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  (outCache,outLibs,outFileDir,resultValues):=
+  match (inCache,inEnv,className,inFileNamePrefix,inSimSettingsOpt)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -3408,15 +3408,25 @@ algorithm
       String commandLineOptions;
       list<String> args;
       Boolean haveAnnotation;
+      SimCode.SimulationSettings simSettings;
+      GlobalScript.SimulationOptions defaulSimOpt;
 
-    case (cache,env,_,fileNamePrefix,_,_)
+    case (cache,env,_,fileNamePrefix,_)
       algorithm
+        if isSome(inSimSettingsOpt)  then
+          SOME(simSettings) := inSimSettingsOpt;
+        else
+          defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
+          simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+        end if;
+
         if Config.ignoreCommandLineOptionsAnnotation() then
           (success, cache, libs, file_dir, resultValues) :=
-            callTranslateModel(cache,env,className,fileNamePrefix,inSimSettingsOpt);
+            callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
         else
           // read the __OpenModelica_commandLineOptions
-          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT
+                          ("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
           haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
           // backup the flags.
           flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
@@ -3428,7 +3438,7 @@ algorithm
             end if;
 
             (success, cache, libs, file_dir, resultValues) :=
-              callTranslateModel(cache,env,className,fileNamePrefix,inSimSettingsOpt);
+              callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
             // reset to the original flags
             FlagsUtil.saveFlags(flags);
           else
@@ -3442,70 +3452,6 @@ algorithm
   end match;
 end translateModel;
 
-protected function translateLabeledModel " author: Fatima
- translates a labeled model into cpp code and writes also a makefile"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
-  input Boolean addDummy "if true, add a dummy state";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  input list<Absyn.NamedArg> inLabelstoCancel;
-  output FCore.Cache outCache;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  (outCache,outStringLst,outFileDir,resultValues):=
-  match (inCache,inEnv,className,inFileNamePrefix,addDummy,inSimSettingsOpt,inLabelstoCancel)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      BackendDAE.BackendDAE indexed_dlow;
-      list<String> libs;
-      String file_dir, fileNamePrefix;
-      Absyn.Program p;
-      Flags.Flag flags;
-      String commandLineOptions;
-      list<String> args;
-      Boolean haveAnnotation;
-      list<Absyn.NamedArg> labelstoCancel;
-
-    case (cache,env,_,fileNamePrefix,_,_,labelstoCancel)
-      algorithm
-
-        if Config.ignoreCommandLineOptionsAnnotation() then
-          (true, cache, libs, file_dir, resultValues) :=
-            SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
-        else
-          // read the __OpenModelica_commandLineOptions
-          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-          // backup the flags.
-          flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-          try
-            // apply if there are any new flags
-            if haveAnnotation then
-              args := System.strtok(commandLineOptions, " ");
-              FlagsUtil.readArgs(args);
-            end if;
-
-            (true, cache, libs, file_dir, resultValues) :=
-              SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
-            // reset to the original flags
-            FlagsUtil.saveFlags(flags);
-          else
-            FlagsUtil.saveFlags(flags);
-            fail();
-          end try;
-        end if;
-      then
-        (cache,libs,file_dir,resultValues);
-
-  end match;
-end translateLabeledModel;
-
 protected function callTranslateModel
 "Call the main translate function. This function
  distinguish between the modes. Now between DAEMode and ODEmode.
@@ -3514,6 +3460,8 @@ protected function callTranslateModel
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input String inFileNamePrefix;
+  input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
+  input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Boolean success;
   output FCore.Cache outCache;
@@ -3528,8 +3476,8 @@ algorithm
     success := true;
   else
     (success, outCache, outStringLst, outFileDir, resultValues) :=
-    SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),inCache,inEnv,
-      className,inFileNamePrefix,true,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+    SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
+      className, inFileNamePrefix, runBackend, runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
   end if;
 end callTranslateModel;
 
@@ -4033,7 +3981,8 @@ algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
+                                            cache, inEnv, className, filenameprefix, true, true, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4229,7 +4178,8 @@ protected function translateModelXML " author: Alachew
 protected
   Boolean success;
 algorithm
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt);
+  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
+                    fileNamePrefix, true, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
 
@@ -5625,7 +5575,7 @@ algorithm
         (cache,simSettings) := calculateSimulationSettings(cache, values);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
-        (success,cache,libsAndLibDirs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
+        (success,cache,libsAndLibDirs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix, true, true, SOME(simSettings));
         //cname_str = AbsynUtil.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);

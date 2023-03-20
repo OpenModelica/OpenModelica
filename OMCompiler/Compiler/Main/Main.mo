@@ -54,7 +54,6 @@ import ClockIndexes;
 import Config;
 import Corba;
 import DAE;
-import DAEDump;
 import DAEUtil;
 import Debug;
 import Dump;
@@ -399,15 +398,16 @@ algorithm
     local
       Absyn.Program p, pLibs;
       DAE.DAElist d;
-      String s,str,f;
+      String flatString,str,f;
       list<String>  libs;
       Absyn.Path cname;
-      Boolean silent,notsilent;
+      Boolean runBackend, runSilent;
       GlobalScript.Statements stmts;
       FCore.Cache cache;
       FCore.Graph env;
       DAE.FunctionTree funcs;
-      list<Absyn.Class> cls;
+      String cls, fileNamePrefix;
+      SimCode.SimulationSettings sim_settings;
 
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
@@ -439,35 +439,60 @@ algorithm
         execStat("Parsed file");
 
         // Instantiate the program.
-        (cache, env, d, cname, s) := instantiate();
-        p := SymbolTable.getAbsyn();
+        // (cache, env, d, cname, flatString) := instantiate();
 
-        d := if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
+        cls := Config.classToInstantiate();
+        // If no class was explicitly specified, instantiate the last class in the
+        // program. Otherwise, instantiate the given class name.
+        cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
+        fileNamePrefix := Util.stringReplaceChar(AbsynUtil.pathString(cname), ".", "_");
 
-        funcs := FCore.getFunctionTree(cache);
+        runBackend := Config.simulationCg() or Config.simulation();
+        runSilent := Config.silent();
 
-        Print.clearBuf();
-        execStat("Transformations before Dump");
-        if stringEmpty(s) and not Config.silent() then
-          s := DAEDump.dumpStr(d, funcs);
-          execStat("DAEDump done");
-        end if;
-        Print.printBuf(s);
-        if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
-          DAEDump.dumpGraphviz(d);
-        end if;
-        execStat("Misc Dump");
+        // If accepting parModelica create a slightly different default settings.
+        // Temporary solution for now since Intel OpenCL dll calls hang.
+        // sim_settings := if Config.acceptParModelicaGrammar() then
+        //   SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6, "dassl", "", "plt", ".*", "") else
+        //   SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
 
-        // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d := if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
+        (_ , _, _, _, _) := CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+                                                                                fileNamePrefix, runBackend, runSilent, NONE());
 
-        if not Config.silent() then
-          print(Print.getString());
-        end if;
-        execStat("Transformations before backend");
 
-        // Run the backend.
-        optimizeDae(cache, env, d, p, cname);
+
+
+
+
+
+        // p := SymbolTable.getAbsyn();
+
+        // d := if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
+
+        // funcs := FCore.getFunctionTree(cache);
+
+        // Print.clearBuf();
+        // execStat("Transformations before Dump");
+        // if stringEmpty(flatString) and not Config.silent() then
+        //   flatString := DAEDump.dumpStr(d, funcs);
+        //   execStat("DAEDump done");
+        // end if;
+        // Print.printBuf(flatString);
+        // if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
+        //   DAEDump.dumpGraphviz(d);
+        // end if;
+        // execStat("Misc Dump");
+
+        // // Do any transformations required before going into code generation, e.g. if-equations to expressions.
+        // d := if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
+
+        // if not Config.silent() then
+        //   print(Print.getString());
+        // end if;
+        // execStat("Transformations before backend");
+
+        // // Run the backend.
+        // optimizeDae(cache, env, d, p, cname);
         // Show any errors or warnings if there are any!
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then ();
