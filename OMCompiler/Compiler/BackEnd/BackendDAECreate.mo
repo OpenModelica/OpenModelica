@@ -131,15 +131,15 @@ algorithm
   (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
 
-  vars := BackendVariable.listVar(varlst);
   globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
   localKnownVars := BackendVariable.emptyVars();
   extVars := BackendVariable.listVar(extvarlst);
   aliasVars := BackendVariable.emptyVars();
   if Flags.isSet(Flags.VECTORIZE) then
     (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
-    vars := BackendVariable.listVar(varlst);
   end if;
+  vars := BackendVariable.listVar(varlst);
+
   // handle alias equations
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
   (ieqns, eqns, reqns, extAliasVars, globalKnownVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, globalKnownVars, extVars);
