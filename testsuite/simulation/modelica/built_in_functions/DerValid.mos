@@ -1,17 +1,17 @@
-// name: DerInvalid
+// name: DerValid
 // keywords: der
 // status: correct
-// teardown_command:
+// teardown_command: rm -rf DerValid DerValid_* DerValid.{c,libs,log,makefile,o}
 // cflags:
 //
 // Tests the builtin der operator.
 //
 
 loadString("
-model DerInvalid
+model DerValid
   Real x(start=1, fixed=true);
   Real y;
-  parameter Boolean b = false;
+  parameter Boolean b = true;
   parameter Real ts = 0.1;
 equation
   if b then
@@ -22,15 +22,13 @@ equation
     end when;
   end if;
   y = der(x);
-end DerInvalid;
+end DerValid;
 "); getErrorString();
 
-buildModel(DerInvalid); getErrorString();
+buildModel(DerValid); getErrorString();
 
 // Result:
 // ""
-// {"",""}
-// "[<interactive>:3:3-3:30:writable] Error: Argument ‘x‘ of der is not differentiable.
-// Error: pre-optimization module expandDerOperator (simulation) failed.
+//{"DerValid","DerValid_init.xml"}
 // "
 // end Result

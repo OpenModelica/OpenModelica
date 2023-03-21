@@ -6,6 +6,7 @@ Compare.mos \
 Delay.mos \
 Delta.mos \
 DerInvalid.mos \
+DerValid.mos \
 dertest.mos \
 DummyDerMatching.mos \
 Epidemics1.mos \
