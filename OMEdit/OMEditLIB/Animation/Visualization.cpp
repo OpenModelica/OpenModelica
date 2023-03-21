@@ -1290,12 +1290,6 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName, options.get());
       if (node.valid())
       {
-        osg::ref_ptr<osg::Material> material = new osg::Material();
-        material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
-
-        osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
-        ss->setAttribute(material.get());
-
         osg::ref_ptr<CADFile> cad = new CADFile(node.get());
 
         transf->addChild(cad.get());
@@ -1316,16 +1310,9 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
     else
     { //geode with shape drawable
       osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
-      shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
       osg::ref_ptr<osg::Geode> geode = new osg::Geode();
       geode->addDrawable(shapeDraw.get());
-
-      osg::ref_ptr<osg::Material> material = new osg::Material();
-      material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
-
-      osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
-      ss->setAttribute(material.get());
 
       transf->addChild(geode.get());
     }
@@ -1351,24 +1338,13 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
     transf->addCullCallback(_atCullCallback.get());
 
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw0 = new osg::ShapeDrawable(); // shaft cylinder
-    shapeDraw0->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw1 = new osg::ShapeDrawable(); // first head cone
-    shapeDraw1->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw2 = new osg::ShapeDrawable(); // second head cone
-    shapeDraw2->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
     geode->addDrawable(shapeDraw0.get());
     geode->addDrawable(shapeDraw1.get());
     geode->addDrawable(shapeDraw2.get());
-
-    osg::ref_ptr<osg::Material> material = new osg::Material();
-    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
-
-    osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
-    ss->setAttribute(material.get());
 
     transf->addChild(geode.get());
 
@@ -1424,7 +1400,7 @@ void UpdateVisitor::apply(osg::MatrixTransform& node)
  */
 void UpdateVisitor::apply(osg::Geode& node)
 {
-  //std::cout<<"GEODE "<< _visualizer->_id<<" "<<_visualizer->getTransparency()<<std::endl;
+  //std::cout<<"GEODE "<<_visualizer->_id<<std::endl;
   switch (_visualizer->getStateSetAction())
   {
   case StateSetAction::update:
@@ -1555,7 +1531,7 @@ void UpdateVisitor::apply(osg::Geode& node)
   case StateSetAction::modify:
    {
      //apply texture
-     applyTexture(node.getOrCreateStateSet(), _visualizer->getTextureImagePath());
+     applyTexture(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTextureImagePath().get());
      break;
    }//end case action modify
 
@@ -1567,10 +1543,10 @@ void UpdateVisitor::apply(osg::Geode& node)
   if (_changeMaterialProperties) {
     if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0) {
       //set color
-      changeColor(node.getOrCreateStateSet(), _visualizer->getColor());
+      changeColor(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getColor().get());
 
       //set transparency
-      changeTransparency(node.getOrCreateStateSet(), _visualizer->getTransparency());
+      changeTransparency(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTransparency().get());
     }
   }
 

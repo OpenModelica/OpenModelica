@@ -505,7 +505,7 @@ public
 
   function updateVariability
     "Updates the variability based on the type of the attributes' owner (e.g.
-     Integer is implicitly discrete."
+     Integer is implicitly discrete)."
     input output Attributes attr;
     input Class cls;
     input InstNode clsNode;

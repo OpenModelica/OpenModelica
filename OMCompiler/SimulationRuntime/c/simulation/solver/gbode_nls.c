@@ -490,7 +490,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
-      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian.");
+      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g.", gbData->time);
       set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10, 100*DBL_EPSILON);
       solved = solveNLS(data, threadData, nlsData);
       if (!solved) {

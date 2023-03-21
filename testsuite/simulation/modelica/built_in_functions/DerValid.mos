@@ -1,0 +1,34 @@
+// name: DerValid
+// keywords: der
+// status: correct
+// teardown_command: rm -rf DerValid DerValid_* DerValid.{c,libs,log,makefile,o}
+// cflags:
+//
+// Tests the builtin der operator.
+//
+
+loadString("
+model DerValid
+  Real x(start=1, fixed=true);
+  Real y;
+  parameter Boolean b = true;
+  parameter Real ts = 0.1;
+equation
+  if b then
+    der(x) = -x;
+  else
+    when sample(ts,ts) then
+      x = pre(x)*exp(-ts);
+    end when;
+  end if;
+  y = der(x);
+end DerValid;
+"); getErrorString();
+
+buildModel(DerValid); getErrorString();
+
+// Result:
+// true
+// ""
+//{"DerValid","DerValid_init.xml"}
+// ""

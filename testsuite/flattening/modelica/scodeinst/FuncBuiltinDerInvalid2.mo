@@ -7,11 +7,11 @@
 //
 
 model FuncBuiltinDerInvalid2
-  Real x = 0;
+  Integer x = 0;
   Real y = der(x);
 equation
   when initial() then
-    x = 1.0;
+    x = 1;
   end when;
 end FuncBuiltinDerInvalid2;
 

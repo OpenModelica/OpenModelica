@@ -2155,10 +2155,10 @@ algorithm
       then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(), false);
 
     case Absyn.C_EXPRESSION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE(), false);
+      then DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION());
 
     case Absyn.C_MODIFICATION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(), false);
+      then DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION());
   end match;
 end elabCodeType;
 

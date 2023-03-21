@@ -339,11 +339,11 @@ void ViewerWidget::changeVisualizerTransparency()
     }
     bool ok;
     const int min = 0, max = 100, step = 1; // Unit: [%]
-    const int currentTransparency = mpSelectedVisualizer->getTransparency() * (max - min) + min;
+    const int currentTransparency = mpSelectedVisualizer->getVisualProperties()->getTransparency().get() * (max - min) + min;
     const int transparency = QInputDialog::getInt(this, Helper::chooseTransparency, Helper::percentageLabel,
                                                   currentTransparency, min, max, step, &ok);
     if (ok) { // Picked transparency is not OK if the user cancels the dialog
-      mpSelectedVisualizer->setTransparency((float) (transparency - min) / (max - min));
+      mpSelectedVisualizer->getVisualProperties()->getTransparency().set((float) (transparency - min) / (max - min));
       mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
@@ -366,7 +366,7 @@ void ViewerWidget::makeVisualizerInvisible()
         return;
       }
     }
-    mpSelectedVisualizer->setTransparency(1.0);
+    mpSelectedVisualizer->getVisualProperties()->getTransparency().set(1.0);
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
@@ -388,10 +388,10 @@ void ViewerWidget::changeVisualizerColor()
         return;
       }
     }
-    const QColor currentColor = mpSelectedVisualizer->getColor();
+    const QColor currentColor = mpSelectedVisualizer->getVisualProperties()->getColor().get();
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
-      mpSelectedVisualizer->setColor(color);
+      mpSelectedVisualizer->getVisualProperties()->getColor().set(color);
       mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
@@ -414,7 +414,7 @@ void ViewerWidget::applyCheckerTexture()
         return;
       }
     }
-    mpSelectedVisualizer->setTextureImagePath(":/Resources/bitmaps/check.png");
+    mpSelectedVisualizer->getVisualProperties()->getTextureImagePath().set(":/Resources/bitmaps/check.png");
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
@@ -440,7 +440,7 @@ void ViewerWidget::applyCustomTexture()
     const QString fileName = StringHandler::getOpenFileName(this, QString("%1 – %2").arg(Helper::applicationName).arg(Helper::chooseFile),
                                                             (QString*) currentFileName, Helper::bitmapFileTypes, nullptr);
     if (!fileName.isEmpty()) { // Picked file name is empty if the user cancels the dialog
-      mpSelectedVisualizer->setTextureImagePath(fileName.toStdString());
+      mpSelectedVisualizer->getVisualProperties()->getTextureImagePath().set(fileName.toStdString());
       mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
@@ -463,7 +463,7 @@ void ViewerWidget::removeTexture()
         return;
       }
     }
-    mpSelectedVisualizer->setTextureImagePath("");
+    mpSelectedVisualizer->getVisualProperties()->getTextureImagePath().set("");
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
   }
@@ -476,8 +476,8 @@ void ViewerWidget::removeTexture()
 void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
 {
   for (AbstractVisualizerObject& visualizer : mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjects()) {
-    visualizer.setTransparency(0.0);
-    visualizer.setTextureImagePath("");
+    visualizer.getVisualProperties()->getTransparency().reset();
+    visualizer.getVisualProperties()->getTextureImagePath().reset();
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(visualizer);
   }
 }

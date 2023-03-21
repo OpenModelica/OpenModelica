@@ -12,6 +12,8 @@ GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
 GetModelInstanceBinding2.mos \
+GetModelInstanceBinding3.mos \
+GetModelInstanceBinding4.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \
@@ -41,6 +43,7 @@ GetModelInstanceMissingClass2.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceMod3.mos \
+GetModelInstanceMod4.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \

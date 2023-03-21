@@ -1,0 +1,105 @@
+// name: GetModelInstanceMod4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type MyReal = Real;
+
+  model A
+    Real x;
+    replaceable Real y;
+  end A;
+
+  model M
+    A a(x = 1, y = 2);
+    Real z;
+  end M;
+");
+
+getModelInstance(M, modifier = "(a(redeclare MyReal y = 4, x = 3), z = 5)", prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 3
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"y\",
+//             \"type\": {
+//               \"name\": \"MyReal\",
+//               \"restriction\": \"type\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": \"Real\"
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 2,
+//                 \"columnEnd\": 21
+//               }
+//             },
+//             \"value\": {
+//               \"binding\": 4
+//             },
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 7,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"modifiers\": {
+//         \"x\": \"1\",
+//         \"y\": \"2\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"value\": {
+//         \"binding\": 5
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 9,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 12,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

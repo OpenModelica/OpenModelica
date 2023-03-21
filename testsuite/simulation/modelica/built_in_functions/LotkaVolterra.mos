@@ -2,14 +2,14 @@
 // keywords: der
 // status: correct
 // teardown_command: rm -rf LotkaVolterra_* LotkaVolterra LotkaVolterra.exe LotkaVolterra.cpp LotkaVolterra.makefile LotkaVolterra.libs LotkaVolterra.log output.log
-// 
-//  
+//
+//
 // Drmodelica: 15.4.1 Population Dynamics (p. 556) Not in the notebook
 // cflags: -d=-newInst
-// 
+//
 loadFile("LotkaVolterra.mo");
 simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=300, tolerance=1e-5); // 2 intervals == 3 values
-echo(false); // turns of output 
+echo(false); // turns of output
 //size:=readSimulationResultSize("LotkaVolterra_res.mat");
 //res:=readSimulationResult("LotkaVolterra_res.mat",{rabbits,foxes},size);
 decimals := 10.0;
@@ -27,7 +27,7 @@ x2:=floor(x2);
 y2:=floor(y2);
 echo(true); // turns on output
 x1/decimals; // rounded value to 3 digits
-x2/decimals; 
+x2/decimals;
 y1/decimals;
 y2/decimals;
 // dymola values, differs a bit.
