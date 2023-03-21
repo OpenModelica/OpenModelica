@@ -1,0 +1,101 @@
+// name: GetModelInstanceBinding4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    parameter Integer n = 0;
+    parameter Real[:, 2] x = zeros(n, 2);
+  end A;
+
+  model M
+    A a(n = 0);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"n\",
+//             \"type\": \"Integer\",
+//             \"modifiers\": \"0\",
+//             \"value\": {
+//               \"binding\": 0
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \":\",
+//                 \"2\"
+//               ],
+//               \"typed\": [
+//                 \"0\",
+//                 \"2\"
+//               ]
+//             },
+//             \"modifiers\": \"zeros(n, 2)\",
+//             \"value\": {
+//               \"binding\": {
+//                 \"$kind\": \"call\",
+//                 \"name\": \"fill\",
+//                 \"arguments\": [
+//                   0,
+//                   0,
+//                   2
+//                 ]
+//               },
+//               \"value\": [
+//
+//               ]
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"modifiers\": {
+//         \"n\": \"0\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
