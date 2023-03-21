@@ -28,7 +28,7 @@ end DerValid;
 buildModel(DerValid); getErrorString();
 
 // Result:
+// true
 // ""
 //{"DerValid","DerValid_init.xml"}
-// "
-// end Result
+// ""
