@@ -3,16 +3,44 @@
 // cflags: -d=-newInst
 
 loadString("
-model M
-equation
-  connect(c1[1],c2);
-  connect(c1,c2);
-end M;
+  model M
+  equation
+    connect(c1[1],c2);
+    connect(c1,c2);
+  end M;
 ");
 deleteConnection(c1[1],c2,M);
 list();
 deleteConnection(c1,c2,M);
 list();
+
+deleteClass(M); getErrorString();
+
+loadString("
+  model M
+  equation
+    connect(c1[1],c2);
+    for i in 1:n-1 loop
+      connect(c3[i],c4[i+1]);
+      for j in n*2:n loop
+        connect(c5[j],c6[i+1]);
+      end for;
+      connect(c2[i],c3[i+1]);
+    end for;
+    connect(c1,c2);
+  end M;
+");
+deleteConnection(c1[1],c2,M);
+list();
+deleteConnection(c3[i],c4[i+1],M);
+list();
+deleteConnection(c5[j],c6[i+1],M);
+list();
+deleteConnection(c1,c2,M);
+list();
+deleteConnection(c2[i],c3[i + 1],M);
+list();
+
 
 // Result:
 // true
@@ -20,6 +48,52 @@ list();
 // "model M
 // equation
 //   connect(c1, c2);
+// end M;"
+// Ok
+// "model M
+// equation
+// 
+// end M;"
+// true
+// ""
+// true
+// Ok
+// "model M
+// equation
+//   for i in 1:n - 1 loop
+//     connect(c3[i], c4[i + 1]);
+//     for j in n*2:n loop
+//       connect(c5[j], c6[i + 1]);
+//     end for;
+//     connect(c2[i], c3[i + 1]);
+//   end for;
+//   connect(c1, c2);
+// end M;"
+// Ok
+// "model M
+// equation
+//   for i in 1:n - 1 loop
+//     for j in n*2:n loop
+//       connect(c5[j], c6[i + 1]);
+//     end for;
+//     connect(c2[i], c3[i + 1]);
+//   end for;
+//   connect(c1, c2);
+// end M;"
+// Ok
+// "model M
+// equation
+//   for i in 1:n - 1 loop
+//     connect(c2[i], c3[i + 1]);
+//   end for;
+//   connect(c1, c2);
+// end M;"
+// Ok
+// "model M
+// equation
+//   for i in 1:n - 1 loop
+//     connect(c2[i], c3[i + 1]);
+//   end for;
 // end M;"
 // Ok
 // "model M
