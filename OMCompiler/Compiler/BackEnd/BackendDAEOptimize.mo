@@ -3853,6 +3853,8 @@ protected function expandDerExp "
   input output DAE.Exp exp;
   input output BackendDAE.Variables vars;
   input Mutable<BackendDAE.Shared> inShared;
+protected
+  Boolean failed = false;
 algorithm
   (exp,vars) := matchcontinue exp
     local
@@ -3883,17 +3885,24 @@ algorithm
         (exp,vars) = Expression.traverseExpBottomUp(e2, function expandDerExp(inShared=inShared), vars);
       then (exp,vars);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
-      equation
-        (v, _) = BackendVariable.getVarSingle(cr, vars);
-        (vars, e1) = updateStatesVar(vars, v, e1);
+      algorithm
+        (v, _) := BackendVariable.getVarSingle(cr, vars);
+        try
+          (vars, e1) := updateStatesVar(vars, v, e1);
+        else
+          failed := true;
+          fail();
+        end try;
       then (e1, vars);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
       equation
+        false = failed;
         (varlst, _) = BackendVariable.getVar(cr, vars);
         vars = updateStatesVars(vars, varlst, false);
       then (e1, vars);
     case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1}))
       equation
+        false = failed;
         (e2, shared) = Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));
         false = Expression.isZero(e2);
         Mutable.update(inShared, shared);
@@ -3902,6 +3911,12 @@ algorithm
       then (e2, vars);
     else (exp,vars);
   end matchcontinue;
+
+  // FIXME dumb hack to make matchcontinue fail
+  // I don't want to rewrite the damn thing
+  if failed then
+    fail();
+  end if;
 end expandDerExp;
 
 protected function derCrefsExp "helper for statesExp"
@@ -3936,32 +3951,28 @@ protected function updateStatesVar "
   input BackendDAE.Variables inVars;
   input BackendDAE.Var var;
   input DAE.Exp iExp;
-  output BackendDAE.Variables outVars;
-  output DAE.Exp oExp;
+  output BackendDAE.Variables outVars = inVars;
+  output DAE.Exp oExp = iExp;
+protected
+  BackendDAE.Var var1;
+  DAE.Exp arg;
 algorithm
-  (outVars, oExp) := matchcontinue(inVars, var, iExp)
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.Var var1;
-    case(_, _, _)
-      equation
-        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
-      then (inVars, DAE.RCONST(0.0));
-    case(_, _, _)
-      equation
-        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
-        false = BackendVariable.isStateVar(var) and not BackendVariable.varStateSelectForced(var);
-        var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1, NONE(), true));
-        vars = BackendVariable.addVar(var1, inVars);
-      then (vars, iExp);
-    case(_, _, _)
-      equation
-        /* Might be part of a different equation-system...
-        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-        */
-      then (inVars, iExp);
-  end matchcontinue;
+  if BackendVariable.isVarNonDifferentiable(var) then
+    DAE.CALL(expLst = {arg}) := iExp;
+    Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
+      {ExpressionDump.printExpStr(arg)}, var.source.info);
+  elseif BackendVariable.isVarDiscrete(var) then
+    oExp := DAE.RCONST(0.0);
+  elseif not BackendVariable.isStateVar(var) or BackendVariable.varStateSelectForced(var) then
+    var1 := BackendVariable.setVarKind(var, BackendDAE.STATE(1, NONE(), true));
+    outVars := BackendVariable.addVar(var1, inVars);
+    oExp := iExp;
+  else
+    /* Might be part of a different equation-system...
+    str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
+    Error.addMessage(Error.INTERNAL_ERROR, {str});
+    */
+  end if;
 end updateStatesVar;
 
 protected function updateStatesVars "
