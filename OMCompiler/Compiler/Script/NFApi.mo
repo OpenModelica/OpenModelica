@@ -1447,15 +1447,15 @@ function dumpJSONBinding
 protected
   Expression exp;
   Binding bind = binding;
+  InstContext.Type context;
 algorithm
   // If the binding has been evaluated by the frontend, try to use the original
   // binding that we saved when building the instance tree instead.
   if isSome(originalBinding) and Binding.isEvaluated(binding) then
     try
-      // Instantiating the binding should be enough, we don't really care about
-      // what the type of it is.
-      bind := Inst.instBinding(Util.getOption(originalBinding),
-        InstContext.set(NFInstContext.RELAXED, NFInstContext.INSTANCE_API));
+      context := InstContext.set(NFInstContext.RELAXED, NFInstContext.INSTANCE_API);
+      bind := Inst.instBinding(Util.getOption(originalBinding), context);
+      bind := Typing.typeBinding(bind, context);
     else
     end try;
   end if;
