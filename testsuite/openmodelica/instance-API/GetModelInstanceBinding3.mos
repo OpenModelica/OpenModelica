@@ -1,0 +1,85 @@
+// name: GetModelInstanceBinding3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter String controller = \"Torque\";
+    Real x if controlMode == 1;
+  protected
+    parameter Integer controlMode = if controller == \"Torque\" then 1 else -1;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"controller\",
+//       \"type\": \"String\",
+//       \"modifiers\": \"\\\"Torque\\\"\",
+//       \"value\": {
+//         \"binding\": \"Torque\"
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"condition\": {
+//         \"binding\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"controlMode\",
+//       \"type\": \"Integer\",
+//       \"modifiers\": \"if controller == \\\"Torque\\\" then 1 else -1\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"if\",
+//           \"condition\": {
+//             \"$kind\": \"binary_op\",
+//             \"lhs\": {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"controller\"
+//                 }
+//               ]
+//             },
+//             \"op\": \"==\",
+//             \"rhs\": \"Torque\"
+//           },
+//           \"true\": 1,
+//           \"false\": -1
+//         },
+//         \"value\": 1
+//       },
+//       \"prefixes\": {
+//         \"public\": false,
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
