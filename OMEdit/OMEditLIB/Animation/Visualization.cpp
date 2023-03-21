@@ -1424,7 +1424,7 @@ void UpdateVisitor::apply(osg::MatrixTransform& node)
  */
 void UpdateVisitor::apply(osg::Geode& node)
 {
-  //std::cout<<"GEODE "<< _visualizer->_id<<" "<<_visualizer->getTransparency()<<std::endl;
+  //std::cout<<"GEODE "<<_visualizer->_id<<std::endl;
   switch (_visualizer->getStateSetAction())
   {
   case StateSetAction::update:
@@ -1555,7 +1555,7 @@ void UpdateVisitor::apply(osg::Geode& node)
   case StateSetAction::modify:
    {
      //apply texture
-     applyTexture(node.getOrCreateStateSet(), _visualizer->getTextureImagePath());
+     applyTexture(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTextureImagePath().get());
      break;
    }//end case action modify
 
@@ -1567,10 +1567,10 @@ void UpdateVisitor::apply(osg::Geode& node)
   if (_changeMaterialProperties) {
     if (!_visualizer->isShape() or _visualizer->asShape()->_type.compare("dxf") != 0) {
       //set color
-      changeColor(node.getOrCreateStateSet(), _visualizer->getColor());
+      changeColor(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getColor().get());
 
       //set transparency
-      changeTransparency(node.getOrCreateStateSet(), _visualizer->getTransparency());
+      changeTransparency(node.getOrCreateStateSet(), _visualizer->getVisualProperties()->getTransparency().get());
     }
   }
 

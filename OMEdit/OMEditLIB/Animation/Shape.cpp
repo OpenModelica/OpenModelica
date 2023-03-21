@@ -35,7 +35,7 @@
 #include "Shape.h"
 
 ShapeObject::ShapeObject()
-    : AbstractVisualizerObject(VisualizerType::shape),
+    : AbstractVisualizerObjectWithVisualProperties(VisualizerType::shape),
       _type(""),
       _fileName(""),
       _length(VisualizerAttribute(0.1)),
@@ -54,9 +54,9 @@ ShapeObject::ShapeObject()
   _wDir[2] = VisualizerAttribute(0.0);
 }
 
-void ShapeObject::dumpVisualizerAttributes() const
+void ShapeObject::dumpVisualizerAttributes()
 {
-  AbstractVisualizerObject::dumpVisualizerAttributes();
+  AbstractVisualizerObjectWithVisualProperties::dumpVisualizerAttributes();
   std::cout << "type " << _type << std::endl;
   std::cout << "fileName " << _fileName << std::endl;
   std::cout << "rShape " << _rShape[0].getValueString() << " , " << _rShape[1].getValueString() << " , " << _rShape[2].getValueString() << std::endl;
