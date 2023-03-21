@@ -147,7 +147,7 @@ algorithm
 
   (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
 
-  vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
+  vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns); // ieqns don't need to be searched because they can't contain when equations
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
