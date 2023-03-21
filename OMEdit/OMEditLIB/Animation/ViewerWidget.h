@@ -106,6 +106,7 @@ public slots:
   void changeVisualizerTransparency();
   void makeVisualizerInvisible();
   void changeVisualizerColor();
+  void changeVisualizerSpec();
   void applyCheckerTexture();
   void applyCustomTexture();
   void removeTexture();

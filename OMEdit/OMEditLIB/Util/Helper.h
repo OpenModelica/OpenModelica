@@ -157,6 +157,7 @@ public:
   static QString error;
   static QString percentageLabel;
   static QString chooseTransparency;
+  static QString chooseSpecularity;
   static QString chooseColor;
   static QString chooseFile;
   static QString chooseFiles;
