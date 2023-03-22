@@ -72,6 +72,9 @@ QString FlatModelica::Parser::getModelicaComment(QString element)
 /*!
  * \brief FlatModelica::Parser::getTypeFromElementRedeclaration
  * \param elmentRedeclaration
+ * Parses the code like,
+ * redeclare ClassA classA "A"
+ * and returns ClassA, the type of the component.
  * \return
  */
 QString FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elmentRedeclaration)
@@ -83,6 +86,27 @@ QString FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elm
   openmodelica::modelicaParser::Element_redeclarationContext *pElement_redeclarationContext = parser.element_redeclaration();
   if (pElement_redeclarationContext && pElement_redeclarationContext->component_clause1()) {
     return QString::fromStdString(pElement_redeclarationContext->component_clause1()->type_specifier()->getText());
+  }
+  return "";
+}
+
+/*!
+ * \brief FlatModelica::Parser::getShortClassTypeFromElementRedeclaration
+ * \param elmentRedeclaration
+ * Parses the code like,
+ * redeclare model M = C
+ * and returns M, the type of the short class specifier.
+ * \return
+ */
+QString FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration)
+{
+  antlr4::ANTLRInputStream input(elmentRedeclaration.toStdString());
+  openmodelica::modelicaLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  openmodelica::modelicaParser parser(&tokens);
+  openmodelica::modelicaParser::Element_redeclarationContext *pElement_redeclarationContext = parser.element_redeclaration();
+  if (pElement_redeclarationContext && pElement_redeclarationContext->short_class_definition()) {
+    return QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->type_specifier()->getText());
   }
   return "";
 }

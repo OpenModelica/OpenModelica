@@ -1159,7 +1159,7 @@ namespace ModelInstance
     foreach (auto pElement, mElements) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
-        value = pExtend->getExtendsModifier().getModifierValue(QStringList() << parameter);
+        value = pExtend->getModifier().getModifierValue(QStringList() << parameter);
         if (!value.isEmpty()) {
           return value;
         } else {
@@ -1394,6 +1394,9 @@ namespace ModelInstance
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;
+    mpPrefixes = std::make_unique<Prefixes>(pParentModel);
+    mComment = "";
+    mpAnnotation = std::make_unique<Annotation>(pParentModel);
   }
 
   Element::~Element()
@@ -1403,22 +1406,86 @@ namespace ModelInstance
     }
   }
 
+  QString Element::getModifierValueFromType(QStringList modifierNames)
+  {
+    /* 1. First check if unit is defined with in the component modifier.
+     * 2. If no unit is found then check it in the derived class modifier value.
+     * 3. A derived class can be inherited, so look recursively.
+     */
+    // Case 1
+    QString modifierValue = mModifier.getModifierValue(modifierNames);
+    if (modifierValue.isEmpty() && mpModel) {
+      // Case 2
+      modifierValue = mpModel->getModifier().getModifierValue(modifierNames);
+      // Case 3
+      if (modifierValue.isEmpty()) {
+        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
+      }
+    }
+    return modifierValue;
+  }
+
+  /*!
+   * \brief Component::getComment
+   * Returns the Component comment.
+   * Prefer the comment given in replaceable part.
+   * \return
+   */
+  QString Element::getComment() const
+  {
+    if (mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
+      return mpPrefixes->getReplaceable()->getComment();
+    } else {
+      return mComment;
+    }
+  }
+
+  /*!
+   * \brief Element::getAnnotation
+   * Returns the Element Annotation.
+   * Prefer the annotation given in replaceable part.
+   * \return
+   */
+  Annotation *Element::getAnnotation() const
+  {
+    if (mpPrefixes->getReplaceable() && mpPrefixes->getReplaceable()->getAnnotation()) {
+      return mpPrefixes->getReplaceable()->getAnnotation();
+    } else {
+      return mpAnnotation.get();
+    }
+  }
+
+  QString Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
+  {
+    QString modifierValue = "";
+    foreach (auto pElement, pModel->getElements()) {
+      if (pElement->isExtend() && pElement->getModel()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        modifierValue = pExtend->getModel()->getModifier().getModifierValue(modifierNames);
+        if (modifierValue.isEmpty()) {
+          modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
+        } else {
+          return modifierValue;
+        }
+      }
+    }
+    return modifierValue;
+  }
+
   Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
-    mpExtendsAnnotation = std::make_unique<Annotation>(pParentModel);
-    mBaseClass = "";
     deserialize(jsonObject);
   }
 
   void Extend::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("modifiers")) {
-      mExtendsModifier.deserialize(jsonObject.value("modifiers"));
+      mModifier.deserialize(jsonObject.value("modifiers"));
     }
 
     if (jsonObject.contains("annotation")) {
-      mpExtendsAnnotation->deserialize(jsonObject.value("annotation").toObject());
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
 
     if (jsonObject.contains("baseClass")) {
@@ -1456,28 +1523,13 @@ namespace ModelInstance
   Component::Component(Model *pParentModel)
     : Element(pParentModel)
   {
-    initialize();
+
   }
 
   Component::Component(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
-    initialize();
     deserialize(jsonObject);
-  }
-
-  void Component::initialize()
-  {
-    mName = "";
-    mCondition = true;
-    mType = "";
-    if (mpModel) {
-      delete mpModel;
-    }
-    mpModel = 0;
-    mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
-    mComment = "";
-    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
   }
 
   void Component::deserialize(const QJsonObject &jsonObject)
@@ -1542,72 +1594,6 @@ namespace ModelInstance
     }
   }
 
-  QString Component::getModifierValueFromType(QStringList modifierNames)
-  {
-    /* 1. First check if unit is defined with in the component modifier.
-     * 2. If no unit is found then check it in the derived class modifier value.
-     * 3. A derived class can be inherited, so look recursively.
-     */
-    // Case 1
-    QString modifierValue = mModifier.getModifierValue(modifierNames);
-    if (modifierValue.isEmpty() && mpModel) {
-      // Case 2
-      modifierValue = mpModel->getModifier().getModifierValue(modifierNames);
-      // Case 3
-      if (modifierValue.isEmpty()) {
-        modifierValue = Component::getModifierValueFromInheritedType(mpModel, modifierNames);
-      }
-    }
-    return modifierValue;
-  }
-
-  /*!
-   * \brief Component::getComment
-   * Returns the Component comment.
-   * Prefer the comment given in replaceable part.
-   * \return
-   */
-  QString Component::getComment() const
-  {
-    if (mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
-      return mpPrefixes->getReplaceable()->getComment();
-    } else {
-      return mComment;
-    }
-  }
-
-  /*!
-   * \brief Component::getAnnotation
-   * Returns the Component Annotation.
-   * Prefer the annotation given in replaceable part.
-   * \return
-   */
-  Annotation *Component::getAnnotation() const
-  {
-    if (mpPrefixes->getReplaceable() && mpPrefixes->getReplaceable()->getAnnotation()) {
-      return mpPrefixes->getReplaceable()->getAnnotation();
-    } else {
-      return mpAnnotation.get();
-    }
-  }
-
-  QString Component::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
-  {
-    QString modifierValue = "";
-    foreach (auto pElement, pModel->getElements()) {
-      if (pElement->isExtend() && pElement->getModel()) {
-        auto pExtend = dynamic_cast<Extend*>(pElement);
-        modifierValue = pExtend->getModel()->getModifier().getModifierValue(modifierNames);
-        if (modifierValue.isEmpty()) {
-          modifierValue = Component::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
-        } else {
-          return modifierValue;
-        }
-      }
-    }
-    return modifierValue;
-  }
-
   /*!
    * \brief Component::getQualifiedName
    * Returns the qualified name of the component.
@@ -1634,9 +1620,7 @@ namespace ModelInstance
     : Element(pParentModel)
   {
     mpParentModel = pParentModel;
-    mName = "";
-    mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
-    mBaseClass = "";
+    mIsShortClassDefinition = false;
     deserialize(jsonObject);
   }
 
@@ -1651,6 +1635,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("baseClass")) {
+      mIsShortClassDefinition = true;
       mBaseClass = jsonObject.value("baseClass").toString();
     }
 
@@ -1660,6 +1645,10 @@ namespace ModelInstance
 
     if (jsonObject.contains("modifiers")) {
       mModifier.deserialize(jsonObject.value("modifiers"));
+    }
+
+    if (jsonObject.contains("annotation")) {
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
 
     if (jsonObject.contains("source")) {
@@ -1674,11 +1663,6 @@ namespace ModelInstance
     } else {
       return mName;
     }
-  }
-
-  QString ReplaceableClass::getRootType() const
-  {
-    return mName;
   }
 
   Part::Part()

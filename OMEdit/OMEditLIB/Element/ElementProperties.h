@@ -56,9 +56,9 @@ public:
     ChoicesAllMatching
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
-  Parameter(ModelInstance::Component *pComponent, ElementParameters *pElementParameters);
+  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
-  ModelInstance::Component* getModelInstanceComponent() {return mpModelInstanceComponent;}
+  ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
   void setTab(QString tab) {mTab = tab;}
   StringAnnotation getTab() {return mTab;}
@@ -102,7 +102,7 @@ public:
   void update();
 private:
   Element *mpElement;
-  ModelInstance::Component *mpModelInstanceComponent;
+  ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
   StringAnnotation mGroup;
@@ -185,7 +185,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Component *pComponent, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
   ~ElementParameters();
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
@@ -193,7 +193,7 @@ public:
   static void applyStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
   void updateParameters();
 private:
-  ModelInstance::Component *mpElement;
+  ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;

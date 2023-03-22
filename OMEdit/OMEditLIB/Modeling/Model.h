@@ -606,15 +606,37 @@ private:
     Model *getParentModel() const {return mpParentModel;}
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
+    Modifier getModifier() const {return mModifier;}
+    QString getModifierValueFromType(QStringList modifierNames);
+    Dimensions getDimensions() const {return mDims;}
+    Prefixes *getPrefixes() const {return mpPrefixes.get();}
+    QString getComment() const;
+    Annotation *getAnnotation() const;
+    FlatModelica::Expression getBinding() const {return mBinding;}
+    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    void resetBinding() {mBinding = mBindingForReset;}
 
+    virtual QString getName() const = 0;
     virtual QString getQualifiedName() const = 0;
     virtual QString getRootType() const = 0;
+    virtual QString getType() const = 0;
+    virtual bool isShortClassDefinition() const = 0;
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
+  private:
+    static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
   protected:
     Model *mpParentModel;
     Model *mpModel = 0;
+
+    Modifier mModifier;
+    Dimensions mDims;
+    std::unique_ptr<Prefixes> mpPrefixes;
+    QString mComment;
+    std::unique_ptr<Annotation> mpAnnotation;
+    FlatModelica::Expression mBinding;
+    FlatModelica::Expression mBindingForReset;
   };
 
   class Extend : public Element
@@ -622,17 +644,15 @@ private:
   public:
     Extend(Model *pParentModel, const QJsonObject &jsonObject);
     void deserialize(const QJsonObject &jsonObject);
-
-    Annotation *getExtendsAnnotation() const {return mpExtendsAnnotation.get();}
-    Modifier getExtendsModifier() const {return mExtendsModifier;}
   private:
-    std::unique_ptr<Annotation> mpExtendsAnnotation;
-    Modifier mExtendsModifier;
     QString mBaseClass;
     // Element interface
   public:
+    virtual QString getName() const override {return "";}
     virtual QString getQualifiedName() const override;
     virtual QString getRootType() const override;
+    virtual QString getType() const override {return mBaseClass;}
+    virtual bool isShortClassDefinition() const override {return false;}
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
@@ -643,41 +663,22 @@ private:
   public:
     Component(Model *pParentModel);
     Component(Model *pParentModel, const QJsonObject &jsonObject);
-    void initialize();
     void deserialize(const QJsonObject &jsonObject);
 
     void setName(const QString &name) {mName = name;}
-    QString getName() const {return mName;}
     bool getCondition() const {return mCondition;}
     void setType(const QString &type) {mType = type;}
-    QString getType() const {return mType;}
-    Modifier getModifier() const {return mModifier;}
-    FlatModelica::Expression getBinding() const {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
-    void resetBinding() {mBinding = mBindingForReset;}
-    QString getModifierValueFromType(QStringList modifierName);
-    Dimensions getDimensions() const {return mDims;}
-    Prefixes *getPrefixes() const {return mpPrefixes.get();}
-    QString getComment() const;
-    Annotation *getAnnotation() const;
   private:
     QString mName;
-    bool mCondition;
+    bool mCondition = true;
     QString mType;
-
-    Modifier mModifier;
-    FlatModelica::Expression mBinding;
-    FlatModelica::Expression mBindingForReset;
-    Dimensions mDims;
-    std::unique_ptr<Prefixes> mpPrefixes;
-    QString mComment;
-    std::unique_ptr<Annotation> mpAnnotation;
-
-    static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierName);
     // Element interface
   public:
+    virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
     virtual QString getRootType() const override;
+    virtual QString getType() const override {return mType;}
+    virtual bool isShortClassDefinition() const override {return false;}
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
@@ -688,17 +689,20 @@ private:
   public:
     ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject);
     void deserialize(const QJsonObject &jsonObject);
+
+    QString getBaseClass() const {return mBaseClass;}
   private:
     QString mName;
-    std::unique_ptr<Prefixes> mpPrefixes;
+    bool mIsShortClassDefinition;
     QString mBaseClass;
-    Dimensions mDims;
-    Modifier mModifier;
     Source mSource;
     // Element interface
   public:
+    virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
-    virtual QString getRootType() const override;
+    virtual QString getRootType() const override {return mName;}
+    virtual QString getType() const override {return mName;}
+    virtual bool isShortClassDefinition() const override {return mIsShortClassDefinition;}
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}
