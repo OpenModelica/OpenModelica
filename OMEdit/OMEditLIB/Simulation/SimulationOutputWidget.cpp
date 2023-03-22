@@ -502,8 +502,8 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   /* append the output */
   /* write the error message */
   if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
-      QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
-      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>\n").arg(simulationLogFilePath));
+    QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
+    mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>\n").arg(simulationLogFilePath));
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
