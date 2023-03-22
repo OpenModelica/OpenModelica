@@ -135,35 +135,36 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
 
 /**
  * @brief Opens sparsity pattern file
- *
- * @param filename  String for the filename
+ * 
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @param filename    String for the filename.
+ * @return FILE*      Pointer to sparsity pattern stream.
  */
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
-#ifdef OMC_FMI_RUNTIME
-  size_t len1 = strlen(data->modelData->resourcesDir);
-  size_t len2 = strlen(filename);
-  size_t length = len1 + 1 + len2 + 1;
-  char* wholename = malloc(length*sizeof(char));
-  sprintf(wholename, "%s/%s", data->modelData->resourcesDir, filename);
-#else
-  char* wholename = filename;
-#endif
+  char* fullPath = NULL;
+  FILE* pFile;
 
-  FILE* pFile = omc_fopen(wholename, "rb");
-  if (pFile == NULL) {
-#ifdef OMC_FMI_RUNTIME
-    free(wholename);
-#endif
-    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", wholename);
+  if(data->modelData->resourcesDir) {
+    size_t len1 = strlen(data->modelData->resourcesDir);
+    size_t len2 = strlen(filename);
+    size_t length = len1 + 1 + len2 + 1;
+    fullPath = malloc(length*sizeof(char));
+    sprintf(fullPath, "%s/%s", data->modelData->resourcesDir, filename);
+    pFile = omc_fopen(fullPath, "rb");
+  } else {
+    pFile = omc_fopen(filename, "rb");
   }
 
-#ifdef OMC_FMI_RUNTIME
-  free(wholename);
-#endif
+  if (pFile == NULL) {
+    free(fullPath);
+    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
+  }
+
+  free(fullPath);
 
   return pFile;
 }
-
 
 /**
  * @brief Reads one color of sparsity pattern and sets colorCols.

@@ -8,7 +8,7 @@
 
 // Generate FMU
 loadModel(Modelica, {"3.2.3"}); getErrorString();
-setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode --fmuCMakeBuild=false"); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version = "2.0", fmuType="cs", platforms={"dynamic"}); getErrorString();
 
 // Check _flags.json for simulation flags

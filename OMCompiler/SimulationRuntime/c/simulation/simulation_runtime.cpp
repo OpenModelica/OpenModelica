@@ -546,6 +546,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
   }
 
+  data->modelData->resourcesDir = NULL;
+
   string init_initMethod = "";
   string init_file = "";
   string init_time_string = "";

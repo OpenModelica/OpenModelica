@@ -551,7 +551,7 @@ typedef struct MODEL_DATA
   const char* modelDir;
   const char* modelGUID;
   const char* initXMLData;
-  char* resourcesDir;
+  char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
 
   int linearizationDumpLanguage;        /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */
