@@ -124,7 +124,7 @@ Build OpenModelica compiler `omc` with C++ runtime, but without using (possibly)
 
 ```bash
 cd OpenModelica
-autoconf
+autoreconf --install # Or autoconf if you have autoconf <=2.69
 ./configure --with-cppruntime --without-omc
 make -j<Nr. of cores>
 ```
@@ -134,7 +134,7 @@ privileges:
 
 ```bash
 cd OpenModelica
-autoconf
+autoreconf --install # Or autoconf if you have autoconf <=2.69
 # Skip some pieces of software to ease installation and only compile the base omc executable
 # If you have a working and compatible omc that is not on the PATH, you can use --with-omc=path/to/omc to speed up compilation
 ./configure --prefix=/usr/local --disable-modelica3d
@@ -195,4 +195,4 @@ and then sent us an email at [OpenModelicaInterest@ida.liu.se](mailto:OpenModeli
 
 --------------
 
-Last updated 2023-02-13.
+Last updated 2023-02-22.
