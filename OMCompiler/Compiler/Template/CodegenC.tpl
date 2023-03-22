@@ -5510,10 +5510,7 @@ match sparsepattern
         int i = 0;
         size_t count;
 
-        FILE* pFile = omc_fopen("<%fileName%>", "rb");
-        if (pFile == NULL) {
-          throwStreamPrint(threadData, "Could not open sparsity pattern file \"<%fileName%>\".");
-        }
+        FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
 
         initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
         jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
