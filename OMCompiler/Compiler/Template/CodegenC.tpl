@@ -1473,7 +1473,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
       <<
       data->modelData->initXMLData = NULL;
       data->modelData->modelDataXml.infoXMLData = NULL;
-      else 'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
+      'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
       >>
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
