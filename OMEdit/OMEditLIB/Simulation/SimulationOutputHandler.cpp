@@ -286,34 +286,6 @@ SimulationOutputHandler::~SimulationOutputHandler()
  */
 void SimulationOutputHandler::parseSimulationOutput(const QString &output)
 {
-  /* if display limit is reached then close and display the so far text
-   * and display a message showing that the limit is reached.
-   */
-  if (isMaximumDisplayLimitReached()) {
-    // Only generate the reached display limit message once.
-    if (!mShownDisplayLimitReachedMessage) {
-      mShownDisplayLimitReachedMessage = true;
-
-      while (mLevel > 0) {
-        endElement();
-      }
-
-      if (mpSimulationOutputWidget->isOutputStructured()) {
-        mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
-      } else {
-        mpSimulationMessage = new SimulationMessage;
-      }
-      mpSimulationMessage->mStream = "stdout";
-      mpSimulationMessage->mType = StringHandler::OMEditInfo;
-      mpSimulationMessage->mText = QString("Reached display limit");
-      mpSimulationMessage->mLevel = mLevel;
-      mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-      mLevel++;
-      endElement();
-    }
-    return;
-  }
-
   mXmlStreamReader.addData(output);
   // parse
   while (!mXmlStreamReader.atEnd()) {
@@ -325,42 +297,69 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
         mNumberOfBytes += text.toUtf8().size();
         // write simulation log file
         writeSimulationLog(text);
-        if (mpSimulationOutputWidget->isOutputStructured()) {
-          mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
-        } else {
-          mpSimulationMessage = new SimulationMessage;
-        }
-        mpSimulationMessage->mStream = attributes.value("stream").toString();
-        mpSimulationMessage->mType = StringHandler::getSimulationMessageType(attributes.value("type").toString());
-        // check if we get the message about embedded opc-ua server initialized.
-        if (attributes.value("text") == "The embedded server is initialized.") {
-          mpSimulationOutputWidget->embeddedServerInitialized();
-        }
-        if (mpSimulationOutputWidget->isOutputStructured()) {
-          mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString());
-        } else {
-          mpSimulationMessage->mText = attributes.value("text").toString();
-        }
-        mpSimulationMessage->mLevel = mLevel;
-        mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-        if (mLevel > 0) {
-          SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
-          if (pSimulationMessage) {
-            mpSimulationMessage->setParent(pSimulationMessage);
-            if (mpSimulationOutputWidget->isOutputStructured()) {
-              mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
-              mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
-                                              .arg(QString::number(pSimulationMessage->children().size() + 1));
+        /* if display limit is reached then close and display the so far text
+         * and display a message showing that the limit is reached.
+         */
+        if (isMaximumDisplayLimitReached()) {
+          // Only generate the reached display limit message once.
+          if (!mShownDisplayLimitReachedMessage) {
+            mShownDisplayLimitReachedMessage = true;
+
+            while (mLevel > 0) {
+              endElement();
             }
-            pSimulationMessage->mChildren.append(mpSimulationMessage);
+
+            if (mpSimulationOutputWidget->isOutputStructured()) {
+              mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+            } else {
+              mpSimulationMessage = new SimulationMessage;
+            }
+            mpSimulationMessage->mStream = "stdout";
+            mpSimulationMessage->mType = StringHandler::OMEditInfo;
+            mpSimulationMessage->mText = QString("Reached display limit");
+            mpSimulationMessage->mLevel = mLevel;
+            mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+            mLevel++;
+            endElement();
           }
         } else {
           if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
-                                            .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
+            mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+          } else {
+            mpSimulationMessage = new SimulationMessage;
           }
+          mpSimulationMessage->mStream = attributes.value("stream").toString();
+          mpSimulationMessage->mType = StringHandler::getSimulationMessageType(attributes.value("type").toString());
+          // check if we get the message about embedded opc-ua server initialized.
+          if (attributes.value("text") == "The embedded server is initialized.") {
+            mpSimulationOutputWidget->embeddedServerInitialized();
+          }
+          if (mpSimulationOutputWidget->isOutputStructured()) {
+            mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString());
+          } else {
+            mpSimulationMessage->mText = attributes.value("text").toString();
+          }
+          mpSimulationMessage->mLevel = mLevel;
+          mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+          if (mLevel > 0) {
+            SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
+            if (pSimulationMessage) {
+              mpSimulationMessage->setParent(pSimulationMessage);
+              if (mpSimulationOutputWidget->isOutputStructured()) {
+                mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
+                mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
+                                                .arg(QString::number(pSimulationMessage->children().size() + 1));
+              }
+              pSimulationMessage->mChildren.append(mpSimulationMessage);
+            }
+          } else {
+            if (mpSimulationOutputWidget->isOutputStructured()) {
+              mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
+                                              .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
+            }
+          }
+          mLevel++;
         }
-        mLevel++;
       } else if (mXmlStreamReader.name() == "used") {
         if (mpSimulationMessage) {
           mpSimulationMessage->mIndex = attributes.value("index").toString();
@@ -371,7 +370,9 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
       }
     } else if (token == QXmlStreamReader::EndElement) {
       if (mXmlStreamReader.name() == "message") {
-        endElement();
+        if (!isMaximumDisplayLimitReached()) {
+          endElement();
+        }
       }
     }
   }
