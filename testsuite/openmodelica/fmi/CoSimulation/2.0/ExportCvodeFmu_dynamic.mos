@@ -35,6 +35,8 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 // ""
 // true
 // ""
+// true
+// ""
 // "Pendulum.fmu"
 // ""
 // 0
@@ -58,8 +60,8 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
 // info:    Result file: Pendulum_dynamic_res.mat (bufferSize=1)
-// info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
 // "
 // 0.0
 // ""
