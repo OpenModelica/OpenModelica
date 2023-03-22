@@ -1,0 +1,107 @@
+// name: GetModelInstanceReplaceable4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    model A
+      replaceable model B
+        Real x;
+      end B;
+
+      replaceable model C
+        Real y;
+      end C;
+
+      replaceable model D = C constrainedby C;
+    end A;
+
+    model M
+      A a;
+    end M;
+  end P;
+");
+
+getModelInstance(P.M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P.M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"P.A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"B\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 4,
+//               \"columnStart\": 19,
+//               \"lineEnd\": 6,
+//               \"columnEnd\": 12
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"C\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 8,
+//               \"columnStart\": 19,
+//               \"lineEnd\": 10,
+//               \"columnEnd\": 12
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"D\",
+//             \"prefixes\": {
+//               \"replaceable\": {
+//                 \"constrainedby\": \"C\"
+//               }
+//             },
+//             \"baseClass\": \"P.A.C\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 12,
+//               \"columnStart\": 19,
+//               \"lineEnd\": 12,
+//               \"columnEnd\": 31
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 13,
+//           \"columnEnd\": 10
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 15,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 17,
+//     \"columnEnd\": 10
+//   }
+// }"
+// endResult

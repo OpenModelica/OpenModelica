@@ -135,7 +135,7 @@ getModelInstance(M, prettyPrint = true);
 //                 }
 //               }
 //             },
-//             \"baseClass\": \"C\",
+//             \"baseClass\": \"A.C\",
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 13,
