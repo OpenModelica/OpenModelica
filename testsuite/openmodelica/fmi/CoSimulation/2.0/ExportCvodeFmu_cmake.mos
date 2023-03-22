@@ -12,7 +12,7 @@ loadString("model Pendulum
 extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
 end Pendulum;"); getErrorString();
 
-setCommandLineOptions("--fmiFlags=s:cvode --fmuCMakeBuild=true"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode --fmuCMakeBuild=true --fmuRuntimeDepends=none"); getErrorString();
 buildModelFMU(Pendulum, version = "2.0", fmuType="cs", platforms={"dynamic"}); getErrorString();
 
 // Check _flags.json for simulation flags
