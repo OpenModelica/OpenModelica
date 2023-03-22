@@ -1173,6 +1173,11 @@ function dumpJSONNodePath
   output JSON json = dumpJSONPath(InstNode.scopePath(node, ignoreBaseClass = true));
 end dumpJSONNodePath;
 
+function dumpJSONNodeEnclosingPath
+  input InstNode node;
+  output JSON json = dumpJSONPath(InstNode.enclosingScopePath(node, ignoreRedeclare = true));
+end dumpJSONNodeEnclosingPath;
+
 function dumpJSONPath
   input Absyn.Path path;
   output JSON json = JSON.makeString(AbsynUtil.pathString(path));
@@ -1258,7 +1263,7 @@ algorithm
       algorithm
         try
           derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
-          json := JSON.addPair("baseClass", dumpJSONNodePath(derivedNode), json);
+          json := JSON.addPair("baseClass", dumpJSONNodeEnclosingPath(derivedNode), json);
         else
         end try;
 

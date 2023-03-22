@@ -648,7 +648,10 @@ uniontype InstNode
      the enclosing class. In the case of a component it is the enclosing class of
      the component's type."
     input InstNode node;
+    input Boolean ignoreRedeclare = false;
     output InstNode scope;
+  protected
+    InstNode orig_node;
   algorithm
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS())
@@ -665,6 +668,10 @@ uniontype InstNode
           else
             parentScope(scope);
 
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
+        guard ignoreRedeclare
+        then parentScope(orig_node);
+
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
@@ -674,22 +681,24 @@ uniontype InstNode
   function enclosingScopePath
     "Returns the enclosing scopes of a node as a path."
     input InstNode node;
+    input Boolean ignoreRedeclare = false;
     output Absyn.Path path;
   algorithm
     path := AbsynUtil.stringListPath(
-      list(InstNode.name(n) for n in enclosingScopeList(node)));
+      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare)));
   end enclosingScopePath;
 
   function enclosingScopeList
     "Returns the enclosing scopes of a node as a list of nodes."
     input InstNode node;
+    input Boolean ignoreRedeclare = false;
     output list<InstNode> res = {};
   protected
     InstNode scope = node;
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(parentScope(scope));
+      scope := classScope(parentScope(scope, ignoreRedeclare));
     end while;
   end enclosingScopeList;
 

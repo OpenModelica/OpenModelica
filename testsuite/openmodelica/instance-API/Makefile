@@ -47,6 +47,7 @@ GetModelInstanceMod4.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
+GetModelInstanceReplaceable4.mos \
 GetModelInstanceStateMachine1.mos \
 
 
