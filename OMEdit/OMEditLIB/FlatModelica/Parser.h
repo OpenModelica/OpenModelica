@@ -40,6 +40,7 @@ namespace FlatModelica
   namespace Parser {
     QString getModelicaComment(QString element);
     QString getTypeFromElementRedeclaration(const QString &elmentRedeclaration);
+    QString getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration);
   } // namespace Utilities
 } // namespace FlatModelica
 
