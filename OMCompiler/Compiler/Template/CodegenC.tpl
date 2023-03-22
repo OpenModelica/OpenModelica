@@ -1427,53 +1427,56 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->modelGUID = "{<%guid%>}";
     <% match isModelExchangeFMU
     case "1.0" then
-    <<
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData =
-    #if defined(OMC_MINIMAL_METADATA)
-      NULL;
-    #else
-    #include "<%fileNamePrefix%>_info.c"
-    #endif
-    ;
-    >>
+      <<
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData =
+      #if defined(OMC_MINIMAL_METADATA)
+        NULL;
+      #else
+        #include "<%fileNamePrefix%>_info.c"
+        ;
+      #endif
+      data->modelData->modelDataXml.fileName = NULL;
+      >>
     case "" then
-    <<
-    #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData = NULL;
-    #else
-    #if defined(_MSC_VER) /* handle joke compilers */
-    {
-    /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
-    /* because the string constant limit is 65535 bytes */
-    static const char contents_init[] =
+      <<
+      #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData = NULL;
+      #else
+      #if defined(_MSC_VER) /* handle joke compilers */
+      {
+      /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
+      /* because the string constant limit is 65535 bytes */
+      static const char contents_init[] =
+        #include "<%fileNamePrefix%>_init.c"
+        ;
+      static const char contents_info[] =
+        #include "<%fileNamePrefix%>_info.c"
+        ;
+        data->modelData->initXMLData = contents_init;
+        data->modelData->modelDataXml.infoXMLData = contents_info;
+      }
+      #else /* handle real compilers */
+      data->modelData->initXMLData =
       #include "<%fileNamePrefix%>_init.c"
-      ;
-    static const char contents_info[] =
+        ;
+      data->modelData->modelDataXml.infoXMLData =
       #include "<%fileNamePrefix%>_info.c"
-      ;
-      data->modelData->initXMLData = contents_init;
-      data->modelData->modelDataXml.infoXMLData = contents_info;
-    }
-    #else /* handle real compilers */
-    data->modelData->initXMLData =
-    #include "<%fileNamePrefix%>_init.c"
-      ;
-    data->modelData->modelDataXml.infoXMLData =
-    #include "<%fileNamePrefix%>_info.c"
-      ;
-    #endif /* defined(_MSC_VER) */
-    #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
-    >>
+        ;
+      #endif /* defined(_MSC_VER) */
+      #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
+      data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";
+      data->modelData->resourcesDir = NULL;
+      >>
     else
-    <<
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData = NULL;
-    >>
+      <<
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData = NULL;
+      else 'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
+      >>
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
-
     data->modelData->nStates = <%varInfo.numStateVars%>;
     data->modelData->nVariablesReal = <%nVariablesReal(varInfo)%>;
     data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
@@ -1486,23 +1489,15 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
     data->modelData->nInputVars = <%varInfo.numInVars%>;
     data->modelData->nOutputVars = <%varInfo.numOutVars%>;
-
     data->modelData->nAliasReal = <%varInfo.numAlgAliasVars%>;
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
-
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
     data->modelData->nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData->nExtObjs = <%varInfo.numExternalObjects%>;
-
-    <% match isModelExchangeFMU
-    case "1.0" then "data->modelData->modelDataXml.fileName = NULL;"
-    case "" then 'data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";'
-    else 'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
-    %>
     data->modelData->modelDataXml.modelInfoXmlLength = 0;
     data->modelData->modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData->modelDataXml.nProfileBlocks = 0;
@@ -1514,22 +1509,17 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nJacobians = <%varInfo.numJacobians%>;
     data->modelData->nOptimizeConstraints = <%varInfo.numOptimizeConstraints%>;
     data->modelData->nOptimizeFinalConstraints = <%varInfo.numOptimizeFinalConstraints%>;
-
     data->modelData->nDelayExpressions = <%match delayed case
      DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
-
     data->modelData->nBaseClocks = <%nClocks%>;
-
     data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
-
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
     data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
     data->modelData->nSetbVars = <%varInfo.numSetbVars%>;
     data->modelData->nRelatedBoundaryConditions = <%varInfo.numRelatedBoundaryConditions%>;
-    data->modelData->linearizationDumpLanguage =
-    <%
+    data->modelData->linearizationDumpLanguage = <%
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA'
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB'
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia") then 'OMC_LINEARIZE_DUMP_LANGUAGE_JULIA'

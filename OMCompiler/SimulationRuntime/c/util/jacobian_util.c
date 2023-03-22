@@ -135,34 +135,30 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
 
 /**
  * @brief Opens sparsity pattern file
- * 
+ *
  * @param data        Runtime data struct.
  * @param threadData  Thread data for error handling.
  * @param filename    String for the filename.
  * @return FILE*      Pointer to sparsity pattern stream.
  */
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
-  char* fullPath = NULL;
   FILE* pFile;
 
-  if(data->modelData->resourcesDir) {
-    size_t len1 = strlen(data->modelData->resourcesDir);
-    size_t len2 = strlen(filename);
-    size_t length = len1 + 1 + len2 + 1;
-    fullPath = malloc(length*sizeof(char));
+  if (data->modelData->resourcesDir) {
+    size_t length = strlen(data->modelData->resourcesDir) + 1 + strlen(filename) + 1;
+    char* fullPath = malloc(length*sizeof(char));
     sprintf(fullPath, "%s/%s", data->modelData->resourcesDir, filename);
     pFile = omc_fopen(fullPath, "rb");
+    if (pFile == NULL) {
+      throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
+    }
+    free(fullPath);
   } else {
     pFile = omc_fopen(filename, "rb");
+    if (pFile == NULL) {
+      throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", filename);
+    }
   }
-
-  if (pFile == NULL) {
-    free(fullPath);
-    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
-  }
-
-  free(fullPath);
-
   return pFile;
 }
 
