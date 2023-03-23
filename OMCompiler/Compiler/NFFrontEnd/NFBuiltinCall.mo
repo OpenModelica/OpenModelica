@@ -614,8 +614,13 @@ protected
     ety := Type.arrayElementType(ty);
 
     if Type.isInteger(ety) then
-      ty := Type.setArrayElementType(ty, Type.REAL());
-      arg := Expression.typeCast(arg, Type.REAL());
+      if variability < Variability.DISCRETE then
+        ty := Type.setArrayElementType(ty, Type.REAL());
+        arg := Expression.typeCast(arg, Type.REAL());
+      else
+        Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
+          {Expression.toString(arg)}, info);
+      end if;
     elseif not Type.isReal(ety) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg),
@@ -624,8 +629,7 @@ protected
 
     // The argument must be differentiable, i.e. not discrete, unless where in a
     // scope where everything is discrete (like an initial equation).
-    if Prefixes.effectiveVariability(variability) == Variability.DISCRETE and
-       not InstContext.inDiscreteScope(context) then
+    if variability == Variability.DISCRETE and not InstContext.inDiscreteScope(context) then
       Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
         {Expression.toString(arg)}, info);
     end if;

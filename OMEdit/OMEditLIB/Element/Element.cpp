@@ -994,8 +994,7 @@ bool Element::hasShapeAnnotation(Element *pElement)
 bool Element::hasNonExistingClass()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    //! @todo Fix this once we support non-existing components in the instance api.
-    return false;
+    return mpModel->isMissing();
   } else {
     if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
       return true;
@@ -1735,6 +1734,7 @@ void Element::reDrawElementNew()
   createStateElement();
   drawElement();
   updateConnections();
+  updateToolTip();
 }
 
 void Element::emitAdded()
@@ -2597,6 +2597,7 @@ void Element::createClassInheritedElements()
 void Element::createClassShapes()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    mpGraphicsView->getModelWidget()->addDependsOnModel(mpModel->getName());
     QList<ModelInstance::Shape*> shapes;
     /* issue #9557
      * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.

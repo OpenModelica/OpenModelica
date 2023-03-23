@@ -1,9 +1,9 @@
-// name:     dertest 
-// keywords: Simulate, der(expr) 
+// name:     dertest
+// keywords: Simulate, der(expr)
 // status: correct
 // teardown_command: rm -rf dertest_* dertest dertest.exe dertest.cpp dertest.makefile dertest.libs dertest.log output.log
 // cflags: -d=-newInst
-// 
+//
 //  Simulate model containing der(expr).
 //
 

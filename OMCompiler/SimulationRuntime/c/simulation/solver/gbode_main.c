@@ -532,8 +532,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
   gbData->err_threshold = 0.1;
   gbData->err_int = 0;            // needed, if GB_INTERPOL_HERMITE_ERRCTRL or GB_DENSE_OUTPUT_ERRCTRL is used
-  gbData->eventSearch = 0;        // use interpolation for event time search
-
 
   if (gbData->multi_rate) {
     gbodef_allocateData(data, threadData, solverInfo, gbData);

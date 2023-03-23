@@ -10,8 +10,8 @@ loadString("
   type RealInput2 = RealInput(start = 1.0);
 ");
 
-getModelInstance(RealInput, true); getErrorString();
-getModelInstance(RealInput2, true); getErrorString();
+getModelInstance(RealInput, prettyPrint = true); getErrorString();
+getModelInstance(RealInput2, prettyPrint = true); getErrorString();
 
 // Result:
 // true

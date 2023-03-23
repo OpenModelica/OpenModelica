@@ -44,7 +44,7 @@ VectorQuantity& operator++(VectorQuantity& quantity);
 
 std::ostream& operator<<(std::ostream& os, const VectorQuantity quantity);
 
-class VectorObject : public AbstractVisualizerObject
+class VectorObject final : public AbstractVisualizerObjectWithVisualProperties<VectorObject>
 {
 public:
   VectorObject();
@@ -52,7 +52,7 @@ public:
   VectorObject(const VectorObject&) = default;
   VectorObject& operator=(const VectorObject&) = default;
   VectorObject* asVector() override final {return this;}
-  void dumpVisualizerAttributes() const override;
+  void dumpVisualizerAttributes() override;
   void setScaleLength(const float scale) {mScaleLength = scale;}
   void setScaleRadius(const float scale) {mScaleRadius = scale;}
   void setScaleTransf(const float scale) {mScaleTransf = scale;}

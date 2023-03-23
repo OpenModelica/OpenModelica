@@ -7596,7 +7596,7 @@ protected
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.InlineData inlineData;
   BackendDAE.Variables globalKnownVars;
-  Integer numCheckpoints;
+  Integer numCheckpoints, oldSize;
   DAE.FunctionTree funcTree;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
@@ -7633,7 +7633,9 @@ algorithm
   end if;
 
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
+    oldSize := daeSize(dae);
     dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
+    execStat("evaluateOutputsOnly (n=" + intString(oldSize) + " -> n=" + intString(daeSize(dae)) + ")");
   end if;
 
   //generate Jacobian for StateSets for initial state selection

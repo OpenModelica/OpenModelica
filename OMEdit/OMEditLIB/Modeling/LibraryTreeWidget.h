@@ -329,22 +329,20 @@ public:
   void generateVerificationScenarios(LibraryTreeItem *pLibraryTreeItem);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
+  void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+  void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
+  void emitModelStateChanged(const QString &name) {emit modelStateChanged(name);}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
   QList<LibraryTreeItem*> mNonExistingLibraryTreeItemsList;
-  QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
-                                         const QModelIndex &parentIndex) const;
+  QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
-public:
-  void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
-  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                        int row = -1);
+  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true, int row = -1);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
@@ -358,13 +356,12 @@ private:
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-public:
-  void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
-private:
   void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:
   Qt::DropActions supportedDropActions() const override;
+signals:
+  void modelStateChanged(const QString &name);
 };
 
 class LibraryTreeView : public QTreeView

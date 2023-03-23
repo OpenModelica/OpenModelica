@@ -58,6 +58,8 @@ std::ostream& operator<<(std::ostream& os, const VisualizerType type);
 
 std::ostream& operator<<(std::ostream& os, const StateSetAction action);
 
+std::ostream& operator<<(std::ostream& os, const QColor color);
+
 struct rAndT
 {
   rAndT()
@@ -95,6 +97,123 @@ public:
   unsigned int fmuValueRef;
 };
 
+class AbstractVisualProperties;
+
+template<typename type>
+class VisualProperty
+{
+public:
+  using Type = type;
+  VisualProperty() {reset();}
+  virtual ~VisualProperty() = default;
+protected:
+  virtual Type getDefault() const {return Type();}
+public:
+  virtual bool custom() const {return mCustom;}
+  virtual Type get() const {return mCustom ? mProperty : getDefault();}
+  virtual void reset() {mCustom = false, mProperty = getDefault();}
+  virtual void set(const Type& rProperty) {mCustom = true, mProperty = rProperty;}
+  virtual void parent(const AbstractVisualProperties* pParent) final {mpParent = pParent;}
+protected:
+  const AbstractVisualProperties* mpParent;
+  Type mProperty;
+  bool mCustom;
+};
+
+class AbstractVisualProperties
+{
+public:
+  using Color = VisualProperty<QColor>;
+  using Specular = VisualProperty<float>;
+  using Transparency = VisualProperty<float>;
+  using TextureImagePath = VisualProperty<std::string>;
+  AbstractVisualProperties() {}
+  virtual ~AbstractVisualProperties() = default;
+  virtual void resetVisualProperties() = 0;
+  virtual Color& getColor() = 0;
+  virtual Specular& getSpecular() = 0;
+  virtual Transparency& getTransparency() = 0;
+  virtual TextureImagePath& getTextureImagePath() = 0;
+};
+
+template<typename VisualizerObject>
+class VisualProperties : public AbstractVisualProperties
+{
+private:
+  class Color final : public AbstractVisualProperties::Color
+  { protected: virtual Type getDefault() const override final;
+    public: virtual Type get() const override final; };
+  class Specular final : public AbstractVisualProperties::Specular
+  { protected: virtual Type getDefault() const override final;
+    public: virtual Type get() const override final; };
+  class Transparency final : public AbstractVisualProperties::Transparency
+  { protected: virtual Type getDefault() const override final;
+    public: virtual Type get() const override final; };
+  class TextureImagePath final : public AbstractVisualProperties::TextureImagePath
+  { protected: virtual Type getDefault() const override final;
+    public: virtual Type get() const override final; };
+public:
+  VisualProperties() noexcept
+  {
+    setParent();
+  }
+  VisualProperties(VisualProperties&& rProperties) noexcept
+  {
+    copyProperties(rProperties);
+    setParent();
+  }
+  VisualProperties(const VisualProperties& rProperties) noexcept
+  {
+    copyProperties(rProperties);
+    setParent();
+  }
+  VisualProperties& operator=(VisualProperties&& rProperties) noexcept
+  {
+    copyProperties(rProperties);
+    setParent();
+    return *this;
+  }
+  VisualProperties& operator=(const VisualProperties& rProperties) noexcept
+  {
+    copyProperties(rProperties);
+    setParent();
+    return *this;
+  }
+  virtual ~VisualProperties() = default;
+private:
+  virtual void copyProperties(const VisualProperties& rProperties) final
+  {
+    mColor = rProperties.mColor;
+    mSpecular = rProperties.mSpecular;
+    mTransparency = rProperties.mTransparency;
+    mTextureImagePath = rProperties.mTextureImagePath;
+  }
+  virtual void setParent() final
+  {
+    mColor.parent(this);
+    mSpecular.parent(this);
+    mTransparency.parent(this);
+    mTextureImagePath.parent(this);
+  }
+public:
+  virtual void resetVisualProperties() override final
+  {
+    mColor.reset();
+    mSpecular.reset();
+    mTransparency.reset();
+    mTextureImagePath.reset();
+  }
+  virtual Color& getColor() override final {return mColor;}
+  virtual Specular& getSpecular() override final {return mSpecular;}
+  virtual Transparency& getTransparency() override final {return mTransparency;}
+  virtual TextureImagePath& getTextureImagePath() override final {return mTextureImagePath;}
+protected:
+  Color mColor;
+  Specular mSpecular;
+  Transparency mTransparency;
+  TextureImagePath mTextureImagePath;
+};
+
 class ShapeObject;
 class VectorObject;
 typedef void SurfaceObject;
@@ -104,7 +223,8 @@ class AbstractVisualizerObject
 public:
   AbstractVisualizerObject(const VisualizerType type);
   virtual ~AbstractVisualizerObject() = 0;
-  virtual void dumpVisualizerAttributes() const;
+  virtual void dumpVisualizerAttributes();
+  virtual AbstractVisualProperties* getVisualProperties() {return nullptr;}
   virtual ShapeObject* asShape() {return nullptr;}
   virtual VectorObject* asVector() {return nullptr;}
   virtual SurfaceObject* asSurface() {return nullptr;}
@@ -116,20 +236,10 @@ public:
   virtual void setStateSetAction(const StateSetAction action) final {mStateSetAction = action;}
   virtual osg::ref_ptr<osg::Transform> getTransformNode() const final {return mTransformNode;}
   virtual void setTransformNode(const osg::ref_ptr<osg::Transform> transform) final {mTransformNode = transform;}
-  virtual std::string getTextureImagePath() const final {return mTextureImagePath;}
-  virtual void setTextureImagePath(const std::string texture) final {mTextureImagePath = texture;}
-  virtual float getTransparency() const final {return mTransparency;}
-  virtual void setTransparency(const float transparency) final {mTransparency = transparency;}
-  virtual QColor getColor() const {return QColor(_color[0].exp, _color[1].exp, _color[2].exp);}
-  virtual void setColor(const QColor color) {_color[0].setConstValue(color.red()),
-                                             _color[1].setConstValue(color.green()),
-                                             _color[2].setConstValue(color.blue());}
 private:
   VisualizerType mVisualizerType;
   StateSetAction mStateSetAction;
   osg::ref_ptr<osg::Transform> mTransformNode;
-  std::string mTextureImagePath;
-  float mTransparency;
 public:
   std::string _id;
   osg::Matrix _mat;
@@ -137,6 +247,16 @@ public:
   VisualizerAttribute _r[3];
   VisualizerAttribute _color[3];
   VisualizerAttribute _specCoeff;
+};
+
+template<typename VisualizerObject>
+class AbstractVisualizerObjectWithVisualProperties : public AbstractVisualizerObject, public VisualProperties<VisualizerObject>
+{
+public:
+  AbstractVisualizerObjectWithVisualProperties(const VisualizerType type);
+  virtual ~AbstractVisualizerObjectWithVisualProperties() = 0;
+  virtual void dumpVisualizerAttributes() override;
+  virtual AbstractVisualProperties* getVisualProperties() override final {return this;}
 };
 
 VisualizerAttribute getVisualizerAttributeForNode(const rapidxml::xml_node<>* node);

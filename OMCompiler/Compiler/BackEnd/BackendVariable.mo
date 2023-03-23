@@ -940,6 +940,20 @@ algorithm
   end match;
 end isVarDiscrete;
 
+public function isVarNonDifferentiable
+"This functions checks if BackendDAE.Var is not differentiable"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
+    case (BackendDAE.VAR(varType = DAE.T_INTEGER())) then true;
+    case (BackendDAE.VAR(varType = DAE.T_BOOL())) then true;
+    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION())) then true;
+    else false;
+  end match;
+end isVarNonDifferentiable;
+
 public function isVarClockedState
 "This functions checks if BackendDAE.Var is a clocked state"
   input BackendDAE.Var inVar;
