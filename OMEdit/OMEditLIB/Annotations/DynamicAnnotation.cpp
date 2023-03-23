@@ -138,10 +138,9 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
                 vname = StringHandler::getLastWordAfterDot(vname);
                 FlatModelica::Expression exp = pModel->getVariableBinding(vname);
                 if (exp.isNull()) {
-                  return mExp;
-                } else {
-                  return exp;
+                  throw std::runtime_error(name + " could not be found");
                 }
+                return exp;
               }));
     } catch (const std::exception &e) {
       qDebug() << "Failed to evaluate expression.";

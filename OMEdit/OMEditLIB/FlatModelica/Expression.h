@@ -99,7 +99,7 @@ namespace FlatModelica
       void deserialize(const QJsonValue &value);
       QJsonValue serialize() const;
 
-      Expression evaluate(const VariableEvaluator &var_eval) const;
+      Expression evaluate(const VariableEvaluator &var_eval, int recursion_level = 0) const;
 
       bool isNull() const;
       bool isLiteral() const;
