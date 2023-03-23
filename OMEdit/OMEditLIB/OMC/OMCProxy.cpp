@@ -3405,6 +3405,9 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  */
 QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint, bool icon)
 {
+  QElapsedTimer timer;
+  timer.start();
+
   QString modelInstanceJson = "";
   if (icon) {
     modelInstanceJson = mpOMCInterface->getModelInstanceIcon(className, prettyPrint);
@@ -3422,8 +3425,15 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
   } else {
     modelInstanceJson = mpOMCInterface->getModelInstance(className, QString(), prettyPrint);
   }
+
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    const QString api = icon ? "getModelInstanceIcon" : "getModelInstance";
+    qDebug() << "Time for" << QString("%1(%2)").arg(api, className) << (double)timer.elapsed() / 1000.0 << "secs";
+  }
+
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
+    timer.restart();
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3431,6 +3441,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
                                                             QString("Failed to parse model instance json for class %1 with error %2.")
                                                             .arg(className, jsonParserError.errorString()),
                                                             Helper::scriptingKind, Helper::errorLevel));
+    }
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      qDebug() << "Time for converting to JSON" << (double)timer.elapsed() / 1000.0 << "secs";
     }
     return doc.object();
   }
