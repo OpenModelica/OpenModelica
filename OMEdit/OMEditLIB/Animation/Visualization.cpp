@@ -317,7 +317,7 @@ void OMVisualBase::initVisObjects()
     }
     shape._type = std::string(expNode->value());
 
-    if (isCADType(shape._type))
+    if (isCADFile(shape._type))
     {
       shape._fileName = extractCADFilename(shape._type);
       if (!fileExists(shape._fileName)) {
@@ -328,13 +328,13 @@ void OMVisualBase::initVisObjects()
         continue;
       }
 
-      if (dxfFileType(shape._fileName)) {
+      if (isDXFFile(shape._fileName)) {
         shape._type = "dxf";
-      } else if (stlFileType(shape._fileName)) {
+      } else if (isSTLFile(shape._fileName)) {
         shape._type = "stl";
-      } else if (objFileType(shape._fileName)) {
+      } else if (isOBJFile(shape._fileName)) {
         shape._type = "obj";
-      } else if (tdsFileType(shape._fileName)) {
+      } else if (is3DSFile(shape._fileName)) {
         shape._type = "3ds";
       }
     }
