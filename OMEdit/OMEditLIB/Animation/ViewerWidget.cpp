@@ -403,8 +403,8 @@ void ViewerWidget::applyCheckerTexture()
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
       ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
+      if (isSimpleCADType(shape->_type)) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.c_str());
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -426,8 +426,8 @@ void ViewerWidget::applyCustomTexture()
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
       ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
+      if (isSimpleCADType(shape->_type)) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.c_str());
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -454,8 +454,8 @@ void ViewerWidget::removeTexture()
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
       ShapeObject* shape = mpSelectedVisualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
+      if (isSimpleCADType(shape->_type)) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.c_str());
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;

@@ -164,6 +164,41 @@ inline bool is3DSFile(const std::string& fileName)
   return fileName.substr(fileName.size() - 3) == "3ds";
 }
 
+inline bool isDXFType(const std::string& type)
+{
+  return type == "DXF";
+}
+
+inline bool isSTLType(const std::string& type)
+{
+  return type == "STL";
+}
+
+inline bool isOBJType(const std::string& type)
+{
+  return type == "OBJ";
+}
+
+inline bool is3DSType(const std::string& type)
+{
+  return type == "3DS";
+}
+
+inline bool isCADType(const std::string& type)
+{
+  return isDXFType(type) || isSTLType(type) || isOBJType(type) || is3DSType(type);
+}
+
+inline bool isSimpleCADType(const std::string& type)
+{
+  return isDXFType(type) || isSTLType(type);
+}
+
+inline bool isAdvancedCADType(const std::string& type)
+{
+  return isOBJType(type) || is3DSType(type);
+}
+
 inline const char* boolToString(bool b)
 {
     return b ? "true" : "false";

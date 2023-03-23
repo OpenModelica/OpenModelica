@@ -329,13 +329,13 @@ void OMVisualBase::initVisObjects()
       }
 
       if (isDXFFile(shape._fileName)) {
-        shape._type = "dxf";
+        shape._type = "DXF";
       } else if (isSTLFile(shape._fileName)) {
-        shape._type = "stl";
+        shape._type = "STL";
       } else if (isOBJFile(shape._fileName)) {
-        shape._type = "obj";
+        shape._type = "OBJ";
       } else if (is3DSFile(shape._fileName)) {
-        shape._type = "3ds";
+        shape._type = "3DS";
       }
     }
 
@@ -795,9 +795,8 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
         // Store the radius of relevant shapes
         for (ShapeObject& shape : relevantShapes) {
-          // Consider OpenSceneGraph shape drawables only
-          if (shape._type.compare("dxf") == 0 || shape._type.compare("stl") == 0 ||
-              shape._type.compare("obj") == 0 || shape._type.compare("3ds") == 0) {
+          // Consider OSG shape drawables only
+          if (isCADType(shape._type)) {
             continue;
           }
 
@@ -1287,7 +1286,7 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
     transf->setName(shape._id);
 
-    if (shape._type.compare("obj") == 0 or shape._type.compare("3ds") == 0)
+    if (isAdvancedCADType(shape._type))
     { //advanced cad node
       //std::cout<<"It's an advanced cad and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
@@ -1298,7 +1297,7 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
         transf->addChild(cad.get());
       }
     }
-    else if (shape._type.compare("stl") == 0)
+    else if (isSTLType(shape._type))
     { //stl node
       //std::cout<<"It's a stl and the filename is "<<shape._fileName<<std::endl;
       // Disable mesh optimization because it is too expensive (see OSG commit a082b57)
@@ -1311,7 +1310,7 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
         transf->addChild(cad.get());
       }
     }
-    else if (shape._type.compare("dxf") == 0)
+    else if (isDXFType(shape._type))
     { //geode with dxf drawable
       //std::cout<<"It's a dxf and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<DXFile> dxfDraw = new DXFile(shape._fileName);
@@ -1429,8 +1428,7 @@ void UpdateVisitor::apply(osg::Geode& node)
     case VisualizerType::shape:
      {
       ShapeObject* shape = _visualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0 or
-          shape->_type.compare("obj") == 0 or shape->_type.compare("3ds") == 0)
+      if (isCADType(shape->_type))
       {
         //it's a cad file so we have to rescale the underlying geometry vertices
         osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
@@ -1567,15 +1565,14 @@ void UpdateVisitor::apply(osg::Geode& node)
 
     if (_visualizer->isShape()) {
       ShapeObject* shape = _visualizer->asShape();
-      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0 or
-          shape->_type.compare("obj") == 0 or shape->_type.compare("3ds") == 0) {
+      if (isCADType(shape->_type)) {
         osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
         if (transformNode.valid() && transformNode->getNumChildren() > 0) {
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid()) {
             stateSet = cad->getOrCreateStateSet();
             geometryColors = !shape->getVisualProperties()->getColor().custom();
-            is3DSShape = shape->_type.compare("3ds") == 0;
+            is3DSShape = is3DSType(shape->_type);
           }
         }
       }
@@ -1890,7 +1887,7 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::
   //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
 
   osg::Matrix3 T0;
-  if (type == "dxf" || type == "stl" || type == "obj" || type == "3ds")
+  if (isCADType(type))
   {
     T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
                       dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
