@@ -877,6 +877,15 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
+      // HOMOTOPY
+      case (Expression.CALL()) guard(name == "homotopy")
+      algorithm
+        {arg1, arg2} := Call.arguments(exp.call);
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1, ret2});
+      then exp;
+
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
