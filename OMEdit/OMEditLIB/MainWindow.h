@@ -108,6 +108,8 @@ public:
   void setNewApi(bool newApi) {mNewApi = newApi;}
   bool isNewApiCommandLine() const {return mNewApiCommandLine;}
   void setNewApiCommandLine(bool newApiCommandLine) {mNewApiCommandLine = newApiCommandLine;}
+  bool isNewApiProfiling() const {return mNewApiProfiling;}
+  void setNewApiProfiling(bool newApiProfiling) {mNewApiProfiling = newApiProfiling;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
@@ -266,6 +268,7 @@ private:
   bool mDebug;
   bool mNewApi;
   bool mNewApiCommandLine;
+  bool mNewApiProfiling;
   bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
