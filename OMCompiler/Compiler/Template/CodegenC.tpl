@@ -5497,7 +5497,6 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        int i = 0;
         size_t count;
 
         FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
@@ -5673,7 +5672,7 @@ template readSPColors(list<list<Integer>> colorList, String arrayName)
     let ind_name = 'indices_<%index%>'
   <<
   /* color <%index%> with <%length%> columns */
-  readColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>);
+  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>);
   >>;separator="\n")
   <<
   <%colorArray%>

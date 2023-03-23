@@ -171,7 +171,7 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
  * @param color         Current color index.
  * @param length        Number of columns in color `color`.
  */
-void readColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length) {
+void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length) {
   unsigned int i, index;
   size_t count;
 
