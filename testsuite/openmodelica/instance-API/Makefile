@@ -49,6 +49,7 @@ GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
 GetModelInstanceReplaceable4.mos \
 GetModelInstanceStateMachine1.mos \
+ModifierToJSON1.mos \
 
 
 # test that currently fail. Move up when fixed.
