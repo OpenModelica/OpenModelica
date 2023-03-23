@@ -3091,6 +3091,9 @@ algorithm
     case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then NFApi.getModelInstanceIcon(classpath, b);
 
+    case ("modifierToJSON", {Values.STRING(str), Values.BOOL(b)})
+      then NFApi.modifierToJSON(str, b);
+
     case ("storeAST", {})
       then Values.INTEGER(SymbolTable.storeAST());
 

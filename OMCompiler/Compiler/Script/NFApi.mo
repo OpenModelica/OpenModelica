@@ -2151,5 +2151,22 @@ algorithm
   end for;
 end dumpJSONChoicesAnnotation;
 
+function modifierToJSON
+  input String modifier;
+  input Boolean prettyPrint;
+  output Values.Value jsonString;
+protected
+  Absyn.Modification amod;
+  SCode.Mod smod;
+  JSON json;
+algorithm
+  Absyn.ElementArg.MODIFICATION(modification = SOME(amod)) :=
+    Parser.stringMod("dummy" + modifier);
+  smod := AbsynToSCode.translateMod(SOME(amod),
+    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), AbsynUtil.dummyInfo);
+  json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
+  jsonString := Values.STRING(JSON.toString(json, prettyPrint));
+end modifierToJSON;
+
   annotation(__OpenModelica_Interface="backend");
 end NFApi;
