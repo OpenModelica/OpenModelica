@@ -752,26 +752,34 @@ void Parameter::editRedeclareClassButtonClicked()
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("Unable to find the redeclare class %1.").arg(type), Helper::ok);
   } else {
-    MainWindow::instance()->getProgressBar()->setRange(0, 0);
-    MainWindow::instance()->showProgressBar();
     ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(type);
+    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(type, mpValueComboBox->lineEdit()->text());
     if (!newModelJSON.isEmpty()) {
+      const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(mpValueComboBox->lineEdit()->text());
+      if (!modifierJSON.isEmpty()) {
+        ModelInstance::Modifier elementModifier;
+        elementModifier.deserialize(QJsonValue(modifierJSON));
+        mpModelInstanceElement->setModifier(elementModifier);
+      }
       ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
       mpModelInstanceElement->setModel(pNewModel);
+      MainWindow::instance()->getProgressBar()->setRange(0, 0);
+      MainWindow::instance()->showProgressBar();
       ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(), true, mpElementParameters);
+      MainWindow::instance()->hideProgressBar();
+      MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
         if (!pElementParameters->getModification().isEmpty()) {
           setValueWidget(pElementParameters->getModification(), false, mUnit, true);
         }
       }
       pElementParameters->deleteLater();
+      // reset the modifier
+      mpModelInstanceElement->resetModifier();
       // reset the actual model of the element
       mpModelInstanceElement->setModel(pCurrentModel);
       delete pNewModel;
     }
-    MainWindow::instance()->hideProgressBar();
-    MainWindow::instance()->getStatusBar()->clearMessage();
   }
 }
 
@@ -1407,7 +1415,7 @@ void ElementParameters::fetchElementModifiers()
 {
   foreach (auto modifier, mpElement->getModifier().getModifiers()) {
     Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited || mNested);
+    ElementParameters::applyStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited);
   }
 }
 

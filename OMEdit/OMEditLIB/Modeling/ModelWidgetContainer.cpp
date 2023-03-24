@@ -959,7 +959,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           /* We use getModelInstanceIcon here for bettter performance
            * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
            */
-          pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(pLibraryTreeItem->getNameStructure(), false, true)));
+          pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(pLibraryTreeItem->getNameStructure(), "", false, true)));
           pModelInstance->addElement(pComponent);
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
           addElementToView(pComponent, false, true, true, position);
@@ -5814,7 +5814,7 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   // call getModelInstance
-  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), false, icon);
+  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
 
   QElapsedTimer timer;
   timer.start();

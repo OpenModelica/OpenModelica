@@ -607,6 +607,8 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier getModifier() const {return mModifier;}
+    void setModifier(const Modifier modifier) {mModifier = modifier;}
+    void resetModifier() {mModifier = mModifierForReset;}
     QString getModifierValueFromType(QStringList modifierNames);
     Dimensions getDimensions() const {return mDims;}
     Prefixes *getPrefixes() const {return mpPrefixes.get();}
@@ -631,6 +633,7 @@ private:
     Model *mpModel = 0;
 
     Modifier mModifier;
+    Modifier mModifierForReset;
     Dimensions mDims;
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;

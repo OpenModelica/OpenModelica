@@ -1553,6 +1553,7 @@ namespace ModelInstance
 
     if (jsonObject.contains("modifiers")) {
       mModifier.deserialize(jsonObject.value("modifiers"));
+      mModifierForReset = mModifier;
     }
 
     if (jsonObject.contains("value")) {
