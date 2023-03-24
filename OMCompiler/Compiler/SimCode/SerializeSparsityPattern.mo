@@ -43,14 +43,16 @@ protected
   String fname;
 algorithm
   for jac in code.jacobianMatrices loop
-    fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
-    columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
-    rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
-    serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
-    for color in jac.coloredCols loop
-      columns := listArray(color);
-      serializeColor(fname, arrayLength(columns), columns);
-    end for;
+    if not listEmpty(jac.sparsity) then
+      fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
+      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
+      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
+      serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
+      for color in jac.coloredCols loop
+        columns := listArray(color);
+        serializeColor(fname, arrayLength(columns), columns);
+      end for;
+    end if;
   end for;
 end serialize;
 

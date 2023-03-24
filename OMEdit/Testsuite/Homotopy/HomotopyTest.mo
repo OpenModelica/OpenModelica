@@ -4,7 +4,7 @@ package HomotopyTest
     Real x;
   equation
     homotopy(x^2 + 0.1*sin(x) + 1,
-             x^2 + 0.2*sin(x) + 1 ) = 0;
+             x^2 + 0.2*sin(x) + 1) = 0;
     annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V"));
   end M1;
 
@@ -18,23 +18,22 @@ package HomotopyTest
     annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V,LOG_INIT_V"));
   end M3;
 
-  model M4 "Fails at 0 < lambda <1"
+  model M4 "Fails at 0 < lambda < 1"
     Real x;
   equation
-    homotopy(x^2 + 2*sin(x) +1,
-              2*x + 1) = 0;
+    homotopy(x^2 + 2*sin(x) + 1,
+             2*x + 1) = 0;
     annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V", ils="10"));
   end M4;
 
-  model M5 "Fails at 0 < lambda <1"
+  model M5 "Fails at 0 < lambda < 1"
     extends M4;
     annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V,LOG_INIT_HOMOTOPY", ils="10"));
   end M5;
 
-  model M6 "Fails at 0 < lambda <1"
+  model M6 "Fails at 0 < lambda < 1"
     extends M4;
     annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V,LOG_INIT_V", ils="10"));
   end M6;
-
 
 end HomotopyTest;
