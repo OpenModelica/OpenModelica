@@ -3403,7 +3403,7 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint, bool icon)
+QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
   timer.start();
@@ -3420,10 +3420,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, QString(), prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, QString(), prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {
@@ -3444,6 +3444,30 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrin
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       qDebug() << "Time for converting to JSON" << (double)timer.elapsed() / 1000.0 << "secs";
+    }
+    return doc.object();
+  }
+  return QJsonObject();
+}
+
+/*!
+ * \brief OMCProxy::modifierToJSON
+ * Converts the modifier to JSON format.
+ * \param modifier
+ * \param prettyPrint
+ * \return
+ */
+QJsonObject OMCProxy::modifierToJSON(const QString &modifier, bool prettyPrint)
+{
+  QString modifierJson = mpOMCInterface->modifierToJSON(modifier, prettyPrint);
+  printMessagesStringInternal();
+  if (!modifierJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(modifierJson.toUtf8(), &jsonParserError);
+    if (doc.isNull()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse modifier to json with error %1.").arg(jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
     }
     return doc.object();
   }
