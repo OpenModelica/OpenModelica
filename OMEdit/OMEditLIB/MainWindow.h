@@ -270,7 +270,7 @@ private:
   bool mNewApi;
   bool mNewApiCommandLine;
   bool mNewApiProfiling;
-  FILE *mpNewApiProfilingFile;
+  FILE *mpNewApiProfilingFile = nullptr;
   bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
