@@ -3428,7 +3428,8 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   if (MainWindow::instance()->isNewApiProfiling()) {
     const QString api = icon ? "getModelInstanceIcon" : "getModelInstance";
-    qDebug() << "Time for" << QString("%1(%2)").arg(api, className) << (double)timer.elapsed() / 1000.0 << "secs";
+    double elapsed = (double)timer.elapsed() / 1000.0;
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for %1 %2 secs").arg(api, QString::number(elapsed, 'f', 6)));
   }
 
   printMessagesStringInternal();
@@ -3443,7 +3444,8 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
-      qDebug() << "Time for converting to JSON" << (double)timer.elapsed() / 1000.0 << "secs";
+      double elapsed = (double)timer.elapsed() / 1000.0;
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }

@@ -109,7 +109,7 @@ public:
   bool isNewApiCommandLine() const {return mNewApiCommandLine;}
   void setNewApiCommandLine(bool newApiCommandLine) {mNewApiCommandLine = newApiCommandLine;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
-  void setNewApiProfiling(bool newApiProfiling) {mNewApiProfiling = newApiProfiling;}
+  void setNewApiProfiling(bool newApiProfiling);
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
@@ -261,6 +261,7 @@ public:
   static void LoadModelCallbackFunction(void *p, const char* modelName);
   void addSystemLibraries();
   QString getLibraryIndexFilePath() const;
+  void writeNewApiProfiling(const QString &str);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -269,6 +270,7 @@ private:
   bool mNewApi;
   bool mNewApiCommandLine;
   bool mNewApiProfiling;
+  FILE *mpNewApiProfilingFile;
   bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;

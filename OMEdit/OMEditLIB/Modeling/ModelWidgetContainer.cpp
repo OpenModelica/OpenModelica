@@ -5814,6 +5814,7 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   // call getModelInstance
+  MainWindow::instance()->writeNewApiProfiling(mpLibraryTreeItem->getNameStructure());
   const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
 
   QElapsedTimer timer;
@@ -5821,14 +5822,17 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
-    qDebug() << "Time for parsing JSON" << (double)timer.elapsed() / 1000.0 << "secs";
+    double elapsed = (double)timer.elapsed() / 1000.0;
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
   }
 
   timer.restart();
   // drawing
   drawModel(modelInfo);
   if (MainWindow::instance()->isNewApiProfiling()) {
-    qDebug() << "Time for drawing graphical objects" << (double)timer.elapsed() / 1000.0 << "secs";
+    double elapsed = (double)timer.elapsed() / 1000.0;
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for drawing graphical objects %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling("\n");
   }
 
   // delete the old ModelInstance
