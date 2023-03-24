@@ -286,7 +286,7 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   QMenu visualizerMenu(name, this);
 
   visualizerMenu.setIcon(QIcon(":/Resources/icons/animation.svg"));
-  QAction action0(QIcon(":/Resources/icons/reset.svg"), tr("Reset Transparency and Texture"), this);
+  QAction action0(QIcon(":/Resources/icons/reset.svg"), tr("Reset Visual Properties"), this);
   QAction action1(QIcon(":/Resources/icons/transparency.svg"), tr("Change Transparency"), this);
   QAction action2(QIcon(":/Resources/icons/invisible.svg"), tr("Make Visualizer Invisible"), this);
   QAction action3(QIcon(":/Resources/icons/changeColor.svg"), tr("Change Color"), this);
@@ -294,7 +294,7 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   QAction action5(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
   QAction action6(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
 
-  connect(&action0, SIGNAL(triggered()), this, SLOT(resetTransparencyAndTextureForAllVisualizers()));
+  connect(&action0, SIGNAL(triggered()), this, SLOT(resetVisualPropertiesForAllVisualizers()));
   connect(&action1, SIGNAL(triggered()), this, SLOT(changeVisualizerTransparency()));
   connect(&action2, SIGNAL(triggered()), this, SLOT(makeVisualizerInvisible()));
   connect(&action3, SIGNAL(triggered()), this, SLOT(changeVisualizerColor()));
@@ -446,14 +446,13 @@ void ViewerWidget::removeTexture()
 }
 
 /*!
- * \brief ViewerWidget::resetTransparencyAndTextureForAllVisualizers
- * sets all transparency and texture settings back to default
+ * \brief ViewerWidget::resetVisualPropertiesForAllVisualizers
+ * sets all visual properties back to default
  */
-void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
+void ViewerWidget::resetVisualPropertiesForAllVisualizers()
 {
   for (AbstractVisualizerObject& visualizer : mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjects()) {
-    visualizer.getVisualProperties()->getTransparency().reset();
-    visualizer.getVisualProperties()->getTextureImagePath().reset();
+    visualizer.getVisualProperties()->resetVisualProperties();
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(visualizer);
   }
 }
