@@ -1477,22 +1477,13 @@ algorithm
     ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(inInitDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
     if debug then ExecStat.execStat("simCode: createStartValueEquations"); end if;
 
-    nominalValueEquations := {};
-    minValueEquations := {};
-    maxValueEquations := {};
-    // For now, disable traversal of globalknownvars for creation of nominal, min, and max assignments (if we are not doing
-    // dynamic optimizations).
-    // We need to revise how we handle these assignments for parameters with regard to maintaining the binding values
-    // for those that we end up generating these assignments. See #9825 for discussions.
-    // If you change these remember to change the coresponding code for ode mode simulation in SimCodeUtil.mo.
-    if (Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM)) then
-      ((uniqueEqIndex, nominalValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
-      if debug then ExecStat.execStat("simCode: createNominalValueEquationsShared"); end if;
-      ((uniqueEqIndex, minValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
-      if debug then ExecStat.execStat("simCode: createMinValueEquationsShared"); end if;
-      ((uniqueEqIndex, maxValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
-      if debug then ExecStat.execStat("simCode: createMaxValueEquationsShared"); end if;
-    end if;
+
+    ((uniqueEqIndex, nominalValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
+    if debug then ExecStat.execStat("simCode: createNominalValueEquationsShared"); end if;
+    ((uniqueEqIndex, minValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
+    if debug then ExecStat.execStat("simCode: createMinValueEquationsShared"); end if;
+    ((uniqueEqIndex, maxValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
+    if debug then ExecStat.execStat("simCode: createMaxValueEquationsShared"); end if;
 
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then ExecStat.execStat("simCode: createNominalValueEquations"); end if;
