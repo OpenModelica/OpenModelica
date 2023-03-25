@@ -3445,10 +3445,10 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
 ::=
 let &sub = buffer ""
   <<
-  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl2(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")%>
-  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
-  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
-  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
+  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl2(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false, /* Initial? */ true) ; separator="\n")%>
+  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
+  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
+  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
