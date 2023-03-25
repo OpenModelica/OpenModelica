@@ -3445,54 +3445,27 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
 ::=
 let &sub = buffer ""
   <<
-  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n") %>
+  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl2(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")%>
+  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
+  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
+  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true) ; separator="\n") %>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     /* min ******************************************************** */
-    <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-
     infoStreamPrint(LOG_INIT, 1, "updating min-values");
-    <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-      <<
-      <%crefAttributes(cref)%>.min = <%cref(cref, &sub)%>;
-        infoStreamPrint(LOG_INIT_V, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.min);
-      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
-      >>
-      ;separator="\n"
-    %>
+    <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* max ******************************************************** */
-    <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-
     infoStreamPrint(LOG_INIT, 1, "updating max-values");
-    <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-      <<
-      <%crefAttributes(cref)%>.max = <%cref(cref, &sub)%>;
-        infoStreamPrint(LOG_INIT_V, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.max);
-      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
-      >>
-      ;separator="\n"
-    %>
+    <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* nominal **************************************************** */
-    <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-
     infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
-    <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-      <<
-      <%crefAttributes(cref)%>.nominal = <%cref(cref, &sub)%>;
-        infoStreamPrint(LOG_INIT_V, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.nominal);
-      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
-      >>
-      ;separator="\n"
-    %>
+    <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* start ****************************************************** */
@@ -3505,6 +3478,69 @@ let &sub = buffer ""
   }
   >>
 end functionUpdateBoundVariableAttributes;
+
+template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String attribute, Context context, String modelNamePrefix, Boolean static, Boolean noOpt)
+ "Generates an a function representing an equation for an attribute binding (e.g min, max ...)"
+::=
+  let OMC_NO_OPT = if noOpt then 'OMC_DISABLE_OPT<%\n%>' else (match eq case SES_LINEAR(__) then 'OMC_DISABLE_OPT<%\n%>')
+  match eq
+    case SES_SIMPLE_ASSIGN(exp=CALL(path=IDENT(name="fail")))
+    case SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=CALL(path=IDENT(name="fail"))) then
+      '<%generateThrow()%><%\n%>'
+
+    case SES_SIMPLE_ASSIGN(__)
+    case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+
+      let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
+      let &varDecls = buffer ""
+      let &auxFunction = buffer ""
+      let body = functionUpdateBoundVariableAttributesFunctionsSimpleAssign(eq, attribute, context, &varDecls, &auxFunction)
+
+      <<
+      /*
+      <%dumpEqs(fill(eq,1))%>
+      */
+      <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
+      {
+        TRACE_PUSH
+        const int equationIndexes[2] = {1,<%ix%>};
+        <%&varDecls%>
+        <%body%>
+        TRACE_POP
+      }
+
+      >>
+
+    else "NOT IMPLEMENTED EQUATION equation_"
+end functionUpdateBoundVariableAttributesFunctions;
+
+template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem eq, String attribute, Context context,
+                              Text &varDecls, Text &auxFunction)
+ "Generates an equation that is just a simple assignment for an arribute binding. The attribute type is given by the
+ function argument 'attibute' (e.g min, max ...)"
+::=
+match eq
+case SES_SIMPLE_ASSIGN(__)
+case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+  let &sub = buffer ""
+  let &preExp = buffer ""
+  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+  let postExp = if isStartCref(cref) then
+    <<
+    <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
+    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+    >>
+  <<
+  <%modelicaLine(eqInfo(eq))%>
+  <%preExp%>
+  <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
+  infoStreamPrint(LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name,
+        (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
+  <%postExp%>
+  <%endModelicaLine()%>
+  >>
+end functionUpdateBoundVariableAttributesFunctionsSimpleAssign;
+
 
 template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquations, list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, SimCode simCode)
   "Generates function in simulation file."
