@@ -63,7 +63,6 @@ import List;
 import MetaModelica.Dangerous;
 import Mutable;
 import SCodeUtil;
-import StringUtil;
 import System;
 import Types;
 import Util;
