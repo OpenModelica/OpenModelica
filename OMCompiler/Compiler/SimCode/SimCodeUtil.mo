@@ -438,26 +438,25 @@ algorithm
                                     backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
     if debug then execStat("simCode: translateClockedEquations"); end if;
 
-    // Assertions and crap
     // create parameter equations
-
     ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, globalKnownVars));
     if debug then execStat("simCode: createStartValueEquations"); end if;
 
-
     ((uniqueEqIndex, nominalValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
     if debug then execStat("simCode: createNominalValueEquationsShared"); end if;
-    ((uniqueEqIndex, minValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
-    if debug then execStat("simCode: createMinValueEquationsShared"); end if;
-    ((uniqueEqIndex, maxValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
-    if debug then execStat("simCode: createMaxValueEquationsShared"); end if;
-
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
+
+    ((uniqueEqIndex, minValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
+    if debug then execStat("simCode: createMinValueEquationsShared"); end if;
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, minValueEquations));
     if debug then execStat("simCode: createMinValueEquations"); end if;
+
+    ((uniqueEqIndex, maxValueEquations)) := createValueEquationsShared(dlow.shared, createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
+    if debug then execStat("simCode: createMaxValueEquationsShared"); end if;
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
+
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
     (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
