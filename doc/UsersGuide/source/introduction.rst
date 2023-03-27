@@ -3,7 +3,7 @@ Introduction
 
 .. highlight:: modelica
 
-The |omlogo| system described in this document has both short-term
+The OpenModelica system described in this document has both short-term
 and long-term goals:
 
 -  The short-term goal is to develop an efficient interactive
@@ -988,8 +988,3 @@ the compiler:
 
 .. command-output :: omc --showErrorMessages -d=failtrace TestScript.mos
   :ellipsis: 4,-4
-
-.. |omlogo| image:: logo.*
-  :alt: OpenModelica logotype
-  :height: 14pt
-  :target: https://openmodelica.org
