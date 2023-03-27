@@ -1,7 +1,7 @@
 // name: fmi_interpolation_01.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf fmi_interpolation_01.fmu fmi_interpolation_01.log fmi_interpolation_01.xml fmi_interpolation_01_tmp.xml
+// teardown_command: rm -rf fmi_interpolation_01.fmu fmi_interpolation_01_info.json fmi_interpolation_01.log fmi_interpolation_01.xml fmi_interpolation_01_tmp.xml
 
 loadString("
 model fmi_interpolation_01
