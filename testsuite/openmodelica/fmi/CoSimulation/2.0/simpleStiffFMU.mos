@@ -1,7 +1,7 @@
-// name:     simpleStiffFMU_dynamic
+// name:     simpleStiffFMU
 // keywords: fmu export simulation flags
 // status: correct
-// teardown_command: rm -rf
+// teardown_command: rm -rf stiffProblem.fmu stiffProblem*
 // cflags: -d=-newInst
 //
 // Export simple stiff model as 2.0 CS FMU with CVODE solver
@@ -46,18 +46,18 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // 0
 // ""
 // "{
-//   \"s\" : \"cvode\",
-//   \"nls\" : \"homotopy\"
+//   \"s\" : \"cvode\"
 // }"
 // ""
 // 0
 // ""
 // "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
-// LOG_SOLVER        | info    | CVODE maximum integration order CV_NEWTON
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
-// LOG_SOLVER        | info    | CVODE Using relative error tolreance 1.000000e-06
-// LOG_SOLVER        | info    | CVODE uses internal dense numeric jacobian method
-// LOG_SOLVER        | info    | CVODE uses internal root finding method YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE Using dense internal linear solver SUNLinSol_Dense.
+// LOG_SOLVER        | info    | CVODE Use internal dense numeric jacobian method.
+// LOG_SOLVER        | info    | CVODE uses internal root finding method NO
 // LOG_SOLVER        | info    | CVODE maximum absolut step size 0
 // LOG_SOLVER        | info    | CVODE initial step size is set automatically
 // LOG_SOLVER        | info    | CVODE maximum integration order 5

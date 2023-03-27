@@ -15684,7 +15684,7 @@ algorithm
     code := "set(NEED_CVODE FALSE)";
   else
     code := "set(NEED_CVODE TRUE)\n" +
-            "set(CVODE_DIRECTORY \"" +  Settings.getInstallationDirectoryPath() + "/lib/omc\")";
+            "set(CVODE_DIRECTORY \"" +  Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\")";
   end if;
 end getCmakeSundialsLinkCode;
 

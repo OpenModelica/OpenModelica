@@ -1,7 +1,7 @@
-// name:     ExportCvodeFmu_dynamic
+// name:     ExportCvodeFmu_cmake
 // keywords: fmu export simulation flags
 // status: correct
-// teardown_command: rm -rf *.fmu Pendulum* Pendulum*  Pendulum-dynamic* Pendulum_dynamic* Pendulum_cs_systemCall* Pendulum_flags_dynamic.json
+// teardown_command: rm -rf Pendulum*  Pendulum-dynamic* Pendulum_dynamic* Pendulum_cs_systemCall* Pendulum_flags_dynamic.json
 // cflags: -d=-newInst
 //
 // Export Pendulum as 2.0 CS FMU with CVODE solver
@@ -11,7 +11,8 @@ loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadString("model Pendulum
 extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
 end Pendulum;"); getErrorString();
-setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=s:cvode --fmuCMakeBuild=true --fmuRuntimeDepends=none"); getErrorString();
 buildModelFMU(Pendulum, version = "2.0", fmuType="cs", platforms={"dynamic"}); getErrorString();
 
 // Check _flags.json for simulation flags
