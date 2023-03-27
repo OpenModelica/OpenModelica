@@ -151,6 +151,7 @@ QString Helper::close;
 QString Helper::error;
 QString Helper::percentageLabel;
 QString Helper::chooseTransparency;
+QString Helper::chooseSpecularity;
 QString Helper::chooseColor;
 QString Helper::chooseFile;
 QString Helper::chooseFiles;
@@ -457,6 +458,7 @@ void Helper::initHelperVariables()
   Helper::error = tr("Error");
   Helper::percentageLabel = tr("Percentage:");
   Helper::chooseTransparency = tr("Choose Transparency");
+  Helper::chooseSpecularity = tr("Choose Specularity");
   Helper::chooseColor = tr("Choose Color");
   Helper::chooseFile = tr("Choose File");
   Helper::chooseFiles = tr("Choose File(s)");

@@ -290,17 +290,19 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   QAction action1(QIcon(":/Resources/icons/transparency.svg"), tr("Change Transparency"), this);
   QAction action2(QIcon(":/Resources/icons/invisible.svg"), tr("Make Visualizer Invisible"), this);
   QAction action3(QIcon(":/Resources/icons/changeColor.svg"), tr("Change Color"), this);
-  QAction action4(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Checker Texture"), this);
-  QAction action5(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
-  QAction action6(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
+  QAction action4(QIcon(":/Resources/icons/specularity.svg"), tr("Change Specularity"), this);
+  QAction action5(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Checker Texture"), this);
+  QAction action6(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
+  QAction action7(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
 
   connect(&action0, SIGNAL(triggered()), this, SLOT(resetVisualPropertiesForAllVisualizers()));
   connect(&action1, SIGNAL(triggered()), this, SLOT(changeVisualizerTransparency()));
   connect(&action2, SIGNAL(triggered()), this, SLOT(makeVisualizerInvisible()));
   connect(&action3, SIGNAL(triggered()), this, SLOT(changeVisualizerColor()));
-  connect(&action4, SIGNAL(triggered()), this, SLOT(applyCheckerTexture()));
-  connect(&action5, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
-  connect(&action6, SIGNAL(triggered()), this, SLOT(removeTexture()));
+  connect(&action4, SIGNAL(triggered()), this, SLOT(changeVisualizerSpec()));
+  connect(&action5, SIGNAL(triggered()), this, SLOT(applyCheckerTexture()));
+  connect(&action6, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
+  connect(&action7, SIGNAL(triggered()), this, SLOT(removeTexture()));
 
   // If a visualizer is picked, one can change its properties
   if (mpSelectedVisualizer) {
@@ -313,10 +315,11 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   visualizerMenu.addAction(&action2);
   visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action3);
-  visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action4);
+  visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action5);
   visualizerMenu.addAction(&action6);
+  visualizerMenu.addAction(&action7);
 
   contextMenu.exec(this->mapToGlobal(pos));
 }
@@ -365,6 +368,26 @@ void ViewerWidget::changeVisualizerColor()
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
       mpSelectedVisualizer->getVisualProperties()->getColor().set(color);
+      mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
+    }
+    mpSelectedVisualizer = nullptr;
+  }
+}
+
+/*!
+ * \brief ViewerWidget::changeVisualizerSpec
+ * opens a number dialog and selects a new specular coefficient for the visualizer
+ */
+void ViewerWidget::changeVisualizerSpec()
+{
+  if (mpSelectedVisualizer) {
+    bool ok;
+    const int min = 0, max = 100, step = 1; // Unit: [%]
+    const int currentSpecular = mpSelectedVisualizer->getVisualProperties()->getSpecular().get() * (max - min) + min;
+    const int specular = QInputDialog::getInt(this, Helper::chooseSpecularity, Helper::percentageLabel,
+                                              currentSpecular, min, max, step, &ok);
+    if (ok) { // Picked specular coefficient is not OK if the user cancels the dialog
+      mpSelectedVisualizer->getVisualProperties()->getSpecular().set((float) (specular - min) / (max - min));
       mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
