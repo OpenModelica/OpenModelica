@@ -118,7 +118,7 @@ end translateModel;
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
     #include "util/parallel_helper.h"
-    #include "util/jacobian_util.h"
+    #include "simulation/jacobian_util.h"
     #include "simulation/simulation_omc_assert.h"
     #include "simulation/solver/model_help.h"
     #include "simulation/solver/delay.h"
@@ -630,7 +630,7 @@ template simulationFile_nls(SimCode simCode)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    #include "util/jacobian_util.h"
+    #include "simulation/jacobian_util.h"
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -900,7 +900,7 @@ template simulationFile_jac(SimCode simCode)
     /* Jacobians <%listLength(jacobianMatrices)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
-    #include "util/jacobian_util.h"
+    #include "simulation/jacobian_util.h"
     #include "util/omc_file.h"
     <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode), simCode.fileNamePrefix)%>
 

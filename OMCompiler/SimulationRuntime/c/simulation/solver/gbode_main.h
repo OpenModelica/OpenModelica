@@ -42,7 +42,7 @@
 #include "gbode_conf.h"
 
 #include "../../simulation_data.h"
-#include "../../util/jacobian_util.h"
+#include "../jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
 #include "../../util/simulation_options.h"

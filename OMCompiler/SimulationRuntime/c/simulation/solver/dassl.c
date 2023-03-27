@@ -42,7 +42,7 @@
 
 #include "gc/omc_gc.h"
 #include "util/context.h"
-#include "util/jacobian_util.h"
+#include "simulation/jacobian_util.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
 

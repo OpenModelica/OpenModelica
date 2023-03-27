@@ -35,7 +35,6 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   generic_array$(OBJ_EXT) \
                   index_spec$(OBJ_EXT) \
                   integer_array$(OBJ_EXT) \
-                  jacobian_util$(OBJ_EXT) \
                   list$(OBJ_EXT) \
                   modelica_string_lit$(OBJ_EXT) \
                   modelica_string$(OBJ_EXT) \
@@ -263,6 +262,7 @@ else
   SIM_OBJS_C_FMI=
 endif
 SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
+             jacobian_util$(OBJ_EXT) \
              omc_simulation_util$(OBJ_EXT) \
              options$(OBJ_EXT) \
              simulation_info_json$(OBJ_EXT) \
@@ -276,7 +276,8 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              simulation_omc_assert.h \
              simulation_runtime.h \
              socket.h \
-             options.h
+             options.h \
+             jacobian_util.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)

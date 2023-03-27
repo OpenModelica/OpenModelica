@@ -56,7 +56,7 @@
 
 #include "newton_diagnostics.h"
 #include "../simulation_info_json.h"
-#include "../../util/jacobian_util.h"
+#include "../jacobian_util.h"
 
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))

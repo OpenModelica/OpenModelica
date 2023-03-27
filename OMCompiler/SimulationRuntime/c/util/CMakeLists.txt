@@ -7,7 +7,6 @@ SET(util_sources ../gc/memory_pool.c
                   doubleEndedList.c
                   index_spec.c
                   integer_array.c
-                  jacobian_util.c
                   java_interface.c
                   libcsv.c
                   list.c
@@ -44,7 +43,6 @@ SET(util_headers ../gc/memory_pool.h
                  doubleEndedList.h
                  index_spec.h
                  integer_array.h
-                 jacobian_util.h
                  java_interface.h
                  jni_md_solaris.h
                  jni_md_windows.h

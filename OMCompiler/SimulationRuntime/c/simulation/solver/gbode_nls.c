@@ -45,7 +45,7 @@
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
 
-#include "util/jacobian_util.h"
+#include "simulation/jacobian_util.h"
 #include "util/rtclock.h"
 
 /**

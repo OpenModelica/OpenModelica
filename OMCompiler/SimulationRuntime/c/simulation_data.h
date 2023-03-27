@@ -159,7 +159,7 @@ typedef struct SPARSE_PATTERN
  * with index vectors pointing to the start of each
  * individual row and column.
  *
- * Use freeNonlinearPattern(NONLINEAR_PATTERN *nlp) for "destruction" (see util/jacobian_util.c/h).
+ * Use freeNonlinearPattern(NONLINEAR_PATTERN *nlp) for "destruction" (see simulation/jacobian_util.c/h).
  *
  */
 typedef struct NONLINEAR_PATTERN

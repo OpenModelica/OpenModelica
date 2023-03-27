@@ -32,8 +32,8 @@
  */
 
 #include "jacobian_util.h"
-#include "../simulation/options.h"
-#include "omc_file.h"
+#include "options.h"
+#include "../util/omc_file.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -143,21 +143,18 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
  */
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
   FILE* pFile;
+  const char* fullPath = NULL;
 
-  if (data->modelData->resourcesDir) {
-    size_t length = strlen(data->modelData->resourcesDir) + 1 + strlen(filename) + 1;
-    char* fullPath = malloc(length*sizeof(char));
-    sprintf(fullPath, "%s/%s", data->modelData->resourcesDir, filename);
-    pFile = omc_fopen(fullPath, "rb");
-    if (pFile == NULL) {
-      throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
-    }
-    free(fullPath);
+  if (omc_flag[FLAG_INPUT_PATH]) {
+    GC_asprintf(&fullPath, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], filename);
+  } else if (data->modelData->resourcesDir) {
+    GC_asprintf(&fullPath, "%s/%s", data->modelData->resourcesDir, filename);
   } else {
-    pFile = omc_fopen(filename, "rb");
-    if (pFile == NULL) {
-      throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", filename);
-    }
+    GC_asprintf(&fullPath, "%s", filename);
+  }
+  pFile = omc_fopen(fullPath, "rb");
+  if (pFile == NULL) {
+    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
   }
   return pFile;
 }

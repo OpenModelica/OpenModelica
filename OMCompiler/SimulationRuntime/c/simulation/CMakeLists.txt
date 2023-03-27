@@ -9,15 +9,29 @@ ADD_SUBDIRECTORY(solver)
 # Include Directory of expat
 INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/lib" "${OMCTRUNCHOME}/OMCompiler/Compiler/runtime/")
 
-# Quellen und Header
-SET(simulation_sources
-      ../linearization/linearize.cpp
-      modelinfo.c simulation_info_json.c simulation_input_xml.c socket.cpp
-      options.c simulation_runtime.cpp simulation_omc_assert.c)
+# sources and headers
+SET(simulation_sources ../linearization/linearize.cpp
+                       jacobian_util.c
+                       modelinfo.c
+                       options.c
+                       simulation_info_json.c
+                       simulation_input_xml.c
+                       simulation_omc_assert.c
+                       simulation_runtime.cpp
+                       socket.cpp)
 
-SET(simulation_headers
-      modelinfo.h simulation_info_json.h simulation_input_xml.h socket.h options.h simulation_runtime.h
-      ../linearization/linearize.h ../simulation_data.h ../omc_inline.h ../util/omc_msvc.h ../openmodelica.h ../openmodelica_func.h)
+SET(simulation_headers ../linearization/linearize.h
+                       ../omc_inline.h
+                       ../openmodelica.h
+                       ../openmodelica_func.h
+                       ../simulation_data.h
+                       ../util/omc_msvc.h
+                       jacobian_util.h
+                       modelinfo.h
+                       simulation_info_json.h
+                       simulation_input_xml.h
+                       simulation_runtime.h
+                       socket.h options.h)
 
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)
