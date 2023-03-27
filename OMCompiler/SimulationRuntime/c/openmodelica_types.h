@@ -48,8 +48,8 @@ extern "C" {
 #define PRINT_MMC_UINT_T "lu"
 typedef unsigned long mmc_uint_t;
 typedef long mmc_sint_t;
-#define MODELICA_INT_MIN LONG_MIN;
-#define MODELICA_INT_MAX LONG_MAX;
+#define MODELICA_INT_MIN LONG_MIN
+#define MODELICA_INT_MAX LONG_MAX
 
 #elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__) /* windows 64bit */
 
@@ -66,8 +66,8 @@ typedef long mmc_sint_t;
 #define PRINT_MMC_UINT_T PRIu64
 typedef unsigned long long mmc_uint_t;
 typedef long long mmc_sint_t;
-#define MODELICA_INT_MIN LONG_MIN;
-#define MODELICA_INT_MAX LONG_MAX;
+#define MODELICA_INT_MIN LONG_MIN
+#define MODELICA_INT_MAX LONG_MAX
 
 #else /* 32bit platforms */
 
@@ -78,8 +78,8 @@ typedef long long mmc_sint_t;
 #define PRINT_MMC_UINT_T "u"
 typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
-#define MODELICA_INT_MIN INT_MIN;
-#define MODELICA_INT_MAX INT_MAX;
+#define MODELICA_INT_MIN INT_MIN
+#define MODELICA_INT_MAX INT_MAX
 
 #endif
 
