@@ -457,8 +457,6 @@ algorithm
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
 
-    ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-    if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
     (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
     if debug then execStat("simCode: createParameterEquations"); end if;
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
@@ -5989,7 +5987,7 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(), (uniqueEqIndex, simeqns))
       equation
-        // get minmax and nominal asserts
+        // get minmax asserts
         res = BackendVariable.traverseBackendDAEVars(vars, BackendVariable.getMinMaxAsserts, {});
         (result, uniqueEqIndex) = List.mapFold(res, dlowAlgToSimEqSystem, uniqueEqIndex);
       then ((uniqueEqIndex, listAppend(result, simeqns)));
@@ -7210,27 +7208,6 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end dlowAlgToSimEqSystem;
 
-public function createVarNominalAssertFromVars
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input tuple<Integer, list<SimCode.SimEqSystem>> acc;
-  output tuple<Integer, list<SimCode.SimEqSystem>> nominalAsserts;
-algorithm
-  nominalAsserts := match (syst, shared, acc)
-    local
-      list<DAE.Algorithm> asserts1;
-      list<SimCode.SimEqSystem> asserts2;
-      BackendDAE.Variables vars;
-      Integer uniqueEqIndex;
-      list<SimCode.SimEqSystem> simeqns;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), _, (uniqueEqIndex, simeqns))
-      equation
-        asserts1 = BackendVariable.traverseBackendDAEVars(vars, BackendVariable.getNominalAssert, {});
-        (asserts2, uniqueEqIndex) = List.mapFold(asserts1, dlowAlgToSimEqSystem, uniqueEqIndex);
-      then ((uniqueEqIndex, listAppend(asserts2, simeqns)));
-  end match;
-end createVarNominalAssertFromVars;
-
 public function createStartValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -7630,8 +7607,7 @@ protected function createVarAsserts
   input BackendDAE.Var inVar;
   output list<DAE.Algorithm> outAlgs;
 algorithm
-  (_, outAlgs) := BackendVariable.getMinMaxAsserts(inVar, {});
-  (_, outAlgs) := BackendVariable.getNominalAssert(inVar, outAlgs);
+  (_, outAlgs) := BackendVariable.getMinMaxAsserts(inVar);
 end createVarAsserts;
 
 public function createModelInfo

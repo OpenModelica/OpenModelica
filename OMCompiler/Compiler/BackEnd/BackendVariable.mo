@@ -63,19 +63,9 @@ import List;
 import MetaModelica.Dangerous;
 import Mutable;
 import SCodeUtil;
-import StringUtil;
 import System;
 import Types;
 import Util;
-
-/* =======================================================
- *
- *  Section for type definitions
- *
- * =======================================================
- */
-
-protected constant Real HASHVECFACTOR = 1.4;
 
 /* =======================================================
  *
@@ -2113,7 +2103,7 @@ end getVarType;
 
 public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
   input BackendDAE.Var inVar;
-  input list<DAE.Algorithm> inAsserts;
+  input list<DAE.Algorithm> inAsserts = {};
   output BackendDAE.Var outVar = inVar;
   output list<DAE.Algorithm> outAsserts;
 algorithm
@@ -2185,64 +2175,22 @@ end getMinMaxAsserts1;
 protected function getMinMaxAsserts1Str "author: Frenkel TUD 2011-03"
   input Option<DAE.Exp> omin,omax;
   input String varStr;
-  input Boolean nominal=false;
   output String msg;
-protected
-  String vstr = if nominal then "Nominal variable " else "Variable ";
 algorithm
   msg := match (omin,omax)
     local
       DAE.Exp min, max;
 
     case (SOME(min),SOME(max))
-    then StringUtil.stringAppend9(vstr,"violating min/max constraint: ",ExpressionDump.printExpStr(min)," <= ",varStr," <= ",ExpressionDump.printExpStr(max),", has value: ");
+    then "Variable violating min/max constraint: " + ExpressionDump.printExpStr(min) + " <= " + varStr + " <= " + ExpressionDump.printExpStr(max) + ", has value: ";
 
     case (SOME(min),NONE())
-    then StringUtil.stringAppend9(vstr,"violating min constraint: ",ExpressionDump.printExpStr(min)," <= ",varStr,", has value: ");
+    then "Variable violating min constraint: " + ExpressionDump.printExpStr(min) + " <= " + varStr + ", has value: ";
 
     case (NONE(),SOME(max))
-    then StringUtil.stringAppend9(vstr,"violating max constraint: ",varStr," <= ",ExpressionDump.printExpStr(max),", has value: ");
+    then "Variable violating max constraint: " + varStr + " <= " + ExpressionDump.printExpStr(max) + ", has value: ";
   end match;
 end getMinMaxAsserts1Str;
-
-public function getNominalAssert "author: Frenkel TUD 2011-03"
-  input BackendDAE.Var inVar;
-  input list<DAE.Algorithm> inAsserts;
-  output BackendDAE.Var outVar = inVar;
-  output list<DAE.Algorithm> outAsserts;
-algorithm
-  outAsserts := matchcontinue(inVar)
-    local
-      DAE.Exp e, cond, msg;
-      Option<DAE.Exp> min, max;
-      String str, varStr, format;
-      DAE.Type tp;
-      DAE.ComponentRef name;
-      Option<DAE.VariableAttributes> attr;
-      BackendDAE.Type varType;
-      DAE.ElementSource source;
-
-    case BackendDAE.VAR(varKind=BackendDAE.CONST())
-    then inAsserts;
-
-    case BackendDAE.VAR(varName=name, values=attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))), varType=varType, source=source) equation
-      (min, max) = DAEUtil.getMinMaxValues(attr);
-      tp = BackendDAEUtil.makeExpType(varType);
-
-      // do not add if const true
-      cond = getMinMaxAsserts1(min, max, e, tp);
-      (cond, _) = ExpressionSimplify.simplify(cond);
-      false = Expression.isConstTrue(cond);
-      str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name), nominal=true);
-      // if is real use %g otherwise use %d (ints and enums)
-      format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
-      msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
-      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, ElementSource.getElementSourceFileInfo(source));
-    then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
-
-    else inAsserts;
-  end matchcontinue;
-end getNominalAssert;
 
 public function varSortFunc "A sorting function (greatherThan) for Variables based on crefs"
   input BackendDAE.Var v1;
