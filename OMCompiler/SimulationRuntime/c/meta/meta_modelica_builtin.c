@@ -49,7 +49,7 @@ metamodelica_string intString(modelica_integer i)
   void *res;
   if (i>=0 && i<=9) /* Small integers are used so much it makes sense to cache them */
     return mmc_strings_len1['0'+i];
-  sprintf(buffer, "%ld", (long) i);
+  snprintf(buffer, 22, "%" PRINT_MMC_SINT_T, i);
   res = mmc_mk_scon(buffer);
   MMC_CHECK_STRING(res);
   return res;
@@ -80,16 +80,20 @@ metamodelica_string nobox_intStringChar(threadData_t *threadData,modelica_intege
 
 modelica_integer nobox_stringInt(threadData_t *threadData,metamodelica_string s)
 {
-  long res;
+  modelica_integer res;
   char *endptr,*str=MMC_STRINGDATA(s);
   MMC_CHECK_STRING(s);
   errno = 0;
+#if defined(_WIN64) || defined(__MINGW64__)
+  res = strtoll(str,&endptr,10);
+#else
   res = strtol(str,&endptr,10);
+#endif
   if (errno != 0 || str == endptr)
     MMC_THROW_INTERNAL();
   if (*endptr != '\0')
     MMC_THROW_INTERNAL();
-  if (res > INT_MAX || res < INT_MIN)
+  if (res > MODELICA_INT_MAX || res < MODELICA_INT_MIN)
     MMC_THROW_INTERNAL();
   return res;
 }
