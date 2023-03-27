@@ -65,7 +65,25 @@
 
 \lstset{language=modelica}
 
-\usepackage{bibliography/biblatex}
+\usepackage[
+    backend=bibtex8,
+    texencoding=utf8,
+    bibencoding=utf8,
+    style=numeric,
+    sorting=nyt,
+    doi=true,
+    isbn=false,
+    url=true,
+    urldate=iso8601,
+    eprint=false,
+    maxnames=70,
+    minnames=70,
+]{biblatex}
+\addbibresource{../../bibliography/openmodelica}
+\addbibresource{../../bibliography/extrarefs}
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}
 
 % begin the document
 \begin{document}
