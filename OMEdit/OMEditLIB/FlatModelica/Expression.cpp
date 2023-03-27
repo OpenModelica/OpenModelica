@@ -491,7 +491,7 @@ namespace FlatModelica
       virtual bool isLiteral() const = 0;
 
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
-      virtual Expression eval(const Expression::VariableEvaluator &var_eval) const = 0;
+      virtual Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level = 0) const = 0;
 
       virtual void print(std::ostream &os) const = 0;
   };
@@ -503,7 +503,7 @@ namespace FlatModelica
         : _value(value) {}
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Integer>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
+      Expression eval(const Expression::VariableEvaluator&, int) const override { return Expression(_value); }
 
       bool isInteger() const override { return true; }
       bool isBooleanish() const override { return true; }
@@ -526,7 +526,7 @@ namespace FlatModelica
         : _value(value) {}
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Real>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
+      Expression eval(const Expression::VariableEvaluator&, int) const override { return Expression(_value); }
 
       bool isReal() const override { return true; }
       bool isBooleanish() const override { return true; }
@@ -549,7 +549,7 @@ namespace FlatModelica
         : _value(value) {}
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Boolean>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
+      Expression eval(const Expression::VariableEvaluator&, int) const override { return Expression(_value); }
 
       bool isBoolean() const override { return true; }
       bool isBooleanish() const override { return true; }
@@ -572,7 +572,7 @@ namespace FlatModelica
       String(const QJsonValue &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<String>(*this); }
-      Expression eval(const Expression::VariableEvaluator&) const override { return Expression(_value); }
+      Expression eval(const Expression::VariableEvaluator&, int) const override { return Expression(_value); }
 
       bool isString() const override { return true; }
       bool isLiteral() const override { return true; }
@@ -596,7 +596,7 @@ namespace FlatModelica
     Enum(const QJsonObject &value);
 
     std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Enum>(*this); }
-    Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+    Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
     bool isEnum() const override { return true; }
     bool isLiteral() const override { return true; }
@@ -619,7 +619,7 @@ namespace FlatModelica
       Cref(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Cref>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
@@ -640,7 +640,7 @@ namespace FlatModelica
       Array(const QJsonArray &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Array>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isArray() const override { return true; }
       bool isLiteral() const override;
@@ -664,7 +664,7 @@ namespace FlatModelica
       Range(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Range>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override;
 
@@ -686,7 +686,7 @@ namespace FlatModelica
       Call(const QJsonObject &value, bool isRecord);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Call>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isCall() const override { return true; }
       bool isLiteral() const override { return false; }
@@ -733,7 +733,7 @@ namespace FlatModelica
       IteratorCall(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IteratorCall>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
 
@@ -755,7 +755,7 @@ namespace FlatModelica
       Binary(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Binary>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
@@ -778,7 +778,7 @@ namespace FlatModelica
       Unary(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Unary>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
@@ -801,7 +801,7 @@ namespace FlatModelica
       IfExp(const QJsonObject &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IfExp>(*this); }
-      Expression eval(const Expression::VariableEvaluator &var_eval) const override;
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
       void print(std::ostream &os) const override;
@@ -1336,9 +1336,10 @@ namespace FlatModelica
     _index = value["index"].toInt();
   }
 
-  Expression Enum::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Enum::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     Q_UNUSED(var_eval);
+    Q_UNUSED(recursion_level);
     return Expression(_name, _index);
   }
 
@@ -1404,9 +1405,13 @@ namespace FlatModelica
     }
   }
 
-  Expression Cref::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Cref::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    return Expression(var_eval(_name));
+    if (recursion_level > 100) {
+      throw std::runtime_error("Recursion limit reached");
+    }
+
+    return var_eval(_name).evaluate(var_eval, recursion_level + 1);
   }
 
   void Cref::print(std::ostream &os) const
@@ -1467,13 +1472,13 @@ namespace FlatModelica
     }
   }
 
-  Expression Array::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Array::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     std::vector<Expression> elems;
     elems.reserve(_elements.size());
 
     for (auto &e: _elements) {
-      elems.emplace_back(e.evaluate(var_eval));
+      elems.emplace_back(e.evaluate(var_eval, recursion_level));
     }
 
     return Expression(std::move(elems));
@@ -1550,11 +1555,11 @@ namespace FlatModelica
     }
   }
 
-  Expression Range::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Range::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    auto start = _start.evaluate(var_eval);
-    auto stop = _stop.evaluate(var_eval);
-    auto step = _step.isNull() ? Expression() : _step.evaluate(var_eval);
+    auto start = _start.evaluate(var_eval, recursion_level);
+    auto stop = _stop.evaluate(var_eval, recursion_level);
+    auto step = _step.isNull() ? Expression() : _step.evaluate(var_eval, recursion_level);
     return Expression(std::make_unique<Range>(std::move(start), std::move(step), std::move(stop)));
   }
 
@@ -1610,13 +1615,13 @@ namespace FlatModelica
     }
   }
 
-  Expression Call::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Call::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     std::vector<Expression> args;
     args.reserve(_args.size());
 
     for (auto &a: _args) {
-      args.emplace_back(a.evaluate(var_eval));
+      args.emplace_back(a.evaluate(var_eval, recursion_level));
     }
 
     switch (djb2_hash(_name.c_str())) {
@@ -1797,9 +1802,10 @@ namespace FlatModelica
     }
   }
 
-  Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression IteratorCall::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     Q_UNUSED(var_eval);
+    Q_UNUSED(recursion_level);
     return Expression(std::make_unique<IteratorCall>(*this));
   }
 
@@ -1846,32 +1852,32 @@ namespace FlatModelica
     _e2.deserialize(value["rhs"]);
   }
 
-  Expression Binary::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Binary::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     switch (_op.type()) {
-      case Operator::Add:       return _e1.evaluate(var_eval) + _e2.evaluate(var_eval);
-      case Operator::Sub:       return _e1.evaluate(var_eval) - _e2.evaluate(var_eval);
-      case Operator::Mul:       return _e1.evaluate(var_eval) * _e2.evaluate(var_eval);
-      case Operator::Div:       return _e1.evaluate(var_eval) / _e2.evaluate(var_eval);
-      case Operator::Pow:       return _e1.evaluate(var_eval) ^ _e2.evaluate(var_eval);
-      case Operator::AddEW:     return Expression::addEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case Operator::SubEW:     return Expression::subEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case Operator::MulEW:     return Expression::mulEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case Operator::DivEW:     return Expression::divEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
-      case Operator::PowEW:     return Expression::powEw(_e1.evaluate(var_eval), _e2.evaluate(var_eval));
+      case Operator::Add:       return _e1.evaluate(var_eval, recursion_level) + _e2.evaluate(var_eval, recursion_level);
+      case Operator::Sub:       return _e1.evaluate(var_eval, recursion_level) - _e2.evaluate(var_eval, recursion_level);
+      case Operator::Mul:       return _e1.evaluate(var_eval, recursion_level) * _e2.evaluate(var_eval, recursion_level);
+      case Operator::Div:       return _e1.evaluate(var_eval, recursion_level) / _e2.evaluate(var_eval, recursion_level);
+      case Operator::Pow:       return _e1.evaluate(var_eval, recursion_level) ^ _e2.evaluate(var_eval, recursion_level);
+      case Operator::AddEW:     return Expression::addEw(_e1.evaluate(var_eval, recursion_level), _e2.evaluate(var_eval, recursion_level));
+      case Operator::SubEW:     return Expression::subEw(_e1.evaluate(var_eval, recursion_level), _e2.evaluate(var_eval, recursion_level));
+      case Operator::MulEW:     return Expression::mulEw(_e1.evaluate(var_eval, recursion_level), _e2.evaluate(var_eval, recursion_level));
+      case Operator::DivEW:     return Expression::divEw(_e1.evaluate(var_eval, recursion_level), _e2.evaluate(var_eval, recursion_level));
+      case Operator::PowEW:     return Expression::powEw(_e1.evaluate(var_eval, recursion_level), _e2.evaluate(var_eval, recursion_level));
       // Special handling of 'and' and 'or' to avoid evaluating both sides unless it's necessary.
       case Operator::And: return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
-                               return e1.evaluate(var_eval) && e2.evaluate(var_eval);
+                               return e1.evaluate(var_eval, recursion_level) && e2.evaluate(var_eval, recursion_level);
                              }, "and");
       case Operator::Or:  return expBinaryEWOp(_e1, _e2, [&] (auto &e1, auto &e2) {
-                               return e1.evaluate(var_eval) || e2.evaluate(var_eval);
+                               return e1.evaluate(var_eval, recursion_level) || e2.evaluate(var_eval, recursion_level);
                              }, "or");
-      case Operator::Equal:     return Expression(_e1.evaluate(var_eval) == _e2.evaluate(var_eval));
-      case Operator::NotEqual:  return Expression(_e1.evaluate(var_eval) != _e2.evaluate(var_eval));
-      case Operator::Less:      return Expression(_e1.evaluate(var_eval) < _e2.evaluate(var_eval));
-      case Operator::LessEq:    return Expression(_e1.evaluate(var_eval) <= _e2.evaluate(var_eval));
-      case Operator::Greater:   return Expression(_e1.evaluate(var_eval) > _e2.evaluate(var_eval));
-      case Operator::GreaterEq: return Expression(_e1.evaluate(var_eval) >= _e2.evaluate(var_eval));
+      case Operator::Equal:     return Expression(_e1.evaluate(var_eval, recursion_level) == _e2.evaluate(var_eval, recursion_level));
+      case Operator::NotEqual:  return Expression(_e1.evaluate(var_eval, recursion_level) != _e2.evaluate(var_eval, recursion_level));
+      case Operator::Less:      return Expression(_e1.evaluate(var_eval, recursion_level) < _e2.evaluate(var_eval, recursion_level));
+      case Operator::LessEq:    return Expression(_e1.evaluate(var_eval, recursion_level) <= _e2.evaluate(var_eval, recursion_level));
+      case Operator::Greater:   return Expression(_e1.evaluate(var_eval, recursion_level) > _e2.evaluate(var_eval, recursion_level));
+      case Operator::GreaterEq: return Expression(_e1.evaluate(var_eval, recursion_level) >= _e2.evaluate(var_eval, recursion_level));
       default: break;
     }
 
@@ -1917,11 +1923,11 @@ namespace FlatModelica
     _op.deserialize(value["op"]);
   }
 
-  Expression Unary::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression Unary::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     switch (_op.type()) {
-      case Operator::Sub: return -_e.evaluate(var_eval);
-      case Operator::Not: return !_e.evaluate(var_eval);
+      case Operator::Sub: return -_e.evaluate(var_eval, recursion_level);
+      case Operator::Not: return !_e.evaluate(var_eval, recursion_level);
       default: break;
     }
 
@@ -1981,10 +1987,10 @@ namespace FlatModelica
     _false_e.deserialize(value["false"]);
   }
 
-  Expression IfExp::eval(const Expression::VariableEvaluator &var_eval) const
+  Expression IfExp::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    return _condition.evaluate(var_eval).boolValue() ?
-           _true_e.evaluate(var_eval) : _false_e.evaluate(var_eval);
+    return _condition.evaluate(var_eval, recursion_level).boolValue() ?
+           _true_e.evaluate(var_eval, recursion_level) : _false_e.evaluate(var_eval, recursion_level);
   }
 
   void IfExp::print(std::ostream &os) const
@@ -2227,9 +2233,9 @@ namespace FlatModelica
    * name as a string and returns the variables value as a double.
    * \param var_eval
    */
-  Expression Expression::evaluate(const VariableEvaluator &var_eval) const
+  Expression Expression::evaluate(const VariableEvaluator &var_eval, int recursion_level) const
   {
-    return Expression(_value->eval(var_eval));
+    return Expression(_value->eval(var_eval, recursion_level));
   }
 
   /*!

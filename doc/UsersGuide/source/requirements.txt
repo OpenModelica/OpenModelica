@@ -1,8 +1,8 @@
 bibtexparser
 gitpython
 natsort
+breathe
 sphinx
-sphinxcontrib-bibtex<2.0.0
-sphinxcontrib-inlinesyntaxhighlight
+sphinxcontrib-bibtex
 sphinxcontrib-programoutput
 ompython

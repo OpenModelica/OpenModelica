@@ -38,6 +38,7 @@ GetModelInstanceIcon4.mos \
 GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
+GetModelInstanceInnerOuter4.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMod1.mos \
@@ -49,6 +50,7 @@ GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
 GetModelInstanceReplaceable4.mos \
 GetModelInstanceStateMachine1.mos \
+ModifierToJSON1.mos \
 
 
 # test that currently fail. Move up when fixed.

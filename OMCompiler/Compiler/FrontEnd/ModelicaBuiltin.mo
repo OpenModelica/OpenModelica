@@ -4420,6 +4420,14 @@ function getModelInstanceIcon
 external "builtin";
 end getModelInstanceIcon;
 
+function modifierToJSON
+  "Parses a modifier given as a string and dumps it as JSON."
+  input String modifier;
+  input Boolean prettyPrint = false;
+  output String json;
+external "builtin";
+end modifierToJSON;
+
 function storeAST
   output Integer id;
 external "builtin";

@@ -1,15 +1,16 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-FmuExportFlags.mos \
-fmi_interpolation_01.mos \
+ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
+fmi_interpolation_01.mos \
+FmuExportFlags.mos \
+simpleStiffFMU.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES = \
-simpleStiffFMU_dynamic.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

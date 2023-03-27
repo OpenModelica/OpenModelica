@@ -286,21 +286,23 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   QMenu visualizerMenu(name, this);
 
   visualizerMenu.setIcon(QIcon(":/Resources/icons/animation.svg"));
-  QAction action0(QIcon(":/Resources/icons/reset.svg"), tr("Reset Transparency and Texture"), this);
+  QAction action0(QIcon(":/Resources/icons/reset.svg"), tr("Reset Visual Properties"), this);
   QAction action1(QIcon(":/Resources/icons/transparency.svg"), tr("Change Transparency"), this);
   QAction action2(QIcon(":/Resources/icons/invisible.svg"), tr("Make Visualizer Invisible"), this);
   QAction action3(QIcon(":/Resources/icons/changeColor.svg"), tr("Change Color"), this);
-  QAction action4(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Checker Texture"), this);
-  QAction action5(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
-  QAction action6(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
+  QAction action4(QIcon(":/Resources/icons/specularity.svg"), tr("Change Specularity"), this);
+  QAction action5(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Checker Texture"), this);
+  QAction action6(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
+  QAction action7(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
 
-  connect(&action0, SIGNAL(triggered()), this, SLOT(resetTransparencyAndTextureForAllVisualizers()));
+  connect(&action0, SIGNAL(triggered()), this, SLOT(resetVisualPropertiesForAllVisualizers()));
   connect(&action1, SIGNAL(triggered()), this, SLOT(changeVisualizerTransparency()));
   connect(&action2, SIGNAL(triggered()), this, SLOT(makeVisualizerInvisible()));
   connect(&action3, SIGNAL(triggered()), this, SLOT(changeVisualizerColor()));
-  connect(&action4, SIGNAL(triggered()), this, SLOT(applyCheckerTexture()));
-  connect(&action5, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
-  connect(&action6, SIGNAL(triggered()), this, SLOT(removeTexture()));
+  connect(&action4, SIGNAL(triggered()), this, SLOT(changeVisualizerSpec()));
+  connect(&action5, SIGNAL(triggered()), this, SLOT(applyCheckerTexture()));
+  connect(&action6, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
+  connect(&action7, SIGNAL(triggered()), this, SLOT(removeTexture()));
 
   // If a visualizer is picked, one can change its properties
   if (mpSelectedVisualizer) {
@@ -313,30 +315,22 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
   visualizerMenu.addAction(&action2);
   visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action3);
-  visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action4);
+  visualizerMenu.addSeparator();
   visualizerMenu.addAction(&action5);
   visualizerMenu.addAction(&action6);
+  visualizerMenu.addAction(&action7);
 
   contextMenu.exec(this->mapToGlobal(pos));
 }
 
 /*!
  * \brief ViewerWidget::changeVisualizerTransparency
- * changes the transparency selection of a visualizer
+ * opens a number dialog and selects a new transparency for the visualizer
  */
 void ViewerWidget::changeVisualizerTransparency()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Transparency is not applicable for DXF-Files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     bool ok;
     const int min = 0, max = 100, step = 1; // Unit: [%]
     const int currentTransparency = mpSelectedVisualizer->getVisualProperties()->getTransparency().get() * (max - min) + min;
@@ -357,15 +351,6 @@ void ViewerWidget::changeVisualizerTransparency()
 void ViewerWidget::makeVisualizerInvisible()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Invisibility is not applicable for DXF-Files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     mpSelectedVisualizer->getVisualProperties()->getTransparency().set(1.0);
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     mpSelectedVisualizer = nullptr;
@@ -379,19 +364,30 @@ void ViewerWidget::makeVisualizerInvisible()
 void ViewerWidget::changeVisualizerColor()
 {
   if (mpSelectedVisualizer) {
-    if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0) {
-        QString msg = tr("Changing the color is not applicable for DXF-Files.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
-        mpSelectedVisualizer = nullptr;
-        return;
-      }
-    }
     const QColor currentColor = mpSelectedVisualizer->getVisualProperties()->getColor().get();
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
       mpSelectedVisualizer->getVisualProperties()->getColor().set(color);
+      mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
+    }
+    mpSelectedVisualizer = nullptr;
+  }
+}
+
+/*!
+ * \brief ViewerWidget::changeVisualizerSpec
+ * opens a number dialog and selects a new specular coefficient for the visualizer
+ */
+void ViewerWidget::changeVisualizerSpec()
+{
+  if (mpSelectedVisualizer) {
+    bool ok;
+    const int min = 0, max = 100, step = 1; // Unit: [%]
+    const int currentSpecular = mpSelectedVisualizer->getVisualProperties()->getSpecular().get() * (max - min) + min;
+    const int specular = QInputDialog::getInt(this, Helper::chooseSpecularity, Helper::percentageLabel,
+                                              currentSpecular, min, max, step, &ok);
+    if (ok) { // Picked specular coefficient is not OK if the user cancels the dialog
+      mpSelectedVisualizer->getVisualProperties()->getSpecular().set((float) (specular - min) / (max - min));
       mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(mpSelectedVisualizer);
     }
     mpSelectedVisualizer = nullptr;
@@ -406,8 +402,9 @@ void ViewerWidget::applyCheckerTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -428,8 +425,9 @@ void ViewerWidget::applyCustomTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -455,8 +453,9 @@ void ViewerWidget::removeTexture()
 {
   if (mpSelectedVisualizer) {
     if (mpSelectedVisualizer->isShape()) {
-      if (mpSelectedVisualizer->asShape()->_type.compare("dxf") == 0 or mpSelectedVisualizer->asShape()->_type.compare("stl") == 0) {
-        QString msg = tr("Texture feature is not applicable for CAD-Files.");
+      ShapeObject* shape = mpSelectedVisualizer->asShape();
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
+        QString msg = tr("Texture feature is not applicable for %1 files.").arg(shape->_type.compare("dxf") == 0 ? "DXF" : "STL");
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
                                                               Helper::scriptingKind, Helper::notificationLevel));
         mpSelectedVisualizer = nullptr;
@@ -470,14 +469,13 @@ void ViewerWidget::removeTexture()
 }
 
 /*!
- * \brief ViewerWidget::resetTransparencyAndTextureForAllVisualizers
- * sets all transparency and texture settings back to default
+ * \brief ViewerWidget::resetVisualPropertiesForAllVisualizers
+ * sets all visual properties back to default
  */
-void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
+void ViewerWidget::resetVisualPropertiesForAllVisualizers()
 {
   for (AbstractVisualizerObject& visualizer : mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjects()) {
-    visualizer.getVisualProperties()->getTransparency().reset();
-    visualizer.getVisualProperties()->getTextureImagePath().reset();
+    visualizer.getVisualProperties()->resetVisualProperties();
     mpAnimationWidget->getVisualization()->getBaseData()->modifyVisualizer(visualizer);
   }
 }

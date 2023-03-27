@@ -1,0 +1,22 @@
+// name: ModifierToJSON1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+modifierToJSON("(a(redeclare MyReal y = 4, x = 3), z = 5)", prettyPrint = true);
+getErrorString();
+
+// Result:
+// "{
+//   \"a\": {
+//     \"y\": {
+//       \"$value\": \"redeclare MyReal y = 4\"
+//     },
+//     \"x\": \"3\"
+//   },
+//   \"z\": \"5\"
+// }"
+// ""
+// endResult

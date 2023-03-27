@@ -45,17 +45,12 @@ import Absyn;
 import AbsynJLDumpTpl;
 import AbsynUtil;
 import Autoconf;
-import BackendDAE;
-import BackendDAECreate;
-import BackendDAEUtil;
 import CevalScript;
 import CevalScriptBackend;
 import ClockIndexes;
 import Config;
 import Corba;
 import DAE;
-import DAEDump;
-import DAEUtil;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -76,7 +71,6 @@ import Parser;
 import Print;
 import Settings;
 import SimCode;
-import SimCodeMain;
 import Socket;
 import StackOverflow;
 import SymbolTable;
@@ -399,15 +393,16 @@ algorithm
     local
       Absyn.Program p, pLibs;
       DAE.DAElist d;
-      String s,str,f;
+      String flatString,str,f;
       list<String>  libs;
       Absyn.Path cname;
-      Boolean silent,notsilent;
+      Boolean runBackend, runSilent;
       GlobalScript.Statements stmts;
       FCore.Cache cache;
       FCore.Graph env;
       DAE.FunctionTree funcs;
-      list<Absyn.Class> cls;
+      String cls, fileNamePrefix;
+      SimCode.SimulationSettings sim_settings;
 
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
@@ -438,37 +433,17 @@ algorithm
 
         execStat("Parsed file");
 
-        // Instantiate the program.
-        (cache, env, d, cname, s) := instantiate();
-        p := SymbolTable.getAbsyn();
+        cls := Config.classToInstantiate();
+        // If no class was explicitly specified, instantiate the last class in the
+        // program. Otherwise, instantiate the given class name.
+        cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
+        fileNamePrefix := Util.stringReplaceChar(AbsynUtil.pathString(cname), ".", "_");
 
-        d := if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
+        runBackend := Config.simulationCg() or Config.simulation();
+        runSilent := Config.silent();
 
-        funcs := FCore.getFunctionTree(cache);
-
-        Print.clearBuf();
-        execStat("Transformations before Dump");
-        if stringEmpty(s) and not Config.silent() then
-          s := DAEDump.dumpStr(d, funcs);
-          execStat("DAEDump done");
-        end if;
-        Print.printBuf(s);
-        if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
-          DAEDump.dumpGraphviz(d);
-        end if;
-        execStat("Misc Dump");
-
-        // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d := if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
-
-        if not Config.silent() then
-          print(Print.getString());
-        end if;
-        execStat("Transformations before backend");
-
-        // Run the backend.
-        optimizeDae(cache, env, d, p, cname);
-        // Show any errors or warnings if there are any!
+        (_ , _, _, _, _) := CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+                                                                                fileNamePrefix, runBackend, runSilent, NONE());
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then ();
 
@@ -520,82 +495,6 @@ algorithm
 
   end matchcontinue;
 end translateFile;
-
-protected function instantiate
-  "Translates the Absyn.Program to SCode and instantiates either a given class
-   specified by the +i flag on the command line, or the last class in the
-   program if no class was specified."
-  output FCore.Cache cache;
-  output FCore.Graph env;
-  output DAE.DAElist dae;
-  output Absyn.Path cname;
-  output String flatString;
-protected
-  String cls;
-algorithm
-  cls := Config.classToInstantiate();
-  // If no class was explicitly specified, instantiate the last class in the
-  // program. Otherwise, instantiate the given class name.
-  cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
-  (cache, env, SOME(dae), flatString) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(),
-    FGraph.empty(), cname, relaxedFrontEnd = false,
-    dumpFlat = Config.flatModelica() and not Config.silent());
-end instantiate;
-
-protected function optimizeDae
-"Run the backend. Used for both parallization and for normal execution."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.DAElist dae;
-  input Absyn.Program ap;
-  input Absyn.Path inClassName;
-protected
-  BackendDAE.ExtraInfo info;
-  BackendDAE.BackendDAE dlow;
-  BackendDAE.BackendDAE initDAE;
-  Option<BackendDAE.BackendDAE> initDAE_lambda0;
-  Option<BackendDAE.InlineData> inlineData;
-  list<BackendDAE.Equation> removedInitialEquationLst;
-algorithm
-  if Config.simulationCg() or Config.simulation() then
-    info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), AbsynUtil.pathString(inClassName));
-    dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
-    (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow, "");
-    simcodegen(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, inClassName, ap);
-  end if;
-end optimizeDae;
-
-protected function simcodegen "
-  Genereates simulation code using the SimCode module"
-  input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.BackendDAE inInitDAE;
-  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
-  input Option<BackendDAE.InlineData> inInlineData;
-  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
-  input Absyn.Path inClassName;
-  input Absyn.Program inProgram;
-protected
-  String cname;
-  SimCode.SimulationSettings sim_settings;
-  Integer intervals;
-algorithm
-  if Config.simulationCg() or Config.simulation() then
-    Print.clearErrorBuf();
-    Print.clearBuf();
-    cname := AbsynUtil.pathString(inClassName);
-
-    // If accepting parModelica create a slightly different default settings.
-    // Temporary solution for now since Intel OpenCL dll calls hang.
-    sim_settings := if Config.acceptParModelicaGrammar() then
-      SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6, "dassl", "", "plt", ".*", "") else
-      SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
-
-    System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-    SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
-
-    execStat("Codegen Done");
-  end if;
-end simcodegen;
 
 protected function interactivemode
 "Initiate the interactive mode using socket communication."

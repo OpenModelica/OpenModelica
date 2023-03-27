@@ -178,6 +178,7 @@
         <file>Resources/icons/checkered.svg</file>
         <file>Resources/icons/texture.svg</file>
         <file>Resources/icons/changeColor.svg</file>
+        <file>Resources/icons/specularity.svg</file>
         <file>Resources/bitmaps/check.png</file>
         <file>Resources/icons/traceability.svg</file>
         <file>Resources/icons/interaction.svg</file>

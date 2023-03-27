@@ -4,6 +4,7 @@ import Absyn;
 import DAE;
 import FCore;
 import GlobalScript;
+import SimCode;
 import Values;
 
 function runFrontEnd
@@ -19,6 +20,23 @@ function runFrontEnd
 algorithm
   assert(false, getInstanceName());
 end runFrontEnd;
+
+public function translateModel
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String inFileNamePrefix;
+  input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
+  input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Boolean success;
+  output FCore.Cache outCache;
+  output list<String> outLibs;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  assert(false, getInstanceName());
+end translateModel;
 
 function getSimulationResultType
   output DAE.Type t;

@@ -1021,9 +1021,12 @@ algorithm
             comp_index :: local_comps := local_comps;
           end while;
 
-          tree := buildInstanceTreeComponent(comps[comp_index]);
+          if not AbsynUtil.isOnlyOuter(SCodeUtil.elementInnerOuter(e)) then
+            tree := buildInstanceTreeComponent(comps[comp_index]);
+            elements := tree :: elements;
+          end if;
         then
-          tree :: elements;
+          elements;
 
       else elements;
     end match;
@@ -2150,6 +2153,23 @@ algorithm
     json := dumpJSONAnnotationSubMod(m, scope, failOnError, json);
   end for;
 end dumpJSONChoicesAnnotation;
+
+function modifierToJSON
+  input String modifier;
+  input Boolean prettyPrint;
+  output Values.Value jsonString;
+protected
+  Absyn.Modification amod;
+  SCode.Mod smod;
+  JSON json;
+algorithm
+  Absyn.ElementArg.MODIFICATION(modification = SOME(amod)) :=
+    Parser.stringMod("dummy" + modifier);
+  smod := AbsynToSCode.translateMod(SOME(amod),
+    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), AbsynUtil.dummyInfo);
+  json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
+  jsonString := Values.STRING(JSON.toString(json, prettyPrint));
+end modifierToJSON;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;
