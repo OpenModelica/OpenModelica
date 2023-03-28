@@ -835,14 +835,27 @@ uniontype InstNode
 
   function getDerivedNode
     input InstNode node;
+    input Boolean recursive = true;
     output InstNode derived;
   algorithm
     derived := match node
-      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = derived))
-        then getDerivedNode(derived);
+      case CLASS_NODE() then getDerivedNode2(node, node.nodeType, recursive);
       else node;
     end match;
   end getDerivedNode;
+
+  function getDerivedNode2
+    input InstNode node;
+    input InstNodeType ty;
+    input Boolean recursive;
+    output InstNode derived;
+  algorithm
+    derived := match ty
+      case InstNodeType.BASE_CLASS() then if recursive then getDerivedNode(ty.parent) else ty.parent;
+      case InstNodeType.DERIVED_CLASS() then getDerivedNode2(node, ty.ty, recursive);
+      else node;
+    end match;
+  end getDerivedNode2;
 
   function updateClass
     input Class cls;

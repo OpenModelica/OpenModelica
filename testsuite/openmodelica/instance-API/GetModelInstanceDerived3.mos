@@ -1,0 +1,87 @@
+// name: GetModelInstanceDerived3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    type ThermodynamicTemperature = Real(final quantity = \"ThermodynamicTemperature\");
+    type Temperature = ThermodynamicTemperature(start = 1);
+    parameter Temperature T_ref = 300.15;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true); getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"T_ref\",
+//       \"type\": {
+//         \"name\": \"Temperature\",
+//         \"restriction\": \"type\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"extends\",
+//             \"modifiers\": {
+//               \"start\": \"1\"
+//             },
+//             \"baseClass\": {
+//               \"name\": \"ThermodynamicTemperature\",
+//               \"restriction\": \"type\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"modifiers\": {
+//                     \"quantity\": {
+//                       \"final\": true,
+//                       \"$value\": \"\\\"ThermodynamicTemperature\\\"\"
+//                     }
+//                   },
+//                   \"baseClass\": \"Real\"
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 3,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 3,
+//                 \"columnEnd\": 86
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 59
+//         }
+//       },
+//       \"modifiers\": \"300.15\",
+//       \"value\": {
+//         \"binding\": 300.15
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 6,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

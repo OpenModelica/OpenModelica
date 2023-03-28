@@ -1088,7 +1088,6 @@ algorithm
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
-  json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), scope, json);
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
 
@@ -1224,13 +1223,14 @@ function dumpJSONExtends
 protected
   InstNode node;
   SCode.Element cls_def, ext_def;
+  SCode.Mod mod;
 algorithm
   InstanceTree.CLASS(node = node) := ext;
   cls_def := InstNode.definition(node);
   ext_def := InstNode.extendsDefinition(node);
 
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
-  json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), node, json);
+  json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
   if Class.isOnlyBuiltin(InstNode.getClass(node)) then
@@ -1239,6 +1239,18 @@ algorithm
     json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
   end if;
 end dumpJSONExtends;
+
+function getExtendsModifier
+  input SCode.Element definition;
+  input InstNode node;
+  output SCode.Mod mod;
+algorithm
+  mod := match definition
+    case SCode.EXTENDS() then definition.modifications;
+    case SCode.CLASS() then SCodeUtil.elementMod(InstNode.definition(InstNode.getDerivedNode(node, recursive = false)));
+    else SCode.NOMOD();
+  end match;
+end getExtendsModifier;
 
 function dumpJSONReplaceableClass
   input InstNode cls;

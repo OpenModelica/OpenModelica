@@ -23,6 +23,7 @@ GetModelInstanceConnection1.mos \
 GetModelInstanceConnection2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
+GetModelInstanceDerived3.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
