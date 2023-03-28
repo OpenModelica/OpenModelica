@@ -452,6 +452,7 @@ if true then /* Suppress output */
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
     "../SimCode/SerializeModelInfo.mo",
+    "../SimCode/SerializeSparsityPattern.mo",
     "../SimCode/SerializeTaskSystemInfo.mo",
     "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",

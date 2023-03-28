@@ -67,10 +67,10 @@ char* omc_wchar_to_multibyte_str(const wchar_t* in_wc_str);
 
 #endif // defined(__MINGW32__) || defined(_MSC_VER)
 
-
 FILE* omc_fopen(const char *filename, const char *mode);
-
+int omc_fclose(FILE * stream);
 size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allow_early_eof);
+size_t omc_fwrite(void * buffer, size_t size, size_t count, FILE * stream);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 typedef struct _stat omc_stat_t;

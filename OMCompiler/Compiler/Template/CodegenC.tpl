@@ -118,7 +118,7 @@ end translateModel;
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
     #include "util/parallel_helper.h"
-    #include "util/jacobian_util.h"
+    #include "simulation/jacobian_util.h"
     #include "simulation/simulation_omc_assert.h"
     #include "simulation/solver/model_help.h"
     #include "simulation/solver/delay.h"
@@ -630,7 +630,7 @@ template simulationFile_nls(SimCode simCode)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    #include "util/jacobian_util.h"
+    #include "simulation/jacobian_util.h"
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -900,8 +900,9 @@ template simulationFile_jac(SimCode simCode)
     /* Jacobians <%listLength(jacobianMatrices)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
-    #include "util/jacobian_util.h"
-    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode))%>
+    #include "simulation/jacobian_util.h"
+    #include "util/omc_file.h"
+    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode), simCode.fileNamePrefix)%>
 
     <%\n%>
     >>
@@ -1426,53 +1427,56 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->modelGUID = "{<%guid%>}";
     <% match isModelExchangeFMU
     case "1.0" then
-    <<
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData =
-    #if defined(OMC_MINIMAL_METADATA)
-      NULL;
-    #else
-    #include "<%fileNamePrefix%>_info.c"
-    #endif
-    ;
-    >>
+      <<
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData =
+      #if defined(OMC_MINIMAL_METADATA)
+        NULL;
+      #else
+        #include "<%fileNamePrefix%>_info.c"
+        ;
+      #endif
+      data->modelData->modelDataXml.fileName = NULL;
+      >>
     case "" then
-    <<
-    #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData = NULL;
-    #else
-    #if defined(_MSC_VER) /* handle joke compilers */
-    {
-    /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
-    /* because the string constant limit is 65535 bytes */
-    static const char contents_init[] =
+      <<
+      #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData = NULL;
+      #else
+      #if defined(_MSC_VER) /* handle joke compilers */
+      {
+      /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
+      /* because the string constant limit is 65535 bytes */
+      static const char contents_init[] =
+        #include "<%fileNamePrefix%>_init.c"
+        ;
+      static const char contents_info[] =
+        #include "<%fileNamePrefix%>_info.c"
+        ;
+        data->modelData->initXMLData = contents_init;
+        data->modelData->modelDataXml.infoXMLData = contents_info;
+      }
+      #else /* handle real compilers */
+      data->modelData->initXMLData =
       #include "<%fileNamePrefix%>_init.c"
-      ;
-    static const char contents_info[] =
+        ;
+      data->modelData->modelDataXml.infoXMLData =
       #include "<%fileNamePrefix%>_info.c"
-      ;
-      data->modelData->initXMLData = contents_init;
-      data->modelData->modelDataXml.infoXMLData = contents_info;
-    }
-    #else /* handle real compilers */
-    data->modelData->initXMLData =
-    #include "<%fileNamePrefix%>_init.c"
-      ;
-    data->modelData->modelDataXml.infoXMLData =
-    #include "<%fileNamePrefix%>_info.c"
-      ;
-    #endif /* defined(_MSC_VER) */
-    #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
-    >>
+        ;
+      #endif /* defined(_MSC_VER) */
+      #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
+      data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";
+      data->modelData->resourcesDir = NULL;
+      >>
     else
-    <<
-    data->modelData->initXMLData = NULL;
-    data->modelData->modelDataXml.infoXMLData = NULL;
-    >>
+      <<
+      data->modelData->initXMLData = NULL;
+      data->modelData->modelDataXml.infoXMLData = NULL;
+      GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);
+      >>
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
-
     data->modelData->nStates = <%varInfo.numStateVars%>;
     data->modelData->nVariablesReal = <%nVariablesReal(varInfo)%>;
     data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
@@ -1485,23 +1489,15 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
     data->modelData->nInputVars = <%varInfo.numInVars%>;
     data->modelData->nOutputVars = <%varInfo.numOutVars%>;
-
     data->modelData->nAliasReal = <%varInfo.numAlgAliasVars%>;
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
-
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
     data->modelData->nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData->nExtObjs = <%varInfo.numExternalObjects%>;
-
-    <% match isModelExchangeFMU
-    case "1.0" then "data->modelData->modelDataXml.fileName = NULL;"
-    case "" then 'data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";'
-    else 'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
-    %>
     data->modelData->modelDataXml.modelInfoXmlLength = 0;
     data->modelData->modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData->modelDataXml.nProfileBlocks = 0;
@@ -1513,22 +1509,17 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nJacobians = <%varInfo.numJacobians%>;
     data->modelData->nOptimizeConstraints = <%varInfo.numOptimizeConstraints%>;
     data->modelData->nOptimizeFinalConstraints = <%varInfo.numOptimizeFinalConstraints%>;
-
     data->modelData->nDelayExpressions = <%match delayed case
      DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
-
     data->modelData->nBaseClocks = <%nClocks%>;
-
     data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
-
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
     data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
     data->modelData->nSetbVars = <%varInfo.numSetbVars%>;
     data->modelData->nRelatedBoundaryConditions = <%varInfo.numRelatedBoundaryConditions%>;
-    data->modelData->linearizationDumpLanguage =
-    <%
+    data->modelData->linearizationDumpLanguage = <%
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA'
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB'
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia") then 'OMC_LINEARIZE_DUMP_LANGUAGE_JULIA'
@@ -5490,11 +5481,11 @@ template genVector(String name, String num, Integer numI, Integer flag) "templat
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
   let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
+    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix, fileNamePrefix); separator="\n")
   let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
     generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
@@ -5508,7 +5499,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String 
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -5528,9 +5519,8 @@ match sparsepattern
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
-      let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-      let colorString = genSPColors(colorList, "jacobian->sparsePattern->colorCols")
+      let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
+      let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
       let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
@@ -5543,25 +5533,31 @@ match sparsepattern
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        <%colPtr%>
-        <%rowIndex%>
-        int i = 0;
+        size_t count;
+
+        FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
 
         initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
         jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
         jacobian->availability = <%availability%>;
 
-        /* write lead index of compressed sparse column */
-        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
+        /* read lead index of compressed sparse column */
+        count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
+        if (count != <%sizeleadindex%>+1) {
+          throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+        }
 
-        for(i=2;i<<%sizeleadindex%>+1;++i)
-          jacobian->sparsePattern->leadindex[i] += jacobian->sparsePattern->leadindex[i-1];
-
-        /* call sparse index */
-        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
+        /* read sparse index */
+        count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
+        if (count != <%sp_size_index%>) {
+          throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+        }
 
         /* write color array */
         <%colorString%>
+
+        omc_fclose(pFile);
+
         TRACE_POP
         return 0;
       }
@@ -5702,6 +5698,22 @@ template genSPColors(list<list<Integer>> colorList, String arrayName)
   <%colorArray%>
   >>
 end genSPColors;
+
+template readSPColors(list<list<Integer>> colorList, String arrayName)
+"This template generates row of the CRS format"
+::=
+  let colorArray = (colorList |> (indices) hasindex index0 =>
+    let length = '<%listLength(indices)%>'
+    let index = '<%intAdd(index0,1)%>'
+    let ind_name = 'indices_<%index%>'
+  <<
+  /* color <%index%> with <%length%> columns */
+  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>);
+  >>;separator="\n")
+  <<
+  <%colorArray%>
+  >>
+end readSPColors;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &eqArray, Text &eqfuncs, String modelNamePrefix, Boolean init)
  "Generates an equation.

@@ -32,7 +32,8 @@
  */
 
 #include "jacobian_util.h"
-#include "../simulation/options.h"
+#include "options.h"
+#include "../util/omc_file.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -129,6 +130,54 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
     free(spp->index); spp->index = NULL;
     free(spp->colorCols); spp->colorCols = NULL;
     free(spp->leadindex); spp->leadindex = NULL;
+  }
+}
+
+/**
+ * @brief Opens sparsity pattern file
+ *
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @param filename    String for the filename.
+ * @return FILE*      Pointer to sparsity pattern stream.
+ */
+FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
+  FILE* pFile;
+  const char* fullPath = NULL;
+
+  if (omc_flag[FLAG_INPUT_PATH]) {
+    GC_asprintf(&fullPath, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], filename);
+  } else if (data->modelData->resourcesDir) {
+    GC_asprintf(&fullPath, "%s/%s", data->modelData->resourcesDir, filename);
+  } else {
+    GC_asprintf(&fullPath, "%s", filename);
+  }
+  pFile = omc_fopen(fullPath, "rb");
+  if (pFile == NULL) {
+    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
+  }
+  return pFile;
+}
+
+/**
+ * @brief Reads one color of sparsity pattern and sets colorCols.
+ *
+ * @param threadData    Used for error handling.
+ * @param pFile         Pointer to file stream.
+ * @param colorCols     Array of column coloring.
+ * @param color         Current color index.
+ * @param length        Number of columns in color `color`.
+ */
+void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length) {
+  unsigned int i, index;
+  size_t count;
+
+  for (i = 0; i < length; i++) {
+    count = omc_fread(&index, sizeof(unsigned int), 1, pFile, FALSE);
+    if (count != 1) {
+      throwStreamPrint(threadData, "Error while reading color %d of sparsity pattern.", color);
+    }
+    colorCols[index] = color;
   }
 }
 

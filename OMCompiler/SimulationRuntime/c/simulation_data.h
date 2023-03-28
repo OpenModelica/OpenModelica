@@ -159,7 +159,7 @@ typedef struct SPARSE_PATTERN
  * with index vectors pointing to the start of each
  * individual row and column.
  *
- * Use freeNonlinearPattern(NONLINEAR_PATTERN *nlp) for "destruction" (see util/jacobian_util.c/h).
+ * Use freeNonlinearPattern(NONLINEAR_PATTERN *nlp) for "destruction" (see simulation/jacobian_util.c/h).
  *
  */
 typedef struct NONLINEAR_PATTERN
@@ -180,15 +180,15 @@ typedef struct NONLINEAR_PATTERN
 typedef struct ANALYTIC_JACOBIAN
 {
   JACOBIAN_AVAILABILITY availability;  /* Availability status */
-  unsigned int sizeCols;              /* Number of columns of Jacobian */
-  unsigned int sizeRows;              /* Number of rows of Jacobian */
-  unsigned int sizeTmpVars;           /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;      /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;            /* Seed vector for specifying which columns to evaluate */
+  unsigned int sizeCols;               /* Number of columns of Jacobian */
+  unsigned int sizeRows;               /* Number of rows of Jacobian */
+  unsigned int sizeTmpVars;            /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;       /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;             /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;          /* Result column for given seed vector */
-  modelica_real dae_cj;               /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
+  modelica_real* resultVars;           /* Result column for given seed vector */
+  modelica_real dae_cj;                /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independent of seed vector */
 } ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -551,7 +551,7 @@ typedef struct MODEL_DATA
   const char* modelDir;
   const char* modelGUID;
   const char* initXMLData;
-  char* resourcesDir;
+  char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
 
   int linearizationDumpLanguage;        /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */

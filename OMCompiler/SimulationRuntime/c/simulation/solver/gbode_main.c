@@ -61,7 +61,7 @@
 #include "nonlinearSystem.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
-#include "util/jacobian_util.h"
+#include "simulation/jacobian_util.h"
 #include "util/omc_error.h"
 #include "util/omc_file.h"
 #include "util/simulation_options.h"

@@ -1,7 +1,7 @@
 // name:     ExportCvodeFmu_dynamic
 // keywords: fmu export simulation flags
 // status: correct
-// teardown_command: rm -rf *.fmu Pendulum* Pendulum*  Pendulum-dynamic* Pendulum_dynamic* Pendulum_cs_systemCall* Pendulum_flags_dynamic.json
+// teardown_command: rm -rf *.fmu Pendulum* Pendulum-dynamic* Pendulum_dynamic* Pendulum_cs_systemCall* Pendulum_flags_dynamic.json
 // cflags: -d=-newInst
 //
 // Export Pendulum as 2.0 CS FMU with CVODE solver

@@ -81,7 +81,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/generic_array.c\" />
 //       <File name=\"./util/index_spec.c\" />
 //       <File name=\"./util/integer_array.c\" />
-//       <File name=\"./util/jacobian_util.c\" />
 //       <File name=\"./util/list.c\" />
 //       <File name=\"./util/modelica_string_lit.c\" />
 //       <File name=\"./util/modelica_string.c\" />
@@ -101,6 +100,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/utility.c\" />
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/jacobian_util.c\" />
 //       <File name=\"./simulation/omc_simulation_util.c\" />
 //       <File name=\"./simulation/options.c\" />
 //       <File name=\"./simulation/simulation_info_json.c\" />

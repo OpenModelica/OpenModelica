@@ -60,7 +60,7 @@
 #include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
-#include "util/jacobian_util.h"
+#include "simulation/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
 #include "simulation/options.h"

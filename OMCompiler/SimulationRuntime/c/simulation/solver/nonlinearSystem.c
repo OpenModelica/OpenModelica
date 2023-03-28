@@ -34,7 +34,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "../../util/jacobian_util.h"
+#include "../jacobian_util.h"
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
@@ -52,7 +52,6 @@
 #include "../simulation_info_json.h"
 #include "../simulation_runtime.h"
 #include "model_help.h"
-#include "../../util/jacobian_util.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "../../meta/meta_modelica.h"

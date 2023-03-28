@@ -23,7 +23,6 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./util/generic_array.c
                                  ./util/index_spec.c
                                  ./util/integer_array.c
-                                 ./util/jacobian_util.c
                                  ./util/list.c
                                  ./util/modelica_string_lit.c
                                  ./util/modelica_string.c
@@ -43,6 +42,7 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./util/utility.c
                                  ./util/varinfo.c
                                  ./math-support/pivot.c
+                                 ./simulation/jacobian_util.c
                                  ./simulation/omc_simulation_util.c
                                  ./simulation/options.c
                                  ./simulation/simulation_info_json.c
@@ -79,6 +79,7 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
                               \"./optimization/OptimizerData.h\",
                               \"./optimization/OptimizerLocalFunction.h\",
                               \"./optimization/OptimizerInterface.h\",
+                              \"./simulation/jacobian_util.h\",
                               \"./simulation/modelinfo.h\",
                               \"./simulation/options.h\",
                               \"./simulation/simulation_info_json.h\",
@@ -134,7 +135,6 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
                               \"./util/generic_array.h\",
                               \"./util/index_spec.h\",
                               \"./util/integer_array.h\",
-                              \"./util/jacobian_util.h\",
                               \"./util/java_interface.h\",
                               \"./util/modelica.h\",
                               \"./util/modelica_string.h\",
