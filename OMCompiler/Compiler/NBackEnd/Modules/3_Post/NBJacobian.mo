@@ -734,7 +734,7 @@ protected
     alias_vars    := {};
     depend_vars   := {};
 
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
+    (res_vars, tmp_vars) := List.splitOnTrue(unknown_vars, BVariable.isStateDerivative);
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
@@ -784,6 +784,7 @@ protected
       tmpVars       = VariablePointers.fromList(tmp_vars),
       seedVars      = seedCandidates
     );
+
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(

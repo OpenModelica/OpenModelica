@@ -437,7 +437,6 @@ public
       list<OldBackendDAE.TimeEvent> timeEvents;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       HashTableCrILst.HashTable varToIndexMapping;
-      list<OldSimCode.JacobianMatrix> jacobians = {};
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
       list<SimVar> residualVars;
@@ -446,14 +445,11 @@ public
       (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo);
 
       (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
-      for jac in listReverse(simCode.jacobians) loop
-        jacobians := SimJacobian.convert(jac) :: jacobians;
-      end for;
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
-          SOME(DAE_MODE_DATA(residualVars = residualVars)) := simCode.daeModeData;
-          crefToSimVarHT:= List.fold(SimVar.SimVar.convertList(residualVars), HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHT);
+        SOME(DAE_MODE_DATA(residualVars = residualVars)) := simCode.daeModeData;
+        crefToSimVarHT:= List.fold(SimVar.SimVar.convertList(residualVars), HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHT);
       end if;
       crefToClockIndexHT := HashTable.emptyHashTable();
       for cref in simCode.discreteVars loop
@@ -494,7 +490,7 @@ public
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
         spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
-        jacobianMatrices              = jacobians,
+        jacobianMatrices              = list(SimJacobian.convert(jac) for jac in simCode.jacobians),
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = simCode.fileNamePrefix,
         fullPathPrefix                = "", // FMI stuff

@@ -5558,52 +5558,52 @@ match sparsepattern
     }
     >>
   case _ then
-      let &eachCrefParts = buffer ""
-      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
-      let sizeleadindex = listLength(sparsepattern)
-      let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
-      let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
-      let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
-      let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
-      let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
-      let constantEqns = (jacobianColumn |> JAC_COLUMN(constantEqns=constantEqns) =>
-        match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
-        ;separator="")
-      let index_ = listLength(seedVars)
-      <<
-      OMC_DISABLE_OPT
-      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
-      {
-        TRACE_PUSH
-        size_t count;
+    let &eachCrefParts = buffer ""
+    let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
+    let sizeleadindex = listLength(sparsepattern)
+    let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
+    let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
+    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
+    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
+    let constantEqns = (jacobianColumn |> JAC_COLUMN(constantEqns=constantEqns) =>
+      match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
+      ;separator="")
+    let index_ = listLength(seedVars)
+    <<
+    OMC_DISABLE_OPT
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
+    {
+      TRACE_PUSH
+      size_t count;
 
-        FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
+      FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
 
-        initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
-        jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
-        jacobian->availability = <%availability%>;
+      initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+      jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
+      jacobian->availability = <%availability%>;
 
-        /* read lead index of compressed sparse column */
-        count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
-        if (count != <%sizeleadindex%>+1) {
-          throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
-        }
-
-        /* read sparse index */
-        count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
-        if (count != <%sp_size_index%>) {
-          throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
-        }
-
-        /* write color array */
-        <%colorString%>
-
-        omc_fclose(pFile);
-
-        TRACE_POP
-        return 0;
+      /* read lead index of compressed sparse column */
+      count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
+      if (count != <%sizeleadindex%>+1) {
+        throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
       }
-      >>
+
+      /* read sparse index */
+      count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
+      if (count != <%sp_size_index%>) {
+        throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
+      }
+
+      /* write color array */
+      <%colorString%>
+
+      omc_fclose(pFile);
+
+      TRACE_POP
+      return 0;
+    }
+    >>
 end match
 end initialAnalyticJacobians;
 
@@ -5657,7 +5657,6 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName,
       TRACE_PUSH
 
       int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
-
       <%(constantEqns |> eq => equation_callJacobian(eq, modelNamePrefix); separator="")%>
 
       TRACE_POP
