@@ -54,12 +54,12 @@ getErrorString();
 //       \"type\": {
 //         \"name\": \"RealInput2\",
 //         \"restriction\": \"type\",
-//         \"modifiers\": {
-//           \"start\": \"1.0\"
-//         },
 //         \"elements\": [
 //           {
 //             \"$kind\": \"extends\",
+//             \"modifiers\": {
+//               \"start\": \"1.0\"
+//             },
 //             \"baseClass\": {
 //               \"name\": \"RealInput\",
 //               \"restriction\": \"type\",

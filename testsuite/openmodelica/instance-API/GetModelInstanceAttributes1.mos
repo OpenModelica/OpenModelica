@@ -39,15 +39,15 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": {
 //         \"name\": \"Angle\",
 //         \"restriction\": \"type\",
-//         \"modifiers\": {
-//           \"quantity\": {
-//             \"final\": true,
-//             \"$value\": \"\\\"Angle\\\"\"
-//           }
-//         },
 //         \"elements\": [
 //           {
 //             \"$kind\": \"extends\",
+//             \"modifiers\": {
+//               \"quantity\": {
+//                 \"final\": true,
+//                 \"$value\": \"\\\"Angle\\\"\"
+//               }
+//             },
 //             \"baseClass\": \"Real\"
 //           }
 //         ],

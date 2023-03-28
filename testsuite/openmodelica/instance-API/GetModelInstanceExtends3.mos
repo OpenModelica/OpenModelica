@@ -7,11 +7,11 @@
 
 loadString("
   type MyReal
-    extends Real;
+    extends Real(start = 1.0);
   end MyReal;
 
   model M
-    MyReal x;
+    MyReal x(unit = \"m\");
   end M;
 ");
 getErrorString();
@@ -34,6 +34,9 @@ getModelInstance(M, prettyPrint=true);
 //         \"elements\": [
 //           {
 //             \"$kind\": \"extends\",
+//             \"modifiers\": {
+//               \"start\": \"1.0\"
+//             },
 //             \"baseClass\": \"Real\"
 //           }
 //         ],
@@ -44,6 +47,9 @@ getModelInstance(M, prettyPrint=true);
 //           \"lineEnd\": 4,
 //           \"columnEnd\": 13
 //         }
+//       },
+//       \"modifiers\": {
+//         \"unit\": \"\\\"m\\\"\"
 //       }
 //     }
 //   ],

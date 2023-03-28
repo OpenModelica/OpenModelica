@@ -20,10 +20,6 @@
       "description": "The class prefixes",
       "$ref": "#/definitions/classPrefixes"
     },
-    "modifiers": {
-      "description": "Modifier from the SCode",
-      "type": "#/definitions/scodeModifier"
-    },
     "comment": {
       "$ref": "#/definitions/comment"
     },
