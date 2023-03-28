@@ -806,8 +806,10 @@ algorithm
 
         SerializeSparsityPattern.serialize(simCode);
         for jac in simCode.jacobianMatrices loop
-          if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin" + "' '" + resourcesDir + "'") then
-            Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin file", sourceInfo());
+          if not listEmpty(jac.sparsity) then
+            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin" + "' '" + resourcesDir + "'") then
+              Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin file", sourceInfo());
+            end if;
           end if;
         end for;
 
