@@ -80,6 +80,13 @@ protected
       throwStreamPrint(NULL, \"Could not open sparsity pattern file %s.\", name);
     }
 
+    /* write endian-mark for endianness check */
+    j = 0x01234567;
+    count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+    if (count != 1) {
+      throwStreamPrint(NULL, \"Error while writing endian-mark. Expected %d, got %ld\", 1, count);
+    }
+
     /* compute and write sparsePattern->leadindex */
     j = 0;
     for (i = 0; i < numCols; i++) {

@@ -144,6 +144,8 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
   FILE* pFile;
   const char* fullPath = NULL;
+  size_t count;
+  unsigned int check = 0;
 
   if (omc_flag[FLAG_INPUT_PATH]) {
     GC_asprintf(&fullPath, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], filename);
@@ -155,6 +157,14 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
   pFile = omc_fopen(fullPath, "rb");
   if (pFile == NULL) {
     throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
+  }
+
+  /* perform endianness check */
+  count = omc_fread(&check, sizeof(unsigned int), 1, pFile, FALSE);
+  if (count != 1) {
+    throwStreamPrint(threadData, "Error while reading endian-mark of sparsity pattern file %s.", fullPath);
+  } else if (check != 0x01234567) {
+    throwStreamPrint(threadData, "Endianness of binary file %s does not match hardware.", fullPath);
   }
   return pFile;
 }
