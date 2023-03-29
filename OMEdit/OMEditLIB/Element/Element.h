@@ -195,7 +195,7 @@ public:
     Port  /* Port Element. */
   };
 
-  Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position);
+  Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position, const QString &placementAnnotation);
   Element(ModelInstance::Model *pModel, Element *pParentElement);
   Element(ModelInstance::Component *pModelComponent, Element *pParentElement, Element *pRootParentElement);
 
@@ -309,8 +309,8 @@ public:
   Transformation mTransformation;
   Transformation mOldTransformation;
 private:
-  ModelInstance::Component *mpModelComponent;
-  ModelInstance::Model *mpModel;
+  ModelInstance::Component *mpModelComponent = nullptr;
+  ModelInstance::Model *mpModel = nullptr;
   QString mName;
   QString mClassName;
   Element *mpReferenceElement;
