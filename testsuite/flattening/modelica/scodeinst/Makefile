@@ -1,7 +1,8 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
-ActualStreamMinMax.mo \
+ActualStreamMinMax1.mo \
+ActualStreamMinMax2.mo \
 ActualStream.mo \
 ActualStreamNonCref1.mo \
 ActualStreamNoStream1.mo \

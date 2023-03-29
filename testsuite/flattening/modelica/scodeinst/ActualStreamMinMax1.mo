@@ -1,4 +1,4 @@
-// name: ActualStreamMinMax
+// name: ActualStreamMinMax1
 // keywords: stream actualStream connector
 // status: correct
 // cflags: -d=newInst
@@ -18,7 +18,7 @@ model A
   S s3(f(min = -5)), s4(f(max = 3));
 end A;
 
-model ActualStreamMinMax
+model ActualStreamMinMax1
   A a;
   Real actual_stream_s1;
   Real actual_stream_s2;
@@ -31,10 +31,10 @@ equation
   actual_stream_s2 = actualStream(a.s2.s);
   actual_stream_s3 = actualStream(a.s3.s);
   actual_stream_s4 = actualStream(a.s4.s);
-end ActualStreamMinMax;
+end ActualStreamMinMax1;
 
 // Result:
-// class ActualStreamMinMax
+// class ActualStreamMinMax1
 //   Real a.s1.r;
 //   Real a.s1.f(min = 0.0);
 //   Real a.s1.s;
@@ -60,5 +60,5 @@ end ActualStreamMinMax;
 //   actual_stream_s2 = a.s2.s;
 //   actual_stream_s3 = if a.s3.f > 0.0 then a.s4.s else a.s3.s;
 //   actual_stream_s4 = if a.s4.f > 0.0 then a.s3.s else a.s4.s;
-// end ActualStreamMinMax;
+// end ActualStreamMinMax1;
 // endResult
