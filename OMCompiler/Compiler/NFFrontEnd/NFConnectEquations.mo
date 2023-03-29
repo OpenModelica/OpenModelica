@@ -73,6 +73,7 @@ import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
 import Flatten = NFFlatten;
 import Subscript = NFSubscript;
+import Structural = NFStructural;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -843,14 +844,21 @@ protected
   ComponentRef flow_name;
   Option<Expression> attr_oexp;
   Expression attr_exp;
+  Variability var;
 algorithm
   flow_name := Expression.toCref(flowExp(element));
   attr_oexp := lookupVarAttr(flow_name, attr, variables);
 
   if isSome(attr_oexp) then
     SOME(attr_exp) := attr_oexp;
+    var := Expression.variability(attr_exp);
 
-    if Expression.variability(attr_exp) <= Variability.STRUCTURAL_PARAMETER then
+    if var == Variability.PARAMETER and not Structural.isExpressionNotFixed(attr_exp) then
+      Structural.markExp(attr_exp);
+      var := Variability.STRUCTURAL_PARAMETER;
+    end if;
+
+    if var <= Variability.STRUCTURAL_PARAMETER then
       attr_exp := Ceval.evalExp(attr_exp);
     end if;
 
