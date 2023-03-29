@@ -1580,8 +1580,8 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
           QString newAnnotation = getOMCShapeAnnotation();
           pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
           pModelWidget->updateClassAnnotationIfNeeded();
-          pModelWidget->updateModelText();
         }
+        pModelWidget->updateModelText();
       }
     } else {
       parseShapeAnnotation(mOldAnnotation);
