@@ -245,7 +245,7 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("fillColor=%1").arg(mFillColor.toQString()));
   }
   /* get the line pattern */
-  if (mLinePattern.isDynamicSelectExpression() || mLinePattern.toQString().compare(QStringLiteral("LinePattern.LineSolid")) != 0) {
+  if (mLinePattern.isDynamicSelectExpression() || mLinePattern.toQString().compare(QStringLiteral("LinePattern.Solid")) != 0) {
     annotationString.append(QString("pattern=%1").arg(mLinePattern.toQString()));
   }
   /* get the fill pattern */

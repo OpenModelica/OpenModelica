@@ -247,7 +247,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position);
+  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position, const QString &placementAnnotation, bool clearSelection);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
@@ -542,12 +542,15 @@ public:
   }
   void addComponent(Element *pComponent) {mComponents.append(pComponent);}
   QList<Element*> getComponents() const {return mComponents;}
+  void addModifier(ModelInstance::Modifier modifier) {mModifiers.append(modifier);}
+  QList<ModelInstance::Modifier> getModifiers() const {return mModifiers;}
   void addConnection(LineAnnotation *pConnectionLineAnnotation) {mConnections.append(pConnectionLineAnnotation);}
   QList<LineAnnotation*> getConnections() const {return mConnections;}
   void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
   QList<ShapeAnnotation*> getShapes() const {return mShapes;}
 private:
   QList<Element*> mComponents;
+  QList<ModelInstance::Modifier> mModifiers;
   QList<LineAnnotation*> mConnections;
   QList<ShapeAnnotation*> mShapes;
   // QMimeData interface

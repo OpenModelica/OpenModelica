@@ -509,7 +509,8 @@ bool ElementInfo::isModiferClassRecord(QString modifierName, Element *pElement)
   return result;
 }
 
-Element::Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position)
+Element::Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position,
+                 const QString &placementAnnotation)
   : QGraphicsItem(0), mpReferenceElement(0), mpParentElement(0)
 {
   setZValue(2000);
@@ -557,6 +558,8 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
     extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
+  } else if (!placementAnnotation.isEmpty()) {
+    mTransformation.parseTransformationString(placementAnnotation, boundingRect().width(), boundingRect().height());
   } else {
     mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   }
@@ -575,11 +578,6 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
-//  /* Ticket:4204
-//   * If the child class use text annotation from base class then we need to call this
-//   * since when the base class is created the child class doesn't exist.
-//   */
-//  displayTextChangedRecursive();
 }
 
 Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
