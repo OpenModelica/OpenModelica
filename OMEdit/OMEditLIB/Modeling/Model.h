@@ -557,7 +557,6 @@ private:
     QString getName() const {return mName;}
     bool isMissing() const {return mMissing;}
     QString getRestriction() const {return mRestriction;}
-    Modifier getModifier() const {return mModifier;}
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
@@ -587,7 +586,6 @@ private:
     Dimensions mDims;
     QString mRestriction;
     std::unique_ptr<Prefixes> mpPrefixes;
-    Modifier mModifier;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
     QList<Element*> mElements;
