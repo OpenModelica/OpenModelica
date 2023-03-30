@@ -951,11 +951,6 @@ namespace ModelInstance
       mRestriction = mModelJson.value("restriction").toString();
     }
 
-    // short type definitions have modifiers
-    if (mModelJson.contains("modifiers")) {
-      mModifier.deserialize(mModelJson.value("modifiers"));
-    }
-
     if (mModelJson.contains("prefixes")) {
       mpPrefixes->deserialize(mModelJson.value("prefixes").toObject());
     }
@@ -1409,15 +1404,12 @@ namespace ModelInstance
   QString Element::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.
-     * 2. If no unit is found then check it in the derived class modifier value.
-     * 3. A derived class can be inherited, so look recursively.
+     * 2. If no unit is found then check it in the derived class modifier value recursively.
      */
     // Case 1
     QString modifierValue = mModifier.getModifierValue(modifierNames);
     if (modifierValue.isEmpty() && mpModel) {
       // Case 2
-      modifierValue = mpModel->getModifier().getModifierValue(modifierNames);
-      // Case 3
       if (modifierValue.isEmpty()) {
         modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
       }
@@ -1459,10 +1451,10 @@ namespace ModelInstance
   {
     QString modifierValue = "";
     foreach (auto pElement, pModel->getElements()) {
-      if (pElement->isExtend() && pElement->getModel()) {
+      if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
-        modifierValue = pExtend->getModel()->getModifier().getModifierValue(modifierNames);
-        if (modifierValue.isEmpty()) {
+        modifierValue = pExtend->getModifier().getModifierValue(modifierNames);
+        if (modifierValue.isEmpty() && pExtend->getModel()) {
           modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
         } else {
           return modifierValue;
