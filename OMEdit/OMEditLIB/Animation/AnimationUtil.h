@@ -35,15 +35,10 @@
 #ifndef ANIMATIONUTIL_H
 #define ANIMATIONUTIL_H
 
-#include <QString>
-#include <QRegExp>
 #include <QFileInfo>
+#include <QString>
 
-#include <QOpenGLContext> // must be included before OSG headers
-
-#include <sys/stat.h>
 #include <string>
-#include <osg/Vec3>
 
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
@@ -125,46 +120,88 @@ inline bool checkForXMLFile(const std::string& modelFile, const std::string& pat
   return fileExists(xmlFileName);
 }
 
-/*! \brief Checks if the type is a cad file
+/*!
+ * \brief Gets the filename of the CAD file
  */
-inline bool isCADType(const std::string& typeName)
+inline std::string extractCADFilename(const std::string& typeName)
 {
-  return ((typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://")
-          || (typeName.size() >= 8 && std::string(typeName.begin(), typeName.begin() + 7) == "file://"));
-}
-
-
-inline bool dxfFileType(const std::string& typeName)
-{
-  return typeName.substr(typeName.size()-3) == std::string("dxf");
-}
-
-
-inline bool stlFileType(const std::string& typeName)
-{
-  return typeName.substr(typeName.size()-3) == std::string("stl");
-}
-
-
-/*! \brief Get file name of the cad file
- */
-inline std::string extractCADFilename(const std::string& s)
-{
-  QString str(s.c_str());
+  QString str(typeName.c_str());
   if (str.startsWith("modelica://")) {
     const QString absoluteFileName = MainWindow::instance()->getOMCProxy()->uriToFilename(str);
     return absoluteFileName.toStdString();
   } else {
-    std::string fileKey = "file://";
-    std::string s2 = s.substr(fileKey.length(), s.length());
-    return s2;
+    const std::string fileKey = "file://";
+    return typeName.substr(fileKey.length(), typeName.length());
   }
+}
+
+/*!
+ * \brief Checks if the type is a CAD file
+ */
+inline bool isCADFile(const std::string& typeName)
+{
+  return ((typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://") ||
+          (typeName.size() >=  8 && std::string(typeName.begin(), typeName.begin() +  7) == "file://"));
+}
+
+inline bool isDXFFile(const std::string& fileName)
+{
+  return fileName.substr(fileName.size() - 3) == "dxf";
+}
+
+inline bool isSTLFile(const std::string& fileName)
+{
+  return fileName.substr(fileName.size() - 3) == "stl";
+}
+
+inline bool isOBJFile(const std::string& fileName)
+{
+  return fileName.substr(fileName.size() - 3) == "obj";
+}
+
+inline bool is3DSFile(const std::string& fileName)
+{
+  return fileName.substr(fileName.size() - 3) == "3ds";
+}
+
+inline bool isDXFType(const std::string& type)
+{
+  return type == "DXF";
+}
+
+inline bool isSTLType(const std::string& type)
+{
+  return type == "STL";
+}
+
+inline bool isOBJType(const std::string& type)
+{
+  return type == "OBJ";
+}
+
+inline bool is3DSType(const std::string& type)
+{
+  return type == "3DS";
+}
+
+inline bool isCADType(const std::string& type)
+{
+  return isDXFType(type) || isSTLType(type) || isOBJType(type) || is3DSType(type);
+}
+
+inline bool isSimpleCADType(const std::string& type)
+{
+  return isDXFType(type) || isSTLType(type);
+}
+
+inline bool isAdvancedCADType(const std::string& type)
+{
+  return isOBJType(type) || is3DSType(type);
 }
 
 inline const char* boolToString(bool b)
 {
     return b ? "true" : "false";
 }
-
 
 #endif //ANIMATIONUTIL_H
