@@ -47,6 +47,7 @@
 #include <QMenu>
 
 #include "AbstractAnimationWindow.h"
+#include "AnimationUtil.h"
 #include "Util/Helper.h"
 
 /*!

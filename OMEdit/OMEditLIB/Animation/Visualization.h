@@ -99,6 +99,7 @@ public:
   void applyTexture(osg::StateSet* ss, const std::string& imagePath);
   void changeColorOfMaterial(osg::StateSet* ss, const osg::Material::ColorMode mode, const QColor color, const float specular);
   void changeTransparencyOfMaterial(osg::StateSet* ss, const float transparency);
+  template<typename Vec4Array, unsigned int scale>
   void changeTransparencyOfGeometry(osg::Geode& geode, const float transparency);
 public:
   AbstractVisualizerObject* _visualizer;
