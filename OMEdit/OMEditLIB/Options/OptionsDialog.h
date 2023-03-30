@@ -168,6 +168,7 @@ public:
   void saveDialogGeometry();
   void show();
   TabSettings getTabSettings();
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 signals:
   void textSettingsChanged();
   void modelicaEditorSettingsChanged();
@@ -178,7 +179,7 @@ signals:
   void HTMLEditorSettingsChanged();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
-  void reject();
+  void reject() override;
   void saveSettings();
   void reset();
 private:
@@ -217,7 +218,6 @@ private:
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
-  QScrollArea *mpPagesWidgetScrollArea;
   Label *mpChangesEffectLabel;
   QPushButton *mpCancelButton;
   QPushButton *mpOkButton;
