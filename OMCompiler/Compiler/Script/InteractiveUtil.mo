@@ -3997,16 +3997,14 @@ public function getAllSubtypeOf
   input Boolean includePartial;
   output list<Absyn.Path> paths;
 protected
-  Absyn.Class cdef;
-  String s1;
   list<String> strlst;
   Absyn.Path pp, fqpath;
-  Absyn.Program p;
   list<Absyn.Class> classes;
   list<Absyn.Path> result_path_lst;
-  list<Absyn.Path> acc, extendPaths;
-  Boolean b,c;
+  list<Absyn.Path> acc, extendPaths, local_paths;
+  Boolean b;
   GraphicEnvCache genv;
+  Option<Absyn.Path> opt_path;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
   strlst := List.map(List.filterOnTrue(classes, AbsynUtil.isNotPartial), AbsynUtil.getClassName);
@@ -4018,20 +4016,31 @@ algorithm
     genv := createEnvironment(inProgram, NONE(), inParentClass);
     fqpath := qualifyPath(genv, inClass);
   else
-    // print("Bummer PPPath: " + AbsynUtil.pathString(inParentClass) + "\n");
     fqpath := inClass;
   end try;
-  // print("FQPath: " + AbsynUtil.pathString(fqpath) + "\n");
-  // print("PPPath: " + AbsynUtil.pathString(inParentClass) + "\n");
+
   paths := {};
+  local_paths := {};
+
   for pt in acc loop
-    // print("Path: " + AbsynUtil.pathString(pt) + ":\n");
     extendPaths := getAllInheritedClasses(pt, inProgram);
-    // print("  " + stringDelimitList(List.map(extendPaths, AbsynUtil.pathStringDefault), ", ")); print("\n"); System.fflush();
-    b := List.applyAndFold1(extendPaths, boolOr, AbsynUtil.pathSuffixOfr, fqpath, false);
-    paths := if b then pt::paths else paths;
+
+    if List.contains(extendPaths, fqpath, AbsynUtil.pathSuffixOfr) then
+      // Put classes declared locally in the parent class first in the list and
+      // remove the parent prefix from their name, since they're usually meant
+      // to be the default option.
+      opt_path := AbsynUtil.removePrefixOpt(inParentClass, pt);
+
+      if isSome(opt_path) then
+        SOME(pt) := opt_path;
+        local_paths := pt :: local_paths;
+      else
+        paths := pt :: paths;
+      end if;
+    end if;
   end for;
-  paths := List.unique(paths);
+
+  paths := List.unique(listAppend(local_paths, paths));
 end getAllSubtypeOf;
 
 public function updateConnectionAnnotation
