@@ -1,13 +1,11 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
-VendorAnnotation.mos \
 AddClassAnnotation.mos \
 ArraySlicing.mos \
-Buildings.PartialFlowMachine.mos \
 Bug2871.mos \
-Bug2943.mos \
 Bug2882.mos \
+Bug2943.mos \
 Bug3269_deleteFile.mos \
 Bug3282.mos \
 Bug3417.mos \
@@ -17,11 +15,12 @@ Bug3974.mos \
 Bug3979.mos \
 Bug4209.mos \
 Bug4248.mos \
+Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 choicesAllMatching.mos \
-ConvertUnits.mos \
-ConversionVersions.mos \
 ConnectionList.mos \
+ConversionVersions.mos \
+ConvertUnits.mos \
 CopyClass.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
@@ -35,10 +34,14 @@ ForStatement5fail.mos \
 ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
+GetAllSubtypeOf1.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \
+getComponentsTestNF.mos \
+getComponentsTestOF.mos \
+getDefinitions.mos \
 getDialogAnnotation.mos \
 getIconAnnotation.mos \
 IfStatementIllegal.mos \
@@ -53,6 +56,8 @@ interactive_api_loadsave.mos \
 interactive_api_param.mos \
 interactive_api_simulations.mos \
 interactive_test.mos \
+Issue7544.mos \
+Issue7706.mos \
 ListAnnotation.mos \
 ListExpressions.mos \
 ListImport.mos \
@@ -60,11 +65,12 @@ ListMultilineComment.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
-MoveClass.mos \
 MoveClass2.mos \
+MoveClass.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 ProtectedHandlingBug2917.mos \
+ReadOnlyPkg.mos \
 refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
@@ -78,19 +84,16 @@ setElementModifierValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
-StoreAST.mos \
-stringSplit.mos \
-strings.mos  \
-variables.mos \
-getDefinitions.mos \
 StateMachine.mos \
+StoreAST.mos \
+strings.mos  \
+stringSplit.mos \
+TestChoices.mos \
 Ticket4674.mos \
-UsesAnnotation1.mos \
-UsesAnnotation2.mos \
 Ticket5506.mos \
 Ticket5548.mos \
-Ticket5571.mos \
 Ticket5565.mos \
+Ticket5571.mos \
 Ticket5662.mos \
 Ticket5680.mos \
 Ticket5696.mos \
@@ -100,12 +103,10 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
-ReadOnlyPkg.mos \
-getComponentsTestNF.mos \
-getComponentsTestOF.mos \
-Issue7544.mos \
-Issue7706.mos \
-TestChoices.mos \
+UsesAnnotation1.mos \
+UsesAnnotation2.mos \
+variables.mos \
+VendorAnnotation.mos \
 
 
 # test that currently fail. Move up when fixed.

@@ -1713,6 +1713,28 @@ algorithm
   end match;
 end removePrefix;
 
+public function removePrefixOpt
+  "Removes prefixPath from path and returns the rest of the path, or returns
+   NONE() if prefixPath isn't a prefix of path."
+  input Absyn.Path prefixPath;
+  input Absyn.Path path;
+  output Option<Absyn.Path> outPath;
+algorithm
+  outPath := match (prefixPath, path)
+    case (_, Absyn.FULLYQUALIFIED()) then removePrefixOpt(prefixPath, path.path);
+
+    case (Absyn.QUALIFIED(), Absyn.QUALIFIED())
+      guard prefixPath.name == path.name
+      then removePrefixOpt(prefixPath.path, path.path);
+
+    case (Absyn.IDENT(), Absyn.QUALIFIED())
+      guard prefixPath.name == path.name
+      then SOME(path.path);
+
+    else NONE();
+  end match;
+end removePrefixOpt;
+
 public function removePartialPrefix
   "Tries to remove a given prefix from a path with removePrefix. If it fails it
   removes the first identifier in the prefix and tries again, until it either
