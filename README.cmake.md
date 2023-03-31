@@ -68,18 +68,34 @@ It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well 
 There is nothing special to be done for linux. Once you have installed all the dependencies (If you need help, follow the instructions [here](https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/README.Linux.md) **excluding** the configuration steps, `autoconf`, ...), you can follow the instruction in [quick start](#1-quick-start) section above or choose your own combination of [configuration options](#4-configuration-options) (e.g. build type, generator, install dir ...).
 
 ## 3.3. macOS
-On macOS you need to install: XCode and macports
-- XCode:
+On macOS you need to install: XCode and either macports or homebrew
+
+### XCode
+
   ```sh
   xcode-select –-install
   ```
-- macports: Follow the instructions on https://guide.macports.org/#installing.macports
+
+### Macports
+
+Follow the instructions on https://guide.macports.org/#installing.macports
 
 Once XCode and macports are installed, you need to install the dependencies for OpenModelica using macports:
 
   ```sh
   sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
   ```
+
+### Homebrew
+
+Follow the instructions on https://brew.sh/
+
+  ```sh
+  brew install autoconf automake openjdk pkg-config cmake make ccache
+  echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
+  ```
+
+### Building
 
 Optionally, You can also install `gfortran` if you plan to use OpenModelica for dynamic optimization purposes.
 > **Note**
@@ -93,13 +109,15 @@ You can now configure and compile OpenModelica as:
   cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF
   # With Fortran ON
   cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran
+  # For homebrew, you also need to disable the graphical clients
+  cmake -S . -B build_cmake -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -D OM_ENABLE_GUI_CLIENTS=OFF -D CMAKE_INSTALL_PREFIX=$PWD/install
   ```
 
 > **Warning**
 > Always specify your C, C++, and Fortran (optional) compilers explicitly on macOS.
 
 > **Warning**
-> This applies **even when you want to use the systems default compiler**. The reason for this is that `/usr/bin/c++` and your actual compiler (e.g., `clang++`) may not match in what default include directories they search.
+> This applies **even when you want to use the systems default compiler**. The reason for this is that `cmake` does not use the default compiler `/usr/bin/c++` or `clang++`, but an a version inside of XCode that disables the default include directories.
 
 Once configuration finishes successfully you can build OpenModelica as you would on any unix system, e.g.,
 
