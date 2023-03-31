@@ -1469,7 +1469,6 @@ algorithm
           Values.BOOL(sort)})
       algorithm
         paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), qualified, includePartial);
-        paths := listReverse(paths);
         paths := if sort then List.sort(paths, AbsynUtil.pathGe) else paths;
         vals := List.map(paths,ValuesUtil.makeCodeTypeName);
       then
