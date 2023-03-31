@@ -173,10 +173,10 @@ algorithm
       case Op.POW_EW then checkBinaryOperationPowEW(exp1, type1, exp2, type2, info);
       // These operators should not occur in untyped expressions, but sometimes
       // we want to retype already typed expressions due to changes in them.
-      case Op.ADD_SCALAR_ARRAY then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
-      case Op.ADD_ARRAY_SCALAR then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
-      case Op.SUB_SCALAR_ARRAY then checkBinaryOperationSub(exp1, type1, exp2, type2, info);
-      case Op.SUB_ARRAY_SCALAR then checkBinaryOperationSub(exp1, type1, exp2, type2, info);
+      case Op.ADD_SCALAR_ARRAY then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.ADD, info);
+      case Op.ADD_ARRAY_SCALAR then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.ADD, info);
+      case Op.SUB_SCALAR_ARRAY then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.SUB, info);
+      case Op.SUB_ARRAY_SCALAR then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.SUB, info);
       case Op.MUL_SCALAR_ARRAY  then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
       case Op.MUL_ARRAY_SCALAR  then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
       case Op.MUL_VECTOR_MATRIX then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
