@@ -1046,7 +1046,7 @@ constant ConfigFlag INST_CACHE_SIZE = CONFIG_FLAG(82, "instCacheSize",
   NONE(), EXTERNAL(), INT_FLAG(25343), NONE(),
   Gettext.gettext("Sets the size of the internal hash table used for instantiation caching."));
 constant ConfigFlag MAX_SIZE_LINEAR_TEARING = CONFIG_FLAG(83, "maxSizeLinearTearing",
-  NONE(), EXTERNAL(), INT_FLAG(200), NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   Gettext.gettext("Sets the maximum system size for tearing of linear systems (default 200)."));
 constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(84, "maxSizeNonlinearTearing",
   NONE(), EXTERNAL(), INT_FLAG(10000), NONE(),
