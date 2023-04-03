@@ -142,6 +142,7 @@ public:
   void setUpDialog();
   void addListItems();
   void createPages();
+  void addPage(QWidget* pPage);
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
   LibrariesPage* getLibrariesPage() {return mpLibrariesPage;}
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
