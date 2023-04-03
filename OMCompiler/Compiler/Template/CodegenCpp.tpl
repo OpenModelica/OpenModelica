@@ -4817,7 +4817,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
 
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref2(c,contextFunction)%>'
-    let byref = match t case T_COMPLEX(__) then '&'
+    let byref = match t case T_COMPLEX(complexClassType=RECORD(__)) then '&'
     if acceptMetaModelicaGrammar() then
       (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
     else
