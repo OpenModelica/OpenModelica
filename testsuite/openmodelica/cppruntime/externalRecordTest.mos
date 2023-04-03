@@ -1,0 +1,60 @@
+// name: externalRecordTest
+// keywords: external function with record input and output
+// status: correct
+// teardown_command: rm -f *ExternalRecord.Test*
+// cflags: -d=-newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+loadString("
+package ExternalRecord
+  record R
+    Real a;
+    Real b;
+  end R;
+  function f
+    input R r1;
+    output R r2;
+    external \"C\" f_ext(r1, r2);
+    annotation(Include=\"
+      void f_ext(const void *x, void *y) {
+        ((double *)y)[0] = ((double *)x)[1];
+        ((double *)y)[1] = ((double *)x)[0];
+      }\");
+  end f;
+  model Test
+    R r1(a = 1, b = 2);
+    R r2;
+  algorithm
+    r2 := f(r1);
+  end Test;
+end ExternalRecord;
+"); getErrorString();
+
+simulate(ExternalRecord.Test); getErrorString();
+
+val(r1.a, 0);
+val(r1.b, 0);
+val(r2.a, 0);
+val(r2.b, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+// resultFile = "ExternalRecord.Test_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalRecord.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 2.0
+// 1.0
+// endResult
