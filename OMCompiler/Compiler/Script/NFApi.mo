@@ -1089,7 +1089,7 @@ algorithm
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
 
-  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, node), json);
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, InstNode.parent(node)), json);
 
   json := dumpJSONCommentOpt(cmt, scope, json);
 

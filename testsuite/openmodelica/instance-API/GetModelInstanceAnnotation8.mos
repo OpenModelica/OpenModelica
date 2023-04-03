@@ -1,0 +1,147 @@
+// name: GetModelInstanceAnnotation8
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+  end A;
+
+  model B
+    parameter Boolean b = false;
+    replaceable model C = A constrainedby A annotation (Dialog(enable=b));
+    C c;
+  end B;
+
+  model M
+    extends B;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"extends\",
+//       \"baseClass\": {
+//         \"name\": \"B\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"b\",
+//             \"type\": \"Boolean\",
+//             \"modifiers\": \"false\",
+//             \"value\": {
+//               \"binding\": false
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"C\",
+//             \"prefixes\": {
+//               \"replaceable\": {
+//                 \"constrainedby\": \"A\",
+//                 \"annotation\": {
+//                   \"Dialog\": {
+//                     \"enable\": {
+//                       \"$kind\": \"cref\",
+//                       \"parts\": [
+//                         {
+//                           \"name\": \"b\"
+//                         }
+//                       ]
+//                     }
+//                   }
+//                 }
+//               }
+//             },
+//             \"baseClass\": \"A\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 7,
+//               \"columnStart\": 17,
+//               \"lineEnd\": 7,
+//               \"columnEnd\": 29
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"c\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"model\",
+//               \"prefixes\": {
+//                 \"replaceable\": {
+//                   \"constrainedby\": \"A\",
+//                   \"annotation\": {
+//                     \"Dialog\": {
+//                       \"enable\": {
+//                         \"$kind\": \"cref\",
+//                         \"parts\": [
+//                           {
+//                             \"name\": \"b\"
+//                           }
+//                         ]
+//                       }
+//                     }
+//                   }
+//                 }
+//               },
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": {
+//                     \"name\": \"A\",
+//                     \"restriction\": \"model\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 2,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 3,
+//                       \"columnEnd\": 8
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 17,
+//                 \"lineEnd\": 7,
+//                 \"columnEnd\": 29
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 12,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 12,
+//           \"columnEnd\": 14
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 11,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 13,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult
