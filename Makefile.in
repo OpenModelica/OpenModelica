@@ -217,7 +217,7 @@ source-dist:
 	echo "@SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/REVISION"
 	echo "OMEdit @SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/OMEdit/REVISION"
 	(cd OMSimulator && git describe --tags --match=v*.*.* | tr "-" "~") > "$(SOURCE_DIR)/OMSimulator/version.txt"
-	rm -rf "$(SOURCE_DIR)/testsuite" "$(SOURCE_DIR)/libraries" "$(SOURCE_DIR)/doc" "$(SOURCE_DIR)/OMOptim" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/CompositeModels" "$(SOURCE_DIR)/OMSimulator/testsuite" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/bin/" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/FMIWrapper/cvode-2.9.0/builddir" "$(SOURCE_DIR)/OMCompiler/3rdParty/tbb/src/test/" "$(SOURCE_DIR)/.CI" "$(SOURCE_DIR)/Jenkinsfile"
+	rm -rf "$(SOURCE_DIR)/testsuite" "$(SOURCE_DIR)/libraries" "$(SOURCE_DIR)/doc" "$(SOURCE_DIR)/OMOptim" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/CompositeModels" "$(SOURCE_DIR)/OMSimulator/testsuite" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/FMIWrapper/cvode-2.9.0/builddir" "$(SOURCE_DIR)/OMCompiler/3rdParty/tbb/src/test/" "$(SOURCE_DIR)/.CI" "$(SOURCE_DIR)/Jenkinsfile"
 	mkdir -p "$(SOURCE_DIR)/doc"
 	tar xCJf "$(SOURCE_DIR)/doc" doc/openmodelica-doc_@SOURCE_REVISION_NO_PKG@.orig.tar.xz
 	tar cJf "$(SOURCE_DIR).orig.tar.xz" "$(SOURCE_DIR)"
