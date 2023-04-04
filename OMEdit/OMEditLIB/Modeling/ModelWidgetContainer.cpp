@@ -530,7 +530,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
           // if a element type is connector then we only get one item in endElementList
           // check the endElementList
           // if conditional connector or condition is false or if type is missing then connect with the red cross box
-          if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelComponent()->getCondition() || pStartElement->getModel()->isMissing()) {
+          if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelComponent()->getCondition() || pEndElement->getModel()->isMissing()) {
             pEndConnectorElement = pEndElement;
           } else {
             QString endElementName = endElementList.at(1);
