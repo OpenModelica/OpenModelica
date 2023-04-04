@@ -872,16 +872,23 @@ algorithm
   mod := parseModifier(modifier, top);
   cls_node := Inst.lookupRootClass(classPath, top, context);
   cls_node := Inst.instantiateRootClass(cls_node, context, mod);
+  execStat("Inst.instantiateRootClass");
   inst_tree := buildInstanceTree(cls_node);
+  execStat("NFApi.buildInstanceTree");
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
   Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
+  execStat("Inst.instExpressions");
 
   Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
   Typing.typeComponents(cls_node, context);
+  execStat("Typing.typeComponents");
   Typing.typeBindings(cls_node, context);
+  execStat("Typing.typeBinding");
 
   json := dumpJSONInstanceTree(inst_tree, cls_node);
+  execStat("NFApi.dumpJSONInstanceTree");
   res := Values.STRING(JSON.toString(json, prettyPrint));
+  execStat("JSON.toString");
 end getModelInstance;
 
 function getModelInstanceIcon
