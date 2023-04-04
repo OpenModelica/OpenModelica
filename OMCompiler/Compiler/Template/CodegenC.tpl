@@ -1354,11 +1354,50 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
+
+    #if defined(__MINGW32__) || defined(_MSC_VER)
+
+    #if !defined(_UNICODE)
+    #define _UNICODE
+    #endif
+    #if !defined(UNICODE)
+    #define UNICODE
+    #endif
+
+    #include <windows.h>
+    char** omc_fixWindowsArgv(int argc, wchar_t **wargv)
+    {
+      char** newargv;
+      /* Support for non-ASCII characters
+      * Read the unicode command line arguments and translate it to char*
+      */
+      newargv = (char**)malloc(argc*sizeof(char*));
+      for (int i = 0; i < argc; i++) {
+        newargv[i] = omc_wchar_to_multibyte_str(wargv[i]);
+      }
+      return newargv;
+    }
+
+    #define OMC_MAIN wmain
+    #define OMC_CHAR wchar
+    #define OMC_EXPORT __declspec(dllexport) extern
+
+    #else
+    #define om_fixWindowsArgv(N, A) (A)
+    #define OMC_MAIN main
+    #define OMC_CHAR char
+    #define OMC_EXPORT extern
+    #endif
+
     #if defined(threadData)
     #undef threadData
     #endif
     /* call the simulation runtime main from our main! */
-    int main(int argc, char**argv)
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    OMC_EXPORT int omcDllMain(int argc, OMC_CHAR **argv)
+    #else
+    int OMC_MAIN(int argc, OMC_CHAR** argv)
+    #endif
     {
       /*
         Set the error functions to be used for simulation.
@@ -1387,7 +1426,9 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
+    #if !defined(OMC_DLL_MAIN_DEFINE) /* do not exit, return in DLL mode */
       EXIT(res);
+    #endif
       return res;
     }
 
@@ -6952,10 +6993,15 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   .PHONY: $(CFILES)
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
+
+  omc_dll_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
+  <%\t%>$(CC) -DOMC_DLL_MAIN_DEFINE -o $(MAINOBJ) -c $(MAINFILE) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+
   clean:
   <%\t%>@rm -f <%fileNamePrefix%>_records.o $(MAINOBJ)
 

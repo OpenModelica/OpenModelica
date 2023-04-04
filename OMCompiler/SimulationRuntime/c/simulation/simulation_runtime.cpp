@@ -1183,17 +1183,6 @@ void communicateMsg(char id, unsigned int size, const char *data)
  * if this is a good idea. However, I am leaving it as it was for now.
  */
 int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  /* Support for non-ASCII characters
-   * Read the unicode command line arguments and replace the normal arguments with it.
-   */
-  wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
-  for (int i = 0; i < argc; i++) {
-    char* buf = omc_wchar_to_multibyte_str(wargv[i]);
-    strcpy(argv[i], buf);
-    free(buf);
-  }
-#endif
 
   if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
