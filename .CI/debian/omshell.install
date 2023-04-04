@@ -1,0 +1,5 @@
+debian/desktops/omshell.desktop                 usr/share/applications
+debian/tmp/usr/bin/OMShell
+debian/tmp/usr/share/omshell/*.xml
+debian/tmp/usr/share/omshell/nls/*.qm
+OMShell/OMShell/OMShellGUI/Resources/omshell-large.svg  usr/share/pixmaps

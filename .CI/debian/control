@@ -1,0 +1,281 @@
+Source: openmodelica
+Section: math
+Priority: optional
+Maintainer: OpenModelica Build System <build@openmodelica.org>
+Build-Depends: debhelper (>= 9.0.0),
+# sbuild i386 does not handle native, cross-compile armhf requires it...
+ clang:native | clang,
+ gfortran:native | gfortran,
+ default-jdk:native | default-jdk,
+ omniidl:native (>= 4.0.0) | omniidl4:native | omniidl (>= 4.0.0) | omniidl4,
+ libhwloc-dev:native | libhwloc-dev,
+ automake,
+ libtool,
+ uuid-dev,
+ libncurses5-dev,
+ libsqlite3-dev,
+ cmake (>= 2.8.6),
+# libssl-dev (>= 0.9.8g), # Do we really depend on libssl directly? Debian stretch conflicts with it...
+ libreadline-dev,
+ qtbase5-dev,
+ libqt5svg5-dev,
+ qttools5-dev-tools,
+ libqt5opengl5-dev,
+ libqt5webkit5-dev,
+ libqt5xmlpatterns5-dev,
+ liblpsolve55-dev (>= 5.5.0.10),
+ libomniorb4-dev,
+ libhdf5-serial-dev | libhdf5-dev,
+ liblapack-dev,
+ libcurl4-gnutls-dev | libcurl-dev,
+ autoconf,
+ libexpat1-dev,
+ libomp-dev,
+# Should be needed but seems to mess up sbuild
+# libexpat1-dev:native,
+ libboost-all-dev,
+ libopenscenegraph-dev,
+ pkg-config,
+ libffi-dev,
+ lsb-release
+Standards-Version: 3.9.5
+
+Package: openmodelica
+Section: math
+Architecture: any
+Depends: omc (<< 20000),
+ omplot (<< 20000),
+ omshell (<< 20000),
+ omshell-terminal (<< 20000),
+ omnotebook (<< 20000),
+ drmodelica (<< 20000),
+ drcontrol (<< 20000),
+ omedit (<< 20000),
+ omsimulator,
+# omoptim,
+ ${misc:Depends}
+Description: A complete Modelica environment
+ The goal of the project is to create a complete Modelica modeling, compilation
+ and simulation environment based on free software distributed in binary and
+ source code form.
+ .
+ This package is a Debian metapackage. After installation this package can be
+ removed. This metapackage pulls in the following OpenModelica packages:
+ .
+ 1. Package omc the OpenModelica Compiler/Interpreter (omc)
+ 2. Package omshell the OpenModelica Shell (OMShell)
+ 3. Package omshell-terminal the OpenModelica Shell-terminal (OMShell-terminal)
+ 4. Package omnotebook the OpenModelica Notebook, with DrModelica and DrControl
+ 5. Package omedit, a Modelica connection editor for OpenModelica
+ 6. Package omoptim, a tool for optimization of Modelica models (temporarily removed while the build system is being updated)
+ 7. Package omplot, the plot tools for OpenModelica
+ 8. Package omsimulator, an FMI/SSP simulation tool
+
+Package: omc
+Section: math
+Architecture: any
+Depends: clang,
+ build-essential,
+ libexpat1-dev,
+ liblapack-dev,
+ zip,
+ unzip,
+ omc-common,
+ libomc,
+ libomcsimulation,
+ ${shlibs:Depends},
+ ${misc:Depends}
+Recommends: libomccpp,
+ omplot,
+ gnuplot-nox,
+ xsltproc,
+ libsaxonb-java
+Suggests: python-beautifulsoup
+Breaks: omlib-modelica-3.2.3,
+ omlib-modelica-4.0.0,
+ omlib-modelicaservices-3.2.3,
+ omlib-modelicaservices-4.0.0
+Description: The OpenModelica Compiler
+ This is the core of the OpenModelica project. It can be used stand-alone as
+ a compiler. It is recommended to use it together with an OpenModelica client,
+ such as OMShell (textual interface), OMNotebook (for teaching purposes)
+ or OMEdit (graphical modeling).
+
+Package: libomc
+Section: math
+Multi-Arch: same
+Architecture: any
+Depends: omc-common (<< 20000),
+ libomcsimulation (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica Compiler lib dependencies
+ This is the core libraries of the OpenModelica project.
+
+Package: libomc-dev
+Section: math
+Multi-Arch: same
+Architecture: any
+Depends: libomc (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica Compiler lib dependencies
+ This is the core libraries of the OpenModelica project.
+ Currently contains antlr3 include-files.
+
+Package: libomcsimulation
+Section: math
+Multi-Arch: same
+Architecture: any
+Depends: omc-common (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica Compiler simulation library dependencies
+ This is the core libraries of the OpenModelica project and can be
+ used for cross-compiling simulation executables and FMU's.
+
+Package: omc-common
+Section: math
+Multi-Arch: foreign
+Architecture: all
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica Compiler lib dependencies
+ This is the core libraries of the OpenModelica project.
+
+Package: omplot
+Section: math
+Architecture: any
+Depends: libomplot (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: Plot tool for OpenModelica
+ This tool is essential for using the plot() command in omc.
+
+Package: libomplot
+Section: math
+Multi-Arch: same
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Plot tool for OpenModelica, lib dependencies
+ This tool is essential for using the plot() command in omc.
+
+Package: libomplot-dev
+Section: math
+Multi-Arch: same
+Architecture: any
+Depends: libomplot (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: Plot tool for OpenModelica, development package
+ This tool is essential for using the plot() command in omc.
+
+Package: omedit
+Section: math
+Architecture: any
+Depends: omc (<< 20000),
+ libomsimulator,
+ libomsensplugin,
+ ${shlibs:Depends},
+ ${misc:Depends}
+Suggests: omlibrary
+Description: A Modelica connection editor for OpenModelica
+ OMEdit is still in active development. Please try it out and give feedback.
+
+Package: libomsensplugin
+Multi-Arch: same
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica OMSense_Qt plugin library for OMEdit
+ This is needed to be able to run OMSense from OMEdit
+
+Package: omnotebook
+Section: math
+Architecture: any
+Depends: omc (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Recommends: drmodelica,
+ drcontrol,
+ texlive-latex-base,
+ dvipng
+Description: A Mathematica-style Notebook for OpenModelica
+
+Package: drmodelica
+Section: math
+Multi-Arch: foreign
+Architecture: all
+Depends: omnotebook (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: An OMNotebook course in the Modelica language
+ The course is based on Peter Fritzson's book
+ “Principles of Object-Oriented Modeling and Simulation with Modelica 2.1”.
+
+Package: drcontrol
+Section: math
+Multi-Arch: foreign
+Architecture: all
+Depends: omnotebook (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: An OMNotebook course in basic control theory
+
+Package: omshell-terminal
+Section: math
+Architecture: any
+Depends: omc (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: A text-based interface to OpenModelica (based on readline)
+
+Package: omshell
+Section: math
+Architecture: any
+Depends: omc (<< 20000),
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: A text-based interface to OpenModelica (based on Qt)
+
+Package: libomccpp
+Section: math
+Architecture: i386 amd64
+Multi-Arch: same
+Depends: libboost-dev,
+ libboost-filesystem-dev,
+ libboost-system-dev,
+ libboost-serialization-dev,
+ libboost-program-options-dev,
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: Libraries for the C++ code generation target of OpenModelica
+
+Package: libomsimulator
+Multi-Arch: same
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica OMSimulator library dependencies
+ This is the embeddable version of OMSimulator, allow a tool to simulate
+ FMUs.
+
+Package: omsimulator
+Multi-Arch: same
+Architecture: any
+Depends: libomsimulator,
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: The OpenModelica OMSimulator
+ OMSimulator is a simulator that allows a tool to for example simulate
+ FMUs.
+
+Package: omlibrary
+Architecture: all
+Description: OpenModelica library cache of the standard library for use
+ during conferences/etc where OpenModelica does not have internet access.
+
+Package: omc-doc
+Architecture: all
+Description: OpenModelica documentation.

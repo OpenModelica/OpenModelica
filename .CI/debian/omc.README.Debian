@@ -1,0 +1,7 @@
+openmodelica for Debian
+-----------------------
+
+Debian package for OpenModelica Compiler/Interpreter omc and OpenModelica
+client application OMNotebook, OMShell and OMShell-terminal
+
+ -- Robert Wotzlaw <Robert.Wotzlaw@web.de>  Mon, 16 Nov 2009 12:05:22 +0100

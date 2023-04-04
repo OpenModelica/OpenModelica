@@ -1,0 +1,35 @@
+# Common
+debian/tmp/usr/lib/*/omc/libomcgc*
+
+# FMIL
+debian/tmp/usr/lib/*/omc/libfmilib*
+
+# MSL-external
+debian/tmp/usr/lib/*/omc/libModelica*
+debian/tmp/usr/lib/*/omc/libzlib*
+
+# Simulations
+debian/tmp/usr/lib/*/omc/libOpenModelicaFMIRuntimeC*
+debian/tmp/usr/lib/*/omc/libSimulationRuntimeC.*
+debian/tmp/usr/lib/*/omc/libSimulationRuntimeFMI*
+## SuiteSparse
+debian/tmp/usr/lib/*/omc/lib*amd*
+debian/tmp/usr/lib/*/omc/libbtf*
+debian/tmp/usr/lib/*/omc/libklu*
+debian/tmp/usr/lib/*/omc/libsuitesparseconfig*
+debian/tmp/usr/lib/*/omc/libumfpack*
+
+debian/tmp/usr/lib/*/omc/liblis*
+debian/tmp/usr/lib/*/omc/libipopt*
+debian/tmp/usr/lib/*/omc/libcoin*
+debian/tmp/usr/lib/*/omc/libcminpack*
+debian/tmp/usr/lib/*/omc/libomopc*
+debian/tmp/usr/lib/*/omc/libsundials_*
+
+# OMSI
+debian/tmp/usr/include/omc/omsi/*
+debian/tmp/usr/lib/*/omc/omsi/*
+
+# ParModAuto
+debian/tmp/usr/lib/*/omc/libParModelicaAuto.*
+debian/tmp/usr/lib/*/omc/libtbb_static.*

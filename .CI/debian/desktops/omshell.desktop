@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=OMShell
+GenericName=Physical modeling and simulation tool
+Comment=A complete Modelica modeling, compilation and simulation environment based on free software.
+TryExec=OMShell
+Exec=OMShell
+Icon=/usr/share/pixmaps/omshell-large.svg
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Development;IDE;

@@ -1,0 +1,176 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# OpenModelica debian/rules that uses debhelper.
+# Based on a sample file with GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+ARCH ?= $(shell uname -m | sed s/i[0-9]86/x86/)
+
+# Some variables to install binaries under debian/tmp
+DEST   = $(CURDIR)/debian/tmp
+SRCD   = $(CURDIR)
+
+CLANGVER ?= $(shell clang --version | grep -o "clang version [0-9.]*" | cut "-d " -f3)
+
+# Try to compile with gcc rather than old gcc versions
+ifeq (3.0,$(CLANGVER))
+
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	CC = gcc
+	CXX = g++
+else
+  CC = $(DEB_HOST_GNU_TYPE)-gcc
+  CXX = $(DEB_HOST_GNU_TYPE)-g++
+endif
+
+else
+
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	CC = clang
+	CXX = clang++
+	CONF_OPTS_CROSS = --without-omc
+	SANITY_CHECK = -C OMCompiler sanity-check
+else
+	CC = clang -target $(DEB_HOST_GNU_TYPE)
+# clang++ seems unable to find some bits stuff in C++ includes
+  CXX = $(DEB_HOST_GNU_TYPE)-g++
+# Even GCC needs special flags because libreadline seems messed up
+# Readline needed this, but messes up other libraries: -Wl,--unresolved-symbols=ignore-all
+  LDFLAGS = -Wl,-rpath-link -Wl,/lib/$(DEB_HOST_GNU_TYPE) -Wl,-rpath-link -Wl,/usr/lib/$(DEB_HOST_GNU_TYPE)
+	NATIVE_CC = clang
+	NATIVE_CXX = clang++
+	CONF_OPTS_CROSS = --with-omc="`pwd`/cross-build/bin/omc"
+	SANITY_CHECK =
+endif
+
+endif
+
+ifeq (arm-linux-gnueabihf,$(DEB_HOST_GNU_TYPE))
+	CONF_OPTS=--without-cppruntime
+	EXTRA_INSTALL=
+else
+	CONF_OPTS=--with-cppruntime
+	EXTRA_INSTALL=
+endif
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -Os
+endif
+
+#ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+#  NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+EXTRA_MAKEFLAGS = $(MAKEFLAGS) -j$(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS))) $(shell make --version --output-sync=recurse > /dev/null 2>&1 && echo --output-sync=recurse)
+#endif
+
+# march=pentium4 used to be enabled because omc required sse2 regardless
+# ifeq (x86,$(ARCH))
+#        CFLAGS += -march=pentium4
+# endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure.ac
+	autoreconf --install
+
+build: build-stamp
+build-arch: build
+build-indep: build
+
+build-stamp: configure
+	dh_testdir
+	# We might be cross-compiling. If so, we need a working omc. Easiest way? Build it ourselves.
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	./configure CFLAGS="$(CFLAGS)" CC=$(NATIVE_CC) CXX=$(NATIVE_CXX) OMPCC="gcc -fopenmp" \
+	--host=$(DEB_BUILD_GNU_TYPE) \
+	--build=$(DEB_BUILD_GNU_TYPE) \
+	--prefix=/usr \
+	--without-METIS \
+	--without-FMIL \
+	--without-lapack \
+	--without-omniORB \
+	--without-paradiseo \
+	--disable-omshell-terminal \
+	--without-lpsolve \
+	--without-ipopt \
+	--with-cppruntime \
+	--without-omlibrary \
+	--disable-modelica3d \
+	$(CONF_OPTS)
+	$(MAKE) $(EXTRA_MAKEFLAGS) -C OMCompiler omc-no-sim
+	mv build cross-build
+	$(MAKE) clean
+endif
+	# Cross-compile done, now configure for real
+	# wily armhf requires -lm for blas...
+	./configure CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" OMPCC="gcc -fopenmp" \
+	--host=$(DEB_HOST_GNU_TYPE) \
+	--build=$(DEB_BUILD_GNU_TYPE) \
+	--prefix=/usr \
+	--with-lapack="-llapack -lblas -lm" \
+	--with-omniORB \
+	--without-paradiseo \
+	--without-omlibrary \
+	--disable-modelica3d \
+	$(CONF_OPTS) $(CONF_OPTS_CROSS)
+	# Add here commands to configure the package.
+#       --with-static-sqlite=`test -f /usr/lib/*/libsqlite3.a && echo /usr/lib/*/libsqlite3.a || echo /usr/lib/libsqlite3.a` \
+#	--with-static-lpsolve=/usr
+#	--with-static-readline=/usr
+	# Add here commands to compile the package.
+	$(MAKE) $(EXTRA_MAKEFLAGS) all
+	$(MAKE) omlibrary
+	test -z "$(SANITY_CHECK)" || $(MAKE) $(SANITY_CHECK)
+	# Skip the testsuite log. People can look it up on hudson
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+	# Add here commands to clean up after the build process.
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs -popenmodelica -Pdebian/tmp
+	# Add here commands to install the package into debian/tmp.
+	$(MAKE) $(EXTRA_MAKEFLAGS) install $(EXTRA_INSTALL) DESTDIR=$(DEST)
+	# We add our own Debian-specific copyright file
+	rm -f $(DEST)/usr/share/doc/omc/COPYING
+	dh_install
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+	dh_installexamples
+	dh_install --list-missing
+	dh_installmenu
+	dh_installmime
+	dh_link
+	dh_strip
+	# dh_compress -X.pdf -X.onb -X.c -X.h -X.mo -X.mos -Xomc_helptext.txt -X.py
+	dh_fixperms
+	dh_installdeb
+	dh_makeshlibs -V
+	dh_shlibdeps -l/usr/lib/$(DEB_HOST_GNU_TYPE)/omc -Lomc -- --ignore-missing-info
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

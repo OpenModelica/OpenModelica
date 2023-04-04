@@ -1,0 +1,4 @@
+debian/tmp/usr/include/*/omc/antlr3
+# These are not really needed, but it is a dev-package, so let's add them anyway
+# debian/tmp/usr/lib/*/omc/libomcruntime.a
+debian/tmp/usr/lib/*/omc/libomparse.a

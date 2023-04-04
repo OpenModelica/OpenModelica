@@ -544,8 +544,6 @@ install: install-dirs
 	cp -a $(OMBUILDDIR)/include/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
-	# Documents
-	test -z "$(HAVE_DOCDIR)" || cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
 	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/

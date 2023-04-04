@@ -1,0 +1,4 @@
+debian/tmp/usr/bin/OMSimulator*
+debian/tmp/usr/bin/StartTLMFmiWrapper
+debian/tmp/usr/bin/FMIWrapper
+debian/tmp/usr/share/OMSimulator

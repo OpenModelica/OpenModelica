@@ -1,0 +1,3 @@
+debian/tmp/usr/share/omc/*.pdf
+debian/tmp/usr/share/omc/OpenModelicaUsersGuide/*
+debian/tmp/usr/share/omc/SystemDocumentation/*

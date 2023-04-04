@@ -810,7 +810,7 @@ pipeline {
             echo "${env.NODE_NAME}"
             unstash 'doc-tarball'
             sh "make source-dist"
-            stash name: 'source-dist', includes: "openmodelica_*.orig.tar.xz"
+            archiveArtifacts "openmodelica_*.tar.xz"
           }
         }
       }

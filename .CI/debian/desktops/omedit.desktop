@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=OMEdit
+GenericName=Physical modeling and simulation tool
+Comment=A Modelica connection editor
+TryExec=OMEdit
+Exec=OMEdit %f
+Icon=/usr/share/pixmaps/omedit.png
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Development;Education;Science;Math;
+MimeType=text/x-onb;application/x-omnotebook;
