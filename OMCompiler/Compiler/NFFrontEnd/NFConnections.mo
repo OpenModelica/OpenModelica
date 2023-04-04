@@ -90,7 +90,7 @@ public
     conns.broken := broken;
   end addBroken;
 
-  function collect
+  function collectConnections
     input output FlatModel flatModel;
     input IsDeleted isDeleted;
           output Connections conns = new();
@@ -100,27 +100,11 @@ public
       output Boolean res;
     end IsDeleted;
   protected
-    Component comp;
-    ComponentRef cr, lhs, rhs;
-    Connector c1, c2;
+    ComponentRef lhs, rhs;
     DAE.ElementSource source;
     list<Equation> eql = {};
-    list<Connector> cl1, cl2;
-    Expression e1, e2;
     Type ty1, ty2;
-    Boolean b1, b2;
   algorithm
-    // Collect all flow variables.
-    for var in flatModel.variables loop
-      comp := InstNode.component(ComponentRef.node(var.name));
-
-      if Component.isFlow(comp) then
-        c1 := Connector.fromFacedCref(var.name, var.ty,
-          NFConnector.Face.INSIDE, ElementSource.createElementSource(Component.info(comp)));
-        conns := addFlow(c1, conns);
-      end if;
-    end for;
-
     // Collect all connects.
     for eq in flatModel.equations loop
       eql := match eq
@@ -140,7 +124,26 @@ public
     if not listEmpty(conns.connections) then
       flatModel.equations := listReverseInPlace(eql);
     end if;
-  end collect;
+  end collectConnections;
+
+  function collectFlows
+    input FlatModel flatModel;
+    input output Connections conns;
+  protected
+    Component comp;
+    Connector c;
+  algorithm
+    // Collect all flow variables.
+    for var in flatModel.variables loop
+      comp := InstNode.component(ComponentRef.node(var.name));
+
+      if Component.isFlow(comp) then
+        c := Connector.fromFacedCref(var.name, var.ty,
+          NFConnector.Face.INSIDE, ElementSource.createElementSource(Component.info(comp)));
+        conns := addFlow(c, conns);
+      end if;
+    end for;
+  end collectFlows;
 
   function makeConnections
     input ComponentRef lhsCref;
