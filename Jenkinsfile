@@ -88,8 +88,9 @@ pipeline {
             }
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
+            sh 'common/semver.sh > REVISION'
             stash name: 'config-status', includes: '**/config.status'
-            stash name: 'omc-clang', includes: 'build/**, **/config.status'
+            stash name: 'omc-clang', includes: 'REVISION, build/**, **/config.status'
           }
         }
         stage('Win/MinGW') {
