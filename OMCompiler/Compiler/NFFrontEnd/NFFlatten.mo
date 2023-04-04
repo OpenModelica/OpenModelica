@@ -354,9 +354,10 @@ algorithm
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collect(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
+  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
   // Elaborate expandable connectors.
   (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+  conns := Connections.collectFlows(flatModel, conns);
 end flattenConnection;
 
 function collectFunctions
@@ -2022,13 +2023,17 @@ algorithm
     UnorderedMap.addNew(v.name, v, vars);
   end for;
 
-  // get the connections from the model
-  (flatModel, conns) := Connections.collect(flatModel,
+  // Collect connections from the model.
+  (flatModel, conns) := Connections.collectConnections(flatModel,
     function isDeletedConnector(deletedVars = deletedVars));
   ctable := CardinalityTable.fromConnections(conns);
 
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+
+  // Collect flow variables from the model, which needs to be done after
+  // elaborating expandable connectors to get all of them.
+  conns := Connections.collectFlows(flatModel, conns);
 
   // handle overconstrained connections
   // - build the graph
