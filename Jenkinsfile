@@ -88,6 +88,7 @@ pipeline {
             }
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
+            stash name: 'config-status', includes: '**/config.status'
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
@@ -809,6 +810,8 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             unstash 'doc-tarball'
+            unstash 'config-status'
+            sh "./config.status"
             sh "make source-dist"
             archiveArtifacts "openmodelica_*.tar.xz"
           }
