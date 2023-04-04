@@ -448,14 +448,12 @@ void SimulationDialog::setUpForm()
   for (int i = 0 ; i < logStreamNames.size() ; i++) {
     QCheckBox *pLogStreamCheckBox = new QCheckBox(logStreamNames[i]);
     pLogStreamCheckBox->setToolTip(logSteamDescriptions[i]);
-    if (column == 0) {
-      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column++);
-    } else if (column == 1) {
-      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column++);
-    } else if (column == 2) {
+    if (column == 2) {
       mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column);
       column = 0;
       row++;
+    } else {
+      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column++);
     }
   }
   mpLoggingGroupBox->setLayout(mpLoggingGroupLayout);
@@ -826,8 +824,14 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
               if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
                 QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-                if (logStreams.contains(pLogStreamCheckBox->text())) {
-                  pLogStreamCheckBox->setChecked(true);
+                if ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0)) {
+                  if (logStreams.contains("-" + pLogStreamCheckBox->text())) {
+                    pLogStreamCheckBox->setChecked(false);
+                  }
+                } else {
+                  if (logStreams.contains(pLogStreamCheckBox->text())) {
+                    pLogStreamCheckBox->setChecked(true);
+                  }
                 }
               }
               i++;
@@ -1184,7 +1188,9 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-      if (pLogStreamCheckBox->isChecked()) {
+      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0))) {
+        logStreams << "-" + pLogStreamCheckBox->text();
+      } else if (pLogStreamCheckBox->isChecked()) {
         logStreams << pLogStreamCheckBox->text();
       }
     }
@@ -1549,7 +1555,9 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-      if (pLogStreamCheckBox->isChecked()) {
+      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0))) {
+        logStreams << "-" + pLogStreamCheckBox->text();
+      } else if (pLogStreamCheckBox->isChecked()) {
         logStreams << pLogStreamCheckBox->text();
       }
     }
