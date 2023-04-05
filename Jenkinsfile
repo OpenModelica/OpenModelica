@@ -90,7 +90,7 @@ pipeline {
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
             sh 'common/semver.sh | tee REVISION.new && mv REVISION.new REVISION' // If we tee to REVISION, semver.sh reads the empty file
             stash name: 'config-status', includes: 'REVISION, **/config.status'
-            stash name: 'omc-clang', includes: 'build/**, **/config.status'
+            stash name: 'omc-clang', includes: 'REVISION, build/**, **/config.status'
           }
         }
         stage('Win/MinGW') {
