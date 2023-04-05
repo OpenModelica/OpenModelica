@@ -62,10 +62,11 @@
  * \param tab
  * \param groupBox
  */
-Parameter::Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox)
+Parameter::Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld)
 {
   mpElement = pElement;
   mpModelInstanceElement = 0;
+  mpElementParametersOld = pElementParametersOld;
   mTab = tab;
   mGroup = groupBox;
   mShowStartAttribute = showStartAttribute;
@@ -608,7 +609,7 @@ void Parameter::createValueWidget()
         if (mpElement->hasChoices()) {
           choices = mpElement->getChoices();
         }
-        parentClassName = mpElement->getElementInfo()->getParentClassName();
+        parentClassName = mpElementParametersOld->getElementParentClassName();
         restriction = mpElement->getElementInfo()->getRestriction();
         elementName = mpElement->getName();
       }
@@ -1664,14 +1665,17 @@ ElementParametersOld::~ElementParametersOld()
 }
 
 /*!
- * \brief ElementParameters::updateParameters
- * Updates the parameters.
+ * \brief ElementParametersOld::getElementParentClassName
+ * Returns the class name where the component is defined.
+ * \return
  */
-void ElementParametersOld::updateParameters()
+QString ElementParametersOld::getElementParentClassName() const
 {
-  foreach (Parameter *pParameter, mParametersList) {
-    pParameter->update();
+  QString parentClassName = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  if (mpElement->isInheritedElement() && mpElement->getReferenceElement() && mpElement->getReferenceElement()->getGraphicsView()) {
+    parentClassName = mpElement->getReferenceElement()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   }
+  return parentClassName;
 }
 
 /*!
@@ -2007,7 +2011,7 @@ void ElementParametersOld::createTabsGroupBoxesAndParametersHelper(LibraryTreeIt
       pGroupBox->setGroupImage(groupImage);
     }
     // create the Parameter
-    Parameter *pParameter = new Parameter(pElement, showStartAttribute, tab, groupBox);
+    Parameter *pParameter = new Parameter(pElement, showStartAttribute, tab, groupBox, this);
     pParameter->setEnabled(enable);
     pParameter->setLoadSelectorFilter(loadSelectorFilter);
     pParameter->setLoadSelectorCaption(loadSelectorCaption);

@@ -55,7 +55,7 @@ public:
     Choices,
     ChoicesAllMatching
   };
-  Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
+  Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld);
   Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
@@ -104,6 +104,7 @@ private:
   Element *mpElement;
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
+  ElementParametersOld *mpElementParametersOld = 0;
   StringAnnotation mTab;
   StringAnnotation mGroup;
   bool mGroupDefined;
@@ -238,8 +239,7 @@ class ElementParametersOld : public QDialog
 public:
   ElementParametersOld(Element *pComponent, QWidget *pParent = 0);
   ~ElementParametersOld();
-
-  void updateParameters();
+  QString getElementParentClassName() const;
 private:
   Element *mpElement;
   Label *mpParametersHeading;
