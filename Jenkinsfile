@@ -812,7 +812,9 @@ pipeline {
             echo "${env.NODE_NAME}"
             unstash 'doc-tarball'
             unstash 'config-status'
+            sh "cat REVISION"
             sh "./config.status"
+            sh "touch configure config.status Makefile"
             sh "make source-dist"
             archiveArtifacts "openmodelica_*.tar.xz"
           }
