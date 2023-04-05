@@ -89,7 +89,6 @@ pipeline {
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
             sh 'common/semver.sh | tee REVISION.new && mv REVISION.new REVISION' // If we tee to REVISION, semver.sh reads the empty file
-            stash name: 'config-status', includes: 'REVISION, **/config.status'
             stash name: 'omc-clang', includes: 'REVISION, build/**, **/config.status'
           }
         }
@@ -811,7 +810,7 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             unstash 'doc-tarball'
-            unstash 'config-status'
+            unstash 'omc-clang'
             sh "cat REVISION"
             sh "./config.status"
             sh "touch configure config.status Makefile"
