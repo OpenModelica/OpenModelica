@@ -236,13 +236,10 @@ template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion
 ::=
 match simCode
 case SIMCODE(__) then
-  let fmi2FunctionPrefix = if boolAnd(isFMIVersion20(FMUVersion), exportStaticCompiledFMU()) then <<#define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_>>
-
   <<
   // define class name and unique id
   #define MODEL_IDENTIFIER <%modelNamePrefix(simCode)%>
   #define MODEL_GUID "{<%guid%>}"
-  <%fmi2FunctionPrefix%>
 
   // include fmu header files, typedefs and macros
   #include <stdio.h>
