@@ -1456,7 +1456,7 @@ constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(154, "frontendInline",
 constant ConfigFlag FMI_STATIC_EXPORT = CONFIG_FLAG(155, "fmiStaticExport",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Defines if FMU should be exported with statically linked binaries." +
-                   "Needs --fmuCMakeBuild=true."));
+                  "Needs --fmuCMakeBuild=true."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
