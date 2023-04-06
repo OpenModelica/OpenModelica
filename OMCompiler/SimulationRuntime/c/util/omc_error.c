@@ -469,13 +469,11 @@ void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisp
   va_list args;
 
   /* Display warning */
-  if (nDisplayed < displayLimit) {
+  if (nDisplayed <= displayLimit) {
     va_start(args, format);
     va_warningStreamPrint(stream, indentNext, format, args);
   }
   if (nDisplayed == displayLimit) {
-    va_start(args, format);
-    va_warningStreamPrint(stream, indentNext, format, args);
     infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %u for this warning.", displayLimit);
     messageClose(stream);
   }
