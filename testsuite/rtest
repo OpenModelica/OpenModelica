@@ -20,6 +20,9 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   elsif (-e "$1build_cmake/install_cmake/bin/omc") {
     $OPENMODELICAHOME = "$1build_cmake/install_cmake";
   }
+  elsif (-e "$1/install_cmake/bin/omc") {
+    $OPENMODELICAHOME = "$1/install_cmake";
+  }
   # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
   else {
     $OPENMODELICAHOME = "$1build";

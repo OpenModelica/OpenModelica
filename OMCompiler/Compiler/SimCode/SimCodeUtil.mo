@@ -15650,16 +15650,26 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
+public function getCMakeLibraryType
+  "Code for FMU CMakeLists.txt to specify if add_library should use static or dynamic library."
+  output String buildSahredLibs;
+algorithm
+  if FMI.exportStaticCompiledFMU() then
+    buildSahredLibs := "OFF";
+  else
+    buildSahredLibs := "ON";
+  end if;
+end getCMakeLibraryType;
+
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if CVODE is needed."
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output String code = "";
+  output String needCvode = "OFF";
+  output String cvodeDirectory = "\"\"";
 algorithm
-  if not cvodeFmiFlagIsSet(fmiSimulationFlags) then
-    code := "set(NEED_CVODE FALSE)";
-  else
-    code := "set(NEED_CVODE TRUE)\n" +
-            "set(CVODE_DIRECTORY \"" +  Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\")";
+  if cvodeFmiFlagIsSet(fmiSimulationFlags) then
+    needCvode := "ON";
+    cvodeDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 

@@ -3533,9 +3533,27 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                              "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=" + defaultFmiIncludeDirectoy + " " +
-                              CMAKE_BUILD_TYPE +
-                              " ..";
+                     CMAKE_BUILD_TYPE +
+                     " ..";
+        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+               "mkdir " + buildDir + " && cd " + buildDir + " && " +
+               cmakeCall + " && " +
+               Autoconf.cmake + " --build . --target install && " +
+               "cd .. && rm -rf " + buildDir;
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          fail();
+        end if;
+        then();
+    case {"static"}
+      algorithm
+        if isWindows then
+          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
+        end if;
+        buildDir := "build_cmake_dynamic";
+        cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
+                     CMAKE_BUILD_TYPE +
+                     " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +

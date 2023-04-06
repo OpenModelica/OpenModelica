@@ -1,15 +1,32 @@
-
 cmake_minimum_required(VERSION 3.5)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
 project(${FMU_NAME})
 
-# Specifies if CVODE is needed
-@NEED_CVODE@
+# FMU compilation options
+set(BUILD_SHARED_LIBS
+    @BUILD_SHARED_LIBS@
+    CACHE BOOL
+    "Compile DLL/Shared Object binary object if 'ON', compile static binary object if 'OFF'.")
+set(FMI_INTERFACE_HEADER_FILES_DIRECTORY
+    @FMI_INTERFACE_HEADER_FILES_DIRECTORY@
+    CACHE STRING
+    "Path to FMI header files containing fmi2Functions.h, fmi2FunctionTypes.h, fmi2TypesPlatforms.h")
+set(RUNTIME_DEPENDENCIES_LEVEL
+    @RUNTIME_DEPENDENCIES_LEVEL@
+    CACHE STRING
+    "Add modelica runtime dependencies to FMU if set to 'modelica'. Add system runtime dependencies as well if set to 'all'.")
+set(NEED_CVODE
+    @NEED_CVODE@
+    CACHE BOOL
+    "FMU needs to link to SUNDIALS CVODE if 'ON'. Used for CoSimulation FMUs that want to use CVODE as integrator. Use 'OFF' otherwise.")
+set(CVODE_DIRECTORY
+    @CVODE_DIRECTORY@
+    CACHE STRING
+    "IF CVODE is needed provide a directory where to find it.")
 
 # Test if RUNTIME_DEPENDENCIES is needed and available
-set(RUNTIME_DEPENDENCIES_LEVEL @RUNTIME_DEPENDENCIES_LEVEL@)
 if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
   message(FATAL_ERROR
           "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requiers CMake version 3.21 or higher.\n"
@@ -71,6 +88,8 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../binaries/${FMU_TARGET_PL
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
+message(STATUS "Install directory: ${CMAKE_INSTALL_PREFIX}")
 
 # Set RPATH
 if(APPLE)
@@ -83,7 +102,7 @@ else()
 endif()
 
 # Target library
-add_library(${FMU_NAME} SHARED
+add_library(${FMU_NAME}
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
 
@@ -100,6 +119,7 @@ endif()
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
 if(${NEED_CVODE})
+  message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
   find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH)
