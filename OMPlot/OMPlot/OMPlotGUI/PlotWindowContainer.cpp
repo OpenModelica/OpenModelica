@@ -77,7 +77,7 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 void PlotWindowContainer::addPlotWindow(QStringList arguments)
 {
   PlotWindow *pPlotWindow = new PlotWindow(arguments, this);
-  if (pPlotWindow->getPlotType() == PlotWindow::PLOT or pPlotWindow->getPlotType() == PlotWindow::PLOTALL) {
+  if (pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTALL) {
     pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
   } else {
     pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
