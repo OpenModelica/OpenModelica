@@ -4,7 +4,7 @@
 # OMCppOMCFactory
 set(OMC_SIMRT_CPP_SIMCOREFACTORY_OMCFACTORY_SOURCES OMCFactory/OMCFactory.cpp)
 
-add_library(OMCppOMCFactory SHARED)
+add_library(OMCppOMCFactory STATIC)
 add_library(omc::simrt::cpp::simcorefactory::omcfactory ALIAS OMCppOMCFactory)
 
 target_sources(OMCppOMCFactory PRIVATE ${OMC_SIMRT_CPP_SIMCOREFACTORY_OMCFACTORY_SOURCES})
