@@ -14,8 +14,8 @@ project(OMModelicaExternalC)
 link_directories(${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_BINDIR})
 
 # Set the rpath to the one dir up as the destination of the libs
-# when installing is an 'ffi' directory in the lib directory.
-# See the install commnad at the end of this file. If that is
+# when installing there is an 'ffi' directory in the lib directory.
+# See the install command at the end of this file. If that is
 # changed make sure to adjust this as well.
 if(APPLE)
   set(CMAKE_INSTALL_RPATH "@loader_path/../../${CMAKE_INSTALL_LIBDIR}")

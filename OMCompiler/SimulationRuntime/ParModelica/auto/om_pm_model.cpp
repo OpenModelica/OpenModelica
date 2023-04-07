@@ -111,7 +111,7 @@ void OMModel::load_ODE_system() {
 }
 
 inline void check_tag(int index, const std::string& tag) {
-    if (tag == "dummy" or tag == "assign" or tag == "residual" or tag == "tornsystem" or tag == "system" or
+    if (tag == "dummy" || tag == "assign" || tag == "residual" || tag == "tornsystem" || tag == "system" ||
         tag == "algorithm")
         return;
     else {
@@ -120,7 +120,7 @@ inline void check_tag(int index, const std::string& tag) {
 }
 
 inline void check_container_dispaly(int index, const std::string& disp) {
-    if (disp == "linear" or disp == "non-linear")
+    if (disp == "linear" || disp == "non-linear")
         return;
     else {
         utility::eq_index_fatal(index, "container with unknown disp : " + disp);
