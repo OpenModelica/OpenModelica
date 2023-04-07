@@ -1246,8 +1246,8 @@ void match_pr_fifo_fair(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids
 }
 
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int matching_id, int cheap_id, double relabel_period, int clear_match) {
-  int* row_ptrs;
-  int* row_ids;
+  int* row_ptrs = NULL;
+  int* row_ids = NULL;
   int i;
 
   if (clear_match==1)
