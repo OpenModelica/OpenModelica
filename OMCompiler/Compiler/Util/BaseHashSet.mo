@@ -347,7 +347,7 @@ protected function get2
   input Key key;
   input list<tuple<Key,Integer>> keyIndices;
   input FuncEq keyEqual;
-  output Integer index;
+  output Integer index = -1;
   output Boolean found = true;
 protected
   Key key2;
