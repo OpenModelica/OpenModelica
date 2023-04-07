@@ -31,10 +31,12 @@
  *
  */
 
+#include <iostream>
+#include <memory>
+
 #include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
 #include "LinearScaleEngine.h"
-#include "iostream"
 #include "qwt_plot_layout.h"
 #if QWT_VERSION >= 0x060000
 #include "qwt_plot_renderer.h"
@@ -382,7 +384,7 @@ void PlotWindow::setupToolbar()
 void PlotWindow::plot(PlotCurve *pPlotCurve)
 {
   QString currentLine;
-  if (mVariablesList.isEmpty() and getPlotType() == PlotWindow::PLOT)
+  if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOT)
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
 
   bool editCase = pPlotCurve ? true : false;
@@ -413,7 +415,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       if (currentLine.contains("DataSet:"))
       {
         currentVariable = currentLine.remove("DataSet: ");
-        if (mVariablesList.contains(currentVariable) or getPlotType() == PlotWindow::PLOTALL)
+        if (mVariablesList.contains(currentVariable) || getPlotType() == PlotWindow::PLOTALL)
         {
           variablesPlotted.append(currentVariable);
           if (!editCase) {
@@ -475,7 +477,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // read in all values
     for (int i = 0; i < csvReader->numvars; i++)
     {
-      if (mVariablesList.contains(csvReader->variables[i]) or getPlotType() == PlotWindow::PLOTALL)
+      if (mVariablesList.contains(csvReader->variables[i]) || getPlotType() == PlotWindow::PLOTALL)
       {
         variablesPlotted.append(csvReader->variables[i]);
         double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
@@ -537,7 +539,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     }
     // read in all values
     for (int i = 0; i < reader.nall; i++) {
-      if (mVariablesList.contains(reader.allInfo[i].name) or getPlotType() == PlotWindow::PLOTALL) {
+      if (mVariablesList.contains(reader.allInfo[i].name) || getPlotType() == PlotWindow::PLOTALL) {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
         if (!editCase) {
@@ -874,7 +876,7 @@ int readPLTDataset(QTextStream *mpTextStream, QString variable, int N, double* v
 
 void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut){
   int index = 1;
-  double vals[intervalSize];
+  auto vals = std::make_unique<double[]>(intervalSize);
   do  //loop over all indexes
   {
     //read the values
@@ -885,7 +887,7 @@ void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int
     } else {
       variableWithInd.append("["+QString::number(index)+"]");
     }
-    if (readPLTDataset(mpTextStream, variableWithInd, intervalSize, vals)){
+    if (readPLTDataset(mpTextStream, variableWithInd, intervalSize, vals.get())){
       if (index == 1)
         throw NoVariableException(QObject::tr("Array variable doesnt exist: %1").arg(variable).toStdString().c_str());
       else
@@ -922,7 +924,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
   QString currentLine;
   setTime(time);
   double timeUnitFactor = getTimeUnitFactor(getTimeUnit());
-  if (mVariablesList.isEmpty() and getPlotType() == PlotWindow::PLOTARRAY)
+  if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOTARRAY)
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
   bool editCase = pPlotCurve ? true : false;
   //PLOT PLT
@@ -950,11 +952,11 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     }
     //    double vals[intervalSize];
     //Read in timevector
-    double timeVals[intervalSize];
-    readPLTDataset(mpTextStream, "time", intervalSize, timeVals);
+    auto timeVals = std::make_unique<double[]>(intervalSize);
+    readPLTDataset(mpTextStream, "time", intervalSize, timeVals.get());
     //Find indexes and alpha to interpolate data in particular time
     double alpha;
-    int it = setupInterp(timeVals, time, intervalSize, alpha);
+    int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
     if (it < 0) {
       mFile.close();
       throw PlotException("Time out of bounds.");
@@ -1168,11 +1170,11 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         throw PlotException(tr("Interval size not specified.").toStdString().c_str());
       }
       //Read in timevector
-      double timeVals[intervalSize];
-      readPLTDataset(mpTextStream, "time", intervalSize, timeVals);
+      auto timeVals = std::make_unique<double[]>(intervalSize);
+      readPLTDataset(mpTextStream, "time", intervalSize, timeVals.get());
       //Find indexes and alpha to interpolate data in particular time
       double alpha;
-      int it = setupInterp(timeVals, time, intervalSize, alpha);
+      int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
       if (it < 0) {
         mFile.close();
         throw PlotException("Time out of bounds.");
