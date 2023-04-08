@@ -124,8 +124,7 @@ OMCFactory::~OMCFactory()
 void OMCFactory::UnloadAllLibs(void)
 {
     map<string,shared_library>::iterator iter;
-    for(iter = _modules.begin();iter!=_modules.end();++iter)
-    {
+    for(iter = _modules.begin(); iter!=_modules.end(); ++iter) {
         UnloadLibrary(iter->second);
     }
 }
@@ -192,66 +191,64 @@ static LogSettings initializeLogger(const po::variables_map& vm)
     "LOG_SOLVER", LOG_SOLVER  MAP_LIST_SEP "LOG_STATS", LOG_STATS MAP_LIST_END;
 
   LogSettings logSettings;
-  std::string logOMEditWarning;
-  if (vm.count("log-settings"))
-    {
-      vector<string> log_vec = vm["log-settings"].as<vector<string> >();
-      vector<string> tmpvec;
-      for (int i = 0; i < log_vec.size(); i++) {
-        // translate XML stream options to native options
-        if (log_vec[i].compare(0, 4, "LOG_") == 0) {
-          LogOMEdit logOMEdit;
-          boost::split(tmpvec, log_vec[i], boost::is_any_of(","));
-          for (int j = 0; j < tmpvec.size(); j++) {
-            if (logOMEditMap.find(tmpvec[j]) != logOMEditMap.end())
-              logOMEdit = logOMEditMap[tmpvec[j]];
-            else {
-              if (logOMEditWarning.size() > 0)
-                logOMEditWarning += ",";
-              logOMEditWarning += tmpvec[j];
-              continue;
-            }
-            switch (logOMEdit) {
-            case LOG_EVENTS:
-              logSettings.modes[LC_EVENTS] = LL_DEBUG;
-              break;
-            case LOG_INIT:
-              logSettings.modes[LC_INIT] = LL_DEBUG;
-              break;
-            case LOG_LS:
-              logSettings.modes[LC_LS] = LL_DEBUG;
-              break;
-            case LOG_NLS:
-              logSettings.modes[LC_NLS] = LL_DEBUG;
-              break;
-            case LOG_SOLVER:
-              logSettings.modes[LC_SOLVER] = LL_DEBUG;
-              //case LOG_STATS:
-            default:
-              if (logSettings.modes[LC_SOLVER] < LL_INFO)
-                logSettings.modes[LC_SOLVER] = LL_INFO;
-            }
+  std::string logWarning;
+  bool logUsingOMEdit = false;
+  if (vm.count("log-settings")) {
+    vector<string> log_vec = vm["log-settings"].as<vector<string> >();
+    vector<string> opt_vec;
+    vector<string> cat_lvl;
+    for (int i = 0; i < log_vec.size(); i++) {
+      // each log setting may be a comma separated list of options
+      boost::split(opt_vec, log_vec[i], boost::is_any_of(","));
+      for (int j = 0; j < opt_vec.size(); j++) {
+        // check for disabled option
+        int disabled = opt_vec[j].rfind("-", 0) == 0? 1: 0;
+        // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
+        boost::split(cat_lvl, opt_vec[j], boost::is_any_of("="));
+        if (!logUsingOMEdit && opt_vec[j].rfind("LOG_", disabled) == disabled)
+          logUsingOMEdit = true;
+        if (logUsingOMEdit && logOMEditMap.find(opt_vec[j]) != logOMEditMap.end()) {
+          // OMEdit option
+          LogOMEdit logOMEdit = logOMEditMap[opt_vec[j]];
+          switch (logOMEdit) {
+          case LOG_EVENTS:
+            logSettings.modes[LC_EVENTS] = LL_DEBUG;
+            break;
+          case LOG_INIT:
+            logSettings.modes[LC_INIT] = LL_DEBUG;
+            break;
+          case LOG_LS:
+            logSettings.modes[LC_LS] = LL_DEBUG;
+            break;
+          case LOG_NLS:
+            logSettings.modes[LC_NLS] = LL_DEBUG;
+            break;
+          case LOG_SOLVER:
+            logSettings.modes[LC_SOLVER] = LL_DEBUG;
+          case LOG_STATS:
+            if (logSettings.modes[LC_SOLVER] < LL_INFO)
+              logSettings.modes[LC_SOLVER] = LL_INFO;
+            break;
           }
         }
-        // treat native option
-        else {
-          // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
-          boost::split(tmpvec, log_vec[i], boost::is_any_of("="));
-          if (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()) {
-            LogLevel logLevel = LL_DEBUG;
-            if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end())
-              logLevel = logLvlMap[tmpvec[1]];
-            if (tmpvec[0] == "all")
-              logSettings.setAll(logLevel);
-            else
-              logSettings.modes[logCatMap[tmpvec[0]]] = logLevel;
-          }
+        else if (cat_lvl[0] == "all" || logCatMap.find(cat_lvl[0]) != logCatMap.end()) {
+          // native option
+          LogLevel logLevel = LL_DEBUG;
+          if (cat_lvl.size() > 1 && logLvlMap.find(cat_lvl[1]) != logLvlMap.end())
+            logLevel = logLvlMap[cat_lvl[1]];
+          if (cat_lvl[0] == "all")
+            logSettings.setAll(logLevel);
           else
-            throw ModelicaSimulationError(MODEL_FACTORY,
-              "log-settings flags not supported: " + log_vec[i] + "\n");
+            logSettings.modes[logCatMap[cat_lvl[0]]] = logLevel;
+        }
+        else {
+          if (logWarning.size() > 0)
+            logWarning += ",";
+          logWarning += opt_vec[j];
         }
       }
     }
+  }
 
   if (vm.count("warn-all") && vm["warn-all"].as<bool>()) {
     for (int i = 0; i < logSettings.modes.size(); i++)
@@ -289,18 +286,19 @@ static LogSettings initializeLogger(const po::variables_map& vm)
       Logger::initialize(logSettings);
   }
 
-  if (logOMEditWarning.size() > 0) {
-    LOGGER_WRITE("Warning: unrecognized logging " + logOMEditWarning,
-                 LC_OTHER, LL_WARNING);
-    ostringstream os;
-    os << "Supported are: ";
-    map<std::string, LogOMEdit>::const_iterator it;
-    for (it = logOMEditMap.begin(); it != logOMEditMap.end(); ++it) {
-      if (it != logOMEditMap.begin())
-        os << ",";
-      os << it->first;
+  if (logWarning.size() > 0) {
+    LOGGER_WRITE("Unrecognized logging: " + logWarning, LC_OTHER, LL_WARNING);
+    if (logUsingOMEdit) {
+      ostringstream os;
+      os << "Supported are: ";
+      map<std::string, LogOMEdit>::const_iterator it;
+      for (it = logOMEditMap.begin(); it != logOMEditMap.end(); ++it) {
+        if (it != logOMEditMap.begin())
+          os << ",";
+        os << it->first;
+      }
+      LOGGER_WRITE(os.str(), LC_OTHER, LL_INFO);
     }
-    LOGGER_WRITE(os.str(), LC_OTHER, LL_INFO);
   }
 
   return logSettings;
@@ -343,7 +341,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
-          ("log-settings,V", po::value< vector<string> >(), "log cat[=lvl] with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug")
+          ("log-settings,V", po::value< vector<string> >(), "cat[=lvl][,cat[=lvl]]... with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug")
           ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml, xmltcp")
           ("log-port", po::value< int >()->default_value(0), "tcp port for log messages (default 0 meaning stdout/stderr)")
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
@@ -542,7 +540,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
   vector<const char *> optv;
 
   optv.push_back(strdup(argv[0]));
-  _overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
+  std::string overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
   for (int i = 1; i < argc; i++) {
 
       string arg = argv[i];
@@ -567,15 +565,15 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
               }
               else {
                   // leave unrecognized overrides
-                  if (_overrideOMEdit.size() > 10)
-                      _overrideOMEdit += ",";
-                  _overrideOMEdit += strs[j];
+                  if (overrideOMEdit.size() > 10)
+                      overrideOMEdit += ",";
+                  overrideOMEdit += strs[j];
                   if (j < strs.size() - 1)
-                      _overrideOMEdit += "=" + strs[++j];
+                      overrideOMEdit += "=" + strs[++j];
               }
           }
-          if (_overrideOMEdit.size() > 10)
-              optv.push_back(strdup(_overrideOMEdit.c_str()));
+          if (overrideOMEdit.size() > 10)
+              optv.push_back(strdup(overrideOMEdit.c_str()));
       }
       else
           optv.push_back(strdup(argv[i]));     // pass through
