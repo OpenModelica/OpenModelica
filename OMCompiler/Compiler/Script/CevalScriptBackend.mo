@@ -3471,8 +3471,15 @@ protected function callTranslateModel
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
+protected
+  Boolean daeMode;
 algorithm
-  if Flags.getConfigBool(Flags.DAE_MODE) then
+  daeMode := Flags.getConfigBool(Flags.DAE_MODE);
+  if daeMode and Config.simCodeTarget() == "Cpp" then
+    Error.addMessage(Error.DAE_MODE_NOT_SUPPORTED_CPP, {});
+    daeMode := false;
+  end if;
+  if daeMode then
     (outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModelDAEMode(inCache,inEnv,className,inFileNamePrefix,
     inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
