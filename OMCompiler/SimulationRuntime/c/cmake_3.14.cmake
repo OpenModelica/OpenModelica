@@ -31,7 +31,14 @@ file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/opt
 
 # ######################################################################################################################
 # Library: OpenModelicaRuntimeC
-add_library(OpenModelicaRuntimeC SHARED)
+# For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
+# It has some dll exporting issues in it that need to be resolved.
+if(MSVC)
+  add_library(OpenModelicaRuntimeC STATIC)
+else()
+  add_library(OpenModelicaRuntimeC SHARED)
+endif()
+
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
 target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_GC_SOURCES} ${OMC_SIMRT_UTIL_SOURCES} ${OMC_SIMRT_META_SOURCES})
@@ -51,6 +58,7 @@ if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
+  target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::regex)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
