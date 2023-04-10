@@ -32,6 +32,10 @@ set(OMPLOTLIB_HEADERS OMPlot.h
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})
 target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
 
+if(MSVC)
+  set_target_properties(OMPlotLib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+endif()
+
 target_include_directories(OMPlotLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(OMPlotLib PUBLIC Qt5::Widgets)
