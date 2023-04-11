@@ -7,6 +7,7 @@ ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuExportFlags.mos \
 simpleStiffFMU.mos \
+issue10523.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
