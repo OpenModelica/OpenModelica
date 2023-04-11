@@ -32,7 +32,6 @@
 encapsulated package Obfuscate
   import Absyn;
   import AbsynUtil;
-  import DAE;
   import Dump;
   import FBuiltin;
   import SCode;
@@ -489,7 +488,7 @@ encapsulated package Obfuscate
     if isSome(oldId) then
       SOME(id) := oldId;
     else
-      id := "$n" + String(index);
+      id := "n" + String(index);
     end if;
   end makeId;
 
@@ -1015,10 +1014,6 @@ encapsulated package Obfuscate
     ety := UnorderedMap.getOrDefault(name, env.builtins, ElementType.OTHER);
     res := ety == ElementType.FUNCTION or ety == ElementType.TYPE_AND_FUNCTION;
   end isBuiltinCall;
-
-  function deobfuscatePublicDAEVars
-
-  end deobfuscatePublicDAEVars;
 
   annotation(__OpenModelica_Interface="backend");
 end Obfuscate;

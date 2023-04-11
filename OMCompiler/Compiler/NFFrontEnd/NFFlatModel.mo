@@ -730,7 +730,7 @@ public
       nodes := List.trim(nodes, InstNode.isPublic);
 
       for node in nodes loop
-        UnorderedMap.tryAdd(node, "$n" + String(UnorderedMap.size(obfuscationMap) + 1), obfuscationMap);
+        UnorderedMap.tryAdd(node, "n" + String(UnorderedMap.size(obfuscationMap) + 1), obfuscationMap);
       end for;
     end if;
   end addObfuscatedVariable;
