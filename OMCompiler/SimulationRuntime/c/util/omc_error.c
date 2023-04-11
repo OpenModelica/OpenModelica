@@ -31,6 +31,7 @@
 #include "setjmp.h"
 #include <stdio.h>
 #include "omc_error.h"
+#include "simulation_options.h"
 /* For MMC_THROW, so we can end this thing */
 #include "../meta/meta_modelica.h"
 
@@ -453,28 +454,30 @@ void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inden
  * If `nDisplayed` is larger than user specified display limit for warnings
  * a info is displayed and no warning will be printed.
  *
- * @param stream      Stream to print to.
- * @param indentNext  Will increase indentation level by one if true.
- * @param nDisplayed  Number of times this warning was displayed.
- * @param format      Format string with message to print.
- * @param ...         Arguments for format string.
+ * @param stream          Stream to print to.
+ * @param indentNext      Will increase indentation level by one if true.
+ * @param nDisplayed      Number of times this warning was displayed.
+ * @param maxWarnDisplays Maximum allowed warning displays.
+ * @param format          Format string with message to print.
+ * @param ...             Arguments for format string.
  */
-void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, const char *format, ...) {
+void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) {
 
   if (!ACTIVE_WARNING_STREAM(stream)) {
     return;
   }
 
-  unsigned long displayLimit = 10;
   va_list args;
 
   /* Display warning */
-  if (nDisplayed <= displayLimit) {
+  if (nDisplayed <= maxWarnDisplays) {
     va_start(args, format);
     va_warningStreamPrint(stream, indentNext, format, args);
   }
-  if (nDisplayed == displayLimit) {
-    infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %u for this warning.", displayLimit);
+  if (nDisplayed == maxWarnDisplays) {
+    infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %u. "
+                                        "Suppressing further warning messages of the same type.", maxWarnDisplays);
+    infoStreamPrint(stream, indentNext, "Change limit with simulation flag -%s=<newLimit>", FLAG_NAME[FLAG_LV_MAX_WARN]);
     messageClose(stream);
   }
 }

@@ -250,8 +250,12 @@ void setGlobalVerboseLevel(int argc, char**argv)
 }
 
 
-/* Read value of flag lv_time to set time interval in which loggin is active */
-void setGlobalLoggingTime(int argc, char**argv, SIMULATION_INFO *simulationInfo)
+/**
+ * @brief Read value of flag lv_time to set time interval in which logging is active.
+ *
+ * @param simulationInfo    Simulation info struct
+ */
+void setGlobalLoggingTime(SIMULATION_INFO *simulationInfo)
 {
   const char *flagStr = omc_flagValue[FLAG_LV_TIME];
   const string *flags = flagStr ? new string(flagStr) : NULL;
@@ -274,7 +278,7 @@ void setGlobalLoggingTime(int argc, char**argv, SIMULATION_INFO *simulationInfo)
   loggingStopTime = om_strtod(secondPart, &endptr);
   if (*endptr)
   {
-    throwStreamPrint(NULL, "Simulation flag %s expects two real numbers, seperated by a comata. Got: %s", FLAG_NAME[FLAG_LV_TIME], flagStr);
+    throwStreamPrint(NULL, "Simulation flag %s expects two real numbers, separated by a commas. Got: %s", FLAG_NAME[FLAG_LV_TIME], flagStr);
   }
 
   /* Check flag input */
@@ -287,7 +291,7 @@ void setGlobalLoggingTime(int argc, char**argv, SIMULATION_INFO *simulationInfo)
   simulationInfo->useLoggingTime = 1;
   simulationInfo->loggingTimeRecord[0] = loggingStartTime;
   simulationInfo->loggingTimeRecord[1] = loggingStopTime;
-  infoStreamPrint(LOG_STDOUT, 0, "Time dependent logging enabled. Activate loggin in intervall [%f, %f]", simulationInfo->loggingTimeRecord[0], simulationInfo->loggingTimeRecord[1]);
+  infoStreamPrint(LOG_STDOUT, 0, "Time dependent logging enabled. Activate logging in interval [%f, %f]", simulationInfo->loggingTimeRecord[0], simulationInfo->loggingTimeRecord[1]);
 
   /* Deactivate Logging */
   deactivateLogging();

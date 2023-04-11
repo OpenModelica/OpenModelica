@@ -696,6 +696,7 @@ typedef struct SIMULATION_INFO
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
   int useLoggingTime;                  /* 0 if logging is currently disabled, 1 if enabled */
+  unsigned long maxWarnDisplays;       /* Maximum number repeating warnings are displayed */
 
   LINEAR_SOLVER lsMethod;              /* linear solver */
   LINEAR_SPARSE_SOLVER lssMethod;      /* linear sparse solver */

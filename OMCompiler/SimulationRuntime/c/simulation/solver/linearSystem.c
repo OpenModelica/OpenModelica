@@ -667,7 +667,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
         } else {
           logLevel = LOG_STDOUT;
         }
-        warningStreamPrintWithLimit(logLevel, 0, linsys->numberOfFailures,
+        warningStreamPrintWithLimit(logLevel, 0, linsys->numberOfFailures, data->simulationInfo->maxWarnDisplays,
                                     "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
         success = solveTotalPivot(data, threadData, sysNumber, aux_x);
         linsys->failed = 1;
