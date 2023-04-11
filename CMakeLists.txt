@@ -1,5 +1,12 @@
 
 cmake_minimum_required(VERSION 3.14)
+
+option(OM_WITH_VCPKG "Use vcpkg to manage dependencies." OFF)
+if(OM_WITH_VCPKG)
+  set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
+  set(CMAKE_TOOLCHAIN_FILE vcpkg/scripts/buildsystems/vcpkg.cmake)
+endif()
+
 project(OpenModelica
         HOMEPAGE_URL "https://openmodelica.org/"
         LANGUAGES C CXX)
