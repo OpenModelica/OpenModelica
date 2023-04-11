@@ -135,7 +135,7 @@ int checkCommandLineArguments(int argc, char **argv)
         }
         // Option is already specified earlier. Check repetition policy.
         else if(!handle_repeated_option(j, argv+i, 0 /*Not sticky*/)) {
-          // repetition is invlaid for this option
+          // repetition is invalid for this option
           return 1;
         }
 
@@ -159,7 +159,7 @@ int checkCommandLineArguments(int argc, char **argv)
         }
         // Option is already specified earlier. Check repetition policy.
         else if (!handle_repeated_option(j, argv+i, 1 /*Sticky*/)) {
-          // repetition is invlaid for this option
+          // repetition is invalid for this option
           return 1;
         }
 
