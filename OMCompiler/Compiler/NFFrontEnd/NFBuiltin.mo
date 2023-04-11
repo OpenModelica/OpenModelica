@@ -163,7 +163,7 @@ constant LookupTree.Tree REAL_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
   REAL_LOOKUP_TREE,
-  listArrayLiteral({}),
+  listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
       Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
@@ -225,7 +225,7 @@ constant LookupTree.Tree INTEGER_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
   INTEGER_LOOKUP_TREE,
-  listArrayLiteral({}),
+  listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
       Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
@@ -263,7 +263,7 @@ constant LookupTree.Tree BOOLEAN_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
   BOOLEAN_LOOKUP_TREE,
-  listArrayLiteral({}),
+  listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
       Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
@@ -298,7 +298,7 @@ constant LookupTree.Tree STRING_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
   STRING_LOOKUP_TREE,
-  listArrayLiteral({}),
+  listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
       Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
@@ -367,7 +367,7 @@ constant LookupTree.Tree CLOCK_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
   CLOCK_LOOKUP_TREE,
-  listArrayLiteral({}),
+  listArray({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", NONE(), Visibility.PUBLIC,
       Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
