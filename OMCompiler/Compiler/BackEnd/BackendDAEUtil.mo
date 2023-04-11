@@ -1792,7 +1792,7 @@ algorithm
   daeVarsLst := {};
   newEqnlst := {};
   for var in BackendVariable.varList(currentSystem.orderedVars) loop
-    if BackendVariable.isOutputVar(var) then
+    if BackendVariable.isOutputVar(var) and BackendVariable.isRealVar(var) then
       newCref := ComponentReference.appendStringLastIdent("_der", var.varName); // append _der
       newCref := ComponentReference.prependStringCref("$", newCref); // prepend $
       daeVarsLst := BackendVariable.makeVar(newCref) :: daeVarsLst;

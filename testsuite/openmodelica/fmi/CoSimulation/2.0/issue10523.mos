@@ -1,0 +1,19 @@
+// name: issue10523.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf Modelica.Blocks.Sources.IntegerConstant.fmu Modelica_Blocks_Sources_IntegerConstant.log Modelica_Blocks_Sources_IntegerConstant_info.json
+
+loadModel(Modelica);
+getErrorString();
+
+buildModelFMU(Modelica.Blocks.Sources.IntegerConstant, version="2.0", fmuType="cs");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// "Modelica.Blocks.Sources.IntegerConstant.fmu"
+// "[Modelica 4.0.0+maint.om/Blocks/Sources.mo:2236:5-2236:57:writable] Warning: Parameter k has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// "
+// endResult
