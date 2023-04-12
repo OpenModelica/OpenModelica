@@ -9,6 +9,9 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     QT *= printsupport widgets
 }
 
+# Set the C++ standard.
+CONFIG += c++14
+
 TARGET = OMPlot
 TEMPLATE = lib
 

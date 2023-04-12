@@ -33,6 +33,9 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets concurrent
 }
 
+# Set the C++ standard.
+CONFIG += c++14
+
 TARGET = OMEdit
 TEMPLATE = app
 
