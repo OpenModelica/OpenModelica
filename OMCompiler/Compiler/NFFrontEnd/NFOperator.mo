@@ -42,48 +42,48 @@ public
 
   type Op = enumeration(
     // Basic arithmetic operators.
-    ADD,               // +
-    SUB,               // -
-    MUL,               // *
-    DIV,               // /
-    POW,               // ^
+    ADD,               //  1: +
+    SUB,               //  2: -
+    MUL,               //  3: *
+    DIV,               //  4: /
+    POW,               //  5: ^
     // Element-wise arithmetic operators. These are only used until the type
     // checking, then replaced with a more specific operator.
-    ADD_EW,            // .+
-    SUB_EW,            // .-
-    MUL_EW,            // .*
-    DIV_EW,            // ./
-    POW_EW,            // .^
+    ADD_EW,            //  6: .+
+    SUB_EW,            //  7: .-
+    MUL_EW,            //  8: .*
+    DIV_EW,            //  9: ./
+    POW_EW,            // 10: .^
     // Scalar-Array and Array-Scalar arithmetic operators.
-    ADD_SCALAR_ARRAY,  // scalar + array
-    ADD_ARRAY_SCALAR,  // array + scalar
-    SUB_SCALAR_ARRAY,  // scalar - array
-    SUB_ARRAY_SCALAR,  // array - scalar
-    MUL_SCALAR_ARRAY,  // scalar * array
-    MUL_ARRAY_SCALAR,  // array * scalar
-    MUL_VECTOR_MATRIX, // vector * matrix
-    MUL_MATRIX_VECTOR, // matrix * vector
-    SCALAR_PRODUCT,    // vector * vector
-    MATRIX_PRODUCT,    // matrix * matrix
-    DIV_SCALAR_ARRAY,  // scalar / array
-    DIV_ARRAY_SCALAR,  // array / scalar
-    POW_SCALAR_ARRAY,  // scalar ^ array
-    POW_ARRAY_SCALAR,  // array ^ scalar
-    POW_MATRIX,        // matrix ^ Integer
+    ADD_SCALAR_ARRAY,  // 11: scalar + array
+    ADD_ARRAY_SCALAR,  // 12: array + scalar
+    SUB_SCALAR_ARRAY,  // 13: scalar - array
+    SUB_ARRAY_SCALAR,  // 14: array - scalar
+    MUL_SCALAR_ARRAY,  // 15: scalar * array
+    MUL_ARRAY_SCALAR,  // 16: array * scalar
+    MUL_VECTOR_MATRIX, // 17: vector * matrix
+    MUL_MATRIX_VECTOR, // 18: matrix * vector
+    SCALAR_PRODUCT,    // 19: vector * vector
+    MATRIX_PRODUCT,    // 20: matrix * matrix
+    DIV_SCALAR_ARRAY,  // 21: scalar / array
+    DIV_ARRAY_SCALAR,  // 22: array / scalar
+    POW_SCALAR_ARRAY,  // 23: scalar ^ array
+    POW_ARRAY_SCALAR,  // 24: array ^ scalar
+    POW_MATRIX,        // 25: matrix ^ Integer
     // Unary arithmetic operators.
-    UMINUS,            // -
+    UMINUS,            // 26: -
     // Logic operators.
-    AND,               // and
-    OR,                // or
-    NOT,               // not
+    AND,               // 27: and
+    OR,                // 28: or
+    NOT,               // 29: not
     // Relational operators.
-    LESS,              // <
-    LESSEQ,            // <=
-    GREATER,           // >
-    GREATEREQ,         // >=
-    EQUAL,             // ==
-    NEQUAL,            // <>
-    USERDEFINED        // Overloaded operator.
+    LESS,              // 30: <
+    LESSEQ,            // 31: <=
+    GREATER,           // 32: >
+    GREATEREQ,         // 33: >=
+    EQUAL,             // 34: ==
+    NEQUAL,            // 35: <>
+    USERDEFINED        // 36: Overloaded operator.
   );
 
   record OPERATOR
