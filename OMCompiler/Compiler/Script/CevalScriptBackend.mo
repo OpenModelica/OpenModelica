@@ -3958,7 +3958,6 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
-  Boolean useCrossCompileCmake = false;
   list<String> fmiFlagsList;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
@@ -4046,38 +4045,16 @@ algorithm
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
   needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
 
-  // Use CMake on Windows when cross-compiling with docker
-  _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD), needs3rdPartyLibs)
-    case ("true", _) algorithm
-      useCrossCompileCmake := true;
-      then();
-    case ("false", _) algorithm
-      useCrossCompileCmake := false;
-      then();
-    case ("default", false) algorithm
-      if (listLength(platforms) > 1 and isWindows) then
-        Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
-        useCrossCompileCmake := true;
-      else
-        for platform in platforms loop
-          if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
-            Error.addCompilerNotification("OS is Windows and docker platform detected. Using CMake to build FMU.");
-            useCrossCompileCmake := true;
-          end if;
-        end for;
-      end if;
-      then();
-    else
-      algorithm
-        useCrossCompileCmake := false;
-        then();
-  end match;
-
+  // Warn about deprecated Makefile build
+  if not Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
+    Error.addCompilerNotification("The Makefile build for FMUs is deprecated and will be removed in a future version of OpenModelica."
+                                  + " Use \"--" + Flags.getConfigName(Flags.FMU_CMAKE_BUILD) + "=true\".");
+  end if;
 
   // Configure the FMU Makefile
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    if useCrossCompileCmake then
+    if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
       configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
