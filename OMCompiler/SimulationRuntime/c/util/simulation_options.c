@@ -101,6 +101,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LSS_MAX_DENSITY */              "lssMaxDensity",
   /* FLAG_LSS_MIN_SIZE */                 "lssMinSize",
   /* FLAG_LV */                           "lv",
+  /* FLAG_LV_MAX_WARN */                  "lvMaxWarn",
   /* FLAG_LV_TIME */                      "lv_time",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "mbi",
   /* FLAG_MAX_EVENT_ITERATIONS */         "mei",
@@ -234,6 +235,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
+  /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */         "[int (default 20)] value specifies the maximum number of event iterations",
@@ -469,6 +471,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
   /* FLAG_LV_TIME */
+  "  Maximum number of times some repeating warnings are displayed.\n"
+  "  Default value " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ".",
+  /* FLAG_LV_TIME */
   "  Interval (a comma-separated Double list with two elements) specifies in which\n"
   "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
   "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
@@ -701,6 +706,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_LSS_MAX_DENSITY */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LSS_MIN_SIZE */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LV */                           FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_LV_MAX_WARN */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LV_TIME */                      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_BISECTION_ITERATIONS */     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_REPEAT_POLICY_FORBID,
@@ -833,6 +839,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_LSS_MAX_DENSITY */              FLAG_TYPE_OPTION,
   /* FLAG_LSS_MIN_SIZE */                 FLAG_TYPE_OPTION,
   /* FLAG_LV */                           FLAG_TYPE_OPTION,
+  /* FLAG_LV_MAX_WARN */                  FLAG_TYPE_OPTION,
   /* FLAG_LV_TIME */                      FLAG_TYPE_OPTION,
   /* FLAG_MAX_BISECTION_ITERATIONS */     FLAG_TYPE_OPTION,
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_TYPE_OPTION,

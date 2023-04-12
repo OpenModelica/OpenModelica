@@ -359,6 +359,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFEval;         /* number of function evaluations of this system */
+  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
   unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
   unsigned long numberOfIterations;    /* number of iteration of non-linear solvers of this system */
   double totalTime;                    /* save the totalTime */
@@ -385,6 +386,7 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
 
   /* Statistics for each thread */
   unsigned long numberOfCall;          /* number of solving calls of this system */
+  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
   unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
   double totalTime;                    /* save the totalTime */
   rtclock_t totalTimeClock;            /* time clock for the totalTime */
@@ -432,6 +434,7 @@ typedef struct LINEAR_SYSTEM_DATA
   // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
+  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
   unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
   double totalTime;                    /* save the totalTime */
   rtclock_t totalTimeClock;            /* time clock for the totalTime */
@@ -693,6 +696,7 @@ typedef struct SIMULATION_INFO
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
   int useLoggingTime;                  /* 0 if logging is currently disabled, 1 if enabled */
+  unsigned long maxWarnDisplays;       /* Maximum number repeating warnings are displayed */
 
   LINEAR_SOLVER lsMethod;              /* linear solver */
   LINEAR_SPARSE_SOLVER lssMethod;      /* linear sparse solver */
