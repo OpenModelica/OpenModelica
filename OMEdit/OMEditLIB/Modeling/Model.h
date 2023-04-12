@@ -704,7 +704,7 @@ private:
     virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
     virtual QString getRootType() const override {return mName;}
-    virtual QString getType() const override {return mName;}
+    virtual QString getType() const override {return mBaseClass;}
     virtual bool isShortClassDefinition() const override {return mIsShortClassDefinition;}
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
