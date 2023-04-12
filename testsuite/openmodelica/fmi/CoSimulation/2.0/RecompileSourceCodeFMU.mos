@@ -26,7 +26,9 @@ setCommandLineOptions("--fmuCMakeBuild=true --fmiFlags=s:cvode --fmuRuntimeDepen
 buildModelFMU(Test.SinSource, version="2.0", fmuType ="cs", platforms={"static"}); getErrorString();
 
 // Check if CMake can re-compile a static library
-system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU && cd Test_SinSource_FMU/sources && cmake -S . -B build_cmake -DBUILD_SHARED_LIBS=OFF && cmake --build build_cmake --target install", outputFile="reCompile.log"); getErrorString();
+success := system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU && cd Test_SinSource_FMU/sources && cmake -S . -B build_cmake -DBUILD_SHARED_LIBS=OFF && cmake --build build_cmake --target install", outputFile="reCompile.log");
+readFile("reCompile.log");
+
 // Check if static library was compiled and that it used FMI2_FUNCTION_PREFIX=Test_SinSource_FMU for function names
 // Has to return "Test_SinSource_fmi2GetReal"
 system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
