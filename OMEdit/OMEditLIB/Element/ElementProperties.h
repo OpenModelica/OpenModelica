@@ -188,6 +188,7 @@ class ElementParameters : public QDialog
 public:
   ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
   ~ElementParameters();
+  QString getElementParentClassName() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}

@@ -597,7 +597,7 @@ void Parameter::createValueWidget()
           }
         }
         choices = mpModelInstanceElement->getAnnotation()->getChoices().getChoices();
-        parentClassName = mpModelInstanceElement->getParentModel()->getName();
+        parentClassName = mpElementParameters->getElementParentClassName();
         if (mpModelInstanceElement->getModel()) {
           restriction = mpModelInstanceElement->getModel()->getRestriction();
         } else {
@@ -1100,6 +1100,16 @@ ElementParameters::~ElementParameters()
 {
   qDeleteAll(mParametersList.begin(), mParametersList.end());
   mParametersList.clear();
+}
+
+/*!
+ * \brief ElementParameters::getElementParentClassName
+ * Returns the class name where the component is defined.
+ * \return
+ */
+QString ElementParameters::getElementParentClassName() const
+{
+  return mpElement->getParentModel()->getName();
 }
 
 /*!
