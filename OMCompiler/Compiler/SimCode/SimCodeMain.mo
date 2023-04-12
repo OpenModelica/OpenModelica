@@ -942,7 +942,6 @@ algorithm
         end match;
 
         // Add external libraries and includes
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@BUILD_SHARED_LIBS@", SimCodeUtil.getCMakeLibraryType());
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
         (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);

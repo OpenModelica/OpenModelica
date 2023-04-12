@@ -15650,17 +15650,6 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
-public function getCMakeLibraryType
-  "Code for FMU CMakeLists.txt to specify if add_library should use static or dynamic library."
-  output String buildSahredLibs;
-algorithm
-  if FMI.exportStaticCompiledFMU() then
-    buildSahredLibs := "OFF";
-  else
-    buildSahredLibs := "ON";
-  end if;
-end getCMakeLibraryType;
-
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if CVODE is needed."
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;

@@ -283,10 +283,6 @@ package FMI
     output Boolean success;
   end isFMIMEType;
 
-  function exportStaticCompiledFMU "Checks if FMU should be exported as static FMU"
-    output Boolean exportStatic;
-  end exportStaticCompiledFMU;
-
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;

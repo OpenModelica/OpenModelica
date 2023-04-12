@@ -304,10 +304,6 @@ algorithm
   end match;
 end isFMICSType;
 
-public function exportStaticCompiledFMU "Checks if FMU should be exported as static FMU"
-  output Boolean exportStatic = Flags.getConfigBool(Flags.FMI_STATIC_EXPORT);
-end exportStaticCompiledFMU;
-
 public function getEnumerationTypeFromTypes
   input list<TypeDefinitions> inTypeDefinitionsList;
   input String inBaseType;

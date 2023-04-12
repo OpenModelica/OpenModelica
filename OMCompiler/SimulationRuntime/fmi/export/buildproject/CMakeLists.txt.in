@@ -6,7 +6,7 @@ project(${FMU_NAME})
 
 # FMU compilation options
 set(BUILD_SHARED_LIBS
-    @BUILD_SHARED_LIBS@
+    ON
     CACHE BOOL
     "Compile DLL/Shared Object binary object if 'ON', compile static binary object if 'OFF'.")
 set(FMI_INTERFACE_HEADER_FILES_DIRECTORY
@@ -32,6 +32,11 @@ if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} ST
           "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requiers CMake version 3.21 or higher.\n"
           "You are running version ${CMAKE_VERSION}.\n"
           "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
+endif()
+
+# Create position independent code for static libraries
+if(NOT BUILD_SHARED_LIBS)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # FMI header files
