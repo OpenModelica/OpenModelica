@@ -3,6 +3,9 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     QT *= printsupport widgets webkitwidgets
 }
 
+# Set the C++ standard.
+CONFIG += c++14
+
 TRANSLATIONS = \
   OMShell_de.ts \
   OMShell_sv.ts
