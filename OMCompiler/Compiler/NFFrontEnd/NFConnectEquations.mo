@@ -385,27 +385,28 @@ function generateStreamEquations
   input Expression flowThreshold;
   input UnorderedMap<ComponentRef, Variable> variables;
   output list<Equation> equations;
+protected
+  ComponentRef cr1, cr2;
+  DAE.ElementSource src, src1, src2;
+  Expression cref1, cref2, e1, e2;
+  list<Connector> inside, outside;
+  Variability var1, var2;
 algorithm
-  equations := match elements
-    local
-      ComponentRef cr1, cr2;
-      DAE.ElementSource src, src1, src2;
-      Expression cref1, cref2, e1, e2;
-      list<Connector> inside, outside;
-      Variability var1, var2;
+  (outside, inside) := List.splitOnTrue(elements, Connector.isOutside);
+  inside := list(s for s guard not isZeroFlowInside(s, variables) in inside);
 
+  equations := match (inside, outside)
     // Unconnected stream connector, do nothing.
-    case ({Connector.CONNECTOR(face = Face.INSIDE)}) then {};
+    case ({_}, {}) then {};
 
     // Both inside, do nothing.
-    case ({Connector.CONNECTOR(face = Face.INSIDE),
-           Connector.CONNECTOR(face = Face.INSIDE)}) then {};
+    case ({_, _}, {}) then {};
 
     // Both outside:
     // cr1 = inStream(cr2);
     // cr2 = inStream(cr1);
-    case ({Connector.CONNECTOR(name = cr1, face = Face.OUTSIDE, source = src1),
-           Connector.CONNECTOR(name = cr2, face = Face.OUTSIDE, source = src2)})
+    case ({}, {Connector.CONNECTOR(name = cr1, source = src1),
+               Connector.CONNECTOR(name = cr2, source = src2)})
       algorithm
         cref1 := Expression.fromCref(cr1);
         cref2 := Expression.fromCref(cr2);
@@ -418,19 +419,15 @@ algorithm
 
     // One inside, one outside:
     // cr1 = cr2;
-    case ({Connector.CONNECTOR(name = cr1, source = src1),
-           Connector.CONNECTOR(name = cr2, source = src2)})
+    case ({Connector.CONNECTOR(name = cr1, source = src1)},
+          {Connector.CONNECTOR(name = cr2, source = src2)})
       algorithm
         src := ElementSource.mergeSources(src1, src2);
       then
         {Equation.makeCrefEquality(cr1, cr2, InstNode.EMPTY_NODE(), src)};
 
     // The general case with N inside connectors and M outside:
-    else
-      algorithm
-        (outside, inside) := List.splitOnTrue(elements, Connector.isOutside);
-      then
-        streamEquationGeneral(outside, inside, flowThreshold, variables);
+    else streamEquationGeneral(outside, inside, flowThreshold, variables);
 
   end match;
 end generateStreamEquations;
@@ -443,14 +440,22 @@ function streamEquationGeneral
   input UnorderedMap<ComponentRef, Variable> variables;
   output list<Equation> equations = {};
 protected
-  list<Connector> outside = outsideElements;
+  list<Connector> reduced_outside, outside;
   Expression cref_exp, res;
   DAE.ElementSource src;
 algorithm
+  reduced_outside := list(s for s guard not isZeroFlowOutside(s, variables) in outsideElements);
+
   for e in outsideElements loop
     cref_exp := Expression.fromCref(e.name);
-    outside := removeStreamSetElement(e.name, outsideElements);
-    res := streamSumEquationExp(outside, insideElements, flowThreshold, variables);
+    outside := removeStreamSetElement(e.name, reduced_outside);
+
+    if listEmpty(outside) and listEmpty(insideElements) then
+      res := Expression.INTEGER(0);
+    else
+      res := streamSumEquationExp(outside, insideElements, flowThreshold, variables);
+    end if;
+
     src := ElementSource.addAdditionalComment(e.source, " equation generated from stream connection");
     equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), InstNode.EMPTY_NODE(), src) :: equations;
   end for;
@@ -833,6 +838,22 @@ algorithm
     isZero := isZeroFlow(conn, "min", variables);
   end if;
 end isZeroFlowMinMax;
+
+function isZeroFlowOutside
+  input Connector conn;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  output Boolean isZero;
+algorithm
+  isZero := isZeroFlow(conn, "max", variables);
+end isZeroFlowOutside;
+
+function isZeroFlowInside
+  input Connector conn;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  output Boolean isZero;
+algorithm
+  isZero := isZeroFlow(conn, "min", variables);
+end isZeroFlowInside;
 
 function isZeroFlow
   "Returns true if the given flow attribute of a connector is zero."

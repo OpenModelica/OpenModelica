@@ -297,6 +297,7 @@ ConnectNonConnector3.mo \
 ConnectNonConnector4.mo \
 ConnectNonConnector5.mo \
 ConnectNonConnector6.mo \
+ConnectStream1.mo \
 ConstantConnector1.mo \
 ConstantConnector2.mo \
 ConstantConnector3.mo \
