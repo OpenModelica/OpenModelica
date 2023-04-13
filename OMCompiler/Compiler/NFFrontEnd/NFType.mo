@@ -462,6 +462,13 @@ public
     COMPLEX(cls = node) := ty;
   end complexNode;
 
+  function complexComponents
+    input Type ty;
+    output array<InstNode> comps;
+  algorithm
+    comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(complexNode(ty))));
+  end complexComponents;
+
   function isConnector
     input Type ty;
     output Boolean isConnector;
