@@ -1,0 +1,53 @@
+// name:     RecompileSourceCodeFMU
+// keywords: fmu export simulation flags
+// status: correct
+// teardown_command: rm -rf Test_SinSource* reCompile.log Test.SinSource.fmu
+//
+// Export SinSource as 2.0 CS FMU with CVODE solver and re-compile FMU with static library
+
+// Generate FMU
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadString("
+package Test
+  model SinSource
+    parameter Real amp=1;
+    parameter Real freq=1;
+    Modelica.Blocks.Interfaces.RealOutput y;
+  protected
+    Modelica.Blocks.Sources.Sine sine(amplitude = amp, f = freq);
+  equation
+    connect(sine.y, y);
+  end SinSource;
+end Test;
+"); getErrorString();
+
+setCommandLineOptions("--fmuCMakeBuild=true --fmiFlags=s:cvode --fmuRuntimeDepends=none"); getErrorString();
+buildModelFMU(Test.SinSource, version="2.0", fmuType ="cs", platforms={"static"}); getErrorString();
+
+// Check if CMake can re-compile a static library
+system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU && mkdir Test_SinSource_FMU/sources/build_cmake", outputFile="reCompile.log"); getErrorString();
+//readFile("reCompile.log");
+system("cd Test_SinSource_FMU/sources/build_cmake && cmake .. -DBUILD_SHARED_LIBS=OFF && cmake --build . && make install", outputFile="reCompile.log"); getErrorString();
+//readFile("reCompile.log");
+
+// Check if static library was compiled and that it used FMI2_FUNCTION_PREFIX=Test_SinSource_FMU for function names
+// Has to return "Test_SinSource_fmi2GetReal"
+system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "Test.SinSource.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// Test_SinSource_fmi2GetReal
+// 0
+// ""
+// endResult

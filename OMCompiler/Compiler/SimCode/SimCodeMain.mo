@@ -752,7 +752,7 @@ algorithm
       Boolean needSundials = false;
       String fileprefix;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
-      String cmakelistsStr;
+      String cmakelistsStr, needCvode, cvodeDirectory;
       list<String> sourceFiles, model_desc_src_files;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -928,13 +928,13 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
           case("none") algorithm
-            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "none");
+            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
             then();
           case("modelica") algorithm
-            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "modelica");
+            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
             then();
           case("all") algorithm
-            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "all");
+            cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"all\"");
             then();
           else algorithm
             Error.addCompilerError("Unsupported value " + Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS) + "for compiler flag 'fmuRuntimeDepends'.");
@@ -942,7 +942,10 @@ algorithm
         end match;
 
         // Add external libraries and includes
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags));
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
+        (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 

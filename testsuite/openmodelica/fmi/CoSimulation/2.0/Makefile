@@ -6,6 +6,7 @@ ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuExportFlags.mos \
+RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
 
