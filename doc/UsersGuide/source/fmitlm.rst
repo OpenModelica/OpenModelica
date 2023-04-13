@@ -18,14 +18,16 @@ FMI Export
 
 To export the FMU use the OpenModelica command
 `translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_
-or `buildModelFMU(ModelName)` <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
+or `buildModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
 from command line interface, OMShell, OMNotebook or MDT.
 The export FMU command is also integrated with OMEdit.
-Select `File > Export > FMU`. Or alternatively, right click a model to obtain the export command.
-The FMU package is generated in the current directory of omc. The location of the generated FMU is indicated in the Messages Browser.
-You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the
-current location. You can set which version of FMI to export through
-OMEdit settings, see section :ref:`omedit-options-fmi`.
+Select `File > Export > FMU`. Or alternatively, right click a model to obtain the export
+command. The FMU package is generated in the current directory of omc. The location of the
+ generated FMU is indicated in the Messages Browser.
+You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ 
+command to see the current location.
+You can set which version of FMI to export through OMEdit settings,see section
+:ref:`omedit-options-fmi`.
 
 .. figure :: media/fmiExport.png
 
@@ -38,13 +40,16 @@ To export the bouncing ball example to an FMU, use the following commands:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
   translateModelFMU(BouncingBall)
-  system("unzip -l BouncingBall.fmu | egrep -v 'sources|files' | tail -n+3 | grep -o '[A-Za-z._0-9/]*$' > BB.log")
 
 After the command execution is complete you will see that a file
 BouncingBall.fmu has been created. Its contents varies depending on the
 current platform.
 On the machine generating this documentation, the contents in
 :numref:`BouncingBall FMU contents` are generated (along with the C source code).
+
+.. omc-mos ::
+  :hidden:
+  system("unzip -l BouncingBall.fmu | egrep -v 'sources|files' | tail -n+3 | grep -o '[A-Za-z._0-9/]*$' > BB.log")
 
 .. literalinclude :: ../tmp/BB.log
   :name: BouncingBall FMU contents
@@ -58,13 +63,17 @@ By default an FMU that can be used for both Model Exchange and
 Co-Simulation is generated. We support FMI 1.0 & FMI 2.0 for Model Exchange FMUs
 and FMI 2.0 for Co-Simulation FMUs.
 
-Currently the Co-Simulation FMU uses the forward Euler solver as default
-with root finding which does an Euler step of communicationStepSize
-in fmi2DoStep. Events are checked for before and after the call to
-fmi2GetDerivatives.
+For the Co-Simulation FMU two integrator methods are available:
 
-For FMI 2.0 for Co-Simulation OpenModelica can export an experimental
-implementation of SUNDIALS CVODE (see [#f1]_) as internal integrator.
+* Forward Euler [default]
+* SUNDIALS CVODE (see [#f1]_)
+
+Forward Euler uses root finding, which does an Euler step of ``communicationStepSize``
+in ``fmi2DoStep``. Events are checked for before and after the call to
+``fmi2GetDerivatives``.
+
+If CVODE is chosen as integrator the FMU should include runtime dependencies
+:ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>=modelica`
 
 To export a Co-Simulation FMU with CVODE for the bouncing ball example use the
 following commands:
@@ -75,39 +84,117 @@ following commands:
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
   setCommandLineOptions("--fmiFlags=s:cvode")
   translateModelFMU(BouncingBall, version = "2.0", fmuType="cs")
-  system("unzip -cqq BouncingBall.fmu resources/BouncingBall_flags.json > BouncingBall_flags.json")
 
 
 The FMU BouncingBall.fmu will have a new file BouncingBall_flags.json in its
-resources directory. By manualy changing its contant users can change the
+resources directory. By manually changing its content users can change the
 solver method without recompiling the FMU.
 
 The BouncingBall_flags.json for this example is displayed in
 :numref:`BouncingBall FMI flags`.
 
+.. omc-mos ::
+  :hidden:
+  system("unzip -cqq BouncingBall.fmu resources/BouncingBall_flags.json > BouncingBall_flags.json")
+
 .. literalinclude :: ../tmp/BouncingBall_flags.json
   :name: BouncingBall FMI flags
   :caption: BouncingBall FMI flags
 
-For this to work OpenModelica will export all needed dependencies into the FMU
-if and only if the flag fmiFlags was set.
-To have CVODE in a SourceCode FMU the user needs to add all sources for
-SUNDIALS manualy and create a build script as well.
 
-CMake FMU Export
-~~~~~~~~~~~~~~~~
+Compilation Process
+~~~~~~~~~~~~~~~~~~~
 
-A prototype implementation of FMUs compiled with CMake instead of Makefiels is available
-when using compiler flag :ref:`--fmuCMakeBuild<omcflag-fmuCMakeBuild>`.
-This is useful for creating Source-Code FMUs and for cross-platform compilation.
-On Windows this is currently the only way to use Docker images for cross-platform compilation.
+OpenModelica can export FMUs that are compiled with CMake (default) or Makefiles. CMake
+version v3.21 or newer is recommended, minimum CMake version is v3.5.
 
-It is possible to add runtime dependencies into the FMU using
-:ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>`.
-The default value *modelica* will include every external libraries mentioned by an annotation
-as well as its dependencies (recursive). The system default locations are excluded.
+The Makefile FMU export will be removed in a future version of OpenModelica.
+Use compiler flag :ref:`--fmuCMakeBuild<omcflag-fmuCMakeBuild>=false` to use the Makefiles
+export.
 
-The minimum CMake version required is v3.21.
+The FMU contains a CMakeLists.txt file in the sources directory that can be used to
+re-compile the FMU for a different host and is also used to cross-compile for different
+platforms.
+
+The CMake compilation accepts the following settings:
+
+* ``BUILD_SHARED_LIBS``
+  Boolean value to switch between dynamic and statically linked binaries.
+
+  * ``ON`` (default): Compile DLL/Shared Object binary object.
+  * ``OFF``: Compile static binary object.
+
+* ``FMI_INTERFACE_HEADER_FILES_DIRECTORY``
+  String value specifying path to FMI header files containing ``fmi2Functions.h``,
+  ``fmi2FunctionTypes.h`` and ``fmi2TypesPlatforms.h``.
+
+  * Defaults to a location inside the OpenModelica installation directory, which was used
+    to create the FMU.
+
+* ``RUNTIME_DEPENDENCIES_LEVEL``
+  String value to specify runtime dependencies set.
+
+  * ``none``: Adds no runtime dependencies to FMU. The FMU can't be used on a system if it
+    doesn't provided all needed dependencies.
+  * ``modelica`` (default): Add Modelica runtime dependencies to FMU, e.g. a external C
+    library used from a Modelica function. Needs CMake version v3.21 or newer.
+  * ``all``: Add system and Modelica runtime dependencies. Needs CMake version v3.21 or
+    newer.
+
+* ``NEED_CVODE``
+  Boolean value to integrate CVODE integrator into CoSimulation FMU.
+
+  * ``ON``: Link to SUNDIALS CVODE. If CVODE is not in a default location
+    ``CVODE_DIRECTORY`` needs to be set.
+    Its also recommended to use ``RUNTIME_DEPENDENCIES_LEVEL=modelica`` or higher to add
+    SUNDIALS runtime dependencies into the FMU.
+  * ``OFF`` (default): Don't link to SUNDIALS CVODE.
+
+* ``CVODE_DIRECTORY``
+  String value with location of libraries ``sundials_cvode`` and ``sundials_nvecserial``
+  with SUNDIALS version 5.4.0.
+
+  * Defaults to a location inside the OpenModelica installation directory, which was
+    used to create the FMU.
+
+
+Then use CMake to configure, build and install the FMU.
+To repack the FMU after installation use custom target ``create_zip``.
+
+For example to re-compile the FMU with cmake and runtime dependencies use:
+
+.. code-block:: bash
+
+    $ unzip BouncingBall.fmu -d BouncingBall_FMU
+    $ cd BouncingBall_FMU/sources
+    $ cmake -S . -B build_cmake \
+      -D RUNTIME_DEPENDENCIES_LEVEL=modelica \
+      -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
+    $ cmake --build build_cmake --target install create_zip --parallel
+
+
+Platforms
+~~~~~~~~~
+
+The ``platforms`` setting specifies for what target system the FMU is compiled:
+
+* Empty: Create a Source-Code only FMU.
+* ``native``:  Create a FMU compiled for the exporting system.
+* ``<cpu>-<vendor>-<os>`` host triple: OpenModelica searches for programs in PATH matching
+  pattern ``<cpu>-<vendor>-<os>cc`` to compile.
+  E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
+  Windows OS using MINGW.
+* ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
+  OpenModelica will use the specified Docker image to cross-compile for given host triple.
+  Because privilege escalation is very easy to achieve with Docker OMEdit adds
+  ``--pull=never`` to the Docker calls for the ``multiarch/crossbuild`` images. Only use
+  this option if you understand the security risks associated with Docker images from
+  unknown sources.
+  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross-compile
+  for a 64 bit Linux OS.
+  Because system libraries can be different for different versions of the same operating
+  system, it is advised to use :ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>=all`.
+
 
 .. _fmi-import :
 
@@ -119,9 +206,12 @@ of several FMUs, the recommended tool to do that is OMSimulator, see the
 `OMSimulator documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_
 for further information.
 
+FMI Import [deprecated]
+~~~~~~~~~~~~~~~~~~~~~~~
+
 FMI Import allows to use an FMU, generated according to the FMI for Model
 Exchange 2.0 standard, as a component in a Modelica model. This can be
-useful if the FMU describes the behaviour of a component or sub-system in a
+useful if the FMU describes the behavior of a component or sub-system in a
 structured Modelica model, which is not easily turned into a pure FMI-based
 model that can be handled by OMSimulator.
 
@@ -130,7 +220,7 @@ a declarative description; this means that not all conceivable FMUs can be succe
 imported as Modelica models. Also, the current implementation of FMU import in
 OpenModelica is still somewhat experimental and not guaranteed to work in all
 cases. However, if the FMU-ME you want to import was exported from a Modelica model
-and only represents continuous time dynamic behaviour, it should work without problems
+and only represents continuous time dynamic behavior, it should work without problems
 when imported as a Modelica block.
 
 Please also note that the current implementation of FMI Import in OpenModelica

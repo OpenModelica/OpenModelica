@@ -233,7 +233,7 @@ source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
 	./resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
 source/interface.inc: interface.mos
 	@mkdir -p tmp
-	$(OPENMODELICA_ROOT)/build/bin/omc -g=MetaModelica -d=nogen interface.mos
+	$(OPENMODELICAHOME)/bin/omc -g=MetaModelica -d=nogen interface.mos
 	mv interface.inc $@
 
 OMEDIT_ICONS_BASE=connect-mode.svg transition-mode.svg parametric-plot-window.svg plot-window.svg array-parametric-plot-window.svg array-plot-window.svg re-simulate.svg tlm-simulate.svg interface-data.svg simulation-parameters.svg
@@ -266,10 +266,10 @@ readme: readme/sphinxcontribopenmodelica.py
 	ln -sf ../source/aplot.svg readme
 	sphinx-build -b html -t nomathjax -d build/readme/doctrees readme build/readme/html
 source/simoptions.inc:
-	$(OPENMODELICA_ROOT)/build/bin/omc +help=simulation-sphinxoutput > "$@.tmp"
+	$(OPENMODELICAHOME)/bin/omc +help=simulation-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
 source/omchelptext.rst:
-	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
+	$(OPENMODELICAHOME)/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
 source/omsimulator-help.inc:
 	$(OPENMODELICAHOME)/bin/OMSimulator --help > "$@.tmp"
