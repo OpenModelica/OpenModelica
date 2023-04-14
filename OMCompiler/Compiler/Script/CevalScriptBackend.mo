@@ -3472,16 +3472,10 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  if Flags.getConfigBool(Flags.DAE_MODE) then
-    (outCache, outStringLst, outFileDir, resultValues) :=
-    SimCodeMain.translateModelDAEMode(inCache,inEnv,className,inFileNamePrefix,
-    inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
-    success := true;
-  else
-    (success, outCache, outStringLst, outFileDir, resultValues) :=
+
+  (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
-      className, inFileNamePrefix, runBackend, runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
-  end if;
+      className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
 end callTranslateModel;
 
 protected function configureFMU_cmake
@@ -3985,7 +3979,7 @@ algorithm
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
     (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, true, SOME(simSettings));
+                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4182,7 +4176,7 @@ protected
   Boolean success;
 algorithm
   (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
-                    fileNamePrefix, true, true, inSimSettingsOpt);
+                    fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
 
