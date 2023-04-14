@@ -178,7 +178,7 @@ Platforms
 
 The ``platforms`` setting specifies for what target system the FMU is compiled:
 
-* Empty: Create a Source-Code only FMU.
+* Empty: Create a Source-Code-only FMU.
 * ``native``:  Create a FMU compiled for the exporting system.
 * ``<cpu>-<vendor>-<os>`` host triple: OpenModelica searches for programs in PATH matching
   pattern ``<cpu>-<vendor>-<os>cc`` to compile.
