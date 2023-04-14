@@ -1025,6 +1025,7 @@ public function translateModel "
   input Absyn.Path className "path for the model";
   input String inFileNamePrefix;
   input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
+  input Boolean useDAEMode "if true, run the backend in DAEMode.";
   input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args=Absyn.emptyFunctionArgs "labels for remove terms";
@@ -1110,7 +1111,11 @@ algorithm
     timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
     if runBackend then
-      (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
+      if useDAEMode then
+        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
+      else
+        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
+      end if;
     end if;
 
   end if;
@@ -1138,7 +1143,7 @@ protected function translateModelCallBackendOB
   input Absyn.Path className "path for the model";
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  input Absyn.FunctionArgs args=Absyn.emptyFunctionArgs "labels for remove terms";
+  input Absyn.FunctionArgs args = Absyn.emptyFunctionArgs "labels for remove terms";
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
@@ -1260,6 +1265,100 @@ algorithm
                   ("timeBackend", Values.REAL(timeBackend))};
 end translateModelCallBackendOB;
 
+public function translateModelCallBackendOBDAEMode
+" Entry point to translate a Modelica model for simulation in DAE mode
+  Called from CevalScriptBackend"
+  input output FCore.Cache cache;
+  input FCore.Graph inEnv;
+  input DAE.DAElist inDae;
+  input Absyn.Path className "path for the model";
+  input String inFileNamePrefix;
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input Absyn.FunctionArgs args "labels for remove terms";
+  output list<String> outLibs;
+  output String outFileDir;
+  output list<tuple<String, Values.Value>> resultValues;
+protected
+  Boolean generateFunctions = false;
+  Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
+algorithm
+  (outLibs, outFileDir) :=
+  matchcontinue (inEnv)
+    local
+      String file_dir, resstr, description;
+      list<String> libs;
+      DAE.DAElist dae;
+      FCore.Graph graph;
+      BackendDAE.BackendDAE dlow, initDAE;
+      Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
+      list<BackendDAE.Equation> removedInitialEquationLst;
+
+    case (graph) algorithm
+      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+      ExecStat.execStat("Transformations before backend");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, "dae2");
+        ExecStat.execStat("Serialize DAE (2)");
+      end if;
+      GCExt.free(inDae);
+
+      generateFunctions := FlagsUtil.set(Flags.GEN, false);
+      // We should not need to lookup constants and classes in the backend,
+      // so let's free up the old graph and just make it the initial environment.
+      if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
+        (cache,graph) := Builtin.initialGraph(cache);
+      end if;
+
+      description := DAEUtil.daeDescription(dae);
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix));
+
+      GCExt.free(dae);
+      dae := DAE.emptyDae;
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, "dlow");
+        ExecStat.execStat("Serialize dlow");
+      end if;
+
+      //BackendDump.printBackendDAE(dlow);
+      (dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow, inFileNamePrefix);
+      ExecStat.execStat("Backend");
+
+      timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, "simDAE");
+        serializeNotify(initDAE, "initDAE");
+        serializeNotify(removedInitialEquationLst, "removedInitialEquationLst");
+        ExecStat.execStat("Serialize solved system");
+      end if;
+
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args);
+      timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+      timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+
+    then (libs, file_dir);
+
+    else equation
+      resstr = AbsynUtil.pathStringNoQual(className);
+      resstr = stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
+      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+    then fail();
+
+  end matchcontinue;
+
+  if generateFunctions then
+    FlagsUtil.set(Flags.GEN, true);
+  end if;
+
+  resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
+                  ("timeSimCode", Values.REAL(timeSimCode)),
+                  ("timeBackend", Values.REAL(timeBackend))};
+
+end translateModelCallBackendOBDAEMode;
+
 protected function translateModelCallBackendNB
   input FlatModel inFlatModel;
   input FunctionTree inFuncTree;
@@ -1292,124 +1391,6 @@ algorithm
                   ("timeSimCode", Values.REAL(timeSimCode)),
                   ("timeBackend", Values.REAL(timeBackend))};
 end translateModelCallBackendNB;
-
-public function translateModelDAEMode
-" Entry point to translate a Modelica model for simulation in DAE mode
-  Called from CevalScriptBackend"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  input Absyn.FunctionArgs args "labels for remove terms";
-  output FCore.Cache outCache;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String, Values.Value>> resultValues;
-protected
-  Boolean generateFunctions = false;
-algorithm
-  (outStringLst, outFileDir, resultValues) :=
-  matchcontinue (inCache, inEnv, className, inFileNamePrefix, inSimSettingsOpt, args)
-    local
-      String filenameprefix = inFileNamePrefix;
-      String file_dir, resstr, description;
-      DAE.DAElist dae;
-      FCore.Graph graph;
-      BackendDAE.BackendDAE dlow, bdae;
-      list<String> libs;
-      Absyn.Program p;
-      //DAE.Exp fileprefix;
-      FCore.Cache cache;
-      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      BackendDAE.BackendDAE initDAE;
-      list<BackendDAE.Equation> removedInitialEquationLst;
-      Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
-      Real fsize;
-      Absyn.ComponentRef classNameCref;
-
-    case (_, _, _, _, _, _) algorithm
-      // calculate stuff that we need to create SimCode data structure
-      System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-      ExecStat.execStatReset();
-      (outCache, graph, SOME(dae), _) := CevalScriptBackend.runFrontEnd(inCache, inEnv, className, false);
-      ExecStat.execStat("FrontEnd");
-
-      if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, "dae");
-        serializeNotify(graph, "graph");
-        serializeNotify(outCache, "cache");
-        ExecStat.execStat("Serialize FrontEnd");
-      end if;
-
-      timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
-
-      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(outCache, graph, dae);
-      ExecStat.execStat("Transformations before backend");
-
-      if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, "dae2");
-        ExecStat.execStat("Serialize DAE (2)");
-      end if;
-
-      generateFunctions := FlagsUtil.set(Flags.GEN, false);
-      // We should not need to lookup constants and classes in the backend,
-      // so let's free up the old graph and just make it the initial environment.
-      if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
-        (outCache,graph) := Builtin.initialGraph(outCache);
-      end if;
-
-      description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, outCache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-
-      GCExt.free(dae);
-
-      if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dlow, "dlow");
-        ExecStat.execStat("Serialize dlow");
-      end if;
-
-      //BackendDump.printBackendDAE(dlow);
-      (bdae, initDAE, initDAE_lambda0_option, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow, inFileNamePrefix);
-      ExecStat.execStat("Backend");
-
-      timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
-
-      if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(bdae, "simDAE");
-        serializeNotify(initDAE, "initDAE");
-        serializeNotify(removedInitialEquationLst, "removedInitialEquationLst");
-        ExecStat.execStat("Serialize solved system");
-      end if;
-
-      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(bdae, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt, args);
-      timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-      timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-
-      resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
-                      ("timeSimCode", Values.REAL(timeSimCode)),
-                      ("timeBackend", Values.REAL(timeBackend)),
-                      ("timeFrontend", Values.REAL(timeFrontend))};
-
-
-
-    then (libs, file_dir, resultValues);
-
-    else equation
-      if generateFunctions then
-        FlagsUtil.set(Flags.GEN, true);
-      end if;
-      true = Flags.isSet(Flags.FAILTRACE);
-      resstr = AbsynUtil.pathStringNoQual(className);
-      resstr = stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
-      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-    then fail();
-  end matchcontinue;
-  if generateFunctions then
-    FlagsUtil.set(Flags.GEN, true);
-  end if;
-end translateModelDAEMode;
 
 protected function generateModelCodeDAE
 " Generates code for a model by creating a SimCode structure for the DAEmode
