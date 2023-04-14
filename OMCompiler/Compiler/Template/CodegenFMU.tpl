@@ -254,11 +254,16 @@ case SIMCODE(__) then
   #include "simulation/solver/events.h"
   <%if isFMIVersion20(FMUVersion) then
   <<
+  #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
   #include "fmi-export/fmu_read_flags.h"
   >>
   else
-  '#include "fmi-export/fmu1_model_interface.h"'%>
+  <<
+  #include "fmi2Functions.h"
+  #include "fmi-export/fmu1_model_interface.h"
+  >>%>
 
   #ifdef __cplusplus
   extern "C" {
@@ -1438,6 +1443,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
       CPPFLAGS=@CPPFLAGS@
+      override CPPFLAGS += -DFMI2_OVERRIDE_FUNCTION_PREFIX
 
       override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
 

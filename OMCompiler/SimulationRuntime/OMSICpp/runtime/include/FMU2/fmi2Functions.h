@@ -7,7 +7,7 @@
 
 /* This header file must be utilized when compiling a FMU.
    It defines all functions of the
-         FMI 2.0 Model Exchange and Co-Simulation Interface.
+         FMI 2.0.4 Model Exchange and Co-Simulation Interface.
 
    In order to have unique function names even if several FMUs
    are compiled together (e.g. for embedded systems), every "real" function name
@@ -25,7 +25,9 @@
    names are used and "FMI2_FUNCTION_PREFIX" must not be defined.
 
    Revisions:
-   - Apr.  9, 2014: all prefixes "fmi" renamed to "fmi2" (decision from April 8)
+   - Sep. 13, 2022: Provide FMI2_OVERRIDE_FUNCTION_PREFIX functionality
+   - Sep. 29, 2019: License changed to 2-clause BSD License (without extensions)
+   - Apr.  9, 2014: All prefixes "fmi" renamed to "fmi2" (decision from April 8)
    - Mar. 26, 2014: FMI_Export set to empty value if FMI_Export and FMI_FUNCTION_PREFIX
                     are not defined (#173)
    - Oct. 11, 2013: Functions of ModelExchange and CoSimulation merged:
@@ -104,11 +106,13 @@
                     meeting with additional improvements (by Martin Otter, DLR).
    - Dec. 3 , 2008: First version by Martin Otter (DLR) and Hans Olsson (Dynasim).
 
-   Copyright © 2008-2011 MODELISAR consortium,
-               2012-2013 Modelica Association Project "FMI"
-               All rights reserved.
-   This file is licensed by the copyright holders under the BSD 2-Clause License
-   (http://www.opensource.org/licenses/bsd-license.html):
+
+   Copyright (C) 2008-2011 MODELISAR consortium,
+                 2012-2022 Modelica Association Project "FMI"
+                 All rights reserved.
+
+   This file is licensed by the copyright holders under the 2-Clause BSD License
+   (https://opensource.org/licenses/BSD-2-Clause):
 
    ----------------------------------------------------------------------------
    Redistribution and use in source and binary forms, with or without
@@ -116,12 +120,10 @@
 
    - Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
+
    - Redistributions in binary form must reproduce the above copyright notice,
      this list of conditions and the following disclaimer in the documentation
      and/or other materials provided with the distribution.
-   - Neither the name of the copyright holders nor the names of its
-     contributors may be used to endorse or promote products derived
-     from this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -135,13 +137,6 @@
    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ----------------------------------------------------------------------------
-
-   with the extension:
-
-   You may distribute or publicly perform any modification only under the
-   terms of this license.
-   (Note, this means that if you distribute a modified file,
-    the modified file must also be provided under this license).
 */
 
 #ifdef __cplusplus
@@ -152,6 +147,15 @@ extern "C" {
 #include "fmi2FunctionTypes.h"
 #include <stdlib.h>
 
+/*
+Allow override of FMI2_FUNCTION_PREFIX: If FMI2_OVERRIDE_FUNCTION_PREFIX
+is defined, then FMI2_ACTUAL_FUNCTION_PREFIX will be used, if defined,
+or no prefix if undefined. Otherwise FMI2_FUNCTION_PREFIX will be used,
+if defined.
+*/
+#if !defined(FMI2_OVERRIDE_FUNCTION_PREFIX) && defined(FMI2_FUNCTION_PREFIX)
+  #define FMI2_ACTUAL_FUNCTION_PREFIX FMI2_FUNCTION_PREFIX
+#endif
 
 /*
   Export FMI2 API functions on Windows and under GCC.
@@ -160,30 +164,30 @@ extern "C" {
   it may be set to __declspec(dllimport).
 */
 #if !defined(FMI2_Export)
-#if !defined(FMI2_FUNCTION_PREFIX)
-#if defined _WIN32 || defined __CYGWIN__
-/* Note: both gcc & MSVC on Windows support this syntax. */
-#define FMI2_Export __declspec(dllexport)
-#else
-#if __GNUC__ >= 4
+  #if !defined(FMI2_ACTUAL_FUNCTION_PREFIX)
+    #if defined _WIN32 || defined __CYGWIN__
+     /* Note: both gcc & MSVC on Windows support this syntax. */
+        #define FMI2_Export __declspec(dllexport)
+    #else
+      #if __GNUC__ >= 4
         #define FMI2_Export __attribute__ ((visibility ("default")))
-#else
+      #else
         #define FMI2_Export
-#endif
-#endif
-#else
+      #endif
+    #endif
+  #else
     #define FMI2_Export
-#endif
+  #endif
 #endif
 
 /* Macros to construct the real function name
    (prepend function name by FMI2_FUNCTION_PREFIX) */
-#if defined(FMI2_FUNCTION_PREFIX)
+#if defined(FMI2_ACTUAL_FUNCTION_PREFIX)
   #define fmi2Paste(a,b)     a ## b
   #define fmi2PasteB(a,b)    fmi2Paste(a,b)
-  #define fmi2FullName(name) fmi2PasteB(FMI2_FUNCTION_PREFIX, name)
+  #define fmi2FullName(name) fmi2PasteB(FMI2_ACTUAL_FUNCTION_PREFIX, name)
 #else
-#define fmi2FullName(name) name
+  #define fmi2FullName(name) name
 #endif
 
 /***************************************************
@@ -253,42 +257,42 @@ Common Functions
 ****************************************************/
 
 /* Inquire version numbers of header files */
-FMI2_Export fmi2GetTypesPlatformTYPE fmi2GetTypesPlatform;
-FMI2_Export fmi2GetVersionTYPE fmi2GetVersion;
-FMI2_Export fmi2SetDebugLoggingTYPE fmi2SetDebugLogging;
+   FMI2_Export fmi2GetTypesPlatformTYPE fmi2GetTypesPlatform;
+   FMI2_Export fmi2GetVersionTYPE       fmi2GetVersion;
+   FMI2_Export fmi2SetDebugLoggingTYPE  fmi2SetDebugLogging;
 
 /* Creation and destruction of FMU instances */
-FMI2_Export fmi2InstantiateTYPE fmi2Instantiate;
-FMI2_Export fmi2FreeInstanceTYPE fmi2FreeInstance;
+   FMI2_Export fmi2InstantiateTYPE  fmi2Instantiate;
+   FMI2_Export fmi2FreeInstanceTYPE fmi2FreeInstance;
 
 /* Enter and exit initialization mode, terminate and reset */
-FMI2_Export fmi2SetupExperimentTYPE fmi2SetupExperiment;
-FMI2_Export fmi2EnterInitializationModeTYPE fmi2EnterInitializationMode;
-FMI2_Export fmi2ExitInitializationModeTYPE fmi2ExitInitializationMode;
-FMI2_Export fmi2TerminateTYPE fmi2Terminate;
-FMI2_Export fmi2ResetTYPE fmi2Reset;
+   FMI2_Export fmi2SetupExperimentTYPE         fmi2SetupExperiment;
+   FMI2_Export fmi2EnterInitializationModeTYPE fmi2EnterInitializationMode;
+   FMI2_Export fmi2ExitInitializationModeTYPE  fmi2ExitInitializationMode;
+   FMI2_Export fmi2TerminateTYPE               fmi2Terminate;
+   FMI2_Export fmi2ResetTYPE                   fmi2Reset;
 
 /* Getting and setting variables values */
-FMI2_Export fmi2GetRealTYPE fmi2GetReal;
-FMI2_Export fmi2GetIntegerTYPE fmi2GetInteger;
-FMI2_Export fmi2GetBooleanTYPE fmi2GetBoolean;
-FMI2_Export fmi2GetStringTYPE fmi2GetString;
+   FMI2_Export fmi2GetRealTYPE    fmi2GetReal;
+   FMI2_Export fmi2GetIntegerTYPE fmi2GetInteger;
+   FMI2_Export fmi2GetBooleanTYPE fmi2GetBoolean;
+   FMI2_Export fmi2GetStringTYPE  fmi2GetString;
 
-FMI2_Export fmi2SetRealTYPE fmi2SetReal;
-FMI2_Export fmi2SetIntegerTYPE fmi2SetInteger;
-FMI2_Export fmi2SetBooleanTYPE fmi2SetBoolean;
-FMI2_Export fmi2SetStringTYPE fmi2SetString;
+   FMI2_Export fmi2SetRealTYPE    fmi2SetReal;
+   FMI2_Export fmi2SetIntegerTYPE fmi2SetInteger;
+   FMI2_Export fmi2SetBooleanTYPE fmi2SetBoolean;
+   FMI2_Export fmi2SetStringTYPE  fmi2SetString;
 
 /* Getting and setting the internal FMU state */
-FMI2_Export fmi2GetFMUstateTYPE fmi2GetFMUstate;
-FMI2_Export fmi2SetFMUstateTYPE fmi2SetFMUstate;
-FMI2_Export fmi2FreeFMUstateTYPE fmi2FreeFMUstate;
-FMI2_Export fmi2SerializedFMUstateSizeTYPE fmi2SerializedFMUstateSize;
-FMI2_Export fmi2SerializeFMUstateTYPE fmi2SerializeFMUstate;
-FMI2_Export fmi2DeSerializeFMUstateTYPE fmi2DeSerializeFMUstate;
+   FMI2_Export fmi2GetFMUstateTYPE            fmi2GetFMUstate;
+   FMI2_Export fmi2SetFMUstateTYPE            fmi2SetFMUstate;
+   FMI2_Export fmi2FreeFMUstateTYPE           fmi2FreeFMUstate;
+   FMI2_Export fmi2SerializedFMUstateSizeTYPE fmi2SerializedFMUstateSize;
+   FMI2_Export fmi2SerializeFMUstateTYPE      fmi2SerializeFMUstate;
+   FMI2_Export fmi2DeSerializeFMUstateTYPE    fmi2DeSerializeFMUstate;
 
 /* Getting partial derivatives */
-FMI2_Export fmi2GetDirectionalDerivativeTYPE fmi2GetDirectionalDerivative;
+   FMI2_Export fmi2GetDirectionalDerivativeTYPE fmi2GetDirectionalDerivative;
 
 
 /***************************************************
@@ -296,20 +300,20 @@ Functions for FMI2 for Model Exchange
 ****************************************************/
 
 /* Enter and exit the different modes */
-FMI2_Export fmi2EnterEventModeTYPE fmi2EnterEventMode;
-FMI2_Export fmi2NewDiscreteStatesTYPE fmi2NewDiscreteStates;
-FMI2_Export fmi2EnterContinuousTimeModeTYPE fmi2EnterContinuousTimeMode;
-FMI2_Export fmi2CompletedIntegratorStepTYPE fmi2CompletedIntegratorStep;
+   FMI2_Export fmi2EnterEventModeTYPE               fmi2EnterEventMode;
+   FMI2_Export fmi2NewDiscreteStatesTYPE            fmi2NewDiscreteStates;
+   FMI2_Export fmi2EnterContinuousTimeModeTYPE      fmi2EnterContinuousTimeMode;
+   FMI2_Export fmi2CompletedIntegratorStepTYPE      fmi2CompletedIntegratorStep;
 
 /* Providing independent variables and re-initialization of caching */
-FMI2_Export fmi2SetTimeTYPE fmi2SetTime;
-FMI2_Export fmi2SetContinuousStatesTYPE fmi2SetContinuousStates;
+   FMI2_Export fmi2SetTimeTYPE             fmi2SetTime;
+   FMI2_Export fmi2SetContinuousStatesTYPE fmi2SetContinuousStates;
 
 /* Evaluation of the model equations */
-FMI2_Export fmi2GetDerivativesTYPE fmi2GetDerivatives;
-FMI2_Export fmi2GetEventIndicatorsTYPE fmi2GetEventIndicators;
-FMI2_Export fmi2GetContinuousStatesTYPE fmi2GetContinuousStates;
-FMI2_Export fmi2GetNominalsOfContinuousStatesTYPE fmi2GetNominalsOfContinuousStates;
+   FMI2_Export fmi2GetDerivativesTYPE                fmi2GetDerivatives;
+   FMI2_Export fmi2GetEventIndicatorsTYPE            fmi2GetEventIndicators;
+   FMI2_Export fmi2GetContinuousStatesTYPE           fmi2GetContinuousStates;
+   FMI2_Export fmi2GetNominalsOfContinuousStatesTYPE fmi2GetNominalsOfContinuousStates;
 
 
 /***************************************************
@@ -317,21 +321,21 @@ Functions for FMI2 for Co-Simulation
 ****************************************************/
 
 /* Simulating the slave */
-FMI2_Export fmi2SetRealInputDerivativesTYPE fmi2SetRealInputDerivatives;
-FMI2_Export fmi2GetRealOutputDerivativesTYPE fmi2GetRealOutputDerivatives;
+   FMI2_Export fmi2SetRealInputDerivativesTYPE  fmi2SetRealInputDerivatives;
+   FMI2_Export fmi2GetRealOutputDerivativesTYPE fmi2GetRealOutputDerivatives;
 
-FMI2_Export fmi2DoStepTYPE fmi2DoStep;
-FMI2_Export fmi2CancelStepTYPE fmi2CancelStep;
+   FMI2_Export fmi2DoStepTYPE     fmi2DoStep;
+   FMI2_Export fmi2CancelStepTYPE fmi2CancelStep;
 
 /* Inquire slave status */
-FMI2_Export fmi2GetStatusTYPE fmi2GetStatus;
-FMI2_Export fmi2GetRealStatusTYPE fmi2GetRealStatus;
-FMI2_Export fmi2GetIntegerStatusTYPE fmi2GetIntegerStatus;
-FMI2_Export fmi2GetBooleanStatusTYPE fmi2GetBooleanStatus;
-FMI2_Export fmi2GetStringStatusTYPE fmi2GetStringStatus;
+   FMI2_Export fmi2GetStatusTYPE        fmi2GetStatus;
+   FMI2_Export fmi2GetRealStatusTYPE    fmi2GetRealStatus;
+   FMI2_Export fmi2GetIntegerStatusTYPE fmi2GetIntegerStatus;
+   FMI2_Export fmi2GetBooleanStatusTYPE fmi2GetBooleanStatus;
+   FMI2_Export fmi2GetStringStatusTYPE  fmi2GetStringStatus;
 
 #ifdef __cplusplus
-} /* end of extern "C" { */
+}  /* end of extern "C" { */
 #endif
 
 #endif /* fmi2Functions_h */

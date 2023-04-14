@@ -475,7 +475,7 @@ void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisp
     va_warningStreamPrint(stream, indentNext, format, args);
   }
   if (nDisplayed == maxWarnDisplays) {
-    infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %u. "
+    infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %lu. "
                                         "Suppressing further warning messages of the same type.", maxWarnDisplays);
     infoStreamPrint(stream, indentNext, "Change limit with simulation flag -%s=<newLimit>", FLAG_NAME[FLAG_LV_MAX_WARN]);
     messageClose(stream);
