@@ -32,7 +32,6 @@
 #define __FMU_READ_FLAGS_H__
 
 #include "fmu2_model_interface.h"
-#include "fmi2Functions.h"
 #include "../simulation_data.h"
 
 #ifdef __cplusplus

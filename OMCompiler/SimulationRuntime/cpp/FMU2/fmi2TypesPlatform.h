@@ -6,12 +6,13 @@
 #define fmi2TypesPlatform_h
 
 /* Standard header file to define the argument types of the
-   functions of the Functional Mock-up Interface 2.0.
+   functions of the Functional Mock-up Interface 2.0.4
    This header file must be utilized both by the model and
    by the simulation engine.
 
    Revisions:
-   - Apr.  9, 2014: all prefixes "fmi" renamed to "fmi2" (decision from April 8)
+   - Sep. 29, 2019:  License changed to 2-clause BSD License (without extensions)
+   - Apr.  9, 2014:  All prefixes "fmi" renamed to "fmi2" (decision from April 8)
    - Mar   31, 2014: New datatype fmiChar introduced.
    - Feb.  17, 2013: Changed fmiTypesPlatform from "standard32" to "default".
                      Removed fmiUndefinedValueReference since no longer needed
@@ -42,11 +43,12 @@
                      Hans Olsson (Dynasim).
 
 
-   Copyright © 2008-2011 MODELISAR consortium,
-               2012-2013 Modelica Association Project "FMI"
-               All rights reserved.
-   This file is licensed by the copyright holders under the BSD 2-Clause License
-   (http://www.opensource.org/licenses/bsd-license.html):
+   Copyright (C) 2008-2011 MODELISAR consortium,
+                 2012-2022 Modelica Association Project "FMI"
+                 All rights reserved.
+
+   This file is licensed by the copyright holders under the 2-Clause BSD License
+   (https://opensource.org/licenses/BSD-2-Clause):
 
    ----------------------------------------------------------------------------
    Redistribution and use in source and binary forms, with or without
@@ -54,12 +56,10 @@
 
    - Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
+
    - Redistributions in binary form must reproduce the above copyright notice,
      this list of conditions and the following disclaimer in the documentation
      and/or other materials provided with the distribution.
-   - Neither the name of the copyright holders nor the names of its
-     contributors may be used to endorse or promote products derived
-     from this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -73,13 +73,6 @@
    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ----------------------------------------------------------------------------
-
-   with the extension:
-
-   You may distribute or publicly perform any modification only under the
-   terms of this license.
-   (Note, this means that if you distribute a modified file,
-    the modified file must also be provided under this license).
 */
 
 /* Platform (unique identification of this header file) */
