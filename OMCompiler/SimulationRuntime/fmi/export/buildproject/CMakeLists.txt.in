@@ -147,7 +147,7 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 # Set compiler definitions
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
 if(BUILD_SHARED_LIBS)
-  # Override FMI2_FUNCTION_PREFIX if FMU compiled dynmically
+  # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically
   target_compile_definitions(${FMU_NAME} PRIVATE FMI2_OVERRIDE_FUNCTION_PREFIX)
   message(STATUS "Not using FMI2_FUNCTION_PREFIX")
 else()
