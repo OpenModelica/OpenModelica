@@ -393,7 +393,7 @@ protected
   Variability var1, var2;
 algorithm
   (outside, inside) := List.splitOnTrue(elements, Connector.isOutside);
-  inside := list(s for s guard not isZeroFlowInside(s, variables) in inside);
+  inside := list(s for s guard not isNoFlowInside(s, variables) in inside);
 
   equations := match (inside, outside)
     // Unconnected stream connector, do nothing.
@@ -444,7 +444,7 @@ protected
   Expression cref_exp, res;
   DAE.ElementSource src;
 algorithm
-  reduced_outside := list(s for s guard not isZeroFlowOutside(s, variables) in outsideElements);
+  reduced_outside := list(s for s guard not isNoFlowOutside(s, variables) in outsideElements);
 
   for e in outsideElements loop
     cref_exp := Expression.fromCref(e.name);
@@ -780,7 +780,7 @@ protected
   ComponentRef cr;
   Face f1, f2;
 algorithm
-  reducedStreams := list(s for s guard not isZeroFlowMinMax(s, streamCref, variables) in streams);
+  reducedStreams := list(s for s guard not isNoFlowMinMax(s, streamCref, variables) in streams);
 
   exp := match reducedStreams
     // Unconnected stream connector:
@@ -823,44 +823,54 @@ algorithm
   end match;
 end generateInStreamExp;
 
-function isZeroFlowMinMax
+function isNoFlowMinMax
   "Returns true if the given flow attribute of a connector is zero."
   input Connector conn;
   input ComponentRef streamCref;
   input UnorderedMap<ComponentRef, Variable> variables;
-  output Boolean isZero;
+  output Boolean noFlow;
 algorithm
   if ComponentRef.isEqual(streamCref, conn.name) then
-    isZero := false;
+    noFlow := false;
   elseif Connector.isOutside(conn) then
-    isZero := isZeroFlow(conn, "max", variables);
+    noFlow := isNoFlowOutside(conn, variables);
   else
-    isZero := isZeroFlow(conn, "min", variables);
+    noFlow := isNoFlowInside(conn, variables);
   end if;
-end isZeroFlowMinMax;
+end isNoFlowMinMax;
 
-function isZeroFlowOutside
+function isNoFlowOutside
+  "Returns true if the given outside stream connector has no flow, which occurs
+   when its max attribute <= 0."
   input Connector conn;
   input UnorderedMap<ComponentRef, Variable> variables;
-  output Boolean isZero;
+  output Boolean noFlow;
 algorithm
-  isZero := isZeroFlow(conn, "max", variables);
-end isZeroFlowOutside;
+  noFlow := isNoFlow(conn, "max", Expression.isNonPositive, variables);
+end isNoFlowOutside;
 
-function isZeroFlowInside
+function isNoFlowInside
+  "Returns true if the given inside stream connector has no flow, which occurs
+   when its min attribute >= 0."
   input Connector conn;
   input UnorderedMap<ComponentRef, Variable> variables;
-  output Boolean isZero;
+  output Boolean noFlow;
 algorithm
-  isZero := isZeroFlow(conn, "min", variables);
-end isZeroFlowInside;
+  noFlow := isNoFlow(conn, "min", Expression.isNonNegative, variables);
+end isNoFlowInside;
 
-function isZeroFlow
-  "Returns true if the given flow attribute of a connector is zero."
+function isNoFlow
+  "Returns true if a given stream connector has no flow."
   input Connector element;
   input String attr;
+  input FlowPred pred;
   input UnorderedMap<ComponentRef, Variable> variables;
-  output Boolean isZero;
+  output Boolean noFlow;
+
+  partial function FlowPred
+    input Expression exp;
+    output Boolean res;
+  end FlowPred;
 protected
   ComponentRef flow_name;
   Option<Expression> attr_oexp;
@@ -883,11 +893,11 @@ algorithm
       attr_exp := Ceval.evalExp(attr_exp);
     end if;
 
-    isZero := Expression.isZero(attr_exp);
+    noFlow := pred(attr_exp);
   else
-    isZero := false;
+    noFlow := false;
   end if;
-end isZeroFlow;
+end isNoFlow;
 
 protected function evaluateActualStream
   "This function evaluates the actualStream operator for a component reference,

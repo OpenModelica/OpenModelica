@@ -4323,13 +4323,39 @@ public
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0;
-      case BOOLEAN() then false;
-      case ENUM_LITERAL() then false;
       case CAST() then isNegative(exp.exp);
       case UNARY() then not isNegative(exp.exp);
       else false;
     end match;
   end isNegative;
+
+  function isNonPositive
+    "Returns true if the expression is a number <= 0, otherwise false."
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case INTEGER() then exp.value <= 0;
+      case REAL() then exp.value <= 0;
+      case CAST() then isNonPositive(exp.exp);
+      case UNARY() then isNonNegative(exp.exp);
+      else false;
+    end match;
+  end isNonPositive;
+
+  function isNonNegative
+    "Returns true if the expression is a number >= 0, otherwise false."
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case INTEGER() then exp.value >= 0;
+      case REAL() then exp.value >= 0;
+      case CAST() then isNonPositive(exp.exp);
+      case UNARY() then isNonNegative(exp.exp);
+      else false;
+    end match;
+  end isNonNegative;
 
   function isScalar
     input Expression exp;
