@@ -100,6 +100,7 @@ import InstSettings = NFInst.InstSettings;
 import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
+constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
 
 public
 function evaluateAnnotation
@@ -154,12 +155,9 @@ protected
   DAE.DAElist dae;
   Type ty;
   Variability var;
-  InstContext.Type context;
 algorithm
   stringLst := {};
-
   Absyn.ANNOTATION(el) := inAnnotation;
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
 
   for e in listReverse(el) loop
 
@@ -180,8 +178,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, context, info);
-          (exp, ty, var) := Typing.typeExp(exp, context, info);
+          exp := NFInst.instExp(absynExp, inst_cls, ANNOTATION_CONTEXT, info);
+          (exp, ty, var) := Typing.typeExp(exp, ANNOTATION_CONTEXT, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
@@ -205,14 +203,13 @@ algorithm
           (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, context);
-
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = context);
+          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -223,8 +220,8 @@ algorithm
           if (listMember(annName, {"Icon", "Diagram", "choices"})) and not listEmpty(graphics_mod) then
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
-              exp := NFInst.instExp(absynExp, inst_cls, context, info);
-              (exp, ty, var) := Typing.typeExp(exp, context, info);
+              exp := NFInst.instExp(absynExp, inst_cls, ANNOTATION_CONTEXT, info);
+              (exp, ty, var) := Typing.typeExp(exp, ANNOTATION_CONTEXT, info);
               save := exp;
               try
                 exp := NFCeval.evalExp(save);
@@ -247,14 +244,13 @@ algorithm
           (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls, context = context);
-
+          inst_anncls := NFInst.instantiate(anncls, context = ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = context);
+          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -339,10 +335,7 @@ protected
   Type ty;
   Variability var;
   Option<Absyn.Comment> cmt;
-  InstContext.Type context;
 algorithm
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
-
   // handle the annotations
   for i in inElements loop
    elArgs := matchcontinue i
@@ -1766,8 +1759,8 @@ algorithm
         ErrorExt.setCheckpoint(getInstanceName());
 
         try
-          binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
-          binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
+          binding_exp := Inst.instExp(absyn_binding, scope, ANNOTATION_CONTEXT, mod.info);
+          binding_exp := Typing.typeExp(binding_exp, ANNOTATION_CONTEXT, mod.info);
           binding_exp := SimplifyExp.simplify(binding_exp);
           json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
         else
