@@ -453,6 +453,7 @@ template createMakefileIn(SimCode simCode, String target, String FileNamePrefix,
         OMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%>
         OMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
 
+        override CPPFLAGS += -DFMI2_OVERRIDE_FUNCTION_PREFIX
         override CPPFLAGS += -Iinclude/ -Iinclude/fmi<%if isFMIVersion20(FMUVersion) then "2" else "1"%> -I. <%makefileParams.includes ; separator=" "%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '-DFMU_EXPERIMENTAL'%>  -DOMC_MODEL_PREFIX=<%CodegenUtilSimulation.modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
 
         <%common%>

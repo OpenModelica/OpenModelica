@@ -1443,6 +1443,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
       CPPFLAGS=@CPPFLAGS@
+      override CPPFLAGS += -DFMI2_OVERRIDE_FUNCTION_PREFIX
 
       override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
 
