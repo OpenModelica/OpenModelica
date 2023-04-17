@@ -894,6 +894,7 @@ PackageConstant3.mo \
 PackageConstant4.mo \
 PackageConstant5.mo \
 PackageConstant6.mo \
+PackageConstant7.mo \
 ParameterBug.mos \
 ParameterDer.mo \
 PartialApplication1.mo \

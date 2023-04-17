@@ -104,6 +104,7 @@ uniontype LookupState
   record IMPORT end IMPORT;
   record PARTIAL_CLASS "A partial class." end PARTIAL_CLASS;
   record NON_CONSTANT "A nonconstant found in a context where a constant is required." end NON_CONSTANT;
+  record NON_ENCAPSULATED "A nonencapsulated element found in a context where encapsulated is required." end NON_ENCAPSULATED;
   record ERROR "An error occured during lookup."
     LookupState errorState;
   end ERROR;
@@ -326,6 +327,14 @@ uniontype LookupState
         algorithm
           Error.addMultiSourceMessage(Error.NON_CONSTANT_IN_ENCLOSING_SCOPE,
             {InstNode.name(node)}, {InstNode.info(node), info});
+        then
+          fail();
+
+      case (ERROR(errorState = NON_ENCAPSULATED()), _)
+        algorithm
+          Error.addMultiSourceMessage(Error.NON_ENCAPSULATED_CLASS_ACCESS,
+            {InstNode.name(InstNode.parent(node)), InstNode.name(node)},
+            {InstNode.info(node), info});
         then
           fail();
 
@@ -628,6 +637,10 @@ uniontype LookupState
     input InstContext.Type context;
     input output LookupState state;
   algorithm
+    if isError(state) then
+      return;
+    end if;
+
     if inEnclosingScope and not InstContext.inRelaxed(context) and
        isNonConstantComponent(ComponentRef.node(cref)) then
       state := ERROR(NON_CONSTANT());

@@ -11,11 +11,11 @@ model A
         Real x;
       end D;
 
-      D d;
+      constant D d;
     end C;
   end B;
 
-  B b;
+  constant B b;
 end A;
 
 model M
