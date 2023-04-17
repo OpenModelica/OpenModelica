@@ -75,7 +75,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // record SimulationResult
 //     resultFile = "TestAssert.TestWarningConstant_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | [<interactive>:7:5-7:76:writable]
+//     messages = "LOG_ASSERT            | warning | [<interactive>:7:5-7:76:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
 // |                 | |       | ((false)) --> \"Variable x is probably too big\"
 // assert            | warning | [<interactive>:7:5-7:76:writable]
