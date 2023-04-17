@@ -138,7 +138,7 @@ clean:
 	dh_testroot
 	rm -f build-stamp
 	# Add here commands to clean up after the build process.
-	dh_clean
+	dh_clean --exclude=libraries/installing/.openmodelica/cache
 
 install: build
 	dh_testdir
