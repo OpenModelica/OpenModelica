@@ -49,7 +49,7 @@ getErrorString();
 // --------------------------------------------------------
 // number of nonlinear constraints: 3
 // ========================================================
-// stdout            | info    | Using values from file as initial guess.
+// LOG_STDOUT        | info    | Using values from file as initial guess.
 //
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.

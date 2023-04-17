@@ -31,10 +31,10 @@ getErrorString();
 // |                 | |       | The following assertion has been violated at time 0.000000
 // |                 | |       | ((der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0)) --> \"Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -9.57311\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:163:9-163:92:writable]
+// LOG_ASSERT        | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:163:9-163:92:writable]
 // |                 | |       | The following assertion has been violated at time 849.600000
 // |                 | |       | ((conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue)) --> \"Variable violating min/max constraint: conSigma.MinValue <= conSigma.con <= conSigma.MaxValue, has value: -150.308\"
-// assert            | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:147:4-147:63:writable]
+// LOG_ASSERT        | info    | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:147:4-147:63:writable]
 // |                 | |       | The following assertion has been violated at time 1252.800000
 // |                 | |       | ((der_V_v >= -0.02 and der_V_v <= 0.025)) --> \"Variable violating min/max constraint: -0.02 <= der_V_v <= 0.025, has value: 0.0252797\"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -65,7 +65,7 @@ getErrorString();
 // --------------------------------------------------------
 // number of nonlinear constraints: 3
 // ========================================================
-// stdout            | info    | Using values from file as initial guess.
+// LOG_STDOUT        | info    | Using values from file as initial guess.
 //
 // max_iter = 100
 // ******************************************************************************

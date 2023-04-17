@@ -760,9 +760,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5d', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5d_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.Splitter5d
-// stdout            | info    | DataReconciliation Completed!
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.Splitter5d
+// LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
 // "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed

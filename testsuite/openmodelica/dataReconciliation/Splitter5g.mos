@@ -873,9 +873,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | Reconcile Boundary Conditions Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.Splitter5g
-// stdout            | info    | Reconcile Boundary Conditions Completed!
+// LOG_STDOUT        | info    | Reconcile Boundary Conditions Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.Splitter5g
+// LOG_STDOUT        | info    | Reconcile Boundary Conditions Completed!
 // "
 // end SimulationResult;
 // ""

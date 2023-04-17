@@ -57,7 +57,7 @@ simulate(StaticIR); getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'StaticIR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: StaticIR
-// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_STDOUT        | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | Solving non-linear system 13 failed at time=0.249296973039019.
 // |                 | |       | For more information please use -lv LOG_NLS.
@@ -79,7 +79,7 @@ simulate(StaticIR); getErrorString();
 // DASKR--  REPEATEDLY OR WITH ABS(H)=HMIN
 // stdout            | warning | The corrector could not converge.
 // stdout            | warning | can't continue. time = 0.463991
-// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.463991
+// LOG_STDOUT        | info    | model terminate | Integrator failed. | Simulation terminated at time 0.463991
 // "
 // end SimulationResult;
 // ""

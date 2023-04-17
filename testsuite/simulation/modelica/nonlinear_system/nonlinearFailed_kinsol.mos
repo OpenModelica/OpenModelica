@@ -15,7 +15,7 @@ simulate(nonlinear_system.nonlinearFailed, simflags="-nls=kinsol"); getErrorStri
 //     messages = "Simulation execution failed for model: nonlinear_system.nonlinearFailed
 // assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // assert            | debug   | Model error: Argument of asin(1.1) outside the domain -1.0 <= 1.1 <= 1.0
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // ""

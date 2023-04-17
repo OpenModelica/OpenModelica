@@ -327,7 +327,7 @@ assert            | warning | The following assertion has been violated at time 
 assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
 assert            | warning | The following assertion has been violated at time 2.000051
 assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
-stdout            | info    | model terminate | Simulation terminated by an assert at time: 2.00005
+LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 2.00005
 "
 end SimulationResult;</Output>
         </GraphCell>

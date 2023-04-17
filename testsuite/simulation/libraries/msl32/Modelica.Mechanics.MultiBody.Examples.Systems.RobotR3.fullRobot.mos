@@ -65,7 +65,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // [Modelica 3.2.1+maint.om/Blocks/Logical.mo:1058:7-1058:33:writable]
-// stdout            | info    | Simulation call terminate() at time 1.856045
+// LOG_STDOUT        | info    | Simulation call terminate() at time 1.856045
 // |                 | |       | Message : ... End condition reached
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //

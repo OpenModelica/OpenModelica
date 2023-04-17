@@ -21,7 +21,7 @@ simulate(InitialAssert);getErrorString();
 //     messages = "Simulation execution failed for model: InitialAssert
 // assert            | error   | [<interactive>:6:5-6:25:writable]
 // |                 | |       | abc
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // ""

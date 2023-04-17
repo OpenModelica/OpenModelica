@@ -111,10 +111,10 @@ p, li { white-space: pre-wrap; }
           <Output>record SimulationResult
     messages = "Simulation execution failed for model: Test2
 [&lt;interactive>:6:3-6:70:writable]
-stdout            | info    | Simulation call assert() at time 0.020000
+LOG_STDOUT        | info    | Simulation call assert() at time 0.020000
 |                 | |       | Level : error
 |                 | |       | Message : Variable x out of limit
-stdout            | info    | model terminate | Simulation terminated at time 0.02
+LOG_STDOUT        | info    | model terminate | Simulation terminated at time 0.02
 "
 end SimulationResult;</Output>
         </GraphCell>

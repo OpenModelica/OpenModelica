@@ -34,9 +34,9 @@ simulate(bug2756,simflags="-output s"); getErrorString();
 // record SimulationResult
 //     resultFile = "bug2756_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug2756', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output s'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | info    | The initialization finished successfully without homotopy method.
 // time=1,s=2
-// stdout            | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

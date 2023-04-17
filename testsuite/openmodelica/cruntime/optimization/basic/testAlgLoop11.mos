@@ -56,7 +56,7 @@ getErrorString();
 // --------------------------------------------------------
 // number of nonlinear constraints: 5
 // ========================================================
-// stdout            | info    | Using values from file as initial guess.
+// LOG_STDOUT        | info    | Using values from file as initial guess.
 //
 // max_iter = -1LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -1140,9 +1140,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileState -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Inputs.csv -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | Reconcile State Estimation Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.Splitter5g
-// stdout            | info    | Reconcile State Estimation Completed!
+// LOG_STDOUT        | info    | Reconcile State Estimation Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.Splitter5g
+// LOG_STDOUT        | info    | Reconcile State Estimation Completed!
 // "
 // end SimulationResult;
 // ""

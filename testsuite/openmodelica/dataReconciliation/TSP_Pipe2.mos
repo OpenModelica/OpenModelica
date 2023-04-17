@@ -1976,9 +1976,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe2_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe2
 // assert            | debug   | division by zero at time 0, (a=0.9860490000000001) / (b=0), where divisor b expression is: singularPressureLoss2.deltaP
-// assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.TSP_Pipe2
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe2
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).

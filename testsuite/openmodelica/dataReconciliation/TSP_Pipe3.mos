@@ -2255,8 +2255,8 @@ getErrorString();
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 1.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_NLS           | error   | residualFunc76: Iteration variable xloc[0] is nan.
 // assert            | debug   | residualFunc76 failed at time=1.

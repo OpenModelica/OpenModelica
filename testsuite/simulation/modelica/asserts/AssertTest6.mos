@@ -123,7 +123,7 @@ getErrorString();
 // stdout            | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
 // stdout            | warning | can't continue. time = 0.500000
 // Value of x(=0.5)
-// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
+// LOG_STDOUT        | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
