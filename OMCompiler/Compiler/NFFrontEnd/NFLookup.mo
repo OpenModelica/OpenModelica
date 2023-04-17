@@ -913,15 +913,16 @@ protected
   InstNode n, cls_node;
   String name;
   Class cls;
-  Boolean is_import;
+  Boolean is_import, scope_is_class;
 algorithm
   if LookupState.isError(state) then
     return;
   end if;
 
   scope := node;
+  scope_is_class := InstNode.isClass(scope);
 
-  if InstNode.isClass(scope) then
+  if scope_is_class then
     scope := Inst.instPackage(node, context);
 
     if InstNode.isPartial(scope) and not InstContext.inRelaxed(context) then
@@ -960,17 +961,24 @@ algorithm
   end if;
 
   (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
-  state := LookupState.next(n, state);
+  foundCref := ComponentRef.fromAbsyn(n, AbsynUtil.crefFirstSubs(cref), foundCref);
+
+  if scope_is_class and not InstContext.inRelaxed(context) and
+     LookupState.isNonConstantComponent(n) then
+    // An element found in a non-package must be encapsulated. So if we find a
+    // non-constant component in a class it's an error, since packages may only
+    // contain constant components and components can't be encapsulated.
+    state := LookupState.ERROR(LookupState.NON_ENCAPSULATED());
+    return;
+  else
+    state := LookupState.next(n, state);
+  end if;
 
   (foundCref, foundScope, state) := match cref
-    case Absyn.ComponentRef.CREF_IDENT()
-      then (ComponentRef.fromAbsyn(n, cref.subscripts, foundCref), foundScope, state);
+    case Absyn.ComponentRef.CREF_IDENT() then (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
-      algorithm
-        foundCref := ComponentRef.fromAbsyn(n, cref.subscripts, foundCref);
-      then
-        lookupCrefInNode(cref.componentRef, n, foundCref, foundScope, state, context);
+      then lookupCrefInNode(cref.componentRef, n, foundCref, foundScope, state, context);
   end match;
 end lookupCrefInNode;
 
