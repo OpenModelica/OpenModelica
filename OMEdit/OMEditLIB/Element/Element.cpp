@@ -1056,7 +1056,20 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mTransformation.isValid()) {
-    setVisible(mTransformation.getVisible() && isCondition());
+    const bool condition = isCondition();
+    if (mElementType == Element::Root) {
+      setVisible(mTransformation.getVisible());
+      if (!condition) {
+        setOpacity(0.3);
+      }
+    } else if (mElementType == Element::Port) {
+      setVisible(mTransformation.getVisible() && condition);
+    } else {
+      /* Element::Extend type ends up in this block
+       * we don't set the opacity for it since it will take the opacity of parent.
+       */
+      setVisible(mTransformation.getVisible());
+    }
     if (mpStateElementRectangle) {
       if (isVisible()) {
         if (mHasTransition && mIsInitialState) {
