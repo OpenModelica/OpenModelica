@@ -23,6 +23,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "AnHeuermann.metamodelica",
         "ms-vscode.cpptools-extension-pack"
       ]
     }
