@@ -19,6 +19,7 @@ getModelInstanceIcon(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"annotation\": {
 //     \"Icon\": {
 //       \"graphics\": [

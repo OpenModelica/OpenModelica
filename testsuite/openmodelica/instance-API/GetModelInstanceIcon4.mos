@@ -38,16 +38,22 @@ getErrorString();
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"elements\": [
 //     {
 //       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
+//         \"restriction\": \"model\",
+//         \"prefixes\": {
+//           \"partial\": true
+//         },
 //         \"elements\": [
 //           {
 //             \"$kind\": \"extends\",
 //             \"baseClass\": {
-//               \"name\": \"Icons.A\"
+//               \"name\": \"Icons.A\",
+//               \"restriction\": \"model\"
 //             }
 //           }
 //         ],
