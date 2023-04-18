@@ -1114,9 +1114,16 @@ protected
   InstNode scope = node;
   InstContext.Type context;
   Boolean annotation_is_literal = true;
+  SCode.Element def;
 algorithm
   Inst.expand(node);
+  def := InstNode.definition(node);
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
+  json := JSON.addPair("restriction",
+    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
+
+  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, InstNode.parent(node)), json);
 
   exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(node)));
 

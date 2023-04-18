@@ -29,11 +29,16 @@ getModelInstanceIcon(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"elements\": [
 //     {
 //       \"$kind\": \"extends\",
 //       \"baseClass\": {
 //         \"name\": \"Icons.Example\",
+//         \"restriction\": \"model\",
+//         \"prefixes\": {
+//           \"partial\": true
+//         },
 //         \"annotation\": {
 //           \"Icon\": {
 //             \"coordinateSystem\": {
