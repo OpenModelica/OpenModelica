@@ -192,7 +192,7 @@ public:
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
-  static void applyStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
+  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;

@@ -276,7 +276,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     }
     setValueWidget(value, true, mUnit);
   } else {
-    ElementParameters::applyStartFixedAndDisplayUnitModifiers(this, mpModelInstanceElement->getModifier(), true);
+    mpElementParameters->applyFinalStartFixedAndDisplayUnitModifiers(this, mpModelInstanceElement->getModifier(), true);
   }
   update();
 }
@@ -1113,56 +1113,64 @@ QString ElementParameters::getElementParentClassName() const
 }
 
 /*!
- * \brief ElementParameters::applyStartFixedAndDisplayUnitModifiers
+ * \brief ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers
  * \param pParameter
  * \param modifier
  * \param defaultValue
  */
-void ElementParameters::applyStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue)
+void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue)
 {
   if (pParameter) {
-    // if builtin type
-    if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
-      const QString value = modifier.getValue();
-      // if value is not empty then use it otherwise try to read start and fixed modifiers
-      if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter())) {
-        bool hasStart = modifier.hasModifier("start");
-        bool hasFixed = modifier.hasModifier("fixed");
-        if (hasStart || hasFixed) {
-          if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
-            pParameter->setGroup("Initialization");
+    /* Ticket #2531
+     * Check if parameter is marked final.
+     */
+    if (modifier.isFinal()) {
+      mParametersList.removeOne(pParameter);
+      delete pParameter;
+    } else {
+      // if builtin type
+      if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
+        const QString value = modifier.getValue();
+        // if value is not empty then use it otherwise try to read start and fixed modifiers
+        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter())) {
+          bool hasStart = modifier.hasModifier("start");
+          bool hasFixed = modifier.hasModifier("fixed");
+          if (hasStart || hasFixed) {
+            if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
+              pParameter->setGroup("Initialization");
+            }
+            pParameter->setShowStartAndFixed(true);
           }
-          pParameter->setShowStartAndFixed(true);
+          if (hasStart) {
+            pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(modifier.getModifier("start")), defaultValue, pParameter->getUnit());
+          }
+          if (hasFixed) {
+            pParameter->setFixedState(StringHandler::removeFirstLastQuotes(modifier.getModifier("fixed")), defaultValue);
+          }
+        } else {
+          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit());
         }
-        if (hasStart) {
-          pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(modifier.getModifier("start")), defaultValue, pParameter->getUnit());
-        }
-        if (hasFixed) {
-          pParameter->setFixedState(StringHandler::removeFirstLastQuotes(modifier.getModifier("fixed")), defaultValue);
-        }
-      } else {
-        pParameter->setValueWidget(value, defaultValue, pParameter->getUnit());
+      } else { // if not builtin type then use all sub modifiers
+        pParameter->setValueWidget(modifier.getValueWithSubModifiers(), defaultValue, pParameter->getUnit());
       }
-    } else { // if not builtin type then use all sub modifiers
-      pParameter->setValueWidget(modifier.getValueWithSubModifiers(), defaultValue, pParameter->getUnit());
-    }
-    // displayUnit
-    QString displayUnit = StringHandler::removeFirstLastQuotes(modifier.getModifier("displayUnit"));
-    if (!displayUnit.isEmpty()) {
-      int index = pParameter->getUnitComboBox()->findData(displayUnit);
-      if (index < 0) {
-        // add modifier as additional display unit if compatible
-        index = pParameter->getUnitComboBox()->count() - 1;
-        OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-        if (index > -1 &&
-            (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
-          pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
-          index ++;
+      // displayUnit
+      QString displayUnit = StringHandler::removeFirstLastQuotes(modifier.getModifier("displayUnit"));
+      if (!displayUnit.isEmpty()) {
+        int index = pParameter->getUnitComboBox()->findData(displayUnit);
+        if (index < 0) {
+          // add modifier as additional display unit if compatible
+          index = pParameter->getUnitComboBox()->count() - 1;
+          OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+          if (index > -1 &&
+              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+            pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
+            index ++;
+          }
         }
-      }
-      if (index > -1) {
-        pParameter->getUnitComboBox()->setCurrentIndex(index);
-        pParameter->setDisplayUnit(displayUnit);
+        if (index > -1) {
+          pParameter->getUnitComboBox()->setCurrentIndex(index);
+          pParameter->setDisplayUnit(displayUnit);
+        }
       }
     }
   }
@@ -1401,17 +1409,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
       foreach (auto modifier, pExtend->getModifier().getModifiers()) {
         Parameter *pParameter = findParameter(modifier.getName());
-        if (pParameter) {
-          /* Ticket #2531
-         * Check if parameter is marked final in the extends modifier.
-         */
-          if (modifier.isFinal()) {
-            mParametersList.removeOne(pParameter);
-            delete pParameter;
-            continue;
-          }
-          ElementParameters::applyStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
-        }
+        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
       }
       fetchElementExtendsModifiers(pExtend->getModel());
     }
@@ -1426,7 +1424,7 @@ void ElementParameters::fetchElementModifiers()
 {
   foreach (auto modifier, mpElement->getModifier().getModifiers()) {
     Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited);
+    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited);
   }
 }
 
@@ -1446,7 +1444,7 @@ void ElementParameters::fetchClassExtendsModifiers()
           if (modifier.getName().compare(mpElement->getName()) == 0) {
             foreach (auto subModifier, modifier.getModifiers()) {
               Parameter *pParameter = findParameter(subModifier.getName());
-              ElementParameters::applyStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
+              applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
             }
           }
           break;
