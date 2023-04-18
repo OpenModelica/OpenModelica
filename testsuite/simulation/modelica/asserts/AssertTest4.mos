@@ -29,7 +29,7 @@ getErrorString();
 // LOG_ASSERT        | info    | [simulation/modelica/asserts/AssertTest4.mo:26:3-26:65:writable]
 // |                 | |       | The following assertion has been violated at time 0.555556
 // |                 | |       | ((assertTest.x >= 0.5)) --> \"Variable x(=0.444444) out of limit\"
-// assert            | error   | No event found, but assert was triggered. Throwing now!
+// LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;
 // ""

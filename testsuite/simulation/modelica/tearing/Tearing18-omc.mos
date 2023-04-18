@@ -26,7 +26,7 @@ val(x8,0.0); getErrorString();
 //     messages = "Simulation execution failed for model: Tearing18
 // Error: Solving non-linear system failed.
 // For more information please use -lv LOG_NLS.
-// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
 // Error: Solving non-linear system failed.
 // For more information please use -lv LOG_NLS.
 // LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 0.085

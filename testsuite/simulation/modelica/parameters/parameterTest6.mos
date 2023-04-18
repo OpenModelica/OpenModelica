@@ -396,9 +396,9 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // "
 // end SimulationResult;
 // ""
-// stdout            | warning | It is not possible to override the following quantity: f2
+// LOG_STDOUT        | warning | It is not possible to override the following quantity: f2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
-// stdout            | warning | It is not possible to override the following quantity: s
+// LOG_STDOUT        | warning | It is not possible to override the following quantity: s
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=3,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=6

@@ -43,16 +43,16 @@ val(s, 1);
 // record SimulationResult
 //     resultFile = "JuliansBib.Connector_Hebelarm_einfach_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib.Connector_Hebelarm_einfach', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_ASSERT            | warning | The following assertion has been violated at time 0.000000
+//     messages = "LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 0.002000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.002000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s, has value: -3.60059e-06
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s, has value: -3.60059e-06
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -74,12 +74,12 @@ val(s, 1);
 // record SimulationResult
 //     resultFile = "JuliansBib_Connector_Hebelarm_einfach_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib_Connector_Hebelarm_einfach_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_ASSERT            | warning | The following assertion has been violated at time 0.000000
+//     messages = "LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

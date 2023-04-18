@@ -1975,7 +1975,7 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe2_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe2
-// assert            | debug   | division by zero at time 0, (a=0.9860490000000001) / (b=0), where divisor b expression is: singularPressureLoss2.deltaP
+// LOG_ASSERT        | debug   | division by zero at time 0, (a=0.9860490000000001) / (b=0), where divisor b expression is: singularPressureLoss2.deltaP
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // LOG_STDOUT        | info    | DataReconciliation Starting!
 // LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe2

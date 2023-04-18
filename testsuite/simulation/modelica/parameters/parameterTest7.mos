@@ -390,7 +390,7 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 // "
 // end SimulationResult;
 // ""
-// stdout            | warning | It is not possible to override the following quantity: p2
+// LOG_STDOUT        | warning | It is not possible to override the following quantity: p2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=3,p2=3,s=3,a[1]=10,a[2]=2,a[3]=3

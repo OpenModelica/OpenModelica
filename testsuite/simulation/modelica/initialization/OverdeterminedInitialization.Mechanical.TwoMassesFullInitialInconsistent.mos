@@ -21,7 +21,7 @@ simulate(OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsisten
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsistent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsistent
 // LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 1 = $START.mass2.s - mass2.s
-// stdout            | warning | Error in initialization. Storing results and exiting.
+// LOG_STDOUT        | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
 // end SimulationResult;

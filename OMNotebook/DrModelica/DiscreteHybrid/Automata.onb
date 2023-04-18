@@ -214,7 +214,7 @@ end SimpleServer;</Input>
       <Output>record SimulationResult
     resultFile = "",
     messages = "Simulation execution failed for model: SimpleServer
-assert            | debug   | ERROR: Too many event iterations. System is inconsistent. Simulation terminate.
+LOG_ASSERT        | debug   | ERROR: Too many event iterations. System is inconsistent. Simulation terminate.
 LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 "
 end SimulationResult;
