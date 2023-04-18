@@ -45,11 +45,11 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 70, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -iif=ReferenceFiles/testAlgLoop6_ref.mat -iim=none'",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+//     messages = "LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | (($EqCon$conDer >= 0.0 and $EqCon$conDer <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$conDer <= 0.0, has value: 0.770042\"
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | (($EqCon$x2 >= 0.0 and $EqCon$x2 <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: 1\"
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | (($EqCon$x1 >= 0.0 and $EqCon$x1 <= 0.0)) --> \"Variable violating min/max constraint: 0.0 <= $EqCon$x1 <= 0.0, has value: -0.64525\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
@@ -70,278 +70,278 @@ getErrorString();
 // ========================================================
 //
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.14286
-// stdout            | warning | -1<= (y2=1.00447) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.14286
+// LOG_STDOUT        | warning | -1<= (y2=1.00447) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.21429
-// stdout            | warning | -1<= (y2=1.06724) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.21429
+// LOG_STDOUT        | warning | -1<= (y2=1.06724) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.28571
-// stdout            | warning | -1<= (y2=1.13002) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.28571
+// LOG_STDOUT        | warning | -1<= (y2=1.13002) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.35714
-// stdout            | warning | -1<= (y2=1.1928) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.35714
+// LOG_STDOUT        | warning | -1<= (y2=1.1928) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.42857
-// stdout            | warning | -1<= (y2=1.25558) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.42857
+// LOG_STDOUT        | warning | -1<= (y2=1.25558) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.5
-// stdout            | warning | -1<= (y2=1.31836) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.5
+// LOG_STDOUT        | warning | -1<= (y2=1.31836) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.57143
-// stdout            | warning | -1<= (y2=1.38114) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.57143
+// LOG_STDOUT        | warning | -1<= (y2=1.38114) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.64286
-// stdout            | warning | -1<= (y2=1.44392) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.64286
+// LOG_STDOUT        | warning | -1<= (y2=1.44392) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.71429
-// stdout            | warning | -1<= (y2=1.5067) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.71429
+// LOG_STDOUT        | warning | -1<= (y2=1.5067) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.78571
-// stdout            | warning | -1<= (y2=1.56948) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.78571
+// LOG_STDOUT        | warning | -1<= (y2=1.56948) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.85714
-// stdout            | warning | -1<= (y2=1.63226) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.85714
+// LOG_STDOUT        | warning | -1<= (y2=1.63226) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 1.92857
-// stdout            | warning | -1<= (y2=1.69504) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 1.92857
+// LOG_STDOUT        | warning | -1<= (y2=1.69504) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2
-// stdout            | warning | -1<= (y2=1.75782) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2
+// LOG_STDOUT        | warning | -1<= (y2=1.75782) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.07143
-// stdout            | warning | -1<= (y2=1.82059) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.07143
+// LOG_STDOUT        | warning | -1<= (y2=1.82059) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.14286
-// stdout            | warning | -1<= (y2=1.88337) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.14286
+// LOG_STDOUT        | warning | -1<= (y2=1.88337) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.21429
-// stdout            | warning | -1<= (y2=1.94615) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.21429
+// LOG_STDOUT        | warning | -1<= (y2=1.94615) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.28571
-// stdout            | warning | -1<= (y2=2.00893) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.28571
+// LOG_STDOUT        | warning | -1<= (y2=2.00893) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.35714
-// stdout            | warning | -1<= (y2=2.07171) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.35714
+// LOG_STDOUT        | warning | -1<= (y2=2.07171) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.42857
-// stdout            | warning | -1<= (y2=2.13449) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.42857
+// LOG_STDOUT        | warning | -1<= (y2=2.13449) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.5
-// stdout            | warning | -1<= (y2=2.19727) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.5
+// LOG_STDOUT        | warning | -1<= (y2=2.19727) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.57143
-// stdout            | warning | -1<= (y2=2.26005) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.57143
+// LOG_STDOUT        | warning | -1<= (y2=2.26005) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.64286
-// stdout            | warning | -1<= (y2=2.32283) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.64286
+// LOG_STDOUT        | warning | -1<= (y2=2.32283) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.71429
-// stdout            | warning | -1<= (y2=2.38561) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.71429
+// LOG_STDOUT        | warning | -1<= (y2=2.38561) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.78571
-// stdout            | warning | -1<= (y2=2.44839) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.78571
+// LOG_STDOUT        | warning | -1<= (y2=2.44839) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.85714
-// stdout            | warning | -1<= (y2=2.51116) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.85714
+// LOG_STDOUT        | warning | -1<= (y2=2.51116) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 2.92857
-// stdout            | warning | -1<= (y2=2.57394) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 2.92857
+// LOG_STDOUT        | warning | -1<= (y2=2.57394) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3
-// stdout            | warning | -1<= (y2=2.63672) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3
+// LOG_STDOUT        | warning | -1<= (y2=2.63672) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.07143
-// stdout            | warning | -1<= (y2=2.6995) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.07143
+// LOG_STDOUT        | warning | -1<= (y2=2.6995) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.14286
-// stdout            | warning | -1<= (y2=2.76228) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.14286
+// LOG_STDOUT        | warning | -1<= (y2=2.76228) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.21429
-// stdout            | warning | -1<= (y2=2.82506) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.21429
+// LOG_STDOUT        | warning | -1<= (y2=2.82506) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.28571
-// stdout            | warning | -1<= (y2=2.88784) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.28571
+// LOG_STDOUT        | warning | -1<= (y2=2.88784) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.35714
-// stdout            | warning | -1<= (y2=2.95062) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.35714
+// LOG_STDOUT        | warning | -1<= (y2=2.95062) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.42857
-// stdout            | warning | -1<= (y2=3.0134) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.42857
+// LOG_STDOUT        | warning | -1<= (y2=3.0134) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.5
-// stdout            | warning | -1<= (y2=3.07618) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.5
+// LOG_STDOUT        | warning | -1<= (y2=3.07618) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.57143
-// stdout            | warning | -1<= (y2=3.13896) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.57143
+// LOG_STDOUT        | warning | -1<= (y2=3.13896) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.64286
-// stdout            | warning | -1<= (y2=3.20173) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.64286
+// LOG_STDOUT        | warning | -1<= (y2=3.20173) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.71429
-// stdout            | warning | -1<= (y2=3.26451) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.71429
+// LOG_STDOUT        | warning | -1<= (y2=3.26451) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.78571
-// stdout            | warning | -1<= (y2=3.32729) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.78571
+// LOG_STDOUT        | warning | -1<= (y2=3.32729) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.85714
-// stdout            | warning | -1<= (y2=3.39007) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.85714
+// LOG_STDOUT        | warning | -1<= (y2=3.39007) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 3.92857
-// stdout            | warning | -1<= (y2=3.45285) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 3.92857
+// LOG_STDOUT        | warning | -1<= (y2=3.45285) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4
-// stdout            | warning | -1<= (y2=3.51563) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4
+// LOG_STDOUT        | warning | -1<= (y2=3.51563) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.07143
-// stdout            | warning | -1<= (y2=3.57841) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.07143
+// LOG_STDOUT        | warning | -1<= (y2=3.57841) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.14286
-// stdout            | warning | -1<= (y2=3.64119) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.14286
+// LOG_STDOUT        | warning | -1<= (y2=3.64119) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.21429
-// stdout            | warning | -1<= (y2=3.70397) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.21429
+// LOG_STDOUT        | warning | -1<= (y2=3.70397) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.28571
-// stdout            | warning | -1<= (y2=3.76675) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.28571
+// LOG_STDOUT        | warning | -1<= (y2=3.76675) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.35714
-// stdout            | warning | -1<= (y2=3.82953) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.35714
+// LOG_STDOUT        | warning | -1<= (y2=3.82953) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.42857
-// stdout            | warning | -1<= (y2=3.89231) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.42857
+// LOG_STDOUT        | warning | -1<= (y2=3.89231) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.5
-// stdout            | warning | -1<= (y2=3.95508) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.5
+// LOG_STDOUT        | warning | -1<= (y2=3.95508) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.57143
-// stdout            | warning | -1<= (y2=4.01786) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.57143
+// LOG_STDOUT        | warning | -1<= (y2=4.01786) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.64286
-// stdout            | warning | -1<= (y2=4.08064) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.64286
+// LOG_STDOUT        | warning | -1<= (y2=4.08064) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.71429
-// stdout            | warning | -1<= (y2=4.14342) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.71429
+// LOG_STDOUT        | warning | -1<= (y2=4.14342) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.78571
-// stdout            | warning | -1<= (y2=4.2062) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.78571
+// LOG_STDOUT        | warning | -1<= (y2=4.2062) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.85714
-// stdout            | warning | -1<= (y2=4.26898) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.85714
+// LOG_STDOUT        | warning | -1<= (y2=4.26898) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 4.92857
-// stdout            | warning | -1<= (y2=4.33176) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 4.92857
+// LOG_STDOUT        | warning | -1<= (y2=4.33176) <=1
 //
 // ********************************************
 // ********************************************
-// stdout            | warning | Initial guess failure at time 5
-// stdout            | warning | -1<= (y2=4.39454) <=1
+// LOG_STDOUT        | warning | Initial guess failure at time 5
+// LOG_STDOUT        | warning | -1<= (y2=4.39454) <=1
 //
 // ********************************************
 // ******************************************************************************

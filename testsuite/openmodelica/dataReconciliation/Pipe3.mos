@@ -256,9 +256,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | NewDataReconciliationSimpleTests.Pipe3
-// stdout            | info    | DataReconciliation Completed!
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.Pipe3
+// LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
 // ""

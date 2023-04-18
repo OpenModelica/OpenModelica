@@ -71,7 +71,7 @@ getErrorString();
 // ""
 // 0
 // ""
-// "stdout            | warning | Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.
+// "LOG_STDOUT        | warning | Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

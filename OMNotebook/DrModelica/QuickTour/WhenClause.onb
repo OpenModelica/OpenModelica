@@ -195,7 +195,7 @@ p, li { white-space: pre-wrap; }
           <Input>simulate( BouncingBall, stopTime=20 )</Input>
           <Output>record SimulationResult
     resultFile = "BouncingBall_res.mat",
-    messages = "stdout            | info    | Chattering detected around time 8.09896836874..8.13847997633 (100 state events in a row with a total time delta less than the step size 0.04). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: height &lt;= radius
+    messages = "LOG_STDOUT        | info    | Chattering detected around time 8.09896836874..8.13847997633 (100 state events in a row with a total time delta less than the step size 0.04). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: height &lt;= radius
 "
 end SimulationResult;</Output>
         </GraphCell>

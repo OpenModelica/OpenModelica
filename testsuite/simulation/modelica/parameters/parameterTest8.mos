@@ -202,7 +202,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// stdout            | warning | It is not possible to override the following quantity: state
+// LOG_STDOUT        | warning | It is not possible to override the following quantity: state
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,state=1,v=1,r=2

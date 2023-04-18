@@ -333,7 +333,7 @@ p, li { white-space: pre-wrap; }
         <Output>record SimulationResult
     resultFile = "MoonLanding_res.mat",
     messages = "[&lt;interactive>:15:5-15:60:writable]
-stdout            | info    | Simulation call terminate() at time 212.101081
+LOG_STDOUT        | info    | Simulation call terminate() at time 212.101081
 |                 | |       | Message : The moon lander touches the ground of moon
 "
 end SimulationResult;</Output>

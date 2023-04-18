@@ -251,83 +251,83 @@ p, li { white-space: pre-wrap; }
           <Output>record SimulationResult
     resultFile = "",
     messages = "Simulation execution failed for model: GuardContinuousVar
-assert            | warning | The following assertion has been violated at time 2.097151
-assert            | debug   | Model error: Argument of sqrt(h) was -0.00592709 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.883583
-assert            | debug   | Model error: Argument of sqrt(h) was -0.149664 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.097151
-assert            | debug   | Model error: Argument of sqrt(h) was -0.00370656 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.031615
-assert            | debug   | Model error: Argument of sqrt(h) was -0.000484081 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.129919
-assert            | debug   | Model error: Argument of sqrt(h) was -0.00256767 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.031615
-assert            | debug   | Model error: Argument of sqrt(h) was -0.000158549 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.007039
-assert            | debug   | Model error: Argument of sqrt(h) was -9.26018e-006 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000895
-assert            | debug   | Model error: Argument of sqrt(h) was -2.83595e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000383
-assert            | debug   | Model error: Argument of sqrt(h) was -5.72968e-008 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000127
-assert            | debug   | Model error: Argument of sqrt(h) was -7.72298e-009 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000511
-assert            | debug   | Model error: Argument of sqrt(h) was -3.92907e-008 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000127
-assert            | debug   | Model error: Argument of sqrt(h) was -2.44974e-009 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000000
-assert            | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000000
-assert            | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
-stdout            | warning | Integrator attempt to handle a problem with a called assert.
-assert            | warning | The following assertion has been violated at time 2.057054
-assert            | debug   | Model error: Argument of sqrt(h) was -0.00167626 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.265950
-assert            | debug   | Model error: Argument of sqrt(h) was -0.0113973 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.057054
-assert            | debug   | Model error: Argument of sqrt(h) was -0.000646546 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.004830
-assert            | debug   | Model error: Argument of sqrt(h) was -1.06404e-005 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000478
-assert            | debug   | Model error: Argument of sqrt(h) was -1.53897e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.007006
-assert            | debug   | Model error: Argument of sqrt(h) was -9.96523e-006 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000478
-assert            | debug   | Model error: Argument of sqrt(h) was -1.14687e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.002110
-assert            | debug   | Model error: Argument of sqrt(h) was -7.00805e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000478
-assert            | debug   | Model error: Argument of sqrt(h) was -4.14408e-008 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000070
-assert            | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000070
-assert            | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
-stdout            | warning | Integrator attempt to handle a problem with a called assert.
-assert            | warning | The following assertion has been violated at time 2.016236
-assert            | debug   | Model error: Argument of sqrt(h) was -0.000156937 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.116076
-assert            | debug   | Model error: Argument of sqrt(h) was -0.00246952 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.016236
-assert            | debug   | Model error: Argument of sqrt(h) was -8.63145e-005 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.007916
-assert            | debug   | Model error: Argument of sqrt(h) was -2.09025e-005 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.003756
-assert            | debug   | Model error: Argument of sqrt(h) was -4.88455e-006 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.001676
-assert            | debug   | Model error: Argument of sqrt(h) was -1.04858e-006 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000636
-assert            | debug   | Model error: Argument of sqrt(h) was -1.76157e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000116
-assert            | debug   | Model error: Argument of sqrt(h) was -8.15526e-009 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000896
-assert            | debug   | Model error: Argument of sqrt(h) was -1.4951e-007 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000116
-assert            | debug   | Model error: Argument of sqrt(h) was -4.69379e-009 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000051
-assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
-assert            | warning | The following assertion has been violated at time 2.000051
-assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
-stdout            | info    | model terminate | Simulation terminated by an assert at time: 2.00005
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.097151
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.00592709 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.883583
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.149664 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.097151
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.00370656 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.031615
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.000484081 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.129919
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.00256767 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.031615
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.000158549 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.007039
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -9.26018e-006 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000895
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -2.83595e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000383
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -5.72968e-008 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000127
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -7.72298e-009 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000511
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -3.92907e-008 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000127
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -2.44974e-009 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000000
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000000
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
+LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.057054
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.00167626 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.265950
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.0113973 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.057054
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.000646546 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.004830
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.06404e-005 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000478
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.53897e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.007006
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -9.96523e-006 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000478
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.14687e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.002110
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -7.00805e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000478
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -4.14408e-008 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000070
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000070
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
+LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.016236
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.000156937 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.116076
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -0.00246952 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.016236
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -8.63145e-005 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.007916
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -2.09025e-005 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.003756
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -4.88455e-006 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.001676
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.04858e-006 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000636
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.76157e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000116
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -8.15526e-009 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000896
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -1.4951e-007 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000116
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -4.69379e-009 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000051
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
+LOG_ASSERT        | warning | The following assertion has been violated at time 2.000051
+LOG_ASSERT        | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
+LOG_STDOUT        | info    | model terminate | Simulation terminated by an assert at time: 2.00005
 "
 end SimulationResult;</Output>
         </GraphCell>

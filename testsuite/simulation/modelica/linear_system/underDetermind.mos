@@ -25,14 +25,14 @@ getErrorString();
 // ""
 // {"Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2","Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_init.xml"}
 // ""
-// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // 0
 // ""
 // 0
 // ""
-// stdout            | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
-// stdout            | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
-// stdout            | warning | Error in initialization. Storing results and exiting.
+// LOG_STDOUT        | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // 255
 // ""

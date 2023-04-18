@@ -596,8 +596,8 @@ Simulation Flags
 
 -  *Logging (Optional)*
 
-  -  *stdout* - standard output stream. This stream is always active, can be disabled with -lv=-stdout
-  -  *assert* - This stream is always active, can be disabled with -lv=-assert
+  -  *LOG_STDOUT* - standard output stream. This stream is always active, can be disabled with -lv=-LOG_STDOUT
+  -  *LOG_ASSERT* - This stream is always active, can be disabled with -lv=-LOG_ASSERT
   -  *LOG_DASSL* - additional information about dassl solver.
   -  *LOG_DASSL_STATES* - outputs the states at every dassl call.
   -  *LOG_DEBUG* - additional debug information.

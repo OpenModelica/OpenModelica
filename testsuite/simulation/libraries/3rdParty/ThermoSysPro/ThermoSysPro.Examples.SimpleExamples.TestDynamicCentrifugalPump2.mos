@@ -35,24 +35,24 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | DynamicCentrifugalPump1.hn >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= DynamicCentrifugalPump1.hn, has value: -6.27038e-24
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= DynamicCentrifugalPump1.hn, has value: -6.27038e-24
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
 //       In above,  R1 =   5.0761191036824E-03   R2 =   1.0089339134636E-15
 // DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE
 // DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE
-// stdout            | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
-// stdout            | warning | can't continue. time = 0.005076
-// assert            | warning | The following assertion has been violated at time 0.005076
+// LOG_STDOUT        | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
+// LOG_STDOUT        | warning | can't continue. time = 0.005076
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.005076
 // |                 | |       | DynamicCentrifugalPump1.C1.P >= 0.0
-// assert            | warning | Variable violating min constraint: 0.0 <= DynamicCentrifugalPump1.C1.P, has value: -3.98028e+06
-// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.00507612
+// LOG_ASSERT        | warning | Variable violating min constraint: 0.0 <= DynamicCentrifugalPump1.C1.P, has value: -3.98028e+06
+// LOG_STDOUT        | info    | model terminate | Integrator failed. | Simulation terminated at time 0.00507612
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.2.0/ElectroMechanics/Connectors.mo:3:3-36:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).

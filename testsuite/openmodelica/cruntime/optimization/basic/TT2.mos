@@ -39,7 +39,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "TimeTableTest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'TimeTableTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -55,7 +55,7 @@ getErrorString();
 //          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
-// stdout            | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

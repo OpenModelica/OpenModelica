@@ -31,8 +31,8 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump5
-// assert            | debug   | division by zero at time 0, (a=-13540.73113683649) / (b=0), where divisor b expression is: if centrifugalPump.dyn_mech_equation then centrifugalPump.J else 0.0
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | debug   | division by zero at time 0, (a=-13540.73113683649) / (b=0), where divisor b expression is: if centrifugalPump.dyn_mech_equation then centrifugalPump.J else 0.0
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).

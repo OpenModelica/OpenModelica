@@ -208,7 +208,7 @@ p, li { white-space: pre-wrap; }
           <Output>record SimulationResult
     resultFile = "GuardContinuousVar_res.mat",
     messages = "Error: Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
-stdout            | warning | Integrator attempt to handle a problem with a called assert.
+LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
 "
 end SimulationResult;</Output>
         </GraphCell>

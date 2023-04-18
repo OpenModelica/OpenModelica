@@ -57,10 +57,10 @@ val(x, 0.9);
 // x : 1.28938
 // Time : 0.5
 // x : 1.22416
-// assert            | info    | [<interactive>:19:7-19:71:writable]
+// LOG_ASSERT        | info    | [<interactive>:19:7-19:71:writable]
 // |                 | |       | The following assertion has been violated at time 0.573517
 // |                 | |       | ((time < 0.5)) --> \"Assert does trigger.\"
-// assert            | info    | [<interactive>:21:7-21:81:writable]
+// LOG_ASSERT        | info    | [<interactive>:21:7-21:81:writable]
 // |                 | |       | The following assertion has been violated at time 0.591693
 // |                 | |       | ((time < 0.55)) --> \"Assert does triggered again .\"
 // Time : 0.6
@@ -72,7 +72,7 @@ val(x, 0.9);
 // Time : 0.9
 // x : 1.28387
 // [<interactive>:16:7-16:40:writable]
-// stdout            | info    | Simulation call terminate() at time 0.900000
+// LOG_STDOUT        | info    | Simulation call terminate() at time 0.900000
 // |                 | |       | Message : Terminate the model.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -117,7 +117,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
 // |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
 // |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
 // |                 | |       | | | or
@@ -135,7 +135,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=3'",
-//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
 // |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
 // |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
 // |                 | |       | | | or
@@ -153,7 +153,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=4'",
-//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
 // |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
 // |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
 // |                 | |       | | | or
@@ -171,7 +171,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
-//     messages = "stdout            | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
+//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
 // |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
 // |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
 // |                 | |       | | | or

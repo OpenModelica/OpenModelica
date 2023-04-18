@@ -30,37 +30,37 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCompressor_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCompressor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+//     messages = "LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lumpedStraightPipe1.pro.cp >= 1e-09 and lumpedStraightPipe1.pro.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= lumpedStraightPipe1.pro.cp <= 9.999999999999999e+59, has value: 6.90145e-310
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= lumpedStraightPipe1.pro.cp <= 9.999999999999999e+59, has value: 6.90145e-310
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lumpedStraightPipe.T >= 200.0 and lumpedStraightPipe.T <= 6000.0
-// assert            | warning | Variable violating min/max constraint: 200.0 <= lumpedStraightPipe.T <= 6000.0, has value: 188.553
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 200.0 <= lumpedStraightPipe.T <= 6000.0, has value: 188.553
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | compressor.Te >= 200.0 and compressor.Te <= 6000.0
-// assert            | warning | Variable violating min/max constraint: 200.0 <= compressor.Te <= 6000.0, has value: 188.553
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 200.0 <= compressor.Te <= 6000.0, has value: 188.553
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | lumpedStraightPipe.pro.cp >= 1e-09 and lumpedStraightPipe.pro.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= lumpedStraightPipe.pro.cp <= 9.999999999999999e+59, has value: 6.90145e-310
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= lumpedStraightPipe.pro.cp <= 9.999999999999999e+59, has value: 6.90145e-310
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | $cse1.cp >= 1e-09 and $cse1.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= $cse1.cp <= 9.999999999999999e+59, has value: 6.90145e-310
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= $cse1.cp <= 9.999999999999999e+59, has value: 6.90145e-310
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | $cse3.T >= 200.0 and $cse3.T <= 6000.0
-// assert            | warning | Variable violating min/max constraint: 200.0 <= $cse3.T <= 6000.0, has value: 188.553
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 200.0 <= $cse3.T <= 6000.0, has value: 188.553
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | $cse3.cp >= 1e-09 and $cse3.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= $cse3.cp <= 9.999999999999999e+59, has value: 6.90145e-310
-// assert            | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= $cse3.cp <= 9.999999999999999e+59, has value: 6.90145e-310
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | $cse7.T >= 200.0 and $cse7.T <= 6000.0
-// assert            | warning | Variable violating min/max constraint: 200.0 <= $cse7.T <= 6000.0, has value: 188.553
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 200.0 <= $cse7.T <= 6000.0, has value: 188.553
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 2.000000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 2.000000
 // |                 | |       | compressor.pros.cp >= 1e-09 and compressor.pros.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= compressor.pros.cp <= 9.999999999999999e+59, has value: 1.01856e-312
-// assert            | warning | The following assertion has been violated at time 2.000000
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= compressor.pros.cp <= 9.999999999999999e+59, has value: 1.01856e-312
+// LOG_ASSERT        | warning | The following assertion has been violated at time 2.000000
 // |                 | |       | $cse6.cp >= 1e-09 and $cse6.cp <= 9.999999999999999e+59
-// assert            | warning | Variable violating min/max constraint: 1e-09 <= $cse6.cp <= 9.999999999999999e+59, has value: 1.01856e-312
+// LOG_ASSERT        | warning | Variable violating min/max constraint: 1e-09 <= $cse6.cp <= 9.999999999999999e+59, has value: 1.01856e-312
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

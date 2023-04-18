@@ -22,8 +22,8 @@ simulate(AssertTests.powAssert2); getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTests.powAssert2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: AssertTests.powAssert2
-// assert            | debug   | powAssert2.mos:9: Invalid root: (0)^(-0.1)
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | debug   | powAssert2.mos:9: Invalid root: (0)^(-0.1)
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // ""

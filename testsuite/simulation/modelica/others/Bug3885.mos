@@ -35,9 +35,9 @@ val(A.temperature.T,{0,1});
 //     resultFile = "compareDrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'compareDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 0.002000
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.002000
 // |                 | |       | A.qm_S >= -9.999999999999999e+59 and A.qm_S <= -0.0
-// assert            | warning | Variable violating min/max constraint: -9.999999999999999e+59 <= A.qm_S <= -0.0, has value: 2.22222e-06
+// LOG_ASSERT        | warning | Variable violating min/max constraint: -9.999999999999999e+59 <= A.qm_S <= -0.0, has value: 2.22222e-06
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
