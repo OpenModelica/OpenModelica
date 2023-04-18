@@ -3,12 +3,15 @@
 The Visual Studio Dev Containers extension lets you use a Docker container as a
 full-featured development environment.
 
+With this setup it is easy to reproduce a similar state to what Jenkins is doing in our
+continuous integration.
+
 ## Available Containers
 
 We added three images that are used by the continuous integration used to compile or test
 the pull requests on github.com/OpenModelica/OpenMOdelica.
 
-  - [build-deps:v1.16.3](./build-deps%3Av1.16.3/devcontainer.json): Default build image to
+  - [build-deps:v1.16.4](./build-deps:v1.16.4/devcontainer.json): Default build image to
     compile OpenModelica.
   - [cache-bionic-cmake-3.17.2](./cache-bionic-cmake-3.17.2/devcontainer.json): Build
      image used to compile OpenModelica with CMake.
@@ -37,8 +40,7 @@ Use `customizations` in `devcontainer.json` to add more extensions to your dev c
 
 ## Caveats
 
-  - The images are using the root user (UID=0), so you can get into troubles with file
-    permissions on the host system when creating new files from inside the dev container.
-    See https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user.
+  - The images need an additional Dockerfile to add an non-root user with your user name
+    and UID.
   - Running Docker images with a different architecture than the host system can have poor
     performance or don't work at all. E.g. running an arm image on x86_64.

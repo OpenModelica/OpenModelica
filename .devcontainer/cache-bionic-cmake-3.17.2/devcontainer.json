@@ -2,11 +2,21 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
   "name": "cache-bionic-cmake-3.17.2",
+
+  // Build and tag base Docker image from .CI/cache-bionic-cmake-3.17.2/Dockerfile
+  "initializeCommand": "docker build --tag cache-bionic-cmake-3.17.2-base ${localWorkspaceFolder}/.CI/cache-bionic-cmake-3.17.2/",
+
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "build": {
-    "dockerfile": "../../.CI/cache-bionic-cmake-3.17.2/Dockerfile"
+    "dockerfile": "Dockerfile",
+    "args": {
+        "BASE_IMAGE": "cache-bionic-cmake-3.17.2-base",
+        "USERNAME": "${localEnv:USER}"
+    }
   },
+  "runArgs": ["--network=host"],
 
+  // Add CMake to PATH
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/opt/cmake-3.17.2/bin/"
   },
@@ -30,8 +40,8 @@
         "njpwerner.autodocstring"
       ]
     }
-  }
+  },
 
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "root"
+  "remoteUser": "${localEnv:USER}"
 }
