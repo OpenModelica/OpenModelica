@@ -60,6 +60,7 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
+	git clean -fX source/
 
 html: all-dep
 	$(SPHINXBUILD) -b html -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/html
