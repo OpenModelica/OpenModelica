@@ -1611,23 +1611,9 @@ algorithm
 end isOutput;
 
 public function isProtectedVar
- "Returns the DAE.Protected attribute, overridden with HideResult annotation"
+ "Returns the DAE.Protected attribute"
   input BackendDAE.Var v;
-  output Boolean hidden;
-protected
-  SCode.Annotation anno;
-  Absyn.Exp val;
-algorithm
-  try
-    BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(anno)))) := v;
-    val := SCodeUtil.getNamedAnnotation(anno, "HideResult");
-    hidden := match(val)
-      case Absyn.BOOL(true) then true;
-      else false;
-    end match;
-  else
-    hidden := DAEUtil.getProtectedAttr(v.values);
-  end try;
+  output Boolean hidden = DAEUtil.getProtectedAttr(v.values);
 end isProtectedVar;
 
 public function isProtected
