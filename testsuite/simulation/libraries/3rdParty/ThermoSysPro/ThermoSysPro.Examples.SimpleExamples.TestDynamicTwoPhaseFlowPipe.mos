@@ -34,17 +34,17 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicTwoPhaseFlowPipe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestDynamicTwoPhaseFlowPipe
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// assert            | debug   | Solving non-linear system 1363 failed at time=0.
+// LOG_ASSERT        | debug   | Solving non-linear system 1363 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).

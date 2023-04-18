@@ -30,12 +30,12 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes1
-// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
-// stdout            | warning | Error solving linear system of equations (no. 528) at time 0.000000.
-// stdout            | warning | Solving linear system 528 fails at time 0. For more information use -lv LOG_LS.
-// assert            | debug   | Solving linear system 528 failed at time=0.
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | Error solving linear system of equations (no. 528) at time 0.000000.
+// LOG_STDOUT        | warning | Solving linear system 528 fails at time 0. For more information use -lv LOG_LS.
+// LOG_ASSERT        | debug   | Solving linear system 528 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_LS.
-// assert            | info    | simulation terminated by an assertion at initialization
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.2.0/FlueGases/Connectors.mo:53:3-101:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
