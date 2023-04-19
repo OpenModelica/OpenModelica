@@ -185,7 +185,9 @@ static LogSettings initializeLogger(const po::variables_map& vm)
   map<string, LogFormat> logFormatMap = MAP_LIST_OF
     "txt", LF_TXT MAP_LIST_SEP "xml", LF_XML MAP_LIST_SEP
     "xmltcp", LF_XMLTCP MAP_LIST_END;
+  enum LogOMEdit {LOG_STDOUT, LOG_ASSERT, LOG_EVENTS, LOG_INIT, LOG_LS, LOG_NLS, LOG_SOLVER, LOG_STATS};
   map<string, LogOMEdit> logOMEditMap = MAP_LIST_OF
+    "LOG_STDOUT", LOG_STDOUT MAP_LIST_SEP "LOG_ASSERT", LOG_ASSERT MAP_LIST_SEP
     "LOG_EVENTS", LOG_EVENTS MAP_LIST_SEP "LOG_INIT", LOG_INIT MAP_LIST_SEP
     "LOG_LS", LOG_LS  MAP_LIST_SEP "LOG_NLS", LOG_NLS  MAP_LIST_SEP
     "LOG_SOLVER", LOG_SOLVER  MAP_LIST_SEP "LOG_STATS", LOG_STATS MAP_LIST_END;
@@ -201,16 +203,20 @@ static LogSettings initializeLogger(const po::variables_map& vm)
       // each log setting may be a comma separated list of options
       boost::split(opt_vec, log_vec[i], boost::is_any_of(","));
       for (int j = 0; j < opt_vec.size(); j++) {
-        // check for disabled option
-        int disabled = opt_vec[j].rfind("-", 0) == 0? 1: 0;
         // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
         boost::split(cat_lvl, opt_vec[j], boost::is_any_of("="));
-        if (!logUsingOMEdit && opt_vec[j].rfind("LOG_", disabled) == disabled)
+        if (!logUsingOMEdit && opt_vec[j].rfind("LOG_", 0) == 0)
           logUsingOMEdit = true;
         if (logUsingOMEdit && logOMEditMap.find(opt_vec[j]) != logOMEditMap.end()) {
           // OMEdit option
           LogOMEdit logOMEdit = logOMEditMap[opt_vec[j]];
           switch (logOMEdit) {
+          case LOG_STDOUT:
+            // that's given
+            break;
+          case LOG_ASSERT:
+            // that's given
+            break;
           case LOG_EVENTS:
             logSettings.modes[LC_EVENTS] = LL_DEBUG;
             break;
