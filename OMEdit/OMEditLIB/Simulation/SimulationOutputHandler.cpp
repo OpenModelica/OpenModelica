@@ -244,7 +244,7 @@ QModelIndex SimulationMessageModel::simulationMessageIndexHelper(const Simulatio
     <message stream="LOG_STATS" type="info" text="    0 state events" />
     <message stream="LOG_STATS" type="info" text="    0 time events" />
   </message>
-  <message stream="stdout" type="info" text="output text">
+  <message stream="LOG_STDOUT" type="info" text="output text">
     <used index="2" />
   </message>
   */
@@ -314,7 +314,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
             } else {
               mpSimulationMessage = new SimulationMessage;
             }
-            mpSimulationMessage->mStream = "stdout";
+            mpSimulationMessage->mStream = "LOG_STDOUT";
             mpSimulationMessage->mType = StringHandler::OMEditInfo;
             mpSimulationMessage->mText = QString("Reached display limit");
             mpSimulationMessage->mLevel = mLevel;

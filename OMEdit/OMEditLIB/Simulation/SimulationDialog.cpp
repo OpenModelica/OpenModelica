@@ -824,7 +824,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
               if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
                 QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-                if ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0)) {
+                if ((pLogStreamCheckBox->text().compare(QStringLiteral("LOG_STDOUT")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("LOG_ASSERT")) == 0)) {
                   if (logStreams.contains("-" + pLogStreamCheckBox->text())) {
                     pLogStreamCheckBox->setChecked(false);
                   }
@@ -1188,7 +1188,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0))) {
+      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("LOG_STDOUT")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("LOG_ASSERT")) == 0))) {
         logStreams << "-" + pLogStreamCheckBox->text();
       } else if (pLogStreamCheckBox->isChecked()) {
         logStreams << pLogStreamCheckBox->text();
@@ -1555,7 +1555,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("stdout")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("assert")) == 0))) {
+      if (!pLogStreamCheckBox->isChecked() && ((pLogStreamCheckBox->text().compare(QStringLiteral("LOG_STDOUT")) == 0) || (pLogStreamCheckBox->text().compare(QStringLiteral("LOG_ASSERT")) == 0))) {
         logStreams << "-" + pLogStreamCheckBox->text();
       } else if (pLogStreamCheckBox->isChecked()) {
         logStreams << pLogStreamCheckBox->text();
