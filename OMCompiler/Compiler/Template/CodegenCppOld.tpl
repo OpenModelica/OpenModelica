@@ -6770,7 +6770,6 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include <Core/System/SystemDefaultImplementation.h>
 
   //Forward declaration to speed-up the compilation process
-  class Functions;
   class EventHandling;
   class DiscreteEvents;
   <%algloopForwardDeclaration(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>

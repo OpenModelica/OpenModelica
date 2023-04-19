@@ -1,0 +1,59 @@
+// name: solveOneNonlinearEquationTest
+// keywords: closure
+// status: correct
+// teardown_command: rm -f *SolveOneNonlinearEquationTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"});
+loadString("
+model SolveOneNonlinearEquationTest
+\"Modelica.Media.Examples.SolveOneNonlinearEquation with input\"
+  import Modelica.Utilities.Streams.print;
+  extends Modelica.Icons.Example;
+
+  parameter Real y_zero = 0.5 \"Desired value of A*sin(w*x)\";
+  parameter Real x_min = -1.7 \"Minimum value of x_zero\";
+  parameter Real x_max = 1.7 \"Maximum value of x_zero\";
+  input Real A(start = 1) \"Amplitude of sine\";
+  input Real w(start = 1) \"Angular frequency of sine\";
+  Real x_zero \"y_zero = A*sin(w*x_zero)\";
+
+  function f_nonlinear \"Define sine as non-linear equation to be solved\"
+    extends Modelica.Math.Nonlinear.Interfaces.partialScalarFunction;
+    input Real A = 1 \"Amplitude of sine\";
+    input Real w = 1 \"Angular frequency of sine\";
+    input Real s = 0 \"Shift of sine\";
+  algorithm
+    y := A*Modelica.Math.sin(w*u) + s;
+  end f_nonlinear;
+
+equation
+  x_zero = Modelica.Math.Nonlinear.solveOneNonlinearEquation(
+    function f_nonlinear(A=A, w=w, s=-y_zero), x_min, x_max);
+  annotation (experiment(StopTime=0));
+end SolveOneNonlinearEquationTest;
+");
+getErrorString();
+
+simulate(SolveOneNonlinearEquationTest);
+val(A, 0);
+val(w, 0);
+val(x_zero, 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SolveOneNonlinearEquationTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SolveOneNonlinearEquationTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 1.0
+// 1.0
+// 0.5235987755982987
+// ""
+// endResult
