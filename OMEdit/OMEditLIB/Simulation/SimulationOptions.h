@@ -100,7 +100,7 @@ public:
     setBoundaryConditionCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setDataReconciliationSaveSetting(false);
-    setLogStreams(QStringList() << "stdout" << "assert" << "LOG_STATS");
+    setLogStreams(QStringList() << "LOG_STDOUT" << "LOG_ASSERT" << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
     setOutputFormat("mat");

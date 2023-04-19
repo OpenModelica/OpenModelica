@@ -907,7 +907,7 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
       } else {
         pSimulationMessage = new SimulationMessage;
       }
-      pSimulationMessage->mStream = "stdout";
+      pSimulationMessage->mStream = "LOG_STDOUT";
       pSimulationMessage->mType = StringHandler::Error;
       pSimulationMessage->mLevel = 0;
 
