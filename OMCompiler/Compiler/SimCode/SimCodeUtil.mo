@@ -108,6 +108,7 @@ import PriorityQueue;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
+import Static;
 import SymbolicJacobian;
 import System;
 import Util;
@@ -3324,6 +3325,50 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
 
+protected function makeSES_SIMPLE_ASSIGNwithArray
+  "extra case to correctly parse arrays that end up in simple assignments,
+   mainly used for record attributes that are arrays.
+   ticket #10519"
+  input tuple<DAE.Exp, DAE.Exp> inTpl;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  input Integer iuniqueEqIndex;
+  output list<SimCode.SimEqSystem> outSimEqn = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+protected
+  SimCode.SimEqSystem eqn;
+algorithm
+  (outSimEqn, ouniqueEqIndex) := match(inTpl)
+    local
+      DAE.Exp left, right;
+      list<DAE.Exp> elems;
+
+    // parse arrays
+    case(left as DAE.ARRAY(), right as DAE.CREF()) algorithm
+      try
+        // vectorize rhs and take the elements as a list
+        DAE.ARRAY(array = elems) := Static.crefVectorize(true, right, right.ty, NONE(), Types.arrayElementType(right.ty));
+        // create an assignment from each lhs and rhs element individually
+        for tpl in List.zip(left.array, elems) loop
+          (eqn, ouniqueEqIndex) := makeSES_SIMPLE_ASSIGN(tpl, source, eqAttr, ouniqueEqIndex);
+          outSimEqn := eqn :: outSimEqn;
+        end for;
+        outSimEqn := listReverse(outSimEqn);
+      else
+        Error.assertion(false, getInstanceName() + " failed because expression "
+          + ExpressionDump.printExpStr(right) + " could not be scalarized.", sourceInfo());
+      end try;
+    then (outSimEqn,iuniqueEqIndex);
+
+    // kabdelhak: is this case needed? probably handled fine by simple assign
+    // case(_, DAE.ARRAY()) algorithm
+
+    else algorithm
+      (eqn, ouniqueEqIndex) := makeSES_SIMPLE_ASSIGN(inTpl, source, eqAttr, ouniqueEqIndex);
+    then ({eqn}, ouniqueEqIndex);
+  end match;
+end makeSES_SIMPLE_ASSIGNwithArray;
+
 protected function makeSolved
   input BackendDAE.Equation eq;
   output SimCode.SimEqSystem outSimEqn;
@@ -6497,6 +6542,7 @@ algorithm
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       SimCode.SimEqSystem simeqn_complex;
       list<SimCode.SimEqSystem> eqSystlst;
+      list<list<SimCode.SimEqSystem>> eqSystlst_nonflat;
       list<SimCodeVar.SimVar> tempvars;
       Integer uniqueEqIndex;
       list<DAE.Var> varLst;
@@ -6566,8 +6612,8 @@ algorithm
         /* pair each of the expanded expressions to coressponding one*/
         exptl = List.zip(expLst, crexplst);
         /* Create residual equations for each pair*/
-        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
-        eqSystlst = simeqn_complex::eqSystlst;
+        (eqSystlst_nonflat, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGNwithArray, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::List.flatten(eqSystlst_nonflat);
 
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
@@ -6596,8 +6642,8 @@ algorithm
         /* pair each of the expanded expressions to coressponding one*/
         exptl = List.zip(expLst, crexplst);
         /* Create residual equations for each pair*/
-        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
-        eqSystlst = simeqn_complex::eqSystlst;
+        (eqSystlst_nonflat, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGNwithArray, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::List.flatten(eqSystlst_nonflat);
 
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
@@ -6624,8 +6670,8 @@ algorithm
         // Record()=tmp
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         exptl = List.zip(expLst, crexplst);
-        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
-        eqSystlst = simeqn_complex::eqSystlst;
+        (eqSystlst_nonflat, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGNwithArray, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::List.flatten(eqSystlst_nonflat);
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
         (eqSystlst, uniqueEqIndex, tempvars);
@@ -6650,8 +6696,8 @@ algorithm
         // Record()=tmp
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         exptl = List.zip(expLst, crexplst);
-        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
-        eqSystlst = simeqn_complex::eqSystlst;
+        (eqSystlst_nonflat, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGNwithArray, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::List.flatten(eqSystlst_nonflat);
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
         (eqSystlst, uniqueEqIndex, tempvars);
