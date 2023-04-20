@@ -8787,6 +8787,15 @@ algorithm
         print(ComponentReference.printComponentRefStr(cref)+" ("+s1+", "+s2+") "+delimiter);
         dumpVariablesString(rest,delimiter);
       then ();
+    case(SimCodeFunction.FUNCTION_PTR(name=s1)::rest,_)
+      equation
+        print("<func> " + s1 + delimiter);
+        dumpVariablesString(rest,delimiter);
+      then ();
+    else
+      equation
+        print("<unknown>" + delimiter);
+      then ();
   end match;
 end dumpVariablesString;
 
