@@ -180,7 +180,9 @@ void DASSL::initialize()
   _tLastEvent = 0.0;
   _event_n = 0;
   SolverDefaultImplementation::initialize();
-  _dimSys = _continuous_system->getDimContinuousStates();
+  _dimStates = _continuous_system->getDimContinuousStates();
+  _dimAE = _continuous_system->getDimAE();
+  _dimSys = _dimStates + _dimAE;
   _dimZeroFunc = _event_system->getDimZeroFunc();
 
   if (_dimSys == 0)
@@ -243,11 +245,19 @@ void DASSL::initialize()
 
   // Set tolerances
   _info[1] = 1;
-  _atol[0] = _rtol[0] = 1.0; // in case of dummy state
-  _continuous_system->getNominalStates(_atol);
-  for (int i = 0; i < _dimSys; i++) {
-    _atol[i] = max(_atol[i] * _settings->getATol(), 1e-10);
-    _rtol[i] = max(_settings->getRTol(), 1e-10);
+  if (_dimAE == 0) {
+    _atol[0] = _rtol[0] = 1.0; // in case of dummy state
+    _continuous_system->getNominalStates(_atol);
+    for (int i = 0; i < _dimStates; i++) {
+      _atol[i] = max(_atol[i] * _settings->getATol(), 1e-10);
+      _rtol[i] = max(_settings->getRTol(), 1e-10);
+    }
+  }
+  else {
+    for (int i = 0; i < _dimSys; i++) {
+      _atol[i] = _settings->getATol();
+      _rtol[i] = _settings->getRTol();
+    }
   }
   LOGGER_WRITE_VECTOR("atol", _atol, _dimSys, LC_SOLVER, LL_DEBUG);
   LOGGER_WRITE_VECTOR("rtol", _rtol, _dimSys, LC_SOLVER, LL_DEBUG);
@@ -256,7 +266,7 @@ void DASSL::initialize()
   _info[2] = 1;
 
   // Use supplied Jacobian function
-  _info[4] = 1;
+  _info[4] = _dimAE == 0? 1: 0;
   _maxColors = _system->getAMaxColors();
   if (_system->isAnalyticJacobianGenerated() && _continuous_system->getDimContinuousStates() > 0)
   {
@@ -436,7 +446,13 @@ void DASSL::DASSLCore()
         if (_idid == 3)
           _time_system->setTime(_tEnd); // interpolated time point
         _continuous_system->setContinuousStates(_y);
-        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+        if (_dimAE == 0)
+          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+        else {
+          _mixed_system->setAlgebraicDAEVars(_y + _dimStates);
+          _continuous_system->setStateDerivatives(_yPrime);
+          _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
+        }
         writeToFile(_accStps, _tCurrent, _h);
       }
 
@@ -503,7 +519,10 @@ void DASSL::DASSLCore()
         {
           try
           {
-            _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+            if (_dimAE == 0)
+              _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+            else
+              _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
           }
           catch (std::exception& ex)
           {
@@ -530,7 +549,10 @@ void DASSL::DASSLCore()
         if (writeEventOutput)
         {
           // If we want to write the event-results, we should evaluate the whole system again
-          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+          if (_dimAE == 0)
+            _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+          else
+            _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
           writeToFile(_accStps, _tCurrent, _h);
         }
 
@@ -575,16 +597,13 @@ bool DASSL::stateSelection()
 int DASSL::_res(double *t, double *y, double *yp,
 	            double *cj, double *delta, int *ires, double *rpar, int *ipar)
 {
-  int success = ((DASSL *)ipar)->calcFunction(*t, y, delta);
-  int n = ((DASSL *)ipar)->_dimSys;
-  for (int i = 0; i < n; i++)
-    delta[i] -= yp[i];
+  int success = ((DASSL *)ipar)->calcFunction(*t, y, yp, delta);
   if (!success)
     *ires = -1;
   return 0;
 }
 
-int DASSL::calcFunction(const double& time, const double* y, double* f)
+int DASSL::calcFunction(const double& time, const double* y, const double *yp, double* f)
 {
   int success = 0;
 
@@ -601,8 +620,18 @@ int DASSL::calcFunction(const double& time, const double* y, double* f)
     f[0] = 0.0; // in case of dummy state
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
-    _continuous_system->getRHS(f);
+    if (_dimAE == 0) {
+      _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+      _continuous_system->getRHS(f);
+      for (int i = 0; i < _dimStates; i++)
+        f[i] -= yp[i];
+    }
+    else {
+      _mixed_system->setAlgebraicDAEVars(y + _dimStates);
+      _continuous_system->setStateDerivatives(yp);
+      _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
+      _mixed_system->getResidual(f);
+    }
     success = 1;
   }
   catch (std::exception & ex)
@@ -707,14 +736,14 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
             _yJac[j] += _dyJac[j];
           }
 
-          calcFunction(t, _yJac, _fJac);
+          calcFunction(t, _yJac, yp, _fJac);
 
           for (int j: _system->getAColumnsOfColor(color))
           {
             int startOfColumn = j * _dimSys;
             for (int i: _system->getADependenciesOfColumn(j))
             {
-              pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
+              pd[startOfColumn + i] = (_fJac[i] - delta[i]) / _dyJac[j];
             }
             _yJac[j] = y[j];
           }
@@ -726,12 +755,12 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
         {
           _yJac[j] += _dyJac[j];
 
-          calcFunction(t, _yJac, _fJac);
+          calcFunction(t, _yJac, yp, _fJac);
 
           int startOfColumn = j * _dimSys;
           for (int i = 0; i < _dimSys; i++)
           {
-            pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
+            pd[startOfColumn + i] = (_fJac[i] - delta[i]) / _dyJac[j];
           }
 
           _yJac[j] = y[j];

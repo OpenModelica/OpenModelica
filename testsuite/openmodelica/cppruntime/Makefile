@@ -29,6 +29,7 @@ RefArrayDim2.mos \
 solveTest.mos \
 solveOneNonlinearEquationTest.mos \
 testArrayEquations.mos \
+testDAE.mos \
 testMatrixIO.mos \
 testMatrixState.mos \
 testReduction.mos \
