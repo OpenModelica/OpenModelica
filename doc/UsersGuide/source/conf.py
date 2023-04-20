@@ -23,7 +23,13 @@ from datetime import date
 sys.setrecursionlimit(2000)
 
 if not 'OPENMODELICAHOME' in os.environ:
-  os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build')
+  if os.path.isdir('../../../build_cmake/install'):
+    os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build_cmake/install')
+  elif os.path.isdir('../../../install_cmake'):
+    os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../install_cmake')
+  else:
+    os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build')
+
 os.environ['PATH'] = "%s/bin:%s" % (os.environ['OPENMODELICAHOME'],os.environ['PATH'])
 
 # If extensions (or modules to document with autodoc) are in another directory,
