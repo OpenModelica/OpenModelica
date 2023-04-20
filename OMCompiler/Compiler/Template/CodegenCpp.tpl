@@ -72,9 +72,9 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationJacobianCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", &jacobianVarsInit, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Jacobian.cpp')
         let()= textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
-        let()= textFile(simulationMixedSystemCppFile(simCode, updateResiduals(simCode, extraFuncs, extraResidualsFuncsDecl, className, stateDerVectorName /*=__zDot*/, false),
+        let()= textFile(simulationMixedSystemCppFile(simCode, updateResiduals(simCode, extraResidualsFuncsDecl, className, stateDerVectorName /*=__zDot*/, false),
                                                      &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Mixed.cpp')
-        let()= textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraResidualsFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
+        let()= textFile(simulationMixedSystemHeaderFile(simCode, &extraResidualsFuncsDecl), 'OMCpp<%fileNamePrefix%>Mixed.h')
         let _ =  match  Config.simCodeTarget()
         case "Cpp" then
         let()= textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
@@ -398,7 +398,7 @@ template getPreVarsCount(ModelInfo modelInfo)
 end getPreVarsCount;
 
 
-template simulationMixedSystemHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationMixedSystemHeaderFile(SimCode simCode, Text& extraResidualsFuncsDecl)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -449,7 +449,8 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual  shared_ptr<ISimObjects> getSimObjects();
    private:
     //update residual methods
-  <%simulationDAEMethodsDeclaration(simCode)%>
+    <%extraResidualsFuncsDecl%>
+    <%simulationDAEMethodsDeclaration(simCode)%>
   };
   >>
 end simulationMixedSystemHeaderFile;
@@ -13713,7 +13714,7 @@ match simCode
  >>
 end simulationDAEMethodsDeclaration;
 
-template updateResiduals(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateResiduals(SimCode simCode,Text& extraFuncsDecl,Text extraFuncsNamespace,  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
  let &extraFuncsResidual = buffer "" /*BUFD*/
 <<

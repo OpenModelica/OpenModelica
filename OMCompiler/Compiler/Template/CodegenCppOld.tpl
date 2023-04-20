@@ -65,9 +65,9 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationJacobianCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", &jacobianVarsInit, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Jacobian.cpp')
         let()= textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
-        let()= textFile(simulationMixedSystemCppFile(simCode, updateResiduals(simCode, extraFuncs, extraResidualsFuncsDecl, className, stateDerVectorName /*=__zDot*/, false),
+        let()= textFile(simulationMixedSystemCppFile(simCode, updateResiduals(simCode, extraResidualsFuncsDecl, className, stateDerVectorName /*=__zDot*/, false),
                                                      &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Mixed.cpp')
-        let()= textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraResidualsFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
+        let()= textFile(simulationMixedSystemHeaderFile(simCode, &extraResidualsFuncsDecl), 'OMCpp<%fileNamePrefix%>Mixed.h')
 
         let()= textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -386,7 +386,7 @@ template getPreVarsCount(ModelInfo modelInfo)
 end getPreVarsCount;
 
 
-template simulationMixedSystemHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationMixedSystemHeaderFile(SimCode simCode, Text& extraResidualsFuncsDecl)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -435,8 +435,9 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
     virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
    private:
-    //update residual methods
-  <%simulationDAEMethodsDeclaration(simCode)%>
+    // update residual methods
+    <%extraResidualsFuncsDecl%>
+    <%simulationDAEMethodsDeclaration(simCode)%>
   };
   >>
 end simulationMixedSystemHeaderFile;
@@ -970,7 +971,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
-template simulationMixedSystemCppFile(SimCode simCode , Text updateResidualFunctionsCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationMixedSystemCppFile(SimCode simCode, Text updateResidualFunctionsCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -1175,8 +1176,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
      return "<%fileNamePrefix%>";
    }
-   <%updateResidualFunctionsCode%>
 
+   <%updateResidualFunctionsCode%>
    >>
 end simulationMixedSystemCppFile;
 
@@ -13816,13 +13817,7 @@ template generateMeasureTimeEndCode(String varNameStartValues, String varNameEnd
 end generateMeasureTimeEndCode;
 
 
-
 /*daeMode templates*/
-
-
-
-
-
 
 template simulationDAEMethodsDeclaration(SimCode simCode)
 ::=
@@ -13830,24 +13825,19 @@ match simCode
     case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
                                      algebraicVars=algebraicDAEVars, residualVars=residualVars))) then
- <<
-  <%generateDAEEquationMemberFuncDecls(daeEquations,"evaluateDAE")%>
-
- >>
+  <<
+  <%generateDAEEquationMemberFuncDecls(daeEquations, "evaluateDAE")%>
+  >>
 end simulationDAEMethodsDeclaration;
 
-template updateResiduals(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateResiduals(SimCode simCode, Text& extraResidualsFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
- let &extraFuncsResidual = buffer "" /*BUFD*/
-<<
-<%simulationDAEMethods(simCode, extraFuncsResidual,extraFuncsDecl, extraFuncsNamespace,contextOther,stateDerVectorName,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+  let &extraResidualsFuncs = buffer "" /*BUFD*/
+  <<
+  <%simulationDAEMethods(simCode, extraResidualsFuncs, extraResidualsFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL), "none")))%>
 
-<%extraFuncsResidual%>
-
-
-
-
->>
+  <%extraResidualsFuncs%>
+  >>
 end updateResiduals;
 
 template generateDAEEquationMemberFuncDecls(list<list<SimEqSystem>> DAEEquations,Text method)
@@ -13863,7 +13853,7 @@ template generateDAEEquationMemberFuncDecls(list<list<SimEqSystem>> DAEEquations
 end generateDAEEquationMemberFuncDecls;
 
 
-template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
+template simulationDAEMethods(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
 "DAEmode equations generation"
 ::=
   match simCode
@@ -13873,12 +13863,9 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
      let modelNamePrefixStr = lastIdentOfPath(modelInfo.name)
 
      <<
-
-
-
      <%algebraicDAEVar(algebraicDAEVars, modelNamePrefixStr)%>
-     <%evaluateDAEResiduals(daeEquations, simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, enableMeasureTime)%>
-     <%equationResidualFunctions(daeEquations,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, stateDerVectorName ,  useFlatArrayNotation,  enableMeasureTime)%>
+     <%evaluateDAEResiduals(daeEquations, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, context, enableMeasureTime)%>
+     <%equationResidualFunctions(daeEquations, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation, enableMeasureTime)%>
      void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
      {
         SystemDefaultImplementation::getResidual(f);
@@ -13891,7 +13878,6 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
     /* DAE residuals is empty */
     void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
     {
-
     }
     void <%modelNamePrefixStr%>Mixed::setAlgebraicDAEVars(const double* y)
     {
@@ -13902,7 +13888,6 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
     }
     void <%modelNamePrefixStr%>Mixed::evaluateDAE(const UPDATETYPE command )
     {
-
     }
     >>
   end match
@@ -13966,11 +13951,11 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, SimCode simC
   let &varDecls = buffer ""
 
   let equation_dae_func_calls = if not Flags.isSet(Flags.MULTIRATE_PARTITION) then (List.partition(List.flatten(resEquations), 100) |> eqs hasindex i0 =>
-                                 createEvaluateWithSplit(i0, context, eqs, "evaluateDAE","evaluateDAE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                                 createEvaluateWithSplit(i0, context, eqs, "evaluateDAE", "evaluateDAE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                                  ;separator="\n")
                 else ( List.intRange(partitionData.numPartitions) |> partIdx =>
                 createEvaluatePartitions(partIdx, context, List.flatten(resEquations), listGet(partitions, partIdx),
-                listGet(activatorsForPartitions,partIdx), className,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
+                listGet(activatorsForPartitions,partIdx), className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
   <<
   void <%className%>::evaluateDAE(const UPDATETYPE command )
   {
