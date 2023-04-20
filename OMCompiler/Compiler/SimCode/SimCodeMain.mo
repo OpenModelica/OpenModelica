@@ -1436,6 +1436,10 @@ protected
   numberofMixedSys, numberOfJacobians, numberofFixedParameters;
   Boolean tmpB;
 
+  HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
+  HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
+  HashTable.HashTable crefToClockIndexHT;
+
   list<DAE.ComponentRef> discreteModelVars;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
@@ -1671,6 +1675,15 @@ algorithm
     // The updated variable 'numEquations' (by SimCodeUtil.addNumEqns) is not even used in createCrefToSimVarHT :/
     // crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
+    if stringEqual(Config.simCodeTarget(), "Cpp") then
+      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtil.createVarToArrayIndexMapping(modelInfo);
+      (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), SimCodeUtil.collectClockedVars, (HashTable.emptyHashTable(), 1));
+    else
+      varToArrayIndexMapping := HashTableCrIListArray.emptyHashTable();
+      varToIndexMapping := HashTableCrILst.emptyHashTable();
+      crefToClockIndexHT := HashTable.emptyHashTable();
+    end if;
+
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {},               // Set by the traversal below...
@@ -1712,10 +1725,10 @@ algorithm
       fmuTargetName               = "",
       hpcomData                   = HpcOmSimCode.emptyHpcomData,
       valueReferences             = AvlTreeCRToInt.EMPTY(),
-      varToArrayIndexMapping      = HashTableCrIListArray.emptyHashTable(),
-      varToIndexMapping           = HashTableCrILst.emptyHashTable(),
+      varToArrayIndexMapping      = varToArrayIndexMapping,
+      varToIndexMapping           = varToIndexMapping,
       crefToSimVarHT              = crefToSimVarHT,
-      crefToClockIndexHT          = HashTable.emptyHashTable(),
+      crefToClockIndexHT          = crefToClockIndexHT,
       backendMapping              = NONE(),
       modelStructure              = NONE(),
       fmiSimulationFlags          = NONE(),
