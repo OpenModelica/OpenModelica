@@ -978,7 +978,7 @@ algorithm
     clockedPartitions := listReverse(clockedPartitions); // in order to keep the correct indexes for the correct clkfire-calls
 end createClockedSimPartitions;
 
-protected function collectClockedVars "author: rfranke
+public function collectClockedVars "author: rfranke
   This function collects clocked variables along with their clockIndex"
   input BackendDAE.EqSystem inEqSystem;
   input tuple<HashTable.HashTable, Integer> inTpl;
