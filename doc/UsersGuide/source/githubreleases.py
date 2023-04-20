@@ -7,7 +7,7 @@ import os
 gh_auth = os.environ["GITHUB_AUTH"]
 g = Github(gh_auth)
 om = g.get_repo("OpenModelica/OpenModelica")
-fout = open("githubreleases.md","w")
+fout = open("githubreleases.md", "w", encoding="utf-8")
 
 for release in om.get_releases():
     if release.draft:
@@ -25,8 +25,8 @@ for release in om.get_releases():
     print(release.title)
 fout.close()
 call(["pandoc", "--wrap=none", "-f", "gfm", "-t", "rst", "--base-header-level=2", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
-with open("githubreleases.tmp.rst") as fin:
-    with open("githubreleases.tmp2.rst", "w") as fout:
+with open("githubreleases.tmp.rst", "r", encoding="utf-8") as fin:
+    with open("githubreleases.tmp2.rst", "w", encoding="utf-8") as fout:
         fout.write('''Major OpenModelica Releases
 """""""""""""""""""""""""""
 
