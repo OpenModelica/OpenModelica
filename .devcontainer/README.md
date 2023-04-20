@@ -11,7 +11,7 @@ continuous integration.
 We added three images that are used by the continuous integration used to compile or test
 the pull requests on github.com/OpenModelica/OpenMOdelica.
 
-  - [build-deps:v1.16.4](./build-deps:v1.16.4/devcontainer.json): Default build image to
+  - [build-deps-v1.16.4](./build-deps-v1.16.4/devcontainer.json): Default build image to
     compile OpenModelica.
   - [cache-bionic-cmake-3.17.2](./cache-bionic-cmake-3.17.2/devcontainer.json): Build
      image used to compile OpenModelica with CMake.
