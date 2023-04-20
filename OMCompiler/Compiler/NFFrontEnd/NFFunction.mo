@@ -1923,7 +1923,7 @@ uniontype Function
     end if;
 
     () := match comp
-      case Component.TYPED_COMPONENT()
+      case Component.COMPONENT()
         algorithm
           ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
 
@@ -2006,7 +2006,7 @@ uniontype Function
     arg := Binding.foldExp(Component.getBinding(comp), foldFn, arg);
 
     () := match comp
-      case Component.TYPED_COMPONENT()
+      case Component.COMPONENT()
         algorithm
           arg := Type.foldDims(comp.ty, function Dimension.foldExp(func = foldFn), arg);
           cls := InstNode.getClass(comp.classInst);

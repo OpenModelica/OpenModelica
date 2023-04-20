@@ -49,6 +49,7 @@ import NFBinding;
 import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
+import NFComponent.ComponentState;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
@@ -408,7 +409,7 @@ constant InstNode TIME =
   InstNode.COMPONENT_NODE("time",
     NONE(),
     Visibility.PUBLIC,
-    Pointer.createImmutable(Component.TYPED_COMPONENT(
+    Pointer.createImmutable(Component.COMPONENT(
       REAL_NODE,
       Type.REAL(),
       NFBinding.EMPTY_BINDING,
@@ -416,6 +417,7 @@ constant InstNode TIME =
       NFAttributes.INPUT_ATTR,
       NONE(),
       NONE(),
+      ComponentState.TypeChecked,
       AbsynUtil.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());

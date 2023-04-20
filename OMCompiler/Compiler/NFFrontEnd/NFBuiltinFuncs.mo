@@ -42,6 +42,7 @@ import NFInstNode.CachedData;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import Component = NFComponent;
+import NFComponent.ComponentState;
 import Type = NFType;
 import Expression = NFExpression;
 import Absyn;
@@ -78,8 +79,9 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
 );
 
 // Default Integer parameter.
-constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component INT_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   NONE(), Visibility.PUBLIC,
@@ -87,8 +89,9 @@ constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   InstNodeType.NORMAL_COMP());
 
 // Default Real parameter.
-constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component REAL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   NONE(), Visibility.PUBLIC,
@@ -96,8 +99,9 @@ constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   InstNodeType.NORMAL_COMP());
 
 // Default Boolean parameter.
-constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component BOOL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   NONE(), Visibility.PUBLIC,
@@ -105,8 +109,9 @@ constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   InstNodeType.NORMAL_COMP());
 
 // Default String parameter.
-constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component STRING_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -114,8 +119,9 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   InstNodeType.NORMAL_COMP());
 
 // Default enumeration(:) parameter.
-constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component ENUM_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   NONE(), Visibility.PUBLIC,
@@ -378,8 +384,9 @@ constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+constant Component CLOCK_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,

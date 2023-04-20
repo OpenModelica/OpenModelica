@@ -40,6 +40,7 @@ encapsulated package NFTyping
 
 import Binding = NFBinding;
 import Component = NFComponent;
+import NFComponent.ComponentState;
 import Dimension = NFDimension;
 import Equation = NFEquation;
 import Class = NFClass;
@@ -417,9 +418,10 @@ function typeComponent
   output Type ty;
 protected
   InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node), c_typed;
+  Component c = InstNode.component(node);
   Expression cond;
   Boolean is_deleted;
+  array<Dimension> dims;
 algorithm
   if InstNode.isOnlyOuter(component) then
     return;
@@ -427,10 +429,10 @@ algorithm
 
   ty := match c
     // An untyped component, type it.
-    case Component.UNTYPED_COMPONENT()
+    case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
       algorithm
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, node, c.binding, context, c.info);
+        typeDimensions(dims, node, c.binding, context, c.info);
 
         // Construct the type of the component and update the node with it.
         if InstNode.isEmpty(c.classInst) then
@@ -438,7 +440,7 @@ algorithm
         else
           ty := typeClassType(c.classInst, c.binding, context, component);
         end if;
-        ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
+        ty := Type.liftArrayLeftList(ty, arrayList(dims));
 
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition, context, evaluate = true);
@@ -448,8 +450,9 @@ algorithm
         end if;
 
         if typeChildren then
-          c_typed := Component.setType(ty, c);
-          InstNode.updateComponent(c_typed, node);
+          c.ty := ty;
+          c.state := ComponentState.Typed;
+          InstNode.updateComponent(c, node);
 
           if not is_deleted and not InstNode.isEmpty(c.classInst) then
             // Check that flow/stream variables are Real.
@@ -465,7 +468,7 @@ algorithm
         ty;
 
     // A component that has already been typed, skip it.
-    case Component.TYPED_COMPONENT() then c.ty;
+    case Component.COMPONENT() then c.ty;
     case Component.ITERATOR() then c.ty;
     case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
 
@@ -934,11 +937,12 @@ algorithm
   end if;
 
   () := match c
-    case Component.TYPED_COMPONENT()
+    case Component.COMPONENT()
       guard Component.isDeleted(c)
       then ();
 
-    case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
+    case Component.COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
+      guard c.state == ComponentState.Typed
       algorithm
         name := InstNode.name(component);
         binding := c.binding;
@@ -969,6 +973,7 @@ algorithm
         ErrorExt.delCheckpoint(getInstanceName());
 
         c.binding := binding;
+        c.state := ComponentState.TypeChecked;
 
         InstNode.updateComponent(c, node);
 
@@ -979,11 +984,18 @@ algorithm
         ();
 
     // A component without a binding, or with a binding that's already been typed.
-    case Component.TYPED_COMPONENT()
+    case Component.COMPONENT()
+      guard c.state >= ComponentState.Typed
       algorithm
-        if Binding.isTyped(c.binding) then
-          c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node, context);
-          checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
+        // Type check the binding if it hasn't already been checked.
+        if c.state == ComponentState.Typed then
+          if Binding.isTyped(c.binding) then
+            c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node, context);
+            checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
+          end if;
+
+          c.state := ComponentState.TypeChecked;
+          InstNode.updateComponent(c, node);
         end if;
 
         if typeChildren and not InstNode.isEmpty(c.classInst) then
@@ -995,7 +1007,8 @@ algorithm
     // An untyped component with a binding. This might happen when typing a
     // dimension and having to evaluate the binding of a not yet typed
     // component. Type only the binding and let the case above handle the rest.
-    case Component.UNTYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
+    case Component.COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
+      guard c.state < ComponentState.Typed
       algorithm
         name := InstNode.name(component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
@@ -1011,7 +1024,8 @@ algorithm
       then
         ();
 
-    case Component.UNTYPED_COMPONENT() then ();
+    // An untyped component without a binding or an already type checked component, do nothing.
+    case Component.COMPONENT() then ();
 
     case Component.ENUM_LITERAL() then ();
     case Component.TYPE_ATTRIBUTE(modifier = Modifier.NOMOD()) then ();
@@ -1724,6 +1738,7 @@ protected
   InstNode node;
   Component c;
   Type ty;
+  array<Dimension> dims;
 algorithm
   // TODO: If the cref has subscripts it becomes trickier to correctly calculate
   //       the dimension. For now we take the easy way out and just type the
@@ -1758,19 +1773,19 @@ algorithm
           end if;
 
           dim_count := match c
-            case Component.UNTYPED_COMPONENT()
+            case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
               algorithm
-                dim_count := arrayLength(c.dimensions);
+                dim_count := arrayLength(dims);
 
                 if index <= dim_count and index > 0 then
-                  dim := typeDimension(c.dimensions, index, node, c.binding, context, c.info);
+                  dim := typeDimension(dims, index, node, c.binding, context, c.info);
                   checkCyclicDimension(dim, node, index, c.info);
                   return;
                 end if;
               then
                 dim_count;
 
-            case Component.TYPED_COMPONENT()
+            case Component.COMPONENT()
               algorithm
                 dim_count := Type.dimensionCount(c.ty);
 
@@ -2875,7 +2890,8 @@ algorithm
   end if;
 
   () := match comp
-    case Component.TYPED_COMPONENT()
+    case Component.COMPONENT()
+      guard comp.state >= ComponentState.TypeChecked
       algorithm
         typeClassSections(comp.classInst, context);
       then

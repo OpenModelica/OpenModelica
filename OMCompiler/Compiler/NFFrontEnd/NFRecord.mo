@@ -42,6 +42,7 @@ import Attributes = NFAttributes;
 import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
+import NFComponent.ComponentState;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
@@ -147,9 +148,10 @@ algorithm
   //all_params := listAppend(inputs, sorted_locals);
 
   // Create the output record element, using the instance created above as both parent and type.
-  out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
+  out_comp := Component.COMPONENT(ctor_node, Type.UNTYPED(node, listArray({})),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-                NFAttributes.OUTPUT_ATTR, NONE(), false, AbsynUtil.dummyInfo);
+                NFAttributes.OUTPUT_ATTR, NONE(), NONE(),
+                ComponentState.FullyInstantiated, AbsynUtil.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.

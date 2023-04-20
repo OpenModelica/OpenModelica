@@ -1149,7 +1149,7 @@ algorithm
   comp := InstNode.component(node);
 
   element := match comp
-    case Component.TYPED_COMPONENT(ty = ty, info = info, attributes = attr)
+    case Component.COMPONENT(ty = ty, info = info, attributes = attr)
       algorithm
         cref := ComponentRef.fromNode(node, ty);
         binding := Binding.toDAEExp(comp.binding);
@@ -1162,7 +1162,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped component.", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got invalid component.", sourceInfo());
       then
         fail();
 
