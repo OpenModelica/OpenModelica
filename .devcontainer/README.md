@@ -44,3 +44,10 @@ Use `customizations` in `devcontainer.json` to add more extensions to your dev c
     and UID.
   - Running Docker images with a different architecture than the host system can have poor
     performance or don't work at all. E.g. running an arm image on x86_64.
+  - Because on Windows and Unix the environment variable containing the user name are
+    different and only one should be set both are added to devcontainer.json:
+    If your user name isn't correct replace
+    ```diff
+    -"${localEnv:USER}${localEnv:USERNAME}"
+    +"username"
+    ```
