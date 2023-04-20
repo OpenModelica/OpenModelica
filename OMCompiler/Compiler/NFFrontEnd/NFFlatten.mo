@@ -479,7 +479,7 @@ algorithm
   c := InstNode.component(comp_node);
 
   () := match c
-    case Component.TYPED_COMPONENT(condition = condition, ty = ty)
+    case Component.COMPONENT(condition = condition, ty = ty)
       algorithm
         // Delete the component if it has a condition that's false.
         if isDeletedComponent(condition, prefix) then
@@ -616,8 +616,7 @@ protected
   Boolean unfix;
   Prefix pre;
 algorithm
-  Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
-    comment = cmt, info = info) := comp;
+  Component.COMPONENT(ty = ty, binding = binding, attributes = comp_attr, comment = cmt, info = info) := comp;
   var := comp_attr.variability;
 
   if isSome(outerBinding) then

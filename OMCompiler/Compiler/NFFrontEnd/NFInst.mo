@@ -45,6 +45,7 @@ import DAE;
 import Builtin = NFBuiltin;
 import Binding = NFBinding;
 import Component = NFComponent;
+import NFComponent.ComponentState;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import Expression = NFExpression;
@@ -1751,14 +1752,17 @@ algorithm
         // correctly during lookup, but the class node the component should have
         // is created by instClass. To break the circle we leave the class node
         // empty here, and let instClass set it for us instead.
-        inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, condition, attr, SOME(component.comment), false, info);
+        inst_comp := Component.COMPONENT(InstNode.EMPTY_NODE(), Type.UNKNOWN(),
+          binding, condition, attr, NONE(), SOME(component.comment),
+          ComponentState.PartiallyInstantiated, info);
         InstNode.updateComponent(inst_comp, node);
 
         // Instantiate the type of the component.
         mod := Modifier.propagate(mod, node, node);
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
+
+        InstNode.componentApply(node, Component.setType, Type.UNTYPED(ty_node, listArray(dims)));
 
         if not InstNode.isEmpty(ty_node) then
           ty := InstNode.getClass(ty_node);
@@ -1925,7 +1929,7 @@ protected
   Component orig_comp, rdcl_comp, new_comp;
   Binding binding, condition;
   Attributes attr;
-  array<Dimension> dims;
+  Type orig_ty, rdcl_ty;
   Option<SCode.Comment> cmt;
   InstNode rdcl_node;
   InstNodeType rdcl_type;
@@ -1948,7 +1952,7 @@ algorithm
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
-    case (Component.UNTYPED_COMPONENT(), Component.UNTYPED_COMPONENT())
+    case (Component.COMPONENT(ty = orig_ty as Type.UNTYPED()), Component.COMPONENT(ty = rdcl_ty as Type.UNTYPED()))
       algorithm
         // Take the binding from the outer modifier, the redeclare, or the
         // original component, in that order of priority.
@@ -1968,12 +1972,15 @@ algorithm
         attr := rdcl_comp.attributes;
 
         // Use the dimensions of the redeclare if any, otherwise take them from the original.
-        dims := if arrayEmpty(rdcl_comp.dimensions) then orig_comp.dimensions else rdcl_comp.dimensions;
+        if Type.dimensionCount(rdcl_ty) == 0 then
+          rdcl_ty := Type.UNTYPED(rdcl_ty.typeNode, orig_ty.dimensions);
+        end if;
 
         // TODO: Use comment of redeclare if available?
         cmt := orig_comp.comment;
       then
-        Component.UNTYPED_COMPONENT(rdcl_comp.classInst, dims, binding, condition, attr, cmt, false, rdcl_comp.info);
+        Component.COMPONENT(rdcl_comp.classInst, rdcl_ty, binding, condition,
+          attr, NONE(), cmt, ComponentState.PartiallyInstantiated, rdcl_comp.info);
 
     else
       algorithm
@@ -2338,7 +2345,8 @@ protected
   array<Dimension> dims;
 algorithm
   () := match c
-    case Component.UNTYPED_COMPONENT(dimensions = dims, instantiated = false)
+    case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
+      guard c.state == ComponentState.PartiallyInstantiated
       algorithm
         c.binding := instBinding(c.binding, context);
         c.condition := instBinding(c.condition, context);
@@ -2353,13 +2361,12 @@ algorithm
 
         // This is to avoid instantiating the same component multiple times,
         // which can otherwise happen with duplicate components at this stage.
-        c.instantiated := true;
-
+        c.state := ComponentState.FullyInstantiated;
         InstNode.updateComponent(c, node);
       then
         ();
 
-    case Component.UNTYPED_COMPONENT() then ();
+    case Component.COMPONENT() then ();
     case Component.ENUM_LITERAL() then ();
     case Component.TYPE_ATTRIBUTE(modifier = Modifier.NOMOD()) then ();
 
@@ -3483,7 +3490,7 @@ algorithm
       Option<Boolean> opt_eval;
       Boolean eval;
 
-    case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
+    case Component.COMPONENT(binding = binding, condition = condition)
       algorithm
         opt_eval := Component.getEvaluateAnnotation(c);
         eval := Util.getOptionOrDefault(opt_eval, false);
@@ -3500,7 +3507,7 @@ algorithm
         end if;
 
         // Parameters used in array dimensions are structural.
-        for dim in c.dimensions loop
+        for dim in Type.arrayDims(c.ty) loop
           Structural.markDimension(dim);
         end for;
 

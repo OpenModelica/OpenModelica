@@ -45,7 +45,6 @@ import NFPrefixes.*;
 import Attributes = NFAttributes;
 
 protected
-import List;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
 import Restriction = NFRestriction;
@@ -54,23 +53,19 @@ import IOStream;
 import NFFunction.Function;
 
 public
+  type ComponentState = enumeration(
+    PartiallyInstantiated "Component instance has been created",
+    FullyInstantiated     "All component expressions have been instantiated",
+    Typed                 "The component's type has been determined",
+    TypeChecked           "The component's binding has been typed and type checked"
+  );
+
   record COMPONENT_DEF
     SCode.Element definition;
     Modifier modifier;
   end COMPONENT_DEF;
 
-  record UNTYPED_COMPONENT
-    InstNode classInst;
-    array<Dimension> dimensions;
-    Binding binding;
-    Binding condition;
-    Attributes attributes;
-    Option<SCode.Comment> comment;
-    Boolean instantiated;
-    SourceInfo info;
-  end UNTYPED_COMPONENT;
-
-  record TYPED_COMPONENT
+  record COMPONENT
     InstNode classInst;
     Type ty;
     Binding binding;
@@ -78,8 +73,9 @@ public
     Attributes attributes;
     Option<Modifier> ann "the annotation from SCode.Comment as a modifier";
     Option<SCode.Comment> comment;
+    ComponentState state;
     SourceInfo info;
-  end TYPED_COMPONENT;
+  end COMPONENT;
 
   record ITERATOR
     Type ty;
@@ -153,8 +149,7 @@ public
   algorithm
     info := match component
       case COMPONENT_DEF() then SCodeUtil.elementInfo(component.definition);
-      case UNTYPED_COMPONENT() then component.info;
-      case TYPED_COMPONENT() then component.info;
+      case COMPONENT() then component.info;
       case ITERATOR() then component.info;
       case TYPE_ATTRIBUTE() then Modifier.info(component.modifier);
       // Fail for enumeration literals, InstNode.info handles that case instead.
@@ -166,8 +161,7 @@ public
     output InstNode classInst;
   algorithm
     classInst := match component
-      case UNTYPED_COMPONENT()  then component.classInst;
-      case TYPED_COMPONENT()    then component.classInst;
+      case COMPONENT()    then component.classInst;
       case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
       case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
       else InstNode.EMPTY_NODE();
@@ -179,13 +173,7 @@ public
     input output Component component;
   algorithm
     () := match component
-      case UNTYPED_COMPONENT()
-        algorithm
-          component.classInst := classInst;
-        then
-          ();
-
-      case TYPED_COMPONENT()
+      case COMPONENT()
         algorithm
           component.classInst := classInst;
         then
@@ -244,8 +232,8 @@ public
     output Type ty;
   algorithm
     ty := match component
-      case TYPED_COMPONENT() then component.ty;
-      case UNTYPED_COMPONENT() then InstNode.getType(component.classInst);
+      case COMPONENT(ty = Type.UNTYPED()) then InstNode.getType(component.classInst);
+      case COMPONENT() then component.ty;
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
       else Type.UNKNOWN();
@@ -257,11 +245,7 @@ public
     input output Component component;
   algorithm
     component := match component
-      case UNTYPED_COMPONENT()
-        then TYPED_COMPONENT(component.classInst, ty, component.binding,
-          component.condition, component.attributes, NONE(), component.comment, component.info);
-
-      case TYPED_COMPONENT()
+      case COMPONENT()
         algorithm
           component.ty := ty;
         then
@@ -281,7 +265,7 @@ public
     output Boolean isTyped;
   algorithm
     isTyped := match component
-      case TYPED_COMPONENT() then true;
+      case COMPONENT() then component.state >= ComponentState.Typed;
       case ITERATOR(ty = Type.UNKNOWN()) then false;
       case ITERATOR() then true;
       case TYPE_ATTRIBUTE() then true;
@@ -296,7 +280,7 @@ public
       local
         Type ty;
 
-      case TYPED_COMPONENT(ty = Type.ARRAY(elementType = ty))
+      case COMPONENT(ty = Type.ARRAY(elementType = ty))
         algorithm
           component.ty := ty;
         then
@@ -317,8 +301,7 @@ public
     output Attributes attr;
   algorithm
     attr := match component
-      case UNTYPED_COMPONENT() then component.attributes;
-      case TYPED_COMPONENT() then component.attributes;
+      case COMPONENT() then component.attributes;
       else NFAttributes.DEFAULT_ATTR;
     end match;
   end getAttributes;
@@ -328,18 +311,11 @@ public
     input output Component component;
   algorithm
     () := match component
-      case UNTYPED_COMPONENT()
+      case COMPONENT()
         algorithm
           component.attributes := attr;
         then
           ();
-
-      case TYPED_COMPONENT()
-        algorithm
-          component.attributes := attr;
-        then
-          ();
-
     end match;
   end setAttributes;
 
@@ -348,8 +324,7 @@ public
     output Binding b;
   algorithm
     b := match component
-      case UNTYPED_COMPONENT()  then component.binding;
-      case TYPED_COMPONENT()    then component.binding;
+      case COMPONENT()          then component.binding;
       case TYPE_ATTRIBUTE()     then Modifier.binding(component.modifier);
       case WILD()               then Binding.WILD();
                                 else NFBinding.EMPTY_BINDING;
@@ -387,13 +362,7 @@ public
     input output Component component;
   algorithm
     () := match component
-      case UNTYPED_COMPONENT()
-        algorithm
-          component.binding := binding;
-        then
-          ();
-
-      case TYPED_COMPONENT()
+      case COMPONENT()
         algorithm
           component.binding := binding;
         then
@@ -449,8 +418,7 @@ public
     output Binding cond;
   algorithm
     cond := match component
-      case UNTYPED_COMPONENT() then component.condition;
-      case TYPED_COMPONENT() then component.condition;
+      case COMPONENT() then component.condition;
       else NFBinding.EMPTY_BINDING;
     end match;
   end getCondition;
@@ -467,8 +435,7 @@ public
     output Direction direction;
   algorithm
     direction := match component
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
       else Direction.NONE;
     end match;
   end direction;
@@ -485,14 +452,7 @@ public
     Attributes attr;
   algorithm
     () := match component
-      case UNTYPED_COMPONENT(attributes = attr)
-        algorithm
-          attr.direction := direction;
-          component.attributes := attr;
-        then
-          ();
-
-      case TYPED_COMPONENT(attributes = attr)
+      case COMPONENT(attributes = attr)
         algorithm
           attr.direction := direction;
           component.attributes := attr;
@@ -513,8 +473,7 @@ public
     output Parallelism parallelism;
   algorithm
     parallelism := match component
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(parallelism = parallelism)) then parallelism;
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(parallelism = parallelism)) then parallelism;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(parallelism = parallelism)) then parallelism;
       else Parallelism.NON_PARALLEL;
     end match;
   end parallelism;
@@ -524,8 +483,7 @@ public
     output Variability variability;
   algorithm
     variability := match component
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
       case ITERATOR() then component.variability;
       case ENUM_LITERAL() then Variability.CONSTANT;
       else Variability.CONTINUOUS;
@@ -540,14 +498,7 @@ public
       local
         Attributes attr;
 
-      case UNTYPED_COMPONENT(attributes = attr)
-        algorithm
-          attr.variability := variability;
-          component.attributes := attr;
-        then
-          ();
-
-      case TYPED_COMPONENT(attributes = attr)
+      case COMPONENT(attributes = attr)
         algorithm
           attr.variability := variability;
           component.attributes := attr;
@@ -595,8 +546,7 @@ public
     isFinal := match component
       case COMPONENT_DEF()
         then SCodeUtil.finalBool(SCodeUtil.prefixesFinal(SCodeUtil.elementPrefixes(component.definition)));
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
       else false;
     end match;
   end isFinal;
@@ -606,8 +556,7 @@ public
     output InnerOuter io;
   algorithm
     io := match component
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
       case COMPONENT_DEF()
         then Prefixes.innerOuterFromSCode(SCodeUtil.prefixesInnerOuter(
           SCodeUtil.elementPrefixes(component.definition)));
@@ -650,8 +599,7 @@ public
     output ConnectorType.Type cty;
   algorithm
     cty := match component
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       else ConnectorType.NON_CONNECTOR;
     end match;
   end connectorType;
@@ -664,14 +612,7 @@ public
       local
         Attributes attr;
 
-      case UNTYPED_COMPONENT(attributes = attr)
-        algorithm
-          attr.connectorType := cty;
-          component.attributes := attr;
-        then
-          ();
-
-      case TYPED_COMPONENT(attributes = attr)
+      case COMPONENT(attributes = attr)
         algorithm
           attr.connectorType := cty;
           component.attributes := attr;
@@ -702,8 +643,8 @@ public
     output Boolean isEO;
   algorithm
     isEO := match component
-      case UNTYPED_COMPONENT() then Class.isExternalObject(InstNode.getClass(component.classInst));
-      case TYPED_COMPONENT() then Type.isExternalObject(component.ty);
+      case COMPONENT(ty = Type.UNTYPED()) then Class.isExternalObject(InstNode.getClass(component.classInst));
+      case COMPONENT() then Type.isExternalObject(component.ty);
       else false;
     end match;
   end isExternalObject;
@@ -717,7 +658,7 @@ public
       identical := true;
     else
       identical := match (comp1, comp2)
-        case (UNTYPED_COMPONENT(), UNTYPED_COMPONENT())
+        case (COMPONENT(), COMPONENT())
           algorithm
             if not Class.isIdentical(InstNode.getClass(comp1.classInst),
                                      InstNode.getClass(comp2.classInst)) then
@@ -747,13 +688,7 @@ public
       case COMPONENT_DEF(definition = def as SCode.Element.COMPONENT())
         then SCodeDump.unparseElementStr(def);
 
-      case UNTYPED_COMPONENT()
-        then Attributes.toString(component.attributes, Type.UNKNOWN()) +
-             InstNode.name(component.classInst) + " " + name +
-             List.toString(arrayList(component.dimensions), Dimension.toString, "", "[", ", ", "]", false) +
-             Binding.toString(component.binding, " = ");
-
-      case TYPED_COMPONENT()
+      case COMPONENT()
         then Attributes.toString(component.attributes, component.ty) +
              Type.toString(component.ty) + " " + name +
              Binding.toString(component.binding, " = ");
@@ -771,7 +706,7 @@ public
     list<tuple<String, Binding>> ty_attrs;
   algorithm
     () := match component
-      case TYPED_COMPONENT()
+      case COMPONENT()
         algorithm
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
           s := IOStream.append(s, Type.toFlatString(component.ty));
@@ -851,34 +786,12 @@ public
     IOStream.delete(s);
   end toFlatString;
 
-  function setDimensions
-    input list<Dimension> dims;
-    input output Component component;
-  algorithm
-    () := match component
-      case UNTYPED_COMPONENT()
-        algorithm
-          component.dimensions := listArray(dims);
-        then
-          ();
-
-      case TYPED_COMPONENT()
-        algorithm
-          component.ty := Type.liftArrayLeftList(Type.arrayElementType(component.ty), dims);
-        then
-          ();
-
-      else ();
-    end match;
-  end setDimensions;
-
   function dimensionCount
     input Component component;
     output Integer count;
   algorithm
     count := match component
-      case UNTYPED_COMPONENT() then arrayLength(component.dimensions);
-      case TYPED_COMPONENT() then listLength(Type.arrayDims(component.ty));
+      case COMPONENT() then Type.dimensionCount(component.ty);
       else 0;
     end match;
   end dimensionCount;
@@ -889,8 +802,7 @@ public
   algorithm
     comment := match component
       case COMPONENT_DEF() then SCodeUtil.getElementComment(component.definition);
-      case UNTYPED_COMPONENT() then component.comment;
-      case TYPED_COMPONENT() then component.comment;
+      case COMPONENT() then component.comment;
       case ENUM_LITERAL() then SOME(component.comment);
       else NONE();
     end match;
@@ -901,7 +813,7 @@ public
     output Option<Modifier> ann;
   algorithm
     ann := match component
-      case TYPED_COMPONENT() then component.ann;
+      case COMPONENT() then component.ann;
       else NONE();
     end match;
   end ann;
@@ -966,7 +878,7 @@ public
       local
         Binding condition;
 
-      case TYPED_COMPONENT(condition = condition)
+      case COMPONENT(condition = condition)
         then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
 
       else false;

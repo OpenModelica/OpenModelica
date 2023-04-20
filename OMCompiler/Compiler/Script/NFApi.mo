@@ -1337,7 +1337,7 @@ algorithm
   scope := InstNode.parent(node);
 
   () := match (comp, elem)
-    case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
+    case (Component.COMPONENT(), SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
@@ -1350,7 +1350,7 @@ algorithm
       then
         ();
 
-    case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
+    case (Component.COMPONENT(), SCode.Element.COMPONENT())
       algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
