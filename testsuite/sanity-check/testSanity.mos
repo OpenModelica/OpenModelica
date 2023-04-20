@@ -304,7 +304,6 @@ end M_total;
 saveTotalSCode("m.mo", M); getErrorString();
 
 // build an FMU out of the model
-setCommandLineOptions("--fmuRuntimeDepends=none"); getErrorString();
 buildModelFMU(M); getErrorString();
 
 // build an simulation executable out of the model

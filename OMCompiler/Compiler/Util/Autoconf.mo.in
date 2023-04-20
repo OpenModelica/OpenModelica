@@ -10,6 +10,7 @@ encapsulated package Autoconf
 
   constant String make = "@OMC_MAKE_EXE@";
   constant String cmake = "\"@OMC_CMAKE_EXE@\"";
+  constant String cmakeVersion ="@OMC_CMAKE_VERSION@";
 
   constant String exeExt = if isWindows then ".exe" else "";
   constant String dllExt = "@SHREXT@";

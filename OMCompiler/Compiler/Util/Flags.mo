@@ -1432,8 +1432,9 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
   Gettext.gettext("Obfuscates identifiers in the simulation model"));
 
 constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(153, "fmuRuntimeDepends",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
+    ("default",  Gettext.notrans("Depending on CMake version. If CMake version >= 3.21 use  \"modelica\", otherwise use \"none\"")),
     ("none",     Gettext.notrans("No runtime library dependencies are copied into the FMU.")),
     ("modelica", Gettext.notrans("All modelica runtime library dependencies are copied into the FMU." +
                                  "System librarys located in '/lib*', '/usr/lib*' and '/usr/local/lib*' are excluded." +

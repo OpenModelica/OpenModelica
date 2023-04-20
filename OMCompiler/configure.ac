@@ -97,6 +97,7 @@ AC_SUBST(MINGW_EXTRA_LIBS)
 AC_SUBST(BSTATIC)
 AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
 AC_SUBST(OMC_CMAKE_EXE)
+AC_SUBST(OMC_CMAKE_VERSION)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -144,6 +145,9 @@ if test -z "$CMAKE"; then
 else
   OMC_CMAKE_EXE="$CMAKE"
 fi
+
+dnl Get CMake version
+OMC_CMAKE_VERSION=`${OMC_CMAKE_EXE} --version 2>&1 | grep "^.*cmake version" | sed -e 's/^.*cmake version *//'`
 
 dnl Disables the default CXXFLAGS="-g -O2"
 if test -z "$CXXFLAGS"; then

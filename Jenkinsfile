@@ -240,7 +240,7 @@ pipeline {
           }
           steps {
             script {
-              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
+              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache-bionic-cmake-3.21.7')
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +

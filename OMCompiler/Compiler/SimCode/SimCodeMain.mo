@@ -926,7 +926,16 @@ algorithm
                         destination = fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
+
+        // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
+          case("default") algorithm
+            if Autoconf.cmakeVersion >= "3.21" then
+              cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
+            else
+              cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
+            end if;
+            then();
           case("none") algorithm
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
             then();
