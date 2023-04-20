@@ -50,13 +50,13 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 //
 // ########### Updated Variable List (simulation) (7)
 // ========================================
-// 1: y.r1[3]:VARIABLE()  type: Real  [3]
-// 2: y.r1[2]:VARIABLE()  type: Real  [3]
-// 3: y.r1[1]:VARIABLE()  type: Real  [3]
-// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
-// 5: $cse1.r1[1]:VARIABLE(protected = true )  type: Real  [3] unreplaceable
-// 6: $cse1.r1[2]:VARIABLE(protected = true )  type: Real  [3] unreplaceable
-// 7: $cse1.r1[3]:VARIABLE(protected = true )  type: Real  [3] unreplaceable
+// 1: y.r1[3]:VARIABLE()  type: Real [3]
+// 2: y.r1[2]:VARIABLE()  type: Real [3]
+// 3: y.r1[1]:VARIABLE()  type: Real [3]
+// 4: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: $cse1.r1[1]:VARIABLE(protected = true )  type: Real [3] unreplaceable
+// 6: $cse1.r1[2]:VARIABLE(protected = true )  type: Real [3] unreplaceable
+// 7: $cse1.r1[3]:VARIABLE(protected = true )  type: Real [3] unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (3, 7)
@@ -77,7 +77,5 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: {y.r1[1], y.r1[2], y.r1[3]} = $TMP_CSE_R1.r1
-// Warning: SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: {y.r1[1], y.r1[2], y.r1[3]} = $TMP_CSE_R7.r1
-// "
+// ""
 // endResult
