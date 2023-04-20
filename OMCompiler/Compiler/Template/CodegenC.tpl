@@ -1200,10 +1200,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data, threadData);
-      res = _main_initRuntimeAndSimulation(argc, argv, &data, threadData);
+      res = _main_initRuntimeAndSimulation(argc, newargv, &data, threadData);
       if(res == 0) {
         <%pminit%>
-        res = _main_SimulationRuntime(argc, argv, &data, threadData);
+        res = _main_SimulationRuntime(argc, newargv, &data, threadData);
       }
       >>
     <<
@@ -1354,12 +1354,52 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
+
+    #if defined(__MINGW32__) || defined(_MSC_VER)
+
+    #if !defined(_UNICODE)
+    #define _UNICODE
+    #endif
+    #if !defined(UNICODE)
+    #define UNICODE
+    #endif
+
+    #include <windows.h>
+    char** omc_fixWindowsArgv(int argc, wchar_t **wargv)
+    {
+      char** newargv;
+      /* Support for non-ASCII characters
+      * Read the unicode command line arguments and translate it to char*
+      */
+      newargv = (char**)malloc(argc*sizeof(char*));
+      for (int i = 0; i < argc; i++) {
+        newargv[i] = omc_wchar_to_multibyte_str(wargv[i]);
+      }
+      return newargv;
+    }
+
+    #define OMC_MAIN wmain
+    #define OMC_CHAR wchar_t
+    #define OMC_EXPORT __declspec(dllexport) extern
+
+    #else
+    #define omc_fixWindowsArgv(N, A) (A)
+    #define OMC_MAIN main
+    #define OMC_CHAR char
+    #define OMC_EXPORT extern
+    #endif
+
     #if defined(threadData)
     #undef threadData
     #endif
     /* call the simulation runtime main from our main! */
-    int main(int argc, char**argv)
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    OMC_EXPORT int omcDllMain(int argc, OMC_CHAR **argv)
+    #else
+    int OMC_MAIN(int argc, OMC_CHAR** argv)
+    #endif
     {
+      char** newargv = omc_fixWindowsArgv(argc, argv);
       /*
         Set the error functions to be used for simulation.
         The default value for them is 'functions' version. Change it here to 'simulation' versions
@@ -1387,7 +1427,9 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
+    #if !defined(OMC_DLL_MAIN_DEFINE) /* do not exit, return in DLL mode */
       EXIT(res);
+    #endif
       return res;
     }
 
@@ -6907,6 +6949,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   let libsPos2 = if dirExtra then libsStr // else ""
   let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lParModelicaExpl -lOpenCL' // else ""
   let ExtraStack = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '--stack,16777216,'
+  let ExtraUnicodeFlag = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '-municode'
   let linkBinDirWindows = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '-L"<%makefileParams.omhome%>/bin"'
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
@@ -6925,7 +6968,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
   OMC_CFLAGS_OPTIMIZATION=-Os
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
+  CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
@@ -6952,10 +6995,15 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   .PHONY: $(CFILES)
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
+
+  omc_dll_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
+  <%\t%>$(CC) -DOMC_DLL_MAIN_DEFINE -o $(MAINOBJ) -c $(MAINFILE) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+
   clean:
   <%\t%>@rm -f <%fileNamePrefix%>_records.o $(MAINOBJ)
 
