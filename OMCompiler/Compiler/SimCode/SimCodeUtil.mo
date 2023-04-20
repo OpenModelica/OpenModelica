@@ -3358,7 +3358,7 @@ algorithm
         Error.assertion(false, getInstanceName() + " failed because expression "
           + ExpressionDump.printExpStr(right) + " could not be scalarized.", sourceInfo());
       end try;
-    then (outSimEqn,iuniqueEqIndex);
+    then (outSimEqn, ouniqueEqIndex);
 
     // kabdelhak: is this case needed? probably handled fine by simple assign
     // case(_, DAE.ARRAY()) algorithm
