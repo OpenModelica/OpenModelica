@@ -1528,9 +1528,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 end functionStateSets;
 
 
-
-
-template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String preRunCommandLinux, String preRunCommandWindows, String execCommandLinux)
+template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String preRunCommandLinux, String preRunCommandWindows, String execCommandLinux)
  "Generates code for header file for simulation target."
 ::=
   match simCode
@@ -1540,15 +1538,15 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let stepsize  = settings.stepSize
     let intervals = settings.numberOfIntervals
     let tol       = settings.tolerance
-    let solver    = match simCode case SIMCODE(daeModeData=NONE()) then settings.method else 'ida' //for dae mode only ida is supported
-    let moLib     =  makefileParams.compileDir
+    let solver    = settings.method
+    let moLib     = makefileParams.compileDir
     let home      = makefileParams.omhome
     let outputformat = settings.outputFormat
     let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>" -M "<%moLib%>" -r "<%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>"'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
 
-    let libFolder = simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    let libFolder = simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
     let libPaths = makefileParams.libPaths |> path => path; separator=";"
 
     match makefileParams.platform

@@ -92,7 +92,7 @@ private:
   void DASSLCore();
 
   /// evaluate right hand side of ODE
-  int calcFunction(const double& time, const double* y, double* yp);
+  int calcFunction(const double& time, const double* y, const double* yp, double *f);
 
   // callback for right hand side
   static int _res(double *t, double *y, double *yp, double *cj,
@@ -141,6 +141,10 @@ private:
 
   // Variables for Coloured Jacobians
   int  _maxColors;
+
+  // DAE support
+  int	_dimStates;
+  int _dimAE;
 
   ISystemProperties* _properties;
   IContinuous* _continuous_system;
