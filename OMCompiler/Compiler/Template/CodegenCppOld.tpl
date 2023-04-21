@@ -12424,6 +12424,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%createTimeConditionTreatments(timeEventLength(simCode), clockedPartitions)%>
 
     // Evaluate Equations
+    if (_dimAE > 0)
+      evaluateDAE(command);
     <%equation_all_func_calls%>
 
     <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>

@@ -446,13 +446,11 @@ void DASSL::DASSLCore()
         if (_idid == 3)
           _time_system->setTime(_tEnd); // interpolated time point
         _continuous_system->setContinuousStates(_y);
-        if (_dimAE == 0)
-          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        else {
+        if (_dimAE > 0) {
           _mixed_system->setAlgebraicDAEVars(_y + _dimStates);
           _continuous_system->setStateDerivatives(_yPrime);
-          _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
         }
+        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         writeToFile(_accStps, _tCurrent, _h);
       }
 
@@ -519,10 +517,7 @@ void DASSL::DASSLCore()
         {
           try
           {
-            if (_dimAE == 0)
-              _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-            else
-              _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
+            _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
           }
           catch (std::exception& ex)
           {
@@ -549,10 +544,7 @@ void DASSL::DASSLCore()
         if (writeEventOutput)
         {
           // If we want to write the event-results, we should evaluate the whole system again
-          if (_dimAE == 0)
-            _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-          else
-            _continuous_system->evaluateDAE(IContinuous::CONTINUOUS);
+          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
           writeToFile(_accStps, _tCurrent, _h);
         }
 
