@@ -303,7 +303,7 @@ vehicle. They are as follows:
 
 and they are as expected.
 
-In this model we don’t use the Modelica capability to automatically
+In this model we don't use the Modelica capability to automatically
 determine the system equations from the graphical description of a
 system. In other words, the above general formulation
 :math:`0 = f\left( \mathbf{x}(t),\dot{\mathbf{x}}(t),\mathbf{u}(t),t \right)`
@@ -333,7 +333,7 @@ be done keeping the energy inside the storage at the final time, equal
 to the one at t=0 (otherwise it is easy to have zero consumption: just
 keep the Internal Combustion Engine OFF all the time!)
 
-For simplicity’s sake, the propulsion power, in this simple example is
+For simplicity's sake, the propulsion power, in this simple example is
 taken as being a sine wave plus an offset (needed to make the average
 positive). When the power is positive the wheels transfer power to the
 road, when negative they recover it (storing it into the battery).
@@ -357,7 +357,7 @@ The DO algorithm is required to determine the battery power outBatPower
 (positive when the battery delivers power) so that to minimise the fuel
 consumption toGrams. Block toGperkWh is normalised, so that it can be
 used for different engines, adapting the horizontal scale through gain,
-and the vertical’s through gain1.
+and the vertical's through gain1.
 
 This diagram defines the system, whose equations will be automatically
 determined by OpenModelica, through model flattening. However, some code

@@ -4,29 +4,29 @@ FMI and TLM-Based Simulation and Co-simulation of External Models
 Functional Mock-up Interface - FMI
 ----------------------------------
 
-The new standard for model exchange and co-simulation with Functional
-Mockup Interface (`FMI <http://www.fmi-standard.org>`_) allows export of pre-compiled models, i.e.,
-C-code or binary code, from a tool for import in another tool, and vice
-versa. The FMI standard is Modelica independent. Import and export works
-both between different Modelica tools, or between certain non-Modelica
-tools.
+The `Functional Mock-up Interface (FMI) <http://www.fmi-standard.org>`_ Standard
+for model exchange and co-simulation allows export, exchange and import of pre-compiled
+models between different tools.
+The FMI standard is Modelica independent, so import and export works both between
+different Modelica or non-Modelica tools.
 
-See also `OMSimulator documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_.
+See also :ref:`OMSimulator documentation<omsimulator-documentation>`.
 
 FMI Export
 ~~~~~~~~~~
 
-To export the FMU use the OpenModelica command
-`translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_
-or `buildModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.buildModelFMU.html>`_
-from command line interface, OMShell, OMNotebook or MDT.
-The export FMU command is also integrated with OMEdit.
+To export a FMU use the OpenModelica command :ref:`buildModelFMU()<buildModelFMU>` from
+the command line interface, OMShell, OMNotebook or MDT.
+The FMU export command is also integrated in OMEdit.
 Select `File > Export > FMU`. Or alternatively, right click a model to obtain the export
-command. The FMU package is generated in the current directory of omc. The location of the
- generated FMU is indicated in the Messages Browser.
-You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ 
-command to see the current location.
-You can set which version of FMI to export through OMEdit settings,see section
+command.
+The FMU package is generated in the current working directory of OMC or the directory set
+in `OMEdit > Options > FMI > Move FMU`.
+You can use the :ref:`cd()<cd>` command to see the current location.
+The location of the generated FMU is printed in the Messages Browser of OMEdit or on the
+command line.
+
+You can set which version of FMI to export through OMEdit settings, see section
 :ref:`omedit-options-fmi`.
 
 .. figure :: media/fmiExport.png
@@ -39,29 +39,28 @@ To export the bouncing ball example to an FMU, use the following commands:
   :erroratend:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  translateModelFMU(BouncingBall)
+  buildModelFMU(BouncingBall)
 
-After the command execution is complete you will see that a file
-BouncingBall.fmu has been created. Its contents varies depending on the
-current platform.
-On the machine generating this documentation, the contents in
-:numref:`BouncingBall FMU contents` are generated (along with the C source code).
+After the command execution is complete you will see that a file BouncingBall.fmu has been
+created. Its contents varies depending on the target platform.
+On the machine generating this documentation the contents in
+:numref:`BouncingBall-FMU-contents` are generated (along with the C source code).
 
 .. omc-mos ::
   :hidden:
+
   system("unzip -l BouncingBall.fmu | egrep -v 'sources|files' | tail -n+3 | grep -o '[A-Za-z._0-9/]*$' > BB.log")
 
 .. literalinclude :: ../tmp/BB.log
-  :name: BouncingBall FMU contents
+  :name: BouncingBall-FMU-contents
   :caption: BouncingBall FMU contents
 
 A log file for FMU creation is also generated named ModelName\_FMU.log.
-If there are some errors while creating FMU they will be shown in the
-command line window and logged in this log file as well.
+If there are some errors while creating the FMU, they will be shown in the command line
+window and logged in this log file as well.
 
-By default an FMU that can be used for both Model Exchange and
-Co-Simulation is generated. We support FMI 1.0 & FMI 2.0 for Model Exchange FMUs
-and FMI 2.0 for Co-Simulation FMUs.
+By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
+We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0 for Co-Simulation FMUs.
 
 For the Co-Simulation FMU two integrator methods are available:
 
@@ -72,8 +71,9 @@ Forward Euler uses root finding, which does an Euler step of ``communicationStep
 in ``fmi2DoStep``. Events are checked for before and after the call to
 ``fmi2GetDerivatives``.
 
-If CVODE is chosen as integrator the FMU should include runtime dependencies
-:ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>=modelica`
+If CVODE is chosen as integrator the FMU should also include runtime dependencies
+(:ref:`--fmuRuntimeDepends=modelica<omcflag-fmuRuntimeDepends>`) to copy all used dynamic
+libraries into the generated FMU to make it exchangeable.
 
 To export a Co-Simulation FMU with CVODE for the bouncing ball example use the
 following commands:
@@ -83,22 +83,23 @@ following commands:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
   setCommandLineOptions("--fmiFlags=s:cvode")
-  translateModelFMU(BouncingBall, version = "2.0", fmuType="cs")
+  buildModelFMU(BouncingBall, version = "2.0", fmuType="cs")
 
 
-The FMU BouncingBall.fmu will have a new file BouncingBall_flags.json in its
-resources directory. By manually changing its content users can change the
-solver method without recompiling the FMU.
+The FMU BouncingBall.fmu will have a new file BouncingBall_flags.json in its resources
+directory. By manually changing its content users can change the solver method without
+recompiling the FMU.
 
 The BouncingBall_flags.json for this example is displayed in
-:numref:`BouncingBall FMI flags`.
+:numref:`BouncingBall-FMI-flags`.
 
 .. omc-mos ::
   :hidden:
+
   system("unzip -cqq BouncingBall.fmu resources/BouncingBall_flags.json > BouncingBall_flags.json")
 
 .. literalinclude :: ../tmp/BouncingBall_flags.json
-  :name: BouncingBall FMI flags
+  :name: BouncingBall-FMI-flags
   :caption: BouncingBall FMI flags
 
 
@@ -109,8 +110,8 @@ OpenModelica can export FMUs that are compiled with CMake (default) or Makefiles
 version v3.21 or newer is recommended, minimum CMake version is v3.5.
 
 The Makefile FMU export will be removed in a future version of OpenModelica.
-Use compiler flag :ref:`--fmuCMakeBuild<omcflag-fmuCMakeBuild>=false` to use the Makefiles
-export.
+Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
+Makefiles export.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
 re-compile the FMU for a different host and is also used to cross-compile for different
@@ -118,39 +119,43 @@ platforms.
 
 The CMake compilation accepts the following settings:
 
-* ``BUILD_SHARED_LIBS``
+* ``BUILD_SHARED_LIBS``:
   Boolean value to switch between dynamic and statically linked binaries.
 
   * ``ON`` (default): Compile DLL/Shared Object binary object.
+
   * ``OFF``: Compile static binary object.
 
-* ``FMI_INTERFACE_HEADER_FILES_DIRECTORY``
+* ``FMI_INTERFACE_HEADER_FILES_DIRECTORY``:
   String value specifying path to FMI header files containing ``fmi2Functions.h``,
   ``fmi2FunctionTypes.h`` and ``fmi2TypesPlatforms.h``.
 
   * Defaults to a location inside the OpenModelica installation directory, which was used
     to create the FMU.
 
-* ``RUNTIME_DEPENDENCIES_LEVEL``
+* ``RUNTIME_DEPENDENCIES_LEVEL``:
   String value to specify runtime dependencies set.
 
   * ``none``: Adds no runtime dependencies to FMU. The FMU can't be used on a system if it
     doesn't provided all needed dependencies.
+
   * ``modelica`` (default): Add Modelica runtime dependencies to FMU, e.g. a external C
     library used from a Modelica function. Needs CMake version v3.21 or newer.
+
   * ``all``: Add system and Modelica runtime dependencies. Needs CMake version v3.21 or
     newer.
 
-* ``NEED_CVODE``
+* ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
 
   * ``ON``: Link to SUNDIALS CVODE. If CVODE is not in a default location
     ``CVODE_DIRECTORY`` needs to be set.
     Its also recommended to use ``RUNTIME_DEPENDENCIES_LEVEL=modelica`` or higher to add
     SUNDIALS runtime dependencies into the FMU.
+
   * ``OFF`` (default): Don't link to SUNDIALS CVODE.
 
-* ``CVODE_DIRECTORY``
+* ``CVODE_DIRECTORY``:
   String value with location of libraries ``sundials_cvode`` and ``sundials_nvecserial``
   with SUNDIALS version 5.4.0.
 
@@ -172,6 +177,7 @@ For example to re-compile the FMU with cmake and runtime dependencies use:
       -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
     $ cmake --build build_cmake --target install create_zip --parallel
 
+.. _fmitlm-export-options :
 
 Platforms
 ~~~~~~~~~
@@ -179,11 +185,14 @@ Platforms
 The ``platforms`` setting specifies for what target system the FMU is compiled:
 
 * Empty: Create a Source-Code-only FMU.
+
 * ``native``:  Create a FMU compiled for the exporting system.
+
 * ``<cpu>-<vendor>-<os>`` host triple: OpenModelica searches for programs in PATH matching
   pattern ``<cpu>-<vendor>-<os>cc`` to compile.
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
+
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
   OpenModelica will use the specified Docker image to cross-compile for given host triple.
   Because privilege escalation is very easy to achieve with Docker OMEdit adds
@@ -193,21 +202,21 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross-compile
   for a 64 bit Linux OS.
   Because system libraries can be different for different versions of the same operating
-  system, it is advised to use :ref:`--fmuRuntimeDepends<omcflag-fmuRuntimeDepends>=all`.
+  system, it is advised to use :ref:`--fmuRuntimeDepends=all<omcflag-fmuRuntimeDepends>`.
 
 
 .. _fmi-import :
 
-FMI Import
-~~~~~~~~~~
+FMI Import - SSP
+~~~~~~~~~~~~~~~~
 
 If you want to simulate a single, stand-alone FMU, or possibly a connection
 of several FMUs, the recommended tool to do that is OMSimulator, see the
-`OMSimulator documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_
-for further information.
+:ref:`OMSimulator documentation<omsimulator-documentation>` and
+:ref:`omedit-graphical-modelling` for further information.
 
-FMI Import [deprecated]
-~~~~~~~~~~~~~~~~~~~~~~~
+FMI Import - Non-Standard Modelica Model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FMI Import allows to use an FMU, generated according to the FMI for Model
 Exchange 2.0 standard, as a component in a Modelica model. This can be
@@ -227,21 +236,22 @@ Please also note that the current implementation of FMI Import in OpenModelica
 is based on a built-in wrapper that uses a `reinit()` statement in an algorithm
 section. This is not allowed by the Modelica Language Specification, so it is
 necessary to set the compiler to accept this non-standard construct by setting
-the `--allowNonStandardModelica=reinitInAlgorithms` compiler flag. In OMEdit,
-you can set this option by activating the *Enable FMU Import* checkbox in the
+the :ref:`--allowNonStandardModelica=reinitInAlgorithms<omcflag-allowNonStandardModelica>`
+compiler flag.
+In OMEdit, you can set this option by activating the *Enable FMU Import* checkbox in the
 *Tools | Options | Simulation | Translation Flags* tab. This will generate a warning during
 compilation, as there is no guarantee that the imported model using this feature
 can be ported to other Modelica tools; if you want to use a model that contains
 imported FMUs in another Modelica tool, you should rely on the other tool's import
 feature to generate the Modelica blocks corresponding to the FMUs.
 
-After setting the `--allowNonStandardModelica` flag, to import the FMU package
-use the OpenModelica command importFMU,
+After setting the :ref:`--allowNonStandardModelica<omcflag-allowNonStandardModelica>`
+flag, to import the FMU package use the OpenModelica command importFMU,
 
 .. omc-mos ::
   :parsed:
 
-  list(OpenModelica.Scripting.importFMU, interfaceOnly=true)
+  list(OpenModelica.Scripting.importFMU, interfaceOnly=true);
 
 The command could be used from command line interface, OMShell,
 OMNotebook or MDT. The importFMU command is also integrated with OMEdit
@@ -260,9 +270,11 @@ co-simulation accessible via OMEdit.
 
 The TLM Based co-simulation provides the following general functionalities:
 
--  Import and add External non-Modelica models such as **Matlab/SimuLink**, **Adams**, and **BEAST** models
+-  Import and add External non-Modelica models such as **Matlab/SimuLink**, **Adams**,
+   and **BEAST** models
 
--  Import and add External Modelica models e.g. from tools such as **Dymola** or **Wolfram SystemModeler**, etc.
+-  Import and add External Modelica models e.g. from tools such as **Dymola** or
+   **Wolfram SystemModeler**, etc.
 
 -  Specify startup methods and interfaces of the external model
 
@@ -290,8 +302,8 @@ Loading a Composite Model for Co-Simulation
 To load the composite model, select **File > Open Composite Model(s)** from the
 menu and select compositemodel.xml.
 
-OMEdit loads the composite model and show it in the **Libraries
-Browser**. Double-clicking the composite model in the **Libraries Browser** will display
+OMEdit loads the composite model and show it in the **Libraries Browser**.
+Double-clicking the composite model in the **Libraries Browser** will display
 the composite model as shown below in
 :numref:`tlm-double-pendulum-compositemodel`.
 
@@ -305,13 +317,16 @@ Co-Simulating the Composite Model
 
 There are two ways to start co-simulation:
 
--  Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a composite model to be active in ModelWidget)
+-  Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a
+   composite model to be active in ModelWidget)
 
 .. |tlm-simulate| image:: media/omedit-icons/tlm-simulate.*
   :alt: Composite Model simulate Icon
   :height: 14pt
 
--  Right click the composite model in the **Libraries Browser** and choose **TLM Co-Simulation setup** from the popup menu (see :numref:`tlm-library-browser-popup-menu`)
+-  Right click the composite model in the **Libraries Browser** and choose
+   **TLM Co-Simulation setup** from the popup menu (see
+   :numref:`tlm-library-browser-popup-menu`)
 
 .. figure :: media/tlm-library-browser-popup-menu.png
   :name: tlm-library-browser-popup-menu
@@ -334,16 +349,19 @@ the progress information of the running co-simulation.
 
   TLM Co-Simulation Progress.
 
-The editor also provides the means of reading the log files generated by the simulation manager and monitor.
-When the simulation ends, click **Open Manager Log File** or **Open Monitor Log File** from the co-simulation progress bar
-to check the log files.
+The editor also provides the means of reading the log files generated by the simulation
+manager and monitor.
+When the simulation ends, click **Open Manager Log File** or **Open Monitor Log File**
+from the co-simulation progress bar to check the log files.
 
 Plotting the Simulation Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When the co-simulation of the composite model is completed successful, simulation results are collected and visualized
-in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results` and :numref:`tlm-cosimulation-visualization`.
-The **Variables Browser** display variables that can be plotted. Each variable has a checkbox, checking it will plot the variable.
+When the co-simulation of the composite model is completed successful, simulation results
+are collected and visualized in the OMEdit plotting perspective as shown in
+:numref:`tlm-plotting-cosimulation-results` and :numref:`tlm-cosimulation-visualization`.
+The **Variables Browser** display variables that can be plotted. Each variable has a
+checkbox, checking it will plot the variable.
 
 .. figure :: media/tlm-plotting-cosimulation-results.png
   :name: tlm-plotting-cosimulation-results
@@ -360,7 +378,8 @@ Preparing External Models
 
 First step in co-simulation Modeling is to prepare the different external simulation
 models with TLM interfaces. Each external model belongs to a specific simulation
-tool, such as **MATLAB/Simulink***, **BEAST**, **MSC/ADAMS**, **Dymola** and **Wolfram SystemModeler**.
+tool, such as **MATLAB/Simulink***, **BEAST**, **MSC/ADAMS**, **Dymola** and
+**Wolfram SystemModeler**.
 
 When the external models have all been prepared, the next step is to load external models
 in OMEdit by selecting the **File > Load External Model(s)** from the menu.
@@ -418,7 +437,8 @@ Fetching Submodels Interface Data
 
 To retrieve list of TLM interface data for sub-models, do any of the following methods:
 
-- Click **Fetch Interface Data button** (|interface-data|) from the toolbar (requires a composite model to be active in ModelWidget)
+- Click **Fetch Interface Data button** (|interface-data|) from the toolbar (requires a
+  composite model to be active in ModelWidget)
 
 .. |interface-data| image:: media/omedit-icons/interface-data.*
   :alt: Composite Model Interface Data Icon

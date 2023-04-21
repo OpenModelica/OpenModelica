@@ -143,7 +143,7 @@ and preys in a closed ecosystem.
     der(pred_pop) = pred_pop*(delta*prey_pop-gamma);
   end LotkaVolterra;
 
-Let’s say we need to investigate the influence of model parameters on the predator population
+Let's say we need to investigate the influence of model parameters on the predator population
 at 40 units of time. We assume a +/-5% uncertainty on model parameters.
 
 We can use OMSens to study the sensitivity model to each parameter, one at a time.
@@ -228,7 +228,7 @@ but this time select **Multi-parameter Sweep**.
   Multi-parameter sweep results.
 
 -  At time 40 the parameters perturbations with a higher predator population are all blue,
-   but it’s not clear which one. We need something more precise.
+   but it's not clear which one. We need something more precise.
 
 .. figure :: media/omsens-multi-sweep-plot.png
 

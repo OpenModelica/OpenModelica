@@ -1,3 +1,5 @@
+.. _omsimulator-documentation:
+
 OMSimulator
 ~~~~~~~~~~~
 

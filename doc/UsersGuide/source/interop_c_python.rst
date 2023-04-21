@@ -1,6 +1,6 @@
 .. _interop-c :
 
-Interoperability – C and Python
+Interoperability - C and Python
 ===============================
 
 Below is information and examples about the OpenModelica external C

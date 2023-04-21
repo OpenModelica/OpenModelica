@@ -318,7 +318,7 @@ The table below compares the results obtained with OpenModelica with those given
 .. figure :: media/dataReconciliationResult_2.png
   :name: dataReconciliationResult_2
 
-The value of mD is left unchanged after reconciliation. This is indicated by ‘Not reconciled’ in OpenModelica,
+The value of mD is left unchanged after reconciliation. This is indicated by 'Not reconciled' in OpenModelica,
 and by repeating the initial measured values in VDI2048. In order to compute the reconciled values of mFD1, mFD2, mFD3 and mHDANZ, which have no measurements, it is possible to consider them as variables of interest with very large half-width confidence, e.g., 1e4, and assign them arbitrary measured values, e.g. 0. The result is
 
 .. figure :: media/dataReconciliationResult_3.png

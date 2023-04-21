@@ -3,11 +3,11 @@
 
 OPENMODELICA_ROOT = $(CURDIR)/../..
 # OMPython needs this
-OPENMODELICAHOME := $(shell                                   \
+OPENMODELICAHOME := $(shell                                 \
 	if [ -d $(OPENMODELICA_ROOT)/build_cmake/install ];       \
-		then echo '$(OPENMODELICA_ROOT)/build_cmake/install'; \
+		then echo '$(OPENMODELICA_ROOT)/build_cmake/install';   \
 	elif [ -d $(OPENMODELICA_ROOT)/install_cmake ];           \
-		then echo '$(OPENMODELICA_ROOT)/install_cmake';       \
+		then echo '$(OPENMODELICA_ROOT)/install_cmake';         \
 	else                                                      \
 		echo '$(OPENMODELICA_ROOT)/build/'; fi)
 

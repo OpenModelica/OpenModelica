@@ -46,6 +46,13 @@ https://github.com/OpenModelica/OpenModelica with the PyGithub package.
 - Install `inkscape` and make sure it's in PATH.
 
 ## Build instructions
+
 ```bash
 make html
+```
+
+## Preview build
+
+```bash
+python3 -m http.server --directory build/html
 ```

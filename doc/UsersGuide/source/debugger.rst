@@ -107,7 +107,7 @@ Start the Algorithmic Debugger
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You should add breakpoints before starting the debugger because
-sometimes the simulation finishes quickly and you won’t get any chance
+sometimes the simulation finishes quickly and you won't get any chance
 to add the breakpoints.
 
 There are four ways to start the debugger,
@@ -164,24 +164,24 @@ Using the Algorithmic Debugger Window
 :numref:`omedit-algorithmic-debugger` shows the Algorithmic Debugger window. The window contains
 the following browsers,
 
--  *Stack Frames Browser* – shows the list of frames. It contains the
+-  *Stack Frames Browser* - shows the list of frames. It contains the
    program context buttons like resume, interrupt, exit, step over,
    step in, step return. It also contains a threads drop down which
    allows switching between different threads.
 
--  *BreakPoints Browser* – shows the list of breakpoints. Allows
+-  *BreakPoints Browser* - shows the list of breakpoints. Allows
    adding/editing/removing breakpoints.
 
--  *Locals Browser* – Shows the list of local variables with values.
+-  *Locals Browser* - Shows the list of local variables with values.
    Select the variable and the value will be shown in the bottom
    right window. This is just for convenience because some variables
    might have long values.
 
--  *Debugger CLI* – shows the commands sent to gdb and their responses.
+-  *Debugger CLI* - shows the commands sent to gdb and their responses.
    This is for advanced users who want to have more control of the
    debugger. It allows sending commands to gdb.
 
--  *Output Browser* – shows the output of the debugged executable.
+-  *Output Browser* - shows the output of the debugged executable.
 
 .. figure :: media/omedit-algorithmic-debugger.png
   :name: omedit-algorithmic-debugger

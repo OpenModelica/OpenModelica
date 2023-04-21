@@ -973,7 +973,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   setGlobalLoggingTime(data->simulationInfo);
   if(omc_flag[FLAG_LV_MAX_WARN]) {
     data->simulationInfo->maxWarnDisplays = atoi(omc_flagValue[FLAG_LV_MAX_WARN]);
-    infoStreamPrint(LOG_STDOUT, 0, "Display limit for repeating warnings changed to %u.", data->simulationInfo->maxWarnDisplays);
+    infoStreamPrint(LOG_STDOUT, 0, "Display limit for repeating warnings changed to %lu.", data->simulationInfo->maxWarnDisplays);
   } else {
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }

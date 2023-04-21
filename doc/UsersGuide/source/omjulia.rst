@@ -1,7 +1,7 @@
-OMJulia – OpenModelica Julia Scripting
+OMJulia - OpenModelica Julia Scripting
 ======================================
 
-OMJulia – the OpenModelica Julia API is a free, open source, 
+OMJulia - the OpenModelica Julia API is a free, open source, 
 highly portable Julia based interactive session handler for 
 Julia scripting of OpenModelica API functionality. It provides the modeler
 with components for creating a complete Julia-Modelica modeling, compilation 

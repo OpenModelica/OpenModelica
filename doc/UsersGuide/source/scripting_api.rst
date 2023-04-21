@@ -16,14 +16,14 @@ formal parameters to the functions by the following notation:
 
 -  String typed argument, e.g. "hello", "myfile.mo".
 
--  TypeName – class, package or function name, e.g. MyClass,
+-  TypeName - class, package or function name, e.g. MyClass,
        Modelica.Math.
 
--  VariableName – variable name, e.g. ``v1``, ``v2``, ``vars1[2].x``, etc.
+-  VariableName - variable name, e.g. ``v1``, ``v2``, ``vars1[2].x``, etc.
 
 -  Integer or Real typed argument, e.g. 35, 3.14, xintvariable.
 
--  options – optional parameters with named formal parameter passing.
+-  options - optional parameters with named formal parameter passing.
 
 OpenModelica Scripting Commands
 ###############################

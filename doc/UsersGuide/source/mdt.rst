@@ -1,4 +1,4 @@
-MDT – The OpenModelica Development Tooling Eclipse Plugin
+MDT - The OpenModelica Development Tooling Eclipse Plugin
 =========================================================
 
 .. role:: bash(code)
@@ -7,7 +7,7 @@ MDT – The OpenModelica Development Tooling Eclipse Plugin
 Introduction
 ------------
 
-The Modelica Development Tooling (MDT) Eclipse Plugin as part of OMDev –
+The Modelica Development Tooling (MDT) Eclipse Plugin as part of OMDev -
 The OpenModelica Development Environment integrates the OpenModelica
 compiler with Eclipse. MDT, together with the OpenModelica compiler,
 provides an environment for working with Modelica and MetaModelica
@@ -47,22 +47,22 @@ The latest installation instructions are available through the `OpenModelica Tra
 2. Select Help->Software Updates->Find and Install.\ **..** from the
    menu
 
-3. Select ‘Search for new features to install’ and click ‘Next’
+3. Select 'Search for new features to install' and click 'Next'
 
-4. Select ‘New Remote Site...’
+4. Select 'New Remote Site...'
 
-5. Enter ‘MDT’ as name and
+5. Enter 'MDT' as name and
    http://www.ida.liu.se/labs/pelab/modelica/OpenModelica/MDT
-   as URL and click ‘OK’
+   as URL and click 'OK'
 
-6. Make sure ‘MDT’ is selected and click ‘Finish’
+6. Make sure 'MDT' is selected and click 'Finish'
 
-7. In the updates dialog select the ‘MDT’ feature and click ‘Next’
+7. In the updates dialog select the 'MDT' feature and click 'Next'
 
-8. Read through the license agreement, select ‘I accept...’ and click
-   ‘Next’
+8. Read through the license agreement, select 'I accept...' and click
+   'Next'
 
-9. Click ‘Finish’ to install MDT
+9. Click 'Finish' to install MDT
 
 Getting Started
 ---------------
@@ -76,8 +76,8 @@ environment variable OPENMODELICAHOME to do so.
 If you have problems using MDT, make sure that OPENMODELICAHOME is
 pointing to the folder where the OpenModelica Compiler is installed. In
 other words, OPENMODELICAHOME must point to the folder that contains the
-Open Modelica Compiler (OMC) binary. On the Windows platform it’s called
-omc.exe and on Unix platforms it’s called omc.
+Open Modelica Compiler (OMC) binary. On the Windows platform it's called
+omc.exe and on Unix platforms it's called omc.
 
 Using the Modelica Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +96,7 @@ choose a workspace folder for this session, see :numref:`mdt-switch-workspace`.
 .. figure :: media/mdt-switch-workspace.png
   :name: mdt-switch-workspace
 
-  Eclipse Setup – Switching Workspace.
+  Eclipse Setup - Switching Workspace.
 
 Creating one or more Modelica Projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,14 +107,14 @@ the Modelica Projects view and selecting New->Modelica Project.
 
 .. figure :: media/mdt-create-project.*
 
-  Eclipse Setup – creating a Modelica project in the workspace.
+  Eclipse Setup - creating a Modelica project in the workspace.
 
 You need to disable automatic build for the project(s) (:numref:`mdt-disable-automatic-build`).
 
 .. figure :: media/mdt-disable-automatic-build.png
   :name: mdt-disable-automatic-build
 
-  Eclipse Setup – disable automatic build for the projects.
+  Eclipse Setup - disable automatic build for the projects.
 
 Repeat the procedure for all the projects you need, e.g. for the
 exercises described in the MetaModelica users guide: 01\_experiment,
@@ -132,7 +132,7 @@ After having created a project, you eventually need to build the project
 .. figure :: media/mdt-build-project.png
   :name: mdt-build-project
 
-  Eclipse MDT – Building a project.
+  Eclipse MDT - Building a project.
 
 The build options are the same as the make targets: you can build,
 build from scratch (clean), or run simulations depending on how the
@@ -142,11 +142,11 @@ can be compiled (:bash:`make omc` builds OMC).
 .. figure :: media/mdt-build-prompt.*
   :name: mdt-build-prompt
 
-  Eclipse – building a project.
+  Eclipse - building a project.
 
 .. figure :: media/mdt-build-log.png
 
-  Eclipse – building a project, resulting log.
+  Eclipse - building a project, resulting log.
 
 Switching to Another Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,7 +158,7 @@ in :numref:`mdt-switch-perspective`.
 .. figure :: media/mdt-switch-perspective.png
   :name: mdt-switch-perspective
 
-  Eclipse – Switching to another perspective – e.g. the Java Perspective.
+  Eclipse - Switching to another perspective - e.g. the Java Perspective.
 
 Creating a Package
 ~~~~~~~~~~~~~~~~~~
@@ -181,8 +181,8 @@ creating a Modelica class you can add different restrictions on what the
 class can contain. These can for example be model, connector, block,
 record, or function. When you have selected your desired class type, you
 can select modifiers that add code blocks to the generated code.
-‘Include initial code block’ will for example add the line ‘initial
-equation’ to the class.
+'Include initial code block' will for example add the line 'initial
+equation' to the class.
 
 .. figure :: media/mdt-create-class.png
 
