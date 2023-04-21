@@ -307,27 +307,22 @@ end stripModifiersKeepRedeclares;
 
 public function setElementModifier
   "Sets a submodifier of an element."
-  input Absyn.ComponentRef inClass;
-  input Absyn.ComponentRef inElementName;
+  input Absyn.Path inClass;
+  input Absyn.Path inElementName;
   input Absyn.Modification inMod;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
-  output String outResult;
+  input output Absyn.Program program;
+        output Boolean outResult;
 protected
-  Absyn.Path p_class;
   Absyn.Within within_;
   Absyn.Class cls;
 algorithm
   try
-    p_class := AbsynUtil.crefToPath(inClass);
-    within_ := buildWithin(p_class);
-    cls := getPathedClassInProgram(p_class, inProgram);
-    cls := setElementSubmodifierInClass(cls, inElementName, inMod);
-    outProgram := updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
-    outResult := "Ok";
+    cls := getPathedClassInProgram(inClass, program);
+    (cls, outResult) := setElementSubmodifierInClass(cls, inElementName, inMod);
+    within_ := buildWithin(inClass);
+    program := updateProgram(Absyn.PROGRAM({cls}, within_), program);
   else
-    outProgram := inProgram;
-    outResult := "Error";
+    outResult := false;
   end try;
 end setElementModifier;
 
@@ -339,94 +334,76 @@ protected function setElementSubmodifierInClass
               Absyn.Modification)
    outputs: Absyn.Class"
   input Absyn.Class inClass;
-  input Absyn.ComponentRef inElementName;
+  input Absyn.Path inElementName;
   input Absyn.Modification inMod;
   output Absyn.Class outClass = inClass;
-protected
-  Boolean found = false;
+  output Boolean found;
 algorithm
-  try
-    (outClass, found) := AbsynUtil.traverseClassElements(inClass,
-      function setSubmodifierInElement(inElementName =
-        inElementName, inMod = inMod), false);
-  else
-    // do nothing
-  end try;
-  // not found in elements, try components
-  if not found then
-    (outClass, true) := AbsynUtil.traverseClassComponents(inClass,
-      function Interactive.setComponentSubmodifierInCompitems(inComponentName =
-        inElementName, inMod = inMod), false);
-  end if;
+  (outClass, found) := AbsynUtil.traverseClassElements(inClass,
+    function setSubmodifierInElement(elementName = inElementName, mod = inMod), false);
 end setElementSubmodifierInClass;
 
 protected function setSubmodifierInElement
   "Helper function to setElementSubmodifierInClass.
    Sets the modifier in an Element."
-  input Absyn.Element inElement;
-  input Boolean inFound;
-  input Absyn.ComponentRef inElementName;
-  input Absyn.Modification inMod;
-  output Absyn.Element outElement = inElement;
-  output Boolean outFound;
-  output Boolean outContinue;
+  input output Absyn.Element element;
+  input output Boolean found;
+  input Absyn.Path elementName;
+  input Absyn.Modification mod;
+        output Boolean outContinue = true;
 protected
   list<Absyn.ElementArg> args_old, args_new;
   Absyn.EqMod eqmod_old, eqmod_new;
   String el_id, id = "";
-  Absyn.Element el = inElement;
-  Absyn.ElementSpec elSpec;
+  Absyn.ElementSpec el_spec;
 algorithm
-  el_id := AbsynUtil.crefFirstIdent(inElementName);
-  elSpec := AbsynUtil.elementSpec(inElement);
-  if AbsynUtil.isClassOrComponentElementSpec(elSpec) then
-    // this will fail if no class or component (extends, import, etc)
-    id := AbsynUtil.elementSpecName(elSpec);
-  else
-    outFound := false;
-    outContinue := true;
+  el_id := AbsynUtil.pathFirstIdent(elementName);
+  el_spec := AbsynUtil.elementSpec(element);
+
+  if not AbsynUtil.isClassOrComponentElementSpec(el_spec) then
     return;
   end if;
 
-  if (el_id == id) then
+  // this will fail if no class or component (extends, import, etc)
+  id := AbsynUtil.elementSpecName(el_spec);
+
+  if el_id == id then
     try
-      outElement := match el
+      () := match element
         case Absyn.ELEMENT()
           algorithm
-            el.specification := setSubmodifierInElementSpec(inElementName, el.specification, inMod);
-          then el;
+            element.specification := setSubmodifierInElementSpec(elementName, mod, element.specification);
+          then ();
       end match;
-      outFound := true;
+      found := true;
       outContinue := false;
     else
-      outFound := false;
-      outContinue := true;
     end try;
-  else // element not found, continue looking.
-    outFound := false;
-    outContinue := true;
   end if;
 end setSubmodifierInElement;
 
 function setSubmodifierInElementSpec
-  input Absyn.ComponentRef inElementName;
-  input Absyn.ElementSpec inElSpec;
-  input Absyn.Modification inMod;
-  output Absyn.ElementSpec outElSpec;
-protected
-  Absyn.ElementSpec elSpec = inElSpec;
+  input Absyn.Path elementName;
+  input Absyn.Modification mod;
+  input output Absyn.ElementSpec elSpec;
 algorithm
-  outElSpec := match elSpec
+  () := match elSpec
     case Absyn.CLASSDEF()
       algorithm
-        elSpec.class_ := setSubmodifierInClass(inElementName, elSpec.class_, inMod);
+        elSpec.class_ := setSubmodifierInClass(elementName, elSpec.class_, mod);
       then
-        elSpec;
+        ();
+
+    case Absyn.COMPONENTS()
+      algorithm
+        elSpec.components := setComponentSubmodifierInCompitems(elSpec.components, false, elementName, mod);
+      then
+        ();
   end match;
 end setSubmodifierInElementSpec;
 
 function setSubmodifierInClass
-  input Absyn.ComponentRef inElementName;
+  input Absyn.Path inElementName;
   input Absyn.Class inClass;
   input Absyn.Modification inMod;
   output Absyn.Class outClass;
@@ -443,7 +420,7 @@ algorithm
         body := match body
           case Absyn.DERIVED()
             algorithm
-              SOME(mod) := Interactive.propagateMod(AbsynUtil.crefToPath(inElementName), inMod, SOME(Absyn.CLASSMOD(body.arguments, Absyn.NOMOD())));
+              SOME(mod) := propagateMod(inElementName, inMod, SOME(Absyn.CLASSMOD(body.arguments, Absyn.NOMOD())));
               body.arguments := match mod case Absyn.CLASSMOD() then mod.elementArgLst; end match;
             then body;
         end match;
@@ -453,12 +430,58 @@ algorithm
   end match;
 end setSubmodifierInClass;
 
+public function setComponentSubmodifierInCompitems
+  "Helper function to setComponentSubmodifierInClass. Sets the modifier in a
+   ComponentItem."
+  input list<Absyn.ComponentItem> inComponents;
+  input Boolean inFound;
+  input Absyn.Path inComponentName;
+  input Absyn.Modification inMod;
+  output list<Absyn.ComponentItem> outComponents = {};
+  output Boolean outFound;
+  output Boolean outContinue;
+protected
+  Absyn.ComponentItem item;
+  list<Absyn.ComponentItem> rest_items = inComponents;
+  Absyn.Component comp;
+  list<Absyn.ElementArg> args_old, args_new;
+  Absyn.EqMod eqmod_old, eqmod_new;
+  String comp_id;
+algorithm
+  comp_id := AbsynUtil.pathFirstIdent(inComponentName);
+
+  // Try to find the component we're looking for.
+  while not listEmpty(rest_items) loop
+    item :: rest_items := rest_items;
+
+    if AbsynUtil.componentName(item) == comp_id then
+      // Found component, propagate the modifier to it.
+      _ := match item
+        case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
+          algorithm
+            comp.modification := propagateMod(inComponentName, inMod, comp.modification);
+            item.component := comp;
+          then
+            ();
+      end match;
+
+      // Reassemble the item list and return.
+      outComponents := List.append_reverse(outComponents, item :: rest_items);
+      outFound := true;
+      outContinue := false;
+      return;
+    end if;
+    outComponents := item :: outComponents;
+  end while;
+
+  // Component not found, continue looking.
+  outComponents := inComponents;
+  outFound := false;
+  outContinue := true;
+end setComponentSubmodifierInCompitems;
+
 public function setSubmodifierInElementargs
-" Helper function to setComponentSubmodifierInCompitems
-   inputs:  (Absyn.ElementArg list,
-               Absyn.ComponentRef, /* subcomponent name */
-               Absyn.Modification)
-   outputs:  Absyn.ElementArg list"
+  "Helper function to setComponentSubmodifierInCompitems"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Path inPath;
   input Absyn.Modification inModification;
@@ -585,6 +608,162 @@ algorithm
     case (_,{}) then false;
   end match;
 end findPathModification;
+
+public function propagateMod
+  input Absyn.Path inComponentName;
+  input Absyn.Modification inNewMod;
+  input Option<Absyn.Modification> inOldMod;
+  output Option<Absyn.Modification> outMod;
+protected
+  list<Absyn.ElementArg> new_args, old_args;
+  Absyn.EqMod new_eqmod, old_eqmod;
+  Absyn.Modification mod;
+algorithm
+  if isSome(inOldMod) then
+    SOME(Absyn.CLASSMOD(elementArgLst = old_args, eqMod = old_eqmod)) := inOldMod;
+  else
+    old_args := {};
+    old_eqmod := Absyn.NOMOD();
+  end if;
+
+  if AbsynUtil.pathIsIdent(inComponentName) then
+    Absyn.CLASSMOD(elementArgLst = new_args, eqMod = new_eqmod) := inNewMod;
+
+    // If we have no eqmod but a list of submods, keep the old eqmod.
+    if valueEq(new_eqmod, Absyn.NOMOD()) and not listEmpty(new_args) then
+      new_eqmod := old_eqmod;
+    end if;
+
+    new_args := mergeElementArgs(old_args, new_args);
+    mod := Absyn.CLASSMOD(new_args, new_eqmod);
+  else
+    new_args := propagateMod2(inComponentName, old_args, inNewMod);
+    mod := Absyn.CLASSMOD(new_args, old_eqmod);
+  end if;
+
+  outMod := if AbsynUtil.isEmptyMod(mod) then NONE() else SOME(mod);
+end propagateMod;
+
+protected function mergeElementArgs
+  input list<Absyn.ElementArg> inOldArgs;
+  input list<Absyn.ElementArg> inNewArgs;
+  output list<Absyn.ElementArg> outArgs = inOldArgs;
+protected
+  Boolean found;
+algorithm
+  if listEmpty(inOldArgs) then
+    outArgs := inNewArgs;
+  elseif listEmpty(inNewArgs) then
+    outArgs := inOldArgs;
+  else
+    for narg in inNewArgs loop
+      (outArgs, found) := List.replaceOnTrue(narg, outArgs,
+        function AbsynUtil.elementArgEqualName(inArg2 = narg));
+
+      if not found then
+        outArgs := narg :: outArgs;
+      end if;
+    end for;
+  end if;
+end mergeElementArgs;
+
+protected function propagateMod2
+  input Absyn.Path inComponentName;
+  input list<Absyn.ElementArg> inSubMods;
+  input Absyn.Modification inNewMod;
+  output list<Absyn.ElementArg> outSubMods = {};
+protected
+  Absyn.ElementArg submod;
+  list<Absyn.ElementArg> rest_submods = inSubMods;
+  Absyn.Modification new_mod;
+  Absyn.Path comp_name, comp_rest;
+algorithm
+  // Search through the submods to see if one matches the component name.
+  while not listEmpty(rest_submods) loop
+    submod :: rest_submods := rest_submods;
+    comp_name := AbsynUtil.pathRest(inComponentName);
+    comp_rest := comp_name;
+
+    // Try to find the submod whose path matches the best. If the have a
+    // component name a.b.c, then first check a.b.c, then a.b, then a.
+    while true loop
+      if AbsynUtil.pathEqual(comp_name, AbsynUtil.elementArgName(submod)) then
+        // Found matching submod, propagate the modifier to it.
+        _ := match(submod)
+          case Absyn.MODIFICATION()
+            algorithm
+              if not AbsynUtil.pathIsIdent(comp_name) then
+                comp_name := AbsynUtil.pathPrefix(comp_name);
+                comp_rest := AbsynUtil.removePrefix(comp_name, comp_rest);
+              end if;
+
+              submod.modification := propagateMod(comp_rest, inNewMod, submod.modification);
+
+              if isSome(submod.modification) then
+                rest_submods := submod :: rest_submods;
+              end if;
+            then
+              ();
+
+          case Absyn.REDECLARATION()
+            algorithm
+              rest_submods := List.append_reverse(inNewMod.elementArgLst, rest_submods);
+            then
+              ();
+
+          else ();
+        end match;
+
+        outSubMods := List.append_reverse(outSubMods, rest_submods);
+        return;
+      end if;
+
+      if AbsynUtil.pathIsIdent(comp_name) then
+        // Nothing left of the path, break and continue with next submod.
+        break;
+      else
+        // Remove the last part of the component name and see if that matches
+        // instead.
+        comp_name := AbsynUtil.pathPrefix(comp_name);
+      end if;
+    end while;
+
+    outSubMods := submod :: outSubMods;
+  end while;
+
+  if not AbsynUtil.isEmptyMod(inNewMod) then
+    // No matching submod was found, create a new submod and insert it into the list.
+    submod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inNewMod);
+    outSubMods := listReverse(submod :: outSubMods);
+  else
+    outSubMods := inSubMods;
+  end if;
+end propagateMod2;
+
+protected function createNestedSubMod
+  input Absyn.Path inComponentName;
+  input Absyn.Modification inMod;
+  output Absyn.ElementArg outSubMod;
+protected
+  Absyn.ElementArg e;
+algorithm
+  if AbsynUtil.pathIsIdent(inComponentName) then
+    outSubMod := match inMod
+      case Absyn.CLASSMOD(elementArgLst = {e as Absyn.REDECLARATION()})
+        then
+          e;
+      else
+        Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
+          SOME(inMod), NONE(), AbsynUtil.dummyInfo);
+    end match;
+  else
+    outSubMod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inMod);
+    outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(),
+                   AbsynUtil.pathFirstPath(inComponentName),
+                   SOME(Absyn.CLASSMOD({outSubMod}, Absyn.NOMOD())), NONE(),
+                   AbsynUtil.dummyInfo);
+  end if;
+end createNestedSubMod;
 
 public function getElementModifierValue
   input Absyn.ComponentRef classRef;

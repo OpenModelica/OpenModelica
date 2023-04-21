@@ -115,11 +115,11 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierValue(C, b1.a1)
 // ""
 // Evaluating: setComponentModifierValue(C, b1.a1, $Code((p1 = 45)))
-// Ok
+// true
 // Evaluating: getComponentModifierValue(C, b1.a1)
 // ""
 // Evaluating: setComponentModifierValue(C, b1.a2, $Code( = 33))
-// Ok
+// true
 // Evaluating: getComponentModifierValue(C, b1.a2)
 // "33"
 // Evaluating: getExtendsModifierNames(D2, B2)
@@ -131,7 +131,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
 // 10
 // Evaluating: setComponentModifierValue(E, a.p1, $Code())
-// Ok
+// true
 // Evaluating: getComponentModifierNames(E, "a")
 // {"p2"}
 // Evaluating: getInheritanceCount(T1)
@@ -147,7 +147,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierNames(Resistance, Real)
 // {unit}
 // Evaluating: setComponentModifierValue(Q, x.start, $Code( = 4))
-// Ok
+// true
 // Evaluating: getComponentModifierValue(Q, x.start)
 // "4"
 // Evaluating: getComponentModifierValue(Q, x)
@@ -155,7 +155,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierNames(Modelica.Blocks.Interfaces.BooleanInput, Modelica.Blocks.Interfaces.BooleanSignal)
 // {}
 // Evaluating: setComponentModifierValue(M, x.start, $Code())
-// Ok
+// true
 // Evaluating: getComponentModifierNames(M, "x")
 // {}
 // Evaluating: getComponentModifierValue(M, x)
@@ -163,25 +163,25 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierValue(M2, x)
 // "1"
 // Evaluating: setComponentModifierValue(M2, x, $Code())
-// Ok
+// true
 // Evaluating: setComponentModifierValue(M3, x, $Code())
-// Ok
+// true
 // Evaluating: getComponentModifierNames(M, "x")
 // {}
 // Evaluating: getComponentModifierValue(M3, x)
 // ""
 // Evaluating: setComponentModifierValue(M4, x, $Code())
-// Ok
+// true
 // Evaluating: setComponentModifierValue(M5, x.start, $Code())
-// Ok
+// true
 // Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code())
-// Ok
+// true
 // Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = false))
-// Ok
+// true
 // Evaluating: getComponentModifierValue(M7, a1.x.fixed)
 // "false"
 // Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = true))
-// Ok
+// true
 // Evaluating: getComponentModifierValue(M7, a1.x.fixed)
 // "true"
 // Evaluating: getComponentModifierNames(M5, "x")

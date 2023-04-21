@@ -1841,6 +1841,7 @@ algorithm
       list<list<Values.Value>> valsLst;
       SourceInfo info;
       System.StatFileType statFileType;
+      Absyn.Modification mod;
 
     case ("getAvailableIndexReductionMethods",_)
       equation
@@ -2630,6 +2631,16 @@ algorithm
         end if;
       then
         Values.STRING(str);
+
+    case ("setElementModifierValue",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementModifier(classpath, path, mod, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        Values.BOOL(b);
 
     case ("removeComponentModifiers",
         Values.CODE(Absyn.C_TYPENAME(path))::
