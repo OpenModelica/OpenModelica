@@ -405,14 +405,11 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
      <%lastIdentOfPath(modelInfo.name)%>Mixed(<%lastIdentOfPath(modelInfo.name)%>Mixed &instance);
     virtual ~ <%lastIdentOfPath(modelInfo.name)%>Mixed();
 
-
-
     /// Provide Jacobian
     virtual const matrix_t& getJacobian() ;
     virtual const matrix_t& getJacobian(unsigned int index) ;
     virtual sparsematrix_t& getSparseJacobian();
     virtual sparsematrix_t& getSparseJacobian(unsigned int index);
-
 
     virtual  const matrix_t& getStateSetJacobian(unsigned int index);
     virtual  sparsematrix_t& getStateSetSparseJacobian(unsigned int index);
@@ -6804,7 +6801,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end generateAlgloopHeaderInlcudeString;
 
-template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,
+template generateClassDeclarationCode(SimCode simCode, Context context, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
                                       String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions,
                                       Boolean useFlatArrayNotation)
  "Generates class declarations."
@@ -6816,13 +6813,13 @@ let friendclasses = generatefriendAlgloops(listAppend(listAppend(allEquations, i
 let algloopsolvers = generateAlgloopsolverVariables(modelInfo,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
 
 let algloopsystems = generateAlgloopsSystemVariables(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace )
-let jacalgloopsystems =  (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
-                        (mat |> JAC_COLUMN(columnEqns=eqs) =>  generateAlgloopsSystemVariables(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
+let jacalgloopsystems = (jacobianMatrices |> JAC_MATRIX(columns=mat) hasindex index0 =>
+                        (mat |> JAC_COLUMN(columnEqns=eqs) => generateAlgloopsSystemVariables(eqs, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
                         ;separator="")
 
 let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
 let clockedfuncs = generateClockedFuncDecls(getSubPartitions(clockedPartitions), "evaluate")
-let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+let conditionvariables = conditionvariable(zeroCrossings, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
@@ -6831,8 +6828,14 @@ match modelInfo
     void getString_<%idx%>(string* z);
     >>
     ;separator="\n")
-
-
+  let auxiliaryVarDecls = match simCode
+    case SIMCODE(daeModeData=SOME(DAEMODEDATA(auxiliaryVars=auxiliaryVars))) then
+    (auxiliaryVars |> var =>
+      (match var
+      case SIMVAR(__) then
+        '<%expTypeShort(type_)%> <%cref(name, false)%>;'
+      end match)
+    ;separator="\n")
 
   <<
   <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
@@ -6902,6 +6905,8 @@ match modelInfo
       int* _stateActivator;
 
       <%memberVariableDefinitions%>
+      /*auxiliary DAE variables*/
+      <%auxiliaryVarDecls%>
       <%conditionvariables%>
       Functions* _functions;
 
@@ -6929,7 +6934,7 @@ match modelInfo
       <%additionalProtectedMembers%>
       /*Additional member functions*/
       <%extraFuncsDecl%>
-   };
+  };
   >>
    /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
