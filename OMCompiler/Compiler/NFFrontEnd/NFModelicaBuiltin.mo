@@ -3401,6 +3401,21 @@ annotation(
   preferredView="text");
 end getElementModifierNames;
 
+function setComponentModifierValue = setElementModifierValue;
+
+function setElementModifierValue
+  input TypeName className;
+  input TypeName elementName;
+  input ExpressionOrModification modifier;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Sets a modifier on an element in a class definition.
+</html>"),
+  preferredView="text");
+end setElementModifierValue;
+
 function getElementModifierValue
   input TypeName className;
   input TypeName modifier;

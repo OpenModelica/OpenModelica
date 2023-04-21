@@ -49,17 +49,17 @@ setComponentModifierValue(M, q, $Code(=1));
 // Result:
 // true
 // ""
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
-// Ok
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
 // "model M
 //   model A
 //     model B
@@ -81,9 +81,9 @@ setComponentModifierValue(M, q, $Code(=1));
 //   A a2(b(x = 12));
 //   Real w(min = 5, start = 4) = 3;
 // end M;"
-// Ok
-// Ok
-// Ok
+// true
+// true
+// true
 // "model M
 //   model A
 //     model B
@@ -105,5 +105,5 @@ setComponentModifierValue(M, q, $Code(=1));
 //   A a2;
 //   Real w(start = 4) = 3;
 // end M;"
-// Error
+// false
 // endResult

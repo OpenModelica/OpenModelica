@@ -1092,7 +1092,7 @@ bool OMCProxy::setElementModifierValue(QString className, QString modifierName, 
     expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   }
   sendCommand(expression);
-  if (getResult().toLower().compare("ok") == 0) {
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
     QString msg = tr("Unable to set the element modifier value using command <b>%1</b>").arg(expression);

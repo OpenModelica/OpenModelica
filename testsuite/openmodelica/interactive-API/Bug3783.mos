@@ -32,7 +32,7 @@ list(Bug3783); getErrorString();
 //     Placement(visible = true, transformation(origin = {-26, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
 // end Bug3783;"
 // ""
-// Ok
+// true
 // ""
 // {"p"}
 // ""

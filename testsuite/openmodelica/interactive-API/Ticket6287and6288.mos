@@ -59,7 +59,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code())
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled, "driveData")
@@ -67,7 +67,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData)))
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled, "driveData")

@@ -22,12 +22,12 @@ list(M);
 
 // Result:
 // true
-// Ok
+// true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"A\");
 // end M;"
-// Ok
+// true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"B\");

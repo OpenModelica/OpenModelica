@@ -491,7 +491,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code( = 2))
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -506,7 +506,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1.start, $Code( = 2))
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -517,7 +517,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code( = Resistor(R = 2)))
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -532,7 +532,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1.min, $Code( = 10))
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -570,7 +570,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1.min, $Code())
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -581,7 +581,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code())
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -592,7 +592,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentModifierValue(TestPack.MyModel, r1.start, $Code())
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
