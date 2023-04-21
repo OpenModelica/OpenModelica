@@ -417,6 +417,7 @@ public
   algorithm
     isTyped := match binding
       case TYPED_BINDING() then true;
+      case FLAT_BINDING() then true;
       else false;
     end match;
   end isTyped;

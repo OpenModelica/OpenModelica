@@ -879,7 +879,7 @@ public
         Binding condition;
 
       case COMPONENT(condition = condition)
-        then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
+        then Binding.isTyped(condition) and Expression.isFalse(Binding.getTypedExp(condition));
 
       else false;
     end match;
