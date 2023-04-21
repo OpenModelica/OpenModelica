@@ -1624,8 +1624,10 @@ algorithm
     SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), listAppend(SymbolicJacs, SymbolicJacsTemp));
     jacobianSimvars := SimCodeUtil.collectAllJacobianVars(SymbolicJacs);
     modelInfo := SimCodeUtil.setJacobianVars(jacobianSimvars, modelInfo);
+    crefToSimVarHT:= List.fold(jacobianSimvars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHT);
     seedVars := SimCodeUtil.collectAllSeedVars(SymbolicJacs);
     modelInfo := SimCodeUtil.setSeedVars(seedVars, modelInfo);
+    crefToSimVarHT := List.fold(seedVars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHT);
 
     // create dae SimVars: residual and algebraic
     varsLst := BackendVariable.equationSystemsVarsLst(inBackendDAE.eqs);

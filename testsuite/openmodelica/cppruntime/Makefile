@@ -20,6 +20,7 @@ externalRecordTest.mos \
 mathFunctionsTest.mos \
 mslDistributionsTest.mos \
 mslElectricalMachinesTest.mos \
+mslElectricalMachinesTestDAE.mos \
 mslElectricalSensorsTest.mos \
 mslMathFFT1Test.mos \
 nameClashTest.mos \

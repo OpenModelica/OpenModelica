@@ -1,0 +1,31 @@
+// name: mslElectricalMachinesTestDAE
+// keywords: DAE Jacobian init const string substring
+// status: correct
+// teardown_command: rm -f *AIMC_Transformer*
+
+setCommandLineOptions("--simCodeTarget=Cpp");
+setCommandLineOptions("--daeMode");
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+simulate(Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer);
+val(currentQuasiRMSSensor.I, 2.5);
+val(aimc.wMechanical, 2.5);
+val(aimc.tauElectrical, 2.5);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 173.2124789170594
+// 150.8435549841741
+// 161.396425531771
+// ""
+// endResult
