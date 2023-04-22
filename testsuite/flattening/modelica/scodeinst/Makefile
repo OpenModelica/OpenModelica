@@ -287,6 +287,7 @@ ConnectComplex1.mo \
 ConnectComplexFlow1.mo \
 ConnectDiffOrder1.mo \
 ConnectDiffOrder2.mo \
+ConnectExtendsBuiltin1.mo \
 ConnectExternalObject1.mo \
 ConnectInitial.mo \
 ConnectInvalidForm1.mo \
