@@ -15,8 +15,6 @@ readFile("DualMassOscillator_System1_systemCall.log");
 // Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
 // "
-// true
-// ""
 // "DualMassOscillator.System1.fmu"
 // ""
 // 0
