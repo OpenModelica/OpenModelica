@@ -59,8 +59,9 @@ import HashSetString;
 
 // protected imports
 protected
-import Array;
 import AbsynUtil;
+import Array;
+import Autoconf;
 import AvlSetString;
 import BackendDAEOptimize;
 import BackendDAETransform;
