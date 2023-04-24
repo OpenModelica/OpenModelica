@@ -191,6 +191,16 @@ public
     end match;
   end isInput;
 
+  function isOutput
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF() then InstNode.isOutput(cref.node);
+      else false;
+    end match;
+  end isOutput;
+
   function node
     input ComponentRef cref;
     output InstNode node;
