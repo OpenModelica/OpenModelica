@@ -14,6 +14,7 @@ encapsulated package Autoconf
   // (systemCall uses 'cmd \c' to issue commands.)
   constant String make = "mingw32-make";
   constant String cmake = "cmake";
+  constant String cmakeVersion = "3.18.4";
   constant String exeExt = ".exe";
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
