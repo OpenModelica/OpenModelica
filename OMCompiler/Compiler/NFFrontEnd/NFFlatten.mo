@@ -2014,6 +2014,7 @@ protected
   CardinalityTable.Table ctable;
   Connections.BrokenEdges broken = {};
   UnorderedMap<ComponentRef, Variable> vars;
+  UnorderedSet<ComponentRef> connectedLocalIOs;
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2052,7 +2053,7 @@ algorithm
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   // generate the equations
-  conn_eql := ConnectEquations.generateEquations(csets_array, vars);
+  (conn_eql, connectedLocalIOs) := ConnectEquations.generateEquations(csets_array, vars);
 
   // append the equalityConstraint call equations for the broken connects
   if System.getHasOverconstrainedConnectors() then
@@ -2064,6 +2065,11 @@ algorithm
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
   flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
+  // remove input and output prefixes from local IOs that are determined through connect equations
+  if Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+    flatModel.variables := list(stripInputOutputForConnected(v, connectedLocalIOs) for v in flatModel.variables);
+  end if;
+
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then
     flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable);
@@ -2071,6 +2077,19 @@ algorithm
 
   execStat(getInstanceName());
 end resolveConnections;
+
+function stripInputOutputForConnected
+  "remove input and output prefixes if variable appears in connectedIOs"
+  input output Variable v;
+  input UnorderedSet<ComponentRef> connectedIOs;
+protected
+  Attributes attributes = v.attributes;
+algorithm
+  if UnorderedSet.contains(v.name, connectedIOs) then
+    attributes.direction := Direction.NONE;
+    v.attributes := attributes;
+  end if;
+end stripInputOutputForConnected;
 
 function evaluateConnectionOperators
   input output FlatModel flatModel;

@@ -410,7 +410,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SIMULATION,
   Flags.OBFUSCATE,
   Flags.FMU_RUNTIME_DEPENDS,
-  Flags.FRONTEND_INLINE
+  Flags.FRONTEND_INLINE,
+  Flags.EXPOSE_LOCAL_IOS
 };
 
 public function new

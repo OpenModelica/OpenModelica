@@ -1518,7 +1518,12 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
+        /* Consider all inputs known with flag exposeLocalIOs unless they are protected */
+        if not Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+          false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
+        else
+          false := DAEUtil.varDirectionEqual(inVarDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(protection);
+        end if;
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1546,7 +1551,11 @@ algorithm
     case DAE.CONST() then BackendDAE.CONST();
     case DAE.VARIABLE()
       equation
-        true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
+        if not Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+          true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
+        else
+          true = DAEUtil.varDirectionEqual(varDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(visibility);
+        end if;
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!

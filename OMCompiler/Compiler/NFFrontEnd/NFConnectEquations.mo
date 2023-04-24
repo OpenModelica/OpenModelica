@@ -83,10 +83,12 @@ function generateEquations
   input array<list<Connector>> sets;
   input UnorderedMap<ComponentRef, Variable> variables;
   output list<Equation> equations = {};
+  output UnorderedSet<ComponentRef> connectedLocalIOs;
 protected
   partial function potFunc
     input list<Connector> elements;
     output list<Equation> equations;
+    input output UnorderedSet<ComponentRef> connectedLocalIOs;
   end potFunc;
 
   list<Equation> set_eql;
@@ -95,7 +97,7 @@ protected
   ConnectorType.Type cty;
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
-
+  connectedLocalIOs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   //potfunc := if Config.orderConnections() then
   //  generatePotentialEquationsOrdered else generatePotentialEquations;
   potfunc := generatePotentialEquations;
@@ -105,7 +107,7 @@ algorithm
     cty := getSetType(set);
 
     if ConnectorType.isPotential(cty) then
-      set_eql := potfunc(set);
+      (set_eql, connectedLocalIOs) := potfunc(set, connectedLocalIOs);
     elseif ConnectorType.isFlow(cty) then
       set_eql := generateFlowEquations(set);
     elseif ConnectorType.isStream(cty) then
@@ -201,6 +203,7 @@ function generatePotentialEquations
    will be X = Y.A and X = Z.B."
   input list<Connector> elements;
   output list<Equation> equations;
+  input output UnorderedSet<ComponentRef> connectedLocalIOs;
 protected
   Connector c1;
 algorithm
@@ -209,6 +212,14 @@ algorithm
   if Connector.variability(c1) > Variability.PARAMETER then
     equations := list(makeEqualityEquation(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
+    // collect inputs and outputs that are inside in connections if --exposeLocalIOs
+    if Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+      for c in elements loop
+        if (Connector.isInside(c) and (ComponentRef.isInput(c.name) or ComponentRef.isOutput(c.name))) then
+          UnorderedSet.add(c.name, connectedLocalIOs);
+        end if;
+      end for;
+    end if;
   else
     equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
