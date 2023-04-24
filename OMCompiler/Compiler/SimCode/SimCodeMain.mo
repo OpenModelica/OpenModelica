@@ -934,7 +934,7 @@ algorithm
             SemanticVersion.Version cmakeVersion;
             SemanticVersion.Version minimumVersion;
           case("default") algorithm
-            cmakeVersion := SemanticVersion.parse(Autoconf.cmakeVersion);
+            cmakeVersion := SimCodeUtil.getCMakeVersion();
             minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
             if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
