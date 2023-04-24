@@ -4649,16 +4649,7 @@ end elementArgName;
 public function elementArgEqualName
   input Absyn.ElementArg inArg1;
   input Absyn.ElementArg inArg2;
-  output Boolean outEqual;
-protected
-  Absyn.Path name1, name2;
-algorithm
-  outEqual := match(inArg1, inArg2)
-    case (Absyn.MODIFICATION(path = name1), Absyn.MODIFICATION(path = name2))
-      then pathEqual(name1, name2);
-
-    else false;
-  end match;
+  output Boolean outEqual = pathEqual(elementArgName(inArg1), elementArgName(inArg2));
 end elementArgEqualName;
 
 public function optMsg

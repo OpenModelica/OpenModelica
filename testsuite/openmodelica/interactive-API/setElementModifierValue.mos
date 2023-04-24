@@ -12,11 +12,19 @@ loadString("
   end M;
 ");
 
-setElementModifierValue(M, classwithReplaceable.testClass, $Code((redeclare ClassB testClass "A")));
+setElementModifierValue(M, classwithReplaceable.otherClass, $Code((redeclare ClassB testClass "A")));
 getErrorString();
 list(M);
 
-setElementModifierValue(M, classwithReplaceable.testClass, $Code((redeclare ClassB testClass "B")));
+setElementModifierValue(M, classwithReplaceable.otherClass, $Code((redeclare ClassB testClass "B")));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, classwithReplaceable.otherClass, $Code((testClass=12)));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, classwithReplaceable.otherClass, $Code((redeclare ClassB testClass "C")));
 getErrorString();
 list(M);
 
@@ -25,11 +33,21 @@ list(M);
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"A\");
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"A\"));
 // end M;"
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(redeclare ClassB testClass \"B\");
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"B\"));
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(testClass = 12));
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"));
 // end M;"
 // endResult

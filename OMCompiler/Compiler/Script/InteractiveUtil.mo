@@ -748,14 +748,8 @@ protected
   Absyn.ElementArg e;
 algorithm
   if AbsynUtil.pathIsIdent(inComponentName) then
-    outSubMod := match inMod
-      case Absyn.CLASSMOD(elementArgLst = {e as Absyn.REDECLARATION()})
-        then
-          e;
-      else
-        Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
-          SOME(inMod), NONE(), AbsynUtil.dummyInfo);
-    end match;
+    outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
+      SOME(inMod), NONE(), AbsynUtil.dummyInfo);
   else
     outSubMod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inMod);
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(),

@@ -17,7 +17,7 @@ getAllSubtypeOf(DC_Drive.DriveParameters.MachineDataSets.MachineData,DC_Drive.Dr
 removeElementModifiers(DC_Drive.Examples.DCPMCurrentControlled,"driveData",false); getErrorString();
 setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code(())); getErrorString();
 getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled,"driveData"); getErrorString();
-setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData))); getErrorString();
+setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData))); getErrorString();
 getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled,"driveData"); getErrorString();
 getElementModifierValues(DC_Drive.Examples.DCPMCurrentControlled,driveData.machineData); getErrorString();
 
@@ -66,7 +66,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // {}
 // Evaluating: getErrorString()
 // ""
-// Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData)))
+// Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData)))
 // true
 // Evaluating: getErrorString()
 // ""
