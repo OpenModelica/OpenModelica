@@ -245,7 +245,7 @@ pipeline {
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
-                common.standardSetup()
+                common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)  // CMake version changed, reconfigure and build
                 unstash 'omc-clang'
                 common.makeLibsAndCache()
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
