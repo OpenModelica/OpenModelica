@@ -1518,8 +1518,8 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        /* Consider all inputs known with flag exposeLocalIOs unless they are protected */
-        if not Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+        /* Consider all inputs known with flag exposeLocalIOs > 0 unless they are protected */
+        if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) == 0 then
           false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
         else
           false := DAEUtil.varDirectionEqual(inVarDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(protection);
@@ -1551,7 +1551,7 @@ algorithm
     case DAE.CONST() then BackendDAE.CONST();
     case DAE.VARIABLE()
       equation
-        if not Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+        if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) == 0 then
           true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
         else
           true = DAEUtil.varDirectionEqual(varDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(visibility);

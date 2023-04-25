@@ -2066,7 +2066,7 @@ algorithm
   flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
   // remove input and output prefixes from local IOs that are determined through connect equations
-  if Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+  if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
     flatModel.variables := list(stripInputOutputForConnected(v, connectedLocalIOs) for v in flatModel.variables);
   end if;
 

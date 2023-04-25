@@ -212,11 +212,12 @@ algorithm
   if Connector.variability(c1) > Variability.PARAMETER then
     equations := list(makeEqualityEquation(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
-    // collect inputs and outputs that are inside in connections if --exposeLocalIOs
-    if Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS) then
+    // collect inputs and outputs that are inside in connections if exposeLocalIOs > 0
+    // strip array indices so that the variables will be found later
+    if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
       for c in elements loop
         if (Connector.isInside(c) and (ComponentRef.isInput(c.name) or ComponentRef.isOutput(c.name))) then
-          UnorderedSet.add(c.name, connectedLocalIOs);
+          UnorderedSet.add(ComponentRef.stripSubscripts(c.name), connectedLocalIOs);
         end if;
       end for;
     end if;
