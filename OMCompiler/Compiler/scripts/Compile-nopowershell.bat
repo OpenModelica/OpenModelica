@@ -31,13 +31,13 @@ if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
 
 :SET_PATH_LOG
 cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.log 2>&1
-set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH% >>%CURRENT_DIR%\%1.log 2>&1
+set PATH=%CD%;%CD%\..\..\usr\bin; >>%CURRENT_DIR%\%1.log 2>&1
 cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.log 2>&1
 goto :CHECK_TARGET
 
 :SET_PATH
 cd /D "%MINGW%\bin"
-set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH%
+set PATH=%CD%;%CD%\..\..\usr\bin;
 echo PATH = "%PATH%"
 cd /D "%CURRENT_DIR%"
 goto :CHECK_TARGET
@@ -109,7 +109,7 @@ goto :Final
 :MINGW
 REM echo "MINGW"
 if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.log 2>&1; Exit $LASTEXITCODE") else (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%; Exit $LASTEXITCODE")
+if %LOGGING%==1 ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.log 2>&1) else ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%)
 set RESULT=%ERRORLEVEL%
 if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
