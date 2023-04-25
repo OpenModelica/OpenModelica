@@ -104,14 +104,14 @@ protected
 uniontype VariableConversionSettings
   record VARIABLE_CONVERSION_SETTINGS
     Boolean useLocalDirection;
-    Boolean exposeLocalIOs;
+    Integer exposeLocalIOs;
     Boolean isFunctionParameter;
     Boolean addTypeToSource;
   end VARIABLE_CONVERSION_SETTINGS;
 end VariableConversionSettings;
 
 constant VariableConversionSettings FUNCTION_VARIABLE_CONVERSION_SETTINGS =
-  VARIABLE_CONVERSION_SETTINGS(false, false, true, false);
+  VARIABLE_CONVERSION_SETTINGS(false, 0, true, false);
 
 function convertVariables
   input list<Variable> variables;
@@ -121,7 +121,7 @@ protected
 algorithm
   settings := VariableConversionSettings.VARIABLE_CONVERSION_SETTINGS(
     useLocalDirection = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION),
-    exposeLocalIOs = Flags.getConfigBool(Flags.EXPOSE_LOCAL_IOS),
+    exposeLocalIOs = Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS),
     isFunctionParameter = false,
     addTypeToSource = Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)
   );
@@ -178,7 +178,8 @@ algorithm
         // Alternatively strip input/output only from non connectors and from protected connectors if
         // --exposeLocalIOs has been set.
         if (attr.direction == Direction.NONE or settings.useLocalDirection) or
-           (settings.exposeLocalIOs and attr.connectorType <> ConnectorType.NON_CONNECTOR and vis == Visibility.PUBLIC) then
+           (settings.exposeLocalIOs > 0 and attr.connectorType <> ConnectorType.NON_CONNECTOR and
+            ComponentRef.depth(cref) <= settings.exposeLocalIOs + 1 and vis == Visibility.PUBLIC) then
           dir := attr.direction;
         else
           dir := getComponentDirection(attr.direction, cref);

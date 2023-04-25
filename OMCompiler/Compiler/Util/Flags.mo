@@ -1454,8 +1454,8 @@ constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(154, "frontendInline",
   Gettext.gettext("Enables inlining of functions in the frontend."));
 
 constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(155, "exposeLocalIOs",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Keeps the input/output prefix for unconnected inputs and outputs at all levels, besides top-level ones."));
+  NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
+  Gettext.gettext("Keeps the input/output prefix for unconnected inputs and outputs at requested levels, 0 meaning top-level."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
