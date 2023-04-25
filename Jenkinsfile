@@ -240,12 +240,12 @@ pipeline {
           }
           steps {
             script {
-              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache-bionic-cmake-3.21.7')
+              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
-                common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)  // CMake version changed, reconfigure and build
+                common.standardSetup()
                 unstash 'omc-clang'
                 common.makeLibsAndCache()
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()

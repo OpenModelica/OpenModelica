@@ -173,7 +173,7 @@ See section :ref:`omedit-options-messages` for Messages Browser options.
 Perspectives
 ------------
 
-The perspective tabs are loacted at the bottom right of the MainWindow:
+The perspective tabs are located at the bottom right of the Main Window:
 
 -  Welcome Perspective
 
@@ -200,7 +200,7 @@ See section :ref:`omedit-options-general`.
 Modeling Perspective
 ~~~~~~~~~~~~~~~~~~~~
 
-The Modeling Perpective provides the interface where user can create and
+The Modeling Perspective provides the interface where user can create and
 design their models. See :numref:`omedit-modeling-perspective`.
 
 .. figure :: media/omedit-modeling-perspective.png
@@ -209,7 +209,7 @@ design their models. See :numref:`omedit-modeling-perspective`.
   OMEdit Modeling Perspective.
 
 The Modeling Perspective interface can be viewed in two different modes,
-the tabbed view and subwindow view, see section :ref:`omedit-options-general`.
+the tabbed view and sub-window view, see section :ref:`omedit-options-general`.
 
 Plotting Perspective
 ~~~~~~~~~~~~~~~~~~~~
@@ -219,7 +219,7 @@ Plotting Perspective will automatically become active when the
 simulation of the model is finished successfully. It will also become
 active when user opens any of the OpenModelica's supported result file.
 Similar to Modeling Perspective this perspective can also be viewed in
-two different modes, the tabbed view and subwindow view, see section
+two different modes, the tabbed view and sub-window view, see section
 :ref:`omedit-options-general`.
 
 .. figure :: media/omedit-plotting-perspective.png
@@ -362,7 +362,7 @@ View Menu
 
   -  *Tile Windows Vertically* - Arranges all child windows in a vertically tiled pattern.
 
--  *Toggle Tab/Sub-window View* - Switches between tab and subwindow view.
+-  *Toggle Tab/SubWindow View* - Switches between tab and sub-window view.
 
 -  *Grid Lines* - Toggle grid lines of the current model.
 
@@ -538,7 +538,8 @@ In order to connect one component model to another the user first needs
 to enable the connect mode (|connect-mode|) from the toolbar.
 
 Move the mouse over the connector. The mouse cursor will change from arrow cursor to cross cursor.
-To start the connection press left button and move while keeping the button pressed. Now release the left button.
+To start the connection press left button and move while keeping the button pressed.
+Now release the left button.
 Move towards the end connector and click when cursor changes to cross cursor.
 
 .. |connect-mode| image:: media/omedit-icons/connect-mode.*
@@ -568,7 +569,7 @@ The simulation process in OMEdit is split into three main phases:
    compiled in parallel by OMEdit, exploiting the power of multi-core CPUs.
 
 #. The simulation executable is started and produces the simulation results in a `.mat` or
-   `.csv` file. The runtime behaviour can be influenced by *Simulation Flags*, e.g. by
+   `.csv` file. The runtime behavior can be influenced by *Simulation Flags*, e.g. by
    choosing specific solvers, or changing the output file name. Note that it it possible
    to re-simulate a model multiple times, changing parameter values from the Variables
    Browser and/or changing some Simulation Flags. In this case, only Phase 3. is repeated,
@@ -795,7 +796,7 @@ Simulation Flags
 
   -  *LOG_SYNCHRONOUS* - Log clocks and sub-clocks for synchronous features.
 
-  -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
+  -  *LOG_ZEROCROSSINGS* - additional information about the zero-crossings.
 
 -  *Additional Simulation Flags (Optional)* - specify any other simulation flag.
 
@@ -834,7 +835,7 @@ Here are some simple examples:
 - ``.*yz`` matches variables ending with ``yz``
 
 - ``abc\.def.*`` matches variables starting with ``abc.def``. Note that the ``.``
-  character is a regex metacharacter, so it must be escaped by a ``\``
+  character is a regex meta-character, so it must be escaped by a ``\``
 
 - ``.*body\.a_0\[1\]`` matches variables ending with ``body.a_0[1]``. Note that ``.``,
   ``[``, and ``]`` must be escaped
@@ -1056,25 +1057,25 @@ Plot Window Menu
 
       -  *Toggle Sign* - Toggles the sign of curve.
 
-    -  *Titles* - Plot, axes and footer titles settings.
+  -  *Titles* - Plot, axes and footer titles settings.
 
-    -  *Legend* - Sets legend position and font.
+  -  *Legend* - Sets legend position and font.
 
-    -  *Range* - Automatic or manual axes range.
+  -  *Range* - Automatic or manual axes range.
 
-      -  *Auto Scale* - Automatically scales the horizontal and vertical axes.
+    -  *Auto Scale* - Automatically scales the horizontal and vertical axes.
 
-      -  *X-Axis*
+    -  *X-Axis*
 
-        -  *Minimum* - Minimum value for x-axis.
+      -  *Minimum* - Minimum value for x-axis.
 
-        -  *Maximum* - Maximum value for x-axis.
+      -  *Maximum* - Maximum value for x-axis.
 
-      -  *Y-Axis*
+    -  *Y-Axis*
 
-        -  *Minimum* - Minimum value for y-axis.
+      -  *Minimum* - Minimum value for y-axis.
 
-        -  *Maximum* - Maximum value for y-axis.
+      -  *Maximum* - Maximum value for y-axis.
 
     -  *Prefix Units* - Automatically pick the right prefix for units.
 
@@ -1138,8 +1139,8 @@ By pushing the *previous* button, the animation jumps to the initial point of ti
 Points of time can be selected by moving the *time slider* or by inserting a simulation
 time in the *Time-box*.
 The speed factor of animation in relation to realtime can be set in the *Speed-dialog*.
-Other animations can be openend by using the *open file* button and selecting a result
-file with a corresping scene description file.
+Other animations can be opened by using the *open file* button and selecting a result
+file with a corresponding scene description file.
 
 The 3D camera view can be manipulated as follows:
 
@@ -1439,7 +1440,7 @@ Libraries Options
 -  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 
   -  *Load latest Modelica version on startup* - Is true then the latest available version of the
-     Modelica Standard Library is always loaded alongwith its dependencies.
+     Modelica Standard Library is always loaded along with its dependencies.
 
 -  User libraries loaded automatically on startup - The list of user libraries/files that are loaded on startup.
 
@@ -1781,6 +1782,7 @@ Plotting Options
 -  General
 
   -  *Auto Scale* - Sets whether to auto scale the plots or not.
+
   -  *Prefix Units* - Automatically pick the right prefix for units for the new plot windows.
      For existing plot windows use the :ref:`omedit-plot-window-menu`.
 
@@ -1913,7 +1915,7 @@ OMTLMSimulator Options
 
   -  *Path* - path to OMTLMSimulator bin directory.
 
-  -  *Manager Process* - path to OMTLMSimulator managar process.
+  -  *Manager Process* - path to OMTLMSimulator manager process.
 
   -  *Monitor Process* - path to OMTLMSimulator monitor process.
 

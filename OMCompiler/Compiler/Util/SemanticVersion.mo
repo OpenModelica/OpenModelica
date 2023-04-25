@@ -51,7 +51,7 @@ uniontype Version
 end Version;
 
 function parse
-  "Parse version string into Version."
+  "Parse version string into SemanticVersion.Version."
   input String s;
   input Boolean nonsemverAsZeroZeroZero = false;
   output Version v;
@@ -189,8 +189,8 @@ function isSemVer
   output Boolean b;
 algorithm
   b := match v
-    case NONSEMVER() then false;
-    else true;
+    case SEMVER() then true;
+    else false;
   end match;
 end isSemVer;
 

@@ -239,7 +239,7 @@ Lets look at the Modelica model for the open loop controlled car:
 .. omc-loadString ::
 
   model noFeedback
-    import SI = Modelica.Units.SI;
+    import SI = Modelica.SIunits;
     SI.Velocity y;                              // output signal without noise, theta = 0 -> v(t) = 0
     SI.Velocity yNoise;                         // output signal with noise,    theta <> 0 -> v(t) <> 0
     parameter SI.Mass m = 1500;

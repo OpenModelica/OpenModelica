@@ -12,7 +12,8 @@ system("rm -rf CMakeCrossCompile && mkdir CMakeCrossCompile", "CMakeCrossCompile
 cd("CMakeCrossCompile");
 
 // Set CMake FMU without any filters
-if not setCommandLineOptions("--fmiFilter=none --fmuCMakeBuild=true --fmuRuntimeDepends=all") then
+// Disable CMake features, because version in multiarch/crossbuild is too old.
+if not setCommandLineOptions("--fmiFilter=none --fmuCMakeBuild=true --fmuRuntimeDepends=none") then
   print(getErrorString());
   exit(1);
 end if;
