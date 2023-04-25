@@ -1062,7 +1062,7 @@ algorithm
       algorithm
         true := System.regularFileExists(str1);
         b := System.regularFileExists(str2) and System.fileContentsEqual(str1,str2);
-        b := if not b then System.rename(str1,str2) else b;
+        b := if not b then System.rename(str1,str2) else System.removeFile(str1) == 0;
       then
         Values.BOOL(b);
 
