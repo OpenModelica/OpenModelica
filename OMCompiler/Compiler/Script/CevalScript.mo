@@ -1061,8 +1061,12 @@ algorithm
     case ("compareFilesAndMove",{Values.STRING(str1),Values.STRING(str2)})
       algorithm
         true := System.regularFileExists(str1);
-        b := System.regularFileExists(str2) and System.fileContentsEqual(str1,str2);
+        b1 := System.fileContentsEqual(str1,str2)
+        b := System.regularFileExists(str2) and b1;
         b := if not b then System.rename(str1,str2) else b;
+        if b1 then // if contents are equal we did not do the rename so remove the file
+          System.removeFile(str1);
+        end if
       then
         Values.BOOL(b);
 

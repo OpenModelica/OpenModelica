@@ -1428,6 +1428,11 @@ package SimCodeUtil
     input list<BackendDAE.SimIterator> iters;
     output Integer size ;
   end getSimIteratorSize;
+
+  function simVarString
+    input SimCodeVar.SimVar inVar;
+    output String s;
+  end simVarString;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
