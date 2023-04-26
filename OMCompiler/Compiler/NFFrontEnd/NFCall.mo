@@ -2302,7 +2302,11 @@ protected
             (range, iter_ty, iter_var, iter_pur) := Typing.typeIterator(iter, range, next_context, is_structural);
 
             if is_structural then
-              range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+              if InstContext.inRelaxed(context) then
+                range := Ceval.tryEvalExp(range);
+              else
+                range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+              end if;
               iter_ty := Expression.typeOf(range);
             end if;
 

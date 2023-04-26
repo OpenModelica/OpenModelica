@@ -1,0 +1,85 @@
+// name: GetModelInstanceExp2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Integer n;
+    Real x[3] = {i for i in 1:n};
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"n\",
+//       \"type\": \"Integer\",
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \"3\"
+//         ],
+//         \"typed\": [
+//           \"3\"
+//         ]
+//       },
+//       \"modifiers\": \"{i for i in 1:n}\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"iterator_call\",
+//           \"name\": \"$array\",
+//           \"exp\": {
+//             \"$kind\": \"cref\",
+//             \"parts\": [
+//               {
+//                 \"name\": \"i\"
+//               }
+//             ]
+//           },
+//           \"iterators\": [
+//             {
+//               \"name\": \"i\",
+//               \"range\": {
+//                 \"$kind\": \"range\",
+//                 \"start\": 1,
+//                 \"stop\": {
+//                   \"$kind\": \"cref\",
+//                   \"parts\": [
+//                     {
+//                       \"name\": \"n\"
+//                     }
+//                   ]
+//                 }
+//               }
+//             }
+//           ]
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

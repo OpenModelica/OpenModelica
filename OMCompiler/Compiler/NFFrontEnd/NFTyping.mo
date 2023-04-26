@@ -656,7 +656,7 @@ algorithm
         if Binding.isUnbound(binding) then
           // If the component has no binding, try to use its parent's binding
           // (i.e. for record fields where the record instance has a binding).
-          (b, parent_dims) := getRecordElementBinding(component);
+          (b, parent_dims) := getRecordElementBinding(component, context);
 
           if Binding.isUnbound(b) then
             // If the component still doesn't have a binding, try to use the start attribute instead.
@@ -831,6 +831,7 @@ function getRecordElementBinding
   "Tries to fetch the binding for a given record field by using the binding of
    the record instance."
   input InstNode component;
+  input InstContext.Type context;
   output Binding binding;
   output Integer parentDims = 0;
 protected
@@ -848,10 +849,10 @@ algorithm
 
     if Binding.isUnbound(parent_binding) then
       // If the parent has no binding, try the parent's parent.
-      (binding, parentDims) := getRecordElementBinding(parent);
+      (binding, parentDims) := getRecordElementBinding(parent, context);
     else
       // Otherwise type the binding, so we can safely look up the field name.
-      binding := typeBinding(parent_binding, InstContext.set(NFInstContext.CLASS, NFInstContext.DIMENSION));
+      binding := typeBinding(parent_binding, InstContext.set(context, NFInstContext.DIMENSION));
 
       // If the binding wasn't typed before, update the parent component with it
       // so we don't have to type it again.
