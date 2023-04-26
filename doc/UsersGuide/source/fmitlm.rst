@@ -60,7 +60,8 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0 for Co-Simulation FMUs.
+We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0.4 for Co-Simulation
+FMUs.
 
 For the Co-Simulation FMU two integrator methods are available:
 
@@ -131,7 +132,7 @@ The CMake compilation accepts the following settings:
   ``fmi2FunctionTypes.h`` and ``fmi2TypesPlatforms.h``.
 
   * Defaults to a location inside the OpenModelica installation directory, which was used
-    to create the FMU.
+    to create the FMU. They need to be version 2.0.4 from the FMI Standard.
 
 * ``RUNTIME_DEPENDENCIES_LEVEL``:
   String value to specify runtime dependencies set.
