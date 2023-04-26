@@ -30,6 +30,7 @@ GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
 GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
+GetModelInstanceExp2.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
 GetModelInstanceExtends3.mos \
