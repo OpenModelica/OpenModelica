@@ -1,0 +1,26 @@
+// name: QualifyPath1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    model A
+    end A;
+
+    model B
+      A a;
+    end B;
+  end P;
+");
+
+qualifyPath(P.B, A);
+getErrorString();
+
+// Result:
+// true
+// "P.A"
+// ""
+// endResult

@@ -3111,6 +3111,9 @@ algorithm
     case ("restoreAST", {Values.INTEGER(integer = n)})
       then Values.BOOL(SymbolTable.restoreAST(n));
 
+    case ("qualifyPath", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Values.STRING(AbsynUtil.pathString(NFApi.mkFullyQual(SymbolTable.getAbsyn(), classpath, path)));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
