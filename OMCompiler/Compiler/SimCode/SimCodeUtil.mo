@@ -59,8 +59,9 @@ import HashSetString;
 
 // protected imports
 protected
-import Array;
 import AbsynUtil;
+import Array;
+import Autoconf;
 import AvlSetString;
 import BackendDAEOptimize;
 import BackendDAETransform;
@@ -105,6 +106,7 @@ import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
 import PriorityQueue;
+import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
@@ -15762,6 +15764,26 @@ algorithm
                  "\"" + System.trim(include, "\"-I") + "\"";
   end for;
 end make2CMakeInclude;
+
+public function getCMakeVersion
+  "Get CMake version"
+  input String pathToCMake = Autoconf.cmake;
+  output SemanticVersion.Version cmakeVersion;
+protected
+  Integer retVal;
+  String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  String cmakeVersionString;
+algorithm
+  // Regex magic to read major.minor.patch version from cmake --version
+  retVal := System.systemCall(pathToCMake + " --version 2>&1 | grep \"^.*cmake version\" | sed -e 's/^.*cmake version *//' | sed -e 's/-.*//'", cmakeVersionLogFile);
+  if 0 <> retVal then
+    System.removeFile(cmakeVersionLogFile);
+    Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
+  end if;
+  cmakeVersionString := System.trimWhitespace(System.readFile(cmakeVersionLogFile));
+  cmakeVersion := SemanticVersion.parse(cmakeVersionString);
+  System.removeFile(cmakeVersionLogFile);
+end getCMakeVersion;
 
 function getSimIteratorSize
   input list<BackendDAE.SimIterator> iters;

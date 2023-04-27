@@ -176,7 +176,7 @@ Interactive Session with Examples
 ---------------------------------
 
 The following is an interactive session using the interactive session
-handler in the OpenModelica environment, called OMShell – the
+handler in the OpenModelica environment, called OMShell - the
 OpenModelica Shell. Most of these examples are also available in the
 :ref:`omnotebook` UsersGuideExamples.onb as well as the testmodels in:
 
@@ -450,7 +450,7 @@ Now, first clear all loaded libraries and models:
 
   clear()
 
-List the loaded models – nothing left:
+List the loaded models - nothing left:
 
 .. omc-mos ::
 
@@ -960,13 +960,13 @@ Running the compiler from command line
 The OpenModelica compiler can also be used from command line, in Windows cmd.exe or a Unix shell.
 The following examples assume omc is on the PATH; if it is not, you can run :code:`C:\\OpenModelica 1.16.0\\build\\bin\\omc.exe` or similar (depending on where you installed OpenModelica).
 
-Example Session 1 – obtaining information about command line parameters
+Example Session 1 - obtaining information about command line parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. command-output :: omc --help
   :ellipsis: 6,-2
 
-Example Session 2 – create an TestModel.mo file and run omc on it
+Example Session 2 - create an TestModel.mo file and run omc on it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: TestModel.mo
@@ -974,7 +974,7 @@ Example Session 2 – create an TestModel.mo file and run omc on it
 
 .. command-output :: omc TestModel.mo
 
-Example Session 3 – create a mos-script and run omc on it
+Example Session 3 - create a mos-script and run omc on it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: TestScript.mos

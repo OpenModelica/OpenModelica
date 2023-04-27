@@ -93,6 +93,7 @@ import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import NFConvertDAE;
 import RuntimeSources;
+import SemanticVersion;
 import SerializeInitXML;
 import SerializeModelInfo;
 import SerializeSparsityPattern;
@@ -926,7 +927,21 @@ algorithm
                         destination = fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
+
+        // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
+          local
+            SemanticVersion.Version cmakeVersion;
+            SemanticVersion.Version minimumVersion;
+          case("default") algorithm
+            cmakeVersion := SimCodeUtil.getCMakeVersion();
+            minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
+            if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
+              cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
+            else
+              cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
+            end if;
+            then();
           case("none") algorithm
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
             then();

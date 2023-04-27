@@ -1,7 +1,9 @@
+*_info.json
+*.bin
+*.fail_log
+*.log
 *.o
 *.so
-*_info.json
-*.fail_log
 /failed.*
 difftool/lex.yy.c
 openmodelica/bootstrapping/CodegenC.*

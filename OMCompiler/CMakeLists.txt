@@ -61,4 +61,4 @@ endif()
 omc_add_subdirectory(SimulationRuntime)
 omc_add_subdirectory(Parser)
 omc_add_subdirectory(Compiler)
-
+omc_add_subdirectory(Examples)

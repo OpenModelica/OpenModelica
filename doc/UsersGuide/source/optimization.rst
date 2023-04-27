@@ -5,15 +5,14 @@ Optimization with OpenModelica
 The following facilities for model-based optimization are provided with
 OpenModelica:
 
--  :ref:`builtin-dynamic-optimization` using
-       dynamic optimization is the recommended way of
-       performing dynamic optimization with OpenModelica.
+-  :ref:`builtin-dynamic-optimization` using dynamic optimization is the recommended way
+   of performing dynamic optimization with OpenModelica.
 
--  :ref:`dynamic-optimization-casadi`. Use this if you want to employ
-       the CasADi tool for dynamic optimization.
+-  :ref:`dynamic-optimization-casadi`. Use this if you want to employ the CasADi tool for
+   dynamic optimization.
 
--  Classical :ref:`parameter-sweep-optimization-using-omoptim`. Use
-       this if you have a static optimization problem.
+-  Classical :ref:`parameter-sweep-optimization-using-omoptim`. Use this if you have a
+   static optimization problem.
 
 .. include:: OM_DOWithAnnotations.rst
 
@@ -21,7 +20,7 @@ OpenModelica:
 Built-in Dynamic Optimization using Optimica language extensions
 ****************************************************************
 
-*Note: this is a very short preliminary decription which soon will be
+*Note: this is a very short preliminary description which soon will be
 considerably improved.*
 
 OpenModelica provides builtin dynamic optimization of models by using
@@ -34,9 +33,11 @@ optimization language extension called Optimica (currently partially
 supported) for the optimization part of the problem. This is used to
 solve the underlying dynamic optimization model formulation using
 collocation methods, using a single execution instead of multiple
-simulations as in the parameter-sweep optimization described in section :ref:`parameter-sweep-optimization-using-omoptim`.
+simulations as in the parameter-sweep optimization described in section
+:ref:`parameter-sweep-optimization-using-omoptim`.
 
-For more detailed information regarding background and methods, see :cite:`openmodelica.org:bernhard:modelica:2012,openmodelica.org:Ruge:modelica:2014`
+For more detailed information regarding background and methods, see
+:cite:`openmodelica.org:bernhard:modelica:2012,openmodelica.org:Ruge:modelica:2014`
 
 ===========================
 Compiling the Modelica code
@@ -104,12 +105,12 @@ command line terminals similar to the options described below:
 The control and state trajectories of the optimization results:
 
 .. omc-gnuplot :: nmpc-input
-  :caption: Optimization results for Batch Reactor model – input variables.
+  :caption: Optimization results for Batch Reactor model - input variables.
 
   u
 
 .. omc-gnuplot :: nmpc-states
-  :caption: Optimization results for Batch Reactor model – state variables.
+  :caption: Optimization results for Batch Reactor model - state variables.
 
   x1
   x2
@@ -210,7 +211,7 @@ optimized and the optimization specification.
 
   list(BatchReactor)
 
-One we have formulated the undelying optimal control problems, we can
+One we have formulated the underlying optimal control problems, we can
 export the XML by using OMShell, OMNotebook, MDT, OMEdit or command
 line terminals which are described in Section :ref:`xml-import-to-casadi`.
 
@@ -319,7 +320,7 @@ For all intended parameters, please note that:
 
 -  The corresponding variable is **constant** during all simulations.
        The OMOptim optimization in version 0.9 only concerns static
-       parameters’ optimization *i.e.* values found for these parameters
+       parameters' optimization *i.e.* values found for these parameters
        will be constant during all simulation time.
 
 -  The corresponding variable should play an **input** role in the model
@@ -345,7 +346,7 @@ Objectives
 ==========
 
 As parameters, objectives are picked up from model variables.
-Objectives’ values are considered by the optimizer at the *final time*.
+Objectives' values are considered by the optimizer at the *final time*.
 
 Set problem in OMOptim
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -451,7 +452,7 @@ button of *Optimization objectives* table.
 For each objective, you must:
 
 -  Set minimum and maximum values it can take. If a configuration does
-       not respect these values, this configuration won’t be considered.
+       not respect these values, this configuration won't be considered.
        You also can set minimum and maximum equals to “-“ : it will then
 
 -  Define whether objective should be minimized or maximized.
@@ -466,14 +467,14 @@ and configure optimization algorithm. To do this, click on
 *Optimization* tab.
 
 Here, you can select optimization algorithm you want to use. In version
-0.9, OMOptim offers three different genetic algorithms. Let’s for
+0.9, OMOptim offers three different genetic algorithms. Let's for
 example choose SPEA2Adapt which is an auto-adaptative genetic algorithm.
 
 By clicking on *parameters*\ … button, a dialog is opened allowing
 defining parameters. These are:
 
 -  *Population size*: this is the number of configurations kept after a
-       generation. If it is set to 50, your final result can’t contain
+       generation. If it is set to 50, your final result can't contain
        more than 50 different points.
 
 -  *Off spring rate*: this is the number of children per adult obtained
@@ -504,7 +505,7 @@ defining parameters. These are:
        It is used only if you start optimization from previously
        obtained configurations (using *Use start file* option). Setting
        it to yes (1) will, in most of cases, lead to a spread research
-       of optimized configurations, forgetting parameters’ variations’
+       of optimized configurations, forgetting parameters' variations'
        reduction obtained in previous optimization.
 
 **Use start file**
@@ -552,7 +553,7 @@ Obtaining all Variable Values
 During optimization, the values of optimized variables and objectives
 are memorized. The others are not. To get these last, you must
 recomputed corresponding points. To achieve this, select one or several
-points in point’s list region and click on *recompute*.
+points in point's list region and click on *recompute*.
 
 For each point, it will simulate model setting input parameters to point
 corresponding values. All values of this point (including those which

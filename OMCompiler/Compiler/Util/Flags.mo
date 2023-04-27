@@ -1363,13 +1363,8 @@ constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(141, "fmiFlags", NONE(), EXTERNAL(),
   Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
 
 constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild",
-  NONE(), EXTERNAL(), STRING_FLAG("default"),
-  SOME(STRING_DESC_OPTION({
-    ("default", Gettext.notrans("Let omc decide if CMake should be used.")),
-    ("true",    Gettext.notrans("Use CMake to compile FMU binaries.")),
-    ("false",   Gettext.notrans("Use default GNU Autoconf toolchain to compile FMU binaries."))
-    })),
-  Gettext.gettext("Defines if FMUs will be configured and build with CMake."));
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Configured and build FMU with CMake if true."));
 
 constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(143, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1437,8 +1432,9 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
   Gettext.gettext("Obfuscates identifiers in the simulation model"));
 
 constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(153, "fmuRuntimeDepends",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
+    ("default",  Gettext.notrans("Depending on CMake version. If CMake version >= 3.21 use  \"modelica\", otherwise use \"none\"")),
     ("none",     Gettext.notrans("No runtime library dependencies are copied into the FMU.")),
     ("modelica", Gettext.notrans("All modelica runtime library dependencies are copied into the FMU." +
                                  "System librarys located in '/lib*', '/usr/lib*' and '/usr/local/lib*' are excluded." +
@@ -1489,6 +1485,14 @@ function isConfigFlagSet
 algorithm
   isMember := listMember(hasMember, Flags.getConfigStringList(inFlag));
 end isConfigFlagSet;
+
+public function getConfigName
+  "Returns name of configuration flag"
+  input ConfigFlag inFlag;
+  output String name;
+algorithm
+  CONFIG_FLAG(name = name) := inFlag;
+end getConfigName;
 
 public function getConfigValue
   "Returns the value of a configuration flag."

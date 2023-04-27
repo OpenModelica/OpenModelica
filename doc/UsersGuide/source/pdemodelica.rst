@@ -31,7 +31,7 @@ Let us introduce new PDEModelica1 language elements by an advection equation exa
 
 The domain ``omega`` represents the geometrical domain where the PDE holds. The domain is
 defined using the built-in record ``DomainLineSegment1D``. This   record contains among
-others ``L`` – the length of the domain, ``N`` – the number of grid points, ``x`` –
+others ``L`` - the length of the domain, ``N`` - the number of grid points, ``x`` -
 the coordinate variable and the regions ``left``, ``right`` and ``interior``, representing
 the left and right boundaries and the interior of the domain.
 

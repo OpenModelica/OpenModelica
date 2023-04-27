@@ -31,14 +31,14 @@ The debugger provides the following general functionalities:
 
 -  Adding/Removing breakpoints.
 
--  Step Over – moves to the next line, skipping the function calls.
+-  Step Over - moves to the next line, skipping the function calls.
 
--  Step In – takes the user into the function call.
+-  Step In - takes the user into the function call.
 
--  Step Return – complete the execution of the function and takes the
+-  Step Return - complete the execution of the function and takes the
        user back to the point from where the function is called.
 
--  Suspend – interrupts the running program.
+-  Suspend - interrupts the running program.
 
 .. figure :: media/mdt-debugger-overview.png
 
@@ -156,13 +156,13 @@ frame is shown as <function\_name at file\_name:line\_number>.
 The Variables view shows the list of variables at a certain point in the
 program, containing four colums:
 
--  Name – the variable name.
+-  Name - the variable name.
 
--  Declared Type – the Modelica type of the variable.
+-  Declared Type - the Modelica type of the variable.
 
--  Value – the variable value.
+-  Value - the variable value.
 
--  Actual Type – the mapped C type.
+-  Actual Type - the mapped C type.
 
 By preserving the stack frames and variables it is possible to keep
 track of the variables values. If the value of any variable is changed

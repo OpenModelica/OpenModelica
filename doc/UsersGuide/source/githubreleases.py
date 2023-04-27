@@ -24,7 +24,7 @@ for release in om.get_releases():
     fout.write("\n")
     print(release.title)
 fout.close()
-call(["pandoc", "--wrap=none", "-f", "gfm", "-t", "rst", "--base-header-level=2", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
+call(["pandoc", "--wrap=none", "--standalone", "-f", "gfm", "-t", "rst", "--base-header-level=2", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
 with open("githubreleases.tmp.rst", "r", encoding="utf-8") as fin:
     with open("githubreleases.tmp2.rst", "w", encoding="utf-8") as fout:
         fout.write('''Major OpenModelica Releases
@@ -38,3 +38,4 @@ Right now versions from 1.3.1 to %s are described.
         fout.write("\n")
         fout.write(".. include :: tracreleases.inc")
 os.rename("githubreleases.tmp2.rst", "githubreleases.rst")
+os.remove("githubreleases.tmp.rst")

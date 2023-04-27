@@ -1,7 +1,7 @@
-OMMatlab – OpenModelica Matlab Interface
+OMMatlab - OpenModelica Matlab Interface
 ========================================
 
-OMMatlab – the OpenModelica Matlab API is a free, open source, highly
+OMMatlab - the OpenModelica Matlab API is a free, open source, highly
 portable Matlab-based interactive session handler for Modelica
 scripting. It provides the modeler with components for creating a
 complete Modelica modeling, compilation and simulation environment based

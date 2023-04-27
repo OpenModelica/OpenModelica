@@ -39,16 +39,19 @@ import System;
 public
 
 uniontype Version
-record SEMVER
-  Integer major, minor, patch;
-  list<String> prerelease, meta;
-end SEMVER;
-record NONSEMVER
-  String version;
-end NONSEMVER;
+  record SEMVER
+    "Semantic version number MAJOR.MINOR.PATCH, see https://semver.org/."
+    Integer major, minor, patch;
+    list<String> prerelease, meta;
+  end SEMVER;
+  record NONSEMVER
+    "Non-semantic version number"
+    String version;
+  end NONSEMVER;
 end Version;
 
 function parse
+  "Parse version string into SemanticVersion.Version."
   input String s;
   input Boolean nonsemverAsZeroZeroZero = false;
   output Version v;
@@ -93,6 +96,13 @@ algorithm
 end parse;
 
 function compare
+  "Compare two versions v1 and v2.
+   If v1 and v2 both non-semver or both semver:
+     Return -1 if the first is smallest,
+     1 if the second is smallest,
+     or 0 if they are equal.
+   If v1 non-semver and v2 semver: return -1.
+   If v1 semver and v2 non-semver: return 1."
   input Version v1, v2;
   input Boolean comparePrerelease = true;
   input Boolean compareBuildInformation = false;
@@ -151,6 +161,7 @@ algorithm
 end toString;
 
 function isPrerelease
+  "Return true if semver version has pre-release information."
   input Version v;
   output Boolean b;
 algorithm
@@ -161,6 +172,7 @@ algorithm
 end isPrerelease;
 
 function hasMetaInformation
+  "Return true if semver version has meta information."
   input Version v;
   output Boolean b;
 algorithm
@@ -172,12 +184,13 @@ algorithm
 end hasMetaInformation;
 
 function isSemVer
+  "Return true if version is of semantic versioning type."
   input Version v;
   output Boolean b;
 algorithm
   b := match v
-    case NONSEMVER() then false;
-    else true;
+    case SEMVER() then true;
+    else false;
   end match;
 end isSemVer;
 

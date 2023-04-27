@@ -3,17 +3,17 @@ OpenModelica Python Interface and PySimulator
 
 This chapter describes the OpenModelica Python integration facilities.
 
--  OMPython – the OpenModelica Python scripting interface, see :ref:`ompython`.
+-  OMPython - the OpenModelica Python scripting interface, see :ref:`ompython`.
 -  EnhancedOMPython - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
--  PySimulator – a Python package that provides simulation and post
+-  PySimulator - a Python package that provides simulation and post
    processing/analysis tools integrated with OpenModelica, see :ref:`pysimulator`.
 
 .. _ompython:
 
-OMPython – OpenModelica Python Interface
+OMPython - OpenModelica Python Interface
 ----------------------------------------
 
-OMPython – OpenModelica Python API is a free, open source, highly
+OMPython - OpenModelica Python API is a free, open source, highly
 portable Python based interactive session handler for Modelica
 scripting. It provides the modeler with components for creating a
 complete Modelica modeling, compilation and simulation environment based
@@ -138,7 +138,7 @@ Implementation
 Client Implementation
 ^^^^^^^^^^^^^^^^^^^^^
 
-The OpenModelica Python API Interface – OMPython, attempts to mimic the
+The OpenModelica Python API Interface - OMPython, attempts to mimic the
 OMShell's style of operations.
 
 OMPython is designed to,

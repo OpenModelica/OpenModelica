@@ -10,8 +10,11 @@ set `GITHUB_AUTH`.
 
  - omc, omc-diff and omsimulator
  - Inkscape
- - Sphinx
- - Python3 and packages from [requirements.txt](https://raw.githubusercontent.com/OpenModelica/OpenModelica-doc/master/UsersGuide/source/requirements.txt)
+ - [Sphinx](http://sphinx-doc.org/)
+ - Python3 and packages from [source/requirements.txt](./source/requirements.txt)
+   ```bash
+   pip3 install --upgrade -r source/requirements.txt
+   ```
  - Python PyGithub package
 
 ### GITHUB_AUTH
@@ -43,6 +46,13 @@ https://github.com/OpenModelica/OpenModelica with the PyGithub package.
 - Install `inkscape` and make sure it's in PATH.
 
 ## Build instructions
+
 ```bash
 make html
+```
+
+## Preview build
+
+```bash
+python3 -m http.server --directory build/html
 ```
