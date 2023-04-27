@@ -944,6 +944,7 @@ RecordBinding9.mo \
 RecordBinding10.mo \
 RecordBinding11.mo \
 RecordBinding12.mo \
+RecordBinding13.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
