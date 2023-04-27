@@ -833,17 +833,17 @@ end flattenComplexComponent;
 function splitRecordCref
   input Expression exp;
   output Expression outExp;
+protected
+  InstNode cls;
+  array<InstNode> comps;
+  ComponentRef cr, field_cr;
+  Type ty;
+  list<Expression> fields;
+  Expression cond;
 algorithm
   outExp := ExpandExp.expand(exp);
 
   outExp := match outExp
-    local
-      InstNode cls;
-      array<InstNode> comps;
-      ComponentRef cr, field_cr;
-      Type ty;
-      list<Expression> fields;
-
     case Expression.CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
       algorithm
         comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
@@ -863,6 +863,17 @@ algorithm
         outExp.elements := Array.map(outExp.elements, splitRecordCref);
       then
         outExp;
+
+    case Expression.IF()
+      guard Expression.variability(outExp.condition) <= Variability.PARAMETER
+      algorithm
+        cond := Ceval.tryEvalExp(outExp.condition);
+        Structural.markExp(outExp.condition);
+      then
+        match cond
+          case Expression.BOOLEAN() then splitRecordCref(if cond.value then outExp.trueBranch else outExp.falseBranch);
+          else outExp;
+        end match;
 
     else exp;
   end match;
