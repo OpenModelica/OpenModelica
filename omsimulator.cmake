@@ -27,6 +27,7 @@ ExternalProject_Add(OMSimulator_external
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
                                                 CMAKE="${CMAKE_COMMAND}"
     #--Build step-----------------
+    BUILD_ALWAYS 1
     BUILD_COMMAND COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 OMSimulator
