@@ -21,6 +21,6 @@ getErrorString();
 
 // Result:
 // true
-// "P.A"
+// P.A
 // ""
 // endResult
