@@ -63,11 +63,11 @@ import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
 import CodegenFMU;
-import CodegenFMUCppOld;
+import CodegenFMUCpp;
 import CodegenOMSICpp;
-import CodegenFMUCppHpcomOld;
-import CodegenCppOld;
-import CodegenCppHpcomOld;
+import CodegenFMUCppHpcom;
+import CodegenCpp;
+import CodegenCppHpcom;
 import CodegenOMSIC;
 import CodegenOMSI_common;
 import CodegenXML;
@@ -716,9 +716,9 @@ protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;
 algorithm
   if(Flags.isSet(Flags.HPCOM)) then
-    Tpl.tplNoret(CodegenCppHpcomOld.translateModel, iSimCode);
+    Tpl.tplNoret(CodegenCppHpcom.translateModel, iSimCode);
   else
-    Tpl.tplNoret(CodegenCppOld.translateModel, iSimCode);
+    Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
   end if;
 end callTargetTemplatesCPP;
 
@@ -1007,9 +1007,9 @@ algorithm
     case (_,"Cpp")
       equation
         if(Flags.isSet(Flags.HPCOM)) then
-          Tpl.tplNoret3(CodegenFMUCppHpcomOld.translateModel, simCode, FMUVersion, FMUType);
+          Tpl.tplNoret3(CodegenFMUCppHpcom.translateModel, simCode, FMUVersion, FMUType);
         else
-          Tpl.tplNoret(function CodegenFMUCppOld.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles={}), simCode);
+          Tpl.tplNoret(function CodegenFMUCpp.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles={}), simCode);
         end if;
       then ();
     else
