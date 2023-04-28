@@ -884,7 +884,15 @@ bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeIte
   return true;
 }
 
-ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className)
+/*!
+ * \brief GraphicsView::createModelInstanceComponent
+ * Creates a Component and returns it.
+ * \param pModelInstance
+ * \param name
+ * \param className
+ * \return
+ */
+ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className)
 {
   ModelInstance::Component *pComponent = new ModelInstance::Component(pModelInstance);
   pComponent->setName(name);
@@ -895,6 +903,25 @@ ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pMo
   pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true)));
   pModelInstance->addElement(pComponent);
   return pComponent;
+}
+
+/*!
+ * \brief GraphicsView::setModifiers
+ * Sets the modifiers on Element.
+ * \param modelName
+ * \param name
+ * \param modifierNames
+ * \param modifier
+ */
+void GraphicsView::setModifiers(const QString &modelName, const QString &name, QString modifierNames, const ModelInstance::Modifier modifier)
+{
+  foreach (auto subModifier, modifier.getModifiers()) {
+    if (!subModifier.getValue().isEmpty()) {
+      const QString modifierName = name % "." % modifierNames % subModifier.getName();
+      MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, subModifier.getValue());
+    }
+    GraphicsView::setModifiers(modelName, name, modifierNames % subModifier.getName() % ".", subModifier);
+  }
 }
 
 bool GraphicsView::addComponent(QString className, QPointF position)
@@ -966,7 +993,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           || (mViewType == StringHandler::Icon && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
         if (mpModelWidget->isNewApi()) {
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-          ModelInstance::Component *pComponent = createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
+          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
           addElementToView(pComponent, false, true, true, position, "", true);
           ModelInfo newModelInfo = mpModelWidget->createModelInfo();
           mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element"));
@@ -2874,6 +2901,28 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 }
 
 /*!
+ * \brief GraphicsView::duplicateItems
+ * Duplicates the selected items by emitting GraphicsView::duplicate() SIGNAL.
+ * \param action
+ */
+void GraphicsView::duplicateItems(const QString &action)
+{
+  mpModelWidget->beginMacro(action);
+  ModelInfo oldModelInfo;
+  if (mpModelWidget->isNewApi()) {
+    oldModelInfo = mpModelWidget->createModelInfo();
+  }
+  emit duplicate();
+  if (mpModelWidget->isNewApi()) {
+    ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
+  }
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelText();
+  mpModelWidget->endMacro();
+}
+
+/*!
  * \brief GraphicsView::getComponentFromQGraphicsItem
  * \param pGraphicsItem
  * A QGraphicsItem can be a Element or a ShapeAnnotation inside a Element.
@@ -3823,25 +3872,6 @@ QString replaceComponentNameInConnection(const QString &oldConnectionComponentNa
 }
 
 /*!
- * \brief setModifiers
- * Sets the modifiers on Element.
- * \param modelName
- * \param name
- * \param modifierNames
- * \param modifier
- */
-void setModifiers(const QString &modelName, const QString &name, QString modifierNames, const ModelInstance::Modifier modifier)
-{
-  foreach (auto subModifier, modifier.getModifiers()) {
-    if (!subModifier.getValue().isEmpty()) {
-      const QString modifierName = name % "." % modifierNames % subModifier.getName();
-      MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, subModifier.getValue());
-    }
-    setModifiers(modelName, name, modifierNames % subModifier.getName() % ".", subModifier);
-  }
-}
-
-/*!
  * \brief GraphicsView::pasteItems
  * Slot activated when mpPasteAction triggered SIGNAL is raised.
  * Reads the items from the clipboard and adds them to the view.
@@ -3851,8 +3881,12 @@ void GraphicsView::pasteItems()
   QClipboard *pClipboard = QApplication::clipboard();
   if (pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
     if (const MimeData *pMimeData = qobject_cast<const MimeData*>(pClipboard->mimeData())) {
-      mpModelWidget->beginMacro("Paste items from clipboard");
-      ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+      const QString action = "Paste items from clipboard";
+      mpModelWidget->beginMacro(action);
+      ModelInfo oldModelInfo;
+      if (mpModelWidget->isNewApi()) {
+        oldModelInfo = mpModelWidget->createModelInfo();
+      }
       // map to store
       QMap<Element*, QString> renamedComponents;
       // paste the components
@@ -3866,10 +3900,10 @@ void GraphicsView::pasteItems()
         }
 
         if (mpModelWidget->isNewApi()) {
-          ModelInstance::Component *pModelInstanceComponent = createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className);
+          ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className);
           addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), false);
           // set modifiers
-          setModifiers(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name, "", pMimeData->getModifiers().at(index));
+          GraphicsView::setModifiers(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name, "", pMimeData->getModifiers().at(index));
         } else {
           ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
           pComponentInfo->setName(name);
@@ -3928,7 +3962,7 @@ void GraphicsView::pasteItems()
       mpModelWidget->updateClassAnnotationIfNeeded();
       if (mpModelWidget->isNewApi()) {
         ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-        mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element"));
+        mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
       }
       mpModelWidget->updateModelText();
       mpModelWidget->endMacro();
@@ -4113,15 +4147,11 @@ void GraphicsView::deleteItems()
 
 /*!
  * \brief GraphicsView::duplicateItems
- * Duplicates the selected items by emitting GraphicsView::mouseDuplicate() SIGNAL.
+ * Slot activated when mpDuplicateAction triggered SIGNAL is raised.
  */
 void GraphicsView::duplicateItems()
 {
-  mpModelWidget->beginMacro("Duplicate by mouse");
-  emit mouseDuplicate();
-  mpModelWidget->updateClassAnnotationIfNeeded();
-  mpModelWidget->updateModelText();
-  mpModelWidget->endMacro();
+  duplicateItems("Duplicate by mouse");
 }
 
 /*!
@@ -4799,9 +4829,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
       pasteItems();
     }
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->beginMacro("Duplicate by key press");
-    emit keyPressDuplicate();
-    mpModelWidget->endMacro();
+    duplicateItems("Duplicate by key press");
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->beginMacro("Rotate clockwise by key press");
     emit keyPressRotateClockwise();
