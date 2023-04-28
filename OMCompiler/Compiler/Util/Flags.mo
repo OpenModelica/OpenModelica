@@ -1449,9 +1449,11 @@ constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(154, "frontendInline",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables inlining of functions in the frontend."));
 
-constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(155, "exposeLocalIOs",
+constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(155, "nonStdExposeLocalIOs",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
-  Gettext.gettext("Keeps the input/output prefix for unconnected inputs and outputs at requested levels, 0 meaning top-level."));
+  Gettext.gettext("Keeps input/output prefixes for unconnected input/output connectors, other outputs and unbound inputs at requested levels, provided they are public, " +
+                  "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
+                  "This flag is particularly useful for FMI export. It breaks the Modelica standard for exposed local inputs."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

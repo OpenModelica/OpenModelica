@@ -1518,7 +1518,7 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        /* Consider all inputs known with flag exposeLocalIOs > 0 unless they are protected */
+        /* Consider all inputs known with flag --nonStdExposeLocalIOs > 0 unless they are protected */
         if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) == 0 then
           false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
         else
