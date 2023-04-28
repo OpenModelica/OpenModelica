@@ -49,7 +49,7 @@ package CodegenOMSICpp
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
-import CodegenCpp.*;
+import CodegenCppOMSI.*;
 
 //import CodegenCppCommon.*;
 //import CodegenOMSI_common.*;
