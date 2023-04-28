@@ -5,14 +5,14 @@
 // result but instead write the result to files. All other templates return
 // text and are used by the root templates (most of them indirectly).
 
-package CodegenCppHpcom
+package CodegenCppHpcomOMSI
 
 import interface SimCodeBackendTV;
 import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCppCommon.*;
 import CodegenCppInit.*;
-import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
+import CodegenCppOMSI.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
 
 
@@ -1922,9 +1922,9 @@ template printCommunicationInfoVariables(CommunicationInfo commInfo)
   /*
   match(commInfo)
     case(COMMUNICATION_INFO(__)) then
-      let floatVarsStr = floatVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
-      let intVarsStr = intVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
-      let boolVarsStr = boolVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
+      let floatVarsStr = floatVars |> v => '<%CodegenCppOMSI.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
+      let intVarsStr = intVars |> v => '<%CodegenCppOMSI.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
+      let boolVarsStr = boolVars |> v => '<%CodegenCppOMSI.MemberVariableDefine2(v, "", false, true)%>' ;separator="\n"
       <<
       <%floatVarsStr%>
       >>
@@ -2032,7 +2032,7 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
   let _ = mpiRunCommandInRunScript(type, &preRunCommandLinux, &execCommandLinux)
   let preRunCommandWindows = ""
 
-  CodegenCpp.simulationMainRunScript(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, preRunCommandLinux, preRunCommandWindows, execCommandLinux)
+  CodegenCppOMSI.simulationMainRunScript(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, preRunCommandLinux, preRunCommandWindows, execCommandLinux)
 end simulationMainRunScript;
 
 template getAdditionalMakefileFlags(Text& additionalLinkerFlags_GCC, Text& additionalLinkerFlags_MSVC, Text& additionalCFlags_GCC, Text& additionalCFlags_MSVC)
@@ -2060,7 +2060,7 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
 
   <<
   <%getAdditionalMakefileFlags(additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
-  <%CodegenCpp.simulationMakefile(target, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
+  <%CodegenCppOMSI.simulationMakefile(target, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
                                 additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC,
                                 Flags.isSet(Flags.USEMPI))%>
   >>
@@ -2072,7 +2072,7 @@ template numPreVarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize,intArraySize=intArraySize,boolArraySize=boolArraySize))) then
       '<%floatArraySize%> + <%intArraySize%> + <%boolArraySize%>'
     else
-      CodegenCpp.getPreVarsCount(modelInfo)
+      CodegenCppOMSI.getPreVarsCount(modelInfo)
 end numPreVarsHpcom;
 
 template numRealvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
@@ -2081,7 +2081,7 @@ template numRealvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize))) then
       '<%floatArraySize%>'
     else
-      '<%CodegenCpp.numRealvars(modelInfo)%>'
+      '<%CodegenCppOMSI.numRealvars(modelInfo)%>'
 end numRealvarsHpcom;
 
 template numIntvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
@@ -2090,7 +2090,7 @@ template numIntvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(intArraySize=intArraySize))) then
       '<%intArraySize%>'
     else
-      CodegenCpp.numIntvars(modelInfo)
+      CodegenCppOMSI.numIntvars(modelInfo)
 end numIntvarsHpcom;
 
 template numBoolvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
@@ -2099,7 +2099,7 @@ template numBoolvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(boolArraySize=boolArraySize))) then
       '<%boolArraySize%>'
     else
-      CodegenCpp.numBoolvars(modelInfo)
+      CodegenCppOMSI.numBoolvars(modelInfo)
 end numBoolvarsHpcom;
 
 template numStringvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
@@ -2108,8 +2108,8 @@ template numStringvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOp
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(stringArraySize=stringArraySize))) then
       '<%stringArraySize%>'
     else
-      CodegenCpp.numStringvars(modelInfo)
+      CodegenCppOMSI.numStringvars(modelInfo)
 end numStringvarsHpcom;
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenCppHpcom;
+end CodegenCppHpcomOMSI;
