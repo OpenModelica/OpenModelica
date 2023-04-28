@@ -43,21 +43,21 @@
 //   - Code after a case should be indented with 2 spaces if not written on the
 //     same line
 
-package CodegenFMUCppHpcomOld
+package CodegenFMUCppHpcom
 
 
 
 import interface SimCodeBackendTV;
 import interface SimCodeTV;
-import CodegenFMUCppOld.*;
-import CodegenCppHpcomOld.*;
+import CodegenFMUCpp.*;
+import CodegenCppHpcom.*;
 import CodegenUtil;
-import CodegenCppOld;
+import CodegenCpp;
 import CodegenCppInit;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType)
  "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
-  Calls CodegenCppOld.translateModel for the actual model code."
+  Calls CodegenCpp.translateModel for the actual model code."
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), hpcomData = HPCOMDATA(__)) then
@@ -68,7 +68,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let &extraFuncsDecl = buffer "" /*BUFD*/
       let &complexStartExpressions = buffer ""
 
-      let className = CodegenCppOld.lastIdentOfPath(modelInfo.name)
+      let className = CodegenCpp.lastIdentOfPath(modelInfo.name)
       let numRealVars = numRealvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
       let numIntVars = numIntvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
       let numBoolVars = numBoolvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
@@ -76,7 +76,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let numPreVars = numPreVarsHpcom(modelInfo, hpcomData.hpcOmMemory)
 
       let()= textFile(CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "hpcom cpp-runtime", complexStartExpressions, stateDerVectorName), 'modelDescription.xml')
-      let cpp = CodegenCppOld.translateModel(simCode)
+      let cpp = CodegenCpp.translateModel(simCode)
       let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
       let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
       let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
@@ -86,18 +86,18 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
       let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
 
-      let() = textFile(CodegenCppOld.simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
+      let() = textFile(CodegenCpp.simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, CodegenUtil.dotPath(modelInfo.name)),
                                          additionalHpcomDestructorBodyStatements(hpcomData.schedules),
                                          stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
 
-      let() = textFile(CodegenCppOld.simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
+      let() = textFile(CodegenCpp.simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
                       additionalHpcomIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
                       "",
                       additionalHpcomProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
-                      CodegenCppOld.memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
+                      CodegenCpp.memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
                       false), 'OMCpp<%fileNamePrefix%>.h')
       ""
       // empty result of the top-level template .., only side effects
@@ -116,12 +116,12 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
   let &additionalLinkerFlags_GCC += if boolOr(stringEq(type,"pthreads"), stringEq(type,"pthreads_spin")) then " -lboost_thread" else ""
 
   <<
-  <%CodegenCppHpcomOld.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
-  <%CodegenFMUCppOld.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
+  <%CodegenCppHpcom.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
+  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
   >>
 end fmuMakefile;
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenFMUCppHpcomOld;
+end CodegenFMUCppHpcom;
 
 // vim: filetype=susan sw=2 sts=2

@@ -429,22 +429,22 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenEmbeddedC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppOld.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppOMSI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcomOld.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcomOMSI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppInit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppOld.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppOMSI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSI_common.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC_Equations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSICpp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOld.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo

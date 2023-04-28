@@ -43,12 +43,12 @@
 //   - Code after a case should be indented with 2 spaces if not written on the
 //     same line
 
-package CodegenFMUCppOld
+package CodegenFMUCpp
 
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
-import CodegenCppOld.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
+import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCppCommon.*;
 import CodegenFMU.*;
 import CodegenCppInit;
@@ -57,7 +57,7 @@ import CodegenFMU2;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
  "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
-  Calls CodegenCppOld.translateModel for the actual model code."
+  Calls CodegenCpp.translateModel for the actual model code."
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
@@ -74,7 +74,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numStringVars = numStringvars(modelInfo)
 
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, true)
-  let cpp = CodegenCppOld.translateModel(simCode)
+  let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
@@ -872,6 +872,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 end fmuMakefile;
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenFMUCppOld;
+end CodegenFMUCpp;
 
 // vim: filetype=susan sw=2 sts=2

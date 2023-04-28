@@ -1,4 +1,4 @@
-package CodegenCppOld
+package CodegenCpp
 
 import interface SimCodeTV;
 import CodegenCppCommon.*;
@@ -14039,4 +14039,4 @@ end simulationFile_dae_header;
 /*end daeMode templates*/
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenCppOld;
+end CodegenCpp;
