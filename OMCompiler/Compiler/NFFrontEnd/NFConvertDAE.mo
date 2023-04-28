@@ -175,11 +175,11 @@ algorithm
       algorithm
         // Strip input/output from non top-level components unless
         // --useLocalDirection=true has been set.
-        // Alternatively strip input/output only from non connectors and from protected connectors if
-        // --exposeLocalIOs has been set.
-        if (attr.direction == Direction.NONE or settings.useLocalDirection) or
-           (settings.exposeLocalIOs > 0 and attr.connectorType <> ConnectorType.NON_CONNECTOR and
-            ComponentRef.depth(cref) <= settings.exposeLocalIOs + 1 and vis == Visibility.PUBLIC) then
+        // Alternatively strip input/output from bound inputs and from protected variables if
+        // --nonStdExposeLocalIOs has been set.
+        if attr.direction == Direction.NONE or settings.useLocalDirection or
+           (settings.exposeLocalIOs > 0 and (match binding case NONE() then true; else attr.direction == Direction.OUTPUT; end match) and
+            vis == Visibility.PUBLIC and ComponentRef.depth(cref) <= settings.exposeLocalIOs + 1) then
           dir := attr.direction;
         else
           dir := getComponentDirection(attr.direction, cref);
