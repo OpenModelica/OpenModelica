@@ -15,6 +15,7 @@ GetModelInstanceBinding1.mos \
 GetModelInstanceBinding2.mos \
 GetModelInstanceBinding3.mos \
 GetModelInstanceBinding4.mos \
+GetModelInstanceBinding5.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \

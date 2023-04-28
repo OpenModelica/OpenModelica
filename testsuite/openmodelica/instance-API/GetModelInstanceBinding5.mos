@@ -1,0 +1,61 @@
+// name: GetModelInstanceBinding5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Real x = time;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"time\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"time\"
+//             }
+//           ]
+//         },
+//         \"value\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"time\"
+//             }
+//           ]
+//         }
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// "[<interactive>:3:5-3:28:writable] Error: Component x of variability parameter has binding 'time' of higher variability continuous.
+// "
+// endResult

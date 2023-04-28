@@ -1069,7 +1069,10 @@ algorithm
         Prefixes.variabilityString(bind_eff_var)
       },
       Binding.getInfo(binding));
-    fail();
+
+    if not InstContext.inRelaxed(context) then
+      fail();
+    end if;
   end if;
 
   // Mark parameters that have a structural cref as binding as also
