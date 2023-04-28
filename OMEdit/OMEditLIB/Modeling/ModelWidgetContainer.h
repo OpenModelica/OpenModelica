@@ -244,6 +244,8 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix);
+  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className);
+  static void setModifiers(const QString &modelName, const QString &name, QString modifierNames, const ModelInstance::Modifier modifier);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
@@ -356,6 +358,7 @@ private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
+  void duplicateItems(const QString &action);
   bool isCreatingShape();
   Element* getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
   Element* elementAtPosition(QPoint position);
@@ -391,7 +394,7 @@ private:
 signals:
   void manhattanize();
   void deleteSignal();
-  void mouseDuplicate();
+  void duplicate();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
@@ -412,7 +415,6 @@ signals:
   void keyPressRight();
   void keyPressShiftRight();
   void keyPressCtrlRight();
-  void keyPressDuplicate();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 public slots:
