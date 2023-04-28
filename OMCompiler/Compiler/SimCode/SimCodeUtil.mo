@@ -6599,15 +6599,13 @@ algorithm
         // check all crefs are on the lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e2_1, _) = Expression.extendArrExp(e2, false);
 
         // tmp = somexp
         ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefToExp(cr1);
-        stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+        stms = DAE.STMT_ASSIGN(tp, e1_1, e2, source);
         simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
 
@@ -6629,15 +6627,13 @@ algorithm
         // check all crefs are on the lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e2_1, _) = Expression.extendArrExp(e2, false);
 
         // tmp = somexp
         ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefToExp(cr1);
-        stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+        stms = DAE.STMT_ASSIGN(tp, e1_1, e2, source);
         simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
 
@@ -6660,15 +6656,13 @@ algorithm
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e1_1, _) = Expression.extendArrExp(e1, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
-        stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
+        stms = DAE.STMT_ASSIGN(tp, e2_1, e1, source);
         simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()=tmp
@@ -6686,15 +6680,13 @@ algorithm
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e1_1, _) = Expression.extendArrExp(e1, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
-        stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
+        stms = DAE.STMT_ASSIGN(tp, e2_1, e1, source);
         simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()=tmp
