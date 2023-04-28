@@ -7899,7 +7899,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
               <<
               <%typeString%>* <%arrayName%>_ref_data[<%size%>];
               getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
-              <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
+              <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayNumElements(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
               >>
     /* newInst with arrays */
     case v as SIMVAR(type_ = T_ARRAY()) then
@@ -8143,7 +8143,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
-      let array_dimensions =  arrayextentDims(name, v.numArrayElement)
+      let array_dimensions =  arrayNumElements(name, v.numArrayElement)
       match dims
       case "0" then
         match createDebugCode
@@ -8354,33 +8354,14 @@ case CREF_IDENT(subscriptLst={}) then
   else "CREF_NOT_IDENT_OR_QUAL"
 end boostextentDims;
 
-
-template arrayextentDims(ComponentRef cr, list<String> array)
-::=
-    match cr
-case CREF_IDENT(subscriptLst={}) then
-  '<%ident%>_NO_SUBS'+ "/*hier1*/"
- //subscriptsToCStr(subscriptLst)
-  case CREF_IDENT(subscriptLst=dims) then
-  //    '_<%ident%>_INVALID_<%listLength(dims)%>_<%listLength(array)%>'
-    '<%List.lastN(array,listLength(dims));separator=","%>'
-    //subscriptsToCStr(subscriptLst)
-  case CREF_QUAL(componentRef=c) then
-    arrayextentDims(c,array)
-  else "CREF_NOT_IDENT_OR_QUAL"
-end arrayextentDims;
-
-
 template arrayNumElements(ComponentRef cr, list<String> array)
 ::=
     match cr
-case CREF_IDENT(subscriptLst={}) then
-  '<%ident%>_NO_SUBS'+ "/*hier1*/"
- //subscriptsToCStr(subscriptLst)
+  case CREF_IDENT(subscriptLst={}) then
+    '<%ident%>_NO_SUBS'
   case CREF_IDENT(subscriptLst=dims) then
-  //    '_<%ident%>_INVALID_<%listLength(dims)%>_<%listLength(array)%>'
-    '<%List.lastN(array,listLength(dims));separator=","%>'
-    //subscriptsToCStr(subscriptLst)
+    let ret = if intLt(listLength(array), listLength(dims)) then '1' else '<%List.lastN(array,listLength(dims));separator=","%>'
+    '<%ret%>'
   case CREF_QUAL(componentRef=c) then
     arrayNumElements(c,array)
   else "CREF_NOT_IDENT_OR_QUAL"

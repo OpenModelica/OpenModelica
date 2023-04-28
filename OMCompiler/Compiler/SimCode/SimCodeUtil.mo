@@ -12303,7 +12303,7 @@ protected
 algorithm
   arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
-  if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
+  if BaseHashTable.hasKey(varName, iVarToArrayIndexMapping) then
     ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
     isContiguous := arrayLength(varIndices) == 1;
     if isContiguous then
@@ -12346,6 +12346,11 @@ algorithm
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
     end if;
     oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex);
+  elseif BaseHashTable.hasKey(iVarName, iVarToArrayIndexMapping) then
+    ((arrayDimensions,varIndices)) := BaseHashTable.get(iVarName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
+    // this should always just have one index
+    oConcreteVarIndex := intString(varIndices[1] - 1);
+    tmpVarIndexListNew := oConcreteVarIndex::tmpVarIndexListNew;
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
