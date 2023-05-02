@@ -2533,6 +2533,12 @@ algorithm
       for fn_inv in fn.inverses loop
         funcs := collectExpFuncs(fn_inv.inverseCall, funcs);
       end for;
+
+      if Function.isPartialDerivative(fn) then
+        for f in Function.getCachedFuncs(Class.lastBaseClass(fn.node)) loop
+          flattenFunction(f, funcs);
+        end for;
+      end if;
     end if;
   end if;
 end flattenFunction;

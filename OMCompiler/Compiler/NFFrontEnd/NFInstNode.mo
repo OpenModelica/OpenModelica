@@ -526,6 +526,21 @@ uniontype InstNode
     end match;
   end name;
 
+  function isNamed
+    input InstNode node;
+    input String name;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE() then node.name == name;
+      case COMPONENT_NODE() then node.name == name;
+      case INNER_OUTER_NODE() then isNamed(node.innerNode, name);
+      case VAR_NODE() then node.name == name;
+      case NAME_NODE() then node.name == name;
+      else false;
+    end match;
+  end isNamed;
+
   function className
     input InstNode node;
     output String name;

@@ -470,6 +470,11 @@ public uniontype FunctionDefinition
     ComponentRef inputParam "The input parameter the inverse is for";
     Exp inverseCall "The inverse function call";
   end FUNCTION_INVERSE;
+
+  record FUNCTION_PARTIAL_DERIVATIVE
+    Absyn.Path derivedFunction;
+    list<String> derivedVars;
+  end FUNCTION_PARTIAL_DERIVATIVE;
 end FunctionDefinition;
 
 public

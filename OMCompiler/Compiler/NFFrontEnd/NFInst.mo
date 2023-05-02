@@ -547,6 +547,15 @@ algorithm
     // get here through e.g. the interactive API. In that case just ignore them.
     case SCode.OVERLOAD() then node;
 
+    // A partial derivative of a function, function df = der(f, x).
+    // Treat it as a short class definition here,
+    case SCode.PDER()
+      guard Flags.getConfigBool(Flags.NEW_BACKEND)
+      then expandClassDerived(def,
+         SCode.ClassDef.DERIVED(Absyn.TypeSpec.TPATH(cdef.functionPath, NONE()),
+                                SCode.NOMOD(), SCode.defaultVarAttr),
+         node, info);
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());

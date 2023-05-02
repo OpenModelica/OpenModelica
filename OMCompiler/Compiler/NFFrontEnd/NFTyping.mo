@@ -130,6 +130,7 @@ end typeClass;
 function typeComponents
   input InstNode cls;
   input InstContext.Type context;
+  input Boolean preserveDerived = false;
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
@@ -158,7 +159,8 @@ algorithm
 
     // For derived types with dimensions we keep them as they are, because we
     // need to preserve the dimensions.
-    case Class.TYPED_DERIVED(ty = Type.ARRAY())
+    case Class.TYPED_DERIVED()
+      guard preserveDerived or Type.isArray(c.ty)
       algorithm
         typeComponents(c.baseClass, context);
       then

@@ -270,6 +270,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
+    list<Integer> derivedInputs;
     array<FunctionInverse> inverses;
     Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
@@ -291,7 +292,7 @@ uniontype Function
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, listArray({}), Pointer.create(status), Pointer.create(0));
+      attr, {}, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -467,6 +468,7 @@ uniontype Function
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
           fn.inverses := FunctionInverse.instInverses(fnNode, fn);
+          fn.derivedInputs := instPartialDerivedVars(def.classDef, fn.inputs, fn, context, info);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
         then
           (fnNode, specialBuiltin);
@@ -728,15 +730,21 @@ uniontype Function
   algorithm
     if isDefaultRecordConstructor(fn) then
       s := IOStream.append(s, InstNode.toFlatString(fn.node));
+    elseif isPartialDerivative(fn) then
+      fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
+
+      s := IOStream.append(s, "function ");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, " = der(");
+      s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(getDerivedFunctionName(fn))));
+      s := IOStream.append(s, ", ");
+      s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
+      s := FlatModelicaUtil.appendComment(SCodeUtil.getElementComment(InstNode.definition(fn.node)), s);
+      s := IOStream.append(s, ")");
     else
       cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
+      fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
-      fn_name := AbsynUtil.pathString(fn.path);
-      if stringEmpty(overrideName) then
-        fn_name := Util.makeQuotedIdentifier(fn_name);
-      else
-        fn_name := overrideName;
-      end if;
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
@@ -1394,7 +1402,7 @@ uniontype Function
     if not isTyped(fn) then
       // Type all the components in the function.
       Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
-      Typing.typeComponents(node, context);
+      Typing.typeComponents(node, context, preserveDerived = isPartialDerivative(fn));
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
@@ -1403,6 +1411,7 @@ uniontype Function
       // Make the slots and return type for the function.
       fn.slots := makeSlots(fn.inputs);
       checkParamTypes(fn);
+      checkPartialDerivativeTypes(fn);
       fn.returnType := makeReturnType(fn);
     end if;
   end typeFunctionSignature;
@@ -1758,6 +1767,31 @@ uniontype Function
       end if;
     end if;
   end isExternalObjectConstructorOrDestructor;
+
+  function isPartialDerivative
+    "Returns true if the function is a partial derivative of a function, df = der(f, x)."
+    input Function fn;
+    output Boolean res = not listEmpty(fn.derivedInputs);
+  end isPartialDerivative;
+
+  function getDerivedInputNames
+    "Returns the names of the differentiated inputs in a partial derivative,
+     df = der(f, x, y, z) => {\"x\", \"y\", \"z\"}"
+    input Function fn;
+    output list<String> names = {};
+  algorithm
+    for i in fn.derivedInputs loop
+      names := InstNode.name(listGet(fn.inputs, i)) :: names;
+    end for;
+
+    names := listReverseInPlace(names);
+  end getDerivedInputNames;
+
+  function getDerivedFunctionName
+    "Returns the name of the derived function in a partial derivative, df = der(f, x) => f"
+    input Function fn;
+    output Absyn.Path name = InstNode.fullPath(Class.lastBaseClass(fn.node), ignoreBaseClass = true);
+  end getDerivedFunctionName;
 
   function inlineBuiltin
     input Function fn;
@@ -2379,6 +2413,24 @@ protected
     end match;
   end isValidParamState;
 
+  function checkPartialDerivativeTypes
+    input Function fn;
+  protected
+    InstNode node;
+    Type ty;
+  algorithm
+    for i in fn.derivedInputs loop
+      node := listGet(fn.inputs, i);
+      ty := InstNode.getType(node);
+
+      if not (Type.isReal(ty) and Type.isScalar(ty)) then
+        Error.addSourceMessage(Error.PARTIAL_DERIVATIVE_INPUT_INVALID_TYPE,
+          {InstNode.name(node), AbsynUtil.pathString(getDerivedFunctionName(fn))}, InstNode.info(fn.node));
+        fail();
+      end if;
+    end for;
+  end checkPartialDerivativeTypes;
+
   public function makeReturnType
     input Function fn;
     output Type returnType;
@@ -2818,6 +2870,39 @@ protected
       else ();
     end match;
   end checkUseBeforeAssignExp_traverse;
+
+  function instPartialDerivedVars
+    input SCode.ClassDef classDef;
+    input list<InstNode> inputs;
+    input Function fn;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output list<Integer> derivedVars = {};
+  protected
+    Integer index;
+  algorithm
+    () := match classDef
+      case SCode.ClassDef.PDER()
+        algorithm
+          for var in classDef.derivedVariables loop
+            index := List.positionOnTrue(inputs, function InstNode.isNamed(name = var));
+
+            if index < 1 then
+              Error.addSourceMessage(Error.PARTIAL_DERIVATIVE_INPUT_NOT_FOUND,
+                {var, AbsynUtil.pathString(getDerivedFunctionName(fn))}, info);
+              fail();
+            end if;
+
+            derivedVars := index :: derivedVars;
+          end for;
+
+          derivedVars := listReverseInPlace(derivedVars);
+        then
+          ();
+
+      else ();
+    end match;
+  end instPartialDerivedVars;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

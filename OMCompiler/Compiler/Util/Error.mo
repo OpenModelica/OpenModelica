@@ -881,6 +881,10 @@ public constant ErrorTypes.Message NF_PDE_NOT_IMPLEMENTED = ErrorTypes.MESSAGE(4
   Gettext.gettext("PDEModelica is not yet supported by the new front-end, using the old front-end instead."));
 public constant ErrorTypes.Message NON_CONSTANT_IN_ENCLOSING_SCOPE = ErrorTypes.MESSAGE(403, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Component ‘%s‘ was found in an enclosing scope but is not a constant."));
+public constant ErrorTypes.Message PARTIAL_DERIVATIVE_INPUT_NOT_FOUND = ErrorTypes.MESSAGE(404, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("‘%s‘ in partial derivative of ‘%s‘ does not name an input parameter of the function."));
+public constant ErrorTypes.Message PARTIAL_DERIVATIVE_INPUT_INVALID_TYPE = ErrorTypes.MESSAGE(405, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("‘%s‘ in partial derivative of ‘%s‘ is not a scalar Real input parameter of the function."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
