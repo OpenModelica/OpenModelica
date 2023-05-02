@@ -3392,7 +3392,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%generateGetTimeEvenData(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
+    <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
     <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%dimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
