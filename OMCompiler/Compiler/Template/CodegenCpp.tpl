@@ -3597,38 +3597,36 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         return _algLoopSolverFactory;
     }
 
-
     <%updateFunctionsCode%>
 
-    <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%DefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
-    <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%checkForDiscreteEvents(discreteModelVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%giveZeroFunc1(zeroCrossings, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%setConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%getConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%isConsistent(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%setConditions(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+    <%getConditions(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+    <%isConsistent(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
-    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%generateStepStarted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
+    <%generateStepCompleted(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%generateStepStarted(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
 
-    <%generateRestoreOldValues(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%generateRestoreNewValues(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%generateRestoreOldValues(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%generateRestoreNewValues(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%generateGetTimeEvenData(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
+    <%generateDimTimeEvent(listAppend(allEquations, initialEquations),simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%generateGetTimeEvenData(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+    <%generateTimeEvent(timeEvents, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%dimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%isODE(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+    <%dimZeroFunc(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
-    <%getCondition(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%getCondition(zeroCrossings, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+    <%saveAll(modelInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-
-    <%labeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName)%>
+    <%labeledDAE(modelInfo.labels, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%giveVariables(modelInfo, context, useFlatArrayNotation, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,stateDerVectorName)%>
 
     <%memberVariableInitialize%>
     <%constVariableInitialize%>
