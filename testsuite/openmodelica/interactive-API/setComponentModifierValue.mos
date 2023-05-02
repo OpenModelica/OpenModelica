@@ -79,7 +79,7 @@ setComponentModifierValue(M, q, $Code(=1));
 //
 //   A a(b.x = 11, b.c(u = 13), y = 9, z = 10);
 //   A a2(b(x = 12));
-//   Real w(min = 5, start = 4) = 3;
+//   Real w(start = 4, min = 5) = 3;
 // end M;"
 // true
 // true

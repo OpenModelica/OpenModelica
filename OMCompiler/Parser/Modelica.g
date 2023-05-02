@@ -2091,8 +2091,8 @@ code_expression returns [void* ast]
       ( (EQUATION eq=code_equation_clause)
        |(CONSTRAINT constr=code_constraint_clause)
        |(T_ALGORITHM alg=code_algorithm_clause))
-    | (LPAR expression[metamodelica_enabled()] RPAR) => e=expression[metamodelica_enabled()]   /* Allow Code((<expr>)) */
     | m=modification
+    | (LPAR expression[metamodelica_enabled()] RPAR) => e=expression[metamodelica_enabled()]   /* Allow Code((<expr>)) */
     | (expression[metamodelica_enabled()] RPAR) => e=expression[metamodelica_enabled()]
     | el=element (SEMICOLON)?
     )  RPAR
