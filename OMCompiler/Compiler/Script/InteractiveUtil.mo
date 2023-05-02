@@ -661,7 +661,7 @@ algorithm
         function AbsynUtil.elementArgEqualName(inArg2 = narg));
 
       if not found then
-        outArgs := narg :: outArgs;
+        outArgs := List.appendElt(narg, outArgs);
       end if;
     end for;
   end if;

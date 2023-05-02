@@ -28,6 +28,10 @@ setElementModifierValue(M, classwithReplaceable.otherClass, $Code((redeclare Cla
 getErrorString();
 list(M);
 
+setElementModifierValue(M, classwithReplaceable, $Code((A = 1, B = 2)));
+getErrorString();
+list(M);
+
 // Result:
 // true
 // true
@@ -49,5 +53,10 @@ list(M);
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"));
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), A = 1, B = 2);
 // end M;"
 // endResult
