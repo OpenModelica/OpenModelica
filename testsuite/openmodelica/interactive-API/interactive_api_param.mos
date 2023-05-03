@@ -223,7 +223,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierValue(K4, Resistor, x)
 //
 // Evaluating: getExtendsModifierNames(K4, Resistor)
-// {x.start, x.fixed}
+// {}
 // Evaluating: removeExtendsModifiers(K4, Resistor)
 // true
 // Evaluating: getExtendsModifierNames(K4, Resistor)

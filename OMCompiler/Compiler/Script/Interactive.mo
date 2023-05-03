@@ -5124,6 +5124,7 @@ algorithm
       Absyn.ComponentRef submod;
       GraphicEnvCache env;
       Absyn.Modification mod;
+      Option<Absyn.Modification> opt_mod;
       Absyn.Element elt;
       Option<Absyn.Annotation> annOpt;
       /* special case for clearing modifications */
@@ -5139,9 +5140,13 @@ algorithm
       algorithm
         (_, path_1) := mkFullyQual(env, path);
         true := AbsynUtil.pathEqual(inherit, path_1);
-        SOME(mod) := InteractiveUtil.propagateMod(AbsynUtil.prefixPath("dummy", AbsynUtil.crefToPath(submod)),
+        opt_mod := InteractiveUtil.propagateMod(AbsynUtil.prefixPath("dummy", AbsynUtil.crefToPath(submod)),
           inModification, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
-        Absyn.Modification.CLASSMOD(elementArgLst = eargs) := mod;
+
+        eargs := match opt_mod
+          case SOME(Absyn.Modification.CLASSMOD(elementArgLst = eargs)) then eargs;
+          else {};
+        end match;
       then
         Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs,annOpt),info,constr);
     else inElement;

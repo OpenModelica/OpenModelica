@@ -586,7 +586,7 @@ getMessagesStringInternal(unique = false); // not unique
 // ""
 // Evaluating: list(TestPack.MyModel)
 // "model MyModel
-//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2);
+//   Modelica.Electrical.Analog.Basic.Resistor r1;
 //   Modelica.Electrical.Analog.Basic.Capacitor c1;
 // end MyModel;"
 // Evaluating: getErrorString()

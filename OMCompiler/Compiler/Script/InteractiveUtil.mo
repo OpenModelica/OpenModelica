@@ -505,7 +505,11 @@ algorithm
       new_eqmod := old_eqmod;
     end if;
 
-    new_args := mergeElementArgs(old_args, new_args);
+    // Merge submodifiers if the new mod isn't empty, otherwise clear them.
+    if not AbsynUtil.isEmptyMod(inNewMod) then
+      new_args := mergeElementArgs(old_args, new_args);
+    end if;
+
     mod := Absyn.CLASSMOD(new_args, new_eqmod);
   else
     new_args := propagateMod2(inComponentName, old_args, inNewMod);
@@ -535,6 +539,8 @@ algorithm
         outArgs := List.appendElt(narg, outArgs);
       end if;
     end for;
+
+    outArgs := list(arg for arg guard not AbsynUtil.isEmptySubMod(arg) in outArgs);
   end if;
 end mergeElementArgs;
 
