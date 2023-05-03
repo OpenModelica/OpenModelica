@@ -5136,12 +5136,14 @@ algorithm
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,
       specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
-      equation
-        (_, path_1) = mkFullyQual(env, path);
-        true = AbsynUtil.pathEqual(inherit, path_1);
-        eargs_1 = InteractiveUtil.setSubmodifierInElementargs(eargs, AbsynUtil.crefToPath(submod), mod);
+      algorithm
+        (_, path_1) := mkFullyQual(env, path);
+        true := AbsynUtil.pathEqual(inherit, path_1);
+        SOME(mod) := InteractiveUtil.propagateMod(AbsynUtil.prefixPath("dummy", AbsynUtil.crefToPath(submod)),
+          inModification, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
+        Absyn.Modification.CLASSMOD(elementArgLst = eargs) := mod;
       then
-        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
+        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs,annOpt),info,constr);
     else inElement;
   end matchcontinue;
 end setExtendsSubmodifierInElement;
