@@ -4631,6 +4631,7 @@ algorithm
 
     case Absyn.MODIFICATION(modification = NONE()) then true;
     case Absyn.MODIFICATION(modification = SOME(mod)) then isEmptyMod(mod);
+    else false;
   end match;
 end isEmptySubMod;
 
