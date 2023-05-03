@@ -81,6 +81,7 @@ saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementModifierValue.mos \
+setExtendsModifierValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \

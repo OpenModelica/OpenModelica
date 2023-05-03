@@ -1,0 +1,41 @@
+// name: setExtendsModifierValue
+// keywords:
+// status: correct
+// cflags: -d=-newInst
+//
+// Tests the setExtendsModifierValue API function.
+//
+
+loadString("
+  package P
+    model M1
+    end M1;
+
+    model M2
+      extends M1;
+    end M2;
+  end P;
+");
+
+setExtendsModifierValue(P.M2, P.M1, c.foo, $Code(=123));
+getErrorString();
+list(P.M2);
+getErrorString();
+setExtendsModifierValue(P.M2, P.M1, c, $Code((testClass(A=2,C=3))));
+getErrorString();
+list(P.M2);
+
+// Result:
+// true
+// Ok
+// ""
+// "model M2
+//   extends M1(c(foo = 123));
+// end M2;"
+// ""
+// Ok
+// ""
+// "model M2
+//   extends M1(c(foo = 123, testClass(A = 2, C = 3)));
+// end M2;"
+// endResult
