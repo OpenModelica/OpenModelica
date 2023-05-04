@@ -363,7 +363,6 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
     QStringList getChoices() const;
-    QString getType(int index) const;
   private:
     BooleanAnnotation mCheckBox;
     BooleanAnnotation mDymolaCheckBox;

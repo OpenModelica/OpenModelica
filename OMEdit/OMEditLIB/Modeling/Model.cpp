@@ -1378,14 +1378,6 @@ namespace ModelInstance
     return choices;
   }
 
-  QString Choices::getType(int index) const
-  {
-    if (0 <= index && index < mChoices.size()) {
-      return mChoices.at(index).second;
-    }
-    return "";
-  }
-
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;

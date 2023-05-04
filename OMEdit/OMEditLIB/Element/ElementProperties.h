@@ -186,7 +186,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool defaultModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
@@ -199,6 +199,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
+  bool mDefaultModifier;
   QString mModification;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;

@@ -1080,16 +1080,14 @@ QString OMCProxy::getElementModifierValue(QString className, QString name)
   */
 bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  QString expression, sapi = QString("setElementModifierValue");
-
+  const QString sapi = QString("setElementModifierValue");
+  QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("%1(%2, %3, $Code(()))").arg(sapi).arg(className).arg(modifierName);
-  } else if (modifierValue.startsWith("redeclare")) {
-    expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
-  } else if (modifierValue.startsWith("(") && modifierValue.contains("=")) {
+  } else if (modifierValue.startsWith("=")) {
     expression = QString("%1(%2, %3, $Code(%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   } else {
-    expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
+    expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
@@ -1152,15 +1150,14 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
+  const QString sapi = QString("setExtendsModifierValue");
   QString expression;
   if (modifierValue.isEmpty()) {
-    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(()))").arg(className).arg(extendsClassName).arg(modifierName);
-  } else if (modifierValue.startsWith("(")) {
-    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(%4))").arg(className).arg(extendsClassName).arg(modifierName)
-        .arg(modifierValue);
+    expression = QString("%1(%2, %3, %4, $Code(()))").arg(sapi, className, extendsClassName, modifierName);
+  } else if (modifierValue.startsWith("=")) {
+    expression = QString("%1(%2, %3, %4, $Code(%5))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   } else {
-    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(=%4))").arg(className).arg(extendsClassName).arg(modifierName)
-        .arg(modifierValue);
+    expression = QString("%1(%2, %3, %4, $Code((%5)))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   }
   sendCommand(expression);
   if (getResult().toLower().compare("ok") == 0) {
@@ -1196,6 +1193,19 @@ bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassNam
 bool OMCProxy::removeExtendsModifiers(QString className, QString extendsClassName)
 {
   return mpOMCInterface->removeExtendsModifiers(className, extendsClassName, true);
+}
+
+/*!
+ * \brief OMCProxy::qualifyPath
+ * \param classPath
+ * \param path
+ * \return
+ */
+QString OMCProxy::qualifyPath(const QString &classPath, const QString &path)
+{
+  QString result = mpOMCInterface->qualifyPath(classPath, path);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
