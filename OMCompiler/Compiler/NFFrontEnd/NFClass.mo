@@ -213,6 +213,12 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     cls := match cls
       case INSTANCED_CLASS()
         then INSTANCED_CLASS(cls.ty, cls.elements, sections, cls.prefixes, cls.restriction);
+
+      case TYPED_DERIVED()
+        algorithm
+          InstNode.classApply(cls.baseClass, setSections, sections);
+        then
+          cls;
     end match;
   end setSections;
 

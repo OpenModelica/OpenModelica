@@ -67,6 +67,14 @@ end dumpFunctions;
 template dumpFunction(DAE.Function function)
 ::=
   match function
+    case FUNCTION(functions = {FUNCTION_PARTIAL_DERIVATIVE(__)}) then
+      let fn_name = AbsynDumpTpl.dumpPathNoQual(path)
+      let cmt_str = dumpCommentOpt(comment)
+      let ann_str = dumpClassAnnotation(comment)
+      let impure_str = if isImpure then 'impure '
+      <<
+      <%impure_str%>function <%fn_name%> = <%dumpFunctionDefinitions(functions)%><%cmt_str%><%if ann_str then " "%><%ann_str%>;
+      >>
     case FUNCTION(__) then
       let cmt_str = dumpCommentOpt(comment)
       let ann_str = dumpClassAnnotation(comment)
@@ -111,6 +119,11 @@ match functions
     >>
   case FUNCTION_DER_MAPPER(__) then ''
   case FUNCTION_INVERSE(__) then ''
+  case FUNCTION_PARTIAL_DERIVATIVE(__) then
+    let vars = (derivedVars |> var => var ;separator=", ")
+    <<
+    der(<%AbsynDumpTpl.dumpPathNoQual(derivedFunction)%>, <%vars%>)
+    >>
 end dumpFunctionDefinition;
 
 template dumpExternalDecl(ExternalDecl externalDecl)

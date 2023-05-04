@@ -81,6 +81,10 @@ function evaluate
 algorithm
   if Function.isExternal(fn) then
     result := evaluateExternal(fn, args, target);
+  elseif Function.isPartialDerivative(fn) then
+    // Partial derivatives of functions are differentiated by the backend, so
+    // make sure we don't try to evaluate the non-differentiated function body.
+    fail();
   else
     result := evaluateNormal(fn, args);
   end if;

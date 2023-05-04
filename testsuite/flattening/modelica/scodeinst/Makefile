@@ -662,6 +662,9 @@ FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
+FunctionPartialDerivative1.mo \
+FunctionPartialDerivative2.mo \
+FunctionPartialDerivative3.mo \
 FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \

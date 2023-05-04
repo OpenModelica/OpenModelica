@@ -1091,6 +1091,14 @@ algorithm
   cls := InstNode.getClass(Function.instance(func));
 
   dfunc := match cls
+    case Class.TYPED_DERIVED(restriction = Restriction.FUNCTION())
+      guard Function.isPartialDerivative(func)
+      algorithm
+        def := DAE.FunctionDefinition.FUNCTION_PARTIAL_DERIVATIVE(
+          Function.getDerivedFunctionName(func), Function.getDerivedInputNames(func));
+      then
+        Function.toDAE(func, def);
+
     case Class.INSTANCED_CLASS(sections = sections, restriction = Restriction.FUNCTION())
       algorithm
         elems := convertFunctionParams(func.inputs, {});
