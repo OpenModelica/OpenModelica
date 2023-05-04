@@ -183,8 +183,8 @@ void SearchWidget::deleteSearchResultWidgets()
  */
 void SearchWidget::searchInFiles()
 {
-  /*do search only if searchstring is available and files opened in library tree browser */
-  if(mpSearchStringComboBox->currentText().isEmpty() | (mpSearchScopeComboBox->count() == 1)) {
+  /* do search only if searchstring is available and files opened in library tree browser */
+  if (mpSearchStringComboBox->currentText().isEmpty() || (mpSearchScopeComboBox->count() == 1)) {
     return;
   }
   updateComboBoxSearchStrings(mpSearchStringComboBox);
