@@ -72,12 +72,14 @@ QString FlatModelica::Parser::getModelicaComment(QString element)
 /*!
  * \brief FlatModelica::Parser::getTypeFromElementRedeclaration
  * \param elmentRedeclaration
+ * \param type
+ * \param modifier
+ * \param comment
  * Parses the code like,
  * redeclare ClassA classA "A"
- * and returns ClassA, the type of the component.
- * \return
+ * and returns ClassA, the type of the component and modifier if any and comment.
  */
-QString FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elmentRedeclaration)
+void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment)
 {
   antlr4::ANTLRInputStream input(elmentRedeclaration.toStdString());
   openmodelica::modelicaLexer lexer(&input);
@@ -85,20 +87,25 @@ QString FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elm
   openmodelica::modelicaParser parser(&tokens);
   openmodelica::modelicaParser::Element_redeclarationContext *pElement_redeclarationContext = parser.element_redeclaration();
   if (pElement_redeclarationContext && pElement_redeclarationContext->component_clause1()) {
-    return QString::fromStdString(pElement_redeclarationContext->component_clause1()->type_specifier()->getText());
+    type = QString::fromStdString(pElement_redeclarationContext->component_clause1()->type_specifier()->getText());
+    if (pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()) {
+      modifier = QString::fromStdString(pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->getText());
+    }
+    comment = QString::fromStdString(pElement_redeclarationContext->component_clause1()->component_declaration1()->comment()->getText());
   }
-  return "";
 }
 
 /*!
  * \brief FlatModelica::Parser::getShortClassTypeFromElementRedeclaration
  * \param elmentRedeclaration
+ * \param type
+ * \param modifier
+ * \param comment
  * Parses the code like,
  * redeclare model M = C
- * and returns M, the type of the short class specifier.
- * \return
+ * and returns M, the type of the short class specifier and modification if any and comment.
  */
-QString FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration)
+void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment)
 {
   antlr4::ANTLRInputStream input(elmentRedeclaration.toStdString());
   openmodelica::modelicaLexer lexer(&input);
@@ -106,7 +113,10 @@ QString FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QS
   openmodelica::modelicaParser parser(&tokens);
   openmodelica::modelicaParser::Element_redeclarationContext *pElement_redeclarationContext = parser.element_redeclaration();
   if (pElement_redeclarationContext && pElement_redeclarationContext->short_class_definition()) {
-    return QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->type_specifier()->getText());
+    type = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->type_specifier()->getText());
+    if (pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()) {
+      modifier = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->getText());
+    }
+    comment = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->comment()->getText());
   }
-  return "";
 }

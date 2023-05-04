@@ -141,6 +141,7 @@ public:
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName);
   bool removeExtendsModifiers(QString className, QString extendsClassName);
+  QString qualifyPath(const QString &classPath, const QString &path);
   QString getIconAnnotation(QString className);
   QString getDiagramAnnotation(QString className);
   int getConnectionCount(QString className);

@@ -3780,7 +3780,7 @@ void Element::showParameters()
   if (MainWindow::instance()->isNewApi()) {
     pMainWindow->getProgressBar()->setRange(0, 0);
     pMainWindow->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, isInheritedElement(), false, pMainWindow);
+    ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, isInheritedElement(), false, true, pMainWindow);
     pMainWindow->hideProgressBar();
     pMainWindow->getStatusBar()->clearMessage();
     pElementParameters->exec();
