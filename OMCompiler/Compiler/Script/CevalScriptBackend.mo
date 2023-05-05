@@ -2642,6 +2642,17 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("setExtendsModifierValue",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath)),
+           Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
+      algorithm
+        (p, b) := InteractiveUtil.setExtendsModifier(classpath, baseClassPath, path, mod, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        Values.BOOL(b);
+
     case ("removeComponentModifiers",
         Values.CODE(Absyn.C_TYPENAME(path))::
       Values.STRING(str1)::

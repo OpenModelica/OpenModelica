@@ -127,7 +127,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
 // 2*y
 // Evaluating: setExtendsModifierValue(D2, B2, a.x, $Code( = 10))
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
 // 10
 // Evaluating: setComponentModifierValue(E, a.p1, $Code())
@@ -191,35 +191,35 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierValues(G, f.r)
 // "(a = 3, b = 4)"
 // Evaluating: setExtendsModifierValue(K, Resistor, R, $Code( = 2))
-// Ok
+// true
 // Evaluating: setExtendsModifierValue(K2, Resistor, R.start, $Code( = 2.25))
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(K2, Resistor, R.start)
 // 2.25
 // Evaluating: getExtendsModifierValue(K2, Resistor, R.fixed)
 // true
 // Evaluating: setExtendsModifierValue(K2, Resistor, R.start, $Code())
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(K2, Resistor, R.start)
 //
 // Evaluating: getExtendsModifierValue(K2, Resistor, R.fixed)
 // true
 // Evaluating: setExtendsModifierValue(K3, Resistor, R, $Code( = 2))
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(K3, Resistor, R.start)
 // 5
 // Evaluating: getExtendsModifierValue(K3, Resistor, R)
 // 2
 // Evaluating: setExtendsModifierValue(K3, Resistor, R.fixed, $Code( = false))
-// Ok
+// true
 // Evaluating: setExtendsModifierValue(K3, Resistor, R.start, $Code( = 2.21))
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(K3, Resistor, R)
 // 2
 // Evaluating: getExtendsModifierNames(K4, Resistor)
 // {x, x.start, x.fixed}
 // Evaluating: setExtendsModifierValue(K4, Resistor, x, $Code())
-// Ok
+// true
 // Evaluating: getExtendsModifierValue(K4, Resistor, x)
 //
 // Evaluating: getExtendsModifierNames(K4, Resistor)
@@ -229,7 +229,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierNames(K4, Resistor)
 // {}
 // Evaluating: setExtendsModifierValue(K5, Resistor, x, $Code())
-// Ok
+// true
 // Evaluating: getExtendsModifierNames(K5, Resistor)
 // {x.fixed, x.start}
 // Evaluating: getExtendsModifierValue(K5, Resistor, x.fixed)

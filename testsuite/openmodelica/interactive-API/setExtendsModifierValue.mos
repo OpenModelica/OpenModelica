@@ -39,33 +39,33 @@ list(P.M2);
 
 // Result:
 // true
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1(c(foo = 123));
 // end M2;"
 // ""
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1(c(foo = 123, testClass(A = 2, C = 3)));
 // end M2;"
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1(c(testClass(A = 2, C = 3)));
 // end M2;"
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1(c(testClass(A = 2, C = 3), foo = 123));
 // end M2;"
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1(c(testClass(A = 2, C = 3)));
 // end M2;"
-// Ok
+// true
 // ""
 // "model M2
 //   extends M1;
