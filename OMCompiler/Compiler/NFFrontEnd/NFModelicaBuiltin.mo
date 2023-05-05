@@ -3475,6 +3475,34 @@ annotation(
   preferredView="text");
 end removeElementModifiers;
 
+function setExtendsModifierValue
+  input TypeName className;
+  input TypeName extendsName;
+  input TypeName elementName;
+  input ExpressionOrModification modifier;
+  output Boolean success;
+external "builtin"
+annotation(
+  Documentation(info="<html>
+Sets a modifier on an extends clause in a class definition, for example:
+<pre>
+package P
+  model M
+    extends A.B(a = 1.0, x(z = 2.0));
+  end M;
+end P;
+
+setExtendsModifierValue(P.M, A.B, x.y, $Code((start = 3.0))) =>
+
+package P
+  model M
+    extends A.B(a = 1.0, x(z = 2.0), y(start = 3.0)));
+  end M;
+end P;
+</html>"),
+  preferredView="text");
+end setExtendsModifierValue;
+
 function getInstantiatedParametersAndValues
   input TypeName cls;
   output String[:] values;

@@ -326,6 +326,30 @@ algorithm
   end try;
 end setElementModifier;
 
+public function setExtendsModifier
+  "Sets a submodifier on an extends clause in a class."
+  input Absyn.Path className;
+  input Absyn.Path extendsName;
+  input Absyn.Path elementName;
+  input Absyn.Modification mod;
+  input output Absyn.Program program;
+        output Boolean result;
+protected
+  Absyn.Within within_;
+  Absyn.Class cls;
+  GraphicEnvCache env;
+algorithm
+  try
+    cls := getPathedClassInProgram(className, program);
+    env := Interactive.getClassEnv(program, className);
+    (cls, result) := setExtendsSubmodifierInClass(cls, extendsName, elementName, mod, env);
+    within_ := buildWithin(className);
+    program := updateProgram(Absyn.PROGRAM({cls}, within_), program);
+   else
+    result := false;
+  end try;
+end setExtendsModifier;
+
 protected function setElementSubmodifierInClass
 " Sets a sub modifier on a component in a class.
    inputs: (Absyn.Class,
@@ -342,6 +366,20 @@ algorithm
   (outClass, found) := AbsynUtil.traverseClassElements(inClass,
     function setSubmodifierInElement(elementName = inElementName, mod = inMod), false);
 end setElementSubmodifierInClass;
+
+protected function setExtendsSubmodifierInClass
+  "Helper function to setExtendsSubmodifierValue."
+  input output Absyn.Class cls;
+  input Absyn.Path extendsPath;
+  input Absyn.Path elementName;
+  input Absyn.Modification mod;
+  input GraphicEnvCache env;
+        output Boolean found;
+algorithm
+  (cls, found) := AbsynUtil.traverseClassElements(cls,
+    function setExtendsSubmodifierInElement(extendsPath = extendsPath,
+      elementName = elementName, mod = mod, env = env), false);
+end setExtendsSubmodifierInClass;
 
 protected function setSubmodifierInElement
   "Helper function to setElementSubmodifierInClass.
@@ -381,6 +419,45 @@ algorithm
     end try;
   end if;
 end setSubmodifierInElement;
+
+protected function setExtendsSubmodifierInElement
+  "Helper function to setExtendsSubmodifierValue."
+  input output Absyn.Element element;
+  input Absyn.Path extendsPath;
+  input Absyn.Path elementName;
+  input Absyn.Modification mod;
+  input GraphicEnvCache env;
+  input output Boolean found;
+        output Boolean outContinue = true;
+protected
+  Absyn.ElementSpec ext_spec;
+  Absyn.Path full_path;
+  list<Absyn.ElementArg> eargs;
+  Option<Absyn.Modification> opt_mod;
+algorithm
+  found := matchcontinue element
+    case Absyn.ELEMENT(specification = ext_spec as Absyn.EXTENDS(elementArg = eargs))
+      algorithm
+        (_, full_path) := Interactive.mkFullyQual(env, ext_spec.path);
+        true := AbsynUtil.pathEqual(extendsPath, full_path);
+
+        opt_mod := propagateMod(AbsynUtil.prefixPath("dummy", elementName),
+          mod, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
+
+        ext_spec.elementArg := match opt_mod
+          case SOME(Absyn.Modification.CLASSMOD(elementArgLst = eargs)) then eargs;
+          else {};
+        end match;
+
+        element.specification := ext_spec;
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+
+  outContinue := not found;
+end setExtendsSubmodifierInElement;
 
 function setSubmodifierInElementSpec
   input Absyn.Path elementName;

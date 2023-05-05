@@ -1160,7 +1160,7 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
     expression = QString("%1(%2, %3, %4, $Code((%5)))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   }
   sendCommand(expression);
-  if (getResult().toLower().compare("ok") == 0) {
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
     QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
