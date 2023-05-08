@@ -4703,5 +4703,17 @@ algorithm
   end match;
 end getPathedElementInElement;
 
+public function getPathedClassRestriction
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Absyn.Restriction restriction;
+algorithm
+  try
+    Absyn.CLASS(restriction = restriction) := getPathedClassInProgram(path, program);
+  else
+    restriction := Absyn.Restriction.R_UNKNOWN();
+  end try;
+end getPathedClassRestriction;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

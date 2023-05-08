@@ -6419,289 +6419,198 @@ algorithm
 end getExternalFunctionSpecification;
 
 protected function getClassDimensions
-"return the dimensions of a class
- as vector of dimension sizes in a string.
- Note: A class can only have dimensions if it is a short class definition."
+  "Returns the dimensions of a class as vector of dimension sizes in a string.
+   Note: A class can only have dimensions if it is a short class definition."
   input Absyn.ClassDef cdef;
   output String str;
+protected
+  Absyn.ArrayDim ad;
 algorithm
-  str := matchcontinue(cdef)
-  local Absyn.ArrayDim ad;
-    case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad)))) equation
-      str = "{"+ stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
-      + "}";
-    then str;
+  str := match cdef
+    case Absyn.DERIVED(typeSpec = Absyn.TPATH(arrayDim = SOME(ad)))
+      then List.toString(ad, Dump.printSubscriptStr, "", "{", ",", "}");
     else "{}";
-  end matchcontinue;
+  end match;
 end getClassDimensions;
 
 public function getClassRestriction
-"author: PA
-  Returns the class restriction of a class as a string."
+  "Returns the class restriction of a class as a string."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
+  input Absyn.Program program;
   output String outRestriction;
+protected
+  Absyn.Restriction restr;
 algorithm
-  outRestriction:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-      Absyn.Restriction restr;
-      String res;
-    case (_,p)
-      equation
-        Absyn.CLASS(_,_,_,_,restr,_,_) = InteractiveUtil.getPathedClassInProgram(path, p);
-        res = Dump.unparseRestrictionStr(restr);
-      then
-        res;
-    else "";
-  end matchcontinue;
+  try
+    Absyn.CLASS(restriction = restr) := InteractiveUtil.getPathedClassInProgram(path, program);
+    outRestriction := Dump.unparseRestrictionStr(restr);
+  else
+    outRestriction := "";
+  end try;
 end getClassRestriction;
 
 public function isType
-"This function takes a component reference and a program.
-  It returns true if the refrenced class has the restriction
-  \"type\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'type', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_TYPE() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isType;
 
 public function isConnector
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"connector\" or \"expandable connector\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'connector' or
+  'expandable connector', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_CONNECTOR() then true;
+    case Absyn.R_EXP_CONNECTOR() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isConnector;
 
 public function isModel
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"model\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'model', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_MODEL(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_MODEL() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isModel;
 
 public function isOperator
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"operator\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'operator', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_OPERATOR() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isOperator;
 
 public function isOperatorRecord
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"operator record\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'operator record', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR_RECORD(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_OPERATOR_RECORD() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isOperatorRecord;
 
 public function isOperatorFunction
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"operator function\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'operator function', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isOperatorFunction;
 
 public function isRecord
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"record\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'record', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_RECORD(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_RECORD() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isRecord;
 
 public function isBlock
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"block\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'block', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_BLOCK() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isBlock;
 
 public function isOptimization
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"Optimization\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'optimization', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPTIMIZATION(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_OPTIMIZATION() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isOptimization;
 
 public function isFunction
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"function\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'function', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_)),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isFunction;
 
 public function isPackage
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"package\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'package', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_PACKAGE() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isPackage;
 
 public function isClass
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"class\", otherwise it returns false."
+  "Returns true if the referenced class has the restriction 'class', otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_CLASS(),_,_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
+  res := match InteractiveUtil.getPathedClassRestriction(path, program)
+    case Absyn.R_CLASS() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isClass;
 
 public function isPartial
-" This function takes a component reference and a program.
-   It returns true if the refrenced class has the restriction
-   \"class\", otherwise it returns false."
+  "Returns true if the referenced class is partial, otherwise false."
   input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean:=
-  matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(partialPrefix=true) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then true;
-    else false;
-  end matchcontinue;
+  try
+    Absyn.CLASS(partialPrefix=true) := InteractiveUtil.getPathedClassInProgram(path, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end isPartial;
 
 public function isReplaceable
+  "Returns true if the referenced element is replaceable, otherwise false."
   input Absyn.Path path;
   input Absyn.Program program;
   output Boolean res;
@@ -6714,6 +6623,7 @@ algorithm
 end isReplaceable;
 
 public function isRedeclare
+  "Returns true if the referenced element is a redeclare, otherwise false."
   input Absyn.Path path;
   input Absyn.Program program;
   output Boolean res;
@@ -6726,212 +6636,125 @@ algorithm
 end isRedeclare;
 
 protected function isParameter
-" This function takes a class and a component reference and a program
+  "This function takes a class and a component reference and a program
    and returns true if the component referenced is a parameter."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program p;
-  output Boolean outBoolean;
+  input Absyn.ComponentRef componentName;
+  input Absyn.ComponentRef className;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  Absyn.Path path;
+  Absyn.Element elem;
 algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,p)
-    local
-      Absyn.Path path;
-      String i;
-      Boolean f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> publst;
-      Absyn.ComponentRef cr,classname;
-   /* a class with parts */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
-      then
-        true;
-    /* an extended class: model extends M end M; */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(parts=parts),_) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
-      then
-        true;
-    /* otherwise */
-    else false;
-  end matchcontinue;
+  try
+    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.PARAM()))) :=
+      InteractiveUtil.getPathedElementInProgram(path, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end isParameter;
 
-protected function isProtected
-" This function takes a class and a component reference and a program
-   and returns true if the component referenced is in a protected section."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program p;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,p)
-    local
-      Absyn.Path path;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> publst,protlst;
-      Absyn.ComponentRef cr,classname;
-    /* a class with parts */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        getComponentsContainsName(cr, publst);
-      then
-        false;
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        protlst = InteractiveUtil.getProtectedList(parts);
-        getComponentsContainsName(cr, protlst);
-      then
-        true;
-    /* an extended class with parts: model extends M end M; */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        getComponentsContainsName(cr, publst);
-      then
-        false;
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        protlst = InteractiveUtil.getProtectedList(parts);
-        getComponentsContainsName(cr, protlst);
-      then
-        true;
-    /* otherwise return false */
-    else false;
-  end matchcontinue;
-end isProtected;
-
 protected function isConstant
-" This function takes a class and a component reference and a program
+  "This function takes a class and a component reference and a program
    and returns true if the component referenced is a constant."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program p;
-  output Boolean outBoolean;
+  input Absyn.ComponentRef componentName;
+  input Absyn.ComponentRef className;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  Absyn.Path path;
+  Absyn.Element elem;
 algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,p)
-    local
-      Absyn.Path path;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> publst;
-      Absyn.ComponentRef cr,classname;
-    /* a class with parts */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
-      then
-        true;
-    /* an extended class with parts: model extends M end M; */
-    case (cr,classname,_)
-      equation
-        path = AbsynUtil.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
-      then
-        true;
-    /* otherwise return false */
-    else false;
-  end matchcontinue;
+  try
+    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()))) :=
+      InteractiveUtil.getPathedElementInProgram(path, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end isConstant;
 
-public function isEnumeration
-" It returns true if the refrenced class has the restriction
-   \"type\" and is an \"Enumeration\", otherwise it returns false."
-  input Absyn.Path path;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+protected function isProtected
+  "This function takes a class and a component reference and a program
+   and returns true if the component referenced is in a protected section."
+  input Absyn.ComponentRef componentName;
+  input Absyn.ComponentRef className;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  Absyn.Path path;
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> items;
 algorithm
-  outBoolean:= matchcontinue (inProgram)
-    case (_)
-      equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),Absyn.ENUMERATION(_,_),_) = InteractiveUtil.getPathedClassInProgram(path, inProgram);
-      then
-        true;
-    else false;
-  end matchcontinue;
+  try
+    path := AbsynUtil.crefToPath(className);
+    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(path, program));
+    items := InteractiveUtil.getProtectedList(parts);
+    getComponentsContainsName(componentName, items);
+    res := true;
+  else
+    res := false;
+  end try;
+end isProtected;
+
+public function isEnumeration
+  "Returns true if the referenced class is an enumeration, otherwise false."
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Boolean res;
+algorithm
+  try
+    Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION()) :=
+      InteractiveUtil.getPathedClassInProgram(path, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end isEnumeration;
 
 public function isProtectedClass
-"Returns true if the class referenced by inString within path is protected.
-  Only look to Element Items of inComponentRef1 for components use getComponents."
+  "Returns true if the class referenced by className within path is protected.
+   Only look to Element Items of inComponentRef1 for components use getComponents."
   input Absyn.Path path;
-  input String inString;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input String className;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> items;
 algorithm
-  outBoolean := matchcontinue (path,inString,inProgram)
-    local
-      Boolean res, protected_res;
-      String str;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> protected_elementitem_list;
-      Absyn.Program p;
-    /* a class with parts - protected elements */
-    case (_,str,p)
-      equation
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        res = isProtectedClassInElements(protected_elementitem_list, str);
-      then res;
-    /* an extended class with parts: model extends M end M; protected elements */
-    case (_,str,p)
-      equation
-        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(path, p);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        res = isProtectedClassInElements(protected_elementitem_list, str);
-      then res;
-    else false;
-  end matchcontinue;
+  try
+    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(path, program));
+    items := InteractiveUtil.getProtectedList(parts);
+    res := isProtectedClassInElements(items, className);
+  else
+    res := false;
+  end try;
 end isProtectedClass;
 
 protected function isProtectedClassInElements
-"Helper function to isProtectedClass."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input String inString;
-  output Boolean outBoolean;
+  "Helper function to isProtectedClass."
+  input list<Absyn.ElementItem> items;
+  input String className;
+  output Boolean res = false;
+protected
+  String name;
 algorithm
-  outBoolean := matchcontinue (inAbsynElementItemLst, inString)
-    local
-      String str, id;
-      Boolean res;
-      list<Absyn.ElementItem> rest;
-    case ({}, _) then false;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)))) :: _), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
-      equation
-        true = stringEq(id,str);
-      then
-        true;
-    case ((_ :: rest), str)
-      equation
-        res = isProtectedClassInElements(rest, str);
-      then
-        res;
-    else false;
-  end matchcontinue;
+  for item in items loop
+    res := match item
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+            Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name))))
+        then name == className;
+      else false;
+    end match;
+
+    if res then
+      break;
+    end if;
+  end for;
 end isProtectedClassInElements;
 
 protected function getEnumLiterals
@@ -6956,20 +6779,16 @@ algorithm
 end getEnumLiterals;
 
 public function getDerivedClassModifierNames
-"Returns the derived class modifier names."
+  "Returns the derived class modifier names."
   input Absyn.Class inClass;
   output list<String> outString;
+protected
+  list<Absyn.ElementArg> args;
 algorithm
-  outString:= match (inClass)
-    local
-      list<Absyn.ElementArg> args;
-      list<String> modifierNames;
-    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.DERIVED(arguments = args)))
-      equation
-        modifierNames = getModificationNames(args);
-      then
-        modifierNames;
-    case (_) then {};
+  outString := match inClass
+    case Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.DERIVED(arguments = args))
+      then getModificationNames(args);
+    else {};
   end match;
 end getDerivedClassModifierNames;
 
@@ -13130,12 +12949,7 @@ protected function selectAnnotation
   Selects either the new annotation if is SOME or the old one"
   input Option<Absyn.Annotation> newAnn;
   input Option<Absyn.Annotation> oldAnn;
-  output Option<Absyn.Annotation> outAnn;
-algorithm
-  outAnn := match(newAnn, oldAnn)
-    case(SOME(_), _) then newAnn;
-    case(NONE(),_) then oldAnn;
-  end match;
+  output Option<Absyn.Annotation> outAnn = if isSome(newAnn) then newAnn else oldAnn;
 end selectAnnotation;
 
 protected function annotationListToAbsynComment
