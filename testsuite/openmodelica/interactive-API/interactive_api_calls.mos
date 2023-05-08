@@ -35,8 +35,8 @@ isEnumeration(C); getErrorString();
 getEnumerationLiterals(C); getErrorString();
 isEnumeration(sizeE); getErrorString();
 getEnumerationLiterals(sizeE); getErrorString();
-isReplaceable(ReplaceableClass, "M1"); getErrorString();
-isReplaceable(RealSignal, "SignalType"); getErrorString();
+isReplaceable(ReplaceableClass.M1); getErrorString();
+isReplaceable(RealSignal.SignalType); getErrorString();
 isProtectedClass(RealSignal, "SignalType"); getErrorString();
 isProtectedClass(ProtectedClass, "M1"); getErrorString();
 getBuiltinType(Resistance); getErrorString();
@@ -238,11 +238,11 @@ getMessagesStringInternal(unique = false); // not unique
 // {"Small","Medium","Large"}
 // Evaluating: getErrorString()
 // ""
-// Evaluating: isReplaceable(ReplaceableClass, "M1")
+// Evaluating: isReplaceable(ReplaceableClass.M1)
 // true
 // Evaluating: getErrorString()
 // ""
-// Evaluating: isReplaceable(RealSignal, "SignalType")
+// Evaluating: isReplaceable(RealSignal.SignalType)
 // true
 // Evaluating: getErrorString()
 // ""

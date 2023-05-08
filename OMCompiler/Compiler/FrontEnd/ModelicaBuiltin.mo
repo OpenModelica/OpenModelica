@@ -3698,6 +3698,28 @@ annotation(
   preferredView="text");
 end isPartial;
 
+function isReplaceable
+  input TypeName element;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given element is replaceable.
+</html>"),
+  preferredView="text");
+end isReplaceable;
+
+function isRedeclare
+  input TypeName element;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given element is a redeclare.
+</html>"),
+  preferredView="text");
+end isRedeclare;
+
 function isModel
   input TypeName cl;
   output Boolean b;

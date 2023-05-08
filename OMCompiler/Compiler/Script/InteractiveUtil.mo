@@ -4634,7 +4634,7 @@ algorithm
 end removeClassInElementitemlist;
 
 public function getPathedElementInProgram
-  "Looks up a class element in the program using the given path."
+  "Looks up an element in the program using the given path."
   input Absyn.Path path;
   input Absyn.Program program;
   output Absyn.Element element;
@@ -4675,7 +4675,7 @@ protected
   Absyn.Element e;
 algorithm
   for item in AbsynUtil.getElementItemsInClassPart(part) loop
-    if AbsynUtil.isElementItemClassNamed(AbsynUtil.pathFirstIdent(path), item) then
+    if AbsynUtil.isElementItemNamed(AbsynUtil.pathFirstIdent(path), item) then
       Absyn.ElementItem.ELEMENTITEM(element = e) := item;
 
       if AbsynUtil.pathIsIdent(path) then

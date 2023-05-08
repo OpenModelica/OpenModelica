@@ -930,6 +930,18 @@ algorithm
   end match;
 end isClassNamed;
 
+public function isComponentItemNamed
+  input String name;
+  input Absyn.ComponentItem component;
+  output Boolean res = isComponentNamed(name, component.component);
+end isComponentItemNamed;
+
+public function isComponentNamed
+  input String name;
+  input Absyn.Component component;
+  output Boolean res = name == component.name;
+end isComponentNamed;
+
 public function elementSpecName
   "The Absyn.ElementSpec type contains the name of the element, and this function
    extracts this name."
@@ -4918,6 +4930,41 @@ algorithm
   end match;
 end isElementItemClassNamed;
 
+public function isElementItemNamed
+  input String name;
+  input Absyn.ElementItem element;
+  output Boolean res;
+algorithm
+  res := match element
+    case Absyn.ELEMENTITEM() then isElementNamed(name, element.element);
+    else false;
+  end match;
+end isElementItemNamed;
+
+public function isElementNamed
+  input String name;
+  input Absyn.Element element;
+  output Boolean res;
+algorithm
+  res := match element
+    case Absyn.Element.ELEMENT() then isElementSpecNamed(name, element.specification);
+    else false;
+  end match;
+end isElementNamed;
+
+public function isElementSpecNamed
+  input String name;
+  input Absyn.ElementSpec elementSpec;
+  output Boolean res;
+algorithm
+  res := match elementSpec
+    case Absyn.ElementSpec.CLASSDEF() then isClassNamed(name, elementSpec.class_);
+    case Absyn.ElementSpec.COMPONENTS()
+      then List.exist(elementSpec.components, function isComponentItemNamed(name = name));
+    else false;
+  end match;
+end isElementSpecNamed;
+
 public function isEmptyClassPart
   input Absyn.ClassPart inClassPart;
   output Boolean outIsEmpty;
@@ -6028,6 +6075,41 @@ algorithm
     else NONE();
   end match;
 end getElementConstrainingClass;
+
+function isElementReplaceable
+  input Absyn.Element element;
+  output Boolean res;
+protected
+  Absyn.RedeclareKeywords redecl;
+algorithm
+  res := match element
+    case Absyn.Element.ELEMENT(redeclareKeywords = SOME(redecl))
+      then match redecl
+             case Absyn.RedeclareKeywords.REPLACEABLE() then true;
+             case Absyn.RedeclareKeywords.REDECLARE_REPLACEABLE() then true;
+             else false;
+           end match;
+
+    else false;
+  end match;
+end isElementReplaceable;
+
+function isElementRedeclare
+  input Absyn.Element element;
+  output Boolean res;
+protected
+  Absyn.RedeclareKeywords redecl;
+algorithm
+  res := match element
+    case Absyn.Element.ELEMENT(redeclareKeywords = SOME(redecl))
+      then match redecl
+             case Absyn.RedeclareKeywords.REDECLARE() then true;
+             else false;
+           end match;
+
+    else false;
+  end match;
+end isElementRedeclare;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
