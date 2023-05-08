@@ -1,4 +1,4 @@
-@echo off
+REM echo off
 REM Arguments
 REM 1 fileprefix
 REM 2 target (gcc|msvc)
@@ -10,6 +10,10 @@ REM 7 LOGGING 0/1
 if not "%5"=="" (set LINK_TYPE=%5) else (set LINK_TYPE=dynamic)
 if not "%6"=="" (set NUM_PROCS=%6) else (set NUM_PROCS=%NUMBER_OF_PROCESSORS%)
 if not "%7"=="" (set LOGGING=%7) else (set LOGGING=1)
+
+REM delete the log file
+del /FQ %1.compile.log
+
 set OM_PLATFORM=%3
 REM Clear all environment variables that may interfere during compile and link phases.
 set GCC_EXEC_PREFIX=
@@ -23,16 +27,16 @@ set ADDITIONAL_ARGS=
 REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
-REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
-REM echo MINGW = %MINGW% >>%1.log 2>&1
+REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.compile.log 2>&1
+REM echo MINGW = %MINGW% >>%1.compile.log 2>&1
 call :CONVERT_CD_TO_SHORT_PATH_NAME "%CD%"
 
 if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
 
 :SET_PATH_LOG
-cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.log 2>&1
-set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH% >>%CURRENT_DIR%\%1.log 2>&1
-cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.log 2>&1
+cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.compile.log 2>&1
+set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH% >>%CURRENT_DIR%\%1.compile.log 2>&1
+cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.compile.log 2>&1
 goto :CHECK_TARGET
 
 :SET_PATH
@@ -42,8 +46,8 @@ echo PATH = "%PATH%"
 cd /D "%CURRENT_DIR%"
 goto :CHECK_TARGET
 
-REM echo PATH = %PATH% >>%1.log 2>&1
-REM echo CD = %CD% >>%1.log 2>&1
+REM echo PATH = %PATH% >>%1.compile.log 2>&1
+REM echo CD = %CD% >>%1.compile.log 2>&1
 
 :CHECK_TARGET
 if /I "%2"=="msvc" (goto :MSVC)
@@ -67,7 +71,7 @@ set MSVCHOME=%VS100COMNTOOLS%..\..\VC
 if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
 set PATHTMP=%PATH%
 set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
+if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.compile.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
 goto :MSVCCOMPILE
 
 :MSVC110
@@ -76,7 +80,7 @@ set MSVCHOME=%VS110COMNTOOLS%..\..\VC
 if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
 set PATHTMP=%PATH%
 set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
+if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.compile.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
 goto :MSVCCOMPILE
 
 :MSVC120
@@ -86,7 +90,7 @@ set MSVCHOME=%VS120COMNTOOLS%..\..\VC
 if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
 set PATHTMP=%PATH%
 set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
+if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.compile.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
 goto :MSVCCOMPILE
 
 :MSVC140
@@ -95,23 +99,23 @@ set MSVCHOME=%VS140COMNTOOLS%..\..\VC
 if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
 set PATHTMP=%PATH%
 set PATH=%OLD_PATH%
-if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
+if %LOGGING%==1 (call "%MSVCHOME%\vcvarsall.bat" >> %1.compile.log 2>&1) else (call "%MSVCHOME%\vcvarsall.bat")
 goto :MSVCCOMPILE
 
 :MSVCCOMPILE
 set MAKE=
 set MAKEFLAGS=
-if %LOGGING%==1 (nmake /a /f %1.makefile >> %1.log 2>&1) else (nmake /a /f %1.makefile)
+if %LOGGING%==1 (nmake /a /f %1.makefile >> %1.compile.log 2>&1) else (nmake /a /f %1.makefile)
 set RESULT=%ERRORLEVEL%
-if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
+if %LOGGING%==1 echo RESULT: %RESULT% >> %1.compile.log 2>&1
 goto :Final
 
 :MINGW
 REM echo "MINGW"
 if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.log 2>&1; Exit $LASTEXITCODE") else (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%; Exit $LASTEXITCODE")
+if %LOGGING%==1 (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.compile.log 2>&1; Exit $LASTEXITCODE") else (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%; Exit $LASTEXITCODE")
 set RESULT=%ERRORLEVEL%
-if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
+if %LOGGING%==1 echo RESULT: %RESULT% >> %1.compile.log 2>&1
 goto :Final
 
 :Final
