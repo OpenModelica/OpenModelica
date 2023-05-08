@@ -1533,12 +1533,6 @@ void ElementParameters::commentLinkClicked(QString link)
   }
 }
 
-typedef struct {
-  QString mKey;
-  QString mValue;
-  bool mIsReplaceable;
-} ElementModifier;
-
 /*!
  * \brief ElementParameters::updateElementParameters
  * Slot activated when mpOkButton clicked signal is raised.\n
@@ -1551,17 +1545,15 @@ void ElementParameters::updateElementParameters()
   QString className = pModelWidget->getLibraryTreeItem()->getNameStructure();
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   bool valueChanged = false;
-  QList<ElementModifier> elementModifiersList;
+  QMap<QString, QString> elementModifiersMap;
   // any parameter changed
   foreach (Parameter *pParameter, mParametersList) {
     // if parameter is not visible then continue
     if (pParameter->getGroup().isEmpty()) {
       continue;
     }
-    ElementModifier elementModifier;
-    elementModifier.mKey = pParameter->getNameLabel()->text();
+    QString elementModifierKey = pParameter->getNameLabel()->text();
     QString elementModifierValue = pParameter->getValue();
-    elementModifier.mIsReplaceable = (pParameter->getValueType() == Parameter::ReplaceableClass || pParameter->getValueType() == Parameter::ReplaceableComponent);
     // convert the value to display unit
     if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
       bool ok = true;
@@ -1577,33 +1569,30 @@ void ElementParameters::updateElementParameters()
         elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue, pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(), pParameter->getUnit());
       }
     }
-    elementModifier.mValue = elementModifierValue;
     if (pParameter->isValueModified()) {
       valueChanged = true;
-      elementModifiersList.append(elementModifier);
+      elementModifiersMap.insert(elementModifierKey, elementModifierValue);
     }
     if (pParameter->isShowStartAndFixed() && (pParameter->getFixedState().compare(pParameter->getOriginalFixedValue()) != 0)) {
       valueChanged = true;
-      elementModifier.mKey.replace(".start", ".fixed");
-      elementModifier.mValue = pParameter->getFixedState();
-      elementModifiersList.append(elementModifier);
+      elementModifierKey = elementModifierKey.replace(".start", ".fixed");
+      elementModifierValue = pParameter->getFixedState();
+      elementModifiersMap.insert(elementModifierKey, elementModifierValue);
     }
     // remove the .start or .fixed from modifier key
     if (pParameter->isShowStartAndFixed()) {
-      if (elementModifier.mKey.endsWith(".start")) {
-        elementModifier.mKey.chop(QString(".start").length());
+      if (elementModifierKey.endsWith(".start")) {
+        elementModifierKey.chop(QString(".start").length());
       }
-      if (elementModifier.mKey.endsWith(".fixed")) {
-        elementModifier.mKey.chop(QString(".fixed").length());
+      if (elementModifierKey.endsWith(".fixed")) {
+        elementModifierKey.chop(QString(".fixed").length());
       }
     }
     // if displayUnit is changed
     const QString unit = pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString();
     if (pParameter->getUnitComboBox()->isEnabled() && !unit.isEmpty() && pParameter->getDisplayUnit().compare(unit) != 0) {
       valueChanged = true;
-      elementModifier.mKey = elementModifier.mKey % ".displayUnit";
-      elementModifier.mValue = "\"" + unit + "\"";
-      elementModifiersList.append(elementModifier);
+      elementModifiersMap.insert(elementModifierKey % ".displayUnit", "\"" + unit + "\"");
     }
   }
   // any new modifier is added
@@ -1616,14 +1605,12 @@ void ElementParameters::updateElementParameters()
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
     foreach (QString modifier, modifiers) {
-      ElementModifier elementModifier;
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier)) {
         valueChanged = true;
-        elementModifier.mKey = modifier.mid(0, modifier.indexOf("("));
-        elementModifier.mValue = modifier.mid(modifier.indexOf("("));
-        elementModifier.mIsReplaceable = false;
-        elementModifiersList.append(elementModifier);
+        QString elementModifierKey = modifier.mid(0, modifier.indexOf("("));
+        QString elementModifierValue = modifier.mid(modifier.indexOf("("));
+        elementModifiersMap.insert(elementModifierKey, elementModifierValue);
       } else {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
                                                               Helper::scriptingKind, Helper::errorLevel));
@@ -1634,30 +1621,22 @@ void ElementParameters::updateElementParameters()
   if (valueChanged) {
     if (mNested) {
       QStringList modifications;
-      foreach (ElementModifier elementModifier, elementModifiersList) {
-        QString modifierValue = elementModifier.mValue.trimmed();
-        if (elementModifier.mIsReplaceable) {
+      QMap<QString, QString>::iterator newElementModifier;
+      for (newElementModifier = elementModifiersMap.begin(); newElementModifier != elementModifiersMap.end(); ++newElementModifier) {
+        QString modifierValue = newElementModifier.value().trimmed();
+        if (modifierValue.startsWith(QStringLiteral("redeclare"))) {
           modifications.append(modifierValue);
         } else {
-          modifications.append(elementModifier.mKey % "=" % modifierValue);
+          modifications.append(newElementModifier.key() % "=" % modifierValue);
         }
       }
       mModification = mpElement->getName() % "(" % modifications.join(",") % ")";
     } else {
       // apply the new Component modifiers if any
-      foreach (ElementModifier elementModifier, elementModifiersList) {
-        QString modifierKey;
-        QString modifierValue;
-        if (elementModifier.mValue.isEmpty()) {
-          modifierKey = mpElement->getName() % "." % elementModifier.mKey;
-          modifierValue = elementModifier.mValue;
-        } else if (elementModifier.mIsReplaceable) {
-          modifierKey = mpElement->getName();
-          modifierValue = elementModifier.mValue;
-        } else {
-          modifierKey = mpElement->getName() % "." % elementModifier.mKey;
-          modifierValue = "=" % elementModifier.mValue;
-        }
+      QMap<QString, QString>::iterator newElementModifier;
+      for (newElementModifier = elementModifiersMap.begin(); newElementModifier != elementModifiersMap.end(); ++newElementModifier) {
+        QString modifierValue = newElementModifier.value();
+        QString modifierKey = QString(mpElement->getName() % "." % newElementModifier.key());
         // if the element is inherited then add the modifier value into the extends.
         if (mInherited) {
           pOMCProxy->setExtendsModifierValue(className, mpElement->getParentModel()->getName(), modifierKey, modifierValue);

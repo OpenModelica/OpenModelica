@@ -133,7 +133,7 @@ public:
   QString getParameterValue(const QString &className, const QString &parameter);
   QStringList getElementModifierNames(QString className, QString name);
   QString getElementModifierValue(QString className, QString name);
-  bool setElementModifierValue(QString className, QString name, QString modifierValue);
+  bool setElementModifierValue(QString className, QString modifierName, QString modifierValue);
   bool removeElementModifiers(QString className, QString name);
   QString getElementModifierValues(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);

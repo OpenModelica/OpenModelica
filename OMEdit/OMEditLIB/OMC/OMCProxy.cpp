@@ -1072,22 +1072,25 @@ QString OMCProxy::getElementModifierValue(QString className, QString name)
 }
 
 /*!
-  Sets the element modifier value.
-  \param className - is the name of the class whose modifier value is set.
-  \param name - is the name of the modifier whose value is set.
-  \param value - is the value to set.
-  \return true on success.
-  */
+ * \brief OMCProxy::setElementModifierValue
+ * Sets the element modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
 bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setElementModifierValue");
   QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("%1(%2, %3, $Code(()))").arg(sapi).arg(className).arg(modifierName);
-  } else if (modifierValue.startsWith("=")) {
-    expression = QString("%1(%2, %3, $Code(%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
-  } else {
+  } else if (modifierValue.startsWith(QStringLiteral("redeclare")) || modifierValue.startsWith(StringHandler::getLastWordAfterDot(modifierName))) {
+    // Do not give name of the element being redeclared, only the name of the element the redeclare modifier is applied to
+    modifierName = StringHandler::removeLastWordAfterDot(modifierName);
     expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
+  } else {
+    expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
@@ -1148,16 +1151,27 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
   return getResult().trimmed();
 }
 
+/*!
+ * \brief OMCProxy::setExtendsModifierValue
+ * Sets the extends modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param extendsClassName - is the name of the extends class.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setExtendsModifierValue");
   QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("%1(%2, %3, %4, $Code(()))").arg(sapi, className, extendsClassName, modifierName);
-  } else if (modifierValue.startsWith("=")) {
-    expression = QString("%1(%2, %3, %4, $Code(%5))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
-  } else {
+  } else if (modifierValue.startsWith(QStringLiteral("redeclare")) || modifierValue.startsWith(StringHandler::getLastWordAfterDot(modifierName))) {
+    // Do not give name of the element being redeclared, only the name of the element the redeclare modifier is applied to
+    modifierName = StringHandler::removeLastWordAfterDot(modifierName);
     expression = QString("%1(%2, %3, %4, $Code((%5)))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
+  } else {
+    expression = QString("%1(%2, %3, %4, $Code(=%5))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
