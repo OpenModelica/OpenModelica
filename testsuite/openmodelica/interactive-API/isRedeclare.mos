@@ -1,0 +1,33 @@
+// name: isRedeclare
+// keywords:
+// status: correct
+// cflags: -d=-newInst
+//
+
+loadString("
+  package P
+    redeclare Real x;
+    Real y;
+
+    redeclare model A
+    end A;
+
+    model B
+    end B;
+  end P;
+");
+
+isRedeclare(P);
+isRedeclare(P.A);
+isRedeclare(P.B);
+isRedeclare(P.x);
+isRedeclare(P.y);
+
+// Result:
+// true
+// false
+// true
+// false
+// true
+// false
+// endResult

@@ -1,0 +1,36 @@
+// name: isReplaceable
+// keywords:
+// status: correct
+// cflags: -d=-newInst
+//
+
+loadString("
+  package P
+    replaceable type B = Real;
+
+    replaceable model C
+      replaceable Real x;
+      Real y;
+    end C;
+
+    model D
+    end D;
+  end P;
+");
+
+isReplaceable(P);
+isReplaceable(P.B);
+isReplaceable(P.C);
+isReplaceable(P.D);
+isReplaceable(P.C.x);
+isReplaceable(P.C.y);
+
+// Result:
+// true
+// false
+// true
+// true
+// false
+// true
+// false
+// endResult

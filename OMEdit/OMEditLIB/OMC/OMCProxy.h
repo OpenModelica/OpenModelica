@@ -127,7 +127,8 @@ public:
   bool isWhat(StringHandler::ModelicaClasses type, QString className);
   bool isProtectedClass(QString className, QString nestedClassName);
   bool isPartial(QString className);
-  bool isReplaceable(QString parentClassName, QString className);
+  bool isReplaceable(QString elementName);
+  bool isRedeclare(QString elementName);
   StringHandler::ModelicaClasses getClassRestriction(QString className);
   bool setParameterValue(const QString &className, const QString &parameter, const QString &value);
   QString getParameterValue(const QString &className, const QString &parameter);

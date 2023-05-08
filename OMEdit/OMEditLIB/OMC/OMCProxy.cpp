@@ -967,15 +967,24 @@ bool OMCProxy::isPartial(QString className)
 
 /*!
  * \brief OMCProxy::isReplaceable
- * Returns true if the className is replaceable in parentClassName.
- * \param parentClassName
- * \param className
+ * Returns true if the elementName is replaceable.
+ * \param elementName
  * \return
  */
-bool OMCProxy::isReplaceable(QString parentClassName, QString className)
+bool OMCProxy::isReplaceable(QString elementName)
 {
-  sendCommand("isReplaceable(" + parentClassName + ", \"" + className + "\")");
-  return StringHandler::unparseBool(getResult());
+  return mpOMCInterface->isReplaceable(elementName);
+}
+
+/*!
+ * \brief OMCProxy::isRedeclare
+ * Returns true if the elementName is a redeclare.
+ * \param elementName
+ * \return
+ */
+bool OMCProxy::isRedeclare(QString elementName)
+{
+  return mpOMCInterface->isRedeclare(elementName);
 }
 
 /*!

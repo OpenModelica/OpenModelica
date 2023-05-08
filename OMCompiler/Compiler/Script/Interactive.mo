@@ -1411,12 +1411,6 @@ algorithm
       then
         boolString(isConstant(cr, class_, p));
 
-    case "isReplaceable"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = name)} := args;
-      then
-        boolString(isReplaceable(class_, name, p));
-
     case "getEnumerationLiterals"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -6707,6 +6701,30 @@ algorithm
   end matchcontinue;
 end isPartial;
 
+public function isReplaceable
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Boolean res;
+algorithm
+  try
+    res := AbsynUtil.isElementReplaceable(InteractiveUtil.getPathedElementInProgram(path, program));
+  else
+    res := false;
+  end try;
+end isReplaceable;
+
+public function isRedeclare
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Boolean res;
+algorithm
+  try
+    res := AbsynUtil.isElementRedeclare(InteractiveUtil.getPathedElementInProgram(path, program));
+  else
+    res := false;
+  end try;
+end isRedeclare;
+
 protected function isParameter
 " This function takes a class and a component reference and a program
    and returns true if the component referenced is a parameter."
@@ -6856,86 +6874,6 @@ algorithm
     else false;
   end matchcontinue;
 end isEnumeration;
-
-protected function isReplaceable
-"Returns true if the class referenced by inString within inComponentRef1 is replaceable.
-  Only look to Element Items of inComponentRef1 for components use getComponents."
-  input Absyn.ComponentRef inComponentRef1;
-  input String inString;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inComponentRef1,inString,inProgram)
-    local
-      Absyn.Path modelpath;
-      Boolean res, public_res, protected_res;
-      String str;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> public_elementitem_list, protected_elementitem_list;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    /* a class with parts - public elements */
-    case (model_,str,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        res = isReplaceableInElements(public_elementitem_list, str);
-      then res;
-    /* a class with parts - protected elements */
-    case (model_,str,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        res = isReplaceableInElements(protected_elementitem_list, str);
-      then res;
-    /* an extended class with parts: model extends M end M; public elements */
-    case (model_,str,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        res = isReplaceableInElements(public_elementitem_list, str);
-      then res;
-    /* an extended class with parts: model extends M end M; protected elements */
-    case (model_,str,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        res = isReplaceableInElements(protected_elementitem_list, str);
-      then res;
-    else false;
-  end matchcontinue;
-end isReplaceable;
-
-protected function isReplaceableInElements
-"Helper function to isReplaceable."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input String inString;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inAbsynElementItemLst, inString)
-    local
-      String str, id;
-      Boolean res;
-      list<Absyn.ElementItem> rest;
-      Option<Absyn.RedeclareKeywords> r;
-    case ({}, _) then false;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)))) :: _), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
-      equation
-        true = stringEq(id,str);
-        res = keywordReplaceable(r);
-      then
-        res;
-    case ((_ :: rest), str)
-      equation
-        res = isReplaceableInElements(rest, str);
-      then
-        res;
-  end matchcontinue;
-end isReplaceableInElements;
 
 public function isProtectedClass
 "Returns true if the class referenced by inString within path is protected.

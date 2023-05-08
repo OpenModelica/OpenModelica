@@ -2065,6 +2065,18 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("isReplaceable",{Values.CODE(Absyn.C_TYPENAME(path))})
+      equation
+        b = Interactive.isReplaceable(path, SymbolTable.getAbsyn());
+      then
+        Values.BOOL(b);
+
+    case ("isRedeclare",{Values.CODE(Absyn.C_TYPENAME(path))})
+      equation
+        b = Interactive.isRedeclare(path, SymbolTable.getAbsyn());
+      then
+        Values.BOOL(b);
+
     case ("isModel",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         b = Interactive.isModel(classpath, SymbolTable.getAbsyn());
