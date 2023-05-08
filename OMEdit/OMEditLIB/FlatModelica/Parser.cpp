@@ -89,7 +89,8 @@ void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elment
   if (pElement_redeclarationContext && pElement_redeclarationContext->component_clause1()) {
     type = QString::fromStdString(pElement_redeclarationContext->component_clause1()->type_specifier()->getText());
     if (pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()) {
-      modifier = QString::fromStdString(pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->getText());
+      modifier = getModificationFromStartAndStopInterval(pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->start,
+                                                         pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->stop);
     }
     comment = QString::fromStdString(pElement_redeclarationContext->component_clause1()->component_declaration1()->comment()->getText());
   }
@@ -115,8 +116,29 @@ void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QStri
   if (pElement_redeclarationContext && pElement_redeclarationContext->short_class_definition()) {
     type = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->type_specifier()->getText());
     if (pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()) {
-      modifier = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->getText());
+      modifier = getModificationFromStartAndStopInterval(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->start,
+                                                         pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->stop);
     }
     comment = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->comment()->getText());
   }
+}
+
+/*!
+ * \brief FlatModelica::Parser::getModificationFromStartAndStopInterval
+ * Calling getText on non-terminals removes the spaces.
+ * So we need to get the text from the interval.
+ * \param pStartToken
+ * \param pStopToken
+ * \return
+ */
+QString FlatModelica::Parser::getModificationFromStartAndStopInterval(antlr4::Token *pStartToken, antlr4::Token *pStopToken)
+{
+  if (pStartToken) {
+    antlr4::CharStream *pCharStream = pStartToken->getTokenSource()->getInputStream();
+    if (pCharStream) {
+      size_t stopIndex = pStopToken != NULL ? pStopToken->getStopIndex() : -1;
+      return QString::fromStdString(pCharStream->getText(antlr4::misc::Interval(pStartToken->getStartIndex(), stopIndex)));
+    }
+  }
+  return "";
 }
