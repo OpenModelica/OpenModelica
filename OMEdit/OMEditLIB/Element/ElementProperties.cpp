@@ -382,9 +382,12 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
          */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-        mpValueComboBox->setMinimumWidth(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()) + 50);
+        // Allow to take 70% of screen width
+        int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.7;
+        mpValueComboBox->setMinimumWidth(qMin(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
 #else // QT_VERSION_CHECK
-        mpValueComboBox->setMinimumWidth(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()) + 50);
+        int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.7;
+        mpValueComboBox->setMinimumWidth(qMin(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
 #endif // QT_VERSION_CHECK
       }
       break;
@@ -406,9 +409,12 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         /* Set the minimum width so that the value text will be readable */
         fm = QFontMetrics(mpValueTextBox->font());
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-        mpValueTextBox->setMinimumWidth(fm.horizontalAdvance(value) + 50);
+        // Allow to take 70% of screen width
+        int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.7;
+        mpValueTextBox->setMinimumWidth(qMin(fm.horizontalAdvance(value), screenWidth) + 50);
 #else // QT_VERSION_CHECK
-        mpValueTextBox->setMinimumWidth(fm.width(value) + 50);
+        int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.7;
+        mpValueTextBox->setMinimumWidth(qMin(fm.width(value), screenWidth) + 50);
 #endif // QT_VERSION_CHECK
       }
       mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
