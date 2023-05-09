@@ -228,9 +228,9 @@ public
       (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
-      (simplify,           "simplify2"),
+      (simplify,           "simplify2"), // TODO simplify in Alias only
       (Events.main,        "Events"),
-      (DetectStates.main,  "DetectStates")
+      (DetectStates.main,  "Detect States")
     };
 
     mainModules := {
@@ -246,6 +246,7 @@ public
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
+      (Initialization.cleanup,                                        "Cleanup Simulation"),
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
       (Partitioning.categorize,                                       "Categorize"),
       (Solve.main,                                                    "Solve"),

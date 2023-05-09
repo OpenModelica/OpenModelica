@@ -43,6 +43,7 @@ public
 protected
   // NF imports
   import Variable = NFVariable;
+  import Expression = NFExpression;
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
@@ -213,6 +214,26 @@ public
         end for;
       end if;
     end getLoopResiduals;
+
+    function mapEquations
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output BEquation.Equation e;
+      end MapFunc;
+    algorithm
+      system.equations := EquationPointers.map(system.equations, func);
+    end mapEquations;
+
+    function mapExpressions
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output Expression e;
+      end MapFunc;
+    algorithm
+      system.equations := EquationPointers.mapExp(system.equations, func);
+    end mapExpressions;
 
     function systemTypeString
       input SystemType systemType;
