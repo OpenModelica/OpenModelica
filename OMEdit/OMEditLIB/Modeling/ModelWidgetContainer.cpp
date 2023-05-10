@@ -8616,20 +8616,17 @@ void ModelWidget::drawOMSModelDiagramElements()
         y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
         double width = x2 - x1;
         double height = y2 - y1;
-        if (width <= 0 && height <= 0) {
-          x1 = -10.0;
-          y1 = -10.0;
-          x2 = 10.0;
-          y2 = 10.0;
-        }
+        double origX = (x1 + x2) / 2;
+        double origY = (y1 + y2) / 2;
         // Load the ModelWidget if not loaded already
         if (!pChildLibraryTreeItem->getModelWidget()) {
           MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
         }
 
-        QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
-                             .arg(x1).arg(y1)
-                             .arg(x2).arg(y2)
+        QString annotation = QString("Placement(true,%1,%2,%3,%4,%5,%6,%7,-,-,-,-,-,-,)")
+                             .arg(origX).arg(origY)
+                             .arg(-width / 2).arg(-height / 2)
+                             .arg(width / 2).arg(height / 2)
                              .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
 
         if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
