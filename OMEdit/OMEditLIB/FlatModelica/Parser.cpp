@@ -91,6 +91,8 @@ void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elment
     if (pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()) {
       modifier = getModificationFromStartAndStopInterval(pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->start,
                                                          pElement_redeclarationContext->component_clause1()->component_declaration1()->declaration()->modification()->stop);
+    } else {
+      modifier = "";
     }
     comment = QString::fromStdString(pElement_redeclarationContext->component_clause1()->component_declaration1()->comment()->getText());
   }
@@ -118,6 +120,8 @@ void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QStri
     if (pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()) {
       modifier = getModificationFromStartAndStopInterval(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->start,
                                                          pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->stop);
+    } else {
+      modifier = "";
     }
     comment = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->comment()->getText());
   }

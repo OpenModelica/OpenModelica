@@ -186,7 +186,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool defaultModifier, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier elementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
@@ -199,7 +199,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
-  bool mDefaultModifier;
+  ModelInstance::Modifier mElementModifier;
   QString mModification;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
@@ -227,6 +227,7 @@ private:
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementModifiers();
   void fetchClassExtendsModifiers();
+  void applyRedeclareElementModifiers();
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:

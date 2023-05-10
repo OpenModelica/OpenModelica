@@ -768,54 +768,49 @@ void Parameter::editRedeclareClassButtonClicked()
   } else {
     ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
     const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
-    // set defaultModifier to false when we really apply some modifier
-    bool defaultModifier = true;
     if (!newModelJSON.isEmpty()) {
       const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-      if (!modifierJSON.isEmpty()) {
-        ModelInstance::Modifier elementModifier;
-        elementModifier.deserialize(QJsonValue(modifierJSON));
-        mpModelInstanceElement->setModifier(elementModifier);
-        defaultModifier = false;
-      }
+      ModelInstance::Modifier elementModifier;
+      elementModifier.deserialize(QJsonValue(modifierJSON));
       ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
       mpModelInstanceElement->setModel(pNewModel);
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
       ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                    true, defaultModifier, mpElementParameters);
+                                                                    true, elementModifier, mpElementParameters);
       MainWindow::instance()->hideProgressBar();
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
-        if (!pElementParameters->getModification().isEmpty()) {
-          if (mValueType == Parameter::ReplaceableComponent) {
-            if (value.startsWith("redeclare")) {
-              QString modification = "redeclare " % type % " " % mpModelInstanceElement->getName() % pElementParameters->getModification();
-              if (!comment.isEmpty()) {
-                modification = modification % " " % comment;
-              }
-              setValueWidget(modification, false, mUnit, true);
-            } else {
-              setValueWidget(mpModelInstanceElement->getName() % pElementParameters->getModification(), false, mUnit, true);
-            }
-          } else if (mValueType == Parameter::ReplaceableClass) {
-            QString restriction;
-            if (mpModelInstanceElement->getModel()) {
-              restriction = mpModelInstanceElement->getModel()->getRestriction();
-            } else {
-              restriction = mpModelInstanceElement->getType();
-            }
-            QString modification = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % pElementParameters->getModification();
+        const QString modification = pElementParameters->getModification();
+        if (mValueType == Parameter::ReplaceableComponent) {
+          if (value.startsWith("redeclare")) {
+            QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
             if (!comment.isEmpty()) {
-              modification = modification % " " % comment;
+              elementRedeclaration = elementRedeclaration % " " % comment;
             }
-            setValueWidget(modification, false, mUnit, true);
+            setValueWidget(elementRedeclaration, false, mUnit, true);
+          } else {
+            if (modification.isEmpty()) {
+              setValueWidget("", false, mUnit, true);
+            } else {
+              setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
+            }
           }
+        } else if (mValueType == Parameter::ReplaceableClass) {
+          QString restriction;
+          if (mpModelInstanceElement->getModel()) {
+            restriction = mpModelInstanceElement->getModel()->getRestriction();
+          } else {
+            restriction = mpModelInstanceElement->getType();
+          }
+          QString elementRedeclaration = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % modification;
+          if (!comment.isEmpty()) {
+            elementRedeclaration = elementRedeclaration % " " % comment;
+          }
+          setValueWidget(elementRedeclaration, false, mUnit, true);
         }
       }
       pElementParameters->deleteLater();
-      // reset the modifier
-      mpModelInstanceElement->resetModifier();
       // reset the actual model of the element
       mpModelInstanceElement->setModel(pCurrentModel);
       delete pNewModel;
@@ -1116,10 +1111,10 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param pGraphicsView
  * \param className
  * \param inherited
- * \param defaultModifier
+ * \param elementModifier
  * \param pParent
  */
-ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool defaultModifier, QWidget *pParent)
+ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier elementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
   const QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -1128,7 +1123,7 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   mpGraphicsView = pGraphicsView;
   mInherited = inherited;
   mNested = nested;
-  mDefaultModifier = defaultModifier;
+  mElementModifier = elementModifier;
   mModification.clear();
   setUpDialog();
 }
@@ -1183,20 +1178,20 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             pParameter->setShowStartAndFixed(true);
           }
           if (hasStart) {
-            pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(modifier.getModifier("start")), defaultValue, pParameter->getUnit(), (mNested && !mDefaultModifier));
+            pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(modifier.getModifier("start")), defaultValue, pParameter->getUnit(), mNested);
           }
           if (hasFixed) {
             pParameter->setFixedState(StringHandler::removeFirstLastQuotes(modifier.getModifier("fixed")), defaultValue);
           }
         } else {
-          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), (mNested && !mDefaultModifier));
+          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
         }
       } else { // if not builtin type then use all sub modifiers
         QString modifierValue = modifier.getValueWithSubModifiers();
         if (modifierValue.startsWith("(")) {
           modifierValue = pParameter->getModelInstanceElement()->getName() % modifierValue;
         }
-        pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), (mNested && !mDefaultModifier));
+        pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
       }
       // displayUnit
       QString displayUnit = StringHandler::removeFirstLastQuotes(modifier.getModifier("displayUnit"));
@@ -1292,6 +1287,9 @@ void ElementParameters::setUpDialog()
   fetchElementExtendsModifiers(mpElement->getModel());
   fetchElementModifiers();
   fetchClassExtendsModifiers();
+  if (mNested) {
+    applyRedeclareElementModifiers();
+  }
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1469,7 +1467,7 @@ void ElementParameters::fetchElementModifiers()
 {
   foreach (auto modifier, mpElement->getModifier().getModifiers()) {
     Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, (mInherited && mDefaultModifier) || (mNested && mDefaultModifier));
+    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited || mNested);
   }
 }
 
@@ -1496,6 +1494,18 @@ void ElementParameters::fetchClassExtendsModifiers()
         }
       }
     }
+  }
+}
+
+/*!
+ * \brief ElementParameters::applyRedeclareElementModifiers
+ * Apply the modifiers that are given in the redeclaration of the replaceable class or component.
+ */
+void ElementParameters::applyRedeclareElementModifiers()
+{
+  foreach (auto modifier, mElementModifier.getModifiers()) {
+    Parameter *pParameter = findParameter(modifier.getName());
+    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
   }
 }
 
@@ -1656,13 +1666,19 @@ void ElementParameters::updateElementParameters()
       QStringList modifications;
       foreach (ElementModifier elementModifier, elementModifiersList) {
         QString modifierValue = elementModifier.mValue.trimmed();
-        if (elementModifier.mIsReplaceable) {
-          modifications.append(modifierValue);
-        } else {
-          modifications.append(elementModifier.mKey % "=" % modifierValue);
+        if (!modifierValue.isEmpty()) {
+          if (elementModifier.mIsReplaceable) {
+            modifications.append(modifierValue);
+          } else {
+            modifications.append(elementModifier.mKey % "=" % modifierValue);
+          }
         }
       }
-      mModification = "(" % modifications.join(",") % ")";
+      if (modifications.isEmpty()) {
+        mModification.clear();
+      } else {
+        mModification = "(" % modifications.join(",") % ")";
+      }
     } else {
       // apply the new Component modifiers if any
       foreach (ElementModifier elementModifier, elementModifiersList) {
