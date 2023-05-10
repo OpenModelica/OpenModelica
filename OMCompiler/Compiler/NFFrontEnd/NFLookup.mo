@@ -395,6 +395,8 @@ protected
   InstNode prev_scope = scope;
 algorithm
   while not InstNode.isEmpty(cur_scope) loop
+    cur_scope := InstNode.getDerivedNode(cur_scope);
+
     try
       // Check if we have an element with the same name as the outer node in this scope.
       innerNode := InstNode.resolveOuter(Class.lookupElement(name, InstNode.getClass(cur_scope)));

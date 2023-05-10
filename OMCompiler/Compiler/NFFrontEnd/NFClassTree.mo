@@ -445,7 +445,7 @@ public
             // If the instance is an empty node, use the cloned clsNode as the instance.
             if InstNode.isEmpty(instance) then
               instance := clsNode;
-              parent_scope := InstNode.parent(clsNode);
+              parent_scope := InstNode.instanceParent(clsNode);
             else
               parent_scope := instance;
               inst_scope := scope;

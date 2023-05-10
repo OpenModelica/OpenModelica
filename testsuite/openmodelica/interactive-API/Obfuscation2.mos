@@ -69,8 +69,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -100,7 +100,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
@@ -472,8 +472,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -503,7 +503,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
@@ -875,8 +875,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -906,7 +906,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
@@ -1518,8 +1518,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -1549,7 +1549,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
@@ -2381,8 +2381,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -2412,7 +2412,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
@@ -3024,8 +3024,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real fb \"= f_nonlinear(b) - y_zero\";
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min - x_eps;
-//   protected Real x_max2 = x_max + x_eps;
+//   protected Real x_min2 = x_min - 1e-10;
+//   protected Real x_max2 = x_max + 1e-10;
 //   protected Real a = x_min2 \"Current best minimum interval value\";
 //   protected Real b = x_max2 \"Current best maximum interval value\";
 // algorithm
@@ -3055,7 +3055,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       fb := fc;
 //       fc := fa;
 //     end if;
-//     tol := 2.0 * eps * abs(b) + x_tol;
+//     tol := 2.0 * 1e-15 * abs(b) + x_tol;
 //     m := (c - b) / 2.0;
 //     if abs(m) <= tol or fb == 0.0 then
 //       found := true;
