@@ -3225,7 +3225,7 @@ match system
           for (j=0; j<<%listLength(nls.crefs)%>; j++) {
             res[j] = NAN;
           }
-          debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+          debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, 0, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
           omc_throw(threadData);
           <%if intEq(whichSet, 0) then "return;" else "return 1;"%>
         }
@@ -6377,7 +6377,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* check if solution process was successful */
   if (retValue > 0){
     const int indexes[2] = {1,<%ls.index%>};
-    debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", data->localData[0]->timeValue);
+    debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, 0, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", data->localData[0]->timeValue);
     omc_throw(threadData);
     <%returnval2%>
   }
@@ -6492,7 +6492,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       /* check if solution process was successful */
       if (retValue > 0){
         const int indexes[2] = {1,<%nls.index%>};
-        debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+        debugStreamPrintWithEquationIndexes(LOG_ASSERT, omc_dummyFileInfo, 0, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
         omc_throw(threadData);
         <%returnval2%>
       }
