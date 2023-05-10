@@ -3021,7 +3021,7 @@ algorithm
 
     if TypeCheck.isIncompatibleMatch(mk) then
       // TODO: Better error message.
-      Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE,
+      Error.addSourceMessage(Error.CONNECT_TYPE_MISMATCH,
         {Expression.toString(lhsConn), Expression.toString(rhsConn)}, info);
       fail();
     end if;
