@@ -476,7 +476,7 @@ algorithm
   (_, _, _, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2, allowUnknown = true);
 
   if TypeCheck.isIncompatibleMatch(mk) then
-    Error.addSourceMessageAndFail(Error.INVALID_CONNECTOR_VARIABLE,
+    Error.addSourceMessageAndFail(Error.CONNECT_TYPE_MISMATCH,
       {Expression.toString(e1), Expression.toString(e2)}, Connector.getInfo(c1));
   end if;
 

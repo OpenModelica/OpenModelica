@@ -23,8 +23,7 @@ end ConnectInvalidType2;
 
 // Result:
 // Error processing file: ConnectInvalidType2.mo
-// [flattening/modelica/scodeinst/ConnectInvalidType2.mo:21:3-21:18:writable] Error: The type of variables c1 and c2
-// are inconsistent in connect equations.
+// [flattening/modelica/scodeinst/ConnectInvalidType2.mo:21:3-21:18:writable] Error: The connectors in connect(c1, c2) are not type compatible.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
