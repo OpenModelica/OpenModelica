@@ -627,11 +627,11 @@ uniontype InstNode
     output InstNode parent;
   algorithm
     parent := match node
-      case CLASS_NODE() then parent(getDerivedNode(node));
+      case CLASS_NODE() then getDerivedNode(parent(getDerivedNode(node)));
       case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
         then getDerivedNode(parent);
-      case COMPONENT_NODE() then parent(getDerivedNode(node));
-      case IMPLICIT_SCOPE() then parent(getDerivedNode(node));
+      case COMPONENT_NODE() then getDerivedNode(parent(getDerivedNode(node)));
+      case IMPLICIT_SCOPE() then getDerivedNode(parent(getDerivedNode(node)));
       else EMPTY_NODE();
     end match;
   end instanceParent;
