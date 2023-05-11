@@ -500,6 +500,8 @@ private:
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
     bool isOuter() const {return mOuter;}
+    bool isInput() const;
+    bool isOutput() const;
     Replaceable *getReplaceable() const {return mpReplaceable.get();}
     bool isRedeclare() const {return mRedeclare;}
     QString getConnector() const {return mConnector;}
@@ -541,6 +543,7 @@ private:
   class Connection;
   class Transition;
   class InitialState;
+  class Name;
   class Model
   {
   public:
@@ -554,27 +557,38 @@ private:
     QJsonObject getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     QString getName() const {return mName;}
+    QString getRootType() const;
     bool isMissing() const {return mMissing;}
     QString getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
     bool isType() const;
+    QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
     QList<Element *> getElements() const {return mElements;}
+    QList<Element *> getComponents() const;
+    size_t componentCount() const;
     QList<Connection *> getConnections() const {return mConnections;}
     QList<Transition *> getTransitions() const {return mTransitions;}
     QList<InitialState *> getInitialStates() const {return mInitialStates;}
     Source getSource() const {return mSource;}
 
     bool isParameterConnectorSizing(const QString &parameter);
+    bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
+    bool isTypeCompatibleWith(const Model &other) const;
     QString getParameterValue(const QString &parameter, QString &typeName);
     QString getParameterValueFromExtendsModifiers(const QString &parameter);
 
     FlatModelica::Expression getVariableBinding(const QString &variableName);
+    const Element *lookupElement(const QString &name) const;
+    Element *lookupElement(const QString &name);
+    const Element *lookupElement(const Name &name) const;
+    Element *lookupElement(const Name &name);
+
   private:
     void initialize();
 
@@ -621,6 +635,8 @@ private:
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
+
+    QString getDirection() const;
   private:
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
   protected:
@@ -709,12 +725,28 @@ private:
   {
   public:
     Part();
+    Part(const QString &str);
     void deserialize(const QJsonObject &jsonObject);
 
-    QString getName() const;
+    QString getName(bool includeSubscripts = true) const;
   private:
     QString mName;
     QStringList mSubScripts;
+  };
+
+  class Name
+  {
+  public:
+    Name();
+    Name(QString str);
+    void deserialize(const QJsonArray &jsonObject);
+
+    QString getName() const;
+    QStringList getNameParts() const;
+    const QList<Part> getParts() const { return mParts; }
+
+  private:
+    QList<Part> mParts;
   };
 
   class Connector
@@ -727,7 +759,7 @@ private:
     QStringList getNameParts() const;
   private:
     QString mKind;
-    QList<Part> mParts;
+    Name mName;
   };
 
   class Connection

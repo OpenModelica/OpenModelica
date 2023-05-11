@@ -3063,6 +3063,29 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
 }
 
 /*!
+ * \brief GraphicsView::getConnectorName
+ * Returns the name of the connector element as a string.
+ * \param pConnector
+ */
+QString GraphicsView::getConnectorName(Element *pConnector)
+{
+  QString name;
+  if (!pConnector) return name;
+
+  if (pConnector->getParentElement()) {
+    name = QString("%1.%2").arg(pConnector->getRootParentElement()->getName()).arg(pConnector->getName());
+  } else {
+    name = pConnector->getName();
+  }
+
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::OMS && pConnector->isConnectorSizing()) {
+    name = QString("%1[%2]").arg(name).arg(numberOfElementConnections(pConnector) + 1);
+  }
+
+  return name;
+}
+
+/*!
  * \brief GraphicsView::addConnection
  * Adds the connection to GraphicsView.
  * \param pElement
@@ -3190,48 +3213,8 @@ void GraphicsView::addConnection(Element *pElement)
           removeCurrentConnection();
         }
       } else {
-        QString startElementName, endElementName;
-        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-          if (pStartElement->getParentElement()) {
-            startElementName = QString("%1.%2").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName());
-          } else {
-            startElementName = pStartElement->getName();
-          }
-          if (pElement->getParentElement()) {
-            endElementName = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName());
-          } else {
-            endElementName = pElement->getName();
-          }
-        } else {
-          int numberOfStartElementConnections = numberOfElementConnections(pStartElement);
-          if (pStartElement->getParentElement()) {
-            if (pStartElement->isConnectorSizing()) {
-              startElementName = QString("%1.%2[%3]").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName()).arg(++numberOfStartElementConnections);
-            } else {
-              startElementName = QString("%1.%2").arg(pStartElement->getRootParentElement()->getName()).arg(pStartElement->getName());
-            }
-          } else {
-            if (pStartElement->isConnectorSizing()) {
-              startElementName = QString("%1[%2]").arg(pStartElement->getName()).arg(++numberOfStartElementConnections);
-            } else {
-              startElementName = pStartElement->getName();
-            }
-          }
-          int numberOfEndComponentConnections = numberOfElementConnections(pElement);
-          if (pElement->getParentElement()) {
-            if (pElement->isConnectorSizing()) {
-              endElementName = QString("%1.%2[%3]").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName()).arg(++numberOfEndComponentConnections);
-            } else {
-              endElementName = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(pElement->getName());
-            }
-          } else {
-            if (pElement->isConnectorSizing()) {
-              endElementName = QString("%1[%2]").arg(pElement->getName()).arg(++numberOfEndComponentConnections);
-            } else {
-              endElementName = pElement->getName();
-            }
-          }
-        }
+        QString startElementName = getConnectorName(pStartElement);
+        QString endElementName = getConnectorName(pElement);
         mpConnectionLineAnnotation->setStartElementName(startElementName);
         mpConnectionLineAnnotation->setEndElementName(endElementName);
         if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
@@ -3271,6 +3254,12 @@ void GraphicsView::addConnection(Element *pElement)
               ModelInfo newModelInfo = mpModelWidget->createModelInfo();
               mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
               mpModelWidget->updateModelText();
+
+              if (!mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+                MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName),
+                                                                      Helper::scriptingKind, Helper::errorLevel));
+              }
             } else {
               removeCurrentConnection();
             }
