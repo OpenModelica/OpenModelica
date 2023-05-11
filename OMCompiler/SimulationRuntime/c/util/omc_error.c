@@ -633,10 +633,12 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
 #if !defined(OMC_MINIMAL_LOGGING)
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
-  va_start(args, format);
-  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  va_end(args);
-  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  if (useStream[LOG_ASSERT]) {
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
+    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  }
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
