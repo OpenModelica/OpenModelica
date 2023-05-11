@@ -5659,7 +5659,7 @@ protected
 algorithm
   if not listEmpty(varIndices) then
     vars := list(BackendVariable.getVarAt(allVars, v) for v in varIndices);
-    crefs := list(BackendVariable.varCref(v) for v in vars);
+    crefs := List.append_reverse(list(BackendVariable.varCref(v) for v in vars), crefs);
     warnings := (message + warnAboutVars(vars)) :: warnings;
   end if;
 end listAllIterationVariables3;
