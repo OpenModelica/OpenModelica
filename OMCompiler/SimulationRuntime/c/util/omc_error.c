@@ -604,17 +604,35 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
   }
 }
 
+/**
+ * @brief Variadic stream print and throw.
+ *
+ * Print message to LOG_ASSERT.
+ *
+ * @param threadData  Thread data for throwing.
+ * @param format      Format string.
+ * @param args        Variadic argument list for format string
+ */
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
-  char logBuffer[SIZE_LOG_BUFFER];
-  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+  if (useStream[LOG_ASSERT]) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+  }
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }
 
+/**
+ * @brief Print message to LOG_ASSERT and throw.
+ *
+ * @param threadData  Thread data for throwing.
+ * @param format      Format string.
+ * @param ...         Additional arguments for format string.
+ */
 void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
@@ -628,15 +646,26 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 #endif
 }
 
+/**
+ * @brief Print message with equation indices to LOG_ASSERT stream and throw.
+ *
+ * @param threadData    Thread data for throwing.
+ * @param info          File info, can be omc_dummyFileInfo.
+ * @param indexes       Equation indices.
+ * @param format        Format string.
+ * @param ...           Additional arguments for format string.
+ */
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
-  char logBuffer[SIZE_LOG_BUFFER];
-  va_list args;
-  va_start(args, format);
-  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  va_end(args);
-  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  if (useStream[LOG_ASSERT]) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
+    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  }
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
