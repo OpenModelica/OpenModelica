@@ -105,8 +105,8 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"Fo\"
 //     valueReference=\"8\"
-//     >
-//     <Real/>
+//     initial=\"approx\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
