@@ -539,6 +539,7 @@ protected
 
       // add children pointers for records afterwards
       case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({});
+      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({});
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();

@@ -186,16 +186,20 @@ public
     input Variable var;
     output list<Variable> children;
   algorithm
-    children := match var.ty
-      case Type.COMPLEX() then var :: List.flatten(list(expandChildren(v) for v in var.children));
+    children := if (isComplex(var) or isComplexArray(var))
+      then var :: List.flatten(list(expandChildren(v) for v in var.children))
       else {var};
-    end match;
   end expandChildren;
 
   function isComplex
     input Variable var;
     output Boolean b = Type.isComplex(var.ty);
   end isComplex;
+
+  function isComplexArray
+    input Variable var;
+    output Boolean b = Type.isComplexArray(var.ty);
+  end isComplexArray;
 
   function isStructural
     input Variable variable;
