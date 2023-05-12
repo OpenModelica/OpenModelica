@@ -284,14 +284,17 @@ public
       if clock_idx <> -1 then
         BuiltinSystem.realtimeClear(clock_idx);
         BuiltinSystem.realtimeTick(clock_idx);
+        if Flags.isSet(Flags.FAILTRACE) then
+          debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
+          debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
+          print(debugStr);
+        end if;
         bdae := func(bdae);
         clock_time := BuiltinSystem.realtimeTock(clock_idx);
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
-          debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
-          debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr)) + " " + realString(clock_time) + "s\n";
-          print(debugStr);
+          print(" " + realString(clock_time) + "s\n");
         end if;
       else
         bdae := func(bdae);
