@@ -467,8 +467,7 @@ public
     output Boolean isComplex;
   algorithm
     isComplex := match ty
-      case ARRAY() guard(isComplex(ty.elementType)) then true;
-      case ARRAY() then isComplexArray(ty.elementType);
+      case ARRAY() then isComplex(ty.elementType);
       else false;
     end match;
   end isComplexArray;
