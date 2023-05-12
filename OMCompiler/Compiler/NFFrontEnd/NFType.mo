@@ -462,6 +462,17 @@ public
     end match;
   end isComplex;
 
+  function isComplexArray
+    input Type ty;
+    output Boolean isComplex;
+  algorithm
+    isComplex := match ty
+      case ARRAY() guard(isComplex(ty.elementType)) then true;
+      case ARRAY() then isComplexArray(ty.elementType);
+      else false;
+    end match;
+  end isComplexArray;
+
   function complexNode
     input Type ty;
     output InstNode node;
