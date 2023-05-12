@@ -155,9 +155,10 @@ public
      This function is only allowed to read and change equations and create new
      discrete zero crossing equations and variables. ($TEV, $SEV)
      It also fills the EventInfo object."
-    input output VarData varData         "Data containing variable pointers";
-    input output EqData eqData           "Data containing equation pointers";
-    input output EventInfo eventInfo     "object containing all zero crossings";
+    input output VarData varData          "Data containing variable pointers";
+    input output EqData eqData            "Data containing equation pointers";
+    input output EventInfo eventInfo      "object containing all zero crossings";
+    input FunctionTree funcTree           "function tree for differentiation (solve)";
   end eventsInterface;
 
 //                               DETECT STATES

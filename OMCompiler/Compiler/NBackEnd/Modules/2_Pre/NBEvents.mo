@@ -46,7 +46,7 @@ protected
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTreeImpl;
+  import NFFlatten.{FuncTreeImpl, FunctionTree};
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import Statement = NFStatement;
@@ -102,7 +102,7 @@ public
 
       case BackendDAE.MAIN()
         algorithm
-          (varData, eqData, eventInfo) := func(bdae.varData, bdae.eqData, bdae.eventInfo);
+          (varData, eqData, eventInfo) := func(bdae.varData, bdae.eqData, bdae.eventInfo, bdae.funcTree);
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.eventInfo := eventInfo;
@@ -273,6 +273,7 @@ public
     function create
       input output Expression condition;
       input output Bucket bucket;
+      input FunctionTree funcTree;
       input Boolean createAux;
       output Boolean failed = false "returns true if time event list could not be created";
     protected
@@ -287,8 +288,8 @@ public
         case Expression.LBINARY()
           guard(Operator.getMathClassification(condition.operator) == NFOperator.MathClassification.LOGICAL)
           algorithm
-            (exp1, bucket, b1) := create(condition.exp1, bucket, createAux);
-            (exp2, bucket, b2) := create(condition.exp2, bucket, createAux);
+            (exp1, bucket, b1) := create(condition.exp1, bucket, funcTree, createAux);
+            (exp2, bucket, b2) := create(condition.exp2, bucket, funcTree, createAux);
             failed := (b1 or b2);
             if not failed then
               // we could simplify here
@@ -297,7 +298,7 @@ public
             end if;
         then (condition, bucket, failed);
 
-        else createSingleOrSample(condition, bucket);
+        else createSingleOrSample(condition, bucket, funcTree);
       end match;
 
       if not failed then
@@ -331,6 +332,7 @@ public
       NOTE: create sample from sin and cos functions?"
       input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
+      input FunctionTree funcTree         "function tree for differentiation (solve)";
       output Boolean failed               "true if it did not work to create a compact time event";
     protected
       Expression new_exp;
@@ -342,28 +344,34 @@ public
             Call call;
             Boolean invert;
             TimeEvent timeEvent;
+            Pointer<Boolean> containsTime = Pointer.create(false);
 
         case Expression.RELATION()
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
-            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, FunctionTreeImpl.EMPTY());
-            if status == NBSolve.Status.EXPLICIT then
-              // save simplified binary
-              exp.exp1 := Equation.getLHS(tmpEqn);
-              exp.exp2 := Equation.getRHS(tmpEqn);
-              if invert then
-                exp.operator := Operator.invert(exp.operator);
-                // ToDo: Operator cannot be < or <= after inversion, because it has been solved for time -> fail()?
+            _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
+            if Pointer.access(containsTime) then
+              (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
+              if status == NBSolve.Status.EXPLICIT then
+                // save simplified binary
+                exp.exp1 := Equation.getLHS(tmpEqn);
+                exp.exp2 := Equation.getRHS(tmpEqn);
+                if invert then
+                  exp.operator := Operator.invert(exp.operator);
+                  // ToDo: Operator cannot be < or <= after inversion, because it has been solved for time -> fail()?
+                end if;
+                timeEvent := SINGLE(0, exp.exp2);
+                if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
+                  bucket.timeEventIndex := bucket.timeEventIndex + 1;
+                  timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
+                  bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
+                end if;
+                failed := false;
+              else
+                failed := true;
               end if;
-              timeEvent := SINGLE(0, exp.exp2);
-              if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
-                bucket.timeEventIndex := bucket.timeEventIndex + 1;
-                timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
-                bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
-              end if;
-              failed := false;
             else
               failed := true;
             end if;
@@ -629,6 +637,7 @@ public
       input Statement stmt;
       input Pointer<Bucket> bucket_ptr;
       input Pointer<Equation> eqn;
+      input FunctionTree funcTree;
       input list<Frame> frames = {};
     algorithm
       () := match stmt
@@ -641,7 +650,7 @@ public
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());
           new_frames := (name, range) :: frames;
           for elem in stmt.body loop
-            fromStatement(elem, bucket_ptr, eqn, frames);
+            fromStatement(elem, bucket_ptr, eqn, funcTree, frames);
           end for;
         then ();
         else algorithm
@@ -650,6 +659,7 @@ public
                 bucket_ptr  = bucket_ptr,
                 eqn         = eqn,
                 frames      = listReverse(frames),
+                funcTree    = funcTree,
                 createAux   = false)));
         then ();
       end match;
@@ -878,7 +888,7 @@ protected
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
         // collect event info and replace all conditions with auxiliary variables
         bucket_ptr := Pointer.create(bucket);
-        EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr));
+        EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree));
         bucket := Pointer.access(bucket_ptr);
 
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
@@ -906,6 +916,7 @@ protected
     "collects all events from an equation pointer."
     input output Pointer<Equation> eqn_ptr;
     input Pointer<Bucket> bucket_ptr;
+    input FunctionTree funcTree;
   protected
     Equation eqn = Pointer.access(eqn_ptr);
     list<Frame> frames;
@@ -914,7 +925,7 @@ protected
     eqn := match eqn
       case Equation.ALGORITHM() algorithm
         for stmt in eqn.alg.statements loop
-          StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr);
+          StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, funcTree);
         end for;
       then eqn;
 
@@ -924,6 +935,7 @@ protected
           bucket_ptr  = bucket_ptr,
           eqn         = eqn_ptr,
           frames      = frames,
+          funcTree    = funcTree,
           createAux   = createAux),
         NONE(), Expression.mapReverse);
     end match;
@@ -941,6 +953,7 @@ protected
     input Pointer<Bucket> bucket_ptr;
     input Pointer<Equation> eqn;
     input list<Frame> frames;
+    input FunctionTree funcTree;
     input Boolean createAux;
   algorithm
     exp := match exp
@@ -950,19 +963,19 @@ protected
       // logical binarys: e.g. (a and b)
       // Todo: this might not always be correct -> check with something like "contains relation?"
       case Expression.LBINARY() algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, createAux);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, funcTree, createAux);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // relations: e.g. (a > b)
       case Expression.RELATION() algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, createAux);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, funcTree, createAux);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // sample functions
       case Expression.CALL() guard(Call.isNamed(exp.call, "sample")) algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, createAux);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn, frames, funcTree, createAux);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
@@ -980,13 +993,14 @@ protected
     input output Bucket bucket;
     input Pointer<Equation> eqn;
     input list<Frame> frames;
+    input FunctionTree funcTree;
     input Boolean createAux;
   protected
     Boolean failed = true;
   algorithm
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(condition) then
-      (condition, bucket, failed) := TimeEvent.create(condition, bucket, createAux);
+      (condition, bucket, failed) := TimeEvent.create(condition, bucket, funcTree, createAux);
     else
       (condition, bucket, failed) := TimeEvent.createComposite(condition, bucket, createAux);
     end if;
@@ -996,6 +1010,24 @@ protected
       (condition, bucket) := StateEvent.create(condition, bucket, eqn, frames, createAux);
     end if;
   end collectEventsCondition;
+
+  function containsTimeTraverseExp
+    input output Expression exp;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and Expression.isTime(exp) then
+      Pointer.update(b, true);
+    end if;
+  end containsTimeTraverseExp;
+
+  function containsTimeTraverseCref
+    input output ComponentRef cref;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and ComponentRef.isTime(cref) then
+      Pointer.update(b, true);
+    end if;
+  end containsTimeTraverseCref;
 
 annotation(__OpenModelica_Interface="backend");
 end NBEvents;
