@@ -10372,6 +10372,11 @@ algorithm
       DAE.Exp e;
       DAE.Type tp;
 
+    // Don't extract bindings of scalar parameters to tuples or records (#10505).
+    // They are treated by createParameterEquations calling createSimEqsForGlobalKnownVars.
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), tplExp = SOME(_)))
+    then NONE();
+
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
