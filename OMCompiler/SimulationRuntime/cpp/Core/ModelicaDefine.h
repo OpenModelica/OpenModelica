@@ -3,6 +3,9 @@
  *  @{
  */
 
+// this might be used by external C code to identify OpenModelica
+#define OPENMODELICA_H_
+
 typedef double modelica_real;
 typedef int modelica_integer;
 typedef bool modelica_boolean;
