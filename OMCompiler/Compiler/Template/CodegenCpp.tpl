@@ -5750,11 +5750,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       stepStarted(0.0);
    #endif
 
-      /*Start complex expressions */
+      /* Start complex expressions */
       <%complexStartExpressions%>
       /* End complex expression */
       <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkParameters();' else '//checkParameters();'%>
-                                                                                      //delete reader;
+      //delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoundVariables()

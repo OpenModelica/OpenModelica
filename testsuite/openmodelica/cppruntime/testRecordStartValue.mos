@@ -1,0 +1,49 @@
+// name: testReduction
+// keywords: cse record parameter binding #10505
+// status: correct
+// teardown_command: rm -f *RecordStartValueTest*
+// cflags:
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"4.0.0"});
+loadString("
+model RecordStartValueTest
+  record R
+    Real a;
+    Real b;
+  end R;
+  function f
+    input R r1;
+    output R r2;
+  algorithm
+    r2.a := r1.b;
+    r2.b := r1.a;
+  end f;
+  R r1(a = 1, b = 2);
+  R r2;
+  parameter Real p = 4;
+equation
+  r2 = f(r1);
+end RecordStartValueTest;
+");
+getErrorString();
+
+simulate(RecordStartValueTest); getErrorString();
+val(r2.a, 0);
+val(r2.b, 0);
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordStartValueTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RecordStartValueTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 2.0
+// 1.0
+// endResult

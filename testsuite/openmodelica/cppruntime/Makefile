@@ -33,6 +33,7 @@ testArrayEquations.mos \
 testDAE.mos \
 testMatrixIO.mos \
 testMatrixState.mos \
+testRecordStartValue.mos \
 testReduction.mos \
 testVectorizedBlocks.mos \
 testVectorizedSolarSystem.mos \
