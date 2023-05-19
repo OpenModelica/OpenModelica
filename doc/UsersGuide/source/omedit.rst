@@ -124,9 +124,6 @@ To view the Documentation Browser click View > Windows > Documentation Browser.
 Variables Browser
 ~~~~~~~~~~~~~~~~~
 
-Variables Browser
-~~~~~~~~~~~~~~~~~
-
 The class variables are structured in the form of the tree and are
 displayed in the Variables Browser. Each variable has a checkbox.
 Ticking the checkbox will plot the variable values. The complete
