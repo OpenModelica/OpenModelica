@@ -124,13 +124,57 @@ To view the Documentation Browser click View > Windows > Documentation Browser.
 Variables Browser
 ~~~~~~~~~~~~~~~~~
 
+Variables Browser
+~~~~~~~~~~~~~~~~~
+
 The class variables are structured in the form of the tree and are
 displayed in the Variables Browser. Each variable has a checkbox.
-Ticking the checkbox will plot the variable values. There is a find box
-on the top for filtering the variable in the tree. The filtering can be
-done using Regular Expression, Wildcard and Fixed String. The complete
+Ticking the checkbox will plot the variable values. The complete
 Variables Browser can be collapsed and expanded using the Collapse All
 and Expand All buttons.
+
+There is a find box for filtering the variable in the tree. By clicking
+the yellow down arrow you can set all the filtering options. The filtering
+can be done using Regular Expression, Wildcard and Fixed String; in all
+three cases, all variables whose full name *contains* a string corresponding
+to the filter string will be displayed.
+
+Fixed String: shows all variables whose name contains the string verbatim
+
+- ``abc`` shows ``abc``, ``abc.def``, ``xyz.abc``, ``der(abc)`` etc.
+
+- ``a.b`` shows ``a.b``, ``a.bcd``, ``a.b.c``, ``x.a.b``, ``x.a.b.c``, etc.
+
+Wildcard: same as Fixed String; additionally, asterisks match any number of characters
+
+- ``der(*)`` shows all derivatives, e.g. ``der(x)``, ``der(abc)``, ``abc.der(xyz)``, etc.
+
+- ``a*c`` shows ``ac``, ``abc``, ``abdc``, ``xyz.adefc``, etc.
+
+Regular expression: shows all variables whose name contain a string that matches the regexp;
+if the regexp ends with ``$``, then the name must end with a string matching the regexp
+
+- ``abc`` shows ``abc``, ``abc.def``, ``xyz.abc``, ``der(abc)`` etc.
+
+- ``abc$`` shows ``abc``, ``xyz.abc`` only
+
+- ``a.c`` shows ``abc``, ``abc.def``, ``azc``, ``xyz.adc`` etc. (``.`` matches any character)
+
+- ``a.*c`` shows ``abc``, ``abc.def``, ``axyc``, ``xyz.axxxxdc`` etc. (``.*`` matches any number of character)
+
+- ``body\.a_0\[1\]`` shows variables containing ``body.a_0[1]``. Note that ``.``,
+  ``[``, and ``]`` are special regexp characters, so they must be escaped
+
+- ``der\(.*\)`` shows all derivatives in the model. Note that ``(`` and ``)`` must be
+  escaped
+
+- ``x\[[2-4]\]`` shows elements 2, 3, and 4 of arrays ``x[:]``, ``abc.x[:]``, ``x[:].abc``
+
+- ``x\[.*\]`` shows all elements of arrays ``x[:]``, ``abc.x[:]``, ``x[:].abc``
+
+- ``abc|def`` shows all variables with names containing either ``abc`` or ``def``
+
+
 
 The browser allows manipulation of changeable parameters for
 :ref:`omedit-resimulation`. It also displays the unit and
