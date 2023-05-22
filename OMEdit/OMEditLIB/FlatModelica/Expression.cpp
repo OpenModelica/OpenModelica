@@ -39,6 +39,8 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QCborMap>
+#include <QCborArray>
 
 #include "ExpressionFuncs.h"
 #include "Expression.h"
@@ -464,6 +466,8 @@ namespace FlatModelica
       void deserialize(const QJsonValue &value);
       QJsonValue serialize() const;
 
+      void deserialize(const QCborValue &value);
+
     private:
       OpType parse(const std::string &str);
       OpType parse(Token::token_t t);
@@ -478,6 +482,7 @@ namespace FlatModelica
       virtual ~ExpressionBase() = default;
 
       static std::unique_ptr<ExpressionBase> deserialize(const QJsonValue &value);
+      static std::unique_ptr<ExpressionBase> deserialize(const QCborValue &value);
       virtual QJsonValue serialize() const = 0;
 
       virtual bool isInteger()    const { return false; }
@@ -571,6 +576,8 @@ namespace FlatModelica
 
       String(const QJsonValue &value);
 
+      String(const QCborValue &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<String>(*this); }
       Expression eval(const Expression::VariableEvaluator&, int) const override { return Expression(_value); }
 
@@ -595,6 +602,8 @@ namespace FlatModelica
 
     Enum(const QJsonObject &value);
 
+    Enum(const QCborMap &value);
+
     std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Enum>(*this); }
     Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
@@ -618,6 +627,8 @@ namespace FlatModelica
 
       Cref(const QJsonObject &value);
 
+      Cref(const QCborMap &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Cref>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
@@ -638,6 +649,8 @@ namespace FlatModelica
         : _elements(std::move(elements)) {}
 
       Array(const QJsonArray &value);
+
+      Array(const QCborArray &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Array>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
@@ -663,6 +676,8 @@ namespace FlatModelica
 
       Range(const QJsonObject &value);
 
+      Range(const QCborMap &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Range>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
@@ -684,6 +699,8 @@ namespace FlatModelica
         : _name(std::move(name)), _args(std::move(args)), _is_record(false) {}
 
       Call(const QJsonObject &value, bool isRecord);
+
+      Call(const QCborMap &value, bool isRecord);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Call>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
@@ -714,6 +731,8 @@ namespace FlatModelica
 
       Iterator(const QJsonValue &value);
 
+      Iterator(const QCborValue &value);
+
       const std::string& name() const { return _name; }
       const Expression& range() const { return _range; }
 
@@ -731,6 +750,8 @@ namespace FlatModelica
         : _name(std::move(name)), _exp(std::move(exp)), _iterators(std::move(iterators)) {}
 
       IteratorCall(const QJsonObject &value);
+
+      IteratorCall(const QCborMap &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IteratorCall>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
@@ -753,6 +774,8 @@ namespace FlatModelica
         : _e1(std::move(e1)), _op(op), _e2(std::move(e2)) {}
 
       Binary(const QJsonObject &value);
+
+      Binary(const QCborMap &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Binary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
@@ -777,6 +800,8 @@ namespace FlatModelica
 
       Unary(const QJsonObject &value);
 
+      Unary(const QCborMap &value);
+
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<Unary>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
@@ -799,6 +824,8 @@ namespace FlatModelica
           _false_e(std::move(false_e)) {}
 
       IfExp(const QJsonObject &value);
+
+      IfExp(const QCborMap &value);
 
       std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<IfExp>(*this); }
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
@@ -931,6 +958,15 @@ namespace FlatModelica
   QJsonValue Operator::serialize() const
   {
     return toString().data();
+  }
+
+  void Operator::deserialize(const QCborValue &value)
+  {
+    if (!value.isString()) {
+      throw std::runtime_error("Expression: invalid CBOR binary operator: " + value.toString().toStdString());
+    }
+
+    _op = parse(value.toString().toStdString());
   }
 
   std::ostream& operator<< (std::ostream &os, Operator op)
@@ -1243,6 +1279,97 @@ namespace FlatModelica
     return nullptr;
   }
 
+  class cbor_error : public std::exception
+  {
+    public:
+      cbor_error(const QString &msg, const QCborValue &value)
+      {
+        QString err = msg;
+
+        switch (value.type()) {
+          case QCborValue::Null:
+            err += "null";
+            break;
+
+          case QCborValue::False:
+          case QCborValue::True:
+            err += value.toBool() ? "true" : "false";
+            break;
+
+          case QCborValue::Double:
+            err += QString::number(value.toDouble());
+            break;
+
+          case QCborValue::String:
+            err += value.toString();
+            break;
+
+          case QCborValue::Array:
+            err += QJsonDocument(value.toJsonValue().toArray()).toJson();
+            break;
+
+          case QCborValue::Map:
+            err += QJsonDocument(value.toJsonValue().toObject()).toJson();
+            break;
+
+          case QCborValue::Undefined:
+            err += "undefined";
+            break;
+
+          default:
+            err += "unhandled CBOR types";
+            break;
+        }
+
+        _error = err.toStdString();
+      }
+
+      const char* what() const noexcept override { return _error.c_str(); }
+
+    private:
+      std::string _error;
+  };
+
+  std::unique_ptr<ExpressionBase> parseCborNumber(const QCborValue &value)
+  {
+    auto val = value.toDouble();
+
+    if (val == std::trunc(val)) {
+      return std::make_unique<Integer>(static_cast<int64_t>(val));
+    }
+
+    return std::make_unique<Real>(val);
+  }
+
+  std::unique_ptr<ExpressionBase> parseCborMap(const QCborMap &value)
+  {
+    auto kind = value["$kind"];
+
+    if (kind.isString()) {
+      switch (djb2_qHash(kind.toString().data())) {
+        case djb2_hash("enum"):              return std::make_unique<Enum>(value);
+        case djb2_hash("clock"):             return std::make_unique<Cref>(value);
+        case djb2_hash("cref"):              return std::make_unique<Cref>(value);
+        case djb2_hash("typename"):          return std::make_unique<Cref>(value);
+        case djb2_hash("range"):             return std::make_unique<Range>(value);
+        //case djb2_hash("tuple"):             return std::make_unique<Tuple>(value);
+        case djb2_hash("record"):            return std::make_unique<Call>(value, true);
+        case djb2_hash("call"):              return std::make_unique<Call>(value, false);
+        case djb2_hash("iterator_call"):     return std::make_unique<IteratorCall>(value);
+        case djb2_hash("binary_op"):         return std::make_unique<Binary>(value);
+        case djb2_hash("unary_op"):          return std::make_unique<Unary>(value);
+        case djb2_hash("if"):                return std::make_unique<IfExp>(value);
+        //case djb2_hash("sub"):               return std::make_unique<Subscripted>(value);
+        //case djb2_hash("tuple_element"):     return std::make_unique<TupleElement>(value);
+        //case djb2_hash("record_element"):    return std::make_unique<RecordElement>(value);
+        //case djb2_hash("function"):          return std::make_unique<Function>(value);
+      }
+    }
+
+    throw cbor_error("Expression: invalid CBOR object ", value);
+    return nullptr;
+  }
+
   std::unique_ptr<ExpressionBase> ExpressionBase::deserialize(const QJsonValue &value)
   {
     switch (value.type()) {
@@ -1255,6 +1382,24 @@ namespace FlatModelica
     }
 
     throw json_error("Expression: invalid JSON value ", value);
+  }
+
+  std::unique_ptr<ExpressionBase> ExpressionBase::deserialize(const QCborValue &value)
+  {
+    switch (value.type()) {
+      case QCborValue::False:
+      case QCborValue::True:
+        return std::make_unique<Boolean>(value.toBool());
+      case QCborValue::Integer:
+      case QCborValue::Double:
+        return parseCborNumber(value);
+      case QCborValue::String: return std::make_unique<String>(value);
+      case QCborValue::Array:  return std::make_unique<Array>(value.toArray());
+      case QCborValue::Map: return parseCborMap(value.toMap());
+      default: break;
+    }
+
+    throw cbor_error("Expression: invalid JSON value ", value);
   }
 
   void Integer::print(std::ostream &os) const
@@ -1313,6 +1458,12 @@ namespace FlatModelica
 
   }
 
+  String::String(const QCborValue &value)
+    : String(value.toString().toStdString())
+  {
+
+  }
+
   void String::print(std::ostream &os) const
   {
     os << '"' << _value << '"';
@@ -1334,6 +1485,12 @@ namespace FlatModelica
   {
     _name = value["name"].toString().toStdString();
     _index = value["index"].toInt();
+  }
+
+  Enum::Enum(const QCborMap &value)
+  {
+    _name = value["name"].toString().toStdString();
+    _index = value["index"].toInteger();
   }
 
   Expression Enum::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
@@ -1373,6 +1530,54 @@ namespace FlatModelica
 
       if (!name.isString()) {
         throw json_error("Expression: invalid JSON component reference part: ", part);
+      }
+
+      if (!_name.empty()) {
+        _name += '.';
+      }
+
+      _name += name.toString().toStdString();
+
+      auto const subs = part_obj["subscripts"].toArray();
+
+      if (!subs.empty()) {
+        std::string subs_str;
+
+        for (const auto& sub: subs) {
+          if (!subs_str.empty()) {
+            subs_str += ",";
+          }
+
+          if (sub.isString()) {
+            subs_str += sub.toString().toStdString();
+          } else {
+            Expression sub_exp;
+            sub_exp.deserialize(sub);
+            subs_str += sub_exp.toString();
+          }
+        }
+
+        _name += '[' + subs_str + ']';
+      }
+    }
+  }
+
+  Cref::Cref(const QCborMap &value)
+  {
+    auto const parts = value["parts"];
+
+    if (!parts.isArray()) {
+      throw cbor_error("Expression: invalid JSON component reference: ", value);
+    }
+
+    auto const parts_array = parts.toArray();
+
+    for (const auto &part: parts_array) {
+      const auto part_obj = part.toMap();
+      auto name = part_obj["name"];
+
+      if (!name.isString()) {
+        throw cbor_error("Expression: invalid JSON component reference part: ", part);
       }
 
       if (!_name.empty()) {
@@ -1472,6 +1677,13 @@ namespace FlatModelica
     }
   }
 
+  Array::Array(const QCborArray &value)
+  {
+    for (const auto &e: value) {
+      _elements.emplace_back(ExpressionBase::deserialize(e));
+    }
+  }
+
   Expression Array::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     std::vector<Expression> elems;
@@ -1555,6 +1767,31 @@ namespace FlatModelica
     }
   }
 
+  Range::Range(const QCborMap &value)
+  {
+    auto start = value.find(QString("start"));
+
+    if (start == value.end()) {
+      throw cbor_error("Expression: missing range start in ", value);
+    }
+
+    _start.deserialize(start.key());
+
+    auto stop = value.find(QString("stop"));
+
+    if (stop == value.end()) {
+      throw cbor_error("Expression: missing range stop in ", value);
+    }
+
+    _stop.deserialize(stop.key());
+
+    auto step = value.find(QString("step"));
+
+    if (step != value.end()) {
+      _step.deserialize(step.key());
+    }
+  }
+
   Expression Range::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     auto start = _start.evaluate(var_eval, recursion_level);
@@ -1608,6 +1845,28 @@ namespace FlatModelica
 
     if (!args.isArray()) {
       throw json_error("Expression: invalid JSON function call arguments: ", args);
+    }
+
+    for (const auto &e: args.toArray()) {
+      _args.emplace_back(ExpressionBase::deserialize(e));
+    }
+  }
+
+  Call::Call(const QCborMap &value, bool isRecord)
+    : _is_record(isRecord)
+  {
+    auto name = value["name"];
+
+    if (!name.isString()) {
+      throw cbor_error("Expression: invalid JSON function call name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+
+    auto args = value[isRecord ? QString("elements") : QString("arguments")];
+
+    if (!args.isArray()) {
+      throw cbor_error("Expression: invalid JSON function call arguments: ", args);
     }
 
     for (const auto &e: args.toArray()) {
@@ -1766,6 +2025,30 @@ namespace FlatModelica
     _range.deserialize(*range);
   }
 
+  Iterator::Iterator(const QCborValue &value)
+  {
+    if (!value.isMap()) {
+      throw cbor_error("Expression: invalid iterator expression: ", value);
+    }
+
+    auto obj = value.toMap();
+    auto name = obj[QString("name")];
+
+    if (!name.isString()) {
+      throw cbor_error("Expression: invalid iterator name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+
+    auto range = obj.find(QString("range"));
+
+    if (range == obj.end()) {
+      throw cbor_error("Expression: missing iterator range in ", value);
+    }
+
+    _range.deserialize(range.key());
+  }
+
   QJsonValue Iterator::serialize() const
   {
     QJsonObject obj;
@@ -1795,6 +2078,28 @@ namespace FlatModelica
 
     if (!iters.isArray()) {
       throw json_error("Expression: invalid JSON iterator call iterators: ", iters);
+    }
+
+    for (const auto &i: iters.toArray()) {
+      _iterators.emplace_back(i);
+    }
+  }
+
+  IteratorCall::IteratorCall(const QCborMap &value)
+  {
+    auto name = value["name"];
+
+    if (!name.isString()) {
+      throw cbor_error("Expression: invalid JSON iterator call name: ", name);
+    }
+
+    _name = name.toString().toStdString();
+    _exp.deserialize(value["exp"]);
+
+    auto iters = value["iterators"];
+
+    if (!iters.isArray()) {
+      throw cbor_error("Expression: invalid JSON iterator call iterators: ", iters);
     }
 
     for (const auto &i: iters.toArray()) {
@@ -1846,6 +2151,13 @@ namespace FlatModelica
   }
 
   Binary::Binary(const QJsonObject &value)
+  {
+    _e1.deserialize(value["lhs"]);
+    _op.deserialize(value["op"]);
+    _e2.deserialize(value["rhs"]);
+  }
+
+  Binary::Binary(const QCborMap &value)
   {
     _e1.deserialize(value["lhs"]);
     _op.deserialize(value["op"]);
@@ -1923,6 +2235,12 @@ namespace FlatModelica
     _op.deserialize(value["op"]);
   }
 
+  Unary::Unary(const QCborMap &value)
+  {
+    _e.deserialize(value["exp"]);
+    _op.deserialize(value["op"]);
+  }
+
   Expression Unary::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
     switch (_op.type()) {
@@ -1981,6 +2299,13 @@ namespace FlatModelica
   }
 
   IfExp::IfExp(const QJsonObject &value)
+  {
+    _condition.deserialize(value["condition"]);
+    _true_e.deserialize(value["true"]);
+    _false_e.deserialize(value["false"]);
+  }
+
+  IfExp::IfExp(const QCborMap &value)
   {
     _condition.deserialize(value["condition"]);
     _true_e.deserialize(value["true"]);
@@ -2176,6 +2501,16 @@ namespace FlatModelica
    * \param value
    */
   void Expression::deserialize(const QJsonValue &value)
+  {
+    _value = ExpressionBase::deserialize(value);
+  }
+
+  /*!
+   * \brief Expression::deserialize
+   * Deserializes the Expression from a Cbor value.
+   * \param value
+   */
+  void Expression::deserialize(const QCborValue &value)
   {
     _value = ExpressionBase::deserialize(value);
   }

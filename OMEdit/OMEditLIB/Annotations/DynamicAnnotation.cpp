@@ -86,6 +86,31 @@ bool DynamicAnnotation::deserialize(const QJsonValue &value)
   return true;
 }
 
+bool DynamicAnnotation::deserialize(const QCborValue &value)
+{
+  try {
+    if (value.isUndefined()) {
+      return true;
+    }
+    if (value.isMap()) {
+      QCborMap valueObject = value.toMap();
+      if (valueObject.contains(QString("$error"))) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, valueObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        return false;
+      }
+    }
+    mExp.deserialize(value);
+    mState = mExp.isCall("DynamicSelect") ? State::Static : State::None;
+    reset();
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to deserialize json: " << value;
+    qDebug() << e.what();
+    clear();
+    return false;
+  }
+  return true;
+}
+
 /*!
  * \brief DynamicAnnotation::update
  * Evaluates the second argument for a given time point if the stored expression

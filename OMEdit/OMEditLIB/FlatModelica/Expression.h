@@ -97,6 +97,7 @@ namespace FlatModelica
       static Expression parse(const QString &str);
 
       void deserialize(const QJsonValue &value);
+      void deserialize(const QCborValue &value);
       QJsonValue serialize() const;
 
       Expression evaluate(const VariableEvaluator &var_eval, int recursion_level = 0) const;

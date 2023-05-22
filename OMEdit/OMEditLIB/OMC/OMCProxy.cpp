@@ -3430,13 +3430,14 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 }
 
 /*!
- * \brief OMCProxy::getModelInstance
+ * \brief OMCProxy::getModelInstanceString
  * \param className
+ * \param modifier
  * \param prettyPrint
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+QString OMCProxy::getModelInstanceString(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
   timer.start();
@@ -3466,8 +3467,23 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   }
 
   printMessagesStringInternal();
+  return modelInstanceJson;
+}
+
+/*!
+ * \brief OMCProxy::getModelInstanceJson
+ * \param className
+ * \param prettyPrint
+ * \param icon
+ * \return
+ */
+QJsonObject OMCProxy::getModelInstanceJson(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+{
+  QString modelInstanceJson = getModelInstanceString(className, modifier, prettyPrint, icon);
+  QElapsedTimer timer;
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+
+    timer.start();
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3480,9 +3496,63 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
       double elapsed = (double)timer.elapsed() / 1000.0;
       MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
+
+//    if (!icon && className == "Rexroth_BRSL.Examples.Systems.SingleAxis") {
+//      QFile file(Utilities::tempDirectory() + "/" + className + ".dat");
+//      if (file.open(QIODevice::WriteOnly)) {
+//        file.write(QCborValue::fromJsonValue(doc.object()).toCbor());
+//        file.close();
+//      } else {
+//        qDebug() << "Error writing file.";
+//      }
+//    }
+
     return doc.object();
   }
   return QJsonObject();
+}
+
+/*!
+ * \brief OMCProxy::getModelInstanceCbor
+ * \param className
+ * \param modifier
+ * \param prettyPrint
+ * \param icon
+ * \return
+ */
+QCborMap OMCProxy::getModelInstanceCbor(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+{
+  QElapsedTimer timer;
+  QString modelInstanceJson = getModelInstanceString(className, modifier, prettyPrint, icon);
+  if (!modelInstanceJson.isEmpty()) {
+    timer.start();
+    QFile file(Utilities::tempDirectory() + "/" + className + ".dat");
+    QByteArray fileContents;
+    if (file.open(QIODevice::ReadOnly)) {
+      if (MainWindow::instance()->isNewApiProfiling()) {
+        fileContents = file.readAll();
+        double elapsed = (double)timer.elapsed() / 1000.0;
+        MainWindow::instance()->writeNewApiProfiling(QString("Time for reading CBOR file %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      }
+      file.close();
+    }
+
+    timer.restart();
+    QCborParserError cborParserError;
+    QCborMap cborMap = QCborValue::fromCbor(fileContents, &cborParserError).toMap();
+    if (!cborParserError.errorString().isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Error parsing model instance cbor for class %1 with error %2.")
+                                                            .arg(className, cborParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      double elapsed = (double)timer.elapsed() / 1000.0;
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to CBOR %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    }
+    return cborMap;
+  }
+  return QCborMap();
 }
 
 /*!

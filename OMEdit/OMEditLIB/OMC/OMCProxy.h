@@ -84,6 +84,8 @@ private:
   QStringList mLibrariesBrowserAdditionCommandsList;
   QStringList mLibrariesBrowserDeletionCommandsList;
   bool mLoadModelError;
+
+  QString getModelInstanceString(const QString &className, const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
@@ -280,7 +282,8 @@ public:
   QStringList getAvailablePackageVersions(QString pkg, QString version);
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
-  QJsonObject getModelInstance(const QString &className, const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
+  QJsonObject getModelInstanceJson(const QString &className, const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
+  QCborMap getModelInstanceCbor(const QString &className, const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
   QJsonObject modifierToJSON(const QString &modifier, bool prettyPrint = false);
   int storeAST();
   bool restoreAST(int id);

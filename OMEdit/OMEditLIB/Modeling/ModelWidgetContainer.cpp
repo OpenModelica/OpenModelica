@@ -900,7 +900,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   /* We use getModelInstanceIcon here for bettter performance
    * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
    */
-  pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true)));
+  pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstanceJson(className, "", false, true)));
   pModelInstance->addElement(pComponent);
   return pComponent;
 }
@@ -5917,15 +5917,27 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   // call getModelInstance
   MainWindow::instance()->writeNewApiProfiling(mpLibraryTreeItem->getNameStructure());
-  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
-
+  QJsonObject jsonObject;
+  QCborMap cborMap;
   QElapsedTimer timer;
-  timer.start();
-  // set the new ModelInstance
-  mpModelInstance = new ModelInstance::Model(jsonObject);
-  if (MainWindow::instance()->isNewApiProfiling()) {
-    double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+  if (!icon && mpLibraryTreeItem->getNameStructure() == "Rexroth_BRSL.Examples.Systems.SingleAxis") {
+    cborMap = MainWindow::instance()->getOMCProxy()->getModelInstanceCbor(mpLibraryTreeItem->getNameStructure(), "", false, icon);
+    timer.start();
+    // set the new ModelInstance
+    mpModelInstance = new ModelInstance::Model(cborMap);
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      double elapsed = (double)timer.elapsed() / 1000.0;
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing CBOR %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    }
+  } else {
+    jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstanceJson(mpLibraryTreeItem->getNameStructure(), "", false, icon);
+    timer.start();
+    // set the new ModelInstance
+    mpModelInstance = new ModelInstance::Model(jsonObject);
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      double elapsed = (double)timer.elapsed() / 1000.0;
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    }
   }
 
   timer.restart();

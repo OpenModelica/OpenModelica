@@ -52,7 +52,7 @@ void ModelInstanceTest::initTestCase()
     QFAIL(QString("Failed to load file %1").arg(mFileName).toStdString().c_str());
   }
 
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mModelName));
+  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstanceJson(mModelName));
 }
 
 void ModelInstanceTest::classAnnotations()

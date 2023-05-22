@@ -35,6 +35,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QCborMap>
 #include <QColor>
 #include <QRectF>
 
@@ -84,6 +85,7 @@ namespace ModelInstance
     void reset();
     bool isComplete() const;
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) = default;
   private:
@@ -107,6 +109,8 @@ namespace ModelInstance
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborArray &cborArray);
+    void deserialize(const QCborMap &cborMap);
 private:
     BooleanAnnotation mVisible;
     PointAnnotation mOrigin;
@@ -125,6 +129,8 @@ private:
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborArray &cborArray);
+    void deserialize(const QCborMap &cborMap);
   private:
     ColorAnnotation mLineColor;
     ColorAnnotation mFillColor;
@@ -153,6 +159,8 @@ private:
     Line(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborArray &cborArray);
+    void deserialize(const QCborMap &cborMap);
 
     void setPoints(const PointArrayAnnotation &points) {mPoints = points;}
     PointArrayAnnotation getPoints() const {return mPoints;}
@@ -184,6 +192,7 @@ private:
   public:
     Polygon(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QCborArray &cborArray);
 
     PointArrayAnnotation getPoints() const {return mPoints;}
     SmoothAnnotation getSmooth() const {return mSmooth;}
@@ -197,6 +206,7 @@ private:
   public:
     Rectangle(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QCborArray &cborArray);
 
     BorderPatternAnnotation getBorderPattern() const {return mBorderPattern;}
     ExtentAnnotation getExtent() const {return mExtent;}
@@ -212,6 +222,7 @@ private:
   public:
     Ellipse(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QCborArray &cborArray);
 
     ExtentAnnotation getExtent() const {return mExtent;}
     RealAnnotation getStartAngle() const {return mStartAngle;}
@@ -230,6 +241,8 @@ private:
     Text(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborArray &cborArray);
+    void deserialize(const QCborMap &cborMap);
 
     ExtentAnnotation getExtent() const {return mExtent;}
     StringAnnotation getTextString() const {return mTextString;}
@@ -253,6 +266,7 @@ private:
   public:
     Bitmap(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
+    void deserialize(const QCborArray &cborArray);
 
     ExtentAnnotation getExtent() const {return mExtent;}
     QString getFileName() const {return mFileName;}
@@ -269,6 +283,7 @@ private:
     IconDiagramAnnotation(Model *pParentModel);
     ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     Model *getParentModel() const {return mpParentModel;}
     QList<Shape*> getGraphics() const {return mGraphics;}
@@ -286,6 +301,7 @@ private:
   public:
     Transformation();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
     PointAnnotation getOrigin() const {return mOrigin;}
     ExtentAnnotation getExtent() const {return mExtent;}
     double getRotation() const {return mRotation;}
@@ -300,6 +316,7 @@ private:
   public:
     PlacementAnnotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
     Model *getParentModel() const {return mpParentModel;}
     BooleanAnnotation getVisible() const {return mVisible;}
     Transformation getTransformation() const {return mTransformation;}
@@ -318,6 +335,7 @@ private:
   public:
     Selector();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
     StringAnnotation getFilter() const {return mFilter;}
     StringAnnotation getCaption() const {return mCaption;}
   private:
@@ -330,6 +348,7 @@ private:
   public:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
     StringAnnotation getTab() const {return mTab;}
     StringAnnotation getGroup() const {return mGroup;}
     BooleanAnnotation isEnabled() const {return mEnable;}
@@ -359,6 +378,7 @@ private:
   public:
     Choices();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
@@ -374,6 +394,7 @@ private:
   public:
     IconDiagramMap();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     ExtentAnnotation getExtent() const {return mExtent;}
     BooleanAnnotation getprimitivesVisible() const {return mPrimitivesVisible;}
@@ -387,6 +408,7 @@ private:
   public:
     Annotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
@@ -436,6 +458,7 @@ private:
   public:
     Dimensions();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     QStringList getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
@@ -451,6 +474,7 @@ private:
   public:
     Modifier();
     void deserialize(const QJsonValue &jsonValue);
+    void deserialize(const QCborValue &cborValue);
 
     QString getName() const {return mName;}
     void setName(const QString &name) {mName = name;}
@@ -478,6 +502,7 @@ private:
   public:
     Replaceable(Model *pParentModel);
     void deserialize(const QJsonValue &jsonValue);
+    void deserialize(const QCborValue &cborValue);
 
     QString getConstrainedby() const {return mConstrainedby;}
     QString getComment() const {return mComment;}
@@ -495,6 +520,7 @@ private:
   public:
     Prefixes(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     bool isPublic() const {return mPublic;}
     bool isFinal() const {return mFinal;}
@@ -525,6 +551,7 @@ private:
   public:
     Source();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     QString getFileName() const {return mFileName;}
   private:
@@ -545,8 +572,10 @@ private:
   {
   public:
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
+    Model(const QCborMap &cborMap, Element *pParentElement = 0);
     virtual ~Model();
-    void deserialize();
+    void deserializeJson();
+    void deserializeCbor();
 
     Element *getParentElement() const {return mpParentElement;}
     Extend *getParentExtend() const;
@@ -580,6 +609,7 @@ private:
 
     Element *mpParentElement;
     QJsonObject mModelJson;
+    QCborMap mCborMap;
     QString mName;
     bool mMissing;
     Dimensions mDims;
@@ -640,7 +670,9 @@ private:
   {
   public:
     Extend(Model *pParentModel, const QJsonObject &jsonObject);
+    Extend(Model *pParentModel, const QCborMap &cborMap);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
   private:
     QString mBaseClass;
     // Element interface
@@ -660,7 +692,9 @@ private:
   public:
     Component(Model *pParentModel);
     Component(Model *pParentModel, const QJsonObject &jsonObject);
+    Component(Model *pParentModel, const QCborMap &cborMap);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     void setName(const QString &name) {mName = name;}
     bool getCondition() const {return mCondition;}
@@ -685,7 +719,9 @@ private:
   {
   public:
     ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject);
+    ReplaceableClass(Model *pParentModel, const QCborMap &cborMap);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     QString getBaseClass() const {return mBaseClass;}
   private:
@@ -710,6 +746,7 @@ private:
   public:
     Part();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     QString getName() const;
   private:
@@ -722,6 +759,7 @@ private:
   public:
     Connector();
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     QString getName() const;
     QStringList getNameParts() const;
@@ -735,6 +773,7 @@ private:
   public:
     Connection(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -753,6 +792,7 @@ private:
   public:
     Transition(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -781,6 +821,7 @@ private:
   public:
     InitialState(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QCborMap &cborMap);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
