@@ -564,6 +564,7 @@ private:
     bool isExpandableConnector() const;
     bool isEnumeration() const;
     bool isType() const;
+    bool isDerivedType() const;
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
