@@ -1058,7 +1058,7 @@ namespace ModelInstance
 
   QString Model::getRootType() const
   {
-    if (isType() && mElements.size() > 0) {
+    if (isDerivedType() && mElements.size() > 0) {
       return mElements.at(0)->getRootType();
     }
     return mName;
@@ -1085,6 +1085,26 @@ namespace ModelInstance
   bool Model::isType() const
   {
     return (mRestriction.compare(QStringLiteral("type")) == 0);
+  }
+
+  /*!
+   * \brief Model::isDerivedType
+   * Returns true if the class is a type or a class derived from a type, otherwise false.
+   * \return
+   */
+  bool Model::isDerivedType() const
+  {
+    if (isType()) return true;
+
+    if (mElements.size() > 0 && mElements[0]->isExtend()) {
+      if (mElements[0]->getModel()) {
+        return mElements[0]->getModel()->isDerivedType();
+      } else {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /*!
@@ -1211,40 +1231,46 @@ namespace ModelInstance
       // they contain here.
       return true;
     } else if (isConnector() && other.isConnector()) {
-      auto comps = getComponents();
+      if (isDerivedType()) {
+        // If the connectors are derived from types, then they must have the same root type.
+        return getRootType() == other.getRootType();
+      } else {
+        // If they are not types, then check the components they contain.
+        auto comps = getComponents();
 
-      // The connectors must contain the same number of components.
-      if (comps.size() != other.getComponents().size()) return false;
+        // The connectors must contain the same number of components.
+        if (comps.size() != other.getComponents().size()) return false;
 
-      // The connectors must contain the same named components, but the order
-      // doesn't matter.
-      foreach (auto e1, comps) {
-        if (e1->isComponent()) {
-          auto e2 = other.lookupElement(e1->getName());
+        // The connectors must contain the same named components, but the order
+        // doesn't matter.
+        foreach (auto e1, comps) {
+          if (e1->isComponent()) {
+            auto e2 = other.lookupElement(e1->getName());
 
-          if (e2) {
-            // The component exists, check that it's type compatible with e1.
-            auto m1 = e1->getModel();
-            auto m2 = e2->getModel();
+            if (e2) {
+              // The component exists, check that it's type compatible with e1.
+              auto m1 = e1->getModel();
+              auto m2 = e2->getModel();
 
-            if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+              if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+                return false;
+              }
+
+              // The components should not have the same input/output prefix.
+              auto dir = e1->getDirection();
+              if (!dir.isEmpty() && dir == e2->getDirection()) {
+                return false;
+              }
+            } else {
+              // The component doesn't exist, the connectors are not type compatible.
               return false;
             }
-
-            // The components should not have the same input/output prefix.
-            auto dir = e1->getDirection();
-            if (!dir.isEmpty() && dir == e2->getDirection()) {
-              return false;
-            }
-          } else {
-            // The component doesn't exist, the connectors are not type compatible.
-            return false;
           }
         }
       }
     } else if (isType()) {
       // Types, check that they're derived from the same basic type.
-      return other.isType() && getRootType() == other.getRootType();
+      return getRootType() == other.getRootType();
     } else {
       // Any other type of class, check that their components are type compatible.
       auto comps1 = getComponents();
@@ -1695,7 +1721,7 @@ namespace ModelInstance
 
   QString Extend::getRootType() const
   {
-    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+    if (mpModel && mpModel->isDerivedType() && mpModel->getElements().size() > 0) {
       return mpModel->getElements().at(0)->getRootType();
     }
     return mBaseClass;
@@ -1791,7 +1817,7 @@ namespace ModelInstance
 
   QString Component::getRootType() const
   {
-    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+    if (mpModel && mpModel->isDerivedType() && mpModel->getElements().size() > 0) {
       return mpModel->getElements().at(0)->getRootType();
     }
     return mType;
