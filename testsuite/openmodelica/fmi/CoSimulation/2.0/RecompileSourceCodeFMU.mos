@@ -1,7 +1,7 @@
 // name:     RecompileSourceCodeFMU
 // keywords: fmu export simulation flags
 // status: correct
-// teardown_command: rm -rf Test_SinSource* reCompile.log Test.SinSource.fmu
+// teardown_command: rm -rf Test_SinSource* Test.SinSource* reCompile.log Test.SinSource.fmu
 //
 // Export SinSource as 2.0 CS FMU with CVODE solver and re-compile FMU with static library
 
@@ -32,7 +32,12 @@ system("cd Test_SinSource_FMU/sources/build_cmake && cmake .. -DBUILD_SHARED_LIB
 
 // Check if static library was compiled and that it used FMI2_FUNCTION_PREFIX=Test_SinSource_FMU for function names
 // Has to return "Test_SinSource_fmi2GetReal"
-system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
+system("nm Test_SinSource_FMU/binaries/linux64/Test.SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
+
+// Repack Test.SinSource.fmu
+system("rm -rf Test.SinSource.fmu && cd Test_SinSource_FMU/sources/build_cmake && cmake --build . && make create_fmu", outputFile="reCompile.log"); getErrorString();
+//readFile("reCompile.log");
+regularFileExists("Test.SinSource.fmu"); getErrorString();
 
 // Result:
 // true
@@ -49,5 +54,9 @@ system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_
 // ""
 // Test_SinSource_fmi2GetReal
 // 0
+// ""
+// 0
+// ""
+// true
 // ""
 // endResult

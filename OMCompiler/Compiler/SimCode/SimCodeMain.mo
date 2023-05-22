@@ -926,7 +926,7 @@ algorithm
         System.copyFile(source = install_share_buildproject_dir + "CMakeLists.txt.in",
                         destination = fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fmuTargetName);
 
         // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
