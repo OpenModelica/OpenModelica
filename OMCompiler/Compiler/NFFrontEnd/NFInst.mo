@@ -220,9 +220,7 @@ algorithm
 
   VerifyModel.verify(flatModel);
 
-  if not Config.simCodeTarget() == "Cpp" and not Config.simCodeTarget() == "omsicpp" then
-    (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
-  end if;
+  (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
 
   flatModel := InstUtil.combineSubscripts(flatModel);
 

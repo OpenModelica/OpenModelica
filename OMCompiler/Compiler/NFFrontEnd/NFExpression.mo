@@ -4276,6 +4276,16 @@ public
     end if;
   end containsAnyIterator;
 
+  function isTime
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case CREF() then ComponentRef.isTime(exp.cref);
+      else false;
+    end match;
+  end isTime;
+
   function isZero
     input Expression exp;
     output Boolean isZero;

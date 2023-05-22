@@ -344,28 +344,34 @@ public
             Call call;
             Boolean invert;
             TimeEvent timeEvent;
+            Pointer<Boolean> containsTime = Pointer.create(false);
 
         case Expression.RELATION()
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
-            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
-            if status == NBSolve.Status.EXPLICIT then
-              // save simplified binary
-              exp.exp1 := Equation.getLHS(tmpEqn);
-              exp.exp2 := Equation.getRHS(tmpEqn);
-              if invert then
-                exp.operator := Operator.invert(exp.operator);
-                // ToDo: Operator cannot be < or <= after inversion, because it has been solved for time -> fail()?
+            _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
+            if Pointer.access(containsTime) then
+              (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
+              if status == NBSolve.Status.EXPLICIT then
+                // save simplified binary
+                exp.exp1 := Equation.getLHS(tmpEqn);
+                exp.exp2 := Equation.getRHS(tmpEqn);
+                if invert then
+                  exp.operator := Operator.invert(exp.operator);
+                  // ToDo: Operator cannot be < or <= after inversion, because it has been solved for time -> fail()?
+                end if;
+                timeEvent := SINGLE(0, exp.exp2);
+                if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
+                  bucket.timeEventIndex := bucket.timeEventIndex + 1;
+                  timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
+                  bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
+                end if;
+                failed := false;
+              else
+                failed := true;
               end if;
-              timeEvent := SINGLE(0, exp.exp2);
-              if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
-                bucket.timeEventIndex := bucket.timeEventIndex + 1;
-                timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
-                bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
-              end if;
-              failed := false;
             else
               failed := true;
             end if;
@@ -1004,6 +1010,24 @@ protected
       (condition, bucket) := StateEvent.create(condition, bucket, eqn, frames, createAux);
     end if;
   end collectEventsCondition;
+
+  function containsTimeTraverseExp
+    input output Expression exp;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and Expression.isTime(exp) then
+      Pointer.update(b, true);
+    end if;
+  end containsTimeTraverseExp;
+
+  function containsTimeTraverseCref
+    input output ComponentRef cref;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and ComponentRef.isTime(cref) then
+      Pointer.update(b, true);
+    end if;
+  end containsTimeTraverseCref;
 
 annotation(__OpenModelica_Interface="backend");
 end NBEvents;

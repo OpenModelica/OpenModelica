@@ -8480,21 +8480,31 @@ protected
   BackendDAE.Var scalarVar;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
-  if Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
-    // Make sure the array does not get expanded again. The check for existence is made by the caller
-    // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
-    // actually added by itslef. So add it here manually.
-    // We can do a check in extractVarFromVar2 for each expanded var as well.
-    // However that means we do the exapnsion of the array for nothing. So add it here so that it does
-    // not get expanded again (and every entry checked again).
-    Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
+  if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
-    for cref in scalar_crefs loop
+    if Config.simCodeTarget() <> "Cpp" then
+      // Make sure the array does not get expanded again. The check for existence is made by the caller
+      // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
+      // actually added by itslef. So add it here manually.
+      // We can do a check in extractVarFromVar2 for each expanded var as well.
+      // However that means we do the exapnsion of the array for nothing. So add it here so that it does
+      // not get expanded again (and every entry checked again).
+      Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
+      for cref in scalar_crefs loop
+        // extract the expanded sim var
+        scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+        scalarVar.varType := ComponentReference.crefTypeFull(cref);
+        extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
+      end for;
+    else
       // extract the sim var
-      scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
-      scalarVar.varType := ComponentReference.crefTypeFull(cref);
-      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
-    end for;
+      extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
+      // add expanded array elements to processed crefs to avoid their redeclaration
+      // as they may appear again as algebraic variables of the initialization problem
+      for cref in scalar_crefs loop
+        Mutable.update(hs, BaseHashSet.add(cref, Mutable.access(hs)));
+      end for;
+    end if;
   else
     // extract the sim var
     extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
@@ -10371,6 +10381,11 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Exp e;
       DAE.Type tp;
+
+    // Don't extract bindings of scalar parameters to tuples or records (#10505).
+    // They are treated by createParameterEquations calling createSimEqsForGlobalKnownVars.
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), tplExp = SOME(_)))
+    then NONE();
 
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
