@@ -767,7 +767,7 @@ void Parameter::editRedeclareClassButtonClicked()
                           tr("Unable to find the redeclare class."), Helper::ok);
   } else {
     ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
+    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstanceJson(qualifiedType, modifier);
     if (!newModelJSON.isEmpty()) {
       const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
       ModelInstance::Modifier elementModifier;

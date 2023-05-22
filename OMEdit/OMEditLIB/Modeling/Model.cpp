@@ -42,6 +42,7 @@
 #include <QVariant>
 #include <QStringBuilder>
 #include <QDebug>
+#include <QCborArray>
 
 namespace ModelInstance
 {
@@ -166,6 +167,22 @@ namespace ModelInstance
     }
   }
 
+  void CoordinateSystem::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("extent"))) {
+      mHasExtent = mExtent.deserialize(cborMap.value("extent"));
+    }
+    if (cborMap.contains(QString("preserveAspectRatio"))) {
+      mHasPreserveAspectRatio = mPreserveAspectRatio.deserialize(cborMap.value("preserveAspectRatio"));
+    }
+    if (cborMap.contains(QString("initialScale"))) {
+      mHasInitialScale = mInitialScale.deserialize(cborMap.value("initialScale"));
+    }
+    if (cborMap.contains(QString("grid"))) {
+      mHasGrid = mGrid.deserialize(cborMap.value("grid"));
+    }
+  }
+
   GraphicItem::GraphicItem()
   {
     mVisible = true;
@@ -192,6 +209,28 @@ namespace ModelInstance
 
     if (jsonObject.contains("rotation")) {
       mRotation.deserialize(jsonObject.value("rotation"));
+    }
+  }
+
+  void GraphicItem::deserialize(const QCborArray &cborArray)
+  {
+    mVisible.deserialize(cborArray.at(0));
+    mOrigin.deserialize(cborArray.at(1));
+    mRotation.deserialize(cborArray.at(2));
+  }
+
+  void GraphicItem::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("visible"))) {
+      mVisible.deserialize(cborMap.value("visible"));
+    }
+
+    if (cborMap.contains(QString("origin"))) {
+      mOrigin.deserialize(cborMap.value("origin"));
+    }
+
+    if (cborMap.contains(QString("rotation"))) {
+      mRotation.deserialize(cborMap.value("rotation"));
     }
   }
 
@@ -242,6 +281,38 @@ namespace ModelInstance
 
     if (jsonObject.contains("lineThickness")) {
       mLineThickness.deserialize(jsonObject.value("lineThickness"));
+    }
+  }
+
+  void FilledShape::deserialize(const QCborArray &cborArray)
+  {
+    mLineColor.deserialize(cborArray.at(3));
+    mFillColor.deserialize(cborArray.at(4));
+    mPattern.deserialize(cborArray.at(5));
+    mFillPattern.deserialize(cborArray.at(6));
+    mLineThickness.deserialize(cborArray.at(7));
+  }
+
+  void FilledShape::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("lineColor"))) {
+      mLineColor.deserialize(cborMap.value("lineColor"));
+    }
+
+    if (cborMap.contains(QString("fillColor"))) {
+      mFillColor.deserialize(cborMap.value("fillColor"));
+    }
+
+    if (cborMap.contains(QString("pattern"))) {
+      mPattern.deserialize(cborMap.value("pattern"));
+    }
+
+    if (cborMap.contains(QString("fillPattern"))) {
+      mFillPattern.deserialize(cborMap.value("fillPattern"));
+    }
+
+    if (cborMap.contains(QString("lineThickness"))) {
+      mLineThickness.deserialize(cborMap.value("lineThickness"));
     }
   }
 
@@ -330,6 +401,54 @@ namespace ModelInstance
     }
   }
 
+  void Line::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 10) {
+      GraphicItem::deserialize(cborArray);
+
+      mPoints.deserialize(cborArray.at(3));
+      mColor.deserialize(cborArray.at(4));
+      mPattern.deserialize(cborArray.at(5));
+      mThickness.deserialize(cborArray.at(6));
+      mArrow.deserialize(cborArray.at(7));
+      mArrowSize.deserialize(cborArray.at(8));
+      mSmooth.deserialize(cborArray.at(9));
+    }
+  }
+
+  void Line::deserialize(const QCborMap &cborMap)
+  {
+    GraphicItem::deserialize(cborMap);
+
+    if (cborMap.contains(QString("points"))) {
+      mPoints.deserialize(cborMap.value("points"));
+    }
+
+    if (cborMap.contains(QString("color"))) {
+      mColor.deserialize(cborMap.value("color"));
+    }
+
+    if (cborMap.contains(QString("pattern"))) {
+      mPattern.deserialize(cborMap.value("pattern"));
+    }
+
+    if (cborMap.contains(QString("thickness"))) {
+      mThickness.deserialize(cborMap.value("thickness"));
+    }
+
+    if (cborMap.contains(QString("arrow"))) {
+      mArrow.deserialize(cborMap.value("arrow"));
+    }
+
+    if (cborMap.contains(QString("arrowSize"))) {
+      mArrowSize.deserialize(cborMap.value("arrowSize"));
+    }
+
+    if (cborMap.contains(QString("smooth"))) {
+      mSmooth.deserialize(cborMap.value("smooth"));
+    }
+  }
+
   void Line::setColor(const QColor &color)
   {
     mColor = color;
@@ -352,6 +471,16 @@ namespace ModelInstance
     }
   }
 
+  void Polygon::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 10) {
+      GraphicItem::deserialize(cborArray);
+      FilledShape::deserialize(cborArray);
+
+      mPoints.deserialize(cborArray.at(8));
+      mSmooth.deserialize(cborArray.at(9));
+    }
+  }
 
   Rectangle::Rectangle(Model *pParentModel)
     : Shape(pParentModel)
@@ -370,6 +499,18 @@ namespace ModelInstance
       mBorderPattern.deserialize(jsonArray.at(8));
       mExtent.deserialize(jsonArray.at(9));
       mRadius.deserialize(jsonArray.at(10));
+    }
+  }
+
+  void Rectangle::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 11) {
+      GraphicItem::deserialize(cborArray);
+      FilledShape::deserialize(cborArray);
+
+      mBorderPattern.deserialize(cborArray.at(8));
+      mExtent.deserialize(cborArray.at(9));
+      mRadius.deserialize(cborArray.at(10));
     }
   }
 
@@ -396,6 +537,19 @@ namespace ModelInstance
       mStartAngle.deserialize(jsonArray.at(9));
       mEndAngle.deserialize(jsonArray.at(10));
       mClosure.deserialize(jsonArray.at(11));
+    }
+  }
+
+  void Ellipse::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 12) {
+      GraphicItem::deserialize(cborArray);
+      FilledShape::deserialize(cborArray);
+
+      mExtent.deserialize(cborArray.at(8));
+      mStartAngle.deserialize(cborArray.at(9));
+      mEndAngle.deserialize(cborArray.at(10));
+      mClosure.deserialize(cborArray.at(11));
     }
   }
 
@@ -473,6 +627,69 @@ namespace ModelInstance
 //    }
   }
 
+  void Text::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 15) {
+      GraphicItem::deserialize(cborArray);
+      FilledShape::deserialize(cborArray);
+
+      mExtent.deserialize(cborArray.at(8));
+      mTextString.deserialize(cborArray.at(9));
+      mFontSize.deserialize(cborArray.at(10));
+      // if invalid color
+      QCborArray colorArray = cborArray.at(11).toArray();
+      if (colorArray.size() == 3 && colorArray.at(0).toInteger() == -1 && colorArray.at(1).toInteger() == -1 && colorArray.at(2).toInteger() == -1) {
+        mTextColor = QColor();
+      } else {
+        mTextColor.deserialize(cborArray.at(11));
+      }
+      mFontName.deserialize(cborArray.at(12));
+      QCborArray textStyles = cborArray.at(13).toArray();
+      if (!textStyles.isEmpty()) {
+        mTextStyle.deserialize(cborArray.at(13));
+      }
+      mHorizontalAlignment.deserialize(cborArray.at(14));
+    }
+  }
+
+  void Text::deserialize(const QCborMap &cborMap)
+  {
+    GraphicItem::deserialize(cborMap);
+    FilledShape::deserialize(cborMap);
+
+    if (cborMap.contains(QString("extent"))) {
+      mExtent.deserialize(cborMap.value("extent"));
+    }
+
+    if (cborMap.contains(QString("string"))) {
+      mTextString.deserialize(cborMap.value("string"));
+    }
+
+    if (cborMap.contains(QString("fontSize"))) {
+      mFontSize.deserialize(cborMap.value("fontSize"));
+    }
+
+    if (cborMap.contains(QString("textColor"))) {
+      mTextColor.deserialize(cborMap.value("textColor"));
+    }
+
+    if (cborMap.contains(QString("fontName"))) {
+      mFontName.deserialize(cborMap.value("fontName"));
+    }
+
+    if (cborMap.contains(QString("textStyle"))) {
+      mTextStyle.deserialize(cborMap.value("textStyle"));
+    }
+
+    if (cborMap.contains(QString("horizontalAlignment"))) {
+      mHorizontalAlignment.deserialize(cborMap.value("horizontalAlignment"));
+    }
+
+//    if (cborMap.contains(QString("index"))) {
+//      mIndex = cborMap.value("index").toDouble();
+    //    }
+  }
+
   Bitmap::Bitmap(Model *pParentModel)
     : Shape(pParentModel)
   {
@@ -489,6 +706,450 @@ namespace ModelInstance
       mExtent.deserialize(jsonArray.at(3));
       mFileName = jsonArray.at(4).toString();
       mImageSource = jsonArray.at(5).toString();
+    }
+  }
+
+  void Bitmap::deserialize(const QCborArray &cborArray)
+  {
+    if (cborArray.size() == 6) {
+      GraphicItem::deserialize(cborArray);
+
+      mExtent.deserialize(cborArray.at(3));
+      mFileName = cborArray.at(4).toString();
+      mImageSource = cborArray.at(5).toString();
+    }
+  }
+
+  IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
+  {
+    mpParentModel = pParentModel;
+    mGraphics.clear();
+  }
+
+  IconDiagramAnnotation::~IconDiagramAnnotation()
+  {
+    qDeleteAll(mGraphics);
+    mGraphics.clear();
+  }
+
+  void IconDiagramAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("coordinateSystem")) {
+      mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
+      mMergedCoOrdinateSystem = mCoordinateSystem;
+    }
+
+    if (jsonObject.contains("graphics")) {
+      if (jsonObject.value("graphics").isObject()) {
+        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
+        if (graphicsObject.contains("$error")) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        }
+      } else if (jsonObject.value("graphics").isArray()) {
+        QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
+        for (int i = 0; i < graphicsArray.size(); ++i) {
+          QJsonObject graphicObject = graphicsArray.at(i).toObject();
+          if (graphicObject.contains("name") && graphicObject.contains("elements")) {
+            const QString name = graphicObject.value("name").toString();
+            if (name.compare(QStringLiteral("Line")) == 0) {
+              Line *pLine = new Line(mpParentModel);
+              pLine->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pLine);
+            } else if (name.compare(QStringLiteral("Polygon")) == 0) {
+              Polygon *pPolygon = new Polygon(mpParentModel);
+              pPolygon->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pPolygon);
+            } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
+              Rectangle *pRectangle = new Rectangle(mpParentModel);
+              pRectangle->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pRectangle);
+            } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
+              Ellipse *pEllipse = new Ellipse(mpParentModel);
+              pEllipse->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pEllipse);
+            } else if (name.compare(QStringLiteral("Text")) == 0) {
+              Text *pText = new Text(mpParentModel);
+              pText->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pText);
+            } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
+              Bitmap *pBitmap = new Bitmap(mpParentModel);
+              pBitmap->deserialize(graphicObject.value("elements").toArray());
+              mGraphics.append(pBitmap);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void IconDiagramAnnotation::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("coordinateSystem"))) {
+      mCoordinateSystem.deserialize(cborMap.value("coordinateSystem").toMap());
+      mMergedCoOrdinateSystem = mCoordinateSystem;
+    }
+
+    if (cborMap.contains(QString("graphics"))) {
+      if (cborMap.value("graphics").isMap()) {
+        QCborMap graphicsObject = cborMap.value("graphics").toMap();
+        if (graphicsObject.contains(QString("$error"))) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+        }
+      } else if (cborMap.value("graphics").isArray()) {
+        QCborArray graphicsArray = cborMap.value("graphics").toArray();
+        for (int i = 0; i < graphicsArray.size(); ++i) {
+          QCborMap graphicMap = graphicsArray.at(i).toMap();
+          if (graphicMap.contains(QString("name")) && graphicMap.contains(QString("elements"))) {
+            const QString name = graphicMap.value("name").toString();
+            if (name.compare(QStringLiteral("Line")) == 0) {
+              Line *pLine = new Line(mpParentModel);
+              pLine->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pLine);
+            } else if (name.compare(QStringLiteral("Polygon")) == 0) {
+              Polygon *pPolygon = new Polygon(mpParentModel);
+              pPolygon->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pPolygon);
+            } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
+              Rectangle *pRectangle = new Rectangle(mpParentModel);
+              pRectangle->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pRectangle);
+            } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
+              Ellipse *pEllipse = new Ellipse(mpParentModel);
+              pEllipse->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pEllipse);
+            } else if (name.compare(QStringLiteral("Text")) == 0) {
+              Text *pText = new Text(mpParentModel);
+              pText->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pText);
+            } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
+              Bitmap *pBitmap = new Bitmap(mpParentModel);
+              pBitmap->deserialize(graphicMap.value("elements").toArray());
+              mGraphics.append(pBitmap);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Transformation::Transformation()
+  {
+    mOrigin = QPointF(0, 0);
+    mExtent.clear();
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mRotation = 0;
+  }
+
+  void Transformation::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("origin")) {
+      mOrigin.deserialize(jsonObject.value("origin"));
+    }
+    if (jsonObject.contains("extent")) {
+      mExtent.deserialize(jsonObject.value("extent"));
+    }
+    if (jsonObject.contains("rotation")) {
+      mRotation.deserialize(jsonObject.value("rotation"));
+    }
+  }
+
+  void Transformation::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("origin"))) {
+      mOrigin.deserialize(cborMap.value("origin"));
+    }
+    if (cborMap.contains(QString("extent"))) {
+      mExtent.deserialize(cborMap.value("extent"));
+    }
+    if (cborMap.contains(QString("rotation"))) {
+      mRotation.deserialize(cborMap.value("rotation"));
+    }
+  }
+
+  PlacementAnnotation::PlacementAnnotation(Model *pParentModel)
+  {
+    mpParentModel = pParentModel;
+    // set the visible to false. Otherwise we get elements in the center of the view.
+    mVisible = false;
+    mIconVisible = false;
+  }
+
+  void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("visible")) {
+      mVisible.deserialize(jsonObject.value("visible"));
+    } else {
+      // if there is no visible then assume it to be true.
+      mVisible = true;
+    }
+
+    if (jsonObject.contains("transformation")) {
+      mTransformation.deserialize(jsonObject.value("transformation").toObject());
+    }
+
+    if (jsonObject.contains("iconVisible")) {
+      mIconVisible.deserialize(jsonObject.value("iconVisible"));
+    } else {
+      mIconVisible = mVisible;
+    }
+
+    if (jsonObject.contains("iconTransformation")) {
+      mIconTransformation.deserialize(jsonObject.value("iconTransformation").toObject());
+    } else {
+      mIconTransformation = mTransformation;
+    }
+  }
+
+  void PlacementAnnotation::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("visible"))) {
+      mVisible.deserialize(cborMap.value("visible"));
+    } else {
+      // if there is no visible then assume it to be true.
+      mVisible = true;
+    }
+
+    if (cborMap.contains(QString("transformation"))) {
+      mTransformation.deserialize(cborMap.value("transformation").toMap());
+    }
+
+    if (cborMap.contains(QString("iconVisible"))) {
+      mIconVisible.deserialize(cborMap.value("iconVisible"));
+    } else {
+      mIconVisible = mVisible;
+    }
+
+    if (cborMap.contains(QString("iconTransformation"))) {
+      mIconTransformation.deserialize(cborMap.value("iconTransformation").toMap());
+    } else {
+      mIconTransformation = mTransformation;
+    }
+  }
+
+  Selector::Selector()
+  {
+    mFilter = "-";
+    mCaption = "-";
+  }
+
+  void Selector::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("filter")) {
+      mFilter.deserialize(jsonObject.value("filter"));
+    }
+
+    if (jsonObject.contains("caption")) {
+      mCaption.deserialize(jsonObject.value("caption"));
+    }
+  }
+
+  void Selector::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("filter"))) {
+      mFilter.deserialize(cborMap.value("filter"));
+    }
+
+    if (cborMap.contains(QString("caption"))) {
+      mCaption.deserialize(cborMap.value("caption"));
+    }
+  }
+
+  DialogAnnotation::DialogAnnotation()
+  {
+    mTab = "General";
+    mGroup = "";
+    mEnable = true;
+    mShowStartAttribute = false;
+    mColorSelector = false;
+    mGroupImage = "";
+    mConnectorSizing = false;
+  }
+
+  void DialogAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("tab")) {
+      mTab.deserialize(jsonObject.value("tab"));
+    }
+
+    if (jsonObject.contains("group")) {
+      mGroup.deserialize(jsonObject.value("group"));
+    }
+
+    if (jsonObject.contains("enable")) {
+      mEnable.deserialize(jsonObject.value("enable"));
+    }
+
+    if (jsonObject.contains("showStartAttribute")) {
+      mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
+    }
+
+    if (jsonObject.contains("colorSelector")) {
+      mColorSelector.deserialize(jsonObject.value("colorSelector"));
+    }
+
+    if (jsonObject.contains("loadSelector")) {
+      mLoadSelector.deserialize(jsonObject.value("loadSelector").toObject());
+    }
+
+    if (jsonObject.contains("saveSelector")) {
+      mSaveSelector.deserialize(jsonObject.value("saveSelector").toObject());
+    }
+
+    if (jsonObject.contains("directorySelector")) {
+      mDirectorySelector.deserialize(jsonObject.value("directorySelector").toObject());
+    }
+
+    if (jsonObject.contains("groupImage")) {
+      mGroupImage.deserialize(jsonObject.value("groupImage"));
+    }
+
+    if (jsonObject.contains("connectorSizing")) {
+      mConnectorSizing.deserialize(jsonObject.value("connectorSizing"));
+    }
+  }
+
+  void DialogAnnotation::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("tab"))) {
+      mTab.deserialize(cborMap.value("tab"));
+    }
+
+    if (cborMap.contains(QString("group"))) {
+      mGroup.deserialize(cborMap.value("group"));
+    }
+
+    if (cborMap.contains(QString("enable"))) {
+      mEnable.deserialize(cborMap.value("enable"));
+    }
+
+    if (cborMap.contains(QString("showStartAttribute"))) {
+      mShowStartAttribute.deserialize(cborMap.value("showStartAttribute"));
+    }
+
+    if (cborMap.contains(QString("colorSelector"))) {
+      mColorSelector.deserialize(cborMap.value("colorSelector"));
+    }
+
+    if (cborMap.contains(QString("loadSelector"))) {
+      mLoadSelector.deserialize(cborMap.value("loadSelector").toMap());
+    }
+
+    if (cborMap.contains(QString("saveSelector"))) {
+      mSaveSelector.deserialize(cborMap.value("saveSelector").toMap());
+    }
+
+    if (cborMap.contains(QString("directorySelector"))) {
+      mDirectorySelector.deserialize(cborMap.value("directorySelector").toMap());
+    }
+
+    if (cborMap.contains(QString("groupImage"))) {
+      mGroupImage.deserialize(cborMap.value("groupImage"));
+    }
+
+    if (cborMap.contains(QString("connectorSizing"))) {
+      mConnectorSizing.deserialize(cborMap.value("connectorSizing"));
+    }
+  }
+
+  Choices::Choices()
+  {
+    mCheckBox = false;
+    mDymolaCheckBox = false;
+    mChoices.clear();
+  }
+
+  void Choices::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("checkBox")) {
+      mCheckBox.deserialize(jsonObject.value("checkBox"));
+    }
+
+    if (jsonObject.contains("__Dymola_checkBox")) {
+      mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
+    }
+
+    if (jsonObject.contains("choice")) {
+      QJsonArray choices = jsonObject.value("choice").toArray();
+      foreach (auto choice, choices) {
+        QString type = "";
+        if (choice.isObject()) {
+          QJsonObject choiceObject = choice.toObject();
+          if (choiceObject.contains("$type")) {
+            type = choiceObject.value("$type").toString();
+          }
+          if (choiceObject.contains("$value")) {
+            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
+          }
+        } else {
+          mChoices.append(qMakePair(choice.toString(), type));
+        }
+      }
+    }
+  }
+
+  void Choices::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("checkBox"))) {
+      mCheckBox.deserialize(cborMap.value("checkBox"));
+    }
+
+    if (cborMap.contains(QString("__Dymola_checkBox"))) {
+      mDymolaCheckBox.deserialize(cborMap.value("__Dymola_checkBox"));
+    }
+
+    if (cborMap.contains(QString("choice"))) {
+      QCborArray choices = cborMap.value("choice").toArray();
+      foreach (auto choice, choices) {
+        QString type = "";
+        if (choice.isMap()) {
+          QCborMap choiceObject = choice.toMap();
+          if (choiceObject.contains(QString("$type"))) {
+            type = choiceObject.value("$type").toString();
+          }
+          if (choiceObject.contains(QString("$value"))) {
+            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
+          }
+        } else {
+          mChoices.append(qMakePair(choice.toString(), type));
+        }
+      }
+    }
+  }
+
+  QStringList Choices::getChoices() const
+  {
+    QStringList choices;
+    foreach (Choice choice, mChoices) {
+      choices.append(choice.first);
+    }
+    return choices;
+  }
+
+  IconDiagramMap::IconDiagramMap()
+  {
+    mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    mPrimitivesVisible = true;
+  }
+
+  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("extent")) {
+      mExtent.deserialize(jsonObject.value("extent"));
+    }
+
+    if (jsonObject.contains("primitivesVisible")) {
+      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
+    }
+  }
+
+  void IconDiagramMap::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("extent"))) {
+      mExtent.deserialize(cborMap.value("extent"));
+    }
+
+    if (cborMap.contains(QString("primitivesVisible"))) {
+      mPrimitivesVisible.deserialize(cborMap.value("primitivesVisible"));
     }
   }
 
@@ -602,65 +1263,93 @@ namespace ModelInstance
     }
   }
 
-  IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
+  void Annotation::deserialize(const QCborMap &cborMap)
   {
-    mpParentModel = pParentModel;
-    mGraphics.clear();
-  }
-
-  IconDiagramAnnotation::~IconDiagramAnnotation()
-  {
-    qDeleteAll(mGraphics);
-    mGraphics.clear();
-  }
-
-  void IconDiagramAnnotation::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("coordinateSystem")) {
-      mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
-      mMergedCoOrdinateSystem = mCoordinateSystem;
+    if (cborMap.contains(QString("Icon"))) {
+      mpIconAnnotation->deserialize(cborMap.value("Icon").toMap());
     }
 
-    if (jsonObject.contains("graphics")) {
-      if (jsonObject.value("graphics").isObject()) {
-        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
-        if (graphicsObject.contains("$error")) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
-        }
-      } else if (jsonObject.value("graphics").isArray()) {
-        QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
-        for (int i = 0; i < graphicsArray.size(); ++i) {
-          QJsonObject graphicObject = graphicsArray.at(i).toObject();
-          if (graphicObject.contains("name") && graphicObject.contains("elements")) {
-            const QString name = graphicObject.value("name").toString();
-            if (name.compare(QStringLiteral("Line")) == 0) {
-              Line *pLine = new Line(mpParentModel);
-              pLine->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pLine);
-            } else if (name.compare(QStringLiteral("Polygon")) == 0) {
-              Polygon *pPolygon = new Polygon(mpParentModel);
-              pPolygon->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pPolygon);
-            } else if (name.compare(QStringLiteral("Rectangle")) == 0) {
-              Rectangle *pRectangle = new Rectangle(mpParentModel);
-              pRectangle->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pRectangle);
-            } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
-              Ellipse *pEllipse = new Ellipse(mpParentModel);
-              pEllipse->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pEllipse);
-            } else if (name.compare(QStringLiteral("Text")) == 0) {
-              Text *pText = new Text(mpParentModel);
-              pText->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pText);
-            } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
-              Bitmap *pBitmap = new Bitmap(mpParentModel);
-              pBitmap->deserialize(graphicObject.value("elements").toArray());
-              mGraphics.append(pBitmap);
-            }
-          }
+    if (cborMap.contains(QString("Diagram"))) {
+      mpDiagramAnnotation->deserialize(cborMap.value("Diagram").toMap());
+    }
+
+    if (cborMap.contains(QString("DocumentationClass"))) {
+      mDocumentationClass.deserialize(cborMap.value("DocumentationClass"));
+    }
+
+    if (cborMap.contains(QString("version"))) {
+      mVersion.deserialize(cborMap.value("version"));
+    }
+
+    if (cborMap.contains(QString("versionDate"))) {
+      mVersionDate.deserialize(cborMap.value("versionDate"));
+    }
+
+    if (cborMap.contains(QString("versionBuild"))) {
+      mVersionBuild.deserialize(cborMap.value("versionBuild"));
+    }
+
+    if (cborMap.contains(QString("dateModified"))) {
+      mDateModified.deserialize(cborMap.value("dateModified"));
+    }
+
+    if (cborMap.contains(QString("preferredView"))) {
+      mPreferredView.deserialize(cborMap.value("preferredView"));
+    }
+
+    if (cborMap.contains(QString("__Dymola_state"))) {
+      mState.deserialize(cborMap.value("__Dymola_state"));
+    }
+
+    if (cborMap.contains(QString("Protection"))) {
+      QCborMap protection = cborMap.value("Protection").toMap();
+      if (protection.contains(QString("access"))) {
+        QCborMap access = protection.value("access").toMap();
+        if (access.contains(QString("name"))) {
+          mAccess.deserialize(access.value("name"));
         }
       }
+    }
+    // Element annotation
+    if (cborMap.contains(QString("choicesAllMatching"))) {
+      mChoicesAllMatching.deserialize(cborMap.value("choicesAllMatching"));
+    }
+
+    if (cborMap.contains(QString("Placement"))) {
+      mPlacementAnnotation = PlacementAnnotation(mpParentModel);
+      mPlacementAnnotation.deserialize(cborMap.value("Placement").toMap());
+    }
+
+    if (cborMap.contains(QString("Dialog"))) {
+      mHasDialogAnnotation = true;
+      mDialogAnnotation = DialogAnnotation();
+      mDialogAnnotation.deserialize(cborMap.value("Dialog").toMap());
+    }
+
+    if (cborMap.contains(QString("Evaluate"))) {
+      mEvaluate.deserialize(cborMap.value("Evaluate"));
+    }
+
+    if (cborMap.contains(QString("choices"))) {
+      mChoices.deserialize(cborMap.value("choices").toMap());
+    }
+    // Connection annotation
+    if (cborMap.contains(QString("Line"))) {
+      mpLine = std::make_unique<Line>(mpParentModel);
+      mpLine->deserialize(cborMap.value("Line").toMap());
+    }
+
+    if (cborMap.contains(QString("Text"))) {
+      mpText = std::make_unique<Text>(mpParentModel);
+      mpText->deserialize(cborMap.value("Text").toMap());
+    }
+    // Extend annotation
+    if (cborMap.contains(QString("IconMap"))) {
+      mIconMap.deserialize(cborMap.value("IconMap").toMap());
+    }
+
+    if (cborMap.contains(QString("DiagramMap"))) {
+      mDiagramMap.deserialize(cborMap.value("DiagramMap").toMap());
     }
   }
 
@@ -681,6 +1370,23 @@ namespace ModelInstance
 
     if (jsonObject.contains("typed")) {
       QJsonArray typedDimsArray = jsonObject.value("typed").toArray();
+      foreach (auto typedDim, typedDimsArray) {
+        mTypedDims.append(typedDim.toString());
+      }
+    }
+  }
+
+  void Dimensions::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("absyn"))) {
+      QCborArray absynDimsArray = cborMap.value("absyn").toArray();
+      foreach (auto absynDim, absynDimsArray) {
+        mAbsynDims.append(absynDim.toString());
+      }
+    }
+
+    if (cborMap.contains(QString("typed"))) {
+      QCborArray typedDimsArray = cborMap.value("typed").toArray();
       foreach (auto typedDim, typedDimsArray) {
         mTypedDims.append(typedDim.toString());
       }
@@ -718,6 +1424,31 @@ namespace ModelInstance
       }
     } else {
       mValue = jsonValue.toString();
+    }
+  }
+
+  void Modifier::deserialize(const QCborValue &cborValue)
+  {
+    if (cborValue.isMap()) {
+      QCborMap modifiers = cborValue.toMap();
+      for (QCborMap::iterator modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+        const QString modifierKey = modifiersIterator.key().toString();
+        const QCborValue modifierValue = modifiersIterator.value();
+        if (modifierKey.compare(QStringLiteral("$value")) == 0) {
+          mValue = modifierValue.toString();
+        } else if (modifierKey.compare(QStringLiteral("final")) == 0) {
+          mFinal = true;
+        } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
+          mEach = true;
+        } else {
+          Modifier modifier;
+          modifier.setName(modifierKey);
+          modifier.deserialize(modifierValue);
+          mModifiers.append(modifier);
+        }
+      }
+    } else {
+      mValue = cborValue.toString();
     }
   }
 
@@ -810,6 +1541,24 @@ namespace ModelInstance
     }
   }
 
+  void Replaceable::deserialize(const QCborValue &cborValue)
+  {
+    if (cborValue.isMap()) {
+      QCborMap replaceableMap = cborValue.toMap();
+      mConstrainedby = replaceableMap.value("constrainedby").toString();
+      mModifier.deserialize(replaceableMap.value("modifiers"));
+
+      if (replaceableMap.contains(QString("comment"))) {
+        mComment = replaceableMap.value("comment").toString();
+      }
+
+      if (replaceableMap.contains(QString("annotation"))) {
+        mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+        mpAnnotation->deserialize(replaceableMap.value("annotation").toMap());
+      }
+    }
+  }
+
   Prefixes::Prefixes(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -873,6 +1622,54 @@ namespace ModelInstance
     }
   }
 
+  void Prefixes::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("public"))) {
+      mPublic = cborMap.value("public").toBool();
+    }
+
+    if (cborMap.contains(QString("final"))) {
+      mFinal = cborMap.value("final").toBool();
+    }
+
+    if (cborMap.contains(QString("inner"))) {
+      mInner = cborMap.value("inner").toBool();
+    }
+
+    if (cborMap.contains(QString("outer"))) {
+      mOuter = cborMap.value("outer").toBool();
+    }
+
+    if (cborMap.contains(QString("replaceable"))) {
+      mpReplaceable = std::make_unique<Replaceable>(mpParentModel);
+      mpReplaceable->deserialize(cborMap.value("replaceable"));
+    }
+
+    if (cborMap.contains(QString("redeclare"))) {
+      mRedeclare = cborMap.value("redeclare").toBool();
+    }
+
+    if (cborMap.contains(QString("partial"))) {
+      mPartial = cborMap.value("partial").toBool();
+    }
+
+    if (cborMap.contains(QString("encapsulated"))) {
+      mEncapsulated = cborMap.value("encapsulated").toBool();
+    }
+
+    if (cborMap.contains(QString("connector"))) {
+      mConnector = cborMap.value("connector").toString();
+    }
+
+    if (cborMap.contains(QString("variability"))) {
+      mVariability = cborMap.value("variability").toString();
+    }
+
+    if (cborMap.contains(QString("direction"))) {
+      mDirection = cborMap.value("direction").toString();
+    }
+  }
+
   Source::Source()
   {
     mFileName = "";
@@ -910,12 +1707,47 @@ namespace ModelInstance
     }
   }
 
+  void Source::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("filename"))) {
+      mFileName = cborMap.value("filename").toString();
+    }
+
+    if (cborMap.contains(QString("lineStart"))) {
+      mLineStart = cborMap.value("lineStart").toInteger();
+    }
+
+    if (cborMap.contains(QString("columnStart"))) {
+      mColumnStart = cborMap.value("columnStart").toInteger();
+    }
+
+    if (cborMap.contains(QString("lineEnd"))) {
+      mLineEnd = cborMap.value("lineEnd").toInteger();
+    }
+
+    if (cborMap.contains(QString("columnEnd"))) {
+      mColumnEnd = cborMap.value("columnEnd").toInteger();
+    }
+
+    if (cborMap.contains(QString("readonly"))) {
+      mReadonly = cborMap.value("readonly").toBool();
+    }
+  }
+
   Model::Model(const QJsonObject &jsonObject, Element *pParentElement)
   {
     mpParentElement = pParentElement;
     initialize();
     mModelJson = jsonObject;
-    deserialize();
+    deserializeJson();
+  }
+
+  Model::Model(const QCborMap &cborMap, Element *pParentElement)
+  {
+    mpParentElement = pParentElement;
+    initialize();
+    mCborMap = cborMap;
+    deserializeCbor();
   }
 
   Model::~Model()
@@ -933,7 +1765,7 @@ namespace ModelInstance
     mInitialStates.clear();
   }
 
-  void Model::deserialize()
+  void Model::deserializeJson()
   {
     if (mModelJson.contains("name")) {
       mName = mModelJson.value("name").toString();
@@ -1035,6 +1867,111 @@ namespace ModelInstance
 
     if (mModelJson.contains("source")) {
       mSource.deserialize(mModelJson.value("source").toObject());
+    }
+  }
+
+  void Model::deserializeCbor()
+  {
+    if (mCborMap.contains(QString("name"))) {
+      mName = mCborMap.value("name").toString();
+    }
+
+    if (mCborMap.contains(QString("missing"))) {
+      mMissing = mCborMap.value("missing").toBool();
+    }
+
+    if (mCborMap.contains(QString("dims"))) {
+      mDims.deserialize(mCborMap.value("dims").toMap());
+    }
+
+    if (mCborMap.contains(QString("restriction"))) {
+      mRestriction = mCborMap.value("restriction").toString();
+    }
+
+    if (mCborMap.contains(QString("prefixes"))) {
+      mpPrefixes->deserialize(mCborMap.value("prefixes").toMap());
+    }
+
+    QCborArray elements = mCborMap.value("elements").toArray();
+
+    foreach (const QCborValue &element, elements) {
+      QCborMap elementMap = element.toMap();
+      QString kind = elementMap.value("$kind").toString();
+
+      if (kind.compare(QStringLiteral("extends")) == 0) {
+        mElements.append(new Extend(this, elementMap));
+      } else if (kind.compare(QStringLiteral("component")) == 0) {
+        mElements.append(new Component(this, elementMap));
+      } else if (kind.compare(QStringLiteral("class")) == 0) {
+        mElements.append(new ReplaceableClass(this, elementMap));
+      } else {
+        qDebug() << "Unhandled kind of element" << kind;
+      }
+    }
+
+    if (mCborMap.contains(QString("comment"))) {
+      mComment = mCborMap.value("comment").toString();
+    }
+
+    if (mCborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(mCborMap.value("annotation").toMap());
+    }
+
+    /* From Modelica Specification Version 3.5-dev
+     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+     * 1. The coordinate system annotation given in the class (if specified).
+     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+     *
+     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
+     */
+    if (!mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getIconAnnotation()->mMergedCoOrdinateSystem, true);
+    }
+
+    if (!mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mpAnnotation->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
+    }
+
+    if (mCborMap.contains(QString("connections"))) {
+      QCborArray connections = mCborMap.value("connections").toArray();
+      foreach (QCborValue connection, connections) {
+        QCborMap connectionObject = connection.toMap();
+        if (!connectionObject.isEmpty()) {
+          Connection *pConnection = new Connection(this);
+          pConnection->deserialize(connection.toMap());
+          mConnections.append(pConnection);
+        }
+      }
+    }
+
+    if (mCborMap.contains(QString("transitions"))) {
+      QCborArray transitions = mCborMap.value("transitions").toArray();
+      foreach (QCborValue transition, transitions) {
+        QCborMap transitionObject = transition.toMap();
+        if (!transitionObject.isEmpty()) {
+          Transition *pTransition = new Transition(this);
+          pTransition->deserialize(transition.toMap());
+          mTransitions.append(pTransition);
+        }
+      }
+    }
+
+    if (mCborMap.contains(QString("initialStates"))) {
+      QCborArray initialStates = mCborMap.value("initialStates").toArray();
+      foreach (QCborValue initialState, initialStates) {
+        QCborMap initialStateObject = initialState.toMap();
+        if (!initialStateObject.isEmpty()) {
+          InitialState *pInitialState = new InitialState(this);
+          pInitialState->deserialize(initialState.toMap());
+          mInitialStates.append(pInitialState);
+        }
+      }
+    }
+
+    if (mCborMap.contains(QString("source"))) {
+      mSource.deserialize(mCborMap.value("source").toMap());
     }
   }
 
@@ -1207,177 +2144,6 @@ namespace ModelInstance
     mInitialStates.clear();
   }
 
-  Transformation::Transformation()
-  {
-    mOrigin = QPointF(0, 0);
-    mExtent.clear();
-    mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mRotation = 0;
-  }
-
-  void Transformation::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("origin")) {
-      mOrigin.deserialize(jsonObject.value("origin"));
-    }
-    if (jsonObject.contains("extent")) {
-      mExtent.deserialize(jsonObject.value("extent"));
-    }
-    if (jsonObject.contains("rotation")) {
-      mRotation.deserialize(jsonObject.value("rotation"));
-    }
-  }
-
-  PlacementAnnotation::PlacementAnnotation(Model *pParentModel)
-  {
-    mpParentModel = pParentModel;
-    // set the visible to false. Otherwise we get elements in the center of the view.
-    mVisible = false;
-    mIconVisible = false;
-  }
-
-  void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("visible")) {
-      mVisible.deserialize(jsonObject.value("visible"));
-    } else {
-      // if there is no visible then assume it to be true.
-      mVisible = true;
-    }
-
-    if (jsonObject.contains("transformation")) {
-      mTransformation.deserialize(jsonObject.value("transformation").toObject());
-    }
-
-    if (jsonObject.contains("iconVisible")) {
-      mIconVisible.deserialize(jsonObject.value("iconVisible"));
-    } else {
-      mIconVisible = mVisible;
-    }
-
-    if (jsonObject.contains("iconTransformation")) {
-      mIconTransformation.deserialize(jsonObject.value("iconTransformation").toObject());
-    } else {
-      mIconTransformation = mTransformation;
-    }
-  }
-
-  Selector::Selector()
-  {
-    mFilter = "-";
-    mCaption = "-";
-  }
-
-  void Selector::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("filter")) {
-      mFilter.deserialize(jsonObject.value("filter"));
-    }
-
-    if (jsonObject.contains("caption")) {
-      mCaption.deserialize(jsonObject.value("caption"));
-    }
-  }
-
-  DialogAnnotation::DialogAnnotation()
-  {
-    mTab = "General";
-    mGroup = "";
-    mEnable = true;
-    mShowStartAttribute = false;
-    mColorSelector = false;
-    mGroupImage = "";
-    mConnectorSizing = false;
-  }
-
-  void DialogAnnotation::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("tab")) {
-      mTab.deserialize(jsonObject.value("tab"));
-    }
-
-    if (jsonObject.contains("group")) {
-      mGroup.deserialize(jsonObject.value("group"));
-    }
-
-    if (jsonObject.contains("enable")) {
-      mEnable.deserialize(jsonObject.value("enable"));
-    }
-
-    if (jsonObject.contains("showStartAttribute")) {
-      mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
-    }
-
-    if (jsonObject.contains("colorSelector")) {
-      mColorSelector.deserialize(jsonObject.value("colorSelector"));
-    }
-
-    if (jsonObject.contains("loadSelector")) {
-      mLoadSelector.deserialize(jsonObject.value("loadSelector").toObject());
-    }
-
-    if (jsonObject.contains("saveSelector")) {
-      mSaveSelector.deserialize(jsonObject.value("saveSelector").toObject());
-    }
-
-    if (jsonObject.contains("directorySelector")) {
-      mDirectorySelector.deserialize(jsonObject.value("directorySelector").toObject());
-    }
-
-    if (jsonObject.contains("groupImage")) {
-      mGroupImage.deserialize(jsonObject.value("groupImage"));
-    }
-
-    if (jsonObject.contains("connectorSizing")) {
-      mConnectorSizing.deserialize(jsonObject.value("connectorSizing"));
-    }
-  }
-
-  Choices::Choices()
-  {
-    mCheckBox = false;
-    mDymolaCheckBox = false;
-    mChoices.clear();
-  }
-
-  void Choices::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("checkBox")) {
-      mCheckBox.deserialize(jsonObject.value("checkBox"));
-    }
-
-    if (jsonObject.contains("__Dymola_checkBox")) {
-      mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
-    }
-
-    if (jsonObject.contains("choice")) {
-      QJsonArray choices = jsonObject.value("choice").toArray();
-      foreach (auto choice, choices) {
-        QString type = "";
-        if (choice.isObject()) {
-          QJsonObject choiceObject = choice.toObject();
-          if (choiceObject.contains("$type")) {
-            type = choiceObject.value("$type").toString();
-          }
-          if (choiceObject.contains("$value")) {
-            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
-          }
-        } else {
-          mChoices.append(qMakePair(choice.toString(), type));
-        }
-      }
-    }
-  }
-
-  QStringList Choices::getChoices() const
-  {
-    QStringList choices;
-    foreach (Choice choice, mChoices) {
-      choices.append(choice.first);
-    }
-    return choices;
-  }
-
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -1462,6 +2228,12 @@ namespace ModelInstance
     deserialize(jsonObject);
   }
 
+  Extend::Extend(Model *pParentModel, const QCborMap &cborMap)
+    : Element(pParentModel)
+  {
+    deserialize(cborMap);
+  }
+
   void Extend::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("modifiers")) {
@@ -1477,6 +2249,26 @@ namespace ModelInstance
         mBaseClass = jsonObject.value("baseClass").toString();
       } else if (jsonObject.value("baseClass").isObject()) {
         mpModel = new Model(jsonObject.value("baseClass").toObject(), this);
+        mBaseClass = mpModel->getName();
+      }
+    }
+  }
+
+  void Extend::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("modifiers"))) {
+      mModifier.deserialize(cborMap.value("modifiers"));
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
+    }
+
+    if (cborMap.contains(QString("baseClass"))) {
+      if (cborMap.value("baseClass").isString()) {
+        mBaseClass = cborMap.value("baseClass").toString();
+      } else if (cborMap.value("baseClass").isMap()) {
+        mpModel = new Model(cborMap.value("baseClass").toMap(), this);
         mBaseClass = mpModel->getName();
       }
     }
@@ -1514,6 +2306,12 @@ namespace ModelInstance
     : Element(pParentModel)
   {
     deserialize(jsonObject);
+  }
+
+  Component::Component(Model *pParentModel, const QCborMap &cborMap)
+    : Element(pParentModel)
+  {
+    deserialize(cborMap);
   }
 
   void Component::deserialize(const QJsonObject &jsonObject)
@@ -1578,6 +2376,68 @@ namespace ModelInstance
     }
   }
 
+  void Component::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("name"))) {
+      mName = cborMap.value("name").toString();
+    }
+
+    if (cborMap.contains(QString("condition"))) {
+      mCondition = cborMap.value("condition").toBool(true);
+    }
+
+    if (cborMap.contains(QString("type"))) {
+      if (cborMap.value("type").isString()) {
+        mType = cborMap.value("type").toString();
+      } else if (cborMap.value("type").isMap()) {
+        mpModel = new Model(cborMap.value("type").toMap(), this);
+        mType = mpModel->getName();
+      }
+    }
+
+    if (cborMap.contains(QString("modifiers"))) {
+      mModifier.deserialize(cborMap.value("modifiers"));
+    }
+
+    if (cborMap.contains(QString("value"))) {
+      QCborMap valueObject = cborMap.value("value").toMap();
+
+      if (valueObject.contains(QString("value"))) {
+        try {
+          mBinding.deserialize(valueObject.value("value"));
+          mBindingForReset = mBinding;
+        } catch (const std::exception &e) {
+          qDebug() << "Failed to deserialize json: " << valueObject.value("value");
+          qDebug() << e.what();
+        }
+      } else if (valueObject.contains(QString("binding"))) {
+        try {
+          mBinding.deserialize(valueObject.value("binding"));
+          mBindingForReset = mBinding;
+        } catch (const std::exception &e) {
+          qDebug() << "Failed to deserialize json: " << valueObject.value("binding");
+          qDebug() << e.what();
+        }
+      }
+    }
+
+    if (cborMap.contains(QString("dims"))) {
+      mDims.deserialize(cborMap.value("dims").toMap());
+    }
+
+    if (cborMap.contains(QString("prefixes"))) {
+      mpPrefixes->deserialize(cborMap.value("prefixes").toMap());
+    }
+
+    if (cborMap.contains(QString("comment"))) {
+      mComment = cborMap.value("comment").toString();
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
+    }
+  }
+
   /*!
    * \brief Component::getQualifiedName
    * Returns the qualified name of the component.
@@ -1606,6 +2466,14 @@ namespace ModelInstance
     mpParentModel = pParentModel;
     mIsShortClassDefinition = false;
     deserialize(jsonObject);
+  }
+
+  ReplaceableClass::ReplaceableClass(Model *pParentModel, const QCborMap &cborMap)
+    : Element(pParentModel)
+  {
+    mpParentModel = pParentModel;
+    mIsShortClassDefinition = false;
+    deserialize(cborMap);
   }
 
   void ReplaceableClass::deserialize(const QJsonObject &jsonObject)
@@ -1640,6 +2508,38 @@ namespace ModelInstance
     }
   }
 
+  void ReplaceableClass::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("name"))) {
+      mName = cborMap.value("name").toString();
+    }
+
+    if (cborMap.contains(QString("prefixes"))) {
+      mpPrefixes->deserialize(cborMap.value("prefixes").toMap());
+    }
+
+    if (cborMap.contains(QString("baseClass"))) {
+      mIsShortClassDefinition = true;
+      mBaseClass = cborMap.value("baseClass").toString();
+    }
+
+    if (cborMap.contains(QString("dims"))) {
+      mDims.deserialize(cborMap.value("dims").toMap());
+    }
+
+    if (cborMap.contains(QString("modifiers"))) {
+      mModifier.deserialize(cborMap.value("modifiers"));
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
+    }
+
+    if (cborMap.contains(QString("source"))) {
+      mSource.deserialize(cborMap.value("source").toMap());
+    }
+  }
+
   QString ReplaceableClass::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
@@ -1665,6 +2565,20 @@ namespace ModelInstance
       QJsonArray subscripts = jsonObject.value("subscripts").toArray();
       foreach (QJsonValue subscript, subscripts) {
         mSubScripts.append(QString::number(subscript.toInt()));
+      }
+    }
+  }
+
+  void Part::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("name"))) {
+      mName = cborMap.value("name").toString();
+    }
+
+    if (cborMap.contains(QString("subscripts"))) {
+      QCborArray subscripts = cborMap.value("subscripts").toArray();
+      foreach (QCborValue subscript, subscripts) {
+        mSubScripts.append(QString::number(subscript.toInteger()));
       }
     }
   }
@@ -1695,6 +2609,22 @@ namespace ModelInstance
       foreach (QJsonValue part, parts) {
         Part partObject;
         partObject.deserialize(part.toObject());
+        mParts.append(partObject);
+      }
+    }
+  }
+
+  void Connector::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("$kind"))) {
+      mKind = cborMap.value("$kind").toString();
+    }
+
+    if (cborMap.contains(QString("parts"))) {
+      QCborArray parts = cborMap.value("parts").toArray();
+      foreach (QCborValue part, parts) {
+        Part partObject;
+        partObject.deserialize(part.toMap());
         mParts.append(partObject);
       }
     }
@@ -1734,6 +2664,23 @@ namespace ModelInstance
 
     if (jsonObject.contains("annotation")) {
       mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
+    }
+  }
+
+  void Connection::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("lhs"))) {
+      mpStartConnector = std::make_unique<Connector>();
+      mpStartConnector->deserialize(cborMap.value("lhs").toMap());
+    }
+
+    if (cborMap.contains(QString("rhs"))) {
+      mpEndConnector = std::make_unique<Connector>();
+      mpEndConnector->deserialize(cborMap.value("rhs").toMap());
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
     }
   }
 
@@ -1781,6 +2728,34 @@ namespace ModelInstance
     }
   }
 
+  void Transition::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("arguments"))) {
+      QCborArray arguments = cborMap.value("arguments").toArray();
+      if (arguments.size() > 6) {
+        if (arguments.at(0).isMap()) {
+          mpStartConnector = std::make_unique<Connector>();
+          mpStartConnector->deserialize(arguments.at(0).toMap());
+        }
+
+        if (arguments.at(1).isMap()) {
+          mpEndConnector = std::make_unique<Connector>();
+          mpEndConnector->deserialize(arguments.at(1).toMap());
+        }
+
+        mCondition = arguments.at(2).toBool();
+        mImmediate = arguments.at(3).toBool();
+        mReset = arguments.at(4).toBool();
+        mSynchronize = arguments.at(5).toBool();
+        mPriority = arguments.at(6).toInteger();
+      }
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
+    }
+  }
+
   QString Transition::toString() const
   {
     QStringList transitionArgs;
@@ -1818,26 +2793,26 @@ namespace ModelInstance
     }
   }
 
+  void InitialState::deserialize(const QCborMap &cborMap)
+  {
+    if (cborMap.contains(QString("arguments"))) {
+      QCborArray arguments = cborMap.value("arguments").toArray();
+      if (!arguments.isEmpty()) {
+        if (arguments.at(0).isMap()) {
+          mpStartConnector = std::make_unique<Connector>();
+          mpStartConnector->deserialize(arguments.at(0).toMap());
+        }
+      }
+    }
+
+    if (cborMap.contains(QString("annotation"))) {
+      mpAnnotation->deserialize(cborMap.value("annotation").toMap());
+    }
+  }
+
   QString InitialState::toString() const
   {
     return "initialState(" % mpStartConnector->getName() % ")";
-  }
-
-  IconDiagramMap::IconDiagramMap()
-  {
-    mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mPrimitivesVisible = true;
-  }
-
-  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("extent")) {
-      mExtent.deserialize(jsonObject.value("extent"));
-    }
-
-    if (jsonObject.contains("primitivesVisible")) {
-      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
-    }
   }
 
 }
