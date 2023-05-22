@@ -1658,19 +1658,14 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
         }
       }
     } else {
-      // If class is top level then simply read its file contents.
-      if (pLibraryTreeItem->isTopLevel()) {
-        pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
-      } else {
-        // If class is nested in a class and nested class is saved in the same file as parent.
-        if (pLibraryTreeItem->isInPackageOneFile()) {
-          LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-          if (pParentLibraryTreeItem) {
-            readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this));
-          }
-        } else {
-          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
+      // If class is nested in a class and nested class is saved in the same file as parent.
+      if (pLibraryTreeItem->isInPackageOneFile()) {
+        LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+        if (pParentLibraryTreeItem) {
+          readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this));
         }
+      } else {
+        pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
       }
     }
   }
