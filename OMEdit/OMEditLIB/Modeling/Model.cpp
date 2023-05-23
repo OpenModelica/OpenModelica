@@ -1056,6 +1056,14 @@ namespace ModelInstance
     }
   }
 
+  QString Model::getRootType() const
+  {
+    if (isDerivedType() && mElements.size() > 0) {
+      return mElements.at(0)->getRootType();
+    }
+    return mName;
+  }
+
   bool Model::isConnector() const
   {
     if (isExpandableConnector() || (mRestriction.compare(QStringLiteral("connector")) == 0)) {
@@ -1077,6 +1085,50 @@ namespace ModelInstance
   bool Model::isType() const
   {
     return (mRestriction.compare(QStringLiteral("type")) == 0);
+  }
+
+  /*!
+   * \brief Model::isDerivedType
+   * Returns true if the class is a type or a class derived from a type, otherwise false.
+   * \return
+   */
+  bool Model::isDerivedType() const
+  {
+    if (isType()) return true;
+
+    if (mElements.size() > 0 && mElements[0]->isExtend()) {
+      if (mElements[0]->getModel()) {
+        return mElements[0]->getModel()->isDerivedType();
+      } else {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /*!
+   * \brief Model::getDirection
+   * Returns the direction of the model, either from the declaration or in the
+   * case of a short class definition from the extended class.
+   * \return
+   */
+  QString Model::getDirection() const
+  {
+    QString dir;
+
+    if (mpPrefixes) {
+      dir = mpPrefixes->getDirection();
+    }
+
+    if (dir.isEmpty() && mElements.size() == 1 && mElements.at(0)->isExtend()) {
+      auto m = mElements.at(0)->getModel();
+      if (m) {
+        dir = m->getDirection();
+      }
+    }
+
+    return dir;
   }
 
   void Model::readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon)
@@ -1115,6 +1167,25 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Model::getComponents
+   * Returns all components of the model, including inherited ones.
+   */
+  QList<Element *> Model::getComponents() const
+  {
+    QList<Element *> comps;
+
+    foreach (auto pElement, mElements) {
+      if (pElement->isExtend() && pElement->getModel()) {
+        comps.append(pElement->getModel()->getComponents());
+      } else if (pElement->isComponent()) {
+        comps.append(pElement);
+      }
+    }
+
+    return comps;
+  }
+
   bool Model::isParameterConnectorSizing(const QString &parameter)
   {
     foreach (auto pElement, mElements) {
@@ -1126,6 +1197,98 @@ namespace ModelInstance
       }
     }
     return false;
+  }
+
+  bool Model::isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const
+  {
+    const Element *lhs = lookupElement(lhsConnector);
+    const Element *rhs = lookupElement(rhsConnector);
+
+    if (!lhs || !rhs) {
+      qDebug() << "Failed to find connector " << (lhs ? rhsConnector : lhsConnector).getName();
+      return true;
+    }
+
+    // An input should not be connected to an input, or an output to an output.
+    auto dir = lhs->getDirection();
+    if (!dir.isEmpty() && dir == rhs->getDirection()) {
+      return false;
+    }
+
+    // Check that the connectors are type compatible.
+    Model *lhs_model = lhs->getModel();
+    Model *rhs_model = rhs->getModel();
+
+    if (!lhs_model || !rhs_model) return false;
+
+    return lhs_model->isTypeCompatibleWith(*rhs_model);
+  }
+
+  bool Model::isTypeCompatibleWith(const Model &other) const
+  {
+    if (isExpandableConnector() || other.isExpandableConnector()) {
+      // Don't type check expandable connectors, since we don't really know what
+      // they contain here.
+      return true;
+    } else if (isConnector() && other.isConnector()) {
+      if (isDerivedType()) {
+        // If the connectors are derived from types, then they must have the same root type.
+        return getRootType() == other.getRootType();
+      } else {
+        // If they are not types, then check the components they contain.
+        auto comps = getComponents();
+
+        // The connectors must contain the same number of components.
+        if (comps.size() != other.getComponents().size()) return false;
+
+        // The connectors must contain the same named components, but the order
+        // doesn't matter.
+        foreach (auto e1, comps) {
+          if (e1->isComponent()) {
+            auto e2 = other.lookupElement(e1->getName());
+
+            if (e2) {
+              // The component exists, check that it's type compatible with e1.
+              auto m1 = e1->getModel();
+              auto m2 = e2->getModel();
+
+              if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+                return false;
+              }
+
+              // The components should not have the same input/output prefix.
+              auto dir = e1->getDirection();
+              if (!dir.isEmpty() && dir == e2->getDirection()) {
+                return false;
+              }
+            } else {
+              // The component doesn't exist, the connectors are not type compatible.
+              return false;
+            }
+          }
+        }
+      }
+    } else if (isType()) {
+      // Types, check that they're derived from the same basic type.
+      return getRootType() == other.getRootType();
+    } else {
+      // Any other type of class, check that their components are type compatible.
+      auto comps1 = getComponents();
+      auto comps2 = other.getComponents();
+
+      if (comps1.size() != comps2.size()) return false;
+
+      for (int i = 0; i < comps1.size(); ++i) {
+        auto m1 = comps1.at(i)->getModel();
+        auto m2 = comps2.at(i)->getModel();
+
+        if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   QString Model::getParameterValue(const QString &parameter, QString &typeName)
@@ -1190,6 +1353,45 @@ namespace ModelInstance
     }
 
     return expression;
+  }
+
+  const Element *Model::lookupElement(const QString &name) const
+  {
+    foreach (auto pElement, mElements) {
+      if (pElement->isExtend() && pElement->getModel()) {
+        auto e = pElement->getModel()->lookupElement(name);
+        if (e) return e;
+      } else if (pElement->getName() == name) {
+        return pElement;
+      }
+    }
+
+    return nullptr;
+  }
+
+  Element *Model::lookupElement(const QString &name)
+  {
+    return const_cast<Element*>(const_cast<const Model*>(this)->lookupElement(name));
+  }
+
+  const Element *Model::lookupElement(const Name &name) const
+  {
+    const Element *e = nullptr;
+    const Model *model = this;
+
+    foreach (const auto &part, name.getParts()) {
+      if (!model) break;
+      e = model->lookupElement(part.getName(false));
+      if (!e) break;
+      model = e->getModel();
+    }
+
+    return e;
+  }
+
+  Element *Model::lookupElement(const Name &name)
+  {
+    return const_cast<Element*>(const_cast<const Model*>(this)->lookupElement(name));
   }
 
   void Model::initialize()
@@ -1439,6 +1641,27 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Element::getDirection
+   * Returns the direction of the element, either from the element itself or
+   * from its type.
+   * \return
+   */
+  QString Element::getDirection() const
+  {
+    QString dir;
+
+    if (mpPrefixes) {
+      dir = mpPrefixes->getDirection();
+    }
+
+    if (dir.isEmpty() && mpModel) {
+      dir = mpModel->getDirection();
+    }
+
+    return dir;
+  }
+
   QString Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
   {
     QString modifierValue = "";
@@ -1498,7 +1721,7 @@ namespace ModelInstance
 
   QString Extend::getRootType() const
   {
-    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+    if (mpModel && mpModel->isDerivedType() && mpModel->getElements().size() > 0) {
       return mpModel->getElements().at(0)->getRootType();
     }
     return mBaseClass;
@@ -1594,7 +1817,7 @@ namespace ModelInstance
 
   QString Component::getRootType() const
   {
-    if (mpModel && mpModel->isType() && mpModel->getElements().size() > 0) {
+    if (mpModel && mpModel->isDerivedType() && mpModel->getElements().size() > 0) {
       return mpModel->getElements().at(0)->getRootType();
     }
     return mType;
@@ -1655,6 +1878,21 @@ namespace ModelInstance
     mSubScripts.clear();
   }
 
+  Part::Part(const QString &str)
+  {
+    int i = str.indexOf('[');
+
+    if (i < 0) {
+      mName = str;
+    } else {
+      mName = str.left(i);
+
+      for (const auto& sub: str.midRef(i + 1, str.size() - i - 2).split(',')) {
+        mSubScripts.append(sub.toString());
+      }
+    }
+  }
+
   void Part::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("name")) {
@@ -1669,19 +1907,53 @@ namespace ModelInstance
     }
   }
 
-  QString Part::getName() const
+  QString Part::getName(bool includeSubscripts) const
   {
-    if (mSubScripts.isEmpty()) {
+    if (mSubScripts.isEmpty() || !includeSubscripts) {
       return mName;
     } else {
       return mName % "[" % mSubScripts.join(",") % "]";
     }
   }
 
+  Name::Name() = default;
+
+  Name::Name(QString str)
+  {
+    while (!str.isEmpty()) {
+      mParts.append(StringHandler::getFirstWordBeforeDot(str));
+      auto next_str = StringHandler::removeFirstWordAfterDot(str);
+      if (next_str.size() == str.size()) break;
+      str = next_str;
+    }
+  }
+
+  void Name::deserialize(const QJsonArray &jsonObject)
+  {
+    foreach (QJsonValue part, jsonObject) {
+      Part partObject;
+      partObject.deserialize(part.toObject());
+      mParts.append(partObject);
+    }
+  }
+
+  QString Name::getName() const
+  {
+    return getNameParts().join(".");
+  }
+
+  QStringList Name::getNameParts() const
+  {
+    QStringList parts;
+    foreach (auto part, mParts) {
+      parts.append(part.getName());
+    }
+    return parts;
+  }
+
   Connector::Connector()
   {
     mKind = "";
-    mParts.clear();
   }
 
   void Connector::deserialize(const QJsonObject &jsonObject)
@@ -1691,27 +1963,18 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("parts")) {
-      QJsonArray parts = jsonObject.value("parts").toArray();
-      foreach (QJsonValue part, parts) {
-        Part partObject;
-        partObject.deserialize(part.toObject());
-        mParts.append(partObject);
-      }
+      mName.deserialize(jsonObject.value("parts").toArray());
     }
   }
 
   QString Connector::getName() const
   {
-    return getNameParts().join(".");
+    return mName.getName();
   }
 
   QStringList Connector::getNameParts() const
   {
-    QStringList parts;
-    foreach (auto part, mParts) {
-      parts.append(part.getName());
-    }
-    return parts;
+    return mName.getNameParts();
   }
 
   Connection::Connection(Model *pParentModel)

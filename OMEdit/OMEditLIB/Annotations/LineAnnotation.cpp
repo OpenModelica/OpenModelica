@@ -2468,6 +2468,12 @@ void CreateConnectionDialog::createConnection()
     ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
     mpGraphicsView->getModelWidget()->updateModelText();
+
+    if (!mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
   } else {
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);

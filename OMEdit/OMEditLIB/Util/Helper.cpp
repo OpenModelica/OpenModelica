@@ -754,6 +754,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Please check the Messages Browser for more error specific details.");
     case SAME_COMPONENT_NAME:
       return tr("A component with the name <b>%1</b> already exists or is a Modelica keyword. Please choose another name.");
+    case MISMATCHED_CONNECTORS_IN_CONNECT:
+      return tr("Connectors %1 and %2 are not compatible.");
     case SAME_COMPONENT_CONNECT:
       return tr("You cannot connect a component to itself.");
     case NO_MODELICA_CLASS_OPEN:
