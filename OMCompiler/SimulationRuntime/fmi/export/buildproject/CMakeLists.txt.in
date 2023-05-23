@@ -183,7 +183,7 @@ endif()
 # Zip target creating modelname.fmu
 add_custom_target(create_fmu
     COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target install
-    COMMAND "${CMAKE_COMMAND}" -E tar "cfv" "../${CMAKE_PROJECT_NAME}.fmu" --format=zip
+    COMMAND "${CMAKE_COMMAND}" -E tar "cfv" "../@FMU_TARGET_NAME@.fmu" --format=zip
       "binaries/"
       "resources/"
       "sources/"

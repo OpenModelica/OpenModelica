@@ -141,8 +141,9 @@ uniontype SimCode
     SpatialDistributionInfo spatialInfo;
     list<JacobianMatrix> jacobianMatrices;
     Option<SimulationSettings> simulationSettingsOpt;
-    String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
-    String fmuTargetName;
+    String fileNamePrefix "Prefix for all enerated C files. Usually the model name with dots replaced by underscores.";
+    String fullPathPrefix "Used in FMI where files are generated in a special directory";
+    String fmuTargetName "Name of FMU file <fmuTargetName>.fmu";
     HpcOmSimCode.HpcOmData hpcomData;
     AvlTreeCRToInt.Tree valueReferences "Used in FMI";
     //maps each variable to an array of storage indices (with this information, arrays must not be unrolled) and a list for the array-dimensions
