@@ -72,6 +72,7 @@ protected
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
   import Initialization = NBInitialization;
+  import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
@@ -224,6 +225,7 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
+      (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
       (simplify,           "simplify2"),
@@ -243,6 +245,7 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
+      (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
       (Partitioning.categorize,                                       "Categorize"),
       (Solve.main,                                                    "Solve"),

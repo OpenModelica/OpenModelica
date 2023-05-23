@@ -60,6 +60,9 @@ public
   import BackendDAE = NBackendDAE;
 
 protected
+  // OF imports
+  import DAE;
+
   // NF imports
   import NFFlatten.FunctionTree;
 
@@ -74,6 +77,7 @@ protected
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
   import NBEvents.EventInfo;
+  import Inline = NBInline;
 
   // Util imports
   import BuiltinSystem = System;
@@ -220,6 +224,16 @@ public
     input output EqData eqData           "Data containing equation pointers";
   end aliasInterface;
 
+//                                 INLINE
+// *************************************************************************
+  partial function inlineInterface
+    "Inline
+     This module is allowed to read, change and add equations. It uses the
+     function tree to evaluate and inline functions."
+    input output EqData eqData                "Data containing equation pointers";
+    input FunctionTree funcTree               "function tree for differentiation (solve)";
+    input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
+  end inlineInterface;
 
 // =========================================================================
 //                         MANDATORY POST-OPT MODULES

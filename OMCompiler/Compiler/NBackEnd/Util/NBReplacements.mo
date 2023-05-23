@@ -44,12 +44,19 @@ protected
   // rename self import
   import Replacements = NBReplacements;
 
+  // OF imports
+  import Absyn;
+
   // NF imports
   import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
+  import NFFunction.Function;
   import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Variable = NFVariable;
 
   // Backend imports
@@ -60,6 +67,9 @@ protected
   import NBVariable.{VarData, VariablePointers};
 
 public
+// =========================================================================
+//                     COMPONENT REFERENCE REPLACEMENT
+// =========================================================================
 
   function single
     "performs a single replacement"
@@ -242,6 +252,153 @@ public
     str := str + StringUtil.headline_4("[dumprepl] Trivial Alias Replacements:") + aliasStr;
     str := str + StringUtil.headline_4("[dumprepl] Nontrivial Alias Replacements:") + nonTrivialStr;
   end simpleToString;
+
+// =========================================================================
+//                     FUNCTION BODY REPLACEMENT
+// =========================================================================
+
+  function replaceFunctions
+    "replaces all function calls in the replacements map with their body expressions,
+    if possible."
+    input output EqData eqData;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+  algorithm
+        // do nothing if replacements are empty
+    if UnorderedMap.isEmpty(replacements) then return; end if;
+
+    eqData := match eqData
+      case EqData.EQ_DATA_SIM() algorithm
+        // we do not want to traverse removed equations, otherwise we could break them
+        eqData.simulation   := EquationPointers.mapExp(eqData.simulation, function applyFuncExp(replacements = replacements));
+        eqData.continuous   := EquationPointers.mapExp(eqData.continuous, function applyFuncExp(replacements = replacements));
+        eqData.discretes    := EquationPointers.mapExp(eqData.discretes, function applyFuncExp(replacements = replacements));
+        eqData.initials     := EquationPointers.mapExp(eqData.initials, function applyFuncExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
+      then eqData;
+
+      case EqData.EQ_DATA_JAC() algorithm
+        eqData.results      := EquationPointers.mapExp(eqData.results, function applyFuncExp(replacements = replacements));
+        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applyFuncExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
+      then eqData;
+
+      case EqData.EQ_DATA_HES() algorithm
+        Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), function applyFuncExp(replacements = replacements)));
+        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applyFuncExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
+      then eqData;
+    end match;
+  end replaceFunctions;
+
+  function applyFuncExp
+    "Needs to be mapped with Expression.map()"
+    input output Expression exp                               "Replacement happens inside this expression";
+    input UnorderedMap<Absyn.Path, Function> replacements     "rules for replacements are stored inside here";
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Function fn;
+        UnorderedMap<ComponentRef, Expression> local_replacements;
+        list<ComponentRef> input_crefs;
+        Expression body_exp;
+
+      case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
+        // use the function from the tree, in case it was changed
+        fn := UnorderedMap.getSafe(fn.path, replacements, sourceInfo());
+
+        // map all the inputs to the arguments and add to local replacement map
+        local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
+        for tpl in List.zip(input_crefs, call.arguments) loop
+          addInputArgTpl(tpl, local_replacements);
+        end for;
+
+        // get the expression from function body (fails if its not a single replacable assignment)
+        body_exp := getFunctionBody(fn);
+
+        // replace input withs arguments in expression
+        body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+      then body_exp;
+
+      else exp;
+    end match;
+  end applyFuncExp;
+
+  function addInputArgTpl
+    input tuple<ComponentRef, Expression> tpl;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    ComponentRef cref;
+    Expression arg;
+    list<Pointer<Variable>> arg_children;
+    list<Expression> children_args;
+    list<ComponentRef> children;
+    Call call;
+    Function fn;
+  algorithm
+    (cref, arg) := tpl;
+    UnorderedMap.add(cref, arg, replacements);
+
+    // also try to add element replacements (throw error if impossible?)
+    //children := BVariable.getRecordChildren(BVariable.getVarPointer(cref));
+    children := ComponentRef.getRecordChildren(cref);
+    if not listEmpty(children) then
+      children_args := match arg
+
+        // if the argument is a cref, get its children
+        case Expression.CREF() algorithm
+          arg_children := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
+        then list(Expression.fromCref(BVariable.getVarName(child)) for child in arg_children);
+
+        // if the argument is a record constructor, map it to its attributes
+        case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) algorithm
+          if Function.isDefaultRecordConstructor(fn) then
+            children_args := call.arguments;
+          elseif Function.isNonDefaultRecordConstructor(fn) then
+            // ToDo: this has to be mapped correctly with the body.
+            //   for non default record constructors its not always the
+            //   case that inputs map 1:1 to attributes
+            children_args := call.arguments;
+          else
+            children_args := {};
+          end if;
+        then children_args;
+
+        else {};
+      end match;
+
+      // check if children and children_args can be mapped to one another
+      if listLength(children) == listLength(children_args) then
+        for child_tpl in List.zip(children, children_args) loop
+          addInputArgTpl(child_tpl, replacements);
+        end for;
+      end if;
+    end if;
+  end addInputArgTpl;
+
+  function getFunctionBody
+    "returns the rhs of the function body if its a single assignment, fails otherwise"
+    input Function fn;
+    output Expression exp;
+  protected
+    list<Statement> body;
+  algorithm
+    body := Function.getBody(fn);
+    exp := match body
+      local
+        Statement stmt;
+
+      case {stmt as Statement.ASSIGNMENT()} then stmt.rhs;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+          + " failed because the body of the function is not a single assignment:\n"
+          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n")});
+      then fail();
+    end match;
+  end getFunctionBody;
+
 
   annotation(__OpenModelica_Interface="backend");
 end NBReplacements;
