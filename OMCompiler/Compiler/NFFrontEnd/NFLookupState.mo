@@ -45,6 +45,8 @@ import SCodeUtil;
 import System;
 import Class = NFClass;
 import Component = NFComponent;
+import Inst = NFInst;
+import Restriction = NFRestriction;
 
 public
 uniontype LookupStateName
@@ -156,9 +158,23 @@ uniontype LookupState
     input InstNode node;
     output Boolean callable;
   protected
-    SCode.Element def = InstNode.definition(node);
+    InstNode n;
   algorithm
-    callable := SCodeUtil.isRecord(def) or SCodeUtil.isOperator(def) or InstNode.isClockType(node);
+    if not InstNode.isClass(node) then
+      callable := false;
+      return;
+    end if;
+
+    n := InstNode.resolveInner(node);
+    Inst.expand(n);
+
+    callable := match InstNode.restriction(n)
+      case Restriction.RECORD() then true;
+      case Restriction.OPERATOR() then true;
+      case Restriction.ENUMERATION() then true;
+      case Restriction.TYPE() guard InstNode.isEnumerationType(n) then true;
+      else InstNode.isClockType(n);
+    end match;
   end isCallableType;
 
   function isCallableComponent

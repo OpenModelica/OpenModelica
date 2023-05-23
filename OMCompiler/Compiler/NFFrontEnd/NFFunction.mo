@@ -420,7 +420,7 @@ uniontype Function
         SCode.ClassDef cdef;
         Function fn;
         Absyn.ComponentRef cr;
-        InstNode sub_fnNode;
+        InstNode node;
         list<Function> funcs;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
@@ -448,11 +448,24 @@ uniontype Function
         algorithm
           for p in cdef.pathLst loop
             cr := AbsynUtil.pathToCref(p);
-            (_,sub_fnNode,specialBuiltin) := instFunction(cr, fnNode, context, info);
-            for f in getCachedFuncs(sub_fnNode) loop
+            (_,node,specialBuiltin) := instFunction(cr, fnNode, context, info);
+            for f in getCachedFuncs(node) loop
               fnNode := InstNode.cacheAddFunc(fnNode, f, specialBuiltin);
             end for;
           end for;
+        then
+          (fnNode, false);
+
+      // An enumeration type name used as an operator, create a conversion
+      // operator EnumTypeName(Integer) => EnumTypeName for it.
+      case SCode.CLASS()
+        guard InstNode.isEnumerationType(fnNode)
+        algorithm
+          node := makeEnumConversionOp(fnNode);
+          node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), node);
+          node := instFunction3(node, context, info);
+          fn := new(fnPath, node);
+          fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
         then
           (fnNode, false);
 
@@ -498,6 +511,129 @@ uniontype Function
     InstNode.cacheInitFunc(fnNode);
     Inst.instExpressions(fnNode, context = context);
   end instFunction3;
+
+  function makeEnumConversionOp
+    "Creates an EnumTypeName(index) conversion operator."
+    input InstNode enumNode;
+    output InstNode fnNode;
+  protected
+    SCode.ClassDef def, fn_def;
+    SCode.Element elem, fn_elem;
+    list<SCode.Element> params;
+    list<SCode.Statement> stmts;
+    SourceInfo info = InstNode.info(enumNode);
+    String enum_name = InstNode.name(enumNode);
+  algorithm
+    elem := InstNode.definition(InstNode.resolveInner(Class.lastBaseClass(enumNode)));
+
+    // Construct an SCode definition for the conversion operator.
+    fn_def := match elem
+      case SCode.Element.CLASS(classDef = def as SCode.ClassDef.ENUMERATION())
+        algorithm
+          // function E
+          params := {
+            // input Integer index;
+            SCode.Element.COMPONENT("index",
+              SCode.defaultPrefixes,
+              SCode.defaultInputAttr,
+              Absyn.TypeSpec.TPATH(Absyn.Path.IDENT("Integer"), NONE()),
+              SCode.NOMOD(),
+              SCode.noComment,
+              NONE(),
+              info
+            ),
+            // output E value;
+            SCode.Element.COMPONENT("value",
+              SCode.defaultPrefixes,
+              SCode.defaultOutputAttr,
+              Absyn.TypeSpec.TPATH(Absyn.Path.IDENT(enum_name), NONE()),
+              SCode.NOMOD(),
+              SCode.noComment,
+              NONE(),
+              info
+            )
+          };
+          // algorithm
+          stmts := {
+            // assert(index >= 1 and index <= size(E, 1),
+            //        "Enumeration index '" + String(index) + "' out of bounds in call to E()");
+            SCode.Statement.ALG_ASSERT(
+              Absyn.Exp.LBINARY(
+                Absyn.Exp.RELATION(
+                  Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("index", {})),
+                  Absyn.Operator.GREATEREQ(),
+                  Absyn.Exp.INTEGER(1)
+                ),
+                Absyn.Operator.AND(),
+                Absyn.Exp.RELATION(
+                  Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("index", {})),
+                  Absyn.Operator.LESSEQ(),
+                  Absyn.Exp.INTEGER(listLength(def.enumLst))
+                )
+              ),
+              Absyn.Exp.BINARY(
+                Absyn.Exp.STRING("Enumeration index '"),
+                Absyn.Operator.ADD(),
+                Absyn.Exp.BINARY(
+                  Absyn.Exp.CALL(
+                    Absyn.ComponentRef.CREF_IDENT("String", {}),
+                    Absyn.FunctionArgs.FUNCTIONARGS(
+                      {Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("index", {}))},
+                      {}
+                    ),
+                    {}
+                  ),
+                  Absyn.Operator.ADD(),
+                  Absyn.Exp.STRING("' out of bounds in call to " + enum_name + "()")
+                )
+              ),
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_QUAL(
+                "AssertionLevel", {}, Absyn.ComponentRef.CREF_IDENT("error", {}))),
+              SCode.noComment,
+              info
+            ),
+            // value := {E.literal1, E.literal2, ...}[index];
+            SCode.Statement.ALG_ASSIGN(
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("value", {})),
+              Absyn.Exp.SUBSCRIPTED_EXP(
+                Absyn.Exp.ARRAY(
+                  list(Absyn.Exp.CREF(Absyn.ComponentRef.CREF_QUAL(enum_name,
+                          {}, Absyn.ComponentRef.CREF_IDENT(e.literal, {}))) for
+                      e in def.enumLst)
+                ),
+                {Absyn.Subscript.SUBSCRIPT(Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("index", {})))}
+              ),
+              SCode.noComment,
+              info
+            )
+          };
+          // end E;
+        then
+          SCode.ClassDef.PARTS(params, {}, {}, {SCode.AlgorithmSection.ALGORITHM(stmts)}, {}, {}, {}, NONE());
+
+      else
+        fail();
+    end match;
+
+    // Construct an SCode element from the definition. The element name is
+    // prefixed with $ since we use the enumeration type inside the function,
+    // and the lookup would otherwise find the function instead. But the flat
+    // model will show the non-prefixed name since the name of the function is
+    // defined when creating the Function object.
+    fn_elem := SCode.Element.CLASS(
+      "$" + enum_name,
+      SCode.defaultPrefixes,
+      SCode.Encapsulated.NOT_ENCAPSULATED(),
+      SCode.Partial.NOT_PARTIAL(),
+      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+      fn_def,
+      SCode.Comment.COMMENT(NONE(), SOME("Automatically generated conversion operator for " + enum_name)),
+      info
+    );
+
+    // Create a node from the SCode element.
+    fnNode := InstNode.new(fn_elem, InstNode.parent(enumNode));
+  end makeEnumConversionOp;
 
   function getCachedFuncs
     input InstNode inNode;

@@ -403,6 +403,8 @@ enum4.mo \
 enum5.mo \
 enum7.mo \
 enum8.mo \
+EnumConversion1.mo \
+EnumConversion2.mo \
 EnumInvalidLiteralName1.mo \
 EnumRangeBinding1.mo \
 eq1.mo \

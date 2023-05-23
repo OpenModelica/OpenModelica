@@ -537,6 +537,16 @@ algorithm
   end match;
 end isOperator;
 
+public function isEnumeration
+  input SCode.Element el;
+  output Boolean res;
+algorithm
+  res := match el
+    case SCode.CLASS(restriction = SCode.R_ENUMERATION()) then true;
+    else false;
+  end match;
+end isEnumeration;
+
 public function className
   "Returns the class name of a Class."
   input SCode.Element inClass;

@@ -1956,6 +1956,11 @@ uniontype InstNode
     end match;
   end isModel;
 
+  function isEnumerationType
+    input InstNode node;
+    output Boolean isEnum = isClass(node) and Class.isEnumeration(getClass(resolveInner(node)));
+  end isEnumerationType;
+
   function hasBinding
     input InstNode node;
     output Boolean hasBinding;

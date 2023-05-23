@@ -2451,6 +2451,7 @@ algorithm
       list<list<Expression>> expll;
       Absyn.Exp absynExp1;
       array<Expression> arr;
+      list<Subscript> subs;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
@@ -2549,6 +2550,14 @@ algorithm
       then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.END() then Expression.END();
+
+    case Absyn.Exp.SUBSCRIPTED_EXP()
+      then Expression.SUBSCRIPTED_EXP(
+        instExp(absynExp.exp, scope, context, info),
+        list(instSubscript(Subscript.RAW_SUBSCRIPT(s), scope, context, info) for s in absynExp.subscripts),
+        Type.UNKNOWN(),
+        false
+      );
 
     case Absyn.Exp.EXPRESSIONCOMMENT() then instExp(absynExp.exp, scope, context, info);
 

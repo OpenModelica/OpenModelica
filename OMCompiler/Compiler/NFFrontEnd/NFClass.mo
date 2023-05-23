@@ -649,6 +649,18 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     output Boolean isFunction = Restriction.isFunction(restriction(cls));
   end isFunction;
 
+  function isEnumeration
+    input Class cls;
+    output Boolean isEnum;
+  algorithm
+    isEnum := match cls
+      case PARTIAL_BUILTIN(ty = Type.ENUMERATION()) then true;
+      case EXPANDED_DERIVED() then isEnumeration(InstNode.getClass(cls.baseClass));
+      case TYPED_DERIVED() then isEnumeration(InstNode.getClass(cls.baseClass));
+      else false;
+    end match;
+  end isEnumeration;
+
   function isExternalFunction
     input Class cls;
     output Boolean isExtFunc;
