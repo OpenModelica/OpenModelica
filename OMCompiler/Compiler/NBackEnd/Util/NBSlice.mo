@@ -29,8 +29,8 @@
 *
 */
 encapsulated uniontype NBSlice<T>
-" file:         NBSlicingUtil.mo
-  package:      NBSlicingUtil
+" file:         NBSlice.mo
+  package:      NBSlice
   description:  This file contains util functions for slicing operations.
 "
 

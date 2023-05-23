@@ -1814,6 +1814,16 @@ uniontype Function
     end match;
   end isDefaultRecordConstructor;
 
+  function isNonDefaultRecordConstructor
+    input Function fn;
+    output Boolean isConstructor;
+  algorithm
+    isConstructor := match fn.path
+      case Absyn.Path.QUALIFIED(path = Absyn.Path.QUALIFIED(name = "'constructor'")) then true;
+      else false;
+    end match;
+  end isNonDefaultRecordConstructor;
+
   function toDAE
     input Function fn;
     input DAE.FunctionDefinition def;

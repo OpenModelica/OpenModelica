@@ -5151,6 +5151,22 @@ algorithm
   end match;
 end convertInlineTypeToBool;
 
+public function inlineTypeEqual
+  input DAE.InlineType it1;
+  input DAE.InlineType it2;
+  output Boolean b;
+algorithm
+  b := match (it1, it2)
+    case (DAE.NORM_INLINE(), DAE.NORM_INLINE()) then true;
+    case (DAE.BUILTIN_EARLY_INLINE(), DAE.BUILTIN_EARLY_INLINE()) then true;
+    case (DAE.EARLY_INLINE(), DAE.EARLY_INLINE()) then true;
+    case (DAE.DEFAULT_INLINE(), DAE.DEFAULT_INLINE()) then true;
+    case (DAE.NO_INLINE(), DAE.NO_INLINE()) then true;
+    case (DAE.AFTER_INDEX_RED_INLINE(), DAE.AFTER_INDEX_RED_INLINE()) then true;
+    else false;
+  end match;
+end inlineTypeEqual;
+
 public function daeElements "Retrieve the elements from a DAEList"
   input DAE.DAElist dae;
   output list<DAE.Element> elts;

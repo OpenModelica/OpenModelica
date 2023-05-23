@@ -42,6 +42,7 @@ protected
   import Expression = NFExpression;
   import NFPrefixes.{Variability, Purity, Visibility};
   import Class = NFClass;
+  import NFClassTree.ClassTree;
   import List;
   import Prefixes = NFPrefixes;
   import MetaModelica.Dangerous.*;
@@ -2112,6 +2113,25 @@ public
       else {};
     end match;
   end iterate;
+
+  function getRecordChildren
+    input ComponentRef cref;
+    output list<ComponentRef> children = {};
+  protected
+    list<InstNode> children_nodes = {};
+  algorithm
+    if Type.isComplex(getComponentType(cref)) then
+      children_nodes := match cref
+        case CREF() then arrayList(ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(cref.node))))));
+        else {};
+      end match;
+    end if;
+
+    if not listEmpty(children_nodes) then
+      children := list(prefixCref(node, InstNode.getType(node), {}, cref) for node in children_nodes);
+    end if;
+  end getRecordChildren;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

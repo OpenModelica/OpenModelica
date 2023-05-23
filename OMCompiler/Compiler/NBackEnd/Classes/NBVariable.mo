@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.BackendInfo;
+  import NFBackendExtension.{BackendInfo, VariableKind};
   import NFBinding.Binding;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -57,7 +57,6 @@ public
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
-  import NFBackendExtension.VariableKind;
 
   // Backend Imports
   import NBAdjacency.Mapping;
@@ -88,7 +87,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
-    BackendExtension.VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -509,7 +508,7 @@ public
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
     input output Pointer<Variable> varPointer;
-    input BackendExtension.VariableKind varKind;
+    input VariableKind varKind;
   protected
     Variable var;
   algorithm
@@ -710,6 +709,20 @@ public
     end match;
   end getDiscreteStateCref;
 
+  function getRecordChildren
+    "returns all children of the variable if its a record, otherwise returns empty list"
+    input Pointer<Variable> var;
+    output list<Pointer<Variable>> children;
+  algorithm
+    children := match Pointer.access(var)
+      local
+        VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD()))
+      then varKind.children;
+      else {};
+    end match;
+  end getRecordChildren;
+
   function makeDummyState
     input Pointer<Variable> varPointer;
     output Pointer<Variable> derivative;
@@ -719,7 +732,7 @@ public
     var := Pointer.access(varPointer);
     var.backendinfo := match BackendExtension.BackendInfo.getVarKind(var.backendinfo)
       local
-        BackendExtension.VariableKind varKind;
+        VariableKind varKind;
         Variable der_var;
 
       case varKind as BackendExtension.STATE(derivative = SOME(derivative)) algorithm
@@ -1152,7 +1165,7 @@ public
         Variable var;
 
       case var as Variable.VARIABLE()
-      then BackendExtension.VariableKind.isTimeDependent(BackendExtension.BackendInfo.getVarKind(var.backendinfo));
+      then VariableKind.isTimeDependent(BackendExtension.BackendInfo.getVarKind(var.backendinfo));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
