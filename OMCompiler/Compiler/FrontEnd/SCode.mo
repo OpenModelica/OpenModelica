@@ -618,12 +618,24 @@ public constant Prefixes defaultPrefixes =
     Absyn.NOT_INNER_OUTER(),
     NOT_REPLACEABLE());
 
+public constant Prefixes defaultProtectedPrefixes =
+  PREFIXES(
+    PROTECTED(),
+    NOT_REDECLARE(),
+    NOT_FINAL(),
+    Absyn.NOT_INNER_OUTER(),
+    NOT_REPLACEABLE());
+
 public constant Attributes defaultVarAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.BIDIR(), Absyn.NONFIELD());
 public constant Attributes defaultParamAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), PARAM(), Absyn.BIDIR(), Absyn.NONFIELD());
 public constant Attributes defaultConstAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR(), Absyn.NONFIELD());
+public constant Attributes defaultInputAttr =
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.INPUT(), Absyn.NONFIELD());
+public constant Attributes defaultOutputAttr =
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.OUTPUT(), Absyn.NONFIELD());
 
 annotation(__OpenModelica_Interface="frontend");
 end SCode;

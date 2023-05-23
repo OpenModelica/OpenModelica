@@ -781,7 +781,6 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record END "array access operator for last element, e.g. a{end}:=1;"
   end END;
 
-
   record CODE  "Modelica AST Code constructors - OpenModelica extension"
     CodeNode code;
   end CODE;
@@ -821,6 +820,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp exp;
     list<String> commentsAfter;
   end EXPRESSIONCOMMENT;
+
+  record SUBSCRIPTED_EXP
+    Exp exp;
+    list<Subscript> subscripts;
+  end SUBSCRIPTED_EXP;
 
 end Exp;
 

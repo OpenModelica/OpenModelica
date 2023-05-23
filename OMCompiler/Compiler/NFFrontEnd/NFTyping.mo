@@ -1442,6 +1442,7 @@ protected
   list<Subscript> subs, expanded_subs;
   list<Expression> fill_dims;
   Boolean split;
+  Variability subs_var;
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := exp;
 
@@ -1490,10 +1491,10 @@ algorithm
       end if;
     end if;
   else
-    // Non-split subscripted expressions are assumed to already be typed.
-    // TODO: Why are they already typed?
-    variability := Expression.variability(exp);
-    purity := Expression.purity(exp);
+    (e, ty, variability, purity) := typeExp(e, context, info);
+    (subs, subs_var) := typeSubscripts(subs, ty, ComponentRef.EMPTY(), context, info);
+    ty := Type.subscript(ty, subs);
+    exp := Expression.SUBSCRIPTED_EXP(e, subs, ty, false);
   end if;
 end typeSubscriptedExp;
 
