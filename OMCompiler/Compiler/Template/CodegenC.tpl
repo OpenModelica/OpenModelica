@@ -5151,7 +5151,7 @@ template crefToPrintfArg(ComponentRef cr)
 ::=
   match crefType(cr)
   case "modelica_real" then "%g"
-  case "modelica_integer" then "%ld"
+  case "modelica_integer" then "\"OMC_INT_FORMAT\""
   case "modelica_boolean" then "%d"
   case "modelica_string" then "%s"
   else error(sourceInfo(), 'Do not know what printf argument to give <%crefStr(cr)%>')
