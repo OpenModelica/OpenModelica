@@ -165,7 +165,7 @@ The CMake compilation accepts the following settings:
 
 
 Then use CMake to configure, build and install the FMU.
-To repack the FMU after installation use custom target ``create_zip``.
+To repack the FMU after installation use custom target ``create_fmu``.
 
 For example to re-compile the FMU with cmake and runtime dependencies use:
 
@@ -176,7 +176,7 @@ For example to re-compile the FMU with cmake and runtime dependencies use:
     $ cmake -S . -B build_cmake \
       -D RUNTIME_DEPENDENCIES_LEVEL=modelica \
       -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
-    $ cmake --build build_cmake --target install create_zip --parallel
+    $ cmake --build build_cmake --target create_fmu --parallel
 
 .. _fmitlm-export-options :
 

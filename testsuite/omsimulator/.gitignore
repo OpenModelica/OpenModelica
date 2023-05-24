@@ -1,2 +1,13 @@
 *.bin
+*.c
+*.fmu
+*.fmutmp
+*.h
+*.libs
 *.log
+*.lua
+*.makefile
+*.mat
+*.xml
+DualMassOscillator.CoupledSystem
+temp-*/
