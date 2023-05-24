@@ -74,9 +74,12 @@ size_t omc_fwrite(void * buffer, size_t size, size_t count, FILE * stream);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 typedef struct _stat omc_stat_t;
+#define omc_fseek _fseeki64
 #else
 typedef struct stat omc_stat_t;
-#endif
+#define omc_fseek fseek
+#endif // defined(__MINGW32__) || defined(_MSC_VER)
+
 int omc_stat(const char *filename, omc_stat_t *statbuf);
 int omc_lstat(const char *filename, omc_stat_t *statbuf);
 
@@ -94,7 +97,7 @@ int omc_rename(const char *source, const char *dest);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 wchar_t* longabspath(wchar_t* unicodePath);
-#endif
+#endif // defined(__MINGW32__) || defined(_MSC_VER)
 
 #ifdef __cplusplus
 }
