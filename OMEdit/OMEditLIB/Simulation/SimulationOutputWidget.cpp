@@ -278,8 +278,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mGeneratedFilesList << "%1.makefile";
   // cpp-runtime generated files
   if (simulationOptions.getTargetLanguage().compare("Cpp") == 0) {
-    mGeneratedFilesList << "%1.bat"
-                        << "OMCpp%1.cpp"
+    mGeneratedFilesList << "OMCpp%1.cpp"
                         << "OMCpp%1.h"
                         << "OMCpp%1.exp"
                         << "OMCpp%1.lib"
