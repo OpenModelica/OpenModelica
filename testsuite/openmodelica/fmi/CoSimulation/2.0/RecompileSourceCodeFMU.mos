@@ -32,7 +32,7 @@ system("cd Test_SinSource_FMU/sources/build_cmake && cmake .. -DBUILD_SHARED_LIB
 
 // Check if static library was compiled and that it used FMI2_FUNCTION_PREFIX=Test_SinSource_FMU for function names
 // Has to return "Test_SinSource_fmi2GetReal"
-system("nm Test_SinSource_FMU/binaries/linux64/Test.SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
+system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
 
 // Repack Test.SinSource.fmu
 system("rm -rf Test.SinSource.fmu && cd Test_SinSource_FMU/sources/build_cmake && cmake --build . && make create_fmu", outputFile="reCompile.log"); getErrorString();
