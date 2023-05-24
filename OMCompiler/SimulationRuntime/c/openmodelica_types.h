@@ -86,12 +86,14 @@ typedef int mmc_sint_t;
 /* helpers for mmc_sint_t: printing / div */
 #if defined(_WIN64) || defined(__MINGW64__)
 #define modelica_div_integer lldiv
-#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*lld"
-#define OMC_INT_FORMAT "%*lld"
+#define OMC_INT_FORMAT "%lld"
+#define OMC_INT_WIDTH_FORMAT "%*lld"
+#define OMC_INT_WIDTH_LEFT_FORMAT "%-*lld"
 #else
 #define modelica_div_integer ldiv
-#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*ld"
-#define OMC_INT_FORMAT "%*ld"
+#define OMC_INT_FORMAT "%ld"
+#define OMC_INT_WIDTH_FORMAT "%*ld"
+#define OMC_INT_WIDTH_LEFT_FORMAT "%-*ld"
 #endif
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
