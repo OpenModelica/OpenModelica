@@ -1545,7 +1545,7 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
   mpLeftTextBox = new QLineEdit;
-  ExtentAnnotation defaultExtent = coOrdinateSystem.getExtent();
+  const ExtentAnnotation &defaultExtent = coOrdinateSystem.getExtent();
   mpLeftTextBox->setPlaceholderText(QString::number(defaultExtent.at(0).x()));
   mpBottomLabel = new Label(Helper::bottom);
   mpBottomTextBox = new QLineEdit;

@@ -61,16 +61,16 @@ public:
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
   void setTab(QString tab) {mTab = tab;}
-  StringAnnotation getTab() {return mTab;}
+  const StringAnnotation &getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
-  StringAnnotation getGroup() {return mGroup;}
+  const StringAnnotation &getGroup() {return mGroup;}
   void setGroupDefined(bool groupDefined) {mGroupDefined = groupDefined;}
   bool isGroupDefined() const {return mGroupDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
   bool isShowStartAttribute() const {return mShowStartAttribute;}
   void setShowStartAndFixed(bool showStartAndFixed) {mShowStartAndFixed = showStartAndFixed;}
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
-  StringAnnotation getGroupImage() const {return mGroupImage;}
+  const StringAnnotation &getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}

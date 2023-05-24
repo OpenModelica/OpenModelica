@@ -94,7 +94,7 @@ public:
   void setLinePattern(StringHandler::LinePattern pattern) {mLinePattern = pattern;}
   StringHandler::LinePattern getLinePattern() {return mLinePattern;}
   void setFillPattern(StringHandler::FillPattern pattern) {mFillPattern = pattern;}
-  FillPatternAnnotation getFillPattern() {return mFillPattern;}
+  const FillPatternAnnotation &getFillPattern() {return mFillPattern;}
   void setLineThickness(qreal thickness) {mLineThickness = thickness;}
   qreal getLineThickness() {return mLineThickness;}
 protected:
@@ -165,8 +165,8 @@ public:
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
-  PointArrayAnnotation getPoints() {return mPoints;}
-  ArrowAnnotation getArrow() {return mArrow;}
+  const PointArrayAnnotation &getPoints() {return mPoints;}
+  const ArrowAnnotation &getArrow() {return mArrow;}
   void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
   StringHandler::Arrow getStartArrow() {return mArrow.at(0);}
   void setEndArrow(StringHandler::Arrow endArrow) {mArrow.replace(1, endArrow);}
@@ -176,7 +176,7 @@ public:
   void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
   StringHandler::Smooth getSmooth() {return mSmooth;}
   void setExtents(QVector<QPointF> extents) {mExtent = extents;}
-  QVector<QPointF> getExtents() {return mExtent;}
+  const QVector<QPointF> &getExtents() {return mExtent;}
   void setBorderPattern(StringHandler::BorderPattern pattern) {mBorderPattern = pattern;}
   StringHandler::BorderPattern getBorderPattern() {return mBorderPattern;}
   void setRadius(qreal radius) {mRadius = radius;}
@@ -188,13 +188,13 @@ public:
   void setClosure(StringHandler::EllipseClosure closure) {mClosure = closure;}
   StringHandler::EllipseClosure getClosure() {return mClosure;}
   void setTextString(QString textString);
-  QString getTextString() {return mTextString;}
+  const QString &getTextString() {return mTextString;}
   void setFontName(QString fontName) {mFontName = fontName;}
-  QString getFontName() {return mFontName;}
+  const QString &getFontName() {return mFontName;}
   void setFontSize(qreal fontSize) {mFontSize = fontSize;}
   qreal getFontSize() {return mFontSize;}
   void setTextStyles(QVector<StringHandler::TextStyle> textStyles) {mTextStyles = textStyles;}
-  QVector<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
+  const QVector<StringHandler::TextStyle> &getTextStyles() {return mTextStyles;}
   void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
   StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
   void setFileName(QString fileName);

@@ -35,7 +35,8 @@
 class RealAnnotation : public DynamicAnnotation
 {
   public:
-    RealAnnotation();
+    RealAnnotation() = default;
+    RealAnnotation(qreal value);
 
     void clear() override;
 

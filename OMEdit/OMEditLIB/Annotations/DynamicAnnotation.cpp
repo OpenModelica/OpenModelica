@@ -132,15 +132,15 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
   }
   if (!expression.isNull()) {
     try {
-      fromExp(expression.evaluate([&] (std::string name) {
+      fromExp(expression.evaluate([&] (std::string name) -> auto& {
                 auto vname = QString::fromStdString(name);
                 // the instance api returns the qualified cref
                 vname = StringHandler::getLastWordAfterDot(vname);
-                FlatModelica::Expression exp = pModel->getVariableBinding(vname);
-                if (exp.isNull()) {
+                auto exp = pModel->getVariableBinding(vname);
+                if (!exp) {
                   throw std::runtime_error(name + " could not be found");
                 }
-                return exp;
+                return *exp;
               }));
     } catch (const std::exception &e) {
       qDebug() << "Failed to evaluate expression.";
