@@ -2042,18 +2042,20 @@ algorithm
   kind := getVarKind(var);
 end getVarKindForVar;
 
-public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1"
+public function isVarOnTopLevelAndOutput "has the DAE.VarDirection = OUTPUT
+  Don't check for top level here as this is done by NFConvertDAE.makeDAEVar.
+  Otherwise the list of model variables may contradict with model structure, e.g. with --nonStdExposeLocalIOs."
   input BackendDAE.Var inVar;
-  output Boolean outBoolean = DAEUtil.topLevelOutput(inVar.varName, inVar.varDirection, inVar.connectorType);
+  //output Boolean outBoolean = DAEUtil.topLevelOutput(inVar.varName, inVar.varDirection, inVar.connectorType);
+  output Boolean outBoolean = isOutputVar(inVar);
 end isVarOnTopLevelAndOutput;
 
-public function isVarOnTopLevelAndInput "and has the DAE.VarDirection = INPUT
-  The check for top-model is done by splitting the name at '.' and checking if
-  the list-length is 1."
+public function isVarOnTopLevelAndInput "has the DAE.VarDirection = INPUT
+  Don't check for top level here as this is done by NFConvertDAE.makeDAEVar.
+  Otherwise the list of model variables may contradict with model structure, e.g. with --nonStdExposeLocalIOs."
   input BackendDAE.Var inVar;
-  output Boolean outBoolean = DAEUtil.topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
+  //output Boolean outBoolean = DAEUtil.topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
+  output Boolean outBoolean = isInput(inVar);
 end isVarOnTopLevelAndInput;
 
 public function isVarOnTopLevelAndInputNoDerInput
