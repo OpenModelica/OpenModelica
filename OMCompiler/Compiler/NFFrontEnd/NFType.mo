@@ -1366,7 +1366,6 @@ public
   function sizeOf
     input Type ty;
     output Integer sz;
-
     function fold_comp_size
       input InstNode comp;
       input Integer sz;
@@ -1387,6 +1386,20 @@ public
       else 0;
     end match;
   end sizeOf;
+
+  function complexSize
+    "Returns the size of complex part of the type as an option.
+    Arrays of complex will only return the size of the contained complex type.
+    Non-complex types will return NONE()."
+    input Type ty;
+    output Option<Integer> sz;
+  algorithm
+    sz := match ty
+      case ARRAY()    then complexSize(ty.elementType);
+      case COMPLEX()  then SOME(sizeOf(ty));
+                      else NONE();
+    end match;
+  end complexSize;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

@@ -91,6 +91,14 @@ public
   type RecollectStatus      = enumeration(SUCCESS, FAILURE)                         "result of sub-routine recollect";
   type FrameOrderingStatus  = enumeration(UNCHANGED, CHANGED, FAILURE)              "result of sub-routine frame ordering";
 
+  partial function MapFuncEqn
+    input output Equation e;
+  end MapFuncEqn;
+
+  partial function MapFuncEqnPtr
+    input output Pointer<Equation> e;
+  end MapFuncEqnPtr;
+
   partial function MapFuncExp
     input output Expression e;
   end MapFuncExp;
@@ -610,11 +618,11 @@ public
 
     record RECORD_EQUATION
       Type ty                         "equality type";
-      //Integer size                    "size of record";
       Expression lhs                  "left hand side expression";
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
       EquationAttributes attr         "Additional Attributes";
+      Integer recordSize              "size of the record";
     end RECORD_EQUATION;
 
     record ALGORITHM
@@ -1144,16 +1152,20 @@ public
       input Pointer<Integer> idx;
       input String context;
       input EquationAttributes attr = EQ_ATTR_DEFAULT_UNKNOWN;
-      input DAE.ElementSource source = DAE.emptyElementSource;
+      input DAE.ElementSource src = DAE.emptyElementSource;
       output Pointer<Equation> eqn_ptr;
     protected
       Type ty;
       Equation eqn;
+      Option<Integer> opt_rec_size;
+      Integer rec_size;
     algorithm
       ty := Expression.typeOf(lhs);
-      eqn := match ty
-        case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE());
-                          else SCALAR_EQUATION(ty, lhs, rhs, source, attr);
+      opt_rec_size := Type.complexSize(ty);
+      eqn := match (ty, opt_rec_size)
+        case (Type.ARRAY(), _)                then ARRAY_EQUATION(ty, lhs, rhs, src, attr, opt_rec_size);
+        case (Type.COMPLEX(), SOME(rec_size)) then RECORD_EQUATION(ty, lhs, rhs, src, attr, rec_size);
+                                              else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
       end match;
       eqn_ptr := Pointer.create(eqn);
       Equation.createName(eqn_ptr, idx, context);
@@ -1167,11 +1179,15 @@ public
       Type ty;
       EquationAttributes attr = getAttributes(eqn);
       DAE.ElementSource src = source(eqn);
+      Option<Integer> opt_rec_size;
+      Integer rec_size;
     algorithm
       ty := Expression.typeOf(lhs);
-      eqn := match ty
-        case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, src, attr, NONE());
-                          else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
+      opt_rec_size := Type.complexSize(ty);
+      eqn := match (ty, opt_rec_size)
+        case (Type.ARRAY(), _)                then ARRAY_EQUATION(ty, lhs, rhs, src, attr, opt_rec_size);
+        case (Type.COMPLEX(), SOME(rec_size)) then RECORD_EQUATION(ty, lhs, rhs, src, attr, rec_size);
+                                              else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
       end match;
     end updateLHSandRHS;
 
@@ -1565,6 +1581,7 @@ public
     algorithm
       b := match Pointer.access(eqn)
         case Equation.RECORD_EQUATION() then true;
+        case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
         else false;
       end match;
     end isRecordEquation;
@@ -2860,10 +2877,7 @@ public
     function map
       "Traverses all equations and applies a function to them."
       input output EquationPointers equations;
-      input MapFunc func;
-      partial function MapFunc
-        input output Equation e;
-      end MapFunc;
+      input MapFuncEqn func;
     protected
       Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
@@ -2885,10 +2899,7 @@ public
       "Traverses all equations wrapped in pointers and applies a function to them.
       Note: the equation can only be updated if the function itself updates it!"
       input EquationPointers equations;
-      input MapFunc func;
-      partial function MapFunc
-        input output Pointer<Equation> e;
-      end MapFunc;
+      input MapFuncEqnPtr func;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
@@ -3172,6 +3183,62 @@ public
 
     record EQ_DATA_EMPTY end EQ_DATA_EMPTY;
 
+    function map
+      input output EqData eqData;
+      input MapFuncEqn func;
+    algorithm
+      eqData := match eqData
+        case EqData.EQ_DATA_SIM() algorithm
+          // we do not want to traverse removed equations, otherwise we could break them
+          eqData.simulation   := EquationPointers.map(eqData.simulation, func);
+          eqData.continuous   := EquationPointers.map(eqData.continuous, func);
+          eqData.discretes    := EquationPointers.map(eqData.discretes, func);
+          eqData.initials     := EquationPointers.map(eqData.initials, func);
+          eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
+        then eqData;
+
+        case EqData.EQ_DATA_JAC() algorithm
+          eqData.results      := EquationPointers.map(eqData.results, func);
+          eqData.temporary    := EquationPointers.map(eqData.temporary, func);
+          eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
+        then eqData;
+
+        case EqData.EQ_DATA_HES() algorithm
+          Pointer.update(eqData.result, func(Pointer.access(eqData.result)));
+          eqData.temporary    := EquationPointers.map(eqData.temporary, func);
+          eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
+        then eqData;
+      end match;
+    end map;
+
+    function mapExp
+      input output EqData eqData;
+      input MapFuncExp func;
+    algorithm
+      eqData := match eqData
+        case EqData.EQ_DATA_SIM() algorithm
+          // we do not want to traverse removed equations, otherwise we could break them
+          eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func);
+          eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func);
+          eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
+          eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+        then eqData;
+
+        case EqData.EQ_DATA_JAC() algorithm
+          eqData.results      := EquationPointers.mapExp(eqData.results, func);
+          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+        then eqData;
+
+        case EqData.EQ_DATA_HES() algorithm
+          Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func));
+          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+        then eqData;
+      end match;
+    end mapExp;
+
     function toString
       input EqData eqData;
       input Integer level = 0;
@@ -3298,34 +3365,67 @@ public
       end match;
     end addTypedList;
 
+    function addUntypedList
+      input output EqData eqData;
+      input list<Pointer<Equation>> eq_lst;
+      input Boolean newName = true;
+    protected
+      list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+    algorithm
+
+      eqData := match eqData
+        case EQ_DATA_SIM() algorithm
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
+            end for;
+          end if;
+          (simulation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := typeList(eq_lst);
+          eqData.equations    := EquationPointers.addList(eq_lst, eqData.equations);
+          eqData.simulation   := EquationPointers.addList(simulation_lst, eqData.simulation);
+          eqData.continuous   := EquationPointers.addList(continuous_lst, eqData.continuous);
+          eqData.discretes    := EquationPointers.addList(discretes_lst, eqData.discretes);
+          eqData.initials     := EquationPointers.addList(initials_lst, eqData.initials);
+          eqData.auxiliaries  := EquationPointers.addList(auxiliaries_lst, eqData.auxiliaries);
+          eqData.removed      := EquationPointers.addList(removed_lst, eqData.removed);
+        then eqData;
+
+        // ToDo: other cases
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end addUntypedList;
+
     function removeList
       input list<Pointer<Equation>> eq_lst;
       input output EqData eqData;
     algorithm
       eqData := match eqData
         case EQ_DATA_SIM() algorithm
-          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
-          eqData.simulation := EquationPointers.removeList(eq_lst, eqData.simulation);
-          eqData.continuous := EquationPointers.removeList(eq_lst, eqData.continuous);
-          eqData.discretes := EquationPointers.removeList(eq_lst, eqData.discretes);
-          eqData.initials := EquationPointers.removeList(eq_lst, eqData.initials);
-          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
-          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+          eqData.equations    := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.simulation   := EquationPointers.removeList(eq_lst, eqData.simulation);
+          eqData.continuous   := EquationPointers.removeList(eq_lst, eqData.continuous);
+          eqData.discretes    := EquationPointers.removeList(eq_lst, eqData.discretes);
+          eqData.initials     := EquationPointers.removeList(eq_lst, eqData.initials);
+          eqData.auxiliaries  := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed      := EquationPointers.removeList(eq_lst, eqData.removed);
         then eqData;
 
         case EQ_DATA_JAC() algorithm
-          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
-          eqData.results := EquationPointers.removeList(eq_lst, eqData.results);
-          eqData.temporary := EquationPointers.removeList(eq_lst, eqData.temporary);
-          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
-          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+          eqData.equations    := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.results      := EquationPointers.removeList(eq_lst, eqData.results);
+          eqData.temporary    := EquationPointers.removeList(eq_lst, eqData.temporary);
+          eqData.auxiliaries  := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed      := EquationPointers.removeList(eq_lst, eqData.removed);
         then eqData;
 
         case EQ_DATA_HES() algorithm
-          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
-          eqData.temporary := EquationPointers.removeList(eq_lst, eqData.temporary);
-          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
-          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+          eqData.equations    := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.temporary    := EquationPointers.removeList(eq_lst, eqData.temporary);
+          eqData.auxiliaries  := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed      := EquationPointers.removeList(eq_lst, eqData.removed);
         then eqData;
 
         else algorithm
@@ -3333,7 +3433,89 @@ public
         then fail();
       end match;
     end removeList;
+
+    function compress
+      input output EqData eqData;
+    algorithm
+      eqData := match eqData
+        case EQ_DATA_SIM() algorithm
+          eqData.equations    := EquationPointers.compress(eqData.equations);
+          eqData.simulation   := EquationPointers.compress(eqData.simulation);
+          eqData.continuous   := EquationPointers.compress(eqData.continuous);
+          eqData.discretes    := EquationPointers.compress(eqData.discretes);
+          eqData.initials     := EquationPointers.compress(eqData.initials);
+          eqData.auxiliaries  := EquationPointers.compress(eqData.auxiliaries);
+          eqData.removed      := EquationPointers.compress(eqData.removed);
+        then eqData;
+
+        case EQ_DATA_JAC() algorithm
+          eqData.equations    := EquationPointers.compress(eqData.equations);
+          eqData.results      := EquationPointers.compress(eqData.results);
+          eqData.temporary    := EquationPointers.compress(eqData.temporary);
+          eqData.auxiliaries  := EquationPointers.compress(eqData.auxiliaries);
+          eqData.removed      := EquationPointers.compress(eqData.removed);
+        then eqData;
+
+        case EQ_DATA_HES() algorithm
+          eqData.equations    := EquationPointers.compress(eqData.equations);
+          eqData.temporary    := EquationPointers.compress(eqData.temporary);
+          eqData.auxiliaries  := EquationPointers.compress(eqData.auxiliaries);
+          eqData.removed      := EquationPointers.compress(eqData.removed);
+        then eqData;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end compress;
   end EqData;
+
+  function typeList
+    input list<Pointer<Equation>> equations;
+    output list<Pointer<Equation>> simulation_lst = {};
+    output list<Pointer<Equation>> continuous_lst = {};
+    output list<Pointer<Equation>> discretes_lst = {};
+    output list<Pointer<Equation>> initials_lst = {};
+    output list<Pointer<Equation>> auxiliaries_lst = {};
+    output list<Pointer<Equation>> removed_lst = {};
+  algorithm
+    for eq in equations loop
+    _:= match Equation.getAttributes(Pointer.access(eq))
+        case EQUATION_ATTRIBUTES(kind = DYNAMIC_EQUATION())
+          algorithm
+            continuous_lst := eq :: continuous_lst;
+            simulation_lst := eq :: simulation_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = DISCRETE_EQUATION())
+          algorithm
+            discretes_lst := eq :: discretes_lst;
+            simulation_lst := eq :: simulation_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = INITIAL_EQUATION())
+          algorithm
+            initials_lst := eq :: initials_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = AUX_EQUATION())
+          algorithm
+            auxiliaries_lst := eq :: auxiliaries_lst;
+            simulation_lst := eq :: simulation_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = EMPTY_EQUATION())
+          algorithm
+            removed_lst := eq :: removed_lst;
+        then ();
+
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(Pointer.access(eq))});
+        then fail();
+      end match;
+    end for;
+  end typeList;
 
   annotation(__OpenModelica_Interface="backend");
 end NBEquation;
