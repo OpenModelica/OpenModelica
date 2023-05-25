@@ -621,7 +621,7 @@ protected
     input output VarData varData;
   protected
     list<ComponentRef> iterators = {};
-    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {}, removed_lst = {};
+    list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
     Pointer<Equation> eq;
     Pointer<Integer> idx = Pointer.create(0);
@@ -636,45 +636,7 @@ protected
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
 
-    for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
-      if ExpandableArray.occupied(i, equations.eqArr) then
-        eq := ExpandableArray.get(i, equations.eqArr);
-        _:= match Equation.getAttributes(Pointer.access(eq))
-          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DYNAMIC_EQUATION())
-            algorithm
-              continuous_lst := eq :: continuous_lst;
-              simulation_lst := eq :: simulation_lst;
-          then ();
-
-          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DISCRETE_EQUATION())
-            algorithm
-              discretes_lst := eq :: discretes_lst;
-              simulation_lst := eq :: simulation_lst;
-          then ();
-
-          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.INITIAL_EQUATION())
-            algorithm
-              initials_lst := eq :: initials_lst;
-          then ();
-
-          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.AUX_EQUATION())
-            algorithm
-              auxiliaries_lst := eq :: auxiliaries_lst;
-              simulation_lst := eq :: simulation_lst;
-          then ();
-
-          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.EMPTY_EQUATION())
-            algorithm
-              removed_lst := eq :: removed_lst;
-          then ();
-
-          else
-            algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(Pointer.access(eq))});
-          then fail();
-        end match;
-      end if;
-    end for;
+    (simulation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
@@ -745,31 +707,39 @@ protected
         ComponentRef iterator;
         list<FEquation.Branch> branches;
         EquationAttributes attr;
+        Integer rec_size;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
         attr := lowerEquationAttributes(ty, init);
-        //ToDo! How to get Record size and replace NONE()?
-      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
+      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
 
       // sometimes regular equalities are array equations aswell. Need to update frontend?
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
         attr := lowerEquationAttributes(ty, init);
-        //ToDo! How to get Record size and replace NONE()?
-      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
+      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
-        result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
-                                        else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+        if Type.isComplex(ty) then
+          try
+            SOME(rec_size) := Type.complexSize(ty);
+          else
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
+              + ": could not determine complex type size of \n" + FEquation.toString(frontend_equation)});
+            fail();
+          end try;
+          result := {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, rec_size))};
+        else
+          result := {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+        end if;
       then result;
 
       case FEquation.FOR(range = SOME(range)) algorithm
         if Expression.rangeSize(range) > 0 then
           // Treat each body equation individually because they can have different equation attributes
           // E.g.: DISCRETE, EvalStages
-
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
           for eq in frontend_equation.body loop
             new_body := listAppend(lowerEquation(eq, init), new_body);
@@ -790,7 +760,8 @@ protected
           end for;
         else
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
+              + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
           end if;
         end if;
       then result;

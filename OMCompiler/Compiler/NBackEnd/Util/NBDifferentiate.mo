@@ -274,7 +274,7 @@ public
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.RECORD_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
+      then (Equation.RECORD_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
       case Equation.IF_EQUATION() algorithm
         (ifBody, diffArguments_ptr) := differentiateIfEquationBody(eq.body, Pointer.create(diffArguments));

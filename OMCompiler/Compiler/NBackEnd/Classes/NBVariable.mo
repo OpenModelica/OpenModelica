@@ -1851,11 +1851,9 @@ public
       output VariablePointers variables;
     algorithm
       variables := match varData
-        local
-          VariablePointers tmp;
-        case VAR_DATA_SIM(variables = tmp) then tmp;
-        case VAR_DATA_JAC(variables = tmp) then tmp;
-        case VAR_DATA_HES(variables = tmp) then tmp;
+        case VAR_DATA_SIM() then varData.variables;
+        case VAR_DATA_JAC() then varData.variables;
+        case VAR_DATA_HES() then varData.variables;
         else fail();
       end match;
     end getVariables;

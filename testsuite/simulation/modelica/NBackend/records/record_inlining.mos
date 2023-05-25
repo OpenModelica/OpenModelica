@@ -1,0 +1,36 @@
+// name: record_inlining
+// keywords: NewBackend
+// status: correct
+
+loadModel(Complex); getErrorString();
+
+loadString("
+  model record_inlining
+    Complex a,b,c;
+  equation
+    a = Complex(sin(time), cos(time));
+    b = Complex(time, tan(time));
+    c = a * b;
+  end record_inlining;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(record_inlining); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "record_inlining_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'record_inlining', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -149,29 +149,7 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-
-    eqData := match eqData
-      case EqData.EQ_DATA_SIM() algorithm
-        // we do not want to traverse removed equations, otherwise we could break them
-        eqData.simulation   := EquationPointers.mapExp(eqData.simulation, function applySimpleExp(replacements = replacements));
-        eqData.continuous   := EquationPointers.mapExp(eqData.continuous, function applySimpleExp(replacements = replacements));
-        eqData.discretes    := EquationPointers.mapExp(eqData.discretes, function applySimpleExp(replacements = replacements));
-        eqData.initials     := EquationPointers.mapExp(eqData.initials, function applySimpleExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
-      then eqData;
-
-      case EqData.EQ_DATA_JAC() algorithm
-        eqData.results      := EquationPointers.mapExp(eqData.results, function applySimpleExp(replacements = replacements));
-        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applySimpleExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
-      then eqData;
-
-      case EqData.EQ_DATA_HES() algorithm
-        Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), function applySimpleExp(replacements = replacements)));
-        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applySimpleExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
-      then eqData;
-    end match;
+    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements));
 
     // apply on bindings (is this necessary?)
     varData := match varData
@@ -265,29 +243,7 @@ public
   algorithm
         // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-
-    eqData := match eqData
-      case EqData.EQ_DATA_SIM() algorithm
-        // we do not want to traverse removed equations, otherwise we could break them
-        eqData.simulation   := EquationPointers.mapExp(eqData.simulation, function applyFuncExp(replacements = replacements));
-        eqData.continuous   := EquationPointers.mapExp(eqData.continuous, function applyFuncExp(replacements = replacements));
-        eqData.discretes    := EquationPointers.mapExp(eqData.discretes, function applyFuncExp(replacements = replacements));
-        eqData.initials     := EquationPointers.mapExp(eqData.initials, function applyFuncExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
-      then eqData;
-
-      case EqData.EQ_DATA_JAC() algorithm
-        eqData.results      := EquationPointers.mapExp(eqData.results, function applyFuncExp(replacements = replacements));
-        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applyFuncExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
-      then eqData;
-
-      case EqData.EQ_DATA_HES() algorithm
-        Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), function applyFuncExp(replacements = replacements)));
-        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applyFuncExp(replacements = replacements));
-        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applyFuncExp(replacements = replacements));
-      then eqData;
-    end match;
+    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements));
   end replaceFunctions;
 
   function applyFuncExp
@@ -326,6 +282,8 @@ public
   end applyFuncExp;
 
   function addInputArgTpl
+    "adds an input to argument replacement and also adds
+    all record children replacements."
     input tuple<ComponentRef, Expression> tpl;
     input UnorderedMap<ComponentRef, Expression> replacements;
   protected
@@ -341,7 +299,6 @@ public
     UnorderedMap.add(cref, arg, replacements);
 
     // also try to add element replacements (throw error if impossible?)
-    //children := BVariable.getRecordChildren(BVariable.getVarPointer(cref));
     children := ComponentRef.getRecordChildren(cref);
     if not listEmpty(children) then
       children_args := match arg
