@@ -29,9 +29,10 @@
  */
 #include "RealAnnotation.h"
 
-RealAnnotation::RealAnnotation()
+RealAnnotation::RealAnnotation(qreal value)
+  : mValue(value)
 {
-  clear();
+  setExp();
 }
 
 void RealAnnotation::clear()

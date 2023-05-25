@@ -48,21 +48,21 @@ public:
   CoOrdinateSystem();
   CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem);
   void setExtent(const QVector<QPointF> extent);
-  ExtentAnnotation getExtent() const {return mExtent;}
+  const ExtentAnnotation &getExtent() const {return mExtent;}
   bool hasExtent() const {return mHasExtent;}
   void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
   void setPreserveAspectRatio(const bool preserveAspectRatio);
-  BooleanAnnotation getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+  const BooleanAnnotation &getPreserveAspectRatio() const {return mPreserveAspectRatio;}
   bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
   void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
   void setInitialScale(const qreal initialScale);
-  RealAnnotation getInitialScale() const {return mInitialScale;}
+  const RealAnnotation &getInitialScale() const {return mInitialScale;}
   bool hasInitialScale() const {return mHasInitialScale;}
   void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
   qreal getHorizontalGridStep();
   qreal getVerticalGridStep();
   void setGrid(const QPointF grid);
-  PointAnnotation getGrid() const {return mGrid;}
+  const PointAnnotation &getGrid() const {return mGrid;}
   void setHasGrid(const bool hasGrid) {mHasGrid = hasGrid;}
   bool hasGrid() const {return mHasGrid;}
 
@@ -71,6 +71,7 @@ public:
   bool isComplete() const;
 
   CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) = default;
+  CoOrdinateSystem& operator=(CoOrdinateSystem &&coOrdinateSystem) = default;
 private:
   ExtentAnnotation mExtent;
   bool mHasExtent;

@@ -150,7 +150,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mpElement = 0;
   mpModelInstanceElement = pElement;
   mpElementParameters = pElementParameters;
-  const ModelInstance::DialogAnnotation dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
+  auto &dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
   mTab = dialogAnnotation.getTab();
   mGroup = dialogAnnotation.getGroup();
   mGroupDefined = !mGroup.isEmpty();
@@ -158,10 +158,10 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mShowStartAttribute = dialogAnnotation.getShowStartAttribute();
   mShowStartAndFixed = mShowStartAttribute;
   mColorSelector = dialogAnnotation.isColorSelector();
-  const ModelInstance::Selector loadSelector = dialogAnnotation.getLoadSelector();
+  auto &loadSelector = dialogAnnotation.getLoadSelector();
   mLoadSelectorFilter = loadSelector.getFilter();
   mLoadSelectorCaption = loadSelector.getCaption();
-  const ModelInstance::Selector saveSelector = dialogAnnotation.getSaveSelector();
+  auto &saveSelector = dialogAnnotation.getSaveSelector();
   mSaveSelectorFilter = saveSelector.getFilter();
   mSaveSelectorCaption = saveSelector.getCaption();
   mGroupImage = dialogAnnotation.getGroupImage();

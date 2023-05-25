@@ -57,8 +57,8 @@ public:
   bool isValid() const {return mValid;}
   void setWidth(const qreal &width) {mWidth = width;}
   void setHeight(const qreal &height) {mHeight = height;}
-  BooleanAnnotation getVisible() const {return mVisible;}
-  BooleanAnnotation getVisibleIcon() const {return mVisibleIcon;}
+  const BooleanAnnotation& getVisible() const {return mVisible;}
+  const BooleanAnnotation& getVisibleIcon() const {return mVisibleIcon;}
   void adjustPosition(qreal x, qreal y);
   void setOrigin(QPointF origin);
   PointAnnotation getOrigin() const;
@@ -93,20 +93,20 @@ private:
   qreal getHeight() const {return mHeight;}
   void adjustPositionDiagram(qreal x, qreal y);
   void setOriginDiagram(QPointF origin);
-  PointAnnotation getOriginDiagram() const {return mOriginDiagram;}
+  const PointAnnotation &getOriginDiagram() const {return mOriginDiagram;}
   void setExtentDiagram(QVector<QPointF> extent) {mExtentDiagram = extent;}
-  ExtentAnnotation getExtentDiagram() const {return mExtentDiagram;}
+  const ExtentAnnotation &getExtentDiagram() const {return mExtentDiagram;}
   void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
-  RealAnnotation getRotateAngleDiagram() const {return mRotateAngleDiagram;}
+  const RealAnnotation &getRotateAngleDiagram() const {return mRotateAngleDiagram;}
   QPointF getPositionDiagram() const;
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
   void setOriginIcon(QPointF origin);
-  PointAnnotation getOriginIcon() const {return mOriginIcon;}
+  const PointAnnotation &getOriginIcon() const {return mOriginIcon;}
   void setExtentIcon(QVector<QPointF> extent) {mExtentIcon = extent;}
-  ExtentAnnotation getExtentIcon() const {return mExtentIcon;}
+  const ExtentAnnotation &getExtentIcon() const {return mExtentIcon;}
   void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
-  RealAnnotation getRotateAngleIcon() const {return mRotateAngleIcon;}
+  const RealAnnotation &getRotateAngleIcon() const {return mRotateAngleIcon;}
   QPointF getPositionIcon() const;
 };
 

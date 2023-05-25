@@ -107,7 +107,7 @@ private:
 class UpdateComponentTransformationsCommand : public UndoCommand
 {
 public:
-  UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+  UpdateComponentTransformationsCommand(Element *pComponent, Transformation oldTransformation, Transformation newTransformation,
                                         const bool positionChanged, const bool moveConnectorsTogether, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();

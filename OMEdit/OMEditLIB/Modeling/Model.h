@@ -62,19 +62,19 @@ namespace ModelInstance
     CoordinateSystem();
     CoordinateSystem(const CoordinateSystem &coOrdinateSystem);
     void setExtent(const QVector<QPointF> extent);
-    ExtentAnnotation getExtent() const {return mExtent;}
+    const ExtentAnnotation& getExtent() const {return mExtent;}
     void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
     bool hasExtent() const {return mHasExtent;}
     void setPreserveAspectRatio(const bool preserveAspectRatio);
-    BooleanAnnotation getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+    const BooleanAnnotation& getPreserveAspectRatio() const {return mPreserveAspectRatio;}
     bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
     void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
     void setInitialScale(const qreal initialScale);
-    RealAnnotation getInitialScale() const {return mInitialScale;}
+    const RealAnnotation& getInitialScale() const {return mInitialScale;}
     bool hasInitialScale() const {return mHasInitialScale;}
     void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
     void setGrid(const QPointF grid);
-    PointAnnotation getGrid() const {return mGrid;}
+    const PointAnnotation& getGrid() const {return mGrid;}
     void setHasGrid(const bool hasGrid) {mHasGrid = hasGrid;}
     bool hasGrid() const {return mHasGrid;}
 
@@ -86,6 +86,7 @@ namespace ModelInstance
     void deserialize(const QJsonObject &jsonObject);
 
     CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) = default;
+    CoordinateSystem& operator=(CoordinateSystem &&coOrdinateSystem) = default;
   private:
     ExtentAnnotation mExtent;
     bool mHasExtent;
@@ -101,9 +102,9 @@ namespace ModelInstance
   {
   public:
     GraphicItem();
-    BooleanAnnotation getVisible() const {return mVisible;}
-    PointAnnotation getOrigin() const {return mOrigin;}
-    RealAnnotation getRotation() const {return mRotation;}
+    const BooleanAnnotation &getVisible() const {return mVisible;}
+    const PointAnnotation &getOrigin() const {return mOrigin;}
+    const RealAnnotation &getRotation() const {return mRotation;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
@@ -117,11 +118,11 @@ private:
   {
   public:
     FilledShape();
-    ColorAnnotation getLineColor() const {return mLineColor;}
-    ColorAnnotation getFillColor() const {return mFillColor;}
-    LinePatternAnnotation getPattern() const {return mPattern;}
-    FillPatternAnnotation getFillPattern() const {return mFillPattern;}
-    RealAnnotation getLineThickness() const {return mLineThickness;}
+    const ColorAnnotation &getLineColor() const {return mLineColor;}
+    const ColorAnnotation &getFillColor() const {return mFillColor;}
+    const LinePatternAnnotation &getPattern() const {return mPattern;}
+    const FillPatternAnnotation &getFillPattern() const {return mFillPattern;}
+    const RealAnnotation &getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
@@ -154,21 +155,21 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    void setPoints(const PointArrayAnnotation &points) {mPoints = points;}
-    PointArrayAnnotation getPoints() const {return mPoints;}
+    void setPoints(PointArrayAnnotation points) {mPoints = std::move(points);}
+    const PointArrayAnnotation &getPoints() const {return mPoints;}
     void clearPoints() {mPoints.clear();}
     void setColor(const QColor &color);
-    ColorAnnotation getColor() const {return mColor;}
+    const ColorAnnotation &getColor() const {return mColor;}
     void setPattern(StringHandler::LinePattern pattern) {mPattern = pattern;}
-    LinePatternAnnotation getPattern() const {return mPattern;}
+    const LinePatternAnnotation &getPattern() const {return mPattern;}
     void setThickness(double thickness) {mThickness = thickness;}
-    RealAnnotation getThickness() const {return mThickness;}
-    void setArrow(const ArrowAnnotation &arrow) {mArrow = arrow;}
-    ArrowAnnotation getArrow() {return mArrow;}
+    const RealAnnotation &getThickness() const {return mThickness;}
+    void setArrow(ArrowAnnotation arrow) {mArrow = std::move(arrow);}
+    const ArrowAnnotation &getArrow() {return mArrow;}
     void setArrowSize(double arrowSize) {mArrowSize = arrowSize;}
-    RealAnnotation getArrowSize() const {return mArrowSize;}
+    const RealAnnotation &getArrowSize() const {return mArrowSize;}
     void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
-    SmoothAnnotation getSmooth() const {return mSmooth;}
+    const SmoothAnnotation &getSmooth() const {return mSmooth;}
   private:
     PointArrayAnnotation mPoints;
     ColorAnnotation mColor;
@@ -185,8 +186,8 @@ private:
     Polygon(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    PointArrayAnnotation getPoints() const {return mPoints;}
-    SmoothAnnotation getSmooth() const {return mSmooth;}
+    const PointArrayAnnotation &getPoints() const {return mPoints;}
+    const SmoothAnnotation &getSmooth() const {return mSmooth;}
   private:
     PointArrayAnnotation mPoints;
     SmoothAnnotation mSmooth;
@@ -198,9 +199,9 @@ private:
     Rectangle(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    BorderPatternAnnotation getBorderPattern() const {return mBorderPattern;}
-    ExtentAnnotation getExtent() const {return mExtent;}
-    RealAnnotation getRadius() const {return mRadius;}
+    const BorderPatternAnnotation &getBorderPattern() const {return mBorderPattern;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
+    const RealAnnotation &getRadius() const {return mRadius;}
   private:
     BorderPatternAnnotation mBorderPattern;
     ExtentAnnotation mExtent;
@@ -213,10 +214,10 @@ private:
     Ellipse(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    ExtentAnnotation getExtent() const {return mExtent;}
-    RealAnnotation getStartAngle() const {return mStartAngle;}
-    RealAnnotation getEndAngle() const {return mEndAngle;}
-    EllipseClosureAnnotation getClosure() const {return mClosure;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
+    const RealAnnotation &getStartAngle() const {return mStartAngle;}
+    const RealAnnotation &getEndAngle() const {return mEndAngle;}
+    const EllipseClosureAnnotation &getClosure() const {return mClosure;}
   private:
     ExtentAnnotation mExtent;
     RealAnnotation mStartAngle;
@@ -231,13 +232,13 @@ private:
     void deserialize(const QJsonArray &jsonArray);
     void deserialize(const QJsonObject &jsonObject);
 
-    ExtentAnnotation getExtent() const {return mExtent;}
-    StringAnnotation getTextString() const {return mTextString;}
-    RealAnnotation getFontSize() const {return mFontSize;}
-    StringAnnotation getFontName() const {return mFontName;}
-    TextStyleAnnotation getTextStyle() const {return mTextStyle;}
-    ColorAnnotation getTextColor() const {return mTextColor;}
-    TextAlignmentAnnotation getHorizontalAlignment() const {return mHorizontalAlignment;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
+    const StringAnnotation &getTextString() const {return mTextString;}
+    const RealAnnotation &getFontSize() const {return mFontSize;}
+    const StringAnnotation &getFontName() const {return mFontName;}
+    const TextStyleAnnotation &getTextStyle() const {return mTextStyle;}
+    const ColorAnnotation &getTextColor() const {return mTextColor;}
+    const TextAlignmentAnnotation &getHorizontalAlignment() const {return mHorizontalAlignment;}
   private:
     ExtentAnnotation mExtent;
     StringAnnotation mTextString;
@@ -254,9 +255,9 @@ private:
     Bitmap(Model *pParentModel);
     void deserialize(const QJsonArray &jsonArray);
 
-    ExtentAnnotation getExtent() const {return mExtent;}
-    QString getFileName() const {return mFileName;}
-    QString getImageSource() const {return mImageSource;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
+    const QString &getFileName() const {return mFileName;}
+    const QString &getImageSource() const {return mImageSource;}
   private:
     ExtentAnnotation mExtent;
     QString mFileName;
@@ -286,8 +287,8 @@ private:
   public:
     Transformation();
     void deserialize(const QJsonObject &jsonObject);
-    PointAnnotation getOrigin() const {return mOrigin;}
-    ExtentAnnotation getExtent() const {return mExtent;}
+    const PointAnnotation &getOrigin() const {return mOrigin;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
     double getRotation() const {return mRotation;}
   private:
     PointAnnotation mOrigin;
@@ -301,10 +302,10 @@ private:
     PlacementAnnotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
     Model *getParentModel() const {return mpParentModel;}
-    BooleanAnnotation getVisible() const {return mVisible;}
-    Transformation getTransformation() const {return mTransformation;}
-    BooleanAnnotation getIconVisible() const {return mIconVisible;}
-    Transformation getIconTransformation() const {return mIconTransformation;}
+    const BooleanAnnotation &getVisible() const {return mVisible;}
+    const Transformation &getTransformation() const {return mTransformation;}
+    const BooleanAnnotation &getIconVisible() const {return mIconVisible;}
+    const Transformation &getIconTransformation() const {return mIconTransformation;}
   private:
     Model *mpParentModel;
     BooleanAnnotation mVisible;
@@ -318,8 +319,8 @@ private:
   public:
     Selector();
     void deserialize(const QJsonObject &jsonObject);
-    StringAnnotation getFilter() const {return mFilter;}
-    StringAnnotation getCaption() const {return mCaption;}
+    const StringAnnotation &getFilter() const {return mFilter;}
+    const StringAnnotation &getCaption() const {return mCaption;}
   private:
     StringAnnotation mFilter;
     StringAnnotation mCaption;
@@ -330,16 +331,16 @@ private:
   public:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
-    StringAnnotation getTab() const {return mTab;}
-    StringAnnotation getGroup() const {return mGroup;}
-    BooleanAnnotation isEnabled() const {return mEnable;}
-    BooleanAnnotation getShowStartAttribute() const {return mShowStartAttribute;}
-    BooleanAnnotation isColorSelector() const {return mColorSelector;}
-    Selector getLoadSelector() const {return mLoadSelector;}
-    Selector getSaveSelector() const {return mSaveSelector;}
-    Selector getDirectorySelector() const {return mDirectorySelector;}
-    QString getGroupImage() const {return mGroupImage;}
-    BooleanAnnotation isConnectorSizing() const {return mConnectorSizing;}
+    const StringAnnotation &getTab() const {return mTab;}
+    const StringAnnotation &getGroup() const {return mGroup;}
+    const BooleanAnnotation &isEnabled() const {return mEnable;}
+    const BooleanAnnotation &getShowStartAttribute() const {return mShowStartAttribute;}
+    const BooleanAnnotation &isColorSelector() const {return mColorSelector;}
+    const Selector &getLoadSelector() const {return mLoadSelector;}
+    const Selector &getSaveSelector() const {return mSaveSelector;}
+    const Selector &getDirectorySelector() const {return mDirectorySelector;}
+    const QString &getGroupImage() const {return mGroupImage;}
+    const BooleanAnnotation &isConnectorSizing() const {return mConnectorSizing;}
   private:
     StringAnnotation mTab;
     StringAnnotation mGroup;
@@ -375,8 +376,8 @@ private:
     IconDiagramMap();
     void deserialize(const QJsonObject &jsonObject);
 
-    ExtentAnnotation getExtent() const {return mExtent;}
-    BooleanAnnotation getprimitivesVisible() const {return mPrimitivesVisible;}
+    const ExtentAnnotation &getExtent() const {return mExtent;}
+    const BooleanAnnotation &getprimitivesVisible() const {return mPrimitivesVisible;}
   private:
     ExtentAnnotation mExtent;
     BooleanAnnotation mPrimitivesVisible;
@@ -390,20 +391,23 @@ private:
 
     IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
     IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
-    BooleanAnnotation isState() const {return mState;}
+    const BooleanAnnotation &isState() const {return mState;}
     // Element annotation
-    BooleanAnnotation isChoicesAllMatching() const {return mChoicesAllMatching;}
-    PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
+    const BooleanAnnotation &isChoicesAllMatching() const {return mChoicesAllMatching;}
+    const PlacementAnnotation &getPlacementAnnotation() const {return mPlacementAnnotation;}
     bool hasDialogAnnotation() const {return mHasDialogAnnotation;}
-    DialogAnnotation getDialogAnnotation() const {return mDialogAnnotation;}
+    const DialogAnnotation &getDialogAnnotation() const {return mDialogAnnotation;}
     bool isEvaluate() const {return mEvaluate;}
-    Choices getChoices() const {return mChoices;}
+    const Choices &getChoices() const {return mChoices;}
     // Connection annotation
     Line *getLine() const {return mpLine.get();}
     Text *getText() const {return mpText.get();}
     // Extend annotation
-    IconDiagramMap getIconMap() const {return mIconMap;}
-    IconDiagramMap getDiagramMap() const {return mDiagramMap;}
+    const IconDiagramMap &getIconMap() const {return mIconMap;}
+    const IconDiagramMap &getDiagramMap() const {return mDiagramMap;}
+
+    static Annotation defaultAnnotation;
+
   private:
     Model *mpParentModel;
     std::unique_ptr<IconDiagramAnnotation> mpIconAnnotation;
@@ -429,6 +433,7 @@ private:
     // Extend annotation
     IconDiagramMap mIconMap;
     IconDiagramMap mDiagramMap;
+    QMap<QString, QVariant> mValues;
   };
 
   class Dimensions
@@ -437,9 +442,9 @@ private:
     Dimensions();
     void deserialize(const QJsonObject &jsonObject);
 
-    QStringList getAbsynDimensions() const {return mAbsynDims;}
+    const QStringList &getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
-    QStringList getTypedDimensions() const {return mTypedDims;}
+    const QStringList &getTypedDimensions() const {return mTypedDims;}
     bool isArray() const {return !mTypedDims.isEmpty();}
   private:
     QStringList mAbsynDims;
@@ -452,17 +457,17 @@ private:
     Modifier();
     void deserialize(const QJsonValue &jsonValue);
 
-    QString getName() const {return mName;}
+    const QString &getName() const {return mName;}
     void setName(const QString &name) {mName = name;}
-    QString getValue() const {return mValue;}
+    const QString &getValue() const {return mValue;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     QString getValueWithSubModifiers() const;
     QString getModifier(const QString &m) const;
     bool hasModifier(const QString &m) const;
-    QList<Modifier> getModifiers() const {return mModifiers;}
+    const QList<Modifier> &getModifiers() const {return mModifiers;}
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
-    QString getModifierValue(QStringList qualifiedModifierName);
+    QString getModifierValue(QStringList qualifiedModifierName) const;
   private:
     QString mName;
     QString mValue;
@@ -479,8 +484,8 @@ private:
     Replaceable(Model *pParentModel);
     void deserialize(const QJsonValue &jsonValue);
 
-    QString getConstrainedby() const {return mConstrainedby;}
-    QString getComment() const {return mComment;}
+    const QString &getConstrainedby() const {return mConstrainedby;}
+    const QString &getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}
   private:
     Model *mpParentModel;
@@ -504,9 +509,9 @@ private:
     bool isOutput() const;
     Replaceable *getReplaceable() const {return mpReplaceable.get();}
     bool isRedeclare() const {return mRedeclare;}
-    QString getConnector() const {return mConnector;}
-    QString getVariability() const {return mVariability;}
-    QString getDirection() const {return mDirection;}
+    const QString &getConnector() const {return mConnector;}
+    const QString &getVariability() const {return mVariability;}
+    const QString &getDirection() const {return mDirection;}
   private:
     Model *mpParentModel;
     bool mPublic;
@@ -528,7 +533,7 @@ private:
     Source();
     void deserialize(const QJsonObject &jsonObject);
 
-    QString getFileName() const {return mFileName;}
+    const QString &getFileName() const {return mFileName;}
   private:
     QString mFileName;
     int mLineStart;
@@ -554,12 +559,12 @@ private:
     Element *getParentElement() const {return mpParentElement;}
     Extend *getParentExtend() const;
     Component *getParentComponent() const;
-    QJsonObject getModelJson() const {return mModelJson;}
+    const QJsonObject &getModelJson() const {return mModelJson;}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
-    QString getName() const {return mName;}
-    QString getRootType() const;
+    const QString &getName() const {return mName;}
+    const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
-    QString getRestriction() const {return mRestriction;}
+    const QString &getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
@@ -567,16 +572,16 @@ private:
     bool isDerivedType() const;
     QString getDirection() const;
     QString getComment() const {return mComment;}
-    Annotation *getAnnotation() const {return mpAnnotation.get();}
+    Annotation *getAnnotation() const;
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
-    QList<Element *> getElements() const {return mElements;}
+    const QList<Element *> &getElements() const {return mElements;}
     QList<Element *> getComponents() const;
     size_t componentCount() const;
-    QList<Connection *> getConnections() const {return mConnections;}
-    QList<Transition *> getTransitions() const {return mTransitions;}
-    QList<InitialState *> getInitialStates() const {return mInitialStates;}
-    Source getSource() const {return mSource;}
+    const QList<Connection *> &getConnections() const {return mConnections;}
+    const QList<Transition *> &getTransitions() const {return mTransitions;}
+    const QList<InitialState *> &getInitialStates() const {return mInitialStates;}
+    const Source &getSource() const {return mSource;}
 
     bool isParameterConnectorSizing(const QString &parameter);
     bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
@@ -584,7 +589,7 @@ private:
     QString getParameterValue(const QString &parameter, QString &typeName);
     QString getParameterValueFromExtendsModifiers(const QString &parameter);
 
-    FlatModelica::Expression getVariableBinding(const QString &variableName);
+    FlatModelica::Expression* getVariableBinding(const QString &variableName);
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -614,23 +619,25 @@ private:
   public:
     Element(Model *pParentModel);
     virtual ~Element();
+    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
-    Modifier getModifier() const {return mModifier;}
+    const Modifier &getModifier() const {return mModifier;}
     QString getModifierValueFromType(QStringList modifierNames);
-    Dimensions getDimensions() const {return mDims;}
+    const Dimensions &getDimensions() const {return mDims;}
     Prefixes *getPrefixes() const {return mpPrefixes.get();}
-    QString getComment() const;
+    const QString &getComment() const;
     Annotation *getAnnotation() const;
-    FlatModelica::Expression getBinding() const {return mBinding;}
+    const FlatModelica::Expression &getBinding() const {return mBinding;}
+    FlatModelica::Expression &getBinding() {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
 
     virtual QString getName() const = 0;
     virtual QString getQualifiedName() const = 0;
-    virtual QString getRootType() const = 0;
+    virtual const QString &getRootType() const = 0;
     virtual QString getType() const = 0;
     virtual bool isShortClassDefinition() const = 0;
     virtual bool isComponent() const = 0;
@@ -639,6 +646,7 @@ private:
 
     QString getDirection() const;
   private:
+    virtual void deserialize_impl(const QJsonObject &jsonObject) = 0;
     static QString getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
   protected:
     Model *mpParentModel;
@@ -657,14 +665,15 @@ private:
   {
   public:
     Extend(Model *pParentModel, const QJsonObject &jsonObject);
-    void deserialize(const QJsonObject &jsonObject);
+  private:
+    void deserialize_impl(const QJsonObject &jsonObject) override;
   private:
     QString mBaseClass;
     // Element interface
   public:
     virtual QString getName() const override {return "";}
     virtual QString getQualifiedName() const override;
-    virtual QString getRootType() const override;
+    virtual const QString& getRootType() const override;
     virtual QString getType() const override {return mBaseClass;}
     virtual bool isShortClassDefinition() const override {return false;}
     virtual bool isComponent() const override {return false;}
@@ -677,11 +686,12 @@ private:
   public:
     Component(Model *pParentModel);
     Component(Model *pParentModel, const QJsonObject &jsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     void setName(const QString &name) {mName = name;}
     bool getCondition() const {return mCondition;}
     void setType(const QString &type) {mType = type;}
+  private:
+    void deserialize_impl(const QJsonObject &jsonObject) override;
   private:
     QString mName;
     bool mCondition = true;
@@ -690,7 +700,7 @@ private:
   public:
     virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
-    virtual QString getRootType() const override;
+    virtual const QString &getRootType() const override;
     virtual QString getType() const override {return mType;}
     virtual bool isShortClassDefinition() const override {return false;}
     virtual bool isComponent() const override {return true;}
@@ -702,9 +712,10 @@ private:
   {
   public:
     ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     QString getBaseClass() const {return mBaseClass;}
+  private:
+    void deserialize_impl(const QJsonObject &jsonObject) override;
   private:
     QString mName;
     bool mIsShortClassDefinition;
@@ -714,7 +725,7 @@ private:
   public:
     virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
-    virtual QString getRootType() const override {return mName;}
+    virtual const QString &getRootType() const override {return mName;}
     virtual QString getType() const override {return mBaseClass;}
     virtual bool isShortClassDefinition() const override {return mIsShortClassDefinition;}
     virtual bool isComponent() const override {return false;}
@@ -772,7 +783,7 @@ private:
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
     Connector *getEndConnector() const {return mpEndConnector.get();}
-    Annotation *getAnnotation() const {return mpAnnotation.get();}
+    Annotation *getAnnotation() const;
     QString toString() const;
   private:
     Model *mpParentModel;
@@ -795,7 +806,7 @@ private:
     bool getReset() const {return mReset;}
     bool getSynchronize() const {return mSynchronize;}
     int getPriority() const {return mPriority;}
-    Annotation *getAnnotation() const {return mpAnnotation.get();}
+    Annotation *getAnnotation() const;
     QString toString() const;
   private:
     Model *mpParentModel;
@@ -817,7 +828,7 @@ private:
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
-    Annotation *getAnnotation() const {return mpAnnotation.get();}
+    Annotation *getAnnotation() const;
     QString toString() const;
   private:
     Model *mpParentModel;

@@ -108,7 +108,7 @@ private:
 public:
   CoOrdinateSystem mMergedCoOrdinateSystem;
   CoOrdinateSystem getCoOrdinateSystem() const {return mCoOrdinateSystem;}
-  void setCoOrdinateSystem(const CoOrdinateSystem coOrdinateSystem) {mCoOrdinateSystem = coOrdinateSystem;}
+  void setCoOrdinateSystem(CoOrdinateSystem coOrdinateSystem) {mCoOrdinateSystem = std::move(coOrdinateSystem);}
 private:
   bool mVisualizationView;
   bool mIsCustomScale;

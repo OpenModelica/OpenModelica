@@ -29,9 +29,10 @@
  */
 #include "BooleanAnnotation.h"
 
-BooleanAnnotation::BooleanAnnotation()
+BooleanAnnotation::BooleanAnnotation(bool value)
+  : mValue(value)
 {
-  clear();
+  setExp();
 }
 
 void BooleanAnnotation::clear()

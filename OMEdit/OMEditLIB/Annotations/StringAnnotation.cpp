@@ -29,9 +29,10 @@
  */
 #include "StringAnnotation.h"
 
-StringAnnotation::StringAnnotation()
+StringAnnotation::StringAnnotation(const QString &str)
+  : mValue(str)
 {
-  clear();
+  setExp();
 }
 
 void StringAnnotation::clear()

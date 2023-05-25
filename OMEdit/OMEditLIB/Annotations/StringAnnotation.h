@@ -35,7 +35,8 @@
 class StringAnnotation : public DynamicAnnotation
 {
   public:
-    StringAnnotation();
+    StringAnnotation() = default;
+    StringAnnotation(const QString &str);
 
     void clear() override;
 

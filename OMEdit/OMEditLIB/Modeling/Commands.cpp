@@ -318,15 +318,15 @@ void AddComponentCommand::undo()
   mpDiagramGraphicsView->deleteElementFromClass(mpDiagramComponent);
 }
 
-UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, Transformation oldTransformation, Transformation newTransformation,
                                                                              const bool positionChanged, const bool moveConnectorsTogether, UndoCommand *pParent)
-  : UndoCommand(pParent)
+  : UndoCommand(pParent),
+    mpComponent(pComponent),
+    mOldTransformation(std::move(oldTransformation)),
+    mNewTransformation(std::move(newTransformation)),
+    mPositionChanged(positionChanged),
+    mMoveConnectorsTogether(moveConnectorsTogether)
 {
-  mpComponent = pComponent;
-  mOldTransformation = oldTransformation;
-  mNewTransformation = newTransformation;
-  mPositionChanged = positionChanged;
-  mMoveConnectorsTogether = moveConnectorsTogether;
   setText(QString("Update Component %1 Transformations").arg(mpComponent->getName()));
 }
 

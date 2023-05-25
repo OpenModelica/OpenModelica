@@ -35,7 +35,8 @@
 class BooleanAnnotation : public DynamicAnnotation
 {
   public:
-    BooleanAnnotation();
+    BooleanAnnotation() = default;
+    BooleanAnnotation(bool value);
 
     void clear() override;
 

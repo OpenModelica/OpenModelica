@@ -3015,7 +3015,8 @@ bool Element::checkEnumerationDisplayString(QString &displayString, const QStrin
 void Element::updateToolTip()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    QString comment = mpModelComponent->getComment().replace("\\\"", "\"");
+    QString comment = mpModelComponent->getComment();
+    comment.replace("\\\"", "\"");
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     comment = pOMCProxy->makeDocumentationUriToFileName(comment);
     // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
