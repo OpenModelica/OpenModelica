@@ -718,7 +718,6 @@ protected
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
         attr := lowerEquationAttributes(ty, init);
-        //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
