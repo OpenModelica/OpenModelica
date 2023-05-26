@@ -498,8 +498,6 @@ namespace ModelInstance
     : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
-    mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(pParentModel);
-    mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(pParentModel);
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
@@ -516,10 +514,12 @@ namespace ModelInstance
   void Annotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("Icon")) {
+      mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpIconAnnotation->deserialize(jsonObject.value("Icon").toObject());
     }
 
     if (jsonObject.contains("Diagram")) {
+      mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpDiagramAnnotation->deserialize(jsonObject.value("Diagram").toObject());
     }
 
@@ -602,6 +602,18 @@ namespace ModelInstance
       mDiagramMap.deserialize(jsonObject.value("DiagramMap").toObject());
     }
   }
+
+  IconDiagramAnnotation *Annotation::getIconAnnotation() const
+  {
+    return mpIconAnnotation ? mpIconAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+  }
+
+  IconDiagramAnnotation *Annotation::getDiagramAnnotation() const
+  {
+    return mpDiagramAnnotation ? mpDiagramAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+  }
+
+  IconDiagramAnnotation IconDiagramAnnotation::defaultIconDiagramAnnotation{nullptr};
 
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
@@ -951,6 +963,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("prefixes")) {
+      mpPrefixes = std::make_unique<Prefixes>(this);
       mpPrefixes->deserialize(mModelJson.value("prefixes").toObject());
     }
 
@@ -1400,7 +1413,6 @@ namespace ModelInstance
     mName = "";
     mMissing = false;
     mRestriction = "";
-    mpPrefixes = std::make_unique<Prefixes>(this);
     mComment = "";
     mElements.clear();
     mConnections.clear();
@@ -1582,7 +1594,6 @@ namespace ModelInstance
   Element::Element(Model *pParentModel)
   {
     mpParentModel = pParentModel;
-    mpPrefixes = std::make_unique<Prefixes>(pParentModel);
     mComment = "";
   }
 
@@ -1623,6 +1634,46 @@ namespace ModelInstance
     return modifierValue;
   }
 
+  bool Element::isPublic() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isPublic() : true;
+  }
+
+  bool Element::isFinal() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isFinal() : false;
+  }
+
+  bool Element::isInner() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isInner() : false;
+  }
+
+  bool Element::isOuter() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
+  }
+
+  Replaceable *Element::getReplaceable() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+  }
+
+  QString Element::getConnector() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getConnector() : "";
+  }
+
+  QString Element::getVariability() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability() : "";
+  }
+
+  QString Element::getDirectionPrefix() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection() : "";
+  }
+
   /*!
    * \brief Component::getComment
    * Returns the Component comment.
@@ -1631,7 +1682,7 @@ namespace ModelInstance
    */
   const QString& Element::getComment() const
   {
-    if (mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
+    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
       return mpPrefixes->getReplaceable()->getComment();
     } else {
       return mComment;
@@ -1646,7 +1697,7 @@ namespace ModelInstance
    */
   Annotation *Element::getAnnotation() const
   {
-    if (mpPrefixes->getReplaceable() && mpPrefixes->getReplaceable()->getAnnotation()) {
+    if (mpPrefixes && mpPrefixes->getReplaceable() && mpPrefixes->getReplaceable()->getAnnotation()) {
       return mpPrefixes->getReplaceable()->getAnnotation();
     } else if (mpAnnotation) {
       return mpAnnotation.get();
@@ -1791,6 +1842,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("prefixes")) {
+      mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
       mpPrefixes->deserialize(jsonObject.value("prefixes").toObject());
     }
 
@@ -1824,7 +1876,6 @@ namespace ModelInstance
   ReplaceableClass::ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
-    mpParentModel = pParentModel;
     mIsShortClassDefinition = false;
     deserialize(jsonObject);
   }
@@ -1836,6 +1887,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("prefixes")) {
+      mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
       mpPrefixes->deserialize(jsonObject.value("prefixes").toObject());
     }
 
