@@ -108,6 +108,7 @@ public
       // Modules
       modules := {
         (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
+        (cleanup,                                                           "Cleanup"),
         (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
         (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
       };
@@ -121,6 +122,7 @@ public
       end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to apply modules!"});
+      fail();
     end try;
   end main;
 
@@ -363,13 +365,11 @@ public
           bdae.dae := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
         end if;
 
-        // Mark init_0 if homotopy call exists.
-        // The init_0 system is created by another module.
+        // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          bdae.init_0 := SOME({});
+          bdae.init_0 := SOME(list(System.clone(sys, false) for sys in bdae.init));
+          bdae.init_0 := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
         end if;
-
-        // TODO or create init_0 here
 
       then bdae;
 
@@ -409,8 +409,7 @@ public
         e := match name
           case "initial" algorithm
             Pointer.update(simplify, true);
-          then if init then listHead(listRest(Call.arguments(exp.call)))
-                       else listHead(Call.arguments(exp.call));
+          then Expression.BOOLEAN(init);
           else exp;
         end match;
       then e;
@@ -433,8 +432,7 @@ public
         e := match name
           case "homotopy" algorithm
             Pointer.update(hasHom, true);
-          then if init then listHead(listRest(Call.arguments(exp.call)))
-                       else listHead(Call.arguments(exp.call));
+          then listGet(Call.arguments(exp.call), if init then 2 else 1);
           else exp;
         end match;
       then e;

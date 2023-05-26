@@ -128,7 +128,6 @@ public
     str := match bdae
       local
         String tmp = "";
-        list<System> dae;
 
       case MAIN()
         algorithm
@@ -143,9 +142,11 @@ public
             tmp := tmp + System.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
             tmp := tmp + System.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
             tmp := tmp + System.toStringList(bdae.init, "[INI] Initialization: " + str);
+            if isSome(bdae.init_0) then
+              tmp := tmp + System.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
+            end if;
             if isSome(bdae.dae) then
-              SOME(dae) := bdae.dae;
-              tmp := tmp + System.toStringList(dae, "[DAE] DAEMode: " + str);
+              tmp := tmp + System.toStringList(Util.getOption(bdae.dae), "[DAE] DAEMode: " + str);
             end if;
           end if;
           tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
@@ -236,6 +237,7 @@ public
     mainModules := {
       (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning"),
       (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize"),
+      (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
       (Initialization.main,                                               "Initialization")
     };
 
@@ -245,8 +247,6 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
-      (Initialization.cleanup,                                        "Cleanup Simulation"),
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
       (Partitioning.categorize,                                       "Categorize"),
       (Solve.main,                                                    "Solve"),

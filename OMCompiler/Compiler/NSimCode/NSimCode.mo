@@ -311,10 +311,14 @@ public
 
             // init before everything else!
             (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map);
+            if isSome(bdae.init_0) then
+              init_0 := SimStrongComponent.Block.createInitialBlocks(Util.getOption(bdae.init_0), simCodeIndices, simcode_map);
+            else
+              init_0 := {};
+            end if;
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBSystem.SystemType.ODE, simcode_map);
-            init_0 := {};
             init_no_ret := {};
             start := {};
             discreteVars := {};
