@@ -277,6 +277,8 @@ private:
 
     CoordinateSystem mCoordinateSystem;
     CoordinateSystem mMergedCoOrdinateSystem;
+
+    static IconDiagramAnnotation defaultIconDiagramAnnotation;
   private:
     Model *mpParentModel;
     QList<Shape*> mGraphics;
@@ -389,8 +391,8 @@ private:
     Annotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
 
-    IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
-    IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
+    IconDiagramAnnotation *getIconAnnotation() const;
+    IconDiagramAnnotation *getDiagramAnnotation() const;
     const BooleanAnnotation &isState() const {return mState;}
     // Element annotation
     const BooleanAnnotation &isChoicesAllMatching() const {return mChoicesAllMatching;}
@@ -504,10 +506,7 @@ private:
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
     bool isOuter() const {return mOuter;}
-    bool isInput() const;
-    bool isOutput() const;
     Replaceable *getReplaceable() const {return mpReplaceable.get();}
-    bool isRedeclare() const {return mRedeclare;}
     const QString &getConnector() const {return mConnector;}
     const QString &getVariability() const {return mVariability;}
     const QString &getDirection() const {return mDirection;}
@@ -626,7 +625,14 @@ private:
     const Modifier &getModifier() const {return mModifier;}
     QString getModifierValueFromType(QStringList modifierNames);
     const Dimensions &getDimensions() const {return mDims;}
-    Prefixes *getPrefixes() const {return mpPrefixes.get();}
+    bool isPublic() const;
+    bool isFinal() const;
+    bool isInner() const;
+    bool isOuter() const;
+    Replaceable *getReplaceable() const;
+    QString getConnector() const;
+    QString getVariability() const;
+    QString getDirectionPrefix() const;
     const QString &getComment() const;
     Annotation *getAnnotation() const;
     const FlatModelica::Expression &getBinding() const {return mBinding;}
