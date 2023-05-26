@@ -179,7 +179,7 @@ See [OSMC-License.txt](OSMC-License.txt).
 
 ## How to cite
 
-See the [CITATIONS](CITATIONS.cff) file for information on how to cite OpenModelica in
+See the [CITATIONS](CITATION.cff) file for information on how to cite OpenModelica in
 any publications reporting work done using OpenModelica.
 
 ------------
