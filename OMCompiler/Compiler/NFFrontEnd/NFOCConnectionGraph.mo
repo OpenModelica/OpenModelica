@@ -583,42 +583,31 @@ protected function connectComponents
   input FlatEdge inFlatEdge;
   output FlatEdges outConnectedConnections;
   output FlatEdges outBrokenConnections;
+protected
+  ComponentRef ref1, ref2, canon1, canon2;
 algorithm
-  (outConnectedConnections,outBrokenConnections) := matchcontinue inFlatEdge
-    local
-      ComponentRef ref1, ref2, canon1, canon2;
+  (ref1, ref2, _) := inFlatEdge;
 
-    // leave the connect(ref1,ref2)
-    case ((ref1,_,_))
-      equation
-        failure(_ = canonical(partition,ref1)); // no parent
-      then ({inFlatEdge}, {});
+  try
+    canon1 := canonical(partition, ref1);
+    canon2 := canonical(partition, ref2);
+    false := connectCanonicalComponents(partition, canon1, canon2);
 
-    // leave the connect(ref1,ref2)
-    case ((_,ref2,_))
-      equation
-        failure(_ = canonical(partition,ref2)); // no parent
-      then ({inFlatEdge}, {});
-
-    // leave the connect(ref1,ref2)
-    case ((ref1,ref2,_))
-      equation
-        canon1 = canonical(partition,ref1);
-        canon2 = canonical(partition,ref2);
-        true = connectCanonicalComponents(partition,canon1,canon2);
-      then ({inFlatEdge}, {});
+    // debug print
+    if Flags.isSet(Flags.CGRAPH) then
+      Debug.trace("- NFOCConnectionGraph.connectComponents: should remove equations generated from: connect(" +
+         ComponentRef.toString(ref1) + ", " +
+         ComponentRef.toString(ref2) + ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.\n");
+    end if;
 
     // break the connect(ref1, ref2)
-    case ((ref1,ref2,_))
-      equation
-        // debug print
-        if Flags.isSet(Flags.CGRAPH) then
-          Debug.trace("- NFOCConnectionGraph.connectComponents: should remove equations generated from: connect(" +
-             ComponentRef.toString(ref1) + ", " +
-             ComponentRef.toString(ref2) + ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.\n");
-        end if;
-      then ({}, {inFlatEdge});
-  end matchcontinue;
+    outConnectedConnections := {};
+    outBrokenConnections := {inFlatEdge};
+  else
+    // leave the connect(ref1,ref2)
+    outConnectedConnections := {inFlatEdge};
+    outBrokenConnections := {};
+  end try;
 end connectComponents;
 
 protected function connectCanonicalComponents
@@ -732,29 +721,18 @@ end addPotentialRootsToTable;
 
 protected function addConnections
 "Adds all connections to graph."
-  input CrefCrefTable inTable;
+  input CrefCrefTable table;
   input FlatEdges inConnections;
-  output FlatEdges outConnectedConnections;
-  output FlatEdges outBrokenConnections;
+  output FlatEdges outConnectedConnections = {};
+  output FlatEdges outBrokenConnections = {};
+protected
+  FlatEdges connected, broken;
 algorithm
-  (outConnectedConnections, outBrokenConnections) := match(inTable, inConnections)
-    local
-      CrefCrefTable table;
-      FlatEdges tail;
-      FlatEdges broken1,broken2,broken,connected1,connected2,connected;
-      FlatEdge e;
-
-    // empty case
-    case(table, {}) then ({}, {});
-    // normal case
-    case(table, e::tail)
-      equation
-        (connected1, broken1) = connectComponents(table, e);
-        (connected2, broken2) = addConnections(table, tail);
-        connected = listAppend(connected1, connected2);
-        broken = listAppend(broken1, broken2);
-      then (connected, broken);
-  end match;
+  for c in inConnections loop
+    (connected, broken) := connectComponents(table, c);
+    outConnectedConnections := listAppend(connected, outConnectedConnections);
+    outBrokenConnections := listAppend(broken, outBrokenConnections);
+  end for;
 end addConnections;
 
 protected function findResultGraph
@@ -766,7 +744,7 @@ protected function findResultGraph
   output FlatEdges outConnectedConnections;
   output FlatEdges outBrokenConnections;
 algorithm
-  (outRoots, outConnectedConnections, outBrokenConnections) := matchcontinue(inGraph, modelNameQualified)
+  (outRoots, outConnectedConnections, outBrokenConnections) := match(inGraph, modelNameQualified)
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
@@ -838,7 +816,7 @@ algorithm
       then
         (finalRoots, connected, broken);
 
-  end matchcontinue;
+  end match;
 end findResultGraph;
 
 protected function orderConnectsGuidedByUser
