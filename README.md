@@ -29,7 +29,7 @@ OpenModelica.git is a superproject. Clone the project using one of:
 # Replace the openmodelica.org pull URL with https://github.com/OpenModelica/OpenModelica.git if you want to pull directly from github
 # The default choice is to push to your fork on github.com (SSH). Replace MY_FORK with OpenModelica to push directly to the OpenModelica repositories (if you have access)
 MY_FORK=<MyGitHubUserName>
-git clone https://openmodelica.org/git-readonly/OpenModelica.git --recursive
+git clone --recurse-submodules https://openmodelica.org/git-readonly/OpenModelica.git
 cd OpenModelica
 git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git
 git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`'
@@ -62,7 +62,7 @@ directories will be ignored by autoconf and skipped during compilation.
 
 To checkout a specific version of OpenModelica, say tag v1.16.2 do:
 ```bash
-git clone https://github.com/OpenModelica/OpenModelica.git --recursive
+git clone --recurse-submodules https://github.com/OpenModelica/OpenModelica.git
 cd OpenModelica
 git checkout v1.16.2
 git submodule update --force --init --recursive
@@ -88,9 +88,9 @@ git submodule status --recursive
 ### To checkout a minimal version of OpenModelica
 
 ```bash
-> git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-minimal
-> cd OpenModelica-minimal
-> git submodule update --init --recursive libraries
+git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-minimal
+cd OpenModelica-minimal
+git submodule update --init --recursive libraries
 ```
 
 ## Build OpenModelica
@@ -165,11 +165,13 @@ end Modelica.Electrical.Analog.Basic.Resistor;
 
 ## How to contribute to the OpenModelica Compiler
 
-The long-term development of OpenModelica is supported by a non-profit organization - the [Open Source Modelica Consortium (OSMC)](https://openmodelica.org/home/consortium/).
+The long-term development of OpenModelica is supported by a non-profit organization - the
+[Open Source Modelica Consortium (OSMC)](https://openmodelica.org/home/consortium/).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) on how to contribute to the development.
 If you encounter any bugs, feel free to open a ticket about it.
-For general questions regarding OpenModelica there is a [discussions section](https://github.com/OpenModelica/OpenModelica/discussions) available.
+For general questions regarding OpenModelica there is a
+[discussions section](https://github.com/OpenModelica/OpenModelica/discussions) available.
 
 ## License
 
@@ -177,23 +179,8 @@ See [OSMC-License.txt](OSMC-License.txt).
 
 ## How to cite
 
-We recommend citing the article
-[The OpenModelica Integrated Environment for Modeling, Simulation, and Model-Based Development](https://www.mic-journal.no/ABS/MIC-2020-4-1.asp/)
-regarding OpenModelica.
+See the [CITATIONS](./CITATIONS.md) file for information on how to cite OpenModelica in
+any publications reporting work done using OpenModelica.
 
-BibTeX:
-```bibtex
-@article{MIC-2020-4-1,
-  title={{The OpenModelica Integrated Environment for Modeling, Simulation, and Model-Based   Development}},
-  author={Fritzson, Peter and Pop, Adrian and Abdelhak, Karim and Ashgar, Adeel and Bachmann,   Bernhard and Braun, Willi and Bouskela, Daniel and Braun, Robert and Buffoni, Lena and Casella,   Francesco and Castro, Rodrigo and Franke, Rüdiger and Fritzson, Dag and Gebremedhin, Mahder and   Heuermann, Andreas and Lie, Bernt and Mengist, Alachew and Mikelsons, Lars and Moudgalya, Kannan   and Ochel, Lennart and Palanisamy, Arunkumar and Ruge, Vitalij and Schamai, Wladimir and Sjölund,   Martin and Thiele, Bernhard and Tinnerholm, John and Östlund, Per},
-  journal={Modeling, Identification and Control},
-  volume={41},
-  number={4},
-  pages={241--295},
-  year={2020},
-  doi={10.4173/mic.2020.4.1},
-  publisher={Norwegian Society of Automatic Control}
-}
-```
 ------------
-Last updated: 2023-02-13
+Last updated: 2023-05-26
