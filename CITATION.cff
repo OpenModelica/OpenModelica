@@ -1,0 +1,117 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: OpenModelica
+message: >-
+  We ask users of OpenModelica to cite the article \"The
+  OpenModelica Integrated Environment for Modeling,
+  Simulation, and Model-Based Development\" in any
+  publications reporting work done with OpenModelica.
+repository-code: 'https://github.com/OpenModelica/OpenModelica'
+url: 'https://www.openmodelica.org'
+preferred-citation:
+  type: article
+  authors:
+    - given-names: Peter
+      family-names: Fritzson
+    - given-names: Adrian
+      family-names: Pop
+    - given-names: Karim
+      family-names: Abdelhak
+    - given-names: Adeel
+      family-names: Ashgar
+    - given-names: Bernhard
+      family-names: Bachmann
+    - given-names: Willi
+      family-names: Braun
+    - given-names: Daniel
+      family-names: Bouskela
+    - given-names: Robert
+      family-names: Braun
+    - given-names: Lena
+      family-names: Buffoni
+    - given-names: Francesco
+      family-names: Casella
+    - given-names: Rodrigo
+      family-names: Castro
+    - given-names: Rüdiger
+      family-names: Franke
+    - given-names: Dag
+      family-names: Fritzson
+    - given-names: Mahder
+      family-names: Gebremedhin
+    - given-names: Andreas
+      family-names: Heuermann
+    - given-names: Bernt
+      family-names: Lie
+    - given-names: Alachew
+      family-names: Mengist
+    - given-names: Lars
+      family-names: Mikelsons
+    - given-names: Kannan
+      family-names: Moudgalya
+    - given-names: Lennart
+      family-names: Ochel
+    - given-names: Arunkumar
+      family-names: Palanisamy
+    - given-names: Vitalij
+      family-names: Ruge
+    - given-names: Wladimir
+      family-names: Schamai
+    - given-names: Martin
+      family-names: Sjölund
+    - given-names: Bernhard
+      family-names: Thiele
+    - given-names: John
+      family-names: Tinnerholm
+    - given-names: Per
+      family-names: Östlund
+
+  doi: "10.4173/mic.2020.4.1"
+  journal: Modeling, Identification and Control
+  title: "The OpenModelica Integrated Environment for Modeling, Simulation, and Model-Based Development"
+  volume: 41
+  issue: 4
+  start: 241 # First page number
+  end: 295   # Last page number
+  year: 2020
+  publisher: "Norwegian Society of Automatic Control"
+
+  abstract: >-
+    OpenModelica is a unique large-scale integrated
+    open-source Modelica- and FMI-based modeling, simulation,
+    optimization, model-based analysis and development
+    environment. Moreover, the OpenModelica environment
+    provides a number of facilities such as debugging;
+    optimization; visualization and 3D animation; web-based
+    model editing and simulation; scripting from Modelica,
+    Python, Julia, and Matlab; efficient simulation and
+    co-simulation of FMI-based models; compilation for
+    embedded systems; Modelica-UML integration; requirement
+    verification; and generation of parallel code for
+    multi-core architectures. The environment is based on the
+    equation-based object-oriented Modelica language and
+    currently uses the MetaModelica extended version of
+    Modelica for its model compiler implementation. This
+    overview paper gives an up-to-date description of the
+    capabilities of the system, short overviews of used open
+    source symbolic and numeric algorithms with pointers to
+    published literature, tool integration aspects, some
+    lessons learned, and the main vision behind its
+    development.
+  keywords:
+    - Modelica
+    - OpenModelica
+    - MetaModelica
+    - FMI
+    - modeling
+    - simulation
+    - optimization
+    - development
+    - environment
+    - numeric
+    - symbolic
+    - compilation
+    - embedded system
+    - real-time
