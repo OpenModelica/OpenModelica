@@ -433,7 +433,6 @@ private:
     // Extend annotation
     IconDiagramMap mIconMap;
     IconDiagramMap mDiagramMap;
-    QMap<QString, QVariant> mValues;
   };
 
   class Dimensions
