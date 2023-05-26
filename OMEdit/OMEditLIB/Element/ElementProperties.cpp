@@ -328,7 +328,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
    * then we assume its an expression and don't do any conversions.
    * So just show the unit in the unit drop down list
    */
-  if (!unitComboBoxChanged) {
+  if (!unitComboBoxChanged && !defaultValue) {
     enableDisableUnitComboBox(value);
   }
   if (Utilities::isValueLiteralConstant(value)) {
@@ -696,8 +696,8 @@ void Parameter::createValueWidget()
  */
 void Parameter::enableDisableUnitComboBox(const QString &value)
 {
-  // Do not do anything when the value is empty OR parameter is not enabled
-  if (value.isEmpty() || !mEnable) {
+  // Do not do anything when the value is empty
+  if (value.isEmpty()) {
     return;
   }
   /* Enable/disable the unit combobox based on the literalConstant
@@ -705,9 +705,9 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
    * ticket:5618 Disable the unit drop down when we have a symbolic parameter
    */
   bool literalConstant = Utilities::isValueLiteralConstant(value);
-  mpUnitComboBox->setEnabled(literalConstant);
+  mpUnitComboBox->setEnabled(mEnable && literalConstant);
   /* ticket:5976 don't change the unit combobox when the literalConstant is true
-   * We only want to disbale and switch to display unit when literalConstant is false and we got a symbolic or expression parameter.
+   * We only want to disbale and switch to unit when literalConstant is false and we got a symbolic or expression parameter.
    */
   if (!literalConstant) {
     bool state = mpUnitComboBox->blockSignals(true);
@@ -925,15 +925,7 @@ void Parameter::valueCheckBoxChanged(bool toggle)
  */
 void Parameter::valueTextBoxEdited(const QString &text)
 {
-  // if we don't have the text we use the default value otherwise the text
-  QString value;
-  if (text.isEmpty()) {
-    value = mDefaultValue;
-  } else {
-    value = text;
-  }
-
-  enableDisableUnitComboBox(value);
+  enableDisableUnitComboBox(text);
 }
 
 void Parameter::showFixedMenu()
