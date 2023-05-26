@@ -66,7 +66,6 @@ protected
   import BackendUtil = NBBackendUtil;
   import StringUtil;
 
-
 public
 
   record TEARING_SET
@@ -125,18 +124,25 @@ public
         algorithm
           (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.ode := systems;
+          bdae.funcTree := funcTree;
       then bdae;
 
       case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree))
         algorithm
           (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.init := systems;
+          if Util.isSome(bdae.init_0) then
+            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), func, funcTree, systemType);
+            bdae.init_0 := SOME(systems);
+          end if;
+          bdae.funcTree := funcTree;
       then bdae;
 
       case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree))
         algorithm
           (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.dae := SOME(systems);
+          bdae.funcTree := funcTree;
       then bdae;
 
     // ToDo: all the other cases: e.g. Jacobian, Hessian

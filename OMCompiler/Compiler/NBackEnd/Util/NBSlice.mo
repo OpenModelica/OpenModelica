@@ -224,7 +224,7 @@ public
   protected
     ComponentRef checkCref;
   algorithm
-    // allways remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
+    // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
     if UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set) then
       Pointer.update(acc, cref :: Pointer.access(acc));
     end if;

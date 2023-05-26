@@ -558,7 +558,7 @@ protected
         ComponentRef checkCref;
         Expression exp;
 
-      // allways checks if exp is independent of cref!
+      // always checks if exp is independent of cref!
 
       // 1. already solved
       // cref = exp

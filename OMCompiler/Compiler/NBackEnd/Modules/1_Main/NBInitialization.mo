@@ -38,10 +38,12 @@ encapsulated package NBInitialization
 protected
   // NF imports
   import BackendExtension = NFBackendExtension;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import Flatten = NFFlatten;
+  import NFFunction.Function;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
@@ -51,14 +53,15 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation,EquationPointers};
+  import NBEquation.{Equation,EquationPointers,WhenEquationBody};
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers};
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
-  import System = NBSystem;
+  import NBSystem;
+  import NBSystem.System;
   import Tearing = NBTearing;
 
   // Util imports
@@ -98,13 +101,14 @@ public
         then bdae;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create initial system!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial system!"});
         then fail();
       end match;
 
       // Modules
       modules := {
         (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
+        (cleanup,                                                           "Cleanup"),
         (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
         (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
       };
@@ -117,7 +121,8 @@ public
         end if;
       end if;
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to apply modules!"});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to apply modules!"});
+      fail();
     end try;
   end main;
 
@@ -330,6 +335,111 @@ public
     end if;
     Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
   end createPreEquationSlice;
+
+  function cleanup
+    "removes calls from the initial problem and marks init_0"
+    extends Module.wrapper;
+  protected
+    Pointer<Boolean> hasHom = Pointer.create(false);
+  algorithm
+    bdae := match bdae
+      case BackendDAE.MAIN() algorithm
+
+        // initial() -> false
+        bdae.ode        := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode);
+        bdae.algebraic  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.algebraic);
+        bdae.ode_event  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode_event);
+        bdae.alg_event  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.alg_event);
+        if Util.isSome(bdae.dae) then
+          bdae.dae := SOME(list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in Util.getOption(bdae.dae)));
+        end if;
+        // initial() -> true
+        bdae.init := list(System.mapEquations(sys, function cleanupInitialCall(init = true)) for sys in bdae.init);
+
+        // homotopy(actual, simplified) -> actual
+        bdae.ode        := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode);
+        bdae.algebraic  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.algebraic);
+        bdae.ode_event  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode_event);
+        bdae.alg_event  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.alg_event);
+        if Util.isSome(bdae.dae) then
+          bdae.dae := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
+        end if;
+
+        // create init_0 if homotopy call exists.
+        if Pointer.access(hasHom) then
+          bdae.init_0 := SOME(list(System.clone(sys, false) for sys in bdae.init));
+          bdae.init_0 := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
+        end if;
+
+      then bdae;
+
+      else bdae;
+    end match;
+  end cleanup;
+
+  function cleanupInitialCall
+    input output Equation eq;
+    input Boolean init;
+  algorithm
+    eq := match eq
+      local
+        WhenEquationBody body;
+        Pointer<Boolean> simplify;
+      case Equation.WHEN_EQUATION(body = body) algorithm
+        simplify := Pointer.create(false);
+        body.condition := Expression.map(body.condition, function cleanupInitialCallExp(init = init, simplify = simplify));
+        // TODO simplify when equation if `Pointer.access(simplify)` is true
+        eq.body := body;
+      then Equation.simplify(eq);
+      else eq;
+    end match;
+  end cleanupInitialCall;
+
+  function cleanupInitialCallExp
+    input output Expression exp;
+    input Boolean init;
+    input Pointer<Boolean> simplify "output, determines if when-equation should be simplified";
+  algorithm
+    exp := match exp
+      local
+        Expression e;
+        String name;
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        e := match name
+          case "initial" algorithm
+            Pointer.update(simplify, true);
+          then Expression.BOOLEAN(init);
+          else exp;
+        end match;
+      then e;
+      else exp;
+    end match;
+  end cleanupInitialCallExp;
+
+  function cleanupHomotopy
+    input output Expression exp;
+    input Boolean init "if init then replace with simplified, else replace with actual";
+    input Pointer<Boolean> hasHom   "output, determines if system contains homotopy()";
+  algorithm
+    exp := match exp
+      local
+        Expression e;
+        String name;
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        e := match name
+          case "homotopy" algorithm
+            Pointer.update(hasHom, true);
+          then listGet(Call.arguments(exp.call), if init then 2 else 1);
+          else exp;
+        end match;
+      then e;
+      else exp;
+    end match;
+  end cleanupHomotopy;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

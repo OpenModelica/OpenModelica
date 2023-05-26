@@ -93,21 +93,18 @@ public
   algorithm
     bdae := match (systemType, bdae)
       local
-        System.System new_system;
-        list<System.System> systems, new_systems = {};
+        list<System.System> systems;
         VarData varData;
         EqData eqData;
         FunctionTree funcTree;
 
       case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          for system in systems loop
-            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
-            new_systems := new_system :: new_systems;
-          end for;
-          bdae.ode := listReverse(new_systems);
+          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
+          bdae.ode := systems;
           bdae.varData := varData;
           bdae.eqData := eqData;
+          bdae.funcTree := funcTree;
       then bdae;
 
       case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
@@ -115,24 +112,24 @@ public
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          for system in systems loop
-            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
-            new_systems := new_system :: new_systems;
-          end for;
-          bdae.init := listReverse(new_systems);
+          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
+          bdae.init := systems;
+          if Util.isSome(bdae.init_0) then
+            (systems, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), varData, eqData, funcTree, func);
+            bdae.init_0 := SOME(systems);
+          end if;
           bdae.varData := varData;
           bdae.eqData := eqData;
+          bdae.funcTree := funcTree;
       then bdae;
 
       case (System.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          for system in systems loop
-            (new_system, varData, eqData, funcTree) := causalizeDAEMode(system, varData, eqData, funcTree);
-            new_systems := new_system :: new_systems;
-          end for;
-          bdae.dae := SOME(listReverse(new_systems));
+          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, causalizeDAEMode);
+          bdae.dae := SOME(systems);
           bdae.varData := varData;
           bdae.eqData := eqData;
+          bdae.funcTree := funcTree;
       then bdae;
 
       else algorithm
@@ -140,6 +137,23 @@ public
       then fail();
     end match;
   end main;
+
+  function applyModule
+    input list<System.System> systems;
+    output list<System.System> new_systems = {};
+    input output VarData varData;
+    input output EqData eqData;
+    input output FunctionTree funcTree;
+    input Module.causalizeInterface func;
+  protected
+    System.System new_system;
+  algorithm
+    for system in systems loop
+      (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
+      new_systems := new_system :: new_systems;
+    end for;
+    new_systems := listReverse(new_systems);
+  end applyModule;
 
   function simple
     input VariablePointers vars;

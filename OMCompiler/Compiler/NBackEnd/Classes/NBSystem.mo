@@ -43,6 +43,7 @@ public
 protected
   // NF imports
   import Variable = NFVariable;
+  import Expression = NFExpression;
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
@@ -214,6 +215,26 @@ public
       end if;
     end getLoopResiduals;
 
+    function mapEquations
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output BEquation.Equation e;
+      end MapFunc;
+    algorithm
+      system.equations := EquationPointers.map(system.equations, func);
+    end mapEquations;
+
+    function mapExpressions
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output Expression e;
+      end MapFunc;
+    algorithm
+      system.equations := EquationPointers.mapExp(system.equations, func);
+    end mapExpressions;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
@@ -249,6 +270,21 @@ public
         then fail();
       end match;
     end systemTypeInteger;
+
+    function clone
+      "only clones equations."
+      input output System sys;
+      input Boolean shallow = true;
+    algorithm
+      sys.equations := EquationPointers.clone(sys.equations, shallow);
+      // these are partially pointer based and have to be recomputed if not shallow
+      if not shallow then
+        sys.adjacencyMatrix   := NONE();
+        sys.matching          := NONE();
+        sys.strongComponents  := NONE();
+        sys.jacobian          := NONE();
+      end if;
+    end clone;
 
   protected
     function partitionKindString
