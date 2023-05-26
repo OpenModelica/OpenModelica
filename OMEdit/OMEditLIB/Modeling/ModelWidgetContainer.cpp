@@ -3244,21 +3244,21 @@ void GraphicsView::addConnection(Element *pElement)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
-              mpConnectionLineAnnotation->updateLine();
-              mpConnectionLineAnnotation->drawCornerItems();
-              mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-              ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-              addConnectionToView(mpConnectionLineAnnotation, false);
-              addConnectionToClass(mpConnectionLineAnnotation);
-              ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-              mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
-              mpModelWidget->updateModelText();
-
-              if (!mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-                MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName),
-                                                                      Helper::scriptingKind, Helper::errorLevel));
+              if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+                mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
+                mpConnectionLineAnnotation->updateLine();
+                mpConnectionLineAnnotation->drawCornerItems();
+                mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+                ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+                addConnectionToView(mpConnectionLineAnnotation, false);
+                addConnectionToClass(mpConnectionLineAnnotation);
+                ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+                mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
+                mpModelWidget->updateModelText();
+              } else {
+                QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
+                removeCurrentConnection();
               }
             } else {
               removeCurrentConnection();
