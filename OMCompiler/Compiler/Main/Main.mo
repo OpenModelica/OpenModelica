@@ -351,9 +351,8 @@ algorithm
     // A .mo-file.
     case true
       equation
-        pnew = Parser.parse(inLib, "UTF-8");
         p = SymbolTable.getAbsyn();
-        pnew = Interactive.mergeProgram(pnew, p);
+        pnew = CevalScript.loadFile(inLib, "UTF-8", p, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 

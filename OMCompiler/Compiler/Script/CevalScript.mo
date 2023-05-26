@@ -311,7 +311,7 @@ algorithm
   end if;
 end compileModel;
 
-protected function loadFile "load the file or the directory structure if the file is named package.mo"
+public function loadFile "load the file or the directory structure if the file is named package.mo"
   input String name;
   input String encoding;
   input Absyn.Program p;
