@@ -132,8 +132,7 @@ public
           (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            SOME(systems) := bdae.init_0;
-            (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
+            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), func, funcTree, systemType);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.funcTree := funcTree;

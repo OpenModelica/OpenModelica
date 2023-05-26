@@ -115,8 +115,7 @@ public
           (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            SOME(systems) := bdae.init_0;
-            (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
+            (systems, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), varData, eqData, funcTree, func);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.varData := varData;
@@ -131,7 +130,7 @@ public
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.funcTree := funcTree;
-       then bdae;
+      then bdae;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with system type " + System.System.systemTypeString(systemType) + "!"});
