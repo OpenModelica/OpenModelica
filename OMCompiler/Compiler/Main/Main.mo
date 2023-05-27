@@ -414,8 +414,6 @@ algorithm
         for lib in libs loop
           loadLib(lib);
         end for;
-        // Show any errors that occured during parsing.
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
 
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");

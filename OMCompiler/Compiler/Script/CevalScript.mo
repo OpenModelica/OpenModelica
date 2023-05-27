@@ -340,7 +340,7 @@ algorithm
   ClassLoader.checkOnLoadMessage(outProgram);
 
   // Check if we have duplicate top level classes before calling checkUsesAndUpdateProgram()
-  // which will update the program by repeatedly replacing duplicates with last one seen.
+  // which will update the program by repeatedly replacing duplicate classes with last one seen.
   if checkDuplicateTopLevelClasses(outProgram) then
     fail();
   end if;
