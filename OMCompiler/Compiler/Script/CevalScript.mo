@@ -114,6 +114,7 @@ import SymbolTable;
 import System;
 import Tpl;
 import Types;
+import UnorderedMap;
 import Unparsing;
 import Util;
 import ValuesUtil;
@@ -311,7 +312,7 @@ algorithm
   end if;
 end compileModel;
 
-protected function loadFile "load the file or the directory structure if the file is named package.mo"
+public function loadFile "load the file or the directory structure if the file is named package.mo"
   input String name;
   input String encoding;
   input Absyn.Program p;
@@ -337,8 +338,60 @@ algorithm
   end if;
   outProgram := Parser.parse(name,encoding);
   ClassLoader.checkOnLoadMessage(outProgram);
+
+  // Check if we have duplicate top level classes before calling checkUsesAndUpdateProgram()
+  // which will update the program by repeatedly replacing duplicate classes with last one seen.
+  if checkDuplicateTopLevelClasses(outProgram) then
+    fail();
+  end if;
+
   outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad, requireExactVersion);
 end loadFile;
+
+protected function checkDuplicateTopLevelClasses
+  input Absyn.Program program;
+  output Boolean hasDuplicates = false;
+protected
+  Boolean skip;
+  list<SourceInfo> infos;
+  UnorderedMap<String, Absyn.Info> classInfoMap;
+  Option<Absyn.Info> optClassInfo;
+algorithm
+
+  if listLength(program.classes) < 2 then
+    return;
+  end if;
+
+  classInfoMap := UnorderedMap.new<Absyn.Info>(stringHashDjb2, stringEq);
+  for cl in program.classes loop
+    _ := match cl
+      case Absyn.CLASS(info=SOURCEINFO())
+        algorithm
+          // If the class comes from the interactive env or builtin files, ignore it.
+          skip := stringEq(cl.info.fileName,"<interactive>")
+                  or stringEq(System.basename(cl.info.fileName), "ModelicaBuiltin.mo")
+                  or stringEq(System.basename(cl.info.fileName), "MetaModelicaBuiltin.mo");
+
+          if not skip then
+            optClassInfo := UnorderedMap.get(cl.name, classInfoMap);
+
+            if Util.isSome(optClassInfo) then
+              // It is a duplicate named top level class. Print error and return.
+              infos := {Util.getOption(optClassInfo), cl.info};
+              Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {cl.name}, infos);
+              hasDuplicates := true;
+              return;
+            else
+              // It is not a duplicate yet. Add it to the map and continue.
+              UnorderedMap.add(cl.name, cl.info, classInfoMap);
+            end if;
+
+          end if;
+        then ();
+      else ();
+    end match;
+  end for;
+end checkDuplicateTopLevelClasses;
 
 protected function checkUsesAndUpdateProgram
   input Absyn.Program newp;
