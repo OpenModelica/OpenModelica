@@ -302,6 +302,10 @@
           "description": "Name of the class",
           "type": "string"
         },
+        "restriction": {
+          "description": "The kind of class",
+          "type": "string"
+        },
         "prefixes": {
           "description": "The class' prefixes",
           "$ref": "#/definitions/classPrefixes"
