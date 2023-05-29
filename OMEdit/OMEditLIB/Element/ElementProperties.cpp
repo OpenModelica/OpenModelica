@@ -605,7 +605,10 @@ void Parameter::createValueWidget()
         if (mValueType == Parameter::ReplaceableComponent || mValueType == Parameter::ReplaceableClass) {
           constrainedByClassName = mpModelInstanceElement->getReplaceable()->getConstrainedby();
           if (constrainedByClassName.isEmpty()) {
-            constrainedByClassName = mpModelInstanceElement->getType();
+            auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
+            if (pReplaceableClass) {
+              constrainedByClassName = pReplaceableClass->getBaseClass();
+            }
           }
         }
         choices = mpModelInstanceElement->getAnnotation()->getChoices().getChoices();

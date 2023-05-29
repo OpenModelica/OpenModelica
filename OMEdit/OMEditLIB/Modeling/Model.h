@@ -723,6 +723,7 @@ private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
   private:
     QString mName;
+    QString mType;
     bool mIsShortClassDefinition;
     QString mBaseClass;
     Source mSource;
@@ -731,7 +732,7 @@ private:
     virtual QString getName() const override {return mName;}
     virtual QString getQualifiedName() const override;
     virtual const QString &getRootType() const override {return mName;}
-    virtual QString getType() const override {return mBaseClass;}
+    virtual QString getType() const override {return mType;}
     virtual bool isShortClassDefinition() const override {return mIsShortClassDefinition;}
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}

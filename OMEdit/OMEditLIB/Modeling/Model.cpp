@@ -1886,6 +1886,10 @@ namespace ModelInstance
       mName = jsonObject.value("name").toString();
     }
 
+    if (jsonObject.contains("restriction")) {
+      mType = jsonObject.value("restriction").toString();
+    }
+
     if (jsonObject.contains("prefixes")) {
       mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
       mpPrefixes->deserialize(jsonObject.value("prefixes").toObject());
