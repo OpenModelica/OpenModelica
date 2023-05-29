@@ -378,6 +378,12 @@ algorithm
 
   ann_node := InstNode.newClass(ann_package, topNode, InstNodeType.IMPLICIT_SCOPE());
   expand(ann_node);
+  // Mark annotations as builtin.
+  cls := InstNode.getClass(ann_node);
+  elems := Class.classTree(cls);
+  ClassTree.mapClasses(elems, markBuiltinTypeNodes);
+  cls := Class.setClassTree(elems, cls);
+  ann_node := InstNode.updateClass(cls, ann_node);
 
   // Recreate the node type for the top scope to include the annotation node.
   // Note that this means that the annotation node will refer to a top scope
@@ -395,7 +401,7 @@ algorithm
   // could also be done when creating InstNodes, but only top-level classes
   // should have this annotation anyway.
   elems := Class.classTree(cls);
-  ClassTree.mapClasses(elems, markBuiltinTypeNodes);
+  ClassTree.mapClasses(elems, markBuiltinTypeNodesByAnnotation);
 
   // ModelicaBuiltin has a dummy declaration of Clock to make sure no one can
   // declare another Clock class in the top scope, here we replace it with the
@@ -409,10 +415,16 @@ end makeTopNode;
 function markBuiltinTypeNodes
   input output InstNode node;
 algorithm
+  node := InstNode.setNodeType(InstNodeType.BUILTIN_CLASS(), node);
+end markBuiltinTypeNodes;
+
+function markBuiltinTypeNodesByAnnotation
+  input output InstNode node;
+algorithm
   if SCodeUtil.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtin") then
     node := InstNode.setNodeType(InstNodeType.BUILTIN_CLASS(), node);
   end if;
-end markBuiltinTypeNodes;
+end markBuiltinTypeNodesByAnnotation;
 
 function partialInstClass
   input output InstNode node;
