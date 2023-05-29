@@ -50,6 +50,7 @@ getErrorString();
 //           {
 //             \"$kind\": \"class\",
 //             \"name\": \"C\",
+//             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
 //                 \"constrainedby\": \"A\",

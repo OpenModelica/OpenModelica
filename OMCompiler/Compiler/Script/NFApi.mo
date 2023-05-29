@@ -1276,6 +1276,8 @@ algorithm
 
   json := JSON.addPair("$kind", JSON.makeString("class"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(elem))), json);
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
 
   SCode.Element.CLASS(classDef = cdef, cmt = cmt) := elem;

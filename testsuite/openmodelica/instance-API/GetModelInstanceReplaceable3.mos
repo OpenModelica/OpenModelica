@@ -99,6 +99,7 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"$kind\": \"class\",
 //             \"name\": \"B\",
+//             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
@@ -113,6 +114,7 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"$kind\": \"class\",
 //             \"name\": \"C\",
+//             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
@@ -127,6 +129,7 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"$kind\": \"class\",
 //             \"name\": \"D\",
+//             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
 //                 \"constrainedby\": \"C\",
