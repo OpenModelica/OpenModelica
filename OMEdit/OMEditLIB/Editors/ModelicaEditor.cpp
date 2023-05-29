@@ -438,6 +438,10 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
+  /* Update the Libraries Browser when Modelica text change is done
+   * See discussion #10728
+   */
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
   return true;
 }
 

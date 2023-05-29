@@ -1116,13 +1116,6 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (pLibraryTreeItem && pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
       return false;
     }
-    // if any of children matches the filter, then current index matches the filter as well
-    int rows = sourceModel()->rowCount(index);
-    for (int i = 0 ; i < rows ; ++i) {
-      if (filterAcceptsRow(i, index)) {
-        return true;
-      }
-    }
     // check current index itself
     if (pLibraryTreeItem) {
       if ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
