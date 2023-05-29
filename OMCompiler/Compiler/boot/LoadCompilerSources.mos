@@ -20,7 +20,6 @@ if true then /* Suppress output */
     "../FrontEnd/ComponentReference.mo",
     "../FrontEnd/ConnectionGraph.mo",
     "../FrontEnd/ConnectUtil.mo",
-    "../FrontEnd/Constants.mo",
     "../FrontEnd/DAEDump.mo",
     "../FrontEnd/DAE.mo",
     "../FrontEnd/DAEUtil.mo",

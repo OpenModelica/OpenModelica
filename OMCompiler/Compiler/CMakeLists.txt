@@ -207,6 +207,9 @@ set_target_properties(OpenModelicaCompiler
 add_custom_command (
     TARGET OpenModelicaCompiler
     POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_1_x.mo
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_2_x.mo
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_3_x.mo
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/ModelicaBuiltin.mo
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/MetaModelicaBuiltin.mo
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/NFModelicaBuiltin.mo
@@ -288,6 +291,15 @@ install(TARGETS omc OpenModelicaCompiler
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
+install(FILES FrontEnd/AnnotationsBuiltin_1_x.mo
+            DESTINATION lib/omc
+            COMPONENT omc)
+install(FILES FrontEnd/AnnotationsBuiltin_2_x.mo
+            DESTINATION lib/omc
+            COMPONENT omc)
+install(FILES FrontEnd/AnnotationsBuiltin_3_x.mo
+            DESTINATION lib/omc
+            COMPONENT omc)
 install(FILES NFFrontEnd/NFModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT omc)

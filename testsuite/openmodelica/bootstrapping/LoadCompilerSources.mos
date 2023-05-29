@@ -17,7 +17,6 @@ if true then /* Suppress output */
     prefixPath + "FrontEnd/ComponentReference.mo",
     prefixPath + "FrontEnd/ConnectionGraph.mo",
     prefixPath + "FrontEnd/ConnectUtil.mo",
-    prefixPath + "FrontEnd/Constants.mo",
     prefixPath + "FrontEnd/DAE.mo",
     prefixPath + "FrontEnd/DAEDump.mo",
     prefixPath + "FrontEnd/DAEUtil.mo",

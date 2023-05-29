@@ -56,7 +56,6 @@ import Ceval;
 import ClassInf;
 import Config;
 import DAE.Connect;
-import Constants;
 import DAEUtil;
 import DoubleEnded;
 import Dump;
@@ -1785,28 +1784,16 @@ algorithm
 end getElementitemsAnnotationsFromItems;
 
 public function modelicaAnnotationProgram
-   input String annotationVersion "1.x or 2.x or 3.x";
-   output Absyn.Program annotationProgram;
+  input String annotationVersion "1.x or 2.x or 3.x";
+  output Absyn.Program annotationProgram;
+protected
+  String filename;
 algorithm
-  annotationProgram := match(annotationVersion)
-    local
-      Absyn.Program annProg;
-
-    case ("1.x")
-      equation
-        annProg = Parser.parsestring(Constants.annotationsModelica_1_x, "<1.x annotations>");
-      then annProg;
-
-    case ("2.x")
-      equation
-        annProg = Parser.parsestring(Constants.annotationsModelica_2_x, "<2.x annotations>");
-      then annProg;
-
-    case ("3.x")
-      equation
-        annProg = Parser.parsestring(Constants.annotationsModelica_3_x, "<3.x annotations>");
-      then annProg;
-  end match;
+  filename := Settings.getInstallationDirectoryPath() +
+              "/lib/omc/AnnotationsBuiltin_" +
+              Util.stringReplaceChar(annotationVersion, ".", "_") +
+              ".mo";
+  annotationProgram := Parser.parsebuiltin(filename, "UTF-8");
 end modelicaAnnotationProgram;
 
 public function buildEnvForGraphicProgram
