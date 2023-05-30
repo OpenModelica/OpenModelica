@@ -1114,9 +1114,11 @@ protected
     list<list<Subscript>> subs;
   algorithm
     try
-      var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
-      cref := lowerComponentReferenceInstNode(cref, var);
-      cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables)));
+      if not ComponentRef.isWild(cref) then
+        var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+        cref := lowerComponentReferenceInstNode(cref, var);
+        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables)));
+      end if;
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
