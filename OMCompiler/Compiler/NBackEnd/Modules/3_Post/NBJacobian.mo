@@ -816,7 +816,7 @@ protected
       // add $<new>.x variable pointer to the variables
       Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));
       // add x -> $<new>.x to the hashTable for later lookup
-      UnorderedMap.add(var.name, cref, Pointer.access(ht)); // PHI: Pointer.update ?
+      UnorderedMap.add(var.name, cref, Pointer.access(ht));
     end if;
   end makeVarTraverse;
 
