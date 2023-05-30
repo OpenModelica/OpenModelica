@@ -2068,7 +2068,7 @@ algorithm
 
   // append the equalityConstraint call equations for the broken connects
   if System.getHasOverconstrainedConnectors() then
-    ec_eql := List.flatten(list(Util.tuple33(e) for e in broken));
+    ec_eql := List.flatten(list(e.brokenEquations for e in broken));
     flatModel.equations := listAppend(ec_eql, flatModel.equations);
   end if;
 

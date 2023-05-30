@@ -49,7 +49,15 @@ protected
   import Type = NFType;
 
 public
-  type BrokenEdge = tuple<ComponentRef, ComponentRef, list<Equation>>;
+  uniontype BrokenEdge
+    record BROKEN_EDGE
+      ComponentRef lhs;
+      ComponentRef rhs;
+      DAE.ElementSource source;
+      list<Equation> brokenEquations;
+    end BROKEN_EDGE;
+  end BrokenEdge;
+
   type BrokenEdges = list<BrokenEdge>;
 
   record CONNECTIONS
