@@ -2620,6 +2620,19 @@ protected
     end match;
   end getBody2;
 
+  function hasSingleOrEmptyBody
+    input Function fn;
+    output Boolean b;
+  protected
+    list<Algorithm> algorithms;
+  algorithm
+    b := match InstNode.getSections(fn.node)
+      case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
+      case Sections.EMPTY() then true;
+      else false;
+    end match;
+  end hasSingleOrEmptyBody;
+
   function analyseUnusedParameters
     input Function fn;
     output list<Integer> unusedInputs = {};

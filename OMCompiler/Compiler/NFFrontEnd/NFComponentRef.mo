@@ -142,6 +142,16 @@ public
     output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
   end makeIterator;
 
+  function isWild
+    input ComponentRef cref;
+    output Boolean isWild;
+  algorithm
+    isWild := match cref
+      case WILD() then true;
+      else false;
+    end match;
+  end isWild;
+
   function isEmpty
     input ComponentRef cref;
     output Boolean isEmpty;

@@ -224,6 +224,7 @@ public
     UnorderedMap<EquationPointer, IntLst> eqn_map_matched, eqn_map_unmatched;
     Pointer<Variable> arr_var;
     Pointer<Equation> arr_eqn;
+    Integer start_idx;
   algorithm
     // pseudo array case
     if isSome(mapping_opt) then
@@ -237,20 +238,22 @@ public
       // check if variables are matched and sort them accordingly
       for var in 1:arrayLength(matching.var_to_eqn) loop
         arr_var := ExpandableArray.get(mapping.var_StA[var], variables.varArr);
+        (start_idx, _) := mapping.var_AtS[mapping.var_StA[var]];
         if matching.var_to_eqn[var] > 0 then
-          Slice.addToSliceMap(arr_var, var, var_map_matched);
+          Slice.addToSliceMap(arr_var, (var - start_idx), var_map_matched);
         else
-          Slice.addToSliceMap(arr_var, var, var_map_unmatched);
+          Slice.addToSliceMap(arr_var, (var - start_idx), var_map_unmatched);
         end if;
       end for;
 
       // check if equations are matched and sort them accordingly
       for eqn in 1:arrayLength(matching.eqn_to_var) loop
         arr_eqn := ExpandableArray.get(mapping.eqn_StA[eqn], equations.eqArr);
+        (start_idx, _) := mapping.eqn_AtS[mapping.eqn_StA[eqn]];
         if matching.eqn_to_var[eqn] > 0 then
-          Slice.addToSliceMap(arr_eqn, eqn, eqn_map_matched);
+          Slice.addToSliceMap(arr_eqn, (eqn - start_idx), eqn_map_matched);
         else
-          Slice.addToSliceMap(arr_eqn, eqn, eqn_map_unmatched);
+          Slice.addToSliceMap(arr_eqn, (eqn - start_idx), eqn_map_unmatched);
         end if;
       end for;
 

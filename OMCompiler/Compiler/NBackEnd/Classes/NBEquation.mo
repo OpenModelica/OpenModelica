@@ -76,6 +76,7 @@ public
   import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
+  import Util;
 
   constant String SIMULATION_STR  = "SIM";
   constant String START_STR       = "SRT";
@@ -1844,6 +1845,7 @@ public
           UnorderedMap<ComponentRef, Expression> replacements, removed_diagonals;
           list<tuple<ComponentRef, Expression>> removed_diagonals_linear_maps;
           Expression condition;
+          Type ty;
 
         // empty index list indicates no slicing and no rearranging
         case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
@@ -1889,7 +1891,7 @@ public
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
-          body_lst := match cref_opt
+          (body_lst, ty) := match cref_opt
             local
               ComponentRef cref;
             case SOME(cref) algorithm
@@ -1917,12 +1919,17 @@ public
                   attr    = eqn.attr
                 );
               end if;
-            then {body};
-            else eqn.body;
+            then ({body}, ComponentRef.getSubscriptedType(cref, true));
+
+            // might be incorrect if the frames are not the last array dimensions
+            else (eqn.body, Type.unliftArrayN(listLength(frames), eqn.ty));
           end match;
 
+
+          dims := list(Dimension.fromRange(Util.tuple22(frame)) for frame in frames);
+          ty := Type.liftArrayLeftList(ty, dims);
           sliced := FOR_EQUATION(
-            ty      = eqn.ty,
+            ty      = ty,
             iter    = Iterator.fromFrames(frames),
             body    = body_lst,
             source  = eqn.source,
