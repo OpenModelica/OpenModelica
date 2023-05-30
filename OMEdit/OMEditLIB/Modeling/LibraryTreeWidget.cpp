@@ -1106,27 +1106,33 @@ LibraryTreeProxyModel::LibraryTreeProxyModel(LibraryWidget *pLibraryWidget, bool
 bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
   QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-  if (index.isValid()) {
-    LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+  LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+  if (pLibraryTreeItem) {
     // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., CompositeModel & Text.
-    if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    if (mShowOnlyModelica && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
       return false;
     }
     // filter the dummy tree item "All" created for search functionality to be at the top
-    if (pLibraryTreeItem && pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
+    if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
       return false;
     }
-    // check current index itself
-    if (pLibraryTreeItem) {
-      if ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
-           && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses())
-          || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses())) {
-        return false;
-      } else {
-        return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
+
+    bool hide = ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
+                  && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses())
+                 || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses()));
+
+    // if any of children matches the filter, then current index matches the filter as well
+    int rows = sourceModel()->rowCount(index);
+    for (int i = 0 ; i < rows ; ++i) {
+      if (filterAcceptsRow(i, index)) {
+        return !hide;
       }
+    }
+    // check current index itself
+    if (hide) {
+      return false;
     } else {
-      return sourceModel()->data(index).toString().contains(filterRegExp());
+      return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
