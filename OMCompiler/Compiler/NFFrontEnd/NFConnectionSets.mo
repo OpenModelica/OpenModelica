@@ -124,17 +124,15 @@ package ConnectionSets
     input BrokenEdges broken;
     output Boolean b = false;
   protected
-    ComponentRef lhs, rhs, cr1, cr2;
+    ComponentRef cr1, cr2;
   algorithm
     cr1 := Connector.name(c1);
     cr2 := Connector.name(c2);
     // print("Check: connect(" + ComponentRef.toString(cr1) + ", " + ComponentRef.toString(cr2) + ")\n");
 
     for c in broken loop
-      ((lhs, rhs, _)) := c;
-
-      if ComponentRef.isPrefix(lhs, cr1) and ComponentRef.isPrefix(rhs, cr2) or
-         ComponentRef.isPrefix(lhs, cr2) and ComponentRef.isPrefix(rhs, cr1)
+      if ComponentRef.isPrefix(c.lhs, cr1) and ComponentRef.isPrefix(c.rhs, cr2) or
+         ComponentRef.isPrefix(c.lhs, cr2) and ComponentRef.isPrefix(c.rhs, cr1)
       then
         // print("Ignore broken: connect(" + Connector.toString(c1) + ", " + Connector.toString(c2) + ")\n");
         b := true;

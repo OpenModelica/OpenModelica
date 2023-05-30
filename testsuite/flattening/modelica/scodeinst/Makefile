@@ -417,6 +417,8 @@ eq7.mo \
 eq8.mo \
 eq10.mo \
 EqualityConstraint1.mo \
+EqualityConstraint2.mo \
+EqualityConstraint3.mo \
 EquationInvalidType1.mo \
 EvaluateAllParams.mo \
 EvaluateAllParams2.mo \
