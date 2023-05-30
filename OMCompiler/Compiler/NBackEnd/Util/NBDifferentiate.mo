@@ -844,6 +844,7 @@ public
       local
         Integer i;
         Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
+        list<Expression> rest;
 
       // SMOOTH
       case (Expression.CALL()) guard(name == "smooth")
@@ -884,6 +885,15 @@ public
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
         exp.call := Call.setArguments(exp.call, {ret1, ret2});
+      then exp;
+
+      // FILL
+      case (Expression.CALL()) guard(name == "fill")
+      algorithm
+        // only differentiate 1st input
+        arg1 :: rest := Call.arguments(exp.call);
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
       // Builtin function call with one argument
