@@ -666,7 +666,7 @@ public
         var := VariablePointers.getVarAt(vars, var_arr_idx);
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
         (_, size) := mapping.var_AtS[var_arr_idx];
-        if size > 1 then
+        if size > 1 or Equation.isForEquation(eqn) then
           // case 1: create the scalar variable and make sliced equation
           cref := VariablePointers.varSlice(vars, var_scal_idx, mapping);
           comp := SLICED_COMPONENT(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
