@@ -51,6 +51,7 @@ public
 
   // backend imports
   import BackendDAE = NBackendDAE;
+  import BackendUtil = NBBackendUtil;
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
@@ -133,6 +134,8 @@ public
     ComponentRef name;
     list<Pointer<Equation>> sliced_eqns;
   algorithm
+    // remove size one array subscripts for solving
+    system := System.mapExp(system, BackendUtil.removeSizeOneArraySubscriptsExp);
     if Util.isSome(system.strongComponents) then
       for comp in Util.getOption(system.strongComponents) loop
         if UnorderedMap.contains(comp, duplicate_map) then

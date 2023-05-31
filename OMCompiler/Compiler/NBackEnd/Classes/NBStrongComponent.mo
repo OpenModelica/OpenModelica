@@ -656,6 +656,8 @@ public
         list<Slice<VariablePointer>> comp_vars;
         list<Slice<EquationPointer>> comp_eqns;
         Tearing tearingSet;
+        Slice<VariablePointer> var_slice;
+        Slice<EquationPointer> eqn_slice;
 
       // Size 1 strong component
       // - case 1: sliced equation because of sliced variable
@@ -669,7 +671,13 @@ public
         if size > 1 or Equation.isForEquation(eqn) then
           // case 1: create the scalar variable and make sliced equation
           cref := VariablePointers.varSlice(vars, var_scal_idx, mapping);
-          comp := SLICED_COMPONENT(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := SLICED_COMPONENT(cref, var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
         else
           // case 2: just create a single strong component
           comp := match Pointer.access(eqn)
@@ -685,10 +693,6 @@ public
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
-          local
-            Slice<VariablePointer> var_slice;
-            Slice<EquationPointer> eqn_slice;
-
           case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
             if Slice.isFull(var_slice) then
               comp := SINGLE_COMPONENT(

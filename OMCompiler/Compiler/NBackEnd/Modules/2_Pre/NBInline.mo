@@ -45,6 +45,7 @@ protected
 
   // NF imports
   import Call = NFCall;
+  import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
@@ -54,7 +55,7 @@ protected
   import Module = NBModule;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, Iterator};
   import Replacements = NBReplacements;
   import NBVariable.{VariablePointers, VarData};
 
@@ -84,6 +85,34 @@ public
 // =========================================================================
 //                    TYPES, UNIONTYPES AND MEMBER FUNCTIONS
 // =========================================================================
+  function inlineForEquation
+    input output Equation eqn;
+  algorithm
+    eqn := match eqn
+      local
+        Equation new_eqn;
+        UnorderedMap<ComponentRef, Expression> replacements     "replacement map for iterator crefs";
+        list<ComponentRef> names;
+        list<Expression> ranges;
+        ComponentRef name;
+        Expression range;
+        Integer start;
+
+      case Equation.FOR_EQUATION(body = {new_eqn}) guard(Equation.size(Pointer.create(eqn)) == 1) algorithm
+        replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        (names, ranges) := Iterator.getFrames(eqn.iter);
+        for tpl in List.zip(names, ranges) loop
+          (name, range) := tpl;
+          (start, _, _) := Expression.getIntegerRange(range);
+          UnorderedMap.add(name, Expression.INTEGER(start), replacements);
+        end for;
+        new_eqn := Equation.map(new_eqn, function Replacements.applySimpleExp(replacements = replacements));
+      then new_eqn;
+
+      else eqn;
+    end match;
+  end inlineForEquation;
+
 protected
   function inline extends Module.inlineInterface;
   protected
@@ -251,6 +280,7 @@ protected
       else exp;
     end match;
   end inlineRecordConstructorElements;
+
 
   annotation(__OpenModelica_Interface="backend");
 end NBInline;

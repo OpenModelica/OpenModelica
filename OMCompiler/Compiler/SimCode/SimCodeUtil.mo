@@ -9136,6 +9136,20 @@ algorithm
         s := s+"\n";
     then s;
 
+    case SimCode.SES_GENERIC_ASSIGN()
+      algorithm
+        s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
+        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, "", "{", ", ", "}", true, 10) + "\n";
+    then s;
+
+    case SimCode.SES_ENTWINED_ASSIGN()
+      algorithm
+        s := intString(eqSysIn.index) +": "+ " (SES_ENTWINED_ASSIGN)\n";
+        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, "", "{", ", ", "}", true, 10) + "\n";
+        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, "", "\t", "\n", "");
+        s := s + "\n";
+    then s;
+
     else
       then
         "SOMETHING DIFFERENT\n";
