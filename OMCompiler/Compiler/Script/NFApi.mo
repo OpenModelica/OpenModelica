@@ -676,6 +676,8 @@ algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndFront_dispatch(" + name + ")");
   end if;
+
+  Inst.clearCaches();
 end frontEndFront_dispatch;
 
 protected
@@ -800,6 +802,7 @@ algorithm
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");
   end if;
 
+  Inst.clearCaches();
 end frontEndLookup_dispatch;
 
 public
@@ -882,6 +885,7 @@ algorithm
   execStat("NFApi.dumpJSONInstanceTree");
   res := Values.STRING(JSON.toString(json, prettyPrint));
   execStat("JSON.toString");
+  Inst.clearCaches();
 end getModelInstance;
 
 function getModelInstanceIcon
@@ -902,6 +906,7 @@ algorithm
 
   json := dumpJSONInstanceIcon(cls_node);
   res := Values.STRING(JSON.toString(json, prettyPrint));
+  Inst.clearCaches();
 end getModelInstanceIcon;
 
 function parseModifier

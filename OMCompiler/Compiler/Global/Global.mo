@@ -70,6 +70,7 @@ constant Integer interactiveCache = 26;
 constant Integer isInStream = 27;
 constant Integer MMToJLListIndex = 28;
 constant Integer packageIndexCacheIndex = 29;
+constant Integer sharedLibraryCacheIndex = 30;
 
 // indexes in System.tick
 // ----------------------
@@ -101,6 +102,7 @@ algorithm
   setGlobalRoot(instNFInstCacheIndex, {});
   setGlobalRoot(instNFNodeCacheIndex, {});
   setGlobalRoot(instNFLookupCacheIndex, {});
+  setGlobalRoot(sharedLibraryCacheIndex, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

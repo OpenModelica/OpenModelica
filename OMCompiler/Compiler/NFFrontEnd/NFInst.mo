@@ -108,6 +108,7 @@ import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
 import UnorderedMap;
 import CheckModel = NFCheckModel;
+import EvalFunction = NFEvalFunction;
 
 public
 
@@ -235,6 +236,8 @@ algorithm
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
+
+  clearCaches();
 end instClassInProgram;
 
 function instClassForConnection
@@ -275,6 +278,8 @@ algorithm
   // Flatten the model and get connections
   conns := Flatten.flattenConnection(inst_cls, name);
   connList := Connections.toStringList(conns);
+
+  clearCaches();
 end instClassForConnection;
 
 function resetGlobalFlags
@@ -296,6 +301,12 @@ algorithm
   System.setHasOverconstrainedConnectors(false);
   System.setHasStreamConnectors(false);
 end resetGlobalFlags;
+
+function clearCaches
+  "Clears global caches used by the instantiation."
+algorithm
+  EvalFunction.clearLibraryCache();
+end clearCaches;
 
 function lookupRootClass
   "Looks up the class to instantiate and marks it as a root node."

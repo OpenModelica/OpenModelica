@@ -59,6 +59,7 @@ import ErrorExt;
 import EvalFunctionExt = NFEvalFunctionExt;
 import FFI;
 import Flags;
+import Global;
 import MetaModelica.Dangerous.*;
 import NFPrefixes.Variability;
 import RangeIterator = NFRangeIterator;
@@ -1134,24 +1135,24 @@ function callExternalFunction
 protected
   SourceInfo info;
   String pkg_name;
-  Integer lib_handle, fn_handle;
   array<Expression> mapped_args;
   array<FFI.ArgSpec> specs;
   Type ret_ty;
   Expression res;
   list<Expression> output_vals;
+  Integer fn_handle;
 algorithm
   info := InstNode.info(fn.node);
   checkExtReturnValue(outputRef, info);
 
   pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
-  (lib_handle, fn_handle) := loadLibraryFunction(extName, pkg_name, extAnnotation, debug, info);
+  fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
   (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
   ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
   (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
 
-  freeLibraryFunction(lib_handle, fn_handle, debug);
+  freeLibraryFunction(fn_handle, debug);
 
   if listEmpty(output_vals) then
     // No output parameters, just return the return value.
@@ -1162,25 +1163,72 @@ algorithm
   end if;
 end callExternalFunction;
 
+function lookupLibraryInCache
+  input String libName;
+  output Integer libHandle;
+protected
+  list<tuple<String, Integer>> cache;
+  String name;
+algorithm
+  cache := getGlobalRoot(Global.sharedLibraryCacheIndex);
+
+  for l in cache loop
+    (name, libHandle) := l;
+
+    if name == libName then
+      return;
+    end if;
+  end for;
+
+  libHandle := -1;
+end lookupLibraryInCache;
+
+function cacheLibrary
+  input String libName;
+  input Integer libHandle;
+protected
+  list<tuple<String, Integer>> cache;
+algorithm
+  cache := getGlobalRoot(Global.sharedLibraryCacheIndex);
+  cache := (libName, libHandle) :: cache;
+  setGlobalRoot(Global.sharedLibraryCacheIndex, cache);
+end cacheLibrary;
+
+public
+function clearLibraryCache
+protected
+  list<tuple<String, Integer>> cache;
+  Integer lib_handle;
+algorithm
+  cache := getGlobalRoot(Global.sharedLibraryCacheIndex);
+
+  for v in cache loop
+    (_, lib_handle) := v;
+    System.freeLibrary(lib_handle, false);
+  end for;
+
+  setGlobalRoot(Global.sharedLibraryCacheIndex, {});
+end clearLibraryCache;
+
+protected
 function loadLibraryFunction
   "Tries to load the function with the given function that's either linked into
-   the compiler itself or in a shared library provided by the user. Returns
-   handles to the shared library and function that should to be freed by
-   freeLibraryFunction when no longer needed."
-  input String fnName;
+   the compiler itself or in a shared library provided by the user. Returns a
+   handle to the function that should be freed with freeLibraryFunction when the
+   function is no longer needed."
   input String libName;
+  input String fnName;
   input Option<SCode.Annotation> extAnnotation;
   input Boolean debug;
   input SourceInfo info;
-  output Integer libHandle;
   output Integer fnHandle;
 protected
+  Integer lib_handle;
   SCode.Annotation ann;
   list<String> libs = {}, dirs = {}, paths = {}, libs2 = {};
   Boolean found = false;
   String installLibDir;
 algorithm
-
   if Autoconf.os == "Windows_NT" then
     installLibDir := Settings.getInstallationDirectoryPath() + "/bin";
   else
@@ -1257,8 +1305,14 @@ algorithm
         path := uriToFilename(path);
       end if;
 
-      libHandle := System.loadLibrary(path, relativePath = false, printDebug = debug);
-      fnHandle := System.lookupFunction(libHandle, fnName);
+      lib_handle := lookupLibraryInCache(path);
+
+      if lib_handle == -1 then
+        lib_handle := System.loadLibrary(path, relativePath = false, printDebug = debug);
+        cacheLibrary(path, lib_handle);
+      end if;
+
+      fnHandle := System.lookupFunction(lib_handle, fnName);
       found := true;
     else
     end try;
@@ -1310,13 +1364,11 @@ algorithm
 end parseExternalAnnotationExp;
 
 function freeLibraryFunction
-  "Frees the function and shared library loaded by loadLibraryFunction."
-  input Integer libHandle;
+  "Frees the function loaded by loadLibraryFunction."
   input Integer fnHandle;
   input Boolean debug;
 algorithm
   System.freeFunction(fnHandle, debug);
-  System.freeLibrary(libHandle, debug);
 end freeLibraryFunction;
 
 function mapExternalArgs
