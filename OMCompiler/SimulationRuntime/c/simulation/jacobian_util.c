@@ -175,7 +175,7 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
   for (i = 0; i < length; i++) {
     count = omc_fread(&index, sizeof(unsigned int), 1, pFile, FALSE);
     if (count != 1) {
-      throwStreamPrint(threadData, "Error while reading color %d of sparsity pattern.", color);
+      throwStreamPrint(threadData, "Error while reading color %u of sparsity pattern.", color);
     }
     colorCols[index] = color;
   }

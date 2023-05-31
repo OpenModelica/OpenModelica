@@ -5586,13 +5586,13 @@ match sparsepattern
         /* read lead index of compressed sparse column */
         count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
         if (count != <%sizeleadindex%>+1) {
-          throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+          throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
         }
 
         /* read sparse index */
         count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
         if (count != <%sp_size_index%>) {
-          throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %ld", <%sizeleadindex%>+1, count);
+          throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
         }
 
         /* write color array */

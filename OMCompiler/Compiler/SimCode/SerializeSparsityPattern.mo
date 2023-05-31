@@ -86,7 +86,7 @@ protected
       j += (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(colPtrs)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->leadindex. Expected %d, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->leadindex. Expected %d, got %zu\", 1, count);
       }
     }
 
@@ -95,7 +95,7 @@ protected
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(rowInds)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->index. Expected %d, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->index. Expected %d, got %zu\", 1, count);
       }
     }
 
@@ -126,7 +126,7 @@ protected
       j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %d, got %ld\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %d, got %zu\", 1, count);
       }
     }
 
