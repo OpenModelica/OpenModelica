@@ -215,7 +215,7 @@ public
       end if;
     end getLoopResiduals;
 
-    function mapEquations
+    function mapEqn
       input output System system;
       input MapFunc func;
       partial function MapFunc
@@ -223,9 +223,9 @@ public
       end MapFunc;
     algorithm
       system.equations := EquationPointers.map(system.equations, func);
-    end mapEquations;
+    end mapEqn;
 
-    function mapExpressions
+    function mapExp
       input output System system;
       input MapFunc func;
       partial function MapFunc
@@ -233,7 +233,7 @@ public
       end MapFunc;
     algorithm
       system.equations := EquationPointers.mapExp(system.equations, func);
-    end mapExpressions;
+    end mapExp;
 
     function systemTypeString
       input SystemType systemType;

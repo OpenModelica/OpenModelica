@@ -254,7 +254,7 @@ public
         case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
         case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
         case IF()                 then str + "(" + intString(blck.index) + ") " + List.toString(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
-        case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when);
+        case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when, str);
         case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
         case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
         case HYBRID()             then str + "(" + intString(blck.index) + ") Hybrid\n"; // ToDo!
@@ -1168,14 +1168,16 @@ public
       input list<ComponentRef> conditions;
       input list<WhenStatement> when_stmts;
       input Option<Block> else_when;
-      output String str = "";
+      input output String str = "";
+    protected
+      String indent = str;
     algorithm
       str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
-             List.toString(when_stmts, function WhenStatement.toString(str = "\t"), "", "", "\n") + "\n";
+             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), "", "", "\n", "") + "\n";
       if Util.isSome(else_when) then
-        str := str + "else" + toString(Util.getOption(else_when));
+        str := str + indent + "else" + toString(Util.getOption(else_when));
       else
-        str := str + "end when;";
+        str := str + indent + "end when;\n";
       end if;
     end whenString;
 

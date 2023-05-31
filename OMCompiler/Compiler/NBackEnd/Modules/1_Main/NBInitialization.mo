@@ -346,29 +346,29 @@ public
       case BackendDAE.MAIN() algorithm
 
         // initial() -> false
-        bdae.ode        := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in bdae.alg_event);
+        bdae.ode        := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode);
+        bdae.algebraic  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.algebraic);
+        bdae.ode_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode_event);
+        bdae.alg_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapEquations(sys, function cleanupInitialCall(init = false)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in Util.getOption(bdae.dae)));
         end if;
         // initial() -> true
-        bdae.init := list(System.mapEquations(sys, function cleanupInitialCall(init = true)) for sys in bdae.init);
+        bdae.init := list(System.mapEqn(sys, function cleanupInitialCall(init = true)) for sys in bdae.init);
 
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.alg_event);
+        bdae.ode        := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode);
+        bdae.algebraic  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.algebraic);
+        bdae.ode_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode_event);
+        bdae.alg_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
         end if;
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
           bdae.init_0 := SOME(list(System.clone(sys, false) for sys in bdae.init));
-          bdae.init_0 := SOME(list(System.mapExpressions(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
+          bdae.init_0 := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
         end if;
 
       then bdae;

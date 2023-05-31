@@ -756,7 +756,11 @@ protected
             );
 
             // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
-            Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
+            body_elem := Equation.mergeIterators(body_elem);
+            // inline if size 1
+            body_elem := Inline.inlineForEquation(body_elem);
+
+            Pointer.update(body_elem_ptr, body_elem);
             result := body_elem_ptr :: result;
           end for;
         else

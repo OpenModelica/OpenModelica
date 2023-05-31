@@ -63,6 +63,7 @@ public
 
   // New Backend imports
   import Evaluation = NBEvaluation;
+  import Inline = NBInline;
   import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
   import Solve = NBSolve;
@@ -821,6 +822,7 @@ public
       input EquationAttributes attr;
       output Pointer<Equation> eq;
     protected
+      Equation e;
       Type ty = ComponentRef.getSubscriptedType(lhs, true);
     algorithm
       if listLength(frames) == 0 then
@@ -843,13 +845,15 @@ public
           ));
         end if;
       else
-        eq := Pointer.create(FOR_EQUATION(
+        e := FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
           body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), rhs, DAE.emptyElementSource, attr)}, // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = attr
-        ));
+        );
+        // inline if it has size 1
+        eq := Pointer.create(Inline.inlineForEquation(e));
       end if;
       Equation.createName(eq, idx, str);
     end makeAssignment;
