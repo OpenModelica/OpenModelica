@@ -49,37 +49,32 @@ constant Integer CHAR_SPACE = 32;
 constant Integer CHAR_DASH = 45;
 constant Integer CHAR_DOT = 46;
 
-constant String HEADLINE_1 = "################################################################################";
-constant String HEADLINE_2 = "========================================";
-constant String HEADLINE_3 = "----------------------------------------";
-constant String HEADLINE_4 = "****************************************";
-
 public function headline_1
   input String title;
   output String header;
 algorithm
-  header := HEADLINE_1 + "\n\n\t" + title + "\n\n" + HEADLINE_1 + "\n";
+  header := repeat("#", stringLength(title) + 8) + "\n\n\t" + title + "\n\n" + repeat("#", stringLength(title) + 8) + "\n";
 end headline_1;
 
 public function headline_2
   input String title;
   output String header;
 algorithm
-  header := HEADLINE_2 + "\n" + title + "\n" + HEADLINE_2 + "\n";
+  header := repeat("=", stringLength(title) + 4) + "\n" + title + "\n" + repeat("=", stringLength(title) + 4) + "\n";
 end headline_2;
 
 public function headline_3
   input String title;
   output String header;
 algorithm
-  header := title + "\n" + HEADLINE_3 + "\n";
+  header := title + "\n" + repeat("-", stringLength(title) + 2) + "\n";
 end headline_3;
 
 public function headline_4
   input String title;
   output String header;
 algorithm
-  header := title + "\n" + HEADLINE_4 + "\n";
+  header := title + "\n" + repeat("*", stringLength(title) + 2) + "\n";
 end headline_4;
 
 public function findChar

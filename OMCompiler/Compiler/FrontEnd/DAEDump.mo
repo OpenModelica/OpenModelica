@@ -1297,9 +1297,27 @@ algorithm
     case(DAE.AFTER_INDEX_RED_INLINE()) then " \"Inline after index reduction\"";
     case(DAE.NORM_INLINE()) then " \"Inline before index reduction\"";
     case(DAE.DEFAULT_INLINE()) then "\"Inline if necessary\"";
+    case(DAE.EARLY_INLINE()) then "\"Inline earier than normal inline\"";
+    case(DAE.BUILTIN_EARLY_INLINE()) then "\"Inline even if inlining is disabled\"";
     else "\"unknown\"";
   end match;
 end dumpInlineTypeStr;
+
+public function dumpInlineTypeBackendStr
+  input DAE.InlineType inlineType;
+  output String str;
+algorithm
+  str := match(inlineType)
+    case(DAE.NO_INLINE()) then "NONE";
+    case(DAE.AFTER_INDEX_RED_INLINE()) then "AFTER_INDEX_RED";
+    case(DAE.NORM_INLINE()) then "NORMAL";
+    case(DAE.DEFAULT_INLINE()) then "DEFAULT";
+    case(DAE.EARLY_INLINE()) then "EARLY";
+    case(DAE.BUILTIN_EARLY_INLINE()) then "BUILTIN_EARLY";
+    else "UNKNOWN";
+  end match;
+end dumpInlineTypeBackendStr;
+
 
 protected function printRecordConstructorInputsStr
   "Helper function to dumpFunction. Prints the inputs of a record constructor."
