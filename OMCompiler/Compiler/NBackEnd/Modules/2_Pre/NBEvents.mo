@@ -251,7 +251,7 @@ public
     algorithm
       str := match timeEvent
         case SINGLE() then "\t(" + intString(timeEvent.index) + ") time > " + Expression.toString(timeEvent.trigger);
-        case SAMPLE() then "\t(" + intString(timeEvent.index) + ") sample(" + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
+        case SAMPLE() then "\t(" + intString(timeEvent.index) + ") sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
         then fail();

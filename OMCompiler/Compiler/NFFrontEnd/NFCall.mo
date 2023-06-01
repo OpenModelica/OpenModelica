@@ -586,11 +586,11 @@ public
     name := match call
       case UNTYPED_CALL() then ComponentRef.toPath(call.ref);
       case ARG_TYPED_CALL() then ComponentRef.toPath(call.ref);
-      case TYPED_CALL() then Function.name(call.fn);
+      case TYPED_CALL() then Function.nameConsiderBuiltin(call.fn);
       case UNTYPED_ARRAY_CONSTRUCTOR() then Absyn.IDENT("array");
       case TYPED_ARRAY_CONSTRUCTOR() then Absyn.IDENT("array");
       case UNTYPED_REDUCTION() then ComponentRef.toPath(call.ref);
-      case TYPED_REDUCTION() then Function.name(call.fn);
+      case TYPED_REDUCTION() then Function.nameConsiderBuiltin(call.fn);
     end match;
   end functionName;
 

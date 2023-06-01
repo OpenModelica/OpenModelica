@@ -404,7 +404,7 @@ protected
           case "previous" then Expression.EMPTY(Type.INTEGER());
           case "hold"     then Expression.EMPTY(Type.INTEGER());
           case "sample" algorithm
-            {_, arg} := Call.arguments(exp.call);
+            {_, _, arg} := Call.arguments(exp.call);
             _ := collectPartitioningCrefs(arg, var_crefs);
           then Expression.EMPTY(Type.INTEGER());
           else exp;
