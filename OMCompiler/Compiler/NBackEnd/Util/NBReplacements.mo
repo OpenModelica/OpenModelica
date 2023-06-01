@@ -275,6 +275,10 @@ public
 
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
+          print("-- Result: " + Expression.toString(body_exp) + "\n");
+        end if;
       then body_exp;
 
       else exp;
@@ -307,6 +311,9 @@ public
         case Expression.CREF() algorithm
           arg_children := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
         then list(Expression.fromCref(BVariable.getVarName(child)) for child in arg_children);
+
+        // if it is a basic record, take its elements
+        case Expression.RECORD() then arg.elements;
 
         // if the argument is a record constructor, map it to its attributes
         case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) algorithm

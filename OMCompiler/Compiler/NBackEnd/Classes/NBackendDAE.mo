@@ -285,20 +285,26 @@ public
   algorithm
     for module in modules loop
       (func, name) := module;
+      debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
+      debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
       if clock_idx <> -1 then
         BuiltinSystem.realtimeClear(clock_idx);
         BuiltinSystem.realtimeTick(clock_idx);
-        if Flags.isSet(Flags.FAILTRACE) then
-          debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
-          debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
-          print(debugStr);
-        end if;
-        bdae := func(bdae);
+        try
+          bdae := func(bdae);
+        else
+          if Flags.isSet(Flags.FAILTRACE) then
+            debugStr := debugStr + " failed\n";
+            print(debugStr);
+          end if;
+          fail();
+        end try;
         clock_time := BuiltinSystem.realtimeTock(clock_idx);
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
-          print(" " + realString(clock_time) + "s\n");
+          debugStr := debugStr + " " + realString(clock_time) + "s\n";
+          print(debugStr);
         end if;
       else
         bdae := func(bdae);

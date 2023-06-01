@@ -41,6 +41,7 @@ protected
   import Absyn;
   import AbsynUtil;
   import DAE;
+  import DAEDump;
   import DAEUtil;
 
   // NF imports
@@ -73,7 +74,13 @@ public
     bdae := match bdae
       case BackendDAE.MAIN()
         algorithm
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: " + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
+          end if;
           bdae.eqData := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types);
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("\n");
+          end if;
         then bdae;
 
       else algorithm
@@ -107,6 +114,10 @@ public
           UnorderedMap.add(name, Expression.INTEGER(start), replacements);
         end for;
         new_eqn := Equation.map(new_eqn, function Replacements.applySimpleExp(replacements = replacements));
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+          print("-- Result: " + Equation.toString(new_eqn) + "\n");
+        end if;
       then new_eqn;
 
       else eqn;
@@ -188,6 +199,9 @@ protected
       // try to inline other record equations. try catch to be sure to not discard
       case Equation.RECORD_EQUATION() algorithm
         try
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+          end if;
           new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, eqn.recordSize, variables, record_eqns, index);
         else
           // inlining failed, keep old equation
@@ -198,6 +212,9 @@ protected
       // only if record size is not NONE()
       case Equation.ARRAY_EQUATION(recordSize = SOME(size)) algorithm
         try
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+          end if;
           new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, size, variables, record_eqns, index);
         else
           // inlining failed, keep old equation
@@ -248,6 +265,9 @@ protected
         tmp_eqns := Pointer.access(tmp_eqns_ptr);
       else
         tmp_eqns := tmp_eqn :: tmp_eqns;
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
+        end if;
       end if;
     end for;
     Pointer.update(record_eqns, tmp_eqns);
