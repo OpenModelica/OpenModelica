@@ -15,73 +15,73 @@ simulate(hybridSys); getErrorString();
 // true
 // ""
 // [stateselection] Natural states before index reduction:
-// ****************************************
+// *********************************************************
 // 	[STAT] (1) Real x1 (start = 10.0)
 //
 // [stateselection] Natural discrete states:
-// ****************************************
-// 	[DISS] (1) Boolean phase_Loop2 (start = false)
-// 	[DISS] (1) Boolean phase_Loop1 (start = false)
-// 	[DISS] (1) Boolean phase_Loop3 (start = false)
+// *******************************************
 // 	[DISS] (1) Boolean phase_Start (start = true)
+// 	[DISS] (1) Boolean phase_Loop1 (start = false)
+// 	[DISS] (1) Boolean phase_Loop2 (start = false)
+// 	[DISS] (1) Boolean phase_Loop3 (start = false)
 // 	[DISS] (1) Real x_End (start = 0.0)
 // 	[DISS] (1) Real x_Loop3 (start = 0.0)
 // 	[DISS] (1) Real x_Loop2 (start = 0.0)
 // 	[DISS] (1) Real x_Loop1 (start = 0.0)
 // 	[DISS] (1) Real x_Start (start = 0.0)
 //
-// ################################################################################
+// ##############################
 //
 // 	Balance Initialization
 //
-// ################################################################################
+// ##############################
 //
-// Stage 3 underdetermined.
+// Stage 15 underdetermined.
 // Not overdetermined.
-// (3) Unmatched variables:
-// ****************************************
-// 	[PRE-] (1) Real $PRE.x_End;
-// 	[DISS] (1) Real x_End (start = 0.0);
-// 	[STAT] (1) Real x1 (start = 10.0);
+// (15) Unmatched variables:
+// ***************************
+// 	[DISS] (1) Real x_Start (start = 0.0)
+// 	 slice: {};
+// 	[DISS] (1) Real x_Loop1 (start = 0.0)
+// 	 slice: {};
+// 	[DISS] (1) Real x_Loop2 (start = 0.0)
+// 	 slice: {};
+// 	[DISS] (1) Real x_Loop3 (start = 0.0)
+// 	 slice: {};
+// 	[DISS] (1) Real x_End (start = 0.0)
+// 	 slice: {};
+// 	[STAT] (1) Real x1 (start = 10.0)
+// 	 slice: {};
+// 	[PRE-] (1) Boolean $PRE.phase_Start
+// 	 slice: {};
+// 	[PRE-] (1) Boolean $PRE.phase_Loop1
+// 	 slice: {};
+// 	[PRE-] (1) Boolean $PRE.phase_Loop2
+// 	 slice: {};
+// 	[PRE-] (1) Boolean $PRE.phase_Loop3
+// 	 slice: {};
+// 	[PRE-] (1) Real $PRE.x_End
+// 	 slice: {};
+// 	[PRE-] (1) Real $PRE.x_Loop3
+// 	 slice: {};
+// 	[PRE-] (1) Real $PRE.x_Loop2
+// 	 slice: {};
+// 	[PRE-] (1) Real $PRE.x_Loop1
+// 	 slice: {};
+// 	[PRE-] (1) Real $PRE.x_Start
+// 	 slice: {};
 //
 // (0) Unmatched equations:
-// ****************************************
+// **************************
 //
 // Not underdetermined.
 // Not overdetermined.
 // (0) Unmatched variables:
-// ****************************************
+// **************************
 //
 //
 // (0) Unmatched equations:
-// ****************************************
-//
-// Stage 10 underdetermined.
-// Not overdetermined.
-// (10) Unmatched variables:
-// ****************************************
-// 	[PRE-] (1) Boolean $PRE.phase_Start;
-// 	[DISS] (1) Real x_Loop1 (start = 0.0);
-// 	[PRE-] (1) Real $PRE.x_Loop1;
-// 	[DISS] (1) Real x_Loop2 (start = 0.0);
-// 	[PRE-] (1) Real $PRE.x_Loop2;
-// 	[DISS] (1) Real x_Loop3 (start = 0.0);
-// 	[PRE-] (1) Real $PRE.x_Loop3;
-// 	[PRE-] (1) Boolean $PRE.phase_Loop3;
-// 	[PRE-] (1) Boolean $PRE.phase_Loop2;
-// 	[PRE-] (1) Boolean $PRE.phase_Loop1;
-//
-// (0) Unmatched equations:
-// ****************************************
-//
-// Not underdetermined.
-// Not overdetermined.
-// (0) Unmatched variables:
-// ****************************************
-//
-//
-// (0) Unmatched equations:
-// ****************************************
+// **************************
 //
 // record SimulationResult
 //     resultFile = "hybridSys_res.mat",
