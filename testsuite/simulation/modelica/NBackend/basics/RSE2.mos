@@ -24,31 +24,31 @@ simulate(RSE); getErrorString();
 // true
 // ""
 // true
-// ========================================
+// ==========================
 // [dumprepl] Alias Sets:
-// ========================================
+// ==========================
 //
 // Alias Set 1:
-// ****************************************
+// **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) x = z ($RES_SIM_4)
 //
 // Alias Set 2:
-// ****************************************
+// **************
 // 	Constant/Parameter Binding: [SCAL] (1) c = time ($RES_SIM_3)
 // 	### Set Equations:
 // 	[SCAL] (1) y = time + c ($RES_SIM_2)
 // 	[SCAL] (1) a = 2.0 * c ($RES_SIM_5)
 //
 // [dumprepl] Constant Replacements:
-// ****************************************
+// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	z	 ==> 	x
 // 	c	 ==> 	time
 // [dumprepl] Nontrivial Alias Replacements:
-// ****************************************
+// *******************************************
 // 	y	 ==> 	time + time
 // 	a	 ==> 	2.0 * time
 //
