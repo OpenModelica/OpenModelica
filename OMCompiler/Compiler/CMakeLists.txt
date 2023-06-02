@@ -1,6 +1,7 @@
 
 omc_add_subdirectory(runtime)
 omc_add_subdirectory(boot)
+omc_add_subdirectory(FrontEndCpp)
 
 
 # set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
@@ -255,6 +256,7 @@ endif()
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 
 # On Windows we need explicitly tell the dll to export all symbols. It is not so good
