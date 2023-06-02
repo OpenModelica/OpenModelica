@@ -109,6 +109,7 @@ import Structural = NFStructural;
 import UnorderedMap;
 import CheckModel = NFCheckModel;
 import EvalFunction = NFEvalFunction;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 
@@ -2936,9 +2937,36 @@ function instEquations
   input InstNode scope;
   input InstContext.Type context;
   output list<Equation> instEql;
+protected
+  list<SCode.Equation> scode_eql = scodeEql;
 algorithm
-  instEql := list(instEquation(eq, scope, context) for eq in scodeEql);
+  if InstContext.inInstanceAPI(context) then
+    scode_eql := filterInstanceAPIEquations(scodeEql);
+  end if;
+
+  instEql := list(instEquation(eq, scope, context) for eq in scode_eql);
 end instEquations;
+
+function filterInstanceAPIEquations
+  input list<SCode.Equation> eql;
+  output list<SCode.Equation> outEql = {};
+protected
+  String name;
+algorithm
+  for eq in eql loop
+    outEql := match eq
+      case SCode.Equation.EQ_CONNECT() then eq :: outEql;
+
+      case SCode.Equation.EQ_NORETCALL(exp = Absyn.Exp.CALL(function_ = Absyn.ComponentRef.CREF_IDENT(name = name)))
+          guard name == "transition" or name == "initialState"
+        then eq :: outEql;
+
+      else outEql;
+    end match;
+  end for;
+
+  outEql := listReverseInPlace(outEql);
+end filterInstanceAPIEquations;
 
 function instEquation
   input SCode.Equation scodeEq;
