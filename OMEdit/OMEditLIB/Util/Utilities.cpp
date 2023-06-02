@@ -309,20 +309,25 @@ FixedCheckBox::FixedCheckBox(QWidget *parent)
 {
   setCheckable(false);
   mDefaultValue = false;
-  mTickState = false;
+  mInheritedValue = false;
+  mFixedState = false;
 }
 
-void FixedCheckBox::setTickState(bool defaultValue, bool tickState)
+void FixedCheckBox::setTickState(bool defaultValue, bool fixedState)
 {
   mDefaultValue = defaultValue;
-  mTickState = tickState;
+  if (mDefaultValue) {
+    mInheritedValue = fixedState;
+  } else {
+    mFixedState = fixedState;
+  }
 }
 
-QString FixedCheckBox::tickStateString()
+QString FixedCheckBox::getTickStateString() const
 {
   if (mDefaultValue) {
     return "";
-  } else if (mTickState) {
+  } else if (mFixedState) {
     return "true";
   } else {
     return "false";
@@ -346,7 +351,7 @@ void FixedCheckBox::paintEvent(QPaintEvent *event)
   }
   p.drawRect(opt.rect.adjusted(0, 0, -1, -1));
   // if is checked then draw a tick
-  if (mTickState) {
+  if ((!mDefaultValue && mFixedState) || (mDefaultValue && mInheritedValue)) {
     p.setRenderHint(QPainter::Antialiasing);
     QPen pen = p.pen();
     pen.setWidthF(1.5);

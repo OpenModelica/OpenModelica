@@ -97,7 +97,7 @@ public:
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed, bool defaultValue);
-  QString getFixedState();
+  QString getFixedState() const;
   void setEnabled(bool enable);
   void update();
 private:
