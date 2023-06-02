@@ -1,0 +1,57 @@
+// name: isExperiment
+// keywords:
+// status: correct
+// cflags: -d=-newInst
+//
+
+loadString("
+  package P
+    model NotExperiment
+    end NotExperiment;
+
+    model Experiment1
+      annotation(experiment(StopTime = 1.0));
+    end Experiment1;
+
+    model Experiment2
+      annotation(experiment(StartTime = 1.0, StopTime = 4.0));
+    end Experiment2;
+
+    block Experiment3
+      annotation(experiment(StopTime = 3.0));
+    end Experiment3;
+
+    model MissingStopTime
+      annotation(experiment(StartTime = 1.0));
+    end MissingStopTime;
+
+    partial model PartialModel
+      annotation(experiment(StopTime = 2.0));
+    end PartialModel;
+
+    package NotModelOrBlock
+      annotation(experiment(StopTime = 1.0));
+    end NotModelOrBlock;
+  end P;
+");
+
+isExperiment(P);
+isExperiment(P.NotExperiment);
+isExperiment(P.Experiment1);
+isExperiment(P.Experiment2);
+isExperiment(P.Experiment3);
+isExperiment(P.MissingStopTime);
+isExperiment(P.PartialModel);
+isExperiment(P.NotModelOrBlock);
+
+// Result:
+// true
+// false
+// false
+// true
+// true
+// true
+// false
+// false
+// false
+// endResult

@@ -2149,13 +2149,7 @@ algorithm
       then Values.BOOL(false);
 
     case ("isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("experiment"), SOME(false), hasStopTime);
-      then
-        Values.BOOL(b);
-
-    case ("isExperiment",_)
-      then Values.BOOL(false);
+      then Values.BOOL(isExperiment(classpath, SymbolTable.getAbsyn()));
 
     case ("getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
@@ -7354,6 +7348,23 @@ algorithm
     else false;
   end matchcontinue;
 end isShortDefinition;
+
+protected function isExperiment
+  input Absyn.Path path;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  Absyn.Class cdef;
+algorithm
+  try
+    cdef := InteractiveUtil.getPathedClassInProgram(path, program);
+    false := AbsynUtil.isPartial(cdef);
+    true := AbsynUtil.isModel(cdef) or AbsynUtil.isBlock(cdef);
+    SOME(res) := AbsynUtil.getNamedAnnotationInClass(cdef, Absyn.Path.IDENT("experiment"), hasStopTime);
+  else
+    res := false;
+  end try;
+end isExperiment;
 
 protected function hasStopTime "For use with getNamedAnnotation"
   input Option<Absyn.Modification> mod;
