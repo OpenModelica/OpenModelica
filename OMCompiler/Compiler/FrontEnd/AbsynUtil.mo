@@ -6111,5 +6111,25 @@ algorithm
   end match;
 end isElementRedeclare;
 
+function isModel
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_MODEL()) then true;
+    else false;
+  end match;
+end isModel;
+
+function isBlock
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_BLOCK()) then true;
+    else false;
+  end match;
+end isBlock;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

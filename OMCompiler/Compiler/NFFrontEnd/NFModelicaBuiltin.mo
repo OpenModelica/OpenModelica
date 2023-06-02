@@ -4143,7 +4143,7 @@ function isExperiment
   output Boolean res;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>An experiment is defined as having annotation experiment(StopTime=...)</p>
+<p>An experiment is defined as a non-partial model or block having annotation experiment(StopTime=...)</p>
 </html>"));
 end isExperiment;
 
