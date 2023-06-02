@@ -73,7 +73,7 @@ Parameter::Parameter(Element *pElement, bool showStartAttribute, QString tab, QS
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
-  setFixedState("false", true);
+  setFixedState("", true);
   // set the value type based on element type.
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   if (mpElement->getElementInfo()->getClassName().compare("Boolean") == 0) {
@@ -488,7 +488,7 @@ QString Parameter::getValue()
 
 void Parameter::setFixedState(QString fixed, bool defaultValue)
 {
-  mOriginalFixedValue = fixed;
+  mOriginalFixedValue = defaultValue ? "" : fixed;
   if (fixed.compare(QStringLiteral("true")) == 0) {
     mpFixedCheckBox->setTickState(defaultValue, true);
   } else {
@@ -496,9 +496,9 @@ void Parameter::setFixedState(QString fixed, bool defaultValue)
   }
 }
 
-QString Parameter::getFixedState()
+QString Parameter::getFixedState() const
 {
-  return mpFixedCheckBox->tickStateString();
+  return mpFixedCheckBox->getTickStateString();
 }
 
 /*!
@@ -955,15 +955,15 @@ void Parameter::showFixedMenu()
   connect(pFalseAction, SIGNAL(triggered()), SLOT(falseFixedClicked()));
   menu.addAction(pFalseAction);
   // inherited case action
-  QString inheritedText = tr("inherited: (%1)").arg(mpFixedCheckBox->tickState() ? trueText : falseText);
+  QString inheritedText = tr("inherited: (%1)").arg(mpFixedCheckBox->getInheritedValue() ? trueText : falseText);
   QAction *pInheritedAction = new QAction(inheritedText, pFixedActionGroup);
   pInheritedAction->setCheckable(true);
   connect(pInheritedAction, SIGNAL(triggered()), SLOT(inheritedFixedClicked()));
   menu.addAction(pInheritedAction);
   // set the menu actions states
-  if (mpFixedCheckBox->tickStateString().compare("true") == 0) {
+  if (mpFixedCheckBox->getTickStateString().compare("true") == 0) {
     pTrueAction->setChecked(true);
-  } else if (mpFixedCheckBox->tickStateString().compare("false") == 0) {
+  } else if (mpFixedCheckBox->getTickStateString().compare("false") == 0) {
     pFalseAction->setChecked(true);
   } else {
     pInheritedAction->setChecked(true);
@@ -984,7 +984,7 @@ void Parameter::falseFixedClicked()
 
 void Parameter::inheritedFixedClicked()
 {
-  mpFixedCheckBox->setTickState(true, true);
+  mpFixedCheckBox->setTickState(true, mpFixedCheckBox->getInheritedValue());
 }
 
 /*!
