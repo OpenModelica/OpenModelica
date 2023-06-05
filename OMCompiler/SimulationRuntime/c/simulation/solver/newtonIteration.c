@@ -40,9 +40,10 @@ extern "C" {
 #include <string.h> /* memcpy */
 
 #include "simulation/simulation_info_json.h"
+#include "model_help.h"
+#include "omc_math.h"
 #include "util/omc_error.h"
 #include "util/varinfo.h"
-#include "model_help.h"
 
 #include "nonlinearSystem.h"
 #include "newtonIteration.h"
@@ -456,18 +457,15 @@ void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x
   *scaledError_f = enorm_(&n,solverData->fvecScaled);
 }
 
-double infinity_norm(double* vec, size_t len) {
-  int i;
-  double norm;
-
-  norm = fabs(vec[0]);
-  for(i = 1; i<len; i++) {
-    norm = fmax(fabs(vec[i]), norm);
-  }
-
-  return norm;
-}
-
+/**
+ * @brief Compute residual scaling vector.
+ *
+ * scalingVector[i] = 1 / ||Jac(i,:)||
+ * Warn if Jacobian row is all zeros i.e. the Jacobian is singular.
+ *
+ * @param solverData      Newton solver data.
+ * @param scalingVector   Residual scaling vector.
+ */
 void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
   int i;
   int jac_row_start;
@@ -475,7 +473,7 @@ void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
   for(i=0; i<solverData->n; i++)
   {
     jac_row_start = i*solverData->n;
-    scalingVector[i] = infinity_norm(&(solverData->fjac[jac_row_start]), solverData->n);
+    scalingVector[i] = _omc_gen_maximumVectorNorm(&(solverData->fjac[jac_row_start]), solverData->n);
     if(scalingVector[i] <= 0.0) {
       warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
       scalingVector[i] = 1e-16;
@@ -483,9 +481,12 @@ void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
   }
 }
 
-/*! \fn calculatingErrors
+/**
+ * @brief Scale residual vector.
  *
- *  function scales the residual vector using the jacobian (heuristic)
+ * Save result in solverData->fvecScaled.
+ *
+ * @param solverData  Newton solver data.
  */
 void scaling_residual_vector(DATA_NEWTON* solverData)
 {
