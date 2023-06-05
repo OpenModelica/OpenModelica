@@ -1276,12 +1276,11 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
       }
 
-      // calculate corresponding values for error estimator and step size control (infinity norm)
-      for (i = 0, err=0; i < nStates; i++) {
+      // calculate corresponding values for error estimator and step size control
+      for (i = 0; i < nStates; i++) {
         gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
-        err = fmax(err, gbData->err[i]);
       }
 
       if (ACTIVE_STREAM(LOG_GBODE_V))
@@ -1763,12 +1762,11 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         }
       }
 
-      // calculate corresponding values for error estimator and step size control (infinity norm)
-      for (i = 0, err=0; i < nStates; i++) {
+      // calculate corresponding values for error estimator and step size control
+      for (i = 0; i < nStates; i++) {
         gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
-        err = fmax(err, gbData->err[i]);
       }
 
       // Rotate buffer
@@ -1777,7 +1775,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
       }
       // update new values
-      gbData->errValues[0] = err;
+      gbData->errValues[0] = _omc_gen_maximumVectorNorm(gbData->err, nStates);
       gbData->stepSizeValues[0] = gbData->stepSize;
 
       // Store performed step size for latter interpolation
