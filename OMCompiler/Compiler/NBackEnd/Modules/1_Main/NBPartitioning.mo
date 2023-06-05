@@ -364,7 +364,7 @@ protected
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
         + ") failed because the following variables could not be assigned to a partition:\n  {"
-        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), ", ") + "}"});
+        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), "\n") + "}"});
       fail();
     end if;
 

@@ -1657,12 +1657,14 @@ public
         local
           Binding qual;
           Option<Expression> start;
-        case qual as Binding.TYPED_BINDING()  then qual.bindingExp;
+        case qual as Binding.TYPED_BINDING()    then qual.bindingExp;
+        case qual as Binding.UNTYPED_BINDING()  then qual.bindingExp;
+        case qual as Binding.FLAT_BINDING()     then qual.bindingExp;
         case qual as Binding.UNBOUND() algorithm
           start := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
         then Util.getOptionOrDefault(start, Expression.makeZero(ComponentRef.getSubscriptedType(var.name, true)));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toDebugString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
 
@@ -1695,7 +1697,6 @@ public
           attr = eqnAttr));
         Equation.createName(eqn, idx, context);
       end if;
-
     end generateBindingEquation;
 
     function mergeIterators

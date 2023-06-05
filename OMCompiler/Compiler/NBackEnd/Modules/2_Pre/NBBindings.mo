@@ -64,6 +64,7 @@ public
             binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
           end if;
         end for;
+
         // adding all continuous equations
         eqData.equations  := EquationPointers.addList(binding_cont, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_cont, eqData.simulation);
@@ -75,6 +76,12 @@ public
         eqData.discretes  := EquationPointers.addList(binding_disc, eqData.discretes);
 
         bdae.eqData := eqData;
+
+        if Flags.isSet(Flags.DUMP_BINDINGS) then
+          print(List.toString(binding_cont, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Continuous Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
+          print(List.toString(binding_disc, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Discrete Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
+        end if;
+
       then bdae;
 
       else algorithm

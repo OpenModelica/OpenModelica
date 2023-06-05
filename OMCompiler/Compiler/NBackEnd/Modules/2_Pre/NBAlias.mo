@@ -60,11 +60,11 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
-  import NBEquation.{Equation, EquationPointers};
+  import NBEquation.{Equation, EquationPointers, EqData};
   import Replacements = NBReplacements;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointers, VarData};
 
   // Util imports
   import MetaModelica.Dangerous;
@@ -84,8 +84,8 @@ public
 
     bdae := match bdae
       local
-        BVariable.VarData varData         "Data containing variable pointers";
-        BEquation.EqData eqData           "Data containing equation pointers";
+        VarData varData         "Data containing variable pointers";
+        EqData eqData           "Data containing equation pointers";
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
