@@ -59,6 +59,7 @@
 #include "model_help.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
+#include "omc_math.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
 #include "simulation/jacobian_util.h"

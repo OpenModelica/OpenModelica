@@ -114,7 +114,7 @@ typedef struct DATA_HOMOTOPY
   double* x1;
   double* finit;
   double* fx0;
-  double* fJac;
+  double* fJac;           /* n times n Jacobian matrix with additional scaling row at the end */
   double* fJacx0;
 
   /* debug arrays */
@@ -144,7 +144,7 @@ typedef struct DATA_HOMOTOPY
 
   int (*f)         (struct DATA_HOMOTOPY*, double*, double*);
   int (*f_con)     (struct DATA_HOMOTOPY*, double*, double*);
-  int (*fJac_f)    (struct DATA_HOMOTOPY*, double*, double*);
+  int (*fJac_f)    (struct DATA_HOMOTOPY* solverData, double* x, double* fJac);
   int (*h_function)(struct DATA_HOMOTOPY*, double*, double*);
   int (*hJac_dh)   (struct DATA_HOMOTOPY*, double*, double*);
 
