@@ -47,13 +47,13 @@ extern "C" {
  */
 typedef struct DATA_NEWTON
 {
-  int initialized; /**< 1 = initialized, else = 0*/
-  double* resScaling;
-  double* fvecScaled;
+  int initialized;      /** 1 = initialized, else = 0 */
+  double* resScaling;   /** Residual scaling vector */
+  double* fvecScaled;   /** scaled f vector */
 
   int newtonStrategy;
 
-  int n;              /**< size of equation */
+  int n;                /** size of equation system */
   double* x;
   double* fvec;
   double xtol;
@@ -62,13 +62,13 @@ typedef struct DATA_NEWTON
   int maxfev;
   int info;
   double epsfcn;
-  double* fjac;
+  double* fjac;           /** Jacobian matrix in row-major format */
   double* rwork;
   int* iwork;
   int calculate_jacobian;
   int factorization;
-  int numberOfIterations;           /**< over the whole simulation time */
-  int numberOfFunctionEvaluations;  /**< over the whole simulation time */
+  int numberOfIterations;           /** over the whole simulation time */
+  int numberOfFunctionEvaluations;  /** over the whole simulation time */
 
   /* damped newton */
   double* x_new;
@@ -81,8 +81,8 @@ typedef struct DATA_NEWTON
   rtclock_t timeClock;
 
   /* Debug information */
-  double time;                /**< Simulation time */
-  modelica_boolean initial;   /**< True if in initialization */
+  double time;                /** Simulation time */
+  modelica_boolean initial;   /** True if in initialization */
 
   NLS_USERDATA* userData;
 } DATA_NEWTON;

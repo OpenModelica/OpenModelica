@@ -781,10 +781,9 @@ typedef struct SIMULATION_INFO
 
   ANALYTIC_JACOBIAN* analyticJacobians; // TODO Only store information for Jacobian used by integrator here
 
-  NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinearSystemData; /* Array of non-linear systems */
 
-  LINEAR_SYSTEM_DATA* linearSystemData;
-  int currentLinearSystemIndex;
+  LINEAR_SYSTEM_DATA* linearSystemData;       /* Array of linear systems */
 
   MIXED_SYSTEM_DATA* mixedSystemData;
 

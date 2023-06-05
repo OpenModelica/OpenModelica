@@ -47,6 +47,7 @@ typedef struct DATA_HOMOTOPY DATA_HOMOTOPY;
 DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData);
 void freeHomotopyData(DATA_HOMOTOPY* homotopyData);
 NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
+double* getHomotopyJacobian(NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };

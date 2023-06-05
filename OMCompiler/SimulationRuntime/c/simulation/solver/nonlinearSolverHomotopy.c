@@ -2532,4 +2532,15 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   return success;
 }
 
+/**
+ * @brief Return pointer to Jacobian.
+ *
+ * @param nlsData     Non-linear system data.
+ * @return double*    Jacobian in row-major format.
+ */
+double* getHomotopyJacobian(NONLINEAR_SYSTEM_DATA* nlsData) {
+  DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*)(nlsData->solverData);
+  return homotopyData->fJac;
+}
+
 #endif
