@@ -139,7 +139,8 @@ typedef struct DATA_GBODE{
   double *yv, *kv, *tv;                             /* Buffer storage of the last values of states (yv) and their derivatives (kv) */
   double *yr, *kr, *tr;                             /* Backup storage of the buffers yv, kv, tv for Richardson extrapolation */
   double *res_const;                                /* Constant parts of residual for non-linear system of implicit RK method. */
-  double *errest, *errtol;                          /* absolute error and given error tolerance of each individual states */
+  double *errest;                                   /* Absolute error estimator of each individual state */
+  double *errtol;                                   /* Given error tolerance of each individual state */
   double *err;                                      /* error of each individual state during integration err = errest/errtol*/
   double *errValues;                                /* ring buffer for step size control */
   double *stepSizeValues;                           /* ring buffer for step size control */

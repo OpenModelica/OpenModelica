@@ -40,9 +40,10 @@ extern "C" {
 #include <string.h> /* memcpy */
 
 #include "simulation/simulation_info_json.h"
+#include "model_help.h"
+#include "omc_math.h"
 #include "util/omc_error.h"
 #include "util/varinfo.h"
-#include "model_help.h"
 
 #include "nonlinearSystem.h"
 #include "newtonIteration.h"
@@ -456,24 +457,44 @@ void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x
   *scaledError_f = enorm_(&n,solverData->fvecScaled);
 }
 
-/*! \fn calculatingErrors
+/**
+ * @brief Compute residual scaling vector.
  *
- *  function scales the residual vector using the jacobian (heuristic)
+ * scalingVector[i] = 1 / ||Jac(i,:)||
+ * Warn if Jacobian row is all zeros i.e. the Jacobian is singular.
+ *
+ * @param solverData      Newton solver data.
+ * @param scalingVector   Residual scaling vector.
+ */
+void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
+  int i;
+  int jac_row_start;
+
+  for(i=0; i<solverData->n; i++)
+  {
+    jac_row_start = i*solverData->n;
+    scalingVector[i] = _omc_gen_maximumVectorNorm(&(solverData->fjac[jac_row_start]), solverData->n);
+    if(scalingVector[i] <= 0.0) {
+      warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
+      scalingVector[i] = 1e-16;
+    }
+  }
+}
+
+/**
+ * @brief Scale residual vector.
+ *
+ * Save result in solverData->fvecScaled.
+ *
+ * @param solverData  Newton solver data.
  */
 void scaling_residual_vector(DATA_NEWTON* solverData)
 {
-  int i,j,k;
-  for(i=0, k=0; i<solverData->n; i++)
+  int i;
+
+  compute_scaling_vector(solverData, solverData->resScaling);
+  for(i=0; i<solverData->n; i++)
   {
-    solverData->resScaling[i] = 0.0;
-    for(j=0; j<solverData->n; j++, ++k)
-    {
-      solverData->resScaling[i] = fmax(fabs(solverData->fjac[k]), solverData->resScaling[i]);
-    }
-    if(solverData->resScaling[i] <= 0.0){
-      warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
-      solverData->resScaling[i] = 1e-16;
-    }
     solverData->fvecScaled[i] = solverData->fvec[i] / solverData->resScaling[i];
   }
 }

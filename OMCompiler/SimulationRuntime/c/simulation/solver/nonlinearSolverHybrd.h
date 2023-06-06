@@ -69,7 +69,7 @@ typedef struct DATA_HYBRD
   integer info;
   integer nfev;
   integer njev;
-  double* fjac;
+  double* fjac;         /* Jacobian matrix in row-major order */
   double* fjacobian;
   integer ldfjac;
   double* r__;
