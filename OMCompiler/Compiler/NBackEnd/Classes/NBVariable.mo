@@ -1180,7 +1180,9 @@ public
     Variable var = Pointer.access(var_ptr);
   algorithm
     b := match var.binding
-      case Binding.TYPED_BINDING() then true;
+      case Binding.TYPED_BINDING()    then true;
+      case Binding.UNTYPED_BINDING()  then true;
+      case Binding.FLAT_BINDING()     then true;
       else false;
     end match;
   end isBound;

@@ -260,9 +260,9 @@ public
     if not listEmpty(unmatched_vars) then
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because following variables could not be solved:\n"
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=0), "", "\t", ", ", "\n", true)
+        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=0), "", "\t", "\n\t", "\n", true)
         + "\n  Furthermore following equations are unmatched:\n"
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=0), "", "\t", ", ", "\n", true)});
+        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=0), "", "\t", "\n\t", "\n", true)});
       fail();
     end if;
   end noIndexReduction;

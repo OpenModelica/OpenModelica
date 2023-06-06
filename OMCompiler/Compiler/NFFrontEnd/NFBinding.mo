@@ -454,6 +454,21 @@ public
     end match;
   end toFlatString;
 
+  function toDebugString
+    input Binding binding;
+    output String string;
+  algorithm
+    string := match binding
+      case UNBOUND() then "UNBOUND";
+      case RAW_BINDING() then "RAW_BINDING";
+      case UNTYPED_BINDING() then "UNTYPED_BINDING";
+      case TYPED_BINDING() then "TYPED_BINDING";
+      case FLAT_BINDING() then "FLAT_BINDING";
+      case CEVAL_BINDING() then "CEVAL_BINDING";
+      case INVALID_BINDING() then "INVALID_BINDING";
+    end match;
+  end toDebugString;
+
   function isEqual
     input Binding binding1;
     input Binding binding2;

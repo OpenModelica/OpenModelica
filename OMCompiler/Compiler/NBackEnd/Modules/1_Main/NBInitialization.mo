@@ -241,7 +241,7 @@ public
     equations := BEquation.EquationPointers.addList(parameter_eqs, equations);
     initialEqs := BEquation.EquationPointers.addList(parameter_eqs, initialEqs);
     initialVars := BVariable.VariablePointers.addList(initial_param_vars, initialVars);
-    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs) then
+    if (Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs)) or Flags.isSet(Flags.DUMP_BINDINGS) then
       print(List.toString(parameter_eqs, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Parameter Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createParameterEquations;
