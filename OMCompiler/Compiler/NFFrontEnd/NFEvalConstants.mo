@@ -61,11 +61,24 @@ import Record = NFRecord;
 import Flatten = NFFlatten;
 
 public
+
+uniontype EvalSettings
+  record SETTINGS
+    Boolean scalarize;
+  end SETTINGS;
+end EvalSettings;
+
 function evaluate
   input output FlatModel flatModel;
   input InstContext.Type context;
+protected
+  EvalSettings settings;
 algorithm
-  flatModel.variables := list(evaluateVariable(v, context) for v in flatModel.variables);
+  settings := EvalSettings.SETTINGS(
+    Flags.isSet(Flags.NF_SCALARIZE)
+  );
+
+  flatModel.variables := list(evaluateVariable(v, context, settings) for v in flatModel.variables);
   flatModel.equations := evaluateEquations(flatModel.equations);
   flatModel.initialEquations := evaluateEquations(flatModel.initialEquations);
   flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms);
@@ -77,18 +90,19 @@ end evaluate;
 function evaluateVariable
   input output Variable var;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   Binding binding;
 algorithm
   binding := evaluateBinding(var.binding, var.name,
-    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER, context);
+    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER, context, settings);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context) for a in var.typeAttributes);
-  var.children := list(evaluateVariable(v, context) for v in var.children);
+  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context, settings) for a in var.typeAttributes);
+  var.children := list(evaluateVariable(v, context, settings) for v in var.children);
 end evaluateVariable;
 
 function evaluateBinding
@@ -96,6 +110,7 @@ function evaluateBinding
   input ComponentRef prefix;
   input Boolean structural;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   Expression exp, eexp;
   SourceInfo info;
@@ -104,7 +119,9 @@ algorithm
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      if InstContext.inRelaxed(context) then
+      if not settings.scalarize and Expression.isLiteralFill(exp) then
+        eexp := exp;
+      elseif InstContext.inRelaxed(context) then
         eexp := Ceval.tryEvalExp(exp);
       else
         eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
@@ -126,6 +143,7 @@ function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
   input ComponentRef prefix;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   String name;
   Binding binding, sbinding;
@@ -133,7 +151,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, prefix, structural, context);
+  sbinding := evaluateBinding(binding, prefix, structural, context, settings);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);

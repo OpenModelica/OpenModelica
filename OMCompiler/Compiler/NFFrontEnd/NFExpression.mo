@@ -4405,6 +4405,16 @@ public
     end match;
   end isLiteral;
 
+  function isLiteralFill
+    input Expression exp;
+    output Boolean literal;
+  algorithm
+    literal := match exp
+      case CALL() then Call.isNamed(exp.call, "fill") and List.all(Call.arguments(exp.call), isLiteral);
+      else false;
+    end match;
+  end isLiteralFill;
+
   function isInteger
     input Expression exp;
     output Boolean isInteger;
