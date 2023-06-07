@@ -1021,7 +1021,7 @@ algorithm
         exp :: list(Dimension.sizeExp(d) for d in dims),
         Binding.variability(binding), Purity.PURE, binding_ty);
     else
-      iters := list((Subscript.toIterator(s), Dimension.toRange(d)) threaded for s in subs, d in dims);
+      iters := listReverse((Subscript.toIterator(s), Dimension.toRange(d)) threaded for s in subs, d in dims);
 
       array_call := Call.TYPED_ARRAY_CONSTRUCTOR(binding_ty,
         Expression.variability(exp), Expression.purity(exp), exp, iters);
