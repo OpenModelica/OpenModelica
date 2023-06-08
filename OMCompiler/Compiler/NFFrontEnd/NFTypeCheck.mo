@@ -1816,6 +1816,11 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
+            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+
             comp2 := InstNode.component(comps2[i]);
 
             if Component.isTyped(comp2) then
@@ -1871,6 +1876,11 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
+            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+
             comp2 := InstNode.component(comps2[i]);
 
             if Component.isTyped(comp2) then
