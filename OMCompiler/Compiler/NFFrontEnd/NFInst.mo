@@ -69,6 +69,7 @@ protected
 import Config;
 import Array;
 import Error;
+import ErrorExt;
 import FlagsUtil;
 import Flatten = NFFlatten;
 import Connections = NFConnections;
@@ -2424,22 +2425,32 @@ function instBinding
   input output Binding binding;
   input InstContext.Type context;
 algorithm
-  binding := match binding
-    local
-      Expression bind_exp;
+  if InstContext.inInstanceAPI(context) then
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      binding := instBinding(binding, InstContext.unset(context, NFInstContext.INSTANCE_API));
+    else
+      binding := Binding.INVALID_BINDING(binding, ErrorExt.getCheckpointMessages());
+    end try;
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    binding := match binding
+      local
+        Expression bind_exp;
 
-    case Binding.RAW_BINDING()
-      algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
+      case Binding.RAW_BINDING()
+        algorithm
+          bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
 
-        if not listEmpty(binding.subs) then
-          bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);
-        end if;
-      then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.info);
+          if not listEmpty(binding.subs) then
+            bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);
+          end if;
+        then
+          Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.info);
 
-    else binding;
-  end match;
+      else binding;
+    end match;
+  end if;
 end instBinding;
 
 function instExpOpt
