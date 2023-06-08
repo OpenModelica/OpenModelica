@@ -639,6 +639,7 @@ FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
+FuncWrongType2.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
 FunctionalArg3.mo \
