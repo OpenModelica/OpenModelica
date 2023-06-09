@@ -67,7 +67,9 @@ public:
   bool isDiagramWindow(QObject *pObject);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
+  void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
+  QAction *mpRenamePlotWindowAction;
 public slots:
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
@@ -78,6 +80,7 @@ public slots:
   void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
+  void renamePlotWindow();
   void exportVariables();
   void updatePlotWindows(QString variable);
 };
