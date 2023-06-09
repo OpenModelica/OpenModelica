@@ -78,6 +78,15 @@ encapsulated package NFInstContext
     annotation(__OpenModelica_EarlyInline=true);
   end set;
 
+  function unset
+    input Type context;
+    input Type flag;
+    output Type newOrigin;
+  algorithm
+    newOrigin := intBitAnd(context, intBitNot(flag));
+    annotation(__OpenModelica_EarlyInline=true);
+  end unset;
+
   function isSet
     input Type context;
     input Type flag;
