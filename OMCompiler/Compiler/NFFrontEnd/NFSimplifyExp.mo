@@ -88,6 +88,7 @@ algorithm
         exp;
 
     case Expression.ARRAY()
+      guard not exp.literal
       algorithm
         exp.elements := Array.map(exp.elements, function simplify(backend = false));
       then
