@@ -2506,6 +2506,10 @@ public
   end dimensions;
 
   function map
+    "Applies a function recursively (depth-first, post-order) to an expression
+     and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input Expression exp;
     input MapFunc func;
     output Expression outExp;
@@ -2520,7 +2524,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2682,6 +2686,10 @@ public
   end mapOpt;
 
   function mapReverse
+    "Applies a function recursively (depth-first, pre-order) to an expression
+     and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input output Expression exp;
     input MapFunc func;
 
@@ -2696,7 +2704,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(mapReverse(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2839,6 +2847,10 @@ public
   end mapReverse;
 
   function mapShallow
+    "Applies a function recursively to each subexpression in an expression,
+     without recursion, and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input Expression exp;
     input MapFunc func;
     output Expression outExp;
@@ -2853,7 +2865,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
