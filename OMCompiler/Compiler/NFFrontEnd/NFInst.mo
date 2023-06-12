@@ -124,6 +124,11 @@ constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
     mergeExtendsSections = true
   );
 
+//function Inst_test
+//  input SCode.Program program;
+//  external "C" Inst_test(program);
+//end Inst_test;
+
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being
    a DAE."
@@ -141,6 +146,7 @@ protected
   InstContext.Type context;
   Integer var_count, eq_count;
 algorithm
+  //Inst_test(program);
   resetGlobalFlags();
   context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
