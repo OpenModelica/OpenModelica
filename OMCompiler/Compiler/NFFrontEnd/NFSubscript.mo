@@ -1315,5 +1315,18 @@ public
     exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(node), index));
   end splitIndexDimExp;
 
+  function isLiteral
+    input Subscript sub;
+    output Boolean literal;
+  algorithm
+    literal := match sub
+      case UNTYPED() then Expression.isLiteral(sub.exp);
+      case INDEX() then Expression.isLiteral(sub.index);
+      case SLICE() then Expression.isLiteral(sub.slice);
+      case WHOLE() then true;
+      else false;
+    end match;
+  end isLiteral;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

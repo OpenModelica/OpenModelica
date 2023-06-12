@@ -1167,10 +1167,12 @@ protected
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := subscriptedExp;
   subscriptedExp := simplify(e);
+  subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
-  if not split then
+  if not split and not List.all(subs, Subscript.isLiteral) then
     // Select the first element as long as the subscripted expression is an
-    // array where all elements are equal.
+    // array where all elements are equal, unless all the subscripts are literal
+    // in which case it's cheaper to just apply them.
     while not listEmpty(subs) and Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
           Array.allEqual(Expression.arrayElements(subscriptedExp), Expression.isEqual) loop
       subs := listRest(subs);
@@ -1182,7 +1184,6 @@ algorithm
     end if;
   end if;
 
-  subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
   if split then
     subscriptedExp := Expression.SUBSCRIPTED_EXP(subscriptedExp, subs, ty, split);
