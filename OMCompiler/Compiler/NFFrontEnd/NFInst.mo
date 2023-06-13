@@ -152,6 +152,14 @@ algorithm
   // Look up the class to instantiate.
   cls := lookupRootClass(classPath, top, context);
 
+  // If the class is a function (allowed with checkModel), do the usual function
+  // handling to check that it's ok and return a dummy model since it won't be
+  // used anyway.
+  if SCodeUtil.isFunction(InstNode.definition(cls)) then
+    (flatModel, functions, flatString) := instantiateRootFunction(cls, context);
+    return;
+  end if;
+
   // Instantiate the class.
   inst_cls := instantiateRootClass(cls, context);
   execStat("NFInst.instantiate(" + name + ")");
@@ -334,6 +342,24 @@ algorithm
 
   insertGeneratedInners(clsNode, InstNode.topScope(clsNode), context);
 end instantiateRootClass;
+
+function instantiateRootFunction
+  input InstNode funcNode;
+  input InstContext.Type context;
+  output FlatModel flatModel;
+  output FunctionTree functions;
+  output String flatString = "";
+algorithm
+  Function.instFunctionNode(funcNode, context, InstNode.info(funcNode));
+  functions := FunctionTree.new();
+
+  for fn in Function.typeNodeCache(funcNode, context) loop
+    functions := Flatten.flattenFunction(fn, functions);
+  end for;
+
+  flatModel := FlatModel.FLAT_MODEL(InstNode.name(funcNode), {}, {}, {}, {}, {},
+    ElementSource.createElementSource(InstNode.info(funcNode)));
+end instantiateRootFunction;
 
 function instantiate
   input output InstNode node;
