@@ -3446,8 +3446,10 @@ algorithm
     checkTopLevelOuter(name, n, node, context);
 
     // Always print a warning that an inner element was automatically generated.
-    Error.addSourceMessage(Error.MISSING_INNER_ADDED,
-      {InstNode.typeName(n), name}, InstNode.info(n));
+    if not InstContext.inInstanceAPI(context) then
+      Error.addSourceMessage(Error.MISSING_INNER_ADDED,
+        {InstNode.typeName(n), name}, InstNode.info(n));
+    end if;
 
     // Only components needs to be added to the class, since classes are
     // not part of the flat class.
@@ -3458,12 +3460,14 @@ algorithm
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
-      try
-        Absyn.STRING(str) := SCodeUtil.getElementNamedAnnotation(
-          InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
-        Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {System.unescapedString(str)}, InstNode.info(n));
-      else
-      end try;
+      if not InstContext.inInstanceAPI(context) then
+        try
+          Absyn.STRING(str) := SCodeUtil.getElementNamedAnnotation(
+            InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
+          Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {System.unescapedString(str)}, InstNode.info(n));
+        else
+        end try;
+      end if;
 
       // Add the instantiated component to the list.
       inner_comps := Mutable.create(n) :: inner_comps;
@@ -3488,6 +3492,10 @@ protected
   InstNode node;
   Boolean is_error;
 algorithm
+  if InstContext.inInstanceAPI(context) then
+    return;
+  end if;
+
   try
     node := Lookup.lookupSimpleName(name, scope, context);
 
