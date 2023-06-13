@@ -1313,6 +1313,7 @@ algorithm
     else ();
   end match;
 
+  json := dumpJSONCommentOpt(SOME(cmt), scope, json);
   json := dumpJSONCommentAnnotation(SOME(cmt), scope, json,
     {"Dialog", "choices", "choicesAllMatching"});
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
