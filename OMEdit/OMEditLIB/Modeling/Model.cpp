@@ -1610,6 +1610,10 @@ namespace ModelInstance
       mModifier.deserialize(jsonObject.value("modifiers"));
     }
 
+    if (jsonObject.contains("comment")) {
+      mComment = jsonObject.value("comment").toString();
+    }
+
     if (jsonObject.contains("annotation")) {
       mpAnnotation = std::make_unique<Annotation>(mpParentModel);
       mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
@@ -1844,10 +1848,6 @@ namespace ModelInstance
     if (jsonObject.contains("prefixes")) {
       mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
       mpPrefixes->deserialize(jsonObject.value("prefixes").toObject());
-    }
-
-    if (jsonObject.contains("comment")) {
-      mComment = jsonObject.value("comment").toString();
     }
   }
 

@@ -322,6 +322,10 @@
           "description": "Modifier from the SCode (on short class definitions or class extends)",
           "$ref": "#/definitions/scodeModifier"
         },
+        "comment": {
+          "description": "The class' comment",
+          "$ref": "#/definitions/comment"
+        },
         "annotation": {
           "description": "The annotation on the replaceble class definition",
           "$ref": "#/definitions/annotation"
