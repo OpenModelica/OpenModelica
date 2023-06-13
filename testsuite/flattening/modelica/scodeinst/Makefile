@@ -753,6 +753,7 @@ ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \
 Inline3.mo \
+Inline4.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \
