@@ -485,6 +485,7 @@ private:
     Replaceable(Model *pParentModel);
     void deserialize(const QJsonValue &jsonValue);
 
+    const Modifier &getModifier() const {return mModifier;}
     const QString &getConstrainedby() const {return mConstrainedby;}
     const QString &getComment() const {return mComment;}
     Annotation *getAnnotation() const {return mpAnnotation.get();}

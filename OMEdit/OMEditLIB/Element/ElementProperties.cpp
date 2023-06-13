@@ -747,12 +747,15 @@ void Parameter::editRedeclareClassButtonClicked()
   QString type;
   const QString value = mpValueComboBox->lineEdit()->text();
   QString modifier = value;
+  ModelInstance::Modifier replaceableConstrainedByModifier;
   QString comment;
   if (mValueType == Parameter::ReplaceableComponent) {
     type = mpModelInstanceElement->getType();
+    replaceableConstrainedByModifier = mpModelInstanceElement->getReplaceable()->getModifier();
   } else if (mValueType == Parameter::ReplaceableClass) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     type = pReplaceableClass->getBaseClass();
+    replaceableConstrainedByModifier = pReplaceableClass->getReplaceable()->getModifier();
   }
   // parse the Modelica code of element redeclaration to get the type and modifiers
   if (value.startsWith("redeclare")) {
@@ -780,7 +783,7 @@ void Parameter::editRedeclareClassButtonClicked()
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
       ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                    true, elementModifier, mpElementParameters);
+                                                                    true, replaceableConstrainedByModifier, elementModifier, mpElementParameters);
       MainWindow::instance()->hideProgressBar();
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
@@ -1109,7 +1112,8 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param elementModifier
  * \param pParent
  */
-ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier elementModifier, QWidget *pParent)
+ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested,
+                                     const ModelInstance::Modifier replaceableConstrainedByModifier, const ModelInstance::Modifier elementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
   const QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -1118,6 +1122,7 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   mpGraphicsView = pGraphicsView;
   mInherited = inherited;
   mNested = nested;
+  mReplaceableConstrainedByModifier = replaceableConstrainedByModifier;
   mElementModifier = elementModifier;
   mModification.clear();
   setUpDialog();
@@ -1282,9 +1287,8 @@ void ElementParameters::setUpDialog()
   fetchElementExtendsModifiers(mpElement->getModel());
   fetchElementModifiers();
   fetchClassExtendsModifiers();
-  if (mNested) {
-    applyRedeclareElementModifiers();
-  }
+  applyReplaceableConstrainedByModifiers();
+  applyRedeclareElementModifiers();
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1493,14 +1497,31 @@ void ElementParameters::fetchClassExtendsModifiers()
 }
 
 /*!
+ * \brief ElementParameters::applyReplaceableConstrainedByModifiers
+ * Apply the modifiers that are given in the constainedBy of the replaceable class or component.
+ *
+ */
+void ElementParameters::applyReplaceableConstrainedByModifiers()
+{
+  if (mNested) {
+    foreach (auto modifier, mReplaceableConstrainedByModifier.getModifiers()) {
+      Parameter *pParameter = findParameter(modifier.getName());
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
+    }
+  }
+}
+
+/*!
  * \brief ElementParameters::applyRedeclareElementModifiers
  * Apply the modifiers that are given in the redeclaration of the replaceable class or component.
  */
 void ElementParameters::applyRedeclareElementModifiers()
 {
-  foreach (auto modifier, mElementModifier.getModifiers()) {
-    Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
+  if (mNested) {
+    foreach (auto modifier, mElementModifier.getModifiers()) {
+      Parameter *pParameter = findParameter(modifier.getName());
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
+    }
   }
 }
 
