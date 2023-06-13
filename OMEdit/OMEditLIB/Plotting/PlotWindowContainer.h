@@ -65,6 +65,7 @@ public:
   bool isPlotWindow(QObject *pObject);
   bool isAnimationWindow(QObject *pObject);
   bool isDiagramWindow(QObject *pObject);
+  bool isUniqueName(QString name);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
