@@ -6,6 +6,6 @@ RUN mkdir -p /cache/runtest/ /cache/omlibrary/ && chmod ugo+rwx /cache/runtest/ 
     && apt-get remove -qy cmake cmake-data
 
 # Install cmake 3.17.2.
-RUN wget cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh
+RUN wget --retry-on-host-error cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh
 RUN mkdir -p /opt/cmake-3.17.2
 RUN sh cmake-3.17.2-Linux-x86_64.sh --prefix=/opt/cmake-3.17.2 --skip-license
