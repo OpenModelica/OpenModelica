@@ -2088,7 +2088,7 @@ public
       input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
-      IfEquationBody else_if;
+      IfEquationBody else_if, old_else_if;
     algorithm
       condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
@@ -2099,8 +2099,13 @@ public
       ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
 
       if Util.isSome(ifBody.else_if) then
-        else_if := map(Util.getOption(ifBody.else_if), funcExp, funcCrefOpt, mapFunc);
+        old_else_if := Util.getOption(ifBody.else_if);
+        else_if := map(old_else_if, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(else_if, old_else_if) then
+          ifBody.else_if := SOME(else_if);
+        end if;
       end if;
+
     end map;
 
     function size
