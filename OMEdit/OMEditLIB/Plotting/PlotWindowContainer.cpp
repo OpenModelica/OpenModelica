@@ -85,7 +85,8 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
   newName = name + QString::number(number);
 
   foreach (QMdiSubWindow *pWindow, subWindowList()) {
-    if (pWindow->widget()->windowTitle().compare(newName) == 0) {
+    QString oldName = pWindow->widget()->windowTitle();
+    if (oldName.compare(newName) == 0) {
       newName = getUniqueName(name, ++number);
       break;
     }
@@ -97,7 +98,8 @@ bool PlotWindowContainer::isUniqueName(QString name)
 {
   bool isUniqueName = true;
   foreach (QMdiSubWindow *pWindow, subWindowList()) {
-    if (pWindow->widget()->windowTitle().compare(name) == 0) {
+    QString oldName = pWindow->widget()->windowTitle();
+    if (oldName.compare(name) == 0) {
       isUniqueName = false;
       break;
     }
@@ -503,7 +505,7 @@ void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget, bool maxim
   if (!pSubWindow) {
     pSubWindow = addSubWindow(mpDiagramWindow);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
-    //addRenameTabToSubWindowSystemMenu(pSubWindow);
+    addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   }
   mpDiagramWindow->show();
@@ -530,20 +532,21 @@ void PlotWindowContainer::removeInteractivePlotWindow()
  */
 void PlotWindowContainer::renamePlotWindow()
 {
-  PlotWindow *pPlotWindow = getCurrentWindow();
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  QMdiSubWindow *pMdiSubWindow = qobject_cast<QMdiSubWindow*>(pAction->parent());
   bool okPressed = false;
   QString text = QInputDialog::getText(this,
                                        tr("Name Plot Tab"),
                                        tr("Name:"),
                                        QLineEdit::Normal,
-                                       pPlotWindow->windowTitle(), &okPressed);
+                                       pMdiSubWindow->windowTitle(), &okPressed);
   if (okPressed && !text.isEmpty()) {
     if (isUniqueName(text)) {
-      pPlotWindow->setWindowTitle(text);
+      pMdiSubWindow->widget()->setWindowTitle(text);
     }
     else /* Name it the users name + 1. Avoids another popup. */{
       QString uniqueName = getUniqueName(text, 1);
-      pPlotWindow->setWindowTitle(uniqueName);
+      pMdiSubWindow->widget()->setWindowTitle(uniqueName);
     }
   }
 }
@@ -682,6 +685,11 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
  */
 void PlotWindowContainer::addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow)
 {
+  QAction *pRenamePlotWindowAction = new QAction(tr("Rename"), pMdiSubWindow);
+  pRenamePlotWindowAction->setStatusTip(tr("Renames the plot tab"));
+  connect(pRenamePlotWindowAction, SIGNAL(triggered()), SLOT(renamePlotWindow()));
   QMenu *pMenu = pMdiSubWindow->systemMenu();
-  pMenu->addAction(mpRenamePlotWindowAction);
+  pMenu->addAction(pRenamePlotWindowAction);
+  //  QMenu *pMenu = pMdiSubWindow->systemMenu();
+  //  pMenu->addAction(mpRenamePlotWindowAction);
 }
