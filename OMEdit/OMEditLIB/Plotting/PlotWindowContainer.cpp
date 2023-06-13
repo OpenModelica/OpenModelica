@@ -57,10 +57,6 @@ PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setActivationOrder(QMdiArea::ActivationHistoryOrder);
   setDocumentMode(true);
-  //Create the plot renaming action
-  mpRenamePlotWindowAction = new QAction(tr("Rename"), MainWindow::instance());
-  mpRenamePlotWindowAction->setStatusTip(tr("Renames the plot tab"));
-  connect(mpRenamePlotWindowAction, SIGNAL(triggered()), SLOT(renamePlotWindow()));
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
   setTabsMovable(true);
@@ -690,6 +686,4 @@ void PlotWindowContainer::addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiS
   connect(pRenamePlotWindowAction, SIGNAL(triggered()), SLOT(renamePlotWindow()));
   QMenu *pMenu = pMdiSubWindow->systemMenu();
   pMenu->addAction(pRenamePlotWindowAction);
-  //  QMenu *pMenu = pMdiSubWindow->systemMenu();
-  //  pMenu->addAction(mpRenamePlotWindowAction);
 }
