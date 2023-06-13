@@ -773,14 +773,14 @@ algorithm
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
-        binding_exp := Inline.inlineRecordConstructorCall(binding_exp);
+        binding_exp := Inline.inlineCallExp(binding_exp, forceInline = true);
       else
       end try;
 
       // If inlining fails, try to evaluate the binding instead.
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
-          binding_exp_eval := Ceval.evalExp(binding_exp);
+          binding_exp_eval := Ceval.tryEvalExp(binding_exp);
           binding_exp_eval := flattenExp(binding_exp_eval, Prefix.toNonIndexedPrefix(prefix));
 
           // Throw away the evaluated binding if the number of dimensions no
