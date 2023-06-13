@@ -1449,11 +1449,14 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
   foreach (auto pElement, pModelInstance->getElements()) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
+      /* Issue #10811
+       * Go deep the in the extends hierarchy and then apply the values in bottom to top order.
+       */
+      fetchElementExtendsModifiers(pExtend->getModel());
       foreach (auto modifier, pExtend->getModifier().getModifiers()) {
         Parameter *pParameter = findParameter(modifier.getName());
         applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
       }
-      fetchElementExtendsModifiers(pExtend->getModel());
     }
   }
 }
