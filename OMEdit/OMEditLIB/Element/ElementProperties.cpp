@@ -747,6 +747,8 @@ void Parameter::editRedeclareClassButtonClicked()
   QString type;
   const QString value = mpValueComboBox->lineEdit()->text();
   QString modifier = value;
+  const QString defaultValue = mpValueComboBox->lineEdit()->placeholderText();
+  QString defaultModifier = defaultValue;
   ModelInstance::Modifier replaceableConstrainedByModifier;
   QString comment;
   if (mValueType == Parameter::ReplaceableComponent) {
@@ -778,12 +780,15 @@ void Parameter::editRedeclareClassButtonClicked()
       const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
       ModelInstance::Modifier elementModifier;
       elementModifier.deserialize(QJsonValue(modifierJSON));
+      const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
+      ModelInstance::Modifier defaultElementModifier;
+      defaultElementModifier.deserialize(QJsonValue(defaultModifierJSON));
       ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
       mpModelInstanceElement->setModel(pNewModel);
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
       ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                    true, replaceableConstrainedByModifier, elementModifier, mpElementParameters);
+                                                                    true, defaultElementModifier, replaceableConstrainedByModifier, elementModifier, mpElementParameters);
       MainWindow::instance()->hideProgressBar();
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
@@ -1113,6 +1118,7 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param pParent
  */
 ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested,
+                                     const ModelInstance::Modifier defaultElementModifier,
                                      const ModelInstance::Modifier replaceableConstrainedByModifier, const ModelInstance::Modifier elementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
@@ -1122,6 +1128,7 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   mpGraphicsView = pGraphicsView;
   mInherited = inherited;
   mNested = nested;
+  mDefaultElementModifier = defaultElementModifier;
   mReplaceableConstrainedByModifier = replaceableConstrainedByModifier;
   mElementModifier = elementModifier;
   mModification.clear();
@@ -1287,8 +1294,12 @@ void ElementParameters::setUpDialog()
   fetchElementExtendsModifiers(mpElement->getModel());
   fetchElementModifiers();
   fetchClassExtendsModifiers();
-  applyReplaceableConstrainedByModifiers();
-  applyRedeclareElementModifiers();
+  // Apply the default modifiers that are given in the redeclaration of the replaceable class or component.
+  applyModifiers(mDefaultElementModifier, true);
+  // Apply the modifiers that are given in the constainedBy of the replaceable class or component.
+  applyModifiers(mReplaceableConstrainedByModifier, true);
+  // Apply the modifiers that are given in the redeclaration of the replaceable class or component.
+  applyModifiers(mElementModifier, false);
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1500,30 +1511,17 @@ void ElementParameters::fetchClassExtendsModifiers()
 }
 
 /*!
- * \brief ElementParameters::applyReplaceableConstrainedByModifiers
- * Apply the modifiers that are given in the constainedBy of the replaceable class or component.
- *
+ * \brief ElementParameters::applyModifiers
+ * Apply the modifiers of the component.
+ * \param modifiers
+ * \param defaultValue
  */
-void ElementParameters::applyReplaceableConstrainedByModifiers()
+void ElementParameters::applyModifiers(const ModelInstance::Modifier modifiers, bool defaultValue)
 {
   if (mNested) {
-    foreach (auto modifier, mReplaceableConstrainedByModifier.getModifiers()) {
+    foreach (auto modifier, modifiers.getModifiers()) {
       Parameter *pParameter = findParameter(modifier.getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
-    }
-  }
-}
-
-/*!
- * \brief ElementParameters::applyRedeclareElementModifiers
- * Apply the modifiers that are given in the redeclaration of the replaceable class or component.
- */
-void ElementParameters::applyRedeclareElementModifiers()
-{
-  if (mNested) {
-    foreach (auto modifier, mElementModifier.getModifiers()) {
-      Parameter *pParameter = findParameter(modifier.getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, false);
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, defaultValue);
     }
   }
 }

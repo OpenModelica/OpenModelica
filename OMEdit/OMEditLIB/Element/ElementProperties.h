@@ -186,8 +186,8 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier replaceableConstrainedByModifier,
-                    const ModelInstance::Modifier elementModifier, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier defaultElementModifier,
+                    const ModelInstance::Modifier replaceableConstrainedByModifier, const ModelInstance::Modifier elementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
@@ -200,6 +200,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
+  ModelInstance::Modifier mDefaultElementModifier;
   ModelInstance::Modifier mReplaceableConstrainedByModifier;
   ModelInstance::Modifier mElementModifier;
   QString mModification;
@@ -229,8 +230,7 @@ private:
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementModifiers();
   void fetchClassExtendsModifiers();
-  void applyReplaceableConstrainedByModifiers();
-  void applyRedeclareElementModifiers();
+  void applyModifiers(const ModelInstance::Modifier modifiers, bool defaultValue);
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
