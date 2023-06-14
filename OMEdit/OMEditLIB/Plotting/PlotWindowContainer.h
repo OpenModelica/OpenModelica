@@ -70,7 +70,6 @@ public:
 private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
-  QAction *mpRenamePlotWindowAction;
 public slots:
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
