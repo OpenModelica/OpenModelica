@@ -140,6 +140,19 @@ public
       end match;
     end toFlatStream;
 
+    function toString
+      input Branch branch;
+      input String indent;
+      output String str;
+    protected
+      IOStream.IOStream s;
+    algorithm
+      s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+      s := toStream(branch, indent, s);
+      str := IOStream.string(s);
+      IOStream.delete(s);
+    end toString;
+
     function triggerErrors
       input Branch branch;
     algorithm
