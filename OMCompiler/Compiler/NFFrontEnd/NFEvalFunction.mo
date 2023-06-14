@@ -139,6 +139,14 @@ algorithm
     fail();
   end try;
 
+  if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+    print(AbsynUtil.pathString(Function.name(fn)) + " => ");
+    print(Expression.toString(result));
+    print("\nArguments:\n");
+    print(UnorderedMap.toString(arg_map, InstNode.name, Expression.toString));
+    print("\n");
+  end if;
+
   Pointer.update(call_counter, call_count - 1);
 end evaluateNormal;
 

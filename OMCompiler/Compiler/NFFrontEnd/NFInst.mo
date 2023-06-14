@@ -1833,7 +1833,7 @@ algorithm
           checkBindingRestriction(res, binding, node, info);
 
           // Update some of the attributes now that we now the type of the component.
-          ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
+          ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node, node, context);
           ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
 
           if not referenceEq(attr, ty_attr) then
