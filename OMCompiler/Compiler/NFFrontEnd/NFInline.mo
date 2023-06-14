@@ -120,6 +120,7 @@ algorithm
     // Normal function
     case Call.TYPED_CALL(fn = fn as Function.FUNCTION(inputs = inputs, outputs = outputs, locals = locals),
                          arguments = args)
+      guard not forceInline
       algorithm
         body := Function.getBody(fn);
 
