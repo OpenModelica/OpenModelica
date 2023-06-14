@@ -1061,8 +1061,9 @@ public
     variability := match Pointer.access(var_ptr)
       local
         Prefixes.Variability tmp;
-      case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = tmp))  then tmp;
-      case Variable.VARIABLE(binding = Binding.UNBOUND()) then NFPrefixes.Variability.CONTINUOUS;
+      case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = tmp))    then tmp;
+      case Variable.VARIABLE(binding = Binding.FLAT_BINDING(variability = tmp))     then tmp;
+      case Variable.VARIABLE(binding = Binding.UNBOUND())                           then NFPrefixes.Variability.CONTINUOUS;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
       then fail();

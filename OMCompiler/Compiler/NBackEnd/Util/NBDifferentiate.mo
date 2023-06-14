@@ -843,8 +843,9 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3;
         list<Expression> rest;
+        Type ty;
 
       // SMOOTH
       case (Expression.CALL()) guard(name == "smooth")
@@ -896,6 +897,35 @@ public
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
+      // SEMI LINEAR
+      // d sL(x, m1, m2)/dt = sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+      case (Expression.CALL()) guard(name == "semiLinear")
+      algorithm
+        {arg1, arg2, arg3} := Call.arguments(exp.call);
+
+        // dx/dt, dm1/dt, dm2/dt
+        (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+        (diffArg3, diffArguments) := differentiateExpression(arg3, diffArguments);
+
+        // sL(x, dm1/dt, dm2/dt)
+        exp.call := Call.setArguments(exp.call, {arg1, diffArg2, diffArg3});
+        ret := exp;
+
+        // only add second part if derivative is nonzero
+        if not Expression.isZero(diffArg1) then
+          ty    := Expression.typeOf(diffArg1);
+          // x >= 0
+          ret1  := Expression.RELATION(arg1, Operator.makeGreaterEq(ty), Expression.makeZero(ty));
+          // if (x>=0) then m1 else m2
+          ret1  := Expression.IF(ty, ret1, arg2, arg3);
+          // dx/dt * if (x>=0) then m1 else m2
+          ret2  := Expression.MULTARY({diffArg1, ret1}, {}, mulOp);
+          // sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+          ret   := Expression.MULTARY({ret, ret2}, {}, addOp);
+        end if;
+      then ret;
+
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
@@ -928,12 +958,14 @@ public
       case (Expression.CALL()) algorithm
         ret := match Call.functionNameLast(exp.call)
           case "sample" then Expression.BOOLEAN(false);
-          else fail();
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+          then fail();
         end match;
       then ret;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of non-call expression: " + Expression.toString(exp)});
         then fail();
     end match;
   end differentiateBuiltinCall;

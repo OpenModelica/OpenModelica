@@ -251,22 +251,45 @@ algorithm
       then
         exp;
 
-    case "delay"     then simplifyDelay(args, call);
-    case "der"       then simplifyDer(listHead(args), call);
-    case "fill"      then simplifyFill(listHead(args), listRest(args), call, expand);
-    case "homotopy"  then simplifyHomotopy(args, call);
-    case "max"       then simplifyMinMax(args, call, isMin = false);
-    case "min"       then simplifyMinMax(args, call, isMin = true);
-    case "ones"      then simplifyFill(Expression.INTEGER(1), args, call, expand);
-    case "product"   then simplifySumProduct(listHead(args), call, expand, isSum = false);
-    case "sum"       then simplifySumProduct(listHead(args), call, expand, isSum = true);
-    case "transpose" then simplifyTranspose(listHead(args), call, expand);
-    case "vector"    then simplifyVector(listHead(args), call);
-    case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call, expand);
+    case "delay"        then simplifyDelay(args, call);
+    case "der"          then simplifyDer(listHead(args), call);
+    case "fill"         then simplifyFill(listHead(args), listRest(args), call, expand);
+    case "homotopy"     then simplifyHomotopy(args, call);
+    case "max"          then simplifyMinMax(args, call, isMin = false);
+    case "min"          then simplifyMinMax(args, call, isMin = true);
+    case "ones"         then simplifyFill(Expression.INTEGER(1), args, call, expand);
+    case "product"      then simplifySumProduct(listHead(args), call, expand, isSum = false);
+    case "sum"          then simplifySumProduct(listHead(args), call, expand, isSum = true);
+    case "transpose"    then simplifyTranspose(listHead(args), call, expand);
+    case "vector"       then simplifyVector(listHead(args), call);
+    case "zeros"        then simplifyFill(Expression.INTEGER(0), args, call, expand);
+    case "semiLinear"   then simplifySemiLinear(args, call);
 
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifySemiLinear
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+protected
+  Expression x, m1, m2;
+  Type ty;
+algorithm
+  {x, m1, m2} := args;
+  ty := Expression.typeOf(x);
+  if Expression.isZero(x) or (Expression.isZero(m1) and Expression.isZero(m2)) then
+    // both slopes x*m1, x*m2 return 0
+    exp := Expression.makeZero(ty);
+  elseif Expression.isEqual(m1, m2) then
+    // both slopes x*m1, x*m2 are equal
+    exp := Expression.BINARY(x, Operator.makeAdd(ty), m1);
+  else
+    // no simplification, just return
+    exp := Expression.CALL(call);
+  end if;
+end simplifySemiLinear;
 
 function simplifyMinMax
   input list<Expression> args;
