@@ -496,9 +496,10 @@ uniontype Function
   protected
     SCode.Element def;
     Integer numError = Error.getNumErrorMessages();
+    InstContext.Type fn_context = InstContext.set(context, NFInstContext.FUNCTION);
   algorithm
     try
-      fnNode := Inst.instantiate(fnNode, context = context, instPartial = true);
+      fnNode := Inst.instantiate(fnNode, context = fn_context, instPartial = true);
     else
       true := Error.getNumErrorMessages() == numError;
       def := InstNode.definition(fnNode);
@@ -1534,11 +1535,14 @@ uniontype Function
   protected
     DAE.FunctionAttributes attr;
     InstNode node = fn.node;
+    InstContext.Type fn_context;
   algorithm
     if not isTyped(fn) then
+      fn_context := InstContext.set(context, NFInstContext.FUNCTION);
+
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
-      Typing.typeComponents(node, context, preserveDerived = isPartialDerivative(fn));
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, fn_context, node);
+      Typing.typeComponents(node, fn_context, preserveDerived = isPartialDerivative(fn));
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
@@ -1559,22 +1563,25 @@ uniontype Function
   protected
     Boolean pure;
     DAE.FunctionAttributes attr;
+    InstContext.Type fn_context;
   algorithm
+    fn_context := InstContext.set(context, NFInstContext.FUNCTION);
+
     // Type the bindings of components in the function.
     for c in fn.inputs loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, context);
+    Typing.typeFunctionSections(fn.node, fn_context);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
@@ -1596,7 +1603,7 @@ uniontype Function
       end if;
     end if;
 
-    if not InstContext.inRelaxed(context) then
+    if not InstContext.inRelaxed(fn_context) then
       checkUseBeforeAssign(fn);
     end if;
 

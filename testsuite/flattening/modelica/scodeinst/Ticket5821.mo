@@ -2169,8 +2169,8 @@ end Test_total;
 //   input Modelica.Blocks.Types.ExternalCombiTimeTable tableID;
 //   input Integer icol;
 //   input Real timeIn;
-//   discrete input Real nextTimeEvent;
-//   discrete input Real pre_nextTimeEvent;
+//   input Real nextTimeEvent;
+//   input Real pre_nextTimeEvent;
 //   output Real y;
 //
 //   external "C" y = ModelicaStandardTables_CombiTimeTable_getValue(tableID, icol, timeIn, nextTimeEvent, pre_nextTimeEvent);

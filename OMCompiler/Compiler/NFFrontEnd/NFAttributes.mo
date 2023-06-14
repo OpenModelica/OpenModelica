@@ -509,6 +509,8 @@ public
     input output Attributes attr;
     input Class cls;
     input InstNode clsNode;
+    input InstNode compNode;
+    input InstContext.Type context;
   protected
     Variability var = attr.variability;
   algorithm
@@ -516,6 +518,13 @@ public
       attr := NFAttributes.IMPL_DISCRETE_ATTR;
     elseif var == Variability.CONTINUOUS and InstNode.isDiscreteClass(clsNode) then
       attr.variability := Variability.IMPLICITLY_DISCRETE;
+    elseif var < Variability.CONTINUOUS and InstContext.inFunction(context) and
+           attr.direction <> Direction.NONE and
+           isNone(InstNode.getAnnotation("__OpenModelica_functionVariability", compNode)) then
+      // Variability prefixes on function parameters has no semantic meaning,
+      // remove them so we don't have to worry about accidentally evaluating
+      // e.g. an input declared as constant/parameter.
+      attr.variability := Variability.CONTINUOUS;
     end if;
   end updateVariability;
 

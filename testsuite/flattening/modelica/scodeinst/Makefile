@@ -624,7 +624,6 @@ FuncStringInvalid2.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
 FuncUnknownDim3.mo \
-FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
 FuncViaComp3.mo \
@@ -667,6 +666,7 @@ FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
+FunctionParamVariability.mo \
 FunctionPartialDerivative1.mo \
 FunctionPartialDerivative2.mo \
 FunctionPartialDerivative3.mo \
