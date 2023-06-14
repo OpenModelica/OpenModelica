@@ -212,6 +212,16 @@ public
     end match;
   end isOutput;
 
+  function isNameNode
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(node = InstNode.NAME_NODE()) then true;
+      else false;
+    end match;
+  end isNameNode;
+
   function node
     input ComponentRef cref;
     output InstNode node;

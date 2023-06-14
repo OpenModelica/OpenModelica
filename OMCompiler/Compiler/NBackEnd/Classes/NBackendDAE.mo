@@ -61,6 +61,7 @@ protected
   import FlatModel = NFFlatModel;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -584,18 +585,23 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
   algorithm
-    var := match var
-      local
-        Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-        // collect all iterators (only locally known) so that they have a respective variable
-        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-        Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then var;
-      else algorithm
-        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then var;
-    end match;
+    try
+      var := match var
+        local
+          Binding binding;
+        case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+          // collect all iterators (only locally known) so that they have a respective variable
+          BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+          Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+        then var;
+        else algorithm
+          BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+        then var;
+      end match;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Variable.toString(var)});
+      fail();
+    end try;
   end collectVariableBindingIterators;
 
   function lowerRecordChildren
@@ -715,6 +721,8 @@ protected
         list<FEquation.Branch> branches;
         EquationAttributes attr;
         Integer rec_size;
+        Statement stmt;
+        Algorithm alg;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
@@ -778,11 +786,18 @@ protected
       then result;
 
       // if equation
-      case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
+      case FEquation.IF() then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
       case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
+
+      // wrap no return call in algorithm
+      case FEquation.NORETCALL() algorithm
+        stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.setInputsOutputs(alg);
+      then {lowerAlgorithm(alg, init)};
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -791,9 +806,6 @@ protected
       then fail();
       case FEquation.REINIT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for REINIT expression without condition:\n" + FEquation.toString(frontend_equation)});
-      then fail();
-      case FEquation.NORETCALL() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
 
       else algorithm
@@ -862,7 +874,8 @@ protected
       // We should never get an empty list here since the last condition has to
       // be TRUE. If-Equations have to have a plain else case for consistency!
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n"
+          + List.toString(branches, function FEquation.Branch.toString(indent = ""), "", "\t", "\n", "\n")});
       then fail();
 
     end match;
@@ -1100,14 +1113,16 @@ protected
   algorithm
     exp := match exp
       local
-        Type ty;
-        ComponentRef cref;
         Call call;
-      case Expression.CREF(ty = ty, cref = cref) then Expression.CREF(ty, lowerComponentReference(cref, variables));
+
+      case Expression.CREF() guard(not ComponentRef.isNameNode(exp.cref))
+      then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables));
+
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
+
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
@@ -1143,13 +1158,14 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
   algorithm
+    try
     () := match exp
       local
-        ComponentRef cref;
         Call call;
 
-      case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
-        Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+        or ComponentRef.isNameNode(exp.cref))) algorithm
+        Pointer.update(binding_iter_lst, lowerIterator(exp.cref) :: Pointer.access(binding_iter_lst));
       then ();
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
@@ -1165,6 +1181,10 @@ protected
       then ();
       else ();
     end match;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Expression.toString(exp)});
+      fail();
+    end try;
   end collectBindingIterators;
 
   function collectIterator

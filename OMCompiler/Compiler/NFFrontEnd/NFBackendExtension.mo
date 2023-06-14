@@ -942,15 +942,15 @@ public
         for attr in attrs loop
           (name, b) := attr;
           () := match name
-            case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
-            case "fixed"          algorithm fixed := createAttribute(b); then ();
-            case "max"            algorithm max := createAttribute(b); then ();
-            case "min"            algorithm min := createAttribute(b); then ();
-            case "nominal"        algorithm nominal := createAttribute(b); then ();
-            case "quantity"       algorithm quantity := createAttribute(b); then ();
-            case "start"          algorithm start := createAttribute(b); then ();
-            case "stateSelect"    algorithm state_select := createStateSelect(b); then ();
-            // TODO: VAR_ATTR_REAL has no field for unbounded.
+            case "displayUnit"    algorithm displayUnit   := createAttribute(b); then ();
+            case "fixed"          algorithm fixed         := createAttribute(b); then ();
+            case "max"            algorithm max           := createAttribute(b); then ();
+            case "min"            algorithm min           := createAttribute(b); then ();
+            case "nominal"        algorithm nominal       := createAttribute(b); then ();
+            case "quantity"       algorithm quantity      := createAttribute(b); then ();
+            case "start"          algorithm start         := createAttribute(b); then ();
+            case "stateSelect"    algorithm state_select  := createStateSelect(b); then ();
+            // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
             case "unbounded"      then ();
             case "unit"           algorithm unit := createAttribute(b); then ();
 
@@ -1150,31 +1150,41 @@ public
     protected
       Expression exp = Binding.getTypedExp(binding);
       String name;
-      function getStateSelectName
-        input Expression exp;
-        output String name;
-      protected
-        Expression arg;
-        InstNode node;
-        Call call;
-      algorithm
-        name := match exp
-          case Expression.ENUM_LITERAL() then exp.name;
-          case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
-          case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
-          case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
-            guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
-          then getStateSelectName(arg);
-          else algorithm
-            Error.assertion(false, getInstanceName() +
-              " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
-          then fail();
-        end match;
-      end getStateSelectName;
     algorithm
       name := getStateSelectName(exp);
       stateSelect := SOME(lookupStateSelectMember(name));
     end createStateSelect;
+
+    function getStateSelectName
+      input Expression exp;
+      output String name;
+    protected
+      Expression arg;
+      InstNode node;
+      Call call;
+      list<Expression> rest;
+    algorithm
+      name := match exp
+        case Expression.ENUM_LITERAL() then exp.name;
+        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
+        then getStateSelectName(arg);
+        case Expression.ARRAY() algorithm
+          arg :: rest := arrayList(exp.elements);
+          if not (listEmpty(rest) or List.all(rest, function Expression.isEqual(exp2=arg))) then
+            Error.assertion(false, getInstanceName() +
+              " cannot handle array StateSelect with different values yet:" + Expression.toString(exp), sourceInfo());
+            fail();
+          end if;
+        then getStateSelectName(arg);
+        else algorithm
+          Error.assertion(false, getInstanceName() +
+            " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
+        then fail();
+      end match;
+    end getStateSelectName;
 
     function createTearingSelect
       "tearingSelect is an annotation and has to be extracted from the comment."
