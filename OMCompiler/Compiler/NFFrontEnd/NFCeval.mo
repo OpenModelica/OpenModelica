@@ -3197,9 +3197,11 @@ algorithm
 
     // Return the size expression for the found dimension.
     outExp := Dimension.sizeExp(dim);
+    outExp := evalExp(outExp, target);
   else
     (outExp, ty) := Typing.typeExp(exp, NFInstContext.CLASS, info);
     arr := Array.mapList(Type.arrayDims(ty), Dimension.sizeExp);
+    Array.mapNoCopy(arr, function evalExp(target = target));
     dim := Dimension.fromInteger(arrayLength(arr), Variability.PARAMETER);
     outExp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {dim}), arr);
   end if;
