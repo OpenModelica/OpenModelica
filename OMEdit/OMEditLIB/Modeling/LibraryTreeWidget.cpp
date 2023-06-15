@@ -2812,6 +2812,8 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->deleteLater();
       pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
     }
+    pLibraryTreeItem->getModelWidget()->clearDependsOnModels();
+    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), pLibraryTreeItem->getModelWidget(), SLOT(updateModelIfDependsOn(QString)));
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }

@@ -7872,10 +7872,12 @@ ModelInfo ModelWidget::createModelInfo() const
   if (mpIconGraphicsView) {
     modelInfo.mIconElementsList = mpIconGraphicsView->getElementsList();
   }
-  modelInfo.mDiagramElementsList = mpDiagramGraphicsView->getElementsList();
-  modelInfo.mConnectionsList = mpDiagramGraphicsView->getConnectionsList();
-  modelInfo.mTransitionsList = mpDiagramGraphicsView->getTransitionsList();
-  modelInfo.mInitialStatesList = mpDiagramGraphicsView->getInitialStatesList();
+  if (mpDiagramGraphicsView) {
+    modelInfo.mDiagramElementsList = mpDiagramGraphicsView->getElementsList();
+    modelInfo.mConnectionsList = mpDiagramGraphicsView->getConnectionsList();
+    modelInfo.mTransitionsList = mpDiagramGraphicsView->getTransitionsList();
+    modelInfo.mInitialStatesList = mpDiagramGraphicsView->getInitialStatesList();
+  }
 
   return modelInfo;
 }
