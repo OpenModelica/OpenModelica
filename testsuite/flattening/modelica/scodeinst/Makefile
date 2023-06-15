@@ -753,6 +753,8 @@ ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \
 Inline3.mo \
+Inline4.mo \
+Inline5.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \
@@ -1159,7 +1161,6 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-Inline4.mo \
 ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
