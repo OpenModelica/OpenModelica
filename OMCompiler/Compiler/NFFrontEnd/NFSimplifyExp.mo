@@ -284,7 +284,7 @@ algorithm
     exp := Expression.makeZero(ty);
   elseif Expression.isEqual(m1, m2) then
     // both slopes x*m1, x*m2 are equal
-    exp := Expression.BINARY(x, Operator.makeAdd(ty), m1);
+    exp := Expression.BINARY(x, Operator.makeMul(ty), m1);
   else
     // no simplification, just return
     exp := Expression.CALL(call);
