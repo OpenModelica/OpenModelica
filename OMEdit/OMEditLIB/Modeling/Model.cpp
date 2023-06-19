@@ -1223,6 +1223,16 @@ namespace ModelInstance
     return false;
   }
 
+  bool isOutsideConnector(const Name &connector, const Model &model)
+  {
+    // An outside connector is a connector where the first part of the name is a
+    // connector. This is automatically true for a simple name.
+    if (connector.size() == 1) return true;
+
+    auto elem = model.lookupElement(connector.first().getName(false));
+    return elem && elem->getModel() && elem->getModel()->isConnector();
+  }
+
   bool Model::isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const
   {
     const Element *lhs = lookupElement(lhsConnector);
@@ -1233,10 +1243,18 @@ namespace ModelInstance
       return true;
     }
 
-    // An input should not be connected to an input, or an output to an output.
+    // A inside output should not be connected to an inside output,
+    // or a public outside input to a public outside input.
     auto dir = lhs->getDirection();
     if (!dir.isEmpty() && dir == rhs->getDirection()) {
-      return false;
+      auto lhs_outside = isOutsideConnector(lhsConnector, *this);
+      auto rhs_outside = isOutsideConnector(rhsConnector, *this);
+
+      if (dir == "output" && !lhs_outside && !rhs_outside) {
+        return false;
+      } else if (dir == "input" && lhs_outside && rhs_outside && lhs->isPublic() && rhs->isPublic()) {
+        return false;
+      }
     }
 
     // Check that the connectors are type compatible.
