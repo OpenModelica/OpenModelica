@@ -775,7 +775,12 @@ namespace ModelInstance
       return "";
     }
 
-    return Modifier::getModifierValue(*this, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+    /* Fixes issues #10819 and #10846.
+     * There is no sequence point between function arguments so call qualifiedModifierName.takeFirst() before calling the Modifier::getModifierValue function
+     * so correct list items are passed to the function.
+     */
+    const QString name = qualifiedModifierName.takeFirst();
+    return Modifier::getModifierValue(*this, name, qualifiedModifierName);
   }
 
   QString Modifier::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName)
@@ -785,7 +790,8 @@ namespace ModelInstance
         if (qualifiedModifierName.isEmpty()) {
           return subModifier.getValueWithoutQuotes();
         } else {
-          return Modifier::getModifierValue(subModifier, qualifiedModifierName.takeFirst(), qualifiedModifierName);
+          const QString name = qualifiedModifierName.takeFirst();
+          return Modifier::getModifierValue(subModifier, name, qualifiedModifierName);
         }
       }
     }
