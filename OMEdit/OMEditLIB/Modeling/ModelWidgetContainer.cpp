@@ -1343,7 +1343,11 @@ bool GraphicsView::checkElementName(const QString &nameStructure, QString elemen
     }
   }
   // if element name is same as class name
-  if (nameStructure.compare(elementName) == 0) {
+  QString className = nameStructure;
+  if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+    className = StringHandler::getLastWordAfterDot(className);
+  }
+  if (className.compare(elementName) == 0) {
     return false;
   }
   // if element with same name exists
