@@ -99,7 +99,7 @@ public
 
       else
         algorithm
-          e := ExpandExp.expand(exp, backend);
+          (e, true) := ExpandExp.expand(exp, backend);
         then
           if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend);
 
