@@ -98,6 +98,12 @@ git submodule update --init --recursive libraries
 * [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
 * [Windows Instructions](OMCompiler/README.Windows.md)
 
+We automatically generate nightly builds for
+[Windows](https://openmodelica.org/download/download-windows/) and for various flavours of
+[Linux](https://openmodelica.org/download/download-linux/). You can download and install
+them directly if you just want to run the latest development version of OpenModelica without
+the effort of compiling the sources yourself.
+
 ## How to run
 
 Here is a short example session.
