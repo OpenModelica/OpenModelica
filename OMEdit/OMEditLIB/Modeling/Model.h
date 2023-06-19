@@ -764,6 +764,9 @@ private:
     QStringList getNameParts() const;
     const QList<Part> getParts() const { return mParts; }
 
+    size_t size() const { return mParts.size(); }
+    Part first() const { return mParts.empty() ? Part() : mParts[0]; }
+
   private:
     QList<Part> mParts;
   };
