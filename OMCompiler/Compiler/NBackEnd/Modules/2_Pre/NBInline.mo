@@ -222,6 +222,11 @@ protected
         end try;
       then new_eqn;
 
+      // iterate over body equations of for-loop
+      case Equation.FOR_EQUATION() algorithm
+        eqn.body := list(inlineRecordEquation(body_eqn, variables, record_eqns, index) for body_eqn in eqn.body);
+      then eqn;
+
       else eqn;
     end match;
   end inlineRecordEquation;
