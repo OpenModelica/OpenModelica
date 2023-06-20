@@ -1646,6 +1646,25 @@ namespace ModelInstance
     deserialize_impl(jsonObject);
   }
 
+  /*!
+   * \brief Element::getTopLevelExtendName
+   * Returns the top level extend name where the element is located.
+   * \return
+   */
+  QString Element::getTopLevelExtendName() const
+  {
+    Element *pElement = mpParentModel->getParentElement();
+    while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
+      pElement = pElement->getParentModel()->getParentElement();
+    }
+
+    if (pElement->getModel()) {
+      return pElement->getModel()->getName();
+    } else {
+      return mpParentModel->getName();
+    }
+  }
+
   QString Element::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.

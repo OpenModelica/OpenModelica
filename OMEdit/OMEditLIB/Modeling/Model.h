@@ -621,6 +621,7 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
+    QString getTopLevelExtendName() const;
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     const Modifier &getModifier() const {return mModifier;}
