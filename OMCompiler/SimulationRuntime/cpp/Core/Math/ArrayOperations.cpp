@@ -142,8 +142,7 @@ void multiply_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& ou
 	outputArray.setDims(inputArray.getDims());
 	const T* data = inputArray.getData();
 	T* aim = outputArray.getData();
-	std::transform (data, data + inputArray.getNumElems(),
-                  aim, std::bind2nd(std::multiplies<T>(), b));
+	std::transform (data, data + inputArray.getNumElems(), aim, [&](const T& a) { return a*b; });
   }
 };
 
@@ -229,7 +228,7 @@ void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outp
   }
   const T* data = inputArray.getData();
   T* aim = outputArray.getData();
-  std::transform(data, data + nelems, aim, std::bind2nd(std::divides<T>(), b));
+  std::transform(data, data + nelems, aim, [&](const T& a) { return a/b; });
 }
 
 template <typename T>
@@ -242,7 +241,7 @@ void divide_array(const T &b, const BaseArray<T>& inputArray, BaseArray<T>& outp
   }
   const T* data = inputArray.getData();
   T* aim = outputArray.getData();
-  std::transform(data, data + nelems, aim, std::bind1st(std::divides<T>(), b));
+  std::transform(data, data + nelems, aim, [&](const T& a) { return b/a; });
 }
 
 template <typename T>
@@ -311,8 +310,7 @@ void subtract_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& ou
     outputArray.setDims(inputArray.getDims());
     const T* data = inputArray.getData();
     T* aim = outputArray.getData();
-    std::transform (data, data + inputArray.getNumElems(),
-                  aim, std::bind2nd(std::minus<T>(), b));
+    std::transform (data, data + inputArray.getNumElems(), aim, [&](const T& a) { return a-b; });
   }
 }
 
@@ -342,8 +340,7 @@ void add_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputA
     outputArray.setDims(inputArray.getDims());
     const T* data = inputArray.getData();
     T* result = outputArray.getData();
-    std::transform (data, data + inputArray.getNumElems(),
-                    result, std::bind2nd(std::plus<T>(), b));
+    std::transform (data, data + inputArray.getNumElems(), result, [&](const T& a) { return a+b; });
   }
 }
 
