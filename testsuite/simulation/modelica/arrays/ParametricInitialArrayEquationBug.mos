@@ -5,7 +5,7 @@
 
 loadFile("ParametricInitialArrayEquationBug.mo"); getErrorString();
 buildModel(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2); getErrorString();
-translateModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, fileNamePrefix="PEM"); getErrorString();
+buildModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, fileNamePrefix="PEM"); getErrorString();
 
 // Result:
 // true

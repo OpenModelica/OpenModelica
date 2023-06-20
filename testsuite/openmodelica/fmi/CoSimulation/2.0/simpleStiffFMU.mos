@@ -19,7 +19,7 @@ equation
 end stiffProblem;
 "); getErrorString();
 setCommandLineOptions("-d=newInst --fmiFlags=s:cvode"); getErrorString();
-translateModelFMU(stiffProblem, version = "2.0", fmuType="me_cs"); getErrorString();
+buildModelFMU(stiffProblem, version = "2.0", fmuType="me_cs"); getErrorString();
 
 // Check _flags.json for simulation flags
 system("unzip -cqq stiffProblem.fmu resources/stiffProblem_flags.json > stiffProblem_flags_dynamic.json"); getErrorString();

@@ -11,4 +11,4 @@ loadModel(Modelica_DeviceDrivers);getErrorString();
 loadFile("device.mo");getErrorString();
 setDebugFlags("visxml"); getErrorString();
 setCommandLineOptions("+n=1"); getErrorString();
-translateModelFMU(device, version = "1.0", fmuType = "me");getErrorString();
+buildModelFMU(device, version = "1.0", fmuType = "me");getErrorString();

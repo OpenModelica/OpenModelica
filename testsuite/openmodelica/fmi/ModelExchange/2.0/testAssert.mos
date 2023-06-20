@@ -13,7 +13,7 @@ equation
   assert(x < 1.5, \"x is too big at time = \" + String(time));
 end testAssertFMI;
 ");
-translateModelFMU(testAssertFMI, version="2.0");
+buildModelFMU(testAssertFMI, version="2.0");
 getErrorString();
 importFMU("testAssertFMI.fmu");
 loadFile("testAssertFMI_me_FMU.mo");

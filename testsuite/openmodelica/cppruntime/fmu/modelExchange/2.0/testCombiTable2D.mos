@@ -21,7 +21,7 @@ getErrorString();
 // enable directional derivatives
 setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
 
-translateModelFMU(TableTest, version="2.0"); getErrorString();
+buildModelFMU(TableTest, version="2.0"); getErrorString();
 
 importFMU("TableTest.fmu"); getErrorString();
 loadFile("TableTest_me_FMU.mo"); getErrorString();

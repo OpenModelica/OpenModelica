@@ -7,7 +7,7 @@
 //
 
 loadFile("HelloFMIWorld.mo");
-translateModelFMU(HelloFMIWorld, version="1.0");
+buildModelFMU(HelloFMIWorld, version="1.0");
 getErrorString();
 importFMU("HelloFMIWorld.fmu");
 loadFile("HelloFMIWorld_me_FMU.mo");

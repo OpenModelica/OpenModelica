@@ -17,7 +17,7 @@ equation
 end fmi_attributes_08;
 "); getErrorString();
 
-translateModelFMU(fmi_attributes_08); getErrorString();
+buildModelFMU(fmi_attributes_08); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_attributes_08.fmu modelDescription.xml > fmi_attributes_08_tmp.xml"); getErrorString();

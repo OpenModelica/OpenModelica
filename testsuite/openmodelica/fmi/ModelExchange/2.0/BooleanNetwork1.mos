@@ -13,7 +13,7 @@ val(onDelay.y, 10);
 val(rSFlipFlop.Q, 10);
 val(rSFlipFlop.QI, 10);
 
-translateModelFMU(Modelica.Blocks.Examples.BooleanNetwork1, version="2.0"); getErrorString();
+buildModelFMU(Modelica.Blocks.Examples.BooleanNetwork1, version="2.0"); getErrorString();
 importFMU("Modelica.Blocks.Examples.BooleanNetwork1.fmu"); getErrorString();
 loadFile("Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"); getErrorString();
 simulate(Modelica_Blocks_Examples_BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150); getErrorString();

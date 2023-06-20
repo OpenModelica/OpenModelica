@@ -12,7 +12,7 @@ loadString("model Pendulum
 extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
 end Pendulum;"); getErrorString();
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
-translateModelFMU(Pendulum, version = "2.0", fmuType="me_cs"); getErrorString();
+buildModelFMU(Pendulum, version = "2.0", fmuType="me_cs"); getErrorString();
 
 // Check _flags.json for simulation flags
 system("unzip -cqq Pendulum.fmu resources/Pendulum_flags.json > Pendulum_flags_static.json"); getErrorString();

@@ -10,7 +10,7 @@
 
 loadFile("EnumerationTest.mo");
 //instantiateModel(EnumerationTest);
-translateModelFMU(EnumerationTest, version="1.0");
+buildModelFMU(EnumerationTest, version="1.0");
 getErrorString();
 
 importFMU("EnumerationTest.fmu"); getErrorString();

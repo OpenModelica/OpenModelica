@@ -13,7 +13,7 @@ equation
 end HelloFMI20World;
 "); getErrorString();
 
-translateModelFMU(HelloFMI20World, version="2.0"); getErrorString();
+buildModelFMU(HelloFMI20World, version="2.0"); getErrorString();
 importFMU("HelloFMI20World.fmu"); getErrorString();
 loadFile("HelloFMI20World_me_FMU.mo"); getErrorString();
 simulate(HelloFMI20World_me_FMU); getErrorString();

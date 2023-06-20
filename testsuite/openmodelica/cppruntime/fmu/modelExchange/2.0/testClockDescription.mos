@@ -40,7 +40,7 @@ end SubClocks;
 ");
 getErrorString();
 
-translateModelFMU(SubClocks, version="2.0");
+buildModelFMU(SubClocks, version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet

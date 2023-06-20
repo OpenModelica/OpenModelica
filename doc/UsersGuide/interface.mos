@@ -34,7 +34,20 @@ algorithm
     out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
   end if;
 end reSTInterface;
+
+function isDeprecatedVersion
+  input OpenModelica.Scripting.TypeName cl;
+  output Boolean deprecated;
+protected
+  String version = OpenModelica.Scripting.getVersion(cl);
+algorithm
+  if stringEq(version, \"Deprecated\") then
+    deprecated := true;
+  else
+    deprecated := false;
+  end if;
+end isDeprecatedVersion;
 ");
 getErrorString();
 
-writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();
+writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not isDeprecatedVersion(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();

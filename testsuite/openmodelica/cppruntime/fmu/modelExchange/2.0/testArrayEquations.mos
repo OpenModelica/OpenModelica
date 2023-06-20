@@ -51,7 +51,7 @@ equation
 end ArrayEquationsTest;
 "); getErrorString();
 
-translateModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
+buildModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq ArrayEquationsTest.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");

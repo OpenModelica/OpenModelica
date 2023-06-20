@@ -15,7 +15,7 @@ end test_Bug3049;
 ");
 getErrorString();
 
-translateModelFMU(test_Bug3049, version="2.0");
+buildModelFMU(test_Bug3049, version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet

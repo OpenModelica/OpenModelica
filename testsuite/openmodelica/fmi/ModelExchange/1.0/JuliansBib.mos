@@ -18,7 +18,7 @@ val(theta,1);
 val(s, 0);
 val(s, 1);
 
-translateModelFMU(JuliansBib.Connector_Hebelarm_einfach, version="1.0"); getErrorString();
+buildModelFMU(JuliansBib.Connector_Hebelarm_einfach, version="1.0"); getErrorString();
 importFMU("JuliansBib_Connector_Hebelarm_einfach.fmu"); getErrorString();
 loadFile("JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo"); getErrorString();
 simulate(JuliansBib_Connector_Hebelarm_einfach_me_FMU, stopTime=1,numberOfIntervals=1000); getErrorString();

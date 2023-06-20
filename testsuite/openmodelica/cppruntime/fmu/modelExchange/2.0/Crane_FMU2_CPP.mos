@@ -13,7 +13,7 @@ setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 setCommandLineOptions("+d=disableDirectionalDerivatives"); getErrorString();
 
 loadFile("../1.0/cranes.mo"); getErrorString();
-translateModelFMU(cranes.crane, version="2.0"); getErrorString();
+buildModelFMU(cranes.crane, version="2.0"); getErrorString();
 
 //importFMU("cranes.crane.fmu", "<default>", 6, false, true); getErrorString();
 importFMU("cranes.crane.fmu", "<default>"); getErrorString();
