@@ -179,6 +179,7 @@ public
         Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
         Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
+
       else ();
     end match;
   end createStartEquation;

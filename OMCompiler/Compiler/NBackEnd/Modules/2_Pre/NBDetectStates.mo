@@ -117,6 +117,7 @@ protected
     VariablePointers variables      "All variables";
     EquationPointers equations      "System equations";
     EquationPointers disc_eqns      "Discrete equations";
+    EquationPointers init_eqns      "Initial equations";
     VariablePointers unknowns       "Unknowns";
     VariablePointers knowns         "Knowns";
     VariablePointers initials       "Initial unknowns";
@@ -129,9 +130,10 @@ protected
     list<Pointer<Equation>> aux_eqns;
   algorithm
     BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
-    BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
+    BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns, initials = init_eqns) := eqData;
     (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns) := continuousFunc(variables, unknowns, knowns, initials, states, derivatives, algebraics, equations);
-    (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous);
+    (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous, "discrete equations");
+    (variables, init_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, init_eqns, knowns, initials, discretes, previous, "initial equations");
     varData := BVariable.VAR_DATA_SIM(
       variables       = variables,
       unknowns        = unknowns,
@@ -171,10 +173,7 @@ protected
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] Created auxiliary equations:"));
-      for eqn in aux_eqns loop
-        print("\t" + Equation.pointerToString(eqn) + "\n");
-      end for;
-      print("\n");
+      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n") + "\n");
     end if;
   end detectContinuousStatesDefault;
 
@@ -188,7 +187,7 @@ protected
     // collect all 'natural' states from pre(d)
     EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
     // move stuff to their correct arrays
-    (variables, knowns, initials, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
+    (variables, knowns, initials, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous), context);
   end detectDiscreteStatesDefault;
 
   function collectStatesAndDerivatives
@@ -324,10 +323,7 @@ protected
       if listEmpty(acc_states) then
         print("\t<no states>\n\n");
       else
-        for var in acc_states loop
-          print("\t" + BVariable.pointerToString(var) + "\n");
-        end for;
-        print("\n");
+        print(List.toString(acc_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
     end if;
   end updateStatesAndDerivatives;
@@ -365,6 +361,7 @@ protected
     input output VariablePointers previous        "Previous (left limit) variables";
     input list<Pointer<Variable>> acc_discrete_states;
     input list<Pointer<Variable>> acc_previous;
+    input String context                          "only for debugging";
   algorithm
     // Add the new derivatives to variables, unknowns and derivative pointer arrays
     variables := VariablePointers.addList(acc_previous, variables);
@@ -373,14 +370,11 @@ protected
     previous := VariablePointers.addList(acc_previous, previous);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
-      print(StringUtil.headline_4("[stateselection] Natural discrete states:"));
+      print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
       if listEmpty(acc_discrete_states) then
         print("\t<no discrete states>\n\n");
       else
-        for var in acc_discrete_states loop
-          print("\t" + BVariable.pointerToString(var) + "\n");
-        end for;
-        print("\n");
+        print(List.toString(acc_discrete_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
     end if;
   end updateDiscreteStatesAndPrevious;
