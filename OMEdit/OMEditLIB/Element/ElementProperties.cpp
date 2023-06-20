@@ -1703,7 +1703,7 @@ void ElementParameters::updateElementParameters()
         QString modifierValue = elementModifier.mValue;
         // if the element is inherited then add the modifier value into the extends.
         if (mInherited) {
-          pOMCProxy->setExtendsModifierValue(className, mpElement->getParentModel()->getName(), modifierKey, modifierValue);
+          pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), modifierKey, modifierValue);
         } else {
           pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
         }
