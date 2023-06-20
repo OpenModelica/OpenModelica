@@ -1502,8 +1502,8 @@ void ElementParameters::fetchClassExtendsModifiers()
               Parameter *pParameter = findParameter(subModifier.getName());
               applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, false);
             }
+            break;
           }
-          break;
         }
       }
     }
