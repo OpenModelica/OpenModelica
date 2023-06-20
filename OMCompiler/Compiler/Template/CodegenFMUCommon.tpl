@@ -482,7 +482,7 @@ match simVar
   let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
-  let initial = getInitialType2(initial_)
+  let initial = getFmiInitialAttributeStr(simVar)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_")%>"
   valueReference="<%valueReference%>"
@@ -502,7 +502,7 @@ match variability
   case SOME(DISCRETE(__)) then "discrete"
   case SOME(FIXED(__)) then "fixed"
   case SOME(CONSTANT(__)) then "constant"
-  case SOME(CONTINUOUS(__)) then "continuous" // default
+  case SOME(CONTINUOUS(__)) then if Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then "continuous" else "" // default
   case SOME(TUNABLE(__)) then "tunable"
   else ""
 end getVariability2;
@@ -514,7 +514,7 @@ match c
   case SOME(NONECAUS(__)) then "none"
   case SOME(OUTPUT(__)) then "output"
   case SOME(INPUT(__)) then "input"
-  case SOME(LOCAL(__)) then "local"  // same as INTERNAL() see FMI-2.0 specification
+  case SOME(LOCAL(__)) then if Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then "local" else "" // same as INTERNAL() see FMI-2.0 specification
   case SOME(PARAMETER(__)) then "parameter"
   case SOME(CALCULATED_PARAMETER(__)) then "calculatedParameter"
   else ""
@@ -533,16 +533,6 @@ match simCode
     end match
   else ""
 end getNumberOfEventIndicators;
-
-template getInitialType2(Option<Initial> initial_)
- "Returns the Initial Attribute for fmiexport"
-::=
-match initial_
-  case SOME(EXACT(__)) then "exact"
-  case SOME(APPROX(__)) then "approx"
-  case SOME(CALCULATED(__)) then "calculated"
-  else ""
-end getInitialType2;
 
 template ScalarVariableType2(SimVar simvar, list<SimVar> stateVars)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
@@ -579,13 +569,26 @@ case SIMVAR(varKind = varKind, index = index) then
     else ''
 end DerivativeVarIndex;
 
+// template StartString2(SimVar simvar)
+// ::=
+// match simvar
+// case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+// case SIMVAR(initialValue = initialValue) then
+//   match initialValue
+//     case SOME(initialValue) then ' start="<%initValXml(initialValue)%>"'
+//     else ''
+// end StartString2;
+
 template StartString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
-case SIMVAR(initialValue = initialValue) then
-  match initialValue
-    case SOME(initialValue) then ' start="<%initValXml(initialValue)%>"'
+case SIMVAR(initialValue = NONE()) then ''
+case SIMVAR(initialValue = SOME(initialValue), causality = SOME(SimCodeVar.INPUT())) then ' start="<%initValXml(initialValue)%>"'
+case SIMVAR(initialValue = SOME(initialValue), initial_ = initial_) then
+  match initial_
+    case SOME(SimCodeVar.EXACT()) then ' start="<%initValXml(initialValue)%>"'
+    case SOME(SimCodeVar.APPROX()) then ' start="<%initValXml(initialValue)%>"'
     else ''
 end StartString2;
 

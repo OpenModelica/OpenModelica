@@ -58,7 +58,6 @@ readFile("fmi_attributes_08.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"_D_TMP_D_VAR_D_2_D_0PREX_D_TAN\"
 //     valueReference=\"2\"
-//     causality=\"local\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

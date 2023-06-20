@@ -8442,28 +8442,36 @@ algorithm
   end match;
 end getDefaultFmiInitialAttribute;
 
-protected function clearUpDefaultFmiAttributes
-  "Replaces default values of the following attributes with NONE(): initial, causality, variability"
-  input output SimCodeVar.SimVar simVar;
+public function getFmiInitialAttributeStr
+  "This function is called from CodegenFMUCommon.tpl. It compares a variable's initial_ fmi attriute
+  with the default expected (based on teh variability and causality of the variable). If it turns out
+  to be the same as the default then it will return an empty string so that the value is not
+  printed to the modelDescription.xml file. However, if the flag DUMP_FORCE_FMI_ATTRIBUTES is set,
+  it will always print the attrbute whether it is equal to the defaul or not."
+  input SimCodeVar.SimVar simVar;
+  output String out_string = "";
 protected
-  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
-  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
-  SimCodeVar.Initial default_initial;
+  SimCodeVar.Initial var_initial, default_initial;
 algorithm
-  default_initial := getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, default_variability), Util.getOptionOrDefault(simVar.causality, default_causality));
-
-  if isSome(simVar.initial_) and valueEq(Util.getOption(simVar.initial_), default_initial) then
-    simVar.initial_ := NONE();
+  if isNone(simVar.initial_) then
+    return;
   end if;
 
-  if isSome(simVar.causality) and valueEq(Util.getOption(simVar.causality), default_causality) then
-    simVar.causality := NONE();
+  SOME(var_initial) := simVar.initial_;
+  default_initial := getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, SimCodeVar.CONTINUOUS())
+                                                  , Util.getOptionOrDefault(simVar.causality, SimCodeVar.LOCAL()));
+
+  if valueEq(var_initial, default_initial) and not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
+    var_initial := SimCodeVar.NONE_INITIAL(); // Set it to NONE_INITIAL here so the case below turns it to ""
   end if;
 
-  if isSome(simVar.variability) and valueEq(Util.getOption(simVar.variability), default_variability) then
-    simVar.variability := NONE();
-  end if;
-end clearUpDefaultFmiAttributes;
+  out_string := match var_initial
+    case SimCodeVar.EXACT(__) then "exact";
+    case SimCodeVar.APPROX(__) then "approx";
+    case SimCodeVar.CALCULATED(__) then "calculated";
+    case SimCodeVar.NONE_INITIAL(__) then "";
+  end match;
+end getFmiInitialAttributeStr;
 
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
@@ -8587,12 +8595,6 @@ algorithm
     Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
-  end if;
-
-  // clear up default values to improve readability of modelDescription.xml
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
-    simVar := clearUpDefaultFmiAttributes(simVar);
-    derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
   //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
@@ -10243,7 +10245,9 @@ protected function startValueIsConstOrDefault
   input DAE.Type type_;
   output Option<DAE.Exp> outstart_value;
 algorithm
-  if Expression.isConstValue(Util.getOption(start_value)) then
+  if Util.isNone(start_value) then
+     outstart_value := NONE();
+  elseif Expression.isConstValue(Util.getOption(start_value)) then
     outstart_value := start_value;
   else
     outstart_value := setDefaultStartValue(type_);
@@ -10265,7 +10269,7 @@ algorithm
       case (NONE()) guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
       case (SOME(_)) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
       case (NONE()) guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else NONE();
+      else startValueIsConstOrDefault(startValue, var.varType);
     end match;
   end if;
 end updateStartValue;

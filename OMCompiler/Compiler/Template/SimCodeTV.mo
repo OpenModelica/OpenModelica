@@ -1428,6 +1428,11 @@ package SimCodeUtil
     input list<BackendDAE.SimIterator> iters;
     output Integer size ;
   end getSimIteratorSize;
+
+  function getFmiInitialAttributeStr
+    input SimCodeVar.SimVar simVar;
+    output String out_string;
+  end getFmiInitialAttributeStr;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -4039,6 +4044,7 @@ package Flags
   constant ConfigFlag ZEROMQ_SERVER_ID;
   constant ConfigFlag ZEROMQ_CLIENT_ID;
   constant ConfigFlag FMI_FILTER;
+  constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES;
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
 
