@@ -1297,7 +1297,7 @@ QString GraphicsView::getUniqueElementName(const QString &nameStructure, const Q
   *defaultName = MainWindow::instance()->getOMCProxy()->getDefaultComponentName(nameStructure);
   QString newName;
   if (!defaultName->isEmpty()) {
-    newName = getUniqueElementName(nameStructure, StringHandler::toCamelCase(*defaultName));
+    newName = getUniqueElementName(nameStructure, *defaultName);
   } else {
     newName = getUniqueElementName(nameStructure, StringHandler::toCamelCase(name));
   }
