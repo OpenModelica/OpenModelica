@@ -201,11 +201,12 @@ public
      This function is only allowed to read and change equations, change algebraic
      variables to discrete and create previous discrete variables."
     input output VariablePointers variables     "All variables";
-    input output EquationPointers equations     "ONLY Discrete equations!";
+    input output EquationPointers equations     "ONLY discrete or initial equations!";
     input output VariablePointers knowns        "Knowns";
     input output VariablePointers initials      "Initial unknowns";
     input output VariablePointers discretes     "Discrete variables";
     input output VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
+    input String context                        "only for debugging";
   end detectDiscreteStatesInterface;
 
 // =========================================================================
