@@ -29,7 +29,7 @@ end testDID;
 ");
 getErrorString();
 
-translateModelFMU(testDID, version="2.0");
+buildModelFMU(testDID, version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet

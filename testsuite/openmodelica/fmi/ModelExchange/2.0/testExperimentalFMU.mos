@@ -20,7 +20,7 @@ equation
   end for;
 end advection; ");
 setDebugFlags("fmuExperimental");
-translateModelFMU(advection ,"2","me","<default>");
+buildModelFMU(advection ,"2","me","<default>");
 getErrorString();
 system("rm -f log.txt");
 system("unzip -cqq advection.fmu sources/advection.c | grep \"void advection_functionODE_Partial(\"", "log.txt");

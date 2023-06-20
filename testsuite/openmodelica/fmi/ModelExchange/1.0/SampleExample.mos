@@ -17,7 +17,7 @@ equation
   end when;
 end SampleEvent;
 ");
-translateModelFMU(SampleEvent, version="1.0");
+buildModelFMU(SampleEvent, version="1.0");
 getErrorString();
 importFMU("SampleEvent.fmu");
 loadFile("SampleEvent_me_FMU.mo");

@@ -8,7 +8,7 @@
 setCFlags(getCFlags() + " -g"); getErrorString();
 loadFile("BouncingBall.mo"); getErrorString();
 
-if ""==translateModelFMU(BouncingBall, version="1.0") then
+if ""==buildModelFMU(BouncingBall, version="1.0") then
   print(getErrorString());
   exit(1);
 end if;

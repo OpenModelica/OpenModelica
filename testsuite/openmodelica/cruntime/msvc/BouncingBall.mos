@@ -24,7 +24,7 @@ equation
 
 end BouncingBallFMI20;
 "); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0"); getErrorString();
 importFMU("BouncingBallFMI20.fmu"); getErrorString();
 loadFile("BouncingBallFMI20_me_FMU.mo"); getErrorString();
 simulate(BouncingBallFMI20_me_FMU, stopTime=3.0); getErrorString();

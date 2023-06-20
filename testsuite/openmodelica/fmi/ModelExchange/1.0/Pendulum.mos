@@ -9,7 +9,7 @@
 //
 
 loadFile("Pendulum.mo");
-translateModelFMU(Pendulum, version="1.0");
+buildModelFMU(Pendulum, version="1.0");
 getErrorString();
 importFMU("Pendulum.fmu");
 getErrorString();

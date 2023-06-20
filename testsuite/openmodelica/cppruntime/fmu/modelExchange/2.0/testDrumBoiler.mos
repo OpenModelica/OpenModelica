@@ -20,7 +20,7 @@ getErrorString();
 // enable directional derivatives
 setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
 
-translateModelFMU(DrumBoilerModel, version="2.0"); getErrorString();
+buildModelFMU(DrumBoilerModel, version="2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq DrumBoilerModel.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");

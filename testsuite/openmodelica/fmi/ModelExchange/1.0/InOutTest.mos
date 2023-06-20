@@ -8,7 +8,7 @@
 
 loadModel(Modelica, {"3.2.1"});getErrorString();
 loadFile("InOutTest.mo");getErrorString();
-translateModelFMU(InOutTest, version="1.0");getErrorString();
+buildModelFMU(InOutTest, version="1.0");getErrorString();
 importFMU("InOutTest.fmu");getErrorString();
 loadFile("InOutTest_me_FMU.mo");getErrorString();
 loadFile("testInOut.mo");getErrorString();

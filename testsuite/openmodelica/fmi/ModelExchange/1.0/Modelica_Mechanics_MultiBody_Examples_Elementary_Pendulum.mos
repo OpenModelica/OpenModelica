@@ -8,7 +8,7 @@
 //
 
 loadModel(Modelica, {"3.2.2"}); getErrorString();
-translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu", loglevel=0); getErrorString();
 loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();
 simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU,stopTime=3.0); getErrorString();

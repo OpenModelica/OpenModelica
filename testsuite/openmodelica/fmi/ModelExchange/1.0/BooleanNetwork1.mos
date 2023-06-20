@@ -16,7 +16,7 @@ val(y4, 10);
 val(Q, 10);
 val(QI, 10);
 
-translateModelFMU(BooleanNetwork1, version="1.0"); getErrorString();
+buildModelFMU(BooleanNetwork1, version="1.0"); getErrorString();
 
 importFMU("BooleanNetwork1.fmu"); getErrorString();
 loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();

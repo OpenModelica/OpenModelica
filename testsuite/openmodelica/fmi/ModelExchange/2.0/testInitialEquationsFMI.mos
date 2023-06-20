@@ -42,21 +42,21 @@ package initializationTestsFMI
 end initializationTestsFMI;
 "); getErrorString();
 
-translateModelFMU(initializationTestsFMI.initial_equation1, version="2.0"); getErrorString();
+buildModelFMU(initializationTestsFMI.initial_equation1, version="2.0"); getErrorString();
 importFMU("initializationTestsFMI.initial_equation1.fmu"); getErrorString();
 loadFile("initializationTestsFMI_initial_equation1_me_FMU.mo"); getErrorString();
 simulate(initializationTestsFMI_initial_equation1_me_FMU, stopTime=0.0); getErrorString();
 val(x, 0.0);
 val(y, 0.0);
 
-translateModelFMU(initializationTestsFMI.initial_equation2, version="2.0"); getErrorString();
+buildModelFMU(initializationTestsFMI.initial_equation2, version="2.0"); getErrorString();
 importFMU("initializationTestsFMI.initial_equation2.fmu"); getErrorString();
 loadFile("initializationTestsFMI_initial_equation2_me_FMU.mo"); getErrorString();
 simulate(initializationTestsFMI_initial_equation2_me_FMU, stopTime=0.0); getErrorString();
 val(x, 0.0);
 val(y, 0.0);
 
-translateModelFMU(initializationTestsFMI.initial_equation3, version="2.0"); getErrorString();
+buildModelFMU(initializationTestsFMI.initial_equation3, version="2.0"); getErrorString();
 importFMU("initializationTestsFMI.initial_equation3.fmu"); getErrorString();
 loadFile("initializationTestsFMI_initial_equation3_me_FMU.mo"); getErrorString();
 simulate(initializationTestsFMI_initial_equation3_me_FMU, stopTime=0.0); getErrorString();

@@ -8,7 +8,7 @@
 //
 
 loadModel(Modelica, {"3.2.1"});
-translateModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="1.0");
+buildModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="1.0");
 getErrorString();
 
 importFMU("Modelica_Blocks_Sources_BooleanPulse.fmu"); getErrorString();

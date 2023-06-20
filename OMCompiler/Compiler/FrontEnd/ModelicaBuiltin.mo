@@ -2478,7 +2478,8 @@ annotation(preferredView="text");
 end importFMUModelDescription;
 
 function translateModelFMU
-"translates a modelica model into a Functional Mockup Unit.
+"Deprecated: Use buildModelFMU instead.
+Translates a modelica model into a Functional Mockup Unit.
 The only required argument is the className, while all others have some default values.
   Example command:
   translateModelFMU(className, version=\"2.0\");"
@@ -2489,7 +2490,7 @@ The only required argument is the className, while all others have some default 
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
-annotation(preferredView="text");
+annotation(preferredView="text", version="Deprecated");
 end translateModelFMU;
 
 function buildModelFMU
@@ -2956,7 +2957,7 @@ public function compareSimulationResults "compares simulation results."
   input String[:] vars = fill("",0);
   output String[:] result;
 external "builtin";
-annotation(preferredView="text");
+annotation(preferredView="text", version="Deprecated");
 end compareSimulationResults;
 
 public function deltaSimulationResults "calculates the sum of absolute errors."

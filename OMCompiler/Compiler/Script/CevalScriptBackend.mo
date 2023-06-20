@@ -1251,6 +1251,7 @@ algorithm
 
     case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::_)
       algorithm
+        Error.addMessage(Error.DEPRECATED_API_CALL, {"translateModelFMU", "buildModelFMU"});
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true);
       then
         ret_val;

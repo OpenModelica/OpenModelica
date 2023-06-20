@@ -21,7 +21,7 @@ equation
 end fmi_attributes_19;
 "); getErrorString();
 
-translateModelFMU(fmi_attributes_19, fmuType="cs"); getErrorString();
+buildModelFMU(fmi_attributes_19, fmuType="cs"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_attributes_19.fmu modelDescription.xml > fmi_attributes_19_tmp.xml"); getErrorString();
