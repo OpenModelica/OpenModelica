@@ -1427,7 +1427,7 @@ protected
 algorithm
   sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
 
-  for cr in ComponentRef.toListReverse(Prefix.prefix(prefix)) loop
+  for cr in ComponentRef.toListReverse(Prefix.indexedPrefix(prefix)) loop
     if ComponentRef.hasSubscripts(cr) then
       UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
     end if;
