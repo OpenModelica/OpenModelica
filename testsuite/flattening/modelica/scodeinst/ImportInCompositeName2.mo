@@ -19,7 +19,7 @@ end ImportInCompositeName2;
 
 // Result:
 // Error processing file: ImportInCompositeName2.mo
-// [flattening/modelica/scodeinst/ImportInCompositeName2.mo:17:3-17:17:writable] Error: Found imported name ‘PI‘ while looking up composite name ‘P2.PI‘.
+// [flattening/modelica/scodeinst/ImportInCompositeName2.mo:17:3-17:17:writable] Error: Found imported name 'PI' while looking up composite name 'P2.PI'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

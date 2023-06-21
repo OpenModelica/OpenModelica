@@ -17,7 +17,7 @@ end ProtectedMod4;
 
 // Result:
 // Error processing file: ProtectedMod4.mo
-// [flattening/modelica/scodeinst/ProtectedMod4.mo:9:13-9:25:writable] Error: Protected element ‘x‘ may not be modified, got ‘x = 1.0‘.
+// [flattening/modelica/scodeinst/ProtectedMod4.mo:9:13-9:25:writable] Error: Protected element 'x' may not be modified, got 'x = 1.0'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
