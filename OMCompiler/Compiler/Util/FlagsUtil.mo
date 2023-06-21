@@ -1486,11 +1486,12 @@ protected
 algorithm
   Print.clearBuf();
   s := "OpenModelica Compiler Flags";
+  Print.printBuf("\n.. _openmodelica-compiler-flags :\n\n");
   Print.printBuf(s);
   Print.printBuf("\n");
   Print.printBuf(sum("=" for e in 1:stringLength(s)));
   Print.printBuf("\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
+  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n\n"));
   Print.printBuf("\n.. _omcflags-options :\n\n");
   s := System.gettext("Options");
   Print.printBuf(s);
