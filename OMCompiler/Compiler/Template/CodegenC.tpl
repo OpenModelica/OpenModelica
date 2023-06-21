@@ -5564,12 +5564,12 @@ match sparsepattern
     let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
     let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
     let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
-    let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
+    let sizeRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>';separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN(constantEqns=constantEqns) =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
-    let index_ = listLength(seedVars)
+    let sizeCols = listLength(seedVars)
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
@@ -5579,7 +5579,7 @@ match sparsepattern
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
 
-      initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+      initAnalyticJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
 

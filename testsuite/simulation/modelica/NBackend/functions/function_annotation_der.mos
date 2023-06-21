@@ -48,7 +48,8 @@ algorithm
 end df;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=debugDifferentiation"); getErrorString();
+//setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=debugDifferentiation"); getErrorString();
+setCommandLineOptions("--newBackend --generateSymbolicJacobian"); getErrorString();
 simulate(function_annotation_der); getErrorString();
 
 // Result:

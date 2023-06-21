@@ -805,7 +805,7 @@ protected
     try
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
-      if jacType == NBJacobian.JacobianType.SIMULATION then
+      if jacType == NBJacobian.JacobianType.ODE then
         for dep in listReverse(dependencies) loop
           if BVariable.checkCref(dep, BVariable.isState) then
             fixed_dependencies := dep :: fixed_dependencies;

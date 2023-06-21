@@ -245,6 +245,8 @@ public
           unknowns_scalar := VariablePointers.scalarize(varData.unknowns);
           seed_scalar := VariablePointers.scalarize(varData.seedVars);
           res_scalar := VariablePointers.scalarize(varData.resultVars);
+          print("PH: len(resultVars) = " + intString(listLength(VariablePointers.toList(varData.resultVars))) + "\n");
+          print("PH: len(res_scalar) = " + intString(listLength(VariablePointers.toList(res_scalar))) + "\n");
           tmp_scalar := VariablePointers.scalarize(varData.tmpVars);
           // use dummy simcode indices to always start at 0 for column and seed vars
           VariablePointers.map(unknowns_scalar, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
@@ -255,6 +257,8 @@ public
           seedVars := listReverse(Pointer.access(seedVars_ptr));
           resVars := listReverse(Pointer.access(resVars_ptr));
           tmpVars := listReverse(Pointer.access(tmpVars_ptr));
+
+          print("PH: len(resVars) = " + intString(listLength(resVars)) + "\n");
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(columnVars) + listLength(seedVars));
           SimCodeUtil.addListSimCodeMap(columnVars, jac_map);
