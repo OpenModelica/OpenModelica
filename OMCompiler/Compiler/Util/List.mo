@@ -747,20 +747,10 @@ public function firstN<T>
   "Returns the first N elements of a list, or fails if there are not enough
    elements in the list."
   input list<T> inList;
-  input Integer inN;
-  output list<T> outList = {};
-protected
-  T e;
-  list<T> rest;
+  input Integer N;
+  output list<T> outList;
 algorithm
-  true := (inN >= 0);
-  rest := inList;
-
-  for i in 1:inN loop
-    e :: rest := rest;
-    outList := e :: outList;
-  end for;
-
+  outList := firstN_reverse(inList, N);
   outList := listReverseInPlace(outList);
 end firstN;
 
@@ -774,7 +764,7 @@ protected
   T e;
   list<T> rest;
 algorithm
-  true := (N >= 0);
+  true := N >= 0;
   rest := inList;
 
   for i in 1:N loop
@@ -6606,8 +6596,8 @@ protected
   String endStr = inEndStr;
 algorithm
   if maxLength > 0 and listLength(lst) > maxLength then
-    lst := List.firstN(lst, maxLength);
-    endStr := ", ..." + endStr;
+    lst := firstN(lst, maxLength);
+    endStr := stringAppendList({inDelimitStr, "...", endStr});
   end if;
 
   outString := match(lst, inPrintEmpty)
