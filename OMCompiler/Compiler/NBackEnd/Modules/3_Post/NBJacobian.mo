@@ -149,8 +149,12 @@ public
     output Option<Jacobian> jacobian;
     input output FunctionTree funcTree;
     input String name;
+  protected
+    constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
+      then jacobianSymbolic
+      else jacobianNumeric;
   algorithm
-    (jacobian, funcTree) := jacobianSymbolic(
+    (jacobian, funcTree) := func(
         name              = name,
         jacType           = JacobianType.NONLINEAR,
         seedCandidates    = variables,
@@ -340,8 +344,8 @@ public
       Integer nnz;
     algorithm
       // get all relevant crefs
-      seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
-      partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+      seed_vars     := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+      partial_vars  := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
 
       // assume full dependency
       for s in listReverse(seed_vars) loop
@@ -381,7 +385,7 @@ public
 
         case SOME(comps) algorithm
           // create index mapping only for variables
-          seed_mapping := Mapping.create(EquationPointers.empty(), seedCandidates);
+          seed_mapping    := Mapping.create(EquationPointers.empty(), seedCandidates);
           partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
 
           // get all relevant crefs
@@ -709,9 +713,9 @@ protected
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),             // no explicit cref necessary, rules are set by HT
+      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by HT
       new_vars        = {},
-      jacobianHT      = optHT, // seed and temporary cref hashtable
+      jacobianHT      = optHT,                  // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       scalarized      = seedCandidates.scalarized
@@ -726,7 +730,7 @@ protected
     all_vars      := unknown_vars; // add other vars later on
 
     seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars; // add other auxiliaries later on
+    aux_vars      := seed_vars;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
 

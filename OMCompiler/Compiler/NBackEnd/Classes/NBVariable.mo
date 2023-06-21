@@ -255,12 +255,6 @@ public
     end match;
   end isState;
 
-  function isNonState
-    "Seems trivial but is necessary for traversal functions"
-    input Pointer<Variable> var;
-    output Boolean b = not isState(var);
-  end isNonState;
-
   function isStateDerivative
     input Pointer<Variable> var;
     output Boolean b;
@@ -423,8 +417,6 @@ public
     output Boolean b;
   algorithm
     b := match Pointer.access(var)
-      local
-        Prefixes.Direction direction;
       case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.INPUT)) then true;
       else false;
     end match;
@@ -435,8 +427,6 @@ public
     output Boolean b;
   algorithm
     b := match Pointer.access(var)
-      local
-        Prefixes.Direction direction;
       case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.OUTPUT)) then true;
       else false;
     end match;
