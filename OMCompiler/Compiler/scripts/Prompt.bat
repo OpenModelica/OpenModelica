@@ -7,7 +7,7 @@ set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
 if not "%1"=="" (set OM_PLATFORM=%1) else (set OM_PLATFORM=mingw64)
-set MINGW=%OPENMODELICAHOME%\msys\%OM_PLATFORM%
+set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
 REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
@@ -18,7 +18,7 @@ set CURRENT_DIR="%CD%"
 
 cd /D "%MINGW%\bin"
 set PATH=%CD%;%CD%\..\..\usr\bin\;%OPENMODELICAHOME%\bin;%OPENMODELICAHOME%\lib\omc\msvc;%OPENMODELICAHOME%\lib\omc\cpp;%OPENMODELICAHOME%\lib\omc\cpp\msvc;
-echo PATH = "%PATH%"
+REM echo PATH = "%PATH%"
 cd /D "%CURRENT_DIR%"
 
 REM echo PATH = %PATH% >>%1.log 2>&1
