@@ -17,7 +17,7 @@ end P;
 
 // Result:
 // Error processing file: InnerOuterMissing9.mo
-// [flattening/modelica/scodeinst/InnerOuterMissing9.mo:14:5-14:17:writable] Error: The model can't be instantiated due to top-level outer element ‘x‘, it may only be used as part of a simulation model.
+// [flattening/modelica/scodeinst/InnerOuterMissing9.mo:14:5-14:17:writable] Error: The model can't be instantiated due to top-level outer element 'x', it may only be used as part of a simulation model.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

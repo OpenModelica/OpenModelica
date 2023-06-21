@@ -2507,7 +2507,7 @@ The only required argument is the className, while all others have some default 
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-  input Boolean includeResources = false "include Modelica based resources via loadResource or not";
+  input Boolean includeResources = false "Depreacted and no effect";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(preferredView="text");

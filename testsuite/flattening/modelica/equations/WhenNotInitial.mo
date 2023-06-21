@@ -17,6 +17,6 @@ end WhenNotInitial;
 //     r = 1.0;
 //   end when;
 // end WhenNotInitial;
-// [flattening/modelica/equations/WhenNotInitial.mo:7:3-9:11:writable] Warning: initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition ‘not initial()‘.
+// [flattening/modelica/equations/WhenNotInitial.mo:7:3-9:11:writable] Warning: initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition 'not initial()'.
 //
 // endResult
