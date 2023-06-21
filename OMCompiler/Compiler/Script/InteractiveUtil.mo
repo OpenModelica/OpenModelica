@@ -4154,6 +4154,11 @@ algorithm
     end if;
   end for;
 
+  // Also add the class itself if it's a candidate.
+  if List.contains(acc, fqpath, AbsynUtil.pathEqual) then
+    paths := fqpath :: paths;
+  end if;
+
   paths := List.unique(listAppend(local_paths, paths));
 end getAllSubtypeOf;
 
