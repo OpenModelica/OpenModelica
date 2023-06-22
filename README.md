@@ -187,6 +187,8 @@ See [OSMC-License.txt](OSMC-License.txt).
 
 See the [CITATIONS](CITATION.cff) file for information on how to cite OpenModelica in
 any publications reporting work done using OpenModelica.
+For a complete list of all publications related to OpenModelica see
+[doc/bibliography/openmodelica.bib](./doc/bibliography/openmodelica.bib).
 
 ------------
-Last updated: 2023-05-26
+Last updated: 2023-06-21

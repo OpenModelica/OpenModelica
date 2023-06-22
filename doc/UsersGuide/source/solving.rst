@@ -3,8 +3,6 @@
 Solving Modelica Models
 =======================
 
-.. TODO: Describe the Backend related modules.
-
 .. _cruntime-integration-methods :
 
 Integration Methods
