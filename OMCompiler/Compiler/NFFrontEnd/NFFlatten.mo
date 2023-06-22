@@ -760,7 +760,9 @@ algorithm
   dims := Type.arrayDims(ty);
   binding := if isSome(outerBinding) then Util.getOption(outerBinding) else Component.getBinding(comp);
 
-  // Create an equation if there's a binding on a complex component.
+  // For a complex component with a binding the binding needs to be split into
+  // a binding for each record field, or moved to an initial equation if
+  // splitting the binding fails.
   if Binding.isExplicitlyBound(binding) then
     binding := flattenBinding(binding, Prefix.toNonIndexedPrefix(prefix));
     binding_exp := Binding.getTypedExp(binding);
@@ -768,6 +770,7 @@ algorithm
 
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
+      // Constant evaluate parameters that are structural/constant.
       binding_exp := Ceval.evalExp(binding_exp);
       binding_exp := flattenExp(binding_exp, Prefix.toNonIndexedPrefix(prefix));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
@@ -803,10 +806,15 @@ algorithm
     //       create an equation for each non-literal in the array, and pass the
     //       rest on as usual.
     if not Expression.isRecordOrRecordArray(binding_exp) then
-      name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
-      eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-        InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
-      sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+      // Skip adding the equation when using the new backend, since this only
+      // occurs when flattening the children of a record instance and will
+      // conflict with the binding on the actual record instance.
+      if not settings.newBackend then
+        name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
+        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
+          InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
+        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+      end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
       binding := Binding.setTypedExp(binding_exp, binding);
