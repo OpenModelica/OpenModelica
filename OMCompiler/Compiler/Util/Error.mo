@@ -1072,7 +1072,7 @@ public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MES
 public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 public constant ErrorTypes.Message FUNCTION_HIGHER_VARIABILITY_BINDING = ErrorTypes.MESSAGE(594, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Component '%s’ of variability %s has binding %s of higher variability %s."));
+  Gettext.gettext("Component '%s' of variability %s has binding %s of higher variability %s."));
 public constant ErrorTypes.Message OCG_MISSING_BRANCH = ErrorTypes.MESSAGE(595, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Connections.rooted(%s) needs exactly one statement Connections.branch(%s, B.R) involving %s but we found none in the graph. Run with -d=cgraphGraphVizFile to debug"));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_EVALUATE_TRUE = ErrorTypes.MESSAGE(596, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
