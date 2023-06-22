@@ -584,24 +584,14 @@ protected
     input output Variable var;
     input VariablePointers variables;
     input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  protected
+    Option<Expression> exp_opt;
   algorithm
-    try
-      var := match var
-        local
-          Binding binding;
-        case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-          // collect all iterators (only locally known) so that they have a respective variable
-          BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-          Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-        then var;
-        else algorithm
-          BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-        then var;
-      end match;
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Variable.toString(var)});
-      fail();
-    end try;
+    BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+    exp_opt := Binding.typedExp(var.binding);
+    if isSome(exp_opt) then
+      Expression.map(Util.getOption(exp_opt), function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+    end if;
   end collectVariableBindingIterators;
 
   function lowerRecordChildren
