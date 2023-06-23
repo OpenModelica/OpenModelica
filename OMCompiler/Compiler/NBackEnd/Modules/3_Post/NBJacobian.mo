@@ -719,7 +719,7 @@ protected
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true)); end for;
-    tmp_vars := listAppend(Pointer.access(pDer_vars_ptr));
+    tmp_vars := Pointer.access(pDer_vars_ptr);
 
     optHT := SOME(Pointer.access(jacobianHT));
 
@@ -745,14 +745,6 @@ protected
     aux_vars      := seed_vars;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
-
-    print("PH: len(partialCandidates) = " + intString(listLength(VariablePointers.toList(partialCandidates))) + "\n");
-    print("PH: len(unknown_vars) = " + intString(listLength(unknown_vars)) + "\n");
-    print("PH: " + List.toString(unknown_vars, BVariable.pointerToString, inDelimitStr="\n") + "\n");
-    print("PH: len(res_vars) = " + intString(listLength(res_vars)) + "\n");
-    print("PH: " + List.toString(res_vars, BVariable.pointerToString, inDelimitStr="\n") + "\n");
-    print("PH: len(tmp_vars) = " + intString(listLength(tmp_vars)) + "\n");
-    print("PH: " + List.toString(tmp_vars, BVariable.pointerToString, inDelimitStr="\n") + "\n");
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
@@ -790,12 +782,6 @@ protected
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
-    print("PH: len(partialCandidates) = " + intString(listLength(VariablePointers.toList(partialCandidates))) + "\n");
-    print("PH: " + List.toString(VariablePointers.toList(partialCandidates), BVariable.pointerToString, inDelimitStr="\n") + "\n");
-    print("PH: len(res_vars) = " + intString(listLength(res_vars)) + "\n");
-    print("PH: " + List.toString(res_vars, BVariable.pointerToString, inDelimitStr="\n") + "\n");
-    print("PH: len(tmp_vars) = " + intString(listLength(tmp_vars)) + "\n");
-    print("PH: " + List.toString(tmp_vars, BVariable.pointerToString, inDelimitStr="\n") + "\n");
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),

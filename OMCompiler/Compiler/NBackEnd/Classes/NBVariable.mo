@@ -1698,7 +1698,7 @@ public
       "Only to be used for Jacobians."
       VariablePointers variables          "All jacobian variables";
       /* subset of full variable array */
-      VariablePointers unknowns           "All result and temporary vars";
+      VariablePointers unknowns           "All result and temporary vars"; // FIXME unused?
       VariablePointers knowns             "Parameters, constants";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
