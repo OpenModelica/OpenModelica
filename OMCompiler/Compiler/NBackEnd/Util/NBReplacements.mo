@@ -57,6 +57,7 @@ protected
   import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Variable = NFVariable;
 
   // Backend imports
@@ -182,7 +183,28 @@ public
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     exp := match exp
-      case Expression.CREF() then UnorderedMap.getOrDefault(exp.cref, replacements, exp);
+      local
+        Expression res;
+        ComponentRef stripped;
+        list<Subscript> subs;
+
+      case Expression.CREF() algorithm
+        if UnorderedMap.contains(exp.cref, replacements) then
+          // the cref is (with subscripts) found in replacements
+          res := UnorderedMap.getSafe(exp.cref, replacements, sourceInfo());
+        else
+          // try to strip the subscripts and see if that cref occurs
+          stripped := ComponentRef.stripSubscriptsAll(exp.cref);
+          if UnorderedMap.contains(stripped, replacements) then
+            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
+            res   := UnorderedMap.getSafe(stripped, replacements, sourceInfo());
+            res   := Expression.applySubscripts(subs, res);
+          else
+            // do nothing
+            res := exp;
+          end if;
+        end if;
+      then res;
       else exp;
     end match;
   end applySimpleExp;

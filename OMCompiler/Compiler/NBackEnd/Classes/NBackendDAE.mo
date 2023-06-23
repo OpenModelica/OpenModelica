@@ -603,7 +603,8 @@ protected
         BackendExtension.BackendInfo binfo;
         BackendExtension.VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        // kabdelhak: why is this list reversed in the frontend? doesnt match input order
+        varKind.children := listReverse(list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children));
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
