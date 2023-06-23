@@ -1203,7 +1203,7 @@ algorithm
       equation
         File.write(file,"jacobian variable");
       then ();
-    case BackendDAE.JAC_DIFF_VAR()
+    case BackendDAE.JAC_TMP_VAR()
       equation
         File.write(file,"jacobian differentiated variable");
       then ();

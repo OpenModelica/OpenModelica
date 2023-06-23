@@ -1754,7 +1754,7 @@ algorithm
   cr := varCref(inVar);
   cr := ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
   outVar := copyVarNewName(cr,inVar);
-  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+  outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 end createpDerVar;
 
 public function createClockedState
@@ -1766,7 +1766,7 @@ protected
 algorithm
   cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
   outVar := copyVarNewName(cr,inVar);
-  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+  outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 
   // HACK hide previous(v) in results because it's not calculated right
   outVar := setHideResult(outVar, SOME(DAE.BCONST(true)));

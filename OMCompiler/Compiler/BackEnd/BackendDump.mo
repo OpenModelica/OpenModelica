@@ -2562,9 +2562,9 @@ algorithm
     case BackendDAE.CONST()       then "CONST";
     case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " + AbsynUtil.pathString(path);
     case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
-    case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
+    case BackendDAE.JAC_TMP_VAR() then "JACOBIAN_TMP_VAR";
     case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";
-    case BackendDAE.OPT_FCONSTR()  then "OPT_FCONSTR";
+    case BackendDAE.OPT_FCONSTR() then "OPT_FCONSTR";
     case BackendDAE.OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER";
     case BackendDAE.OPT_INPUT_DER()  then "OPT_INPUT_DER";
     case BackendDAE.OPT_TGRID()  then "OPT_TGRID";

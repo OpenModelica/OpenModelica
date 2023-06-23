@@ -3687,7 +3687,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DAE_RESIDUAL_VAR())::rest,i::irest,_,_)
       guard not AvlSetInt.hasKey(vars, i)
       then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.JAC_DIFF_VAR())::rest,i::irest,_,_)
+    case (BackendDAE.VAR(varKind = BackendDAE.JAC_TMP_VAR())::rest,i::irest,_,_)
       guard not AvlSetInt.hasKey(vars, i)
       then adjacencyRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE())::rest,i::irest,_,_)

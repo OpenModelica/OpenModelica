@@ -221,9 +221,12 @@ public
     output Expression exp = Expression.fromCref(getVarName(var_ptr));
   end toExpression;
 
-  function isArray
+  partial function checkVar
     input Pointer<Variable> var_ptr;
     output Boolean b;
+  end checkVar;
+
+  function isArray extends checkVar;
   protected
     Variable var = Pointer.access(var_ptr);
   algorithm
@@ -240,66 +243,54 @@ public
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
-  function isEmpty
-    input Pointer<Variable> var_ptr;
-    output Boolean b = ComponentRef.isEmpty(getVarName(var_ptr));
+  function isEmpty extends checkVar;
+  algorithm
+    b := ComponentRef.isEmpty(getVarName(var_ptr));
   end isEmpty;
 
-  function isState
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isState extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
       else false;
     end match;
   end isState;
 
-  function isStateDerivative
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isStateDerivative extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER())) then true;
       else false;
     end match;
   end isStateDerivative;
 
-  function isAlgebraic
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isAlgebraic extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC())) then true;
       else false;
     end match;
   end isAlgebraic;
 
-  function isStart
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isStart extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.START())) then true;
       else false;
     end match;
   end isStart;
 
-  function isTime
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isTime extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.TIME())) then true;
       else false;
     end match;
   end isTime;
 
-  function isContinuous
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isContinuous extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))  then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))        then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))        then false;
@@ -309,82 +300,66 @@ public
     end match;
   end isContinuous;
 
-  function isDiscreteState
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isDiscreteState extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then true;
       else false;
     end match;
   end isDiscreteState;
 
-  function isDiscrete
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isDiscrete extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then true;
       else false;
     end match;
   end isDiscrete;
 
-  function isPrevious
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isPrevious extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS())) then true;
       else false;
     end match;
   end isPrevious;
 
-  function isDummyState
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isDummyState extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_STATE())) then true;
       else false;
     end match;
   end isDummyState;
 
-  function isDummyDer
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isDummyDer extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_DER())) then true;
       else false;
     end match;
   end isDummyDer;
 
-  function isParamOrConst
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isParamOrConst extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
       else false;
     end match;
   end isParamOrConst;
 
-  function isConst
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isConst extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
       else false;
     end match;
   end isConst;
 
-  function isKnown
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isKnown extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
@@ -392,51 +367,41 @@ public
     end match;
   end isKnown;
 
-  function isDAEResidual
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isDAEResidual extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DAE_RESIDUAL_VAR())) then true;
       else false;
     end match;
   end isDAEResidual;
 
-  function isSeed
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isSeed extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.SEED_VAR())) then true;
       else false;
     end match;
   end isSeed;
 
-  function isInput
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isInput extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.INPUT)) then true;
       else false;
     end match;
   end isInput;
 
-  function isOutput
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isOutput extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.OUTPUT)) then true;
       else false;
     end match;
   end isOutput;
 
-  function isFixed
-    input Pointer<Variable> var;
-    output Boolean b;
+  function isFixed extends checkVar;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       local
         Expression fixed;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
@@ -451,32 +416,30 @@ public
   function isFixable
     "states, discretes and parameters are fixable if they are not already fixed.
     discrete states are always fixable. previous vars are only fixable if the discrete state for it wasn't fixed."
-    input Pointer<Variable> var;
-    output Boolean b;
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var);
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then not isFixed(getDiscreteStateVar(var));
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then not isFixed(getDiscreteStateVar(var_ptr));
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var_ptr);
       else false;
     end match;
   end isFixable;
 
   function isStateSelect
     "checks if a variable has a certain StateSelect attribute"
-    input Pointer<Variable> var;
+    extends checkVar;
     input BackendExtension.StateSelect stateSelect;
-    output Boolean b;
   algorithm
-    b := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       local
         BackendExtension.VariableAttributes attributes;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
       then BackendExtension.VariableAttributes.getStateSelect(attributes) == stateSelect;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var))});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var_ptr))});
       then fail();
     end match;
   end isStateSelect;
@@ -511,21 +474,20 @@ public
     "Returns true, if the variable is a dummy variable.
     Note: !Only works in the backend, will return true for any variable if used
     during frontend!"
-    input Pointer<Variable> var;
-    output Boolean isDummy;
+    extends checkVar;
   algorithm
-    isDummy := match Pointer.access(var)
+    b := match Pointer.access(var_ptr)
       case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY())) then true;
       else false;
     end match;
   end isDummyVariable;
 
   function createTimeVar
-    output Pointer<Variable> varPointer;
+    output Pointer<Variable> var_ptr;
   protected
     Variable var = TIME_VARIABLE;
   algorithm
-    (varPointer, _) := makeVarPtrCyclic(var, var.name);
+    (var_ptr, _) := makeVarPtrCyclic(var, var.name);
   end createTimeVar;
 
   function makeStateVar
@@ -865,7 +827,10 @@ public
     e.g: (speed, 'Jac') -> $pDer_Jac.speed"
     input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this partial derivative belongs to";
+    input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
     output Pointer<Variable> var_ptr  "pointer to new variable";
+  protected
+    VariableKind varKind = if isTmp then BackendExtension.JAC_TMP_VAR() else BackendExtension.JAC_VAR();
   algorithm
     () := match ComponentRef.node(cref)
       local
@@ -878,9 +843,8 @@ public
         qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
         cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
         var := fromCref(cref);
-        // update the variable to be a jac var and pass the pointer to the original variable
-        // ToDo: tmps will get JAC_DIFF_VAR !
-        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
+        // update the variable kind and pass the pointer to the original variable
+        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
         // create the new variable pointer and safe it to the component reference
         (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();
@@ -1060,9 +1024,7 @@ public
     end match;
   end getBindingVariability;
 
-  function hasConstBinding
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
+  function hasConstBinding extends checkVar;
   protected
     Variable var;
   algorithm
@@ -1124,8 +1086,7 @@ public
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.
      used for alias removal since only those can be stored as actual alias variables"
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
+    extends checkVar;
   protected
     Variable var;
     Expression binding;
@@ -1135,9 +1096,7 @@ public
     b := (not Expression.isTrivialCref(binding)) and checkExpMap(binding, isTimeDependent);
   end hasNonTrivialAliasBinding;
 
-  function hasConstOrParamAliasBinding
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
+  function hasConstOrParamAliasBinding extends checkVar;
   protected
     Variable var;
     Expression binding;
@@ -1147,9 +1106,7 @@ public
     b := not checkExpMap(binding, isTimeDependent);
   end hasConstOrParamAliasBinding;
 
-  function isTimeDependent
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
+  function isTimeDependent extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
       local
@@ -1164,9 +1121,7 @@ public
     end match;
   end isTimeDependent;
 
-  function isBound
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
+  function isBound extends checkVar;
   protected
     Variable var = Pointer.access(var_ptr);
   algorithm
@@ -1183,14 +1138,9 @@ public
   //
   // ==========================================================================
 
-  partial function checkFunc
-    input Pointer<Variable> var;
-    output Boolean b;
-  end checkFunc;
-
   function checkExp
     input Expression exp;
-    input checkFunc func;
+    input checkVar func;
     output Boolean b;
   algorithm
     b := match exp
@@ -1204,11 +1154,11 @@ public
 
   function checkExpMap
     input Expression exp;
-    input checkFunc func;
+    input checkVar func;
     output Boolean b;
     function checkExpTraverse
       input output Expression exp;
-      input checkFunc func;
+      input checkVar func;
       input output Boolean b;
     algorithm
       if not b then
@@ -1221,7 +1171,7 @@ public
 
   function checkCref
     input ComponentRef cref;
-    input checkFunc func;
+    input checkVar func;
     output Boolean b = func(getVarPointer(cref));
   end checkCref;
 
@@ -1696,7 +1646,7 @@ public
       "Only to be used for Jacobians."
       VariablePointers variables          "All jacobian variables";
       /* subset of full variable array */
-      VariablePointers unknowns           "All result and temporary vars";
+      VariablePointers unknowns           "All result and temporary vars"; // FIXME unused?
       VariablePointers knowns             "Parameters, constants";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";

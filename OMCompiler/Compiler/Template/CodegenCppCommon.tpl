@@ -241,7 +241,7 @@ template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFun
       '__daeResidual[<%i%>]'
     case JAC_VAR() then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_y(<%i%>)'
-    case JAC_DIFF_VAR() then
+    case JAC_TMP_VAR() then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_tmp(<%i%>)'
     case SEED_VAR() then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_x(<%i%>)'
@@ -434,7 +434,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
           daeExpCrefRhsArrayBox2(arrdata, ty, false, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
         case JAC_VAR()
-        case JAC_DIFF_VAR()
+        case JAC_TMP_VAR()
         case SEED_VAR() then
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
           daeExpCrefRhsArrayBox2(arrdata, ty, true, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
@@ -2792,7 +2792,7 @@ case ecr as CREF(componentRef=cr, ty=ty as DAE.T_ARRAY()) then
   case SIMVAR(varKind=varKind) then
     match varKind
     case JAC_VAR()
-    case JAC_DIFF_VAR()
+    case JAC_TMP_VAR()
     case SEED_VAR() then
       <<
       <%assignJacArray(lhsStr, rhsStr, ty)%>

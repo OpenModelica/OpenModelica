@@ -4802,7 +4802,7 @@ algorithm
         ((allVars, _)) = BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(BackendVariable.equationSystemsVarsLst(systs)), getFurtherVars , ({}, x));
         systvars = BackendVariable.listVar1(allVars);
         ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+        columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
         columnVars = List.map1(columnVars, setSimVarMatrixName, SOME(name));
         columnVars = rewriteIndex(columnVars, 0);
 
@@ -5151,7 +5151,7 @@ algorithm
         ((allVars, _)) = BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(BackendVariable.equationSystemsVarsLst(systs)), getFurtherVars , ({}, x));
         systvars = BackendVariable.listVar1(allVars);
         ((otherColumnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        otherColumnVars = List.map1(otherColumnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+        otherColumnVars = List.map1(otherColumnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
         otherColumnVars = List.map1(otherColumnVars, setSimVarMatrixName, SOME(name));
         otherColumnVars = rewriteIndex(otherColumnVars, 0);
 
@@ -5335,7 +5335,7 @@ algorithm
         end match;
         derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, inCref, inMatrixName);
         v1 := BackendVariable.copyVarNewName(derivedCref, v);
-        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_DIFF_VAR());
+        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_TMP_VAR());
         simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
         simVar.index := inTmpIndex;
         simVar.matrixName := SOME(inMatrixName);
@@ -5714,7 +5714,7 @@ algorithm
       ((allVars, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, getFurtherVars , ({}, x));
       systvars = BackendVariable.listVar1(allVars);
       ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-      columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+      columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
       columnVars = List.map1(columnVars, setSimVarMatrixName, SOME(name));
       innerVars = rewriteIndex(columnVars, 0);
 
