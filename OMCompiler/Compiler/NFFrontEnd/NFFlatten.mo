@@ -1002,6 +1002,7 @@ protected
   Type binding_ty;
   list<tuple<InstNode, Expression>> iters;
   ComponentRef prefix_cr;
+  Integer dim_count;
 algorithm
   if not Binding.isBound(binding) then
     return;
@@ -1021,7 +1022,13 @@ algorithm
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   binding_ty := Type.liftArrayLeftList(binding_ty, dims);
 
-  dims := List.stripN(dims, Expression.dimensionCount(exp));
+  dim_count := Expression.dimensionCount(exp) - Type.dimensionCount(binding_ty);
+
+  if dim_count <= 0 then
+    return;
+  end if;
+
+  dims := List.lastN(dims, dim_count);
 
   if not listEmpty(dims) then
     if Expression.isLiteral(exp) then
