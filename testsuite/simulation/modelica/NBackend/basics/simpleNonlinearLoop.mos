@@ -130,8 +130,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // Partial Derivative Variables (2/2)
 // ************************************
-// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
-// (2)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// (1)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// (2)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
 //
 // Seed Variables (2/2)
 // **********************
@@ -220,8 +220,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // Partial Derivative Variables (2/2)
 // ************************************
-// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
-// (2)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// (1)       [JTMP] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
+// (2)       [JTMP] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
 //
 // Seed Variables (2/2)
 // **********************
