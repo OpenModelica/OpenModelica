@@ -1081,15 +1081,17 @@ algorithm
     timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStat("FrontEnd");
 
+    if runBackend then
+      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+    end if;
+
+    // This must be done after calling the backend since it uses the FlatModel,
+    // and converting it to DAE is destructive.
     if dumpValidFlatModelicaNF then
       flatString := NFFlatString;
     elseif not runSilent then
       (dae, funcs) := NFConvertDAE.convert(flatModel, funcTree);
       flatString := DAEDump.dumpStr(dae, funcs);
-    end if;
-
-    if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
     end if;
 
   // old backend
