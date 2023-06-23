@@ -698,6 +698,7 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
 
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -711,7 +712,7 @@ protected
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
 
     // create pDer vars (also filters out discrete vars)
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
 
     for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false)); end for;
@@ -777,10 +778,10 @@ protected
     VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
-  protected
     list<Pointer<Variable>> res_vars, tmp_vars;
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
 
     varDataJac := BVariable.VAR_DATA_JAC(
@@ -807,6 +808,23 @@ protected
       sparsityColoring  = sparsityColoring
     ));
   end jacobianNumeric;
+
+  function getTmpFilterFunction
+    " - ODE/DAE filter by state derivative / algebraic
+      - LS/NLS filter by residual / inner"
+    input JacobianType jacType;
+    output BVariable.checkVar func;
+  algorithm
+    func := match jacType
+      case JacobianType.ODE then BVariable.isStateDerivative;
+      case JacobianType.DAE then BVariable.isStateDerivative;
+      case JacobianType.LS  then BVariable.isDAEResidual;
+      case JacobianType.NLS then BVariable.isDAEResidual;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
+      then fail();
+    end match;
+  end getTmpFilterFunction;
 
   function makeVarTraverse
     input Pointer<Variable> var_ptr;
