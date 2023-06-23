@@ -714,11 +714,11 @@ protected
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
 
-    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, BVariable.makePDerVar); end for;
+    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false)); end for;
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, BVariable.makePDerVar); end for;
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true)); end for;
     tmp_vars := listAppend(Pointer.access(pDer_vars_ptr));
 
     optHT := SOME(Pointer.access(jacobianHT));

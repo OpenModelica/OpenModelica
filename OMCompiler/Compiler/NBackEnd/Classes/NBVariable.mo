@@ -865,7 +865,10 @@ public
     e.g: (speed, 'Jac') -> $pDer_Jac.speed"
     input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this partial derivative belongs to";
+    input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
     output Pointer<Variable> var_ptr  "pointer to new variable";
+  protected
+    VariableKind varKind = if isTmp then BackendExtension.JAC_TMP_VAR() else BackendExtension.JAC_VAR();
   algorithm
     () := match ComponentRef.node(cref)
       local
@@ -878,9 +881,8 @@ public
         qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
         cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
         var := fromCref(cref);
-        // update the variable to be a jac var and pass the pointer to the original variable
-        // ToDo: tmps will get JAC_DIFF_VAR !
-        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
+        // update the variable kind and pass the pointer to the original variable
+        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
         // create the new variable pointer and safe it to the component reference
         (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();

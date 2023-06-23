@@ -481,7 +481,7 @@ public
         case BackendExtension.START()                   then OldBackendDAE.VARIABLE();
         case qual as BackendExtension.EXTOBJ()          then OldBackendDAE.EXTOBJ(qual.fullClassName);
         case BackendExtension.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
-        case BackendExtension.JAC_DIFF_VAR()            then OldBackendDAE.JAC_DIFF_VAR();
+        case BackendExtension.JAC_TMP_VAR()            then OldBackendDAE.JAC_TMP_VAR();
         case BackendExtension.SEED_VAR()                then OldBackendDAE.SEED_VAR();
         case BackendExtension.OPT_CONSTR()              then OldBackendDAE.OPT_CONSTR();
         case BackendExtension.OPT_FCONSTR()             then OldBackendDAE.OPT_FCONSTR();

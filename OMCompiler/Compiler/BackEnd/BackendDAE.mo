@@ -276,7 +276,7 @@ uniontype VarKind "variable kind"
   record CONST end CONST;
   record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
   record JAC_VAR end JAC_VAR;
-  record JAC_DIFF_VAR end JAC_DIFF_VAR;
+  record JAC_TMP_VAR end JAC_TMP_VAR;
   record SEED_VAR end SEED_VAR;
   record OPT_CONSTR end OPT_CONSTR;
   record OPT_FCONSTR end OPT_FCONSTR;

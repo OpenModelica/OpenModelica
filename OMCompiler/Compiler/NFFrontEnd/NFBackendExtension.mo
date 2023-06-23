@@ -164,7 +164,7 @@ public
       Absyn.Path fullClassName;
     end EXTOBJ;
     record JAC_VAR end JAC_VAR;
-    record JAC_DIFF_VAR end JAC_DIFF_VAR;
+    record JAC_TMP_VAR end JAC_TMP_VAR;
     record SEED_VAR
       Pointer<Variable> var                 "Pointer to the variable for which the seed got created.";
     end SEED_VAR;
@@ -208,8 +208,8 @@ public
         case RECORD()             then "[RECD]";
         case START()              then "[STRT]";
         case EXTOBJ()             then "[EXTO]";
-        case JAC_VAR()            then "[JACV]";
-        case JAC_DIFF_VAR()       then "[JACD]";
+        case JAC_VAR()            then "[JVAR]";
+        case JAC_TMP_VAR()        then "[JTMP]";
         case SEED_VAR()           then "[SEED]";
         case OPT_CONSTR()         then "[OPT][CONS]";
         case OPT_FCONSTR()        then "[OPT][FCON]";

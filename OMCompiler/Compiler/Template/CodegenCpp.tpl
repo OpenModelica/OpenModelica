@@ -10886,7 +10886,7 @@ case CREF(componentRef = c, ty = ty) then
       memcpy(&<%lhsStr%>, <%arr%>.getData(), <%arr%>.getNumElems()*sizeof(double));
       >>
     case JAC_VAR()
-    case JAC_DIFF_VAR()
+    case JAC_TMP_VAR()
     case SEED_VAR() then
       <<
       <%assignJacArray(lhsStr, arr, ty)%>
@@ -13075,7 +13075,7 @@ match simVar
     let jacobianVar = '_<%crefToCStr(name, false)%>'
     let typeName = match varKind
                      case BackendDAE.JAC_VAR() then 'jac_y(<%index%>)'
-                     case BackendDAE.JAC_DIFF_VAR() then 'jac_tmp(<%index%>)'
+                     case BackendDAE.JAC_TMP_VAR() then 'jac_tmp(<%index%>)'
                      case BackendDAE.SEED_VAR() then 'jac_x(<%index0%>)'
                      else 'UNKNOWN KIND'
     let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%><%typeName%>)<%\n%>'

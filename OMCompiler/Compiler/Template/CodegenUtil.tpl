@@ -247,7 +247,7 @@ template variabilityString(VarKind varKind)
     case CONST()       then "CONST"
     case EXTOBJ()  then 'EXTOBJ: <%dotPath(fullClassName)%>'
     case JAC_VAR()     then "JACOBIAN_VAR"
-    case JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR"
+    case JAC_TMP_VAR()then "JACOBIAN_TMP_VAR"
     case SEED_VAR()    then "SEED_VAR"
     case OPT_CONSTR()  then "OPT_CONSTR"
     case OPT_FCONSTR()  then "OPT_FCONSTR"
