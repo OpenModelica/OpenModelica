@@ -103,12 +103,6 @@ protected
   BackendDAE.BackendDAEType DAEtype;
   Integer strongComponentIndex = System.tmpTickIndex(Global.strongComponent_index);
 algorithm
-  // if noTearing is selected, do nothing.
-  if methodString == "noTearing" then
-    outDAE := inDAE;
-    return;
-  end if;
-
   // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
   if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
     Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});

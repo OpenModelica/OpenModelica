@@ -1133,6 +1133,10 @@ algorithm
   // add other deprecated flags here...
 
   // CONFIG_FLAGS
+  if Flags.getConfigString(Flags.TEARING_METHOD) == "noTearing" then
+    setConfigString(Flags.TEARING_METHOD, "minimalTearing");
+    Error.addMessage(Error.DEPRECATED_FLAG, {"--tearingMethod=noTearing", "--tearingMethod=minimalTearing"});
+  end if;
   remaining_flags := {};
   for flag in Flags.getConfigStringList(Flags.PRE_OPT_MODULES) loop
     if flag == "unitChecking" then

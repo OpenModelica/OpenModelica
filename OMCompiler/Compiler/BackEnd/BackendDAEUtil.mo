@@ -8602,10 +8602,6 @@ algorithm
       disabledModules := "removeSimpleEquations"::disabledModules;
     end if;
 
-    if Config.getTearingMethod() == "noTearing" then
-      disabledModules := "tearingSystem"::disabledModules;
-    end if;
-
     if not Flags.isSet(Flags.NF_SCALARIZE) then
       disabledModules := "inlineArrayEqn"::disabledModules;
     end if;
@@ -8648,9 +8644,6 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    if Config.getTearingMethod() == "noTearing" then
-      disabledModules := "tearingSystem"::disabledModules;
-    end if;
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
