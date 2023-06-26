@@ -519,7 +519,7 @@ constant DebugFlag DUMP_JL = DEBUG_FLAG(177, "dumpJL", false,
   Gettext.gettext("Dumps the absyn representation of a program as a Julia representation"));
 constant DebugFlag DUMP_ASSC = DEBUG_FLAG(178, "dumpASSC", false,
   Gettext.gettext("Dumps the conversion process of analytical to structural singularities."));
-constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(179, "symJacConstantSplit", false,
+constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(179, "symJacConstantSplit", true,
   Gettext.gettext("Generates all symbolic Jacobians with splitted constant parts."));
 constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(180, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
