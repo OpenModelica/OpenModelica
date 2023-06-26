@@ -10,7 +10,7 @@
 package nonlinear_system
   model problem1 "adapted Rosenbrock function"
     parameter Integer N = 10;
-    Real x[N];
+    Real x[N](each start=0.0);
     Real z;
     Real y;
   equation
@@ -24,7 +24,7 @@ package nonlinear_system
 
   model problem2 "adapted Rosenbrock function"
     parameter Integer N = 10;
-    Real x[N];
+    Real x[N](each start=0.0);
     Real y(start=-1.0);
   equation
     x[N] = 1 - x[1];
