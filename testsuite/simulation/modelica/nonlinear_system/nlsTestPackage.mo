@@ -10,9 +10,9 @@
 package nonlinear_system
   model problem1 "adapted Rosenbrock function"
     parameter Integer N = 10;
-    Real x[N](each start=0.0);
+    Real x[N];
     Real z;
-    Real y;
+    Real y(start = 0.0, fixed = true);
   equation
     x[1] = 1 - y - z;
     for i in 2:N loop
@@ -24,8 +24,8 @@ package nonlinear_system
 
   model problem2 "adapted Rosenbrock function"
     parameter Integer N = 10;
-    Real x[N](each start=0.0);
-    Real y(start=-1.0);
+    Real x[N];
+    Real y(start = -1.0, fixed = true);
   equation
     x[N] = 1 - x[1];
     for i in 2:N loop
