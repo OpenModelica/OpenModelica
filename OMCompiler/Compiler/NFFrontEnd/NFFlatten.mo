@@ -764,7 +764,7 @@ algorithm
   // a binding for each record field, or moved to an initial equation if
   // splitting the binding fails.
   if Binding.isExplicitlyBound(binding) then
-    binding := flattenBinding(binding, Prefix.toNonIndexedPrefix(prefix));
+    binding := flattenBinding(binding, prefix);
     binding_exp := Binding.getTypedExp(binding);
     binding_var := Binding.variability(binding);
 
@@ -772,7 +772,7 @@ algorithm
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       // Constant evaluate parameters that are structural/constant.
       binding_exp := Ceval.evalExp(binding_exp);
-      binding_exp := flattenExp(binding_exp, Prefix.toNonIndexedPrefix(prefix));
+      binding_exp := flattenExp(binding_exp, prefix);
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
@@ -784,7 +784,7 @@ algorithm
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
           binding_exp_eval := Ceval.tryEvalExp(binding_exp);
-          binding_exp_eval := flattenExp(binding_exp_eval, Prefix.toNonIndexedPrefix(prefix));
+          binding_exp_eval := flattenExp(binding_exp_eval, prefix);
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
@@ -1002,14 +1002,13 @@ protected
   Type binding_ty;
   list<tuple<InstNode, Expression>> iters;
   ComponentRef prefix_cr;
-  Integer dim_count;
 algorithm
   if not Binding.isBound(binding) then
     return;
   end if;
 
   prefix_cr := Prefix.indexedPrefix(prefix);
-  subs := ComponentRef.subscriptsAllFlat(prefix_cr);
+  subs := list(s for s guard Subscript.isIterator(s) in ComponentRef.subscriptsAllFlat(prefix_cr));
 
   if listEmpty(subs) then
     return;
@@ -1020,15 +1019,8 @@ algorithm
 
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
+  dims := List.lastN(dims, listLength(subs));
   binding_ty := Type.liftArrayLeftList(binding_ty, dims);
-
-  dim_count := Expression.dimensionCount(exp) - Type.dimensionCount(binding_ty);
-
-  if dim_count <= 0 then
-    return;
-  end if;
-
-  dims := List.lastN(dims, dim_count);
 
   if not listEmpty(dims) then
     if Expression.isLiteral(exp) then
