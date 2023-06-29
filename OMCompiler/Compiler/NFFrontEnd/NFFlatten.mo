@@ -1145,7 +1145,7 @@ algorithm
             eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
           end while;
         then
-          eq :: equations;
+          splitForLoop(eq, EMPTY_PREFIX, equations, settings);
 
     end match;
   end for;
