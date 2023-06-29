@@ -244,8 +244,6 @@ static inline void resetThreadData(ModelInstance* comp)
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
   }
-  /* Clear the extra memory pools */
-  omc_alloc_interface.collect_a_little();
 }
 
 static inline void setThreadData(ModelInstance* comp)
@@ -431,6 +429,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
   if (comp->_need_update)
   {
     setThreadData(comp);
+    MemPoolState mem_pool_state = omc_util_get_pool_state();
 
     /* TRY */
 #if !defined(OMC_EMCC)
@@ -461,6 +460,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
     threadData->mmc_jumper = old_jmp;
 #endif
 
+    omc_util_restore_pool_state(mem_pool_state);
     resetThreadData(comp);
     if (!success)
     {
@@ -1822,6 +1822,8 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFM
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep")
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
@@ -1851,6 +1853,7 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFM
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->mmc_jumper = old_jmp;
   resetThreadData(comp);
+  omc_util_restore_pool_state(mem_pool_state);
 
   if (done) {
     return fmi2OK;
@@ -1924,6 +1927,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
     return fmi2Error;
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
@@ -1945,6 +1949,8 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
     done=1;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   if (done) {
@@ -1972,6 +1978,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
     return fmi2Error;
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
@@ -1992,7 +1999,9 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
+
   if (done) {
     return fmi2OK;
   }
