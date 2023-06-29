@@ -902,15 +902,15 @@ void TransformationsWidget::loadTransformations()
     QVariantList eqs = result["equations"].toList();
     for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
       QVariantMap value = iter.value().toMap();
-      OMVariable *var = new OMVariable();
-      var->name = iter.key();
-      var->comment = value["comment"].toString();
+      OMVariable var;
+      var.name = iter.key();
+      var.comment = value["comment"].toString();
       QVariantMap sourceMap = value["source"].toMap();
-      variantToSource(value["source"].toMap(), var->info, var->types, var->ops);
+      variantToSource(value["source"].toMap(), var.info, var.types, var.ops);
       if (!hasOperationsEnabled && sourceMap.contains("operations")) {
         hasOperationsEnabled = true;
       }
-      mVariables[iter.key()] = *var;
+      mVariables[iter.key()] = var;
     }
     mpTVariablesTreeView->setSortingEnabled(false);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
@@ -1402,6 +1402,8 @@ void TransformationsWidget::filterEquationOperations(int index)
 void TransformationsWidget::parseProfiling(QString fileName)
 {
   JsonDocument jsonDocument;
+  bool index_error = false;
+
   if (jsonDocument.parse(fileName)) {
     QVariantMap result = jsonDocument.result.toMap();
     double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
@@ -1411,6 +1413,18 @@ void TransformationsWidget::parseProfiling(QString fileName)
     for (int i=0; i<list.size(); i++) {
       QVariantMap eq = list[i].toMap();
       long id = eq["id"].toInt();
+
+      // Ignore the entry if the index is out of bounds.
+      if (id < 0 || id >= mEquations.size()) {
+        // Print an error only once.
+        if (!index_error) {
+          index_error = true;
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+            QStringLiteral("Out of bounds equation index %1").arg(id), Helper::scriptingKind, Helper::errorLevel));
+        }
+        continue;
+      }
+
       double time = eq["time"].toDouble();
       mEquations[id]->ncall = eq["ncall"].toInt();
       mEquations[id]->maxTime = eq["maxTime"].toDouble();
