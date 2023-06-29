@@ -328,38 +328,25 @@ extern char* SystemImpl__pwd(void)
 #endif
 }
 
-extern int SystemImpl__regularFileExists(const char* str)
+/**
+ * @brief Check if regular file exists.
+ *
+ * Use stat and check mode of file.
+ *
+ * @param filename  Multibyte string with file name.
+ * @return int      Return 1 if it exists, 0 otherwise.
+ */
+extern int SystemImpl__regularFileExists(const char* filename)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WIN32_FIND_DATAW FileData;
-  HANDLE sh;
+  omc_stat_t buf;
+  int res = omc_stat(filename, &buf);
 
-  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(str);
-  sh = FindFirstFileW(unicodeFilename, &FileData);
-  free(unicodeFilename);
-
-  if (sh == INVALID_HANDLE_VALUE) {
-    if (strlen(str) >= MAXPATHLEN)
-    {
-      const char *c_tokens[1]={str};
-      c_add_message(NULL,85, /* error opening file */
-        ErrorType_scripting,
-        ErrorLevel_error,
-        gettext("Error opening file: %s."),
-        c_tokens,
-        1);
-    }
+  if(res != 0) {
     return 0;
   }
-  FindClose(sh);
-  return ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
-#else
-  omc_stat_t buf;
-  /* adrpo: TODO: check if str leads to a path > PATH_MAX, maybe use realpath impl. from below */
-  if (omc_stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
-#endif
 }
+
 
 extern int SystemImpl__regularFileWritable(const char* str)
 {
@@ -933,33 +920,11 @@ extern int SystemImpl__directoryExists(const char *str)
 {
   /* if the string is NULL return 0 */
   if (!str) return 0;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WIN32_FIND_DATAW FileData;
-  HANDLE sh;
-  char* path = strdup(str);
-  int last = strlen(path)-1;
-  /* adrpo: RTFM! the path cannot end in a slash??!! https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx */
-  while (last > 0 && (path[last] == '\\' || path[last] == '/'))
-      last--;
-
-  path[last + 1] = '\0';
-
-  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
-  sh = FindFirstFileW(unicodePath, &FileData);
-  free(unicodePath);
-  free(path);
-
-  if (sh == INVALID_HANDLE_VALUE)
-    return 0;
-
-  FindClose(sh);
-  return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-#else
   omc_stat_t buf;
-  if (omc_stat(str, &buf))
+  if (omc_stat(str, &buf)) {
     return 0;
+  }
   return (buf.st_mode & S_IFDIR) != 0;
-#endif
 }
 
 extern int SystemImpl__createDirectory(const char *str)
