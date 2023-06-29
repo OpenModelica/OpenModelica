@@ -1711,7 +1711,8 @@ public
         guard(UnorderedMap.contains(BVariable.getVarName(residualVar), jacobianHT))
         algorithm
           diffedResidualVar := BVariable.getVarPointer(UnorderedMap.getOrFail(BVariable.getVarName(residualVar), jacobianHT));
-      then EquationAttributes.EQUATION_ATTRIBUTES(NONE(), attr.kind, attr.evalStages, SOME(diffedResidualVar));
+          attr.residualVar := SOME(diffedResidualVar);
+      then attr;
 
       else attr;
 

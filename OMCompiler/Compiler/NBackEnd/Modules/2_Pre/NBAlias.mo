@@ -31,16 +31,35 @@
 encapsulated package NBAlias
 "file:        NBAlias.mo
  package:     NBAlias
- description: This file contains the functions for the alias module.
+ description: This file contains the functions for the alias elimination module.
+              It eliminates alias variables (ToDo: and resolves simple index reduction problems).
 "
 
-// ToDo: simple state rules
-// 1. state = state
-// 2. state = alg
-// 3. state = time
-// 4. state = const
+// ToDo:
+// 1. simple state rules (with derivative replacement)
+//    - state = state
+//    - state = alg
+//    - state = time
+//    - state = const
+// 2. write rateVar() and decide if we want an auxiliary for each set
+//    - rateVar() --> mergeAttributes()
+// 3. post causalize alias elimination
+//    - for the ODE
+//    - for jacobians/hessians (once we got hessians)
+//    - for strong components in general
+// 4. simplify only replaced equations and remove simplify2 module
+//    - probably not that trivial
+//    - Equation mapExp function that returns true if something was replaced
+//    - EquationArray map function that accumulates pointers if function returns true
+//    - simplify all equations in pointer list
 
-// trivial solution a = b; a = -b;
+// 5. trivial solution a = b; a = -b; (or other cyclic sets)
+//    - take an equation from the set, get both crefs in it (a,b)
+//    - solve for a -> set a as known
+//    - solve the rest of the set with causalize
+//    - replacements a -> what it solves for in eq1 and apply on all eq in set
+//    - find equation that solves b, and solve for b. add to replacements
+//    - apply replacements on all eq
 
 public
   import Module = NBModule;
