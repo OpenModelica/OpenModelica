@@ -37,7 +37,7 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, EquationKind, IfEquationBody, Iterator};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
@@ -819,7 +819,7 @@ protected
 
       case FEquation.IF(branches = branches, source = source)
         algorithm
-          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
+          attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
           SOME(ifEqBody) := lowerIfEquationBody(branches, init);
           // ToDo: compute correct size
       then BEquation.IF_EQUATION(IfEquationBody.size(ifEqBody), ifEqBody, source, attr);
@@ -935,14 +935,14 @@ protected
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
           // When equation inside initial actually not allowed. Throw error?
-          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
+          attr := EquationAttributes.default(EquationKind.DISCRETE, init);
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
           bodies := BEquation.WhenEquationBody.split(whenEqBody);
       then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
-          attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
+          attr := EquationAttributes.default(EquationKind.EMPTY, init);
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
       then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
 
@@ -1075,9 +1075,13 @@ protected
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
     size := sum(ComponentRef.size(out) for out in alg.outputs);
-    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
-            elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
-            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+
+    // can an algorithm output even be discrete?
+    if ComponentRef.listHasDiscrete(alg.outputs) then
+      attr := EquationAttributes.default(EquationKind.DISCRETE, init);
+    else
+      attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+    end if;
     eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
@@ -1086,9 +1090,11 @@ protected
     input Boolean init;
     output EquationAttributes attr;
   algorithm
-    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
-            elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
-            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+    if Type.isDiscrete(ty) then
+      attr := EquationAttributes.default(EquationKind.DISCRETE, init);
+    else
+      attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+    end if;
   end lowerEquationAttributes;
 
   function lowerComponentReferences

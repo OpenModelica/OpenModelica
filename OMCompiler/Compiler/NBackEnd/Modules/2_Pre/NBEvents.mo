@@ -62,7 +62,7 @@ protected
   // New Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, Frame, Iterator, EqData, EquationAttributes, EquationPointers, IfEquationBody};
+  import NBEquation.{Equation, Frame, Iterator, EqData, EquationAttributes, EquationKind, EquationPointers, IfEquationBody};
   import Solve = NBSolve;
   import System = NBSystem;
   import BVariable = NBVariable;
@@ -172,7 +172,7 @@ public
       // get auxiliary eqns and vars from time events
       for tpl in full_time_event_list loop
         (rhs, aux_var) := tpl;
-        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context, EquationAttributes.default(EquationKind.DISCRETE, false));
         if not BVariable.isDummyVariable(aux_var) then
           auxiliary_vars := aux_var :: auxiliary_vars;
           auxiliary_eqns := aux_eqn :: auxiliary_eqns;
@@ -186,7 +186,7 @@ public
           (iter, range) := Equation.Iterator.getFrames(iterator);
           // lower the subscripts (containing iterators)
           lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-          aux_eqn := Equation.makeAssignment(lhs_cref, rhs, idx, context, List.zip(iter, range), NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+          aux_eqn := Equation.makeAssignment(lhs_cref, rhs, idx, context, List.zip(iter, range), EquationAttributes.default(EquationKind.DISCRETE, false));
           auxiliary_vars := aux_var :: auxiliary_vars;
           auxiliary_eqns := aux_eqn :: auxiliary_eqns;
         end if;
