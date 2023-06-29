@@ -633,7 +633,11 @@ algorithm
     case Equation.NORETCALL()
       then DAE.Element.NORETCALL(Expression.toDAE(eq.exp), eq.source) :: elements;
 
-    else elements;
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+      then
+        fail();
   end match;
 end convertEquation;
 
@@ -793,7 +797,11 @@ algorithm
     case Equation.NORETCALL()
       then DAE.Element.INITIAL_NORETCALL(Expression.toDAE(eq.exp), eq.source) :: elements;
 
-    else elements;
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+      then
+        fail();
   end match;
 end convertInitialEquation;
 
@@ -878,6 +886,11 @@ algorithm
     case Statement.FAILURE()
       then DAE.Statement.STMT_FAILURE(convertStatements(stmt.body), stmt.source);
 
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown statement " + Statement.toString(stmt), sourceInfo());
+      then
+        fail();
   end match;
 end convertStatement;
 
