@@ -1818,6 +1818,17 @@ function splitForLoop2
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
 protected
+  function is_conn_operator
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CALL()
+        then Call.isConnectionsOperator(exp.call) or Call.isStreamOperator(exp.call);
+      else false;
+    end match;
+  end is_conn_operator;
+protected
   list<Equation> conns, nconns;
 algorithm
   for eq in forBody loop
@@ -1844,7 +1855,11 @@ algorithm
 
       else
         algorithm
-          nonConnects := eq :: nonConnects;
+          if Equation.containsExp(eq, function Expression.contains(func = is_conn_operator)) then
+            connects := eq :: connects;
+          else
+            nonConnects := eq :: nonConnects;
+          end if;
         then
           ();
 
