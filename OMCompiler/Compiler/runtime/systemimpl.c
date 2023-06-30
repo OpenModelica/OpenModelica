@@ -916,12 +916,19 @@ extern double SystemImpl__time(void)
   return (double)cl / (double)CLOCKS_PER_SEC;
 }
 
-extern int SystemImpl__directoryExists(const char *str)
+/**
+ * @brief Check if regular directory exists.
+ *
+ * Use stat and check mode of directory.
+ *
+ * @param dirname   Multibyte string with directory name.
+ * @return int      Return 1 if it exists, 0 otherwise.
+ */
+extern int SystemImpl__directoryExists(const char *dirname)
 {
-  /* if the string is NULL return 0 */
-  if (!str) return 0;
+  if (!dirname) return 0;
   omc_stat_t buf;
-  if (omc_stat(str, &buf)) {
+  if (omc_stat(dirname, &buf)) {
     return 0;
   }
   return (buf.st_mode & S_IFDIR) != 0;
