@@ -468,7 +468,7 @@ function convertStateSelectAttribute
 protected
   String name;
 algorithm
-  name := getStateSelectName(Binding.getTypedExp(binding));
+  name := getStateSelectName(Expression.arrayFirstScalar(Binding.getTypedExp(binding)));
   stateSelect := SOME(lookupStateSelectMember(name));
 end convertStateSelectAttribute;
 
@@ -515,7 +515,7 @@ function convertUncertaintyAttribute
 protected
   InstNode node;
   String name;
-  Expression exp = Binding.getTypedExp(binding);
+  Expression exp = Expression.arrayFirstScalar(Binding.getTypedExp(binding));
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
