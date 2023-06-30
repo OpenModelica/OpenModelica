@@ -59,6 +59,7 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   /* Error check */
   for(i=0; i<data->modelData->nBaseClocks; i++) {
     for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++) {
+      assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks != NULL, "Initialization of synchronous systems failed: baseclocks[%i]->subClocks is NULL!", i);
       assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
       assertStreamPrint(threadData, floorRat(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
     }
