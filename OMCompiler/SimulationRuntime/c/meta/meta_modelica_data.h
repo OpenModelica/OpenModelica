@@ -41,7 +41,7 @@
 
 /*
  *
- * adrpo: define this to have mmk_mk_* function tracing
+ * adrpo: define this to have mmc_mk_* function tracing
  * #define MMC_MK_DEBUG
  *
  */

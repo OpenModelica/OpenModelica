@@ -66,10 +66,11 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
 #include <regex.h>
 #include "../meta/meta_modelica.h"
 
-extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int ignoreCase, void*(*mystrdup)(const char*), void **outMatches)
+extern modelica_integer OpenModelica_regexImpl(const char* str, const char* re, const modelica_integer maxn, int extended, int ignoreCase, void*(*mystrdup)(const char*), void **outMatches)
 {
   regex_t myregex;
-  int nmatch=0,i,rc,res;
+  modelica_integer nmatch=0,i;
+  int rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (ignoreCase ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
 #if !defined(_MSC_VER)
   regmatch_t matches[maxn < 1 ? 1 : maxn];
@@ -89,7 +90,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   }
   if (rc) {
     char err_buf[2048] = {0};
-    int len = 0;
+    modelica_integer len = 0;
     len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
     regerror(rc, &myregex, err_buf+len, 2048-len);
     regfree(&myregex);
@@ -135,7 +136,7 @@ static char* Modelica_strdup(const char *str)
   return res;
 }
 
-extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **outMatches)
+extern modelica_integer OpenModelica_regex(const char* str, const char* re, modelica_integer maxn, int extended, int sensitive, const char **outMatches)
 {
   return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) Modelica_strdup,(void**)outMatches);
 }
@@ -146,7 +147,6 @@ extern int OpenModelica_regex(const char* str, const char* re, int maxn, int ext
 
 void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs)
 {
-  int i;
   threadData->localRoots[LOCAL_ROOT_URI_LOOKUP] = namesAndDirs; /* This should keep the names from being garbage collected */
 }
 

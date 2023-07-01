@@ -46,8 +46,8 @@ static inline void printStacktraceMessages()
 #else
 void printStacktraceMessages();
 #endif
-void mmc_setStacktraceMessages(int numSkip, int numFrames);
-void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
+void mmc_setStacktraceMessages(mmc_sint_t numSkip, mmc_sint_t numFrames);
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, mmc_sint_t numSkip, mmc_sint_t numFrames);
 void init_metamodelica_segv_handler();
 #if defined(OMC_MINIMAL_RUNTIME)
 static inline void mmc_init_stackoverflow(threadData_t *threadData)

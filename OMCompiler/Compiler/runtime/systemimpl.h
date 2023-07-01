@@ -41,6 +41,7 @@ char* _replace(const char* source_str,
                const char* search_str,
                const char* replace_str);
 
+// todo: do we need modelica_integer below instead of int?
 typedef int (*function_t)(threadData_t*, type_description*, type_description*);
 
 #if defined(_MSC_VER) || defined(NO_GETTEXT) /* no gettext for VS! */
@@ -109,7 +110,8 @@ extern int SystemImpl__createDirectory(const char *str);
 extern int SystemImpl__removeDirectory(const char *str);
 extern const char* SystemImpl__readFileNoNumeric(const char* filename);
 extern double SystemImpl__getCurrentTime(void);
-extern int SystemImpl__unescapedStringLength(const char* str);
+extern modelica_integer SystemImpl__unescapedStringLength(const char* str);
+extern modelica_integer SystemImpl__setenv(const char* /*_varName*/, const char* /*_value*/, int /*_overwrite*/);
 extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
 extern const char* SystemImpl__iconv__ascii(const char * str);
 extern void SystemImpl__initGarbageCollector(void);

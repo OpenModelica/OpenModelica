@@ -1300,7 +1300,7 @@ template extType(Type type, Boolean isInput, Boolean isArray, Boolean returnType
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case T_INTEGER(__)     then "int"
+  case T_INTEGER(__)     then if not acceptMetaModelicaGrammar() then 'int' else 'modelica_integer'
   case T_REAL(__)        then "double"
   case T_STRING(__)      then "const char*"
   case T_BOOL(__)        then "int"

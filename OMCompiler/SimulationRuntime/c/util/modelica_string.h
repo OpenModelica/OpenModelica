@@ -65,11 +65,11 @@ extern modelica_string enum_to_modelica_string(modelica_integer nr, const char *
                                    modelica_integer minLen, modelica_boolean leftJustified);
 
 /* Escape string */
-int omc__escapedStringLength(const char* str, int nl, int *hasEscape);
+modelica_integer omc__escapedStringLength(const char* str, int nl, int *hasEscape);
 extern char* omc__escapedString(const char* str, int nl);
 
-int GC_vasprintf(const char **strp, const char *fmt, va_list ap);
-int GC_asprintf(const char **strp, const char *fmt, ...);
+modelica_integer GC_vasprintf(const char **strp, const char *fmt, va_list ap);
+modelica_integer GC_asprintf(const char **strp, const char *fmt, ...);
 
 static inline void* mmc_alloc_scon(size_t nbytes)
 {

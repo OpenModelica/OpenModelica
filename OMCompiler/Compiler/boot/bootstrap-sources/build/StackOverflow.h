@@ -27,7 +27,7 @@ DLLExport
 void boxptr_StackOverflow_setStacktraceMessages(threadData_t *threadData, modelica_metatype _numSkip, modelica_metatype _numFrames);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_StackOverflow_setStacktraceMessages,2,0) {(void*) boxptr_StackOverflow_setStacktraceMessages,0}};
 #define boxvar_StackOverflow_setStacktraceMessages MMC_REFSTRUCTLIT(boxvar_lit_StackOverflow_setStacktraceMessages)
-extern void mmc_setStacktraceMessages_threadData(OpenModelica_threadData_ThreadData*, int /*_numSkip*/, int /*_numFrames*/);
+extern void mmc_setStacktraceMessages_threadData(OpenModelica_threadData_ThreadData*, modelica_integer /*_numSkip*/, modelica_integer /*_numFrames*/);
 DLLExport
 modelica_metatype omc_StackOverflow_getStacktraceMessages(threadData_t *threadData);
 #define boxptr_StackOverflow_getStacktraceMessages omc_StackOverflow_getStacktraceMessages
