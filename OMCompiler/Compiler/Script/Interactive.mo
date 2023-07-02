@@ -9923,7 +9923,8 @@ algorithm
 
     if isSome(opt_uses) then
       SOME(uses) := opt_uses;
-      outUses := listAppend(uses, outUses);
+      // adrpo: listReverse here to load them in the order they appear
+      outUses := listReverse(uses);
     end if;
   end for;
 end getUsesAnnotation;
