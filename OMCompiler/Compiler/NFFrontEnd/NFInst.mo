@@ -1443,18 +1443,16 @@ algorithm
               fail();
             end if;
 
+            if InstNode.isOnlyOuter(node) then
+              Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+                {Modifier.toString(mod, printName = false), Modifier.name(mod)},
+                Modifier.info(mod));
+              fail();
+            end if;
+
             if InstNode.isComponent(node) then
               InstNode.componentApply(node, Component.mergeModifier, mod);
             else
-              if InstNode.isOnlyOuter(node) then
-                // Modifying an outer class is illegal. We can't check that in instClass
-                // since we get the inner class there, so we check it here instead.
-                Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
-                  {Modifier.toString(mod, printName = false), Modifier.name(mod)},
-                  Modifier.info(mod));
-                fail();
-              end if;
-
               partialInstClass(node);
               node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
               node := InstNode.clearPackageCache(node);
@@ -1715,7 +1713,8 @@ protected
   InstContext.Type next_context;
   list<Subscript> propagated_subs;
 algorithm
-  comp_node := InstNode.resolveOuter(node);
+  checkOuterComponentMod(node);
+  comp_node := InstNode.resolveInner(node);
   comp := InstNode.component(comp_node);
   parent := InstNode.parent(comp_node);
 
@@ -1729,8 +1728,6 @@ algorithm
   Component.COMPONENT_DEF(definition = def, modifier = outer_mod) := comp;
 
   if Modifier.isRedeclare(outer_mod) then
-    checkOuterComponentMod(outer_mod, def, comp_node);
-
     Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod,
       outerMod = outer_mod, constrainingMod = cc_mod, propagatedSubs = propagated_subs) := outer_mod;
 
@@ -1785,7 +1782,6 @@ algorithm
 
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
-        checkOuterComponentMod(mod, component, node);
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
@@ -2053,17 +2049,24 @@ algorithm
 end redeclareComponent;
 
 function checkOuterComponentMod
-  "Prints an error message and fails if it gets an outer component and a
-   non-empty modifier."
-  input Modifier mod;
-  input SCode.Element component;
+  "Prints an error message and fails if it gets an outer component with a modifier."
   input InstNode node;
+protected
+  InstNode outer_node;
+  SCode.Element elem;
+  SCode.Mod smod;
 algorithm
-  if not Modifier.isEmpty(mod) and
-     AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(component))) then
-    Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
-      {Modifier.toString(mod, printName = false), InstNode.name(node)}, InstNode.info(node));
-    fail();
+  outer_node := InstNode.resolveOuter(node);
+  elem := InstNode.definition(outer_node);
+
+  if AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(elem))) then
+    smod := SCodeUtil.componentMod(elem);
+
+    if not SCodeUtil.isEmptyMod(smod) then
+      Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+        {SCodeDump.printModStr(smod), InstNode.name(outer_node)}, InstNode.info(outer_node));
+      fail();
+    end if;
   end if;
 end checkOuterComponentMod;
 
@@ -2399,7 +2402,7 @@ function instComponentExpressions
   input InstNode component;
   input InstContext.Type context;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node = InstNode.resolveInner(component);
   Component c = InstNode.component(node);
   array<Dimension> dims;
 algorithm
@@ -2407,6 +2410,11 @@ algorithm
     case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
       guard c.state == ComponentState.PartiallyInstantiated
       algorithm
+        // This is to avoid instantiating the same component multiple times,
+        // which can otherwise happen with duplicate components at this stage.
+        c.state := ComponentState.FullyInstantiated;
+        InstNode.updateComponent(c, node);
+
         c.binding := instBinding(c.binding, context);
         c.condition := instBinding(c.condition, context);
 
@@ -2418,9 +2426,6 @@ algorithm
           dims[i] := instDimension(dims[i], context, c.info);
         end for;
 
-        // This is to avoid instantiating the same component multiple times,
-        // which can otherwise happen with duplicate components at this stage.
-        c.state := ComponentState.FullyInstantiated;
         InstNode.updateComponent(c, node);
       then
         ();
