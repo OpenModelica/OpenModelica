@@ -135,7 +135,15 @@ public
     Boolean changed;
   algorithm
     // 1. match the system
-    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := continue_(matching, adj, transposed, clear);
+    try
+      (matching, marked_eqns, mapping, matrixType, matrixStrictness) := continue_(matching, adj, transposed, clear);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match system:\n"
+        + VariablePointers.toString(vars, "system vars") + "\n"
+        + EquationPointers.toString(eqns, "system eqns") + "\n"
+        + Adjacency.Matrix.toString(adj)});
+      fail();
+    end try;
 
     // 2. Resolve singular systems if necessary
     changed := match systemType

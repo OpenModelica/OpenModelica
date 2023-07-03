@@ -753,7 +753,7 @@ protected
           for body_elem_ptr in new_body loop
             body_elem := Pointer.access(body_elem_ptr);
             body_elem := BEquation.FOR_EQUATION(
-              ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+              size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
               iter    = Iterator.SINGLE(iterator, range),
               body    = {body_elem},
               source  = frontend_equation.source,
@@ -935,10 +935,14 @@ protected
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
           // When equation inside initial actually not allowed. Throw error?
-          attr := EquationAttributes.default(EquationKind.DISCRETE, init);
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
           bodies := BEquation.WhenEquationBody.split(whenEqBody);
-      then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
+      then list(Pointer.create(BEquation.WHEN_EQUATION(
+        size    = BEquation.WhenEquationBody.size(b),
+        body    = b,
+        source  = source,
+        attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
+      )) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm

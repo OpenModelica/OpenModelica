@@ -405,13 +405,20 @@ public
       output Matrix adj;
       input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     algorithm
-      (adj, funcTree) := match ty
-        case MatrixType.ARRAY  then createArray(vars, eqns, st, funcTree);
-        case MatrixType.PSEUDO then createPseudo(vars, eqns, st, funcTree);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
-        then fail();
-      end match;
+      try
+        (adj, funcTree) := match ty
+          case MatrixType.ARRAY  then createArray(vars, eqns, st, funcTree);
+          case MatrixType.PSEUDO then createPseudo(vars, eqns, st, funcTree);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
+          then fail();
+        end match;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create adjacency matrix for system:\n"
+          + VariablePointers.toString(vars, "system vars") + "\n"
+          + EquationPointers.toString(eqns, "system eqns")});
+        fail();
+      end try;
     end create;
 
     function update

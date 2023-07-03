@@ -209,40 +209,48 @@ public
     input EquationPointers eqns;
     output list<StrongComponent> comps = {};
   algorithm
-    comps := match adj
-      local
-        list<list<Integer>> comps_indices, phase2_indices;
-        PseudoBucket bucket;
-        Option<StrongComponent> comp_opt;
-        Adjacency.Matrix phase2_adj;
-        Matching phase2_matching;
-        array<SuperNode> super_nodes;
+    try
+      comps := match adj
+        local
+          list<list<Integer>> comps_indices, phase2_indices;
+          PseudoBucket bucket;
+          Option<StrongComponent> comp_opt;
+          Adjacency.Matrix phase2_adj;
+          Matching phase2_matching;
+          array<SuperNode> super_nodes;
 
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
-        bucket := PseudoBucket.create(matching.eqn_to_var, adj.mapping, adj.modes);
-        comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
+        case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+          bucket := PseudoBucket.create(matching.eqn_to_var, adj.mapping, adj.modes);
+          comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
-        // phase 2 tarjan
-        (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
+          // phase 2 tarjan
+          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
 
-        // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
-        // it is just safer if something is changed in the future
-        () := match phase2_adj
-          case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
-            phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
-            comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
-          then ();
+          // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
+          // it is just safer if something is changed in the future
+          () := match phase2_adj
+            case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+              phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
+              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
+            then ();
 
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
-          then fail();
-        end match;
-      then comps;
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+            then fail();
+          end match;
+        then comps;
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix has unknown type."});
-      then fail();
-    end match;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix has unknown type."});
+        then fail();
+      end match;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to sort system:\n"
+        + VariablePointers.toString(vars, "system vars") + "\n"
+        + EquationPointers.toString(eqns, "system eqns") + "\n"
+        + Matching.toString(matching)});
+      fail();
+    end try;
   end tarjan;
 
   function tarjanScalar
