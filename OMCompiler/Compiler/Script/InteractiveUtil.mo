@@ -4707,5 +4707,20 @@ algorithm
   end try;
 end getPathedClassRestriction;
 
+public function getPathedSCodeElementInProgram
+  input Absyn.Path path;
+  input SCode.Program program;
+  output SCode.Element element;
+protected
+  String name;
+algorithm
+  name := AbsynUtil.pathFirstIdent(path);
+  element := List.find(program, function SCodeUtil.isElementNamed(name = name));
+
+  if not AbsynUtil.pathIsIdent(path) then
+    element := getPathedSCodeElementInProgram(AbsynUtil.pathRest(path), SCodeUtil.getClassElements(element));
+  end if;
+end getPathedSCodeElementInProgram;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
