@@ -216,6 +216,7 @@ private:
   QCheckBox *mpObfuscateOutputCheckBox;
   QCheckBox *mpStripAnnotationsCheckBox;
   QCheckBox *mpStripCommentsCheckBox;
+  QCheckBox *mpUseSimplifiedHeuristic;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
