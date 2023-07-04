@@ -4,7 +4,7 @@
 // cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
-OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=minimalTearing"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
 simulate(nonlinear_system.problem7, stopTime=0); getErrorString();
 
@@ -34,14 +34,14 @@ val(x[10],{0.0});
 // "
 // end SimulationResult;
 // ""
-// {1.000000000000002}
-// {1.000000000000002}
-// {1.000000000000001}
-// {1.000000000000002}
-// {1.000000000000002}
-// {1.000000000000001}
-// {0.9999999999999987}
-// {1.000000000000003}
-// {1.000000000000001}
-// {0.9999999999999869}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
+// {1.0}
 // endResult

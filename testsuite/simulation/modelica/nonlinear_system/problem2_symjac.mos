@@ -5,7 +5,7 @@
 
 alarm(360);
 loadFile("nlsTestPackage.mo"); getErrorString();
-OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=minimalTearing"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
 simulate(nonlinear_system.problem2, stopTime=2); getErrorString();
 
@@ -36,7 +36,7 @@ val(y,{0.0,1.0,2.0});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {1.087909512402704,0.9908697454089415,0.8650752875248886}
 // {1.083547107176289,0.9818228523667806,0.8483552530862688}
@@ -48,5 +48,5 @@ val(y,{0.0,1.0,2.0});
 // {0.4582103810528884,0.3091154569105283,0.2947567584322355}
 // {0.1099567533046332,0.09555236570100469,0.1868815466414792}
 // {-0.08790951240270403,0.009130254591058533,0.1349247124751113}
-// {-1.0,-5.551115123125783e-17,0.9999999999999998}
+// {-1.0,0.0,1.0}
 // endResult
