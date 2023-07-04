@@ -3308,6 +3308,12 @@ int SystemImpl__fputs(const char *str, int stream)
   return -1;
 }
 
+void SystemImpl__waitForInput()
+{
+  printf("Press enter to continue\n");
+  getchar();
+}
+
 #ifdef __cplusplus
 }
 #endif

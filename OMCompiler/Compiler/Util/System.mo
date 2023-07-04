@@ -1327,5 +1327,11 @@ Outputs a string using the C function fputs.
 </html>"));
 end fputs;
 
+function waitForInput
+  external "C" SystemImpl__waitForInput() annotation(Library = "omcruntime", Documentation(info="<html>
+Waits for input, useful for e.g. pausing the compiler in order to turn valgrind instrumentation on/off.
+</html>"));
+end waitForInput;
+
 annotation(__OpenModelica_Interface="util");
 end System;
