@@ -38,6 +38,35 @@
 extern "C" {
 #endif
 
+/// @brief
+/// The memory pool is a linked list of blocks of memory. Each block has its own
+/// chink of memory space to be used for requests by the program. It knows the size
+/// of the chunk and keeps track of how much of it used currently. Each block also has
+/// a pointer to the previous block.
+typedef struct OMCMemPoolBlock_s {
+  void *memory;
+  size_t used;
+  size_t size;
+  struct OMCMemPoolBlock_s *previous;
+} OMCMemPoolBlock;
+
+/// @brief
+/// The current state of the pool can be represented by a pointer to the current block
+/// and the currently used amount of that block. Restoring will reset the pool pointer
+/// the block saved in the state and then restors the used value when the satate was created.
+typedef struct {
+  OMCMemPoolBlock *block;
+  size_t used;
+} MemPoolState;
+
+/// @brief Get the current state of the pool (the current block and used amount in that block)
+MemPoolState omc_util_get_pool_state();
+/// @brief Restors the memory pool to a given state (specifc block and used amount in that block).
+void omc_util_restore_pool_state(MemPoolState in_state_v);
+/// @brief Completely cleans up the memory pool by deleting all blocks.
+void free_memory_pool();
+
+
 /* Allocation functions */
 extern modelica_real* real_alloc(int n);
 extern modelica_integer* integer_alloc(int n);
@@ -47,8 +76,6 @@ extern _index_t* size_alloc(int n);
 extern _index_t** index_alloc(int n);
 
 void* generic_alloc(int n, size_t sze);
-
-void free_memory_pool();
 
 #if defined(__cplusplus)
 } /* end extern "C" */

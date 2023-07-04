@@ -1860,11 +1860,19 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  * \param stripAnnotations
  * \param stripComments
  * \param obfuscate
+ * \param simplified
  * \return true on success.
  */
-bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
+bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  bool result;
+
+  if (simplified) {
+    result = mpOMCInterface->saveTotalModelDebug(fileName, className, stripAnnotations, stripComments, obfuscate);
+  } else {
+    result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  }
+
   printMessagesStringInternal();
   return result;
 }

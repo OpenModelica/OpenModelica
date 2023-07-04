@@ -2076,6 +2076,24 @@ public
     end match;
   end isConnectionsOperator;
 
+  function isStreamOperator
+    input Call call;
+    output Boolean isOp;
+  protected
+    String name;
+  algorithm
+    isOp := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        algorithm
+          name := functionNameFirst(call);
+        then
+          name == "actualStream" or name == "inStream";
+
+      else false;
+    end match;
+  end isStreamOperator;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;

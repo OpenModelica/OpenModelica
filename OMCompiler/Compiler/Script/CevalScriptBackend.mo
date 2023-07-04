@@ -1944,11 +1944,12 @@ algorithm
                             Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
       then Values.BOOL(false);
 
-    case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))})
+    case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                 Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       equation
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if (access >= 9) then // i.e., Access.documentation
-          saveTotalModelDebug(filename, classpath);
+          saveTotalModelDebug(filename, classpath, b1, b2, b3);
           b = true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
@@ -7500,20 +7501,39 @@ end saveTotalModel;
 protected function saveTotalModelDebug
   input String filename;
   input Absyn.Path classPath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
 protected
   SCode.Program prog;
-  String str, name_str, cls_str;
+  String str, name_str, cls_str, str1, str2, str3;
+  Absyn.Path cls_path = classPath;
+  Option<SCode.Comment> ocmt;
+  SCode.Comment cmt;
 algorithm
-  runFrontEndLoadProgram(classPath);
+  runFrontEndLoadProgram(cls_path);
   prog := SymbolTable.getSCode();
-  prog := TotalModelDebug.getTotalModel(prog, classPath);
+  prog := TotalModelDebug.getTotalModel(prog, cls_path);
   prog := SCodeUtil.removeBuiltinsFromTopScope(prog);
-  prog := SCodeUtil.stripCommentsFromProgram(prog, stripAnnotations = false, stripComments = true);
+  ocmt := SCodeUtil.getElementComment(InteractiveUtil.getPathedSCodeElementInProgram(cls_path, prog));
+  cmt := if isSome(ocmt) then Util.getOption(ocmt) else SCode.noComment;
+
+  if stripAnnotations or stripComments then
+    prog := SCodeUtil.stripCommentsFromProgram(prog, stripAnnotations, stripComments);
+  end if;
+
+  if obfuscate then
+    (prog, cls_path, cmt, _) := Obfuscate.obfuscateProgram(prog, cls_path, cmt);
+  end if;
 
   str := SCodeDump.programStr(prog, SCodeDump.defaultOptions);
-  name_str := AbsynUtil.pathLastIdent(classPath) + "_total";
-  cls_str := "\nmodel " + name_str + "\n  extends " + AbsynUtil.pathString(classPath) + ";\nend " + name_str + ";\n";
-  System.writeFile(filename, str + cls_str);
+  str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
+  str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
+  str2 := if stringEq(str2,"") then "" else (" " + str2);
+  str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+  str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+  str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
+  System.writeFile(filename, str + str1);
 end saveTotalModelDebug;
 
 protected function getDymolaStateAnnotation

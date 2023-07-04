@@ -890,7 +890,7 @@ public
         case FOR_EQUATION()                   then eq.attr;
         case WHEN_EQUATION()                  then eq.attr;
         case AUX_EQUATION(body = SOME(body))  then getAttributes(body);
-                                              else EQ_ATTR_DEFAULT_UNKNOWN;
+                                              else EquationAttributes.default(EquationKind.UNKNOWN, false);
       end match;
     end getAttributes;
 
@@ -1156,7 +1156,7 @@ public
       input Expression rhs;
       input Pointer<Integer> idx;
       input String context;
-      input EquationAttributes attr = EQ_ATTR_DEFAULT_UNKNOWN;
+      input EquationAttributes attr = EquationAttributes.default(EquationKind.UNKNOWN, false);
       input DAE.ElementSource src = DAE.emptyElementSource;
       output Pointer<Equation> eqn_ptr;
     protected
@@ -1524,8 +1524,18 @@ public
       EquationAttributes attr;
     algorithm
       attr := getAttributes(Pointer.access(eqn));
-      b := EquationKind.isDiscrete(attr.kind);
+      b := attr.kind == EquationKind.DISCRETE;
     end isDiscrete;
+
+    function isContinuous
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(Pointer.access(eqn));
+      b := attr.kind == EquationKind.CONTINUOUS;
+    end isContinuous;
 
     function isInitial
       input Pointer<Equation> eqn;
@@ -1534,7 +1544,7 @@ public
       EquationAttributes attr;
     algorithm
       attr := getAttributes(Pointer.access(eqn));
-      b := EquationKind.isInitial(attr.kind);
+      b := attr.exclusively_initial;
     end isInitial;
 
     function isWhenEquation
@@ -1668,12 +1678,10 @@ public
         then fail();
       end match;
 
-      if initial_ then
-        eqnAttr := EQ_ATTR_DEFAULT_INITIAL;
-      elseif BVariable.isContinuous(var_ptr) then
-        eqnAttr := EQ_ATTR_DEFAULT_DYNAMIC;
+      if BVariable.isContinuous(var_ptr) then
+        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
       else
-        eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
+        eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
 
       // simplify rhs and get potential iterators
@@ -2646,10 +2654,12 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
-      Option<Pointer<Equation>> derivative;
-      EquationKind kind;
-      Evaluation.Stages evalStages;
+      Option<Pointer<Equation>> derivative  "if the equation has been differentiated w.r.t time already";
       Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
+      Option<Integer> clock_idx             "only set if clocked eq";
+      Boolean exclusively_initial           "true if in initial equation block";
+      Evaluation.Stages evalStages          "evaluation stages (prior used for DAE mode, still necessary?)";
+      EquationKind kind                     "continuous, clocked, discrete, empty";
     end EQUATION_ATTRIBUTES;
 
     function toString
@@ -2690,68 +2700,76 @@ public
     algorithm
       oldAttributes := OldBackendDAE.EQUATION_ATTRIBUTES(
         differentiated  = Util.isSome(attributes.derivative),
-        kind            = EquationKind.convert(attributes.kind),
+        kind            = convertEquationKind(attributes.kind, attributes.clock_idx, attributes.exclusively_initial),
         evalStages      = Evaluation.Stages.convert(attributes.evalStages));
     end convert;
   end EquationAttributes;
 
-  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(NONE(), DYNAMIC_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(NONE(), BINDING_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(NONE(), INITIAL_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(NONE(), DISCRETE_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(NONE(), AUX_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_EMPTY_DISCRETE = EQUATION_ATTRIBUTES(NONE(), EMPTY_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(NONE(), UNKNOWN_EQUATION_KIND(), NBEvaluation.DEFAULT_STAGES, NONE());
+  function default
+    input EquationKind kind;
+    input Boolean exclusively_initial;
+    input Option<Integer> clock_idx = NONE();
+    output EquationAttributes attr;
+  algorithm
+    attr := EQUATION_ATTRIBUTES(
+      derivative          = NONE(),
+      residualVar         = NONE(),
+      clock_idx           = clock_idx,
+      exclusively_initial = exclusively_initial,
+      evalStages          = NBEvaluation.DEFAULT_STAGES,
+      kind                = kind);
+  end default;
 
-  uniontype EquationKind
-    record BINDING_EQUATION end BINDING_EQUATION;
-    record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
-    record INITIAL_EQUATION end INITIAL_EQUATION;
-    record CLOCKED_EQUATION Integer clk; end CLOCKED_EQUATION;
-    record DISCRETE_EQUATION end DISCRETE_EQUATION;
-    record AUX_EQUATION "ToDo! Do we still need this?" end AUX_EQUATION;
-    record EMPTY_EQUATION end EMPTY_EQUATION;
-    record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
+  type EquationKind = enumeration(CONTINUOUS, DISCRETE, CLOCKED, EMPTY, UNKNOWN);
 
-    function convert
-      input EquationKind eqKind;
-      output OldBackendDAE.EquationKind oldEqKind;
-    algorithm
-      oldEqKind := match eqKind
-        local
-          Integer clk;
-        case BINDING_EQUATION()           then OldBackendDAE.BINDING_EQUATION();
-        case DYNAMIC_EQUATION()           then OldBackendDAE.DYNAMIC_EQUATION();
-        case INITIAL_EQUATION()           then OldBackendDAE.INITIAL_EQUATION();
-        case CLOCKED_EQUATION(clk = clk)  then OldBackendDAE.CLOCKED_EQUATION(clk);
-        case DISCRETE_EQUATION()          then OldBackendDAE.DISCRETE_EQUATION();
-        case AUX_EQUATION()               then OldBackendDAE.AUX_EQUATION();
-        case EMPTY_EQUATION()             then OldBackendDAE.AUX_EQUATION();
-        case UNKNOWN_EQUATION_KIND()      then OldBackendDAE.UNKNOWN_EQUATION_KIND();
-        else fail();
-      end match;
-    end convert;
+  function convertEquationKind
+    input EquationKind eqKind;
+    input Option<Integer> clock_idx;
+    input Boolean exclusively_initial;
+    output OldBackendDAE.EquationKind oldEqKind;
+  algorithm
+    oldEqKind := match (eqKind, clock_idx)
+      local
+        Integer clk;
+      case (_, _) guard(exclusively_initial)  then OldBackendDAE.INITIAL_EQUATION();
+      case (EquationKind.CONTINUOUS, NONE())  then OldBackendDAE.DYNAMIC_EQUATION();
+      case (EquationKind.CLOCKED, SOME(clk))  then OldBackendDAE.CLOCKED_EQUATION(clk);
+      case (EquationKind.DISCRETE, NONE())    then OldBackendDAE.DISCRETE_EQUATION();
+      case (EquationKind.EMPTY, NONE())       then OldBackendDAE.AUX_EQUATION();
+      case (EquationKind.UNKNOWN, NONE())     then OldBackendDAE.UNKNOWN_EQUATION_KIND();
+      case (_, SOME(clk)) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the non-clock equation kind "
+          + equationKindString(eqKind, clock_idx, exclusively_initial) + " has a clock index."});
+      then fail();
+      case (EquationKind.CLOCKED, NONE()) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no clock index was provided for clocked equation."});
+      then fail();
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for unknown reason."});
+      then fail();
+    end match;
+  end convertEquationKind;
 
-    function isDiscrete
-      input EquationKind eqKind;
-      output Boolean b;
-    algorithm
-      b := match eqKind
-        case DISCRETE_EQUATION() then true;
-        else false;
-      end match;
-    end isDiscrete;
-
-    function isInitial
-      input EquationKind eqKind;
-      output Boolean b;
-    algorithm
-      b := match eqKind
-        case INITIAL_EQUATION() then true;
-        else false;
-      end match;
-    end isInitial;
-  end EquationKind;
+  function equationKindString
+    input EquationKind eqKind;
+    input Option<Integer> clock_idx;
+    input Boolean exclusively_initial;
+    output String str;
+  algorithm
+    str := match eqKind
+      case EquationKind.CONTINUOUS  then "[CONT";
+      case EquationKind.CLOCKED     then "[CLCK";
+      case EquationKind.DISCRETE    then "[DISC";
+      case EquationKind.EMPTY       then "[EMTY";
+                                    else "[UKWN";
+    end match;
+    str := if exclusively_initial then "[INI]" + str else "[DAE]" + str;
+    if Util.isSome(clock_idx) then
+      str := str + "(" + intString(Util.getOption(clock_idx)) + ")]";
+    else
+      str := str + "]";
+    end if;
+  end equationKindString;
 
   uniontype EquationPointers
     record EQUATION_POINTERS
@@ -3498,30 +3516,24 @@ public
   algorithm
     for eq in equations loop
     _:= match Equation.getAttributes(Pointer.access(eq))
-        case EQUATION_ATTRIBUTES(kind = DYNAMIC_EQUATION())
+        case EQUATION_ATTRIBUTES(exclusively_initial = true)
+          algorithm
+            initials_lst := eq :: initials_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CONTINUOUS)
           algorithm
             continuous_lst := eq :: continuous_lst;
             simulation_lst := eq :: simulation_lst;
         then ();
 
-        case EQUATION_ATTRIBUTES(kind = DISCRETE_EQUATION())
+        case EQUATION_ATTRIBUTES(kind = EquationKind.DISCRETE)
           algorithm
             discretes_lst := eq :: discretes_lst;
             simulation_lst := eq :: simulation_lst;
         then ();
 
-        case EQUATION_ATTRIBUTES(kind = INITIAL_EQUATION())
-          algorithm
-            initials_lst := eq :: initials_lst;
-        then ();
-
-        case EQUATION_ATTRIBUTES(kind = AUX_EQUATION())
-          algorithm
-            auxiliaries_lst := eq :: auxiliaries_lst;
-            simulation_lst := eq :: simulation_lst;
-        then ();
-
-        case EQUATION_ATTRIBUTES(kind = EMPTY_EQUATION())
+        case EQUATION_ATTRIBUTES(kind = EquationKind.EMPTY)
           algorithm
             removed_lst := eq :: removed_lst;
         then ();

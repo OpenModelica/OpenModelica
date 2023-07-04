@@ -766,6 +766,7 @@ InnerOuter8.mo \
 InnerOuter9.mo \
 InnerOuter10.mo \
 InnerOuter11.mo \
+InnerOuter12.mo \
 InnerOuterClass1.mo \
 InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \
@@ -858,6 +859,8 @@ NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NoScalarize1.mo \
 NoScalarize2.mo \
+NoScalarizeConnect1.mo \
+NoScalarizeConnect2.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -1116,6 +1119,7 @@ usertype5.mo \
 usertype6.mo \
 VectorizeBindings1.mo \
 VectorizeBindings2.mo \
+VectorizeBindings3.mo \
 VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \

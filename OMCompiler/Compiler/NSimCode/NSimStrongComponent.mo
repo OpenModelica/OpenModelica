@@ -318,18 +318,18 @@ public
       b := match blck
         local
           EquationAttributes attr;
-        case RESIDUAL(attr = attr)          then EquationKind.isDiscrete(attr.kind);
-        case ARRAY_RESIDUAL(attr = attr)    then EquationKind.isDiscrete(attr.kind);
-        case FOR_RESIDUAL(attr = attr)      then EquationKind.isDiscrete(attr.kind);
-        case SIMPLE_ASSIGN(attr = attr)     then EquationKind.isDiscrete(attr.kind);
-        case ARRAY_ASSIGN(attr = attr)      then EquationKind.isDiscrete(attr.kind);
-        case GENERIC_ASSIGN(attr = attr)    then EquationKind.isDiscrete(attr.kind);
-        case ENTWINED_ASSIGN(attr = attr)   then EquationKind.isDiscrete(attr.kind);
+        case RESIDUAL(attr = attr)          then attr.kind == EquationKind.DISCRETE;
+        case ARRAY_RESIDUAL(attr = attr)    then attr.kind == EquationKind.DISCRETE;
+        case FOR_RESIDUAL(attr = attr)      then attr.kind == EquationKind.DISCRETE;
+        case SIMPLE_ASSIGN(attr = attr)     then attr.kind == EquationKind.DISCRETE;
+        case ARRAY_ASSIGN(attr = attr)      then attr.kind == EquationKind.DISCRETE;
+        case GENERIC_ASSIGN(attr = attr)    then attr.kind == EquationKind.DISCRETE;
+        case ENTWINED_ASSIGN(attr = attr)   then attr.kind == EquationKind.DISCRETE;
         case ALIAS()                        then false; // todo: once this is implemented check in the HT for alias eq discrete
-        case ALGORITHM(attr = attr)         then EquationKind.isDiscrete(attr.kind);
-        case INVERSE_ALGORITHM(attr = attr) then EquationKind.isDiscrete(attr.kind);
-        case IF(attr = attr)                then EquationKind.isDiscrete(attr.kind);
-        case WHEN(attr = attr)              then EquationKind.isDiscrete(attr.kind); // should hopefully always be true
+        case ALGORITHM(attr = attr)         then attr.kind == EquationKind.DISCRETE;
+        case INVERSE_ALGORITHM(attr = attr) then attr.kind == EquationKind.DISCRETE;
+        case IF(attr = attr)                then attr.kind == EquationKind.DISCRETE;
+        case WHEN(attr = attr)              then attr.kind == EquationKind.DISCRETE; // should hopefully always be true
         else false;
       end match;
     end isDiscrete;
@@ -605,7 +605,7 @@ public
             call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
           end for;
           // todo: eq attributes and source
-          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, DAE.emptyElementSource, NBEquation.EQ_ATTR_DEFAULT_DYNAMIC);
+          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
@@ -1019,7 +1019,7 @@ public
           eqAttr      = EquationAttributes.convert(blck.attr)
         );
 
-        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
+        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
         case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
 

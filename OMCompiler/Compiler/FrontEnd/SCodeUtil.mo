@@ -4606,6 +4606,18 @@ algorithm
   end match;
 end isClassNamed;
 
+public function isElementNamed
+  input SCode.Ident name;
+  input SCode.Element element;
+  output Boolean res;
+algorithm
+  res := match element
+    case SCode.CLASS() then element.name == name;
+    case SCode.COMPONENT() then element.name == name;
+    else false;
+  end match;
+end isElementNamed;
+
 public function getElementComment
   "Returns the comment of an element."
   input SCode.Element inElement;
