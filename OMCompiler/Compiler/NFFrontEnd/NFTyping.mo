@@ -309,7 +309,7 @@ protected
 algorithm
   if isExpandable then
     for c in ClassTree.enumerateComponents(ctree) loop
-      cty := Component.connectorType(InstNode.component(c));
+      cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.EXPANDABLE) > 0 then
         exps := c :: exps;
@@ -321,7 +321,7 @@ algorithm
     connectorTy := ComplexType.EXPANDABLE_CONNECTOR(pots, exps);
   else
     for c in ClassTree.enumerateComponents(ctree) loop
-      cty := Component.connectorType(InstNode.component(c));
+      cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
 
       if intBitAnd(cty, ConnectorType.FLOW) > 0 then
         flows := c :: flows;
