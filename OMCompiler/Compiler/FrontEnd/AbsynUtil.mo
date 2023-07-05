@@ -193,6 +193,7 @@ algorithm
       String error_msg;
       Absyn.Ident id, enterName, exitName;
       list<Absyn.Case> match_cases;
+      list<Absyn.Subscript> subs;
 
     case Absyn.INTEGER() then (exp, arg);
     case Absyn.REAL() then (exp, arg);
@@ -329,6 +330,13 @@ algorithm
       then
         (if referenceEq(exp.exp,e1) then exp else Absyn.EXPRESSIONCOMMENT(exp.commentsBefore, e1, exp.commentsAfter), arg);
 
+    case Absyn.SUBSCRIPTED_EXP()
+      algorithm
+        (e1, arg) := traverseExpBidir(exp.exp, enterFunc, exitFunc, arg);
+        (subs, arg) := traverseExpBidirSubs(exp.subscripts, enterFunc, exitFunc, arg);
+      then
+        (if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs) then exp else Absyn.SUBSCRIPTED_EXP(e1, subs), arg);
+
     else
       algorithm
         (,,enterName) := System.dladdr(enterFunc);
@@ -362,21 +370,21 @@ algorithm
       list<Absyn.Subscript> subs1,subs2;
 
     case Absyn.CREF_FULLYQUALIFIED(componentRef = cr1)
-      equation
-        (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
+      algorithm
+        (cr2, arg) := traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
         (if referenceEq(cr1,cr2) then cref else crefMakeFullyQualified(cr2), arg);
 
     case Absyn.CREF_QUAL(name = name, subscripts = subs1, componentRef = cr1)
-      equation
-        (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
-        (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
+      algorithm
+        (subs2, arg) := traverseExpBidirSubs(subs1, enterFunc, exitFunc, arg);
+        (cr2, arg) := traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
         (if referenceEq(cr1,cr2) and referenceEq(subs1,subs2) then cref else Absyn.CREF_QUAL(name, subs2, cr2), arg);
 
     case Absyn.CREF_IDENT(name = name, subscripts = subs1)
-      equation
-        (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
+      algorithm
+        (subs2, arg) := traverseExpBidirSubs(subs1, enterFunc, exitFunc, arg);
       then
         (if referenceEq(subs1,subs2) then cref else Absyn.CREF_IDENT(name, subs2), arg);
 
@@ -386,8 +394,22 @@ algorithm
 end traverseExpBidirCref;
 
 public function traverseExpBidirSubs<Arg>
-  "Helper function to traverseExpBidirCref. Traverses expressions in a
-  subscript."
+  "Helper function to traverseExpBidir. Traverses expressions in a list of subscripts."
+  input output list<Absyn.Subscript> subscripts;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input output Arg arg;
+
+  partial function FuncType
+    input output Absyn.Exp exp;
+    input output Arg arg;
+  end FuncType;
+algorithm
+  (subscripts, arg) := List.map2FoldCheckReferenceEq(subscripts, traverseExpBidirSub, enterFunc, exitFunc, arg);
+end traverseExpBidirSubs;
+
+public function traverseExpBidirSub<Arg>
+  "Helper function to traverseExpBidir. Traverses expressions in a subscript."
   input output Absyn.Subscript subscript;
   input FuncType enterFunc;
   input FuncType exitFunc;
@@ -410,7 +432,7 @@ algorithm
 
     case Absyn.NOSUB() then (subscript, arg);
   end match;
-end traverseExpBidirSubs;
+end traverseExpBidirSub;
 
 public function traverseExpBidirElseIf<Arg>
   "Helper function to traverseExpBidirSubExps. Traverses the expressions in an
@@ -1800,7 +1822,7 @@ public function getCrefFromExp
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Absyn.ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst := match (inExp,includeSubs,includeFunctions)
+  outComponentRefLst := match inExp
     local
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> l1,l2,res;
@@ -1814,21 +1836,21 @@ algorithm
       list<list<Absyn.ComponentRef>> lstres1;
       list<list<Absyn.ComponentRef>> crefll;
 
-    case (Absyn.INTEGER(),_,_) then {};
-    case (Absyn.REAL(),_,_) then {};
-    case (Absyn.STRING(),_,_) then {};
-    case (Absyn.BOOL(),_,_) then {};
-    case (Absyn.CREF(componentRef = Absyn.ALLWILD()),_,_) then {};
-    case (Absyn.CREF(componentRef = Absyn.WILD()),_,_) then {};
-    case (Absyn.CREF(componentRef = cr),false,_) then {cr};
+    case Absyn.INTEGER() then {};
+    case Absyn.REAL() then {};
+    case Absyn.STRING() then {};
+    case Absyn.BOOL() then {};
+    case Absyn.CREF(componentRef = Absyn.ALLWILD()) then {};
+    case Absyn.CREF(componentRef = Absyn.WILD()) then {};
+    case Absyn.CREF(componentRef = cr) guard not includeSubs then {cr};
 
-    case (Absyn.CREF(componentRef = (cr)),true,_)
+    case Absyn.CREF(componentRef = (cr))
       equation
         subs = getSubsFromCref(cr,includeSubs,includeFunctions);
         l1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
       then cr::l1;
 
-    case (Absyn.BINARY(exp1 = e1,exp2 = e2),_,_)
+    case Absyn.BINARY(exp1 = e1,exp2 = e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1836,13 +1858,13 @@ algorithm
       then
         res;
 
-    case (Absyn.UNARY(exp = e1),_,_)
+    case Absyn.UNARY(exp = e1)
       equation
         res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
 
-    case (Absyn.LBINARY(exp1 = e1,exp2 = e2),_,_)
+    case Absyn.LBINARY(exp1 = e1,exp2 = e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1850,13 +1872,13 @@ algorithm
       then
         res;
 
-    case (Absyn.LUNARY(exp = e1),_,_)
+    case Absyn.LUNARY(exp = e1)
       equation
         res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
 
-    case (Absyn.RELATION(exp1 = e1,exp2 = e2),_,_)
+    case Absyn.RELATION(exp1 = e1,exp2 = e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1865,36 +1887,36 @@ algorithm
         res;
 
     // TODO: Handle else if-branches.
-    case (Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),_,_)
+    case Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3)
       then List.flatten({
         getCrefFromExp(e1, includeSubs, includeFunctions),
         getCrefFromExp(e2, includeSubs, includeFunctions),
         getCrefFromExp(e3, includeSubs, includeFunctions)});
 
-    case (Absyn.CALL(function_ = cr, functionArgs = farg),_,_)
+    case Absyn.CALL(function_ = cr, functionArgs = farg)
       equation
         res = getCrefFromFarg(farg,includeSubs,includeFunctions);
         res = if includeFunctions then cr::res else res;
       then
         res;
-    case (Absyn.PARTEVALFUNCTION(function_ = cr, functionArgs = farg),_,_)
+    case Absyn.PARTEVALFUNCTION(function_ = cr, functionArgs = farg)
       equation
         res = getCrefFromFarg(farg,includeSubs,includeFunctions);
         res = if includeFunctions then cr::res else res;
       then
         res;
-    case (Absyn.ARRAY(arrayExp = expl),_,_)
+    case Absyn.ARRAY(arrayExp = expl)
       equation
         lstres1 = List.map2(expl, getCrefFromExp, includeSubs, includeFunctions);
         res = List.flatten(lstres1);
       then
         res;
-    case (Absyn.MATRIX(matrix = expll),_,_)
+    case Absyn.MATRIX(matrix = expll)
       equation
         res = List.flatten(List.flatten(List.map2List(expll, getCrefFromExp, includeSubs, includeFunctions)));
       then
         res;
-    case (Absyn.RANGE(start = e1,step = SOME(e3),stop = e2),_,_)
+    case Absyn.RANGE(start = e1,step = SOME(e3),stop = e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1903,7 +1925,7 @@ algorithm
         res = listAppend(l1, l2);
       then
         res;
-    case (Absyn.RANGE(start = e1,step = NONE(),stop = e2),_,_)
+    case Absyn.RANGE(start = e1,step = NONE(),stop = e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1911,20 +1933,20 @@ algorithm
       then
         res;
 
-    case (Absyn.END(),_,_) then {};
+    case Absyn.END() then {};
 
-    case (Absyn.TUPLE(expressions = expl),_,_)
+    case Absyn.TUPLE(expressions = expl)
       equation
         crefll = List.map2(expl,getCrefFromExp,includeSubs,includeFunctions);
         res = List.flatten(crefll);
       then
         res;
 
-    case (Absyn.CODE(),_,_) then {};
+    case Absyn.CODE() then {};
 
-    case (Absyn.AS(exp = e1),_,_) then getCrefFromExp(e1,includeSubs,includeFunctions);
+    case Absyn.AS(exp = e1) then getCrefFromExp(e1,includeSubs,includeFunctions);
 
-    case (Absyn.CONS(e1,e2),_,_)
+    case Absyn.CONS(e1,e2)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -1932,21 +1954,32 @@ algorithm
       then
         res;
 
-    case (Absyn.LIST(expl),_,_)
+    case Absyn.LIST(expl)
       equation
         crefll = List.map2(expl,getCrefFromExp,includeSubs,includeFunctions);
         res = List.flatten(crefll);
       then
         res;
 
-    case (Absyn.MATCHEXP(),_,_) then fail();
+    case Absyn.MATCHEXP() then fail();
 
-    case (Absyn.DOT(),_,_)
+    case Absyn.DOT()
       // inExp.index is only allowed to contain names to index the function call; not crefs that are evaluated in any way
       then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
 
-    case (Absyn.EXPRESSIONCOMMENT(),_,_)
+    case Absyn.EXPRESSIONCOMMENT()
       then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
+
+    case Absyn.SUBSCRIPTED_EXP()
+      algorithm
+        l1 := getCrefFromExp(inExp.exp, includeSubs, includeFunctions);
+
+        if includeSubs then
+          l2 := getCrefsFromSubs(inExp.subscripts, includeSubs, includeFunctions);
+          l1 := listAppend(l2, l1);
+        end if;
+      then
+        l1;
 
     else
       equation
@@ -4830,6 +4863,19 @@ algorithm
       then
         ();
 
+    case Absyn.EXPRESSIONCOMMENT()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+      then
+        ();
+
+    case Absyn.SUBSCRIPTED_EXP()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+        outExp.subscripts := list(traverseExpShallowSub(s, inArg, inFunc) for s in outExp.subscripts);
+      then
+        ();
+
     else ();
   end match;
 end traverseExpShallow;
@@ -4884,6 +4930,28 @@ algorithm
   range_exp := Util.applyOption1(range_exp, inFunc, inArg);
   outIterator := Absyn.ITERATOR(name, guard_exp, range_exp);
 end traverseExpShallowIterator;
+
+public function traverseExpShallowSub<ArgT>
+  input output Absyn.Subscript sub;
+  input ArgT inArg;
+  input FuncT inFunc;
+
+  partial function FuncT
+    input Absyn.Exp inExp;
+    input ArgT inArg;
+    output Absyn.Exp outExp;
+  end FuncT;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := inFunc(sub.subscript, inArg);
+      then
+        ();
+
+    else ();
+  end match;
+end traverseExpShallowSub;
 
 public function isElementItemClass
   input Absyn.ElementItem inElement;

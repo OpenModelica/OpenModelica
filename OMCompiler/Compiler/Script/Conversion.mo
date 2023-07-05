@@ -2038,6 +2038,13 @@ protected
         then
           ();
 
+      case Absyn.Exp.SUBSCRIPTED_EXP()
+        algorithm
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
+          exp.subscripts := convertSubscripts(exp.subscripts, localRules, rules, env, info);
+        then
+          ();
+
       else ();
     end match;
   end convertExp;
