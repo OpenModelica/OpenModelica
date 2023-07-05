@@ -301,7 +301,7 @@ algorithm
       DAE.ExtArg retty;
     case DAE.EXTERNALDECL(name = id,args = extargs,returnArg = retty,language = lang)
       equation
-        extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ", ");
+        extargsstr = List.toString(extargs, dumpExtArgStr, "", "", ", ", "");
         rettystr = dumpExtArgStr(retty);
         rettystr = if stringEq(rettystr, "") then rettystr else (rettystr + " = ");
         str = stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
@@ -576,17 +576,17 @@ algorithm
 
     case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
       equation
-        quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
-        unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
-        displayUnit_str = Dump.getOptionWithConcatStr(displayUnit, ExpressionDump.printExpStr, "displayUnit = ");
-        stateSel_str = Dump.getOptionWithConcatStr(stateSel, dumpStateSelectStr , "stateSelect = ");
-        min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
-        max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
-        nominal_str = Dump.getOptionWithConcatStr(nominal, ExpressionDump.printExpStr, "nominal = ");
-        initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
-        dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
+        quantity = getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
+        unit_str = getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
+        displayUnit_str = getOptionWithConcatStr(displayUnit, ExpressionDump.printExpStr, "displayUnit = ");
+        stateSel_str = getOptionWithConcatStr(stateSel, dumpStateSelectStr , "stateSelect = ");
+        min_str = getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
+        max_str = getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
+        nominal_str = getOptionWithConcatStr(nominal, ExpressionDump.printExpStr, "nominal = ");
+        initial_str = getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        uncertainty_str = getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
+        dist_str = getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
@@ -599,13 +599,13 @@ algorithm
 
     case (SOME(DAE.VAR_ATTR_INT(quant,min,max,initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
       equation
-        quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
-        min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
-        max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
-        initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
-        dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
+        quantity = getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
+        min_str = getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
+        max_str = getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
+        initial_str = getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        uncertainty_str = getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
+        dist_str = getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
@@ -616,9 +616,9 @@ algorithm
 
     case (SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_,startOrigin)))
       equation
-        quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
-        initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        quantity = getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
+        initial_str = getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
@@ -629,9 +629,9 @@ algorithm
 
     case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,fixed,_,_,_,startOrigin)))
       equation
-        quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
-        initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        quantity = getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
+        initial_str = getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
@@ -642,11 +642,11 @@ algorithm
 
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,initialExp,fixed,_,_,_,startOrigin)))
       equation
-        quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
-        min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
-        max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
-        initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        quantity = getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
+        min_str = getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
+        max_str = getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
+        initial_str = getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
@@ -675,7 +675,7 @@ algorithm
       equation
         if (Flags.isSet(Flags.SHOW_START_ORIGIN))
         then
-          str = Dump.getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
+          str = getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
         else
           str = "";
         end if;
@@ -4075,6 +4075,36 @@ algorithm
     else "#UNKNOWN_EQUATION#";
   end matchcontinue;
 end dumpDebugElementStr;
+
+protected function getOptionWithConcatStr "
+  Get option string value using a function translating the value to a string
+  and concatenate with an additional suffix string.
+"
+  input Option<Type_a> inTypeAOption;
+  input FuncTypeType_aToString inFuncTypeTypeAToString;
+  input String inString;
+  output String outString;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToString
+    input Type_a inTypeA;
+    output String outString;
+  end FuncTypeType_aToString;
+algorithm
+  outString:=
+  match (inTypeAOption,inFuncTypeTypeAToString,inString)
+    local
+      String str,str_1,default_str;
+      Type_a a;
+      FuncTypeType_aToString r;
+    case (SOME(a),r,default_str) /* suffix */
+      equation
+        str = r(a);
+        str_1 = stringAppend(default_str, str);
+      then
+        str_1;
+    case (NONE(),_,_) then "";
+  end match;
+end getOptionWithConcatStr;
 
 
 annotation(__OpenModelica_Interface="frontend");
