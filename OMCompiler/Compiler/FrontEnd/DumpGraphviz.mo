@@ -201,8 +201,7 @@ protected function makeBoolAttr "Create an Attribute from a bool value and a des
 protected
   String s;
 algorithm
-  s := Dump.selectString(flag, "true", "false");
-  outAttribute := Graphviz.ATTR(str,s);
+  outAttribute := Graphviz.ATTR(str, boolString(flag));
 end makeBoolAttr;
 
 protected function makeLeaf "Create a leaf Node from a string an a list of attributes."

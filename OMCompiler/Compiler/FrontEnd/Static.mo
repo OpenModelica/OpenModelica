@@ -9525,7 +9525,7 @@ algorithm
       algorithm
         farg_str := Types.printFargStr(farg);
         filledStr := if filled then "filled" else "not filled";
-        str := Dump.getOptionStr(exp, ExpressionDump.printExpStr);
+        str := Util.applyOptionOrDefault(exp, ExpressionDump.printExpStr, "");
         str_lst := List.map(ds, ExpressionDump.dimensionString);
         s := stringDelimitList(str_lst, ", ");
         s1 := stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});

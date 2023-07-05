@@ -382,7 +382,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertClass", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -438,7 +438,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertElement", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -472,7 +472,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -563,7 +563,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertMessage", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
         then
           fail();
 

@@ -14,9 +14,6 @@ echo(true);
 "DumpGraphviz.dump";
 DumpGraphviz.dump(prog);
 getErrorString();
-"Dump.dump";
-DumpTest.dump(prog);
-getErrorString();
 "Dump.unparseStr";
 Dump.unparseStr(prog,false);
 getErrorString();
@@ -55,12 +52,6 @@ getErrorString();
 // GVNOD0[label="ROOT"];GVNOD1[label="PURE FUNCTION"];GVNOD1 -- GVNOD0;
 // }
 //
-// ""
-// "Dump.dump"
-// "Absyn.PROGRAM([
-// Absyn.CLASS(\"dummyClass\", true, true, true, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE)), Absyn.PARTS([], NONE()), SOURCEINFO(\"\", false, 0, 0, 0, 0))
-// ],Absyn.TOP)
-// "
 // ""
 // "Dump.unparseStr"
 // "final encapsulated partial pure function dummyClass

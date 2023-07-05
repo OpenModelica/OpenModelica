@@ -3620,7 +3620,7 @@ algorithm
     else
       equation
         Print.printBuf("InteractiveUtil.recordConstructorToModification failed, exp=");
-        Dump.printExp(inExp);
+        Print.printBuf(Dump.printExpStr(inExp));
         Print.printBuf("\n");
       then
         fail();

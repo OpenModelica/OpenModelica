@@ -189,7 +189,7 @@ algorithm
         prog2 = InteractiveUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
-          Dump.dump(prog2);
+          Print.printBuf(Dump.unparseStr(prog2));
         end if;
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
           DumpGraphviz.dump(prog2);
@@ -417,7 +417,7 @@ algorithm
 
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
-          Dump.dump(SymbolTable.getAbsyn());
+          Dump.unparseStr(SymbolTable.getAbsyn());
           print(Print.getString());
         end if;
         if Flags.isSet(Flags.DUMP_JL) then
