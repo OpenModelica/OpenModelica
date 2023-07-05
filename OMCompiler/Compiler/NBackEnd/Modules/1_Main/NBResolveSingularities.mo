@@ -253,18 +253,27 @@ public
     extends Module.resolveSingularitiesInterface;
     input Matching matching;
   protected
-    list<Slice<VariablePointer>> unmatched_vars;
-    list<Slice<EquationPointer>> unmatched_eqns;
+    list<Slice<VariablePointer>> unmatched_vars, matched_vars;
+    list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
+    String err_str;
   algorithm
-    (_, unmatched_vars, _, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
+    (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-        + " failed because following variables could not be solved:\n"
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=0), "", "\t", "\n\t", "\n", true)
-        + "\n  Furthermore following equations are unmatched:\n"
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=0), "", "\t", "\n\t", "\n", true)});
+      err_str := getInstanceName()
+        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched Variables")
+        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched Equations")
+        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
+      if Flags.isSet(Flags.BLT_DUMP) then
+        err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
+        + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+        + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
+        + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
+       end if;
+      Error.addMessage(Error.INTERNAL_ERROR,{err_str});
       fail();
     end if;
+    changed := false;
   end noIndexReduction;
 
   function balanceInitialization

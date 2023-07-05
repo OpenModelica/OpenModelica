@@ -1120,12 +1120,7 @@ public
 
   function rangeSize
     input Expression range  "has to be RANGE()!";
-    output Integer size;
-  protected
-    Integer start, step, stop;
-  algorithm
-    (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start + 1) / step);
+    output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1));
   end rangeSize;
 
   function applySubscripts

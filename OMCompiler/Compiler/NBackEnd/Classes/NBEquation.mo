@@ -643,7 +643,7 @@ public
     end IF_EQUATION;
 
     record FOR_EQUATION
-      Type ty                         "equality type containing dimensions";
+      Integer size                    "size of equation";
       Iterator iter                   "list of all: <iterator, range>";
       list<Equation> body             "iterated equations (only multiples if entwined)";
       DAE.ElementSource source        "origin of equation";
@@ -721,21 +721,23 @@ public
 
     function size
       input Pointer<Equation> eqn_ptr;
-      output Integer size;
+      output Integer s;
     protected
       Equation eqn;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      size := match eqn
-        case SCALAR_EQUATION() then 1;
-        case ARRAY_EQUATION()  then Type.sizeOf(eqn.ty);
-        case RECORD_EQUATION() then Type.sizeOf(eqn.ty);
-        case ALGORITHM()       then eqn.size;
-        case IF_EQUATION()     then eqn.size;
-        case FOR_EQUATION()    then Type.sizeOf(eqn.ty); //probably wrong
-        case WHEN_EQUATION()   then eqn.size;
-        case AUX_EQUATION()    then Variable.size(Pointer.access(eqn.auxiliary));
-        case DUMMY_EQUATION()  then 0;
+      s := match eqn
+        local
+          Equation body;
+        case SCALAR_EQUATION()            then 1;
+        case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty);
+        case RECORD_EQUATION()            then Type.sizeOf(eqn.ty);
+        case ALGORITHM()                  then eqn.size;
+        case IF_EQUATION()                then eqn.size;
+        case FOR_EQUATION(body = {body})  then eqn.size;
+        case WHEN_EQUATION()              then eqn.size;
+        case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary));
+        case DUMMY_EQUATION()             then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
@@ -846,7 +848,7 @@ public
         end if;
       else
         e := FOR_EQUATION(
-          ty      = ComponentRef.nodeType(lhs),
+          size    = ComponentRef.size(lhs),
           iter    = Iterator.fromFrames(frames),
           body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), rhs, DAE.emptyElementSource, attr)}, // this can also be an array?
           source  = DAE.emptyElementSource,
@@ -1475,7 +1477,6 @@ public
         case SCALAR_EQUATION()  then eq.ty;
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
-        case FOR_EQUATION()     then eq.ty;
                                 else Type.REAL(); // TODO: WRONG there should not be an else case
       end match;
     end getType;
@@ -1698,7 +1699,7 @@ public
         lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
         eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
         eqn := Pointer.create(Equation.FOR_EQUATION(
-          ty = ComponentRef.getSubscriptedType(var.name),
+          size = ComponentRef.size(var.name),
           iter = iter,
           body = {Pointer.access(eqn)},
           source = DAE.emptyElementSource,
@@ -1719,7 +1720,7 @@ public
         case FOR_EQUATION() algorithm
           (body, acc) := mergeIterators(List.first(eq.body), false);
           acc := eq.iter :: acc;
-        then (if top_level then Equation.FOR_EQUATION(eq.ty, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
+        then (if top_level then Equation.FOR_EQUATION(eq.size, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
         else (eq, {});
       end match;
     end mergeIterators;
@@ -1737,7 +1738,7 @@ public
           iterators := Iterator.split(eqn.iter);
           body := List.first(eqn.body);
           for iter in iterators loop
-            body := Equation.FOR_EQUATION(eqn.ty, iter, {body}, eqn.source, eqn.attr);
+            body := Equation.FOR_EQUATION(eqn.size, iter, {body}, eqn.source, eqn.attr);
           end for;
         then body;
         else eqn;
@@ -1790,14 +1791,14 @@ public
             (intersection, (rest1_left, rest1_right), (rest2_left, rest2_right)) := Iterator.intersect(eqn1.iter, eqn2.iter);
             tmp := {};
             if not Iterator.isEmpty(rest1_left) then
-              tmp := FOR_EQUATION(eqn1.ty, rest1_left, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn1.size, rest1_left, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(rest2_left) then
-              tmp := FOR_EQUATION(eqn2.ty, rest2_left, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn2.size, rest2_left, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(intersection) then
               tmp := FOR_EQUATION(
-                ty      = eqn1.ty,
+                size    = eqn1.size,
                 iter    = intersection,
                 body    = entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1),
                 source  = eqn1.source,
@@ -1805,10 +1806,10 @@ public
               ) :: tmp;
             end if;
             if not Iterator.isEmpty(rest1_right) then
-              tmp := FOR_EQUATION(eqn1.ty, rest1_right, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn1.size, rest1_right, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(rest2_right) then
-              tmp := FOR_EQUATION(eqn2.ty, rest2_right, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn2.size, rest2_right, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
             end if;
             // there has to be at least one equation
             next :: tmp := tmp;
@@ -1858,7 +1859,8 @@ public
           UnorderedMap<ComponentRef, Expression> replacements, removed_diagonals;
           list<tuple<ComponentRef, Expression>> removed_diagonals_linear_maps;
           Expression condition;
-          Type ty;
+          Integer size;
+          Iterator iter;
 
         // empty index list indicates no slicing and no rearranging
         case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
@@ -1904,7 +1906,7 @@ public
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
-          (body_lst, ty) := match cref_opt
+          body_lst := match cref_opt
             local
               ComponentRef cref;
             case SOME(cref) algorithm
@@ -1932,18 +1934,16 @@ public
                   attr    = eqn.attr
                 );
               end if;
-            then ({body}, ComponentRef.getSubscriptedType(cref, true));
+            then {body};
 
-            // might be incorrect if the frames are not the last array dimensions
-            else (eqn.body, Type.unliftArrayN(listLength(frames), eqn.ty));
+            else eqn.body;
           end match;
 
-
-          dims := list(Dimension.fromRange(Util.tuple22(frame)) for frame in frames);
-          ty := Type.liftArrayLeftList(ty, dims);
+          iter := Iterator.fromFrames(frames);
+          size := Iterator.size(iter) * sum(Equation.size(Pointer.create(eq)) for eq in body_lst);
           sliced := FOR_EQUATION(
-            ty      = ty,
-            iter    = Iterator.fromFrames(frames),
+            size    = size,
+            iter    = iter,
             body    = body_lst,
             source  = eqn.source,
             attr    = eqn.attr

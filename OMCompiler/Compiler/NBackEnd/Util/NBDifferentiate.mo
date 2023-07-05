@@ -287,7 +287,7 @@ public
           forBody := body_eqn :: forBody;
         end for;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.ty, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.size, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);
