@@ -1125,7 +1125,7 @@ public
     Integer start, step, stop;
   algorithm
     (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start + 1) / step);
+    size := realInt((stop - start) / step + 1);
   end rangeSize;
 
   function applySubscripts
