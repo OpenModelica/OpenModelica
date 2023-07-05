@@ -273,6 +273,7 @@ public
       Error.addMessage(Error.INTERNAL_ERROR,{err_str});
       fail();
     end if;
+    changed := false;
   end noIndexReduction;
 
   function balanceInitialization
