@@ -6,12 +6,12 @@ set CPLUS_INCLUDE_PATH=
 set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
-if not "%1"=="" (set OM_PLATFORM=%1) else (set OM_PLATFORM=mingw64)
+if not "%1"=="" (set OM_PLATFORM=%1) else (set OM_PLATFORM=ucrt64)
 set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
 REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
-if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
+if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys64\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
 REM echo MINGW = %MINGW% >>%1.log 2>&1
 set CURRENT_DIR="%CD%"

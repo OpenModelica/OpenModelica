@@ -5,8 +5,6 @@ endif
 buildbin=$(OMBUILDDIR)/bin
 buildlib=$(OMBUILDDIR)/lib/omc
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
-
 all: omedit
 
 CC = gcc
@@ -16,7 +14,7 @@ ifeq (gcc,$(findstring gcc,$(CC)))
 	override CFLAGS +=-falign-functions -fstack-protector-all
 endif
 AR = ar
-CMAKE = cmake # $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
 QMAKE=qmake
 

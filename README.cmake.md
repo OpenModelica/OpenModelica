@@ -12,7 +12,7 @@
       - [3.3.1.2 Homebrew](#3312-homebrew)
     - [3.3.2 Building](#332-building)
     - [3.3.3 Common macOS issues](#333-common-macos-issues)
-  - [3.4. Windows MSYS/MinGW](#34-windows-msysmingw)
+  - [3.4. Windows MSYS/UCRT64](#34-windows-msysucrt64)
 - [4. Configuration Options.](#4-configuration-options)
   - [4.1. OpenModelica Specific Configuration Options](#41-openmodelica-specific-configuration-options)
     - [4.1.1. OpenModelica Options](#411-openmodelica-options)
@@ -62,9 +62,8 @@ MetaModelica compilation involves a lot of recompilation of unmodified C files b
 new time stamps for generated header files. ccache will practically reduce the cost of
 these types of recompilations to a no-op.
 
-It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well
-(mingw-w64-x86_64-ccache and mingw-w64-i686-ccache). It is not part of OMDev at the moment
-but it will be in the next iteration.
+It is available for Linux (of course) and, fortunately, for MSYS/UCRT64 as well
+(mingw-w64-ucrt-x86_64-ccache).
 
 # 3. Usage
 ## 3.1. General Notes
@@ -236,9 +235,9 @@ If you encounter some errors while configuring, building, or simulating-with Ope
     export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
     ```
 
-## 3.4. Windows MSYS/MinGW
+## 3.4. Windows MSYS/UCRT64
 
-There is nothing special about MSYS/MinGW if you are familiar with it. Just a few hints:
+There is nothing special about MSYS/UCRT64 if you are familiar with it. Just a few hints:
 
   - The generator should be "MSYS Makefiles". This is not what CMake chooses by default
     for Windows.
@@ -316,15 +315,7 @@ support with Ipopt. Enabling this requires having a working Fortran compiler.
 `OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
 
 `OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the
-required runtime DLLs for MSYS/MinGW builds.
-
-You should disable this if you are either
-
-  - using OMDev but plan to start/launch all the GUI executables exclusively from a
-    MSYS/MinGW shell and never from the Windows explorer.
-
-  - Using OMDev or other MSYS/MinGW setup and have specified the MSYS/MinGW system
-    directories as your CMake install directory.
+required runtime DLLs for MSYS/UCRT64 builds.
 
 ### 4.1.4. OpenModelica/OMShell Options
 

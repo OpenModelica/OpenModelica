@@ -15,11 +15,18 @@ builddir_inc=$(OMBUILDDIR)/include/omc
 
 OMBUILDDIR_WIN=$(shell cygpath -w $$OMBUILDDIR)
 
-#use this call to use precompiled headers
-#use this call if you want to debug the cpp runtime
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+CMAKE = $(where cmake)
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
+ifndef OMDEV_MSYS
+	@echo You have to set the OMDEV_MSYS variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -155,9 +162,9 @@ omcCAPImsvc: getMSVCversion
 	mkdir -p Build_CAPI_MSVC
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_CAPI_MSVC/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_CAPI_MSVC/build.bat
+	echo echo Running CMake from '$(CMAKE)' >> Build_CAPI_MSVC/build.bat
 	echo echo using omc libraries from "$(OMBUILDDIR)" >> Build_CAPI_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)/build"  -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../omcCAPI/ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_CAPI_MSVC/build.bat
+	echo '$(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)/build"  -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../omcCAPI/ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_CAPI_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_CAPI_MSVC/build.bat
@@ -172,8 +179,8 @@ runtimeCPPmsvc: getMSVCversion
 	mkdir -p Build_MSVC
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+	echo echo Running CMake from '$(CMAKE)' >> Build_MSVC/build.bat
+	echo $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
@@ -187,8 +194,8 @@ runtimeCPPmsvc: getMSVCversion
 	mkdir -p Build_MSVC_static
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC_static/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+	echo echo Running CMake from '$(CMAKE)' >> Build_MSVC_static/build.bat
+	echo '$(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
@@ -212,11 +219,11 @@ omcCAPIinstall:
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
-	cp -p $(OMDEVMSYS)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
+	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OMDEV_MSYS)/bin/libboost*.dll $(builddir_bin)/.)
 else
-	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw64/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OMDEV_MSYS)/bin/libboost*.dll $(builddir_bin)/.)
 endif
 
 

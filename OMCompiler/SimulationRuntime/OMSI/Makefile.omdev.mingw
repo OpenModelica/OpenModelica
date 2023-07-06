@@ -16,11 +16,18 @@ LIB_OMC=lib/omc
 
 OMBUILDDIR_WIN=$(shell cygpath -w $$OMBUILDDIR)
 
-#use this call to use precompiled headers
-#use this call if you want to debug the cpp runtime
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+CMAKE = $(where cmake)
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
+ifndef OMDEV_MSYS
+	@echo You have to set the OMDEV_MSYS variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -146,8 +153,8 @@ OMSIBaseMSVC: getMSVCversion
 	#rm -rf Build_MSVC
 	mkdir -p Build_MSVC
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake'  for OMSI base build >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp -DLIB_OMC=$(LIB_OMC) -DOMBUILDDIR=$(OMBUILDDIR) -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe" ../' >> Build_MSVC/build.bat
+	echo echo Running CMake from '$(CMAKE)'  for OMSI base build >> Build_MSVC/build.bat
+	echo '$(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp -DLIB_OMC=$(LIB_OMC) -DOMBUILDDIR=$(OMBUILDDIR) -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe" ../' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat

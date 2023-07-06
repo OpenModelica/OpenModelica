@@ -1,3 +1,9 @@
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
+
 TOP_BUILDDIR = $(realpath ../../../../)/build
 OMCOMPILER_ROOT = $(realpath ../../../)
 

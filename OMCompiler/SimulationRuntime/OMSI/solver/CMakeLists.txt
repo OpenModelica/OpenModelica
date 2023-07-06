@@ -14,8 +14,7 @@ GET_FILENAME_COMPONENT(OMCTRUNCHOME "${OMCTRUNCHOME}" ABSOLUTE)
 # Find BLAS and LAPACK
 ############################
 IF(IS_MINGW32)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw32/bin/libopenblas.dll)
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW})
+  MESSAGE(FATAL_ERROR "No 32-bit MSYS support")
 ELSEIF(IS_MINGW64)
   SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw64/bin/libopenblas.dll)
   SET(LAPACK_LIBRARIES  ${LAPACK_MINGW})

@@ -13,10 +13,11 @@ LDFLAGS += ../../3rdParty/FMIL/build/Config.cmake/Minizip/libminizip.a
 
 SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/
 
-ifndef OMDEV
-	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
-else
+detected_OS ?= $(shell uname -s)
+ifeq (MINGW,$(findstring MINGW,$(detected_OS)))
 	configUnix =
+else
+	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
 endif
 
 OMC_OBJ_SHARED = Error_omc$(OBJEXT) \

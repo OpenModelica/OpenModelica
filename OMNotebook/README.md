@@ -17,8 +17,7 @@ Follow the instructions matching your OS:
 
 If you used MSYS Makefiles to compile OpenModelica you need one additional step:
 
-Start a MSYS terminal `$OMDEV\tools\msys\mingw64.exe` (64 bit) or
-`$OMDEV\tools\msys\mingw32.exe` (32 bit) and run:
+Start a MSYS terminal `$OMDEV_MSYS\ucrt64.exe` and run:
 
 ```bash
 $ cd /path/to/OpenModelica

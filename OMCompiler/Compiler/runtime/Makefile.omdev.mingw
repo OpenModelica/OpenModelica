@@ -1,26 +1,16 @@
-# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
-# Makefile for Compiler/runtime compilation of OMC using OMDev-mingw
-# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
-#
-# $Id: Makefile.omdev.mingw.in 1817 2006-02-01 12:21:26Z adrpo $
-#
+# Makefile for Compiler/runtime compilation of OMC using MSYS UCRT
 
-# The path to the OMDev-mingw package MUST BE SET!
-#OMDEV=$OMDEV
 # Test if the needed variables are there...
 .testvariables:
 ifndef OMDEV
 	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
-	@echo Take the OMDev package from: http://www.ida.liu.se/~adrpo/omc/omdev/
-	@echo For questions or problems email Adrian Pop, adrpo@ida.liu.se
+	@echo See OpenModelica/OMCompiler/README.Windows.md
 	ABORT
 endif
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
-
 TOP_DIR=../../
 USE_METIS = -DUSE_METIS
-CORBAHOME = $(OMDEVMSYS)
+CORBAHOME = $(OMDEV)
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 CJSONINCLUDE = ../../3rdParty/cJSON/
@@ -38,11 +28,11 @@ OMPCC = gcc -fopenmp
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
 CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
-IDL	= $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
 else # 64 bit
 USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
 CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
-IDL	= $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
 endif
 OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 

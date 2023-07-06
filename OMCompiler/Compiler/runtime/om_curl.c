@@ -54,9 +54,8 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result, int n)
     char* ca_bundle_file = NULL;
     const char* omhome = SettingsImpl__getInstallationDirectoryPath();
 #if defined(__MINGW64__)
-#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw64/ssl/certs/ca-bundle.crt"
-#else
-#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw32/ssl/certs/ca-bundle.crt"
+// TODO AHeu: Update to use OMDEV_MSYS?
+#define CURL_CA_BUNDLE_SUFFIX "/tools/msys64/ucrt64/ssl/certs/ca-bundle.crt"
 #endif
     ca_bundle_file = (char*)malloc(sizeof(char*)*strlen(omhome) + strlen(CURL_CA_BUNDLE_SUFFIX) + 1);
     sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);

@@ -40,8 +40,6 @@ ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
-
 prefix = ./build
 exec_prefix = ${prefix}
 bindir = ${exec_prefix}/bin
@@ -57,13 +55,13 @@ CMAKE_NO_CHECK_UNDEFINED = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw32/include
+	BOOST_PATH = $(OM_MSYS_ENV_DIR)/include
 	IS_MINGW32 = -DIS_MINGW32=ON
 	IS_MINGW64 = -DIS_MINGW64=OFF
 	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win32
 	LVE_EXE_SUFFIX=win32
 else # mingw64
-	BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
+	BOOST_PATH = $(OM_MSYS_ENV_DIR)/include
 	IS_MINGW32 = -DIS_MINGW32=OFF
 	IS_MINGW64 = -DIS_MINGW64=ON
 	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
@@ -235,60 +233,60 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	# build 32 bit libOpenCL.a
 	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || gendef - $(WROOT)/SysWOW64/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
 	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgomp-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwinpthread*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libtre-5.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libsystre-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libstdc++-6.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libquadmath-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libintl-8.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgfortran*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libexpat-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libopenblas.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libhdf5-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libp11-kit*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libffi*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgomp-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgfortran*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libexpat-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libopenblas.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
-	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll $(builddir_bin)/
-	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 else # mingw64
   # build 64 bit libOpenCL.a
 	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
 	test ! -f $(WROOT)/system32/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgomp-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libwinpthread*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libtre-5.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libsystre-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libstdc++-6.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libquadmath-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgfortran*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libexpat-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libopenblas.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libhdf5-0.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libp11-kit*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libffi*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgomp-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgfortran*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libexpat-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libopenblas.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
-	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll $(builddir_bin)/
-	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)

@@ -260,7 +260,7 @@ static const char* GetLastErrorAsString()
 
 const char* omc_dlerror()
 {
-  return (char*)GetLastErrorAsString();
+  return (char*) GetLastErrorAsString();
 }
 
 void *omc_dlsym(void *handle, const char *symbol)

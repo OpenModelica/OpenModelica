@@ -221,9 +221,9 @@ install: runtimeCpp
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
 	cp -p $(OMDEVMSYS)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OM_MSYS_ENV_DIR)/bin/libboost*.dll $(builddir_bin)/.)
 else
-	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw64/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OM_MSYS_ENV_DIR)/bin/libboost*.dll $(builddir_bin)/.)
 endif
 
 

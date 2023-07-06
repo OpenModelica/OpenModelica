@@ -187,10 +187,6 @@ IF(MSVC)
 ENDIF(MSVC)
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
-#IF(IS_MINGW32 OR IS_MINGW64)
-# SET(USE_CPP_03 ON)
-#ENDIF(IS_MINGW32 OR IS_MINGW64)
-
 # Check C++11
 IF(NOT(USE_CPP_03))
   IF(MSVC)
@@ -328,28 +324,42 @@ ELSEIF(SIMSTER_BUILD)
 ENDIF(OMC_BUILD)
 
 
-# Handle OMDEV
-#  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
+# Handle MSYS
+#  - On windows boost,blas,lapack and sundial solvers from MSYS are used else the installed versions are used
 IF(WIN32)
   MESSAGE(STATUS "MINGW:")
-  MESSAGE(STATUS ${IS_MINGW32})
   MESSAGE(STATUS ${IS_MINGW64})
-  IF(IS_MINGW32)
-    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw32/")
-  ELSEIF(IS_MINGW64)
-    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/")
+
+  # Check environment variables
+  if(NOT DEFINED ENV{OMDEV})
+    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+  endif()
+  if(NOT DEFINED ENV{OMDEV_MSYS})
+    message(FATAL_ERROR "Environment variable \"OMDEV_MSYS\" is not set.")
+  endif()
+  string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
+  string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV_MSYS}")
+
+  IF(IS_MINGW64)
+    set(UCRT_DIR "${OMDEV_MSYS_ESCAPED}/ucrt64")
+    SET(BOOST_ROOT ${UCRT_DIR})
+  ELSEIF(IS_MINGW632)
+    MESSAGE(FATAL_ERROR "32-bit version not supported")
   ELSE()
     IF(MSVC_VERSION GREATER 1700)
-      SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_59/")
+      SET(BOOST_ROOT $ENV{OMDEV_ESCAPED}"/lib/3rdParty/boost-1_59/")
     ELSE(MSVC_VERSION GREATER 1700)
-      SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+      SET(BOOST_ROOT $ENV{OMDEV_ESCAPED}"/lib/3rdParty/boost-1_55/")
     ENDIF(MSVC_VERSION GREATER 1700)
   ENDIF(IS_MINGW32)
   MESSAGE(STATUS "Boost root for cpp runtime:")
   MESSAGE(STATUS ${BOOST_ROOT})
-  SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-  SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
-  SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+  # TODO AHeu: Set path to BLAS and LAPACK.
+  # Maybe we can use the msys64/ucrt/lib ones.
+  MESSAGE(FATAL_ERROR "Set path to BLAS, LAPACK compiled with MSVC")
+  SET(BLAS_blas_LIBRARY $ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
+  SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+  SET(BLAS_DIRY "$ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
   # Disable Optimization for RelWithDebInfo on Windows
   IF(MSVC)
@@ -360,8 +370,8 @@ IF(WIN32)
   ENDIF(MSVC)
 
   #set mico paths
-  SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
-  SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
+  SET(MICO_LIB_HOME $ENV{OMDEV_ESCAPED}/lib/mico-msys-mingw/)
+  SET(MICO_INCLUDE_HOME  $ENV{OMDEV_ESCAPED}/include/mico-msys-mingw/)
 
   SET(INSTALL_OMDEV_LIBS OFF)
 ENDIF(WIN32)
@@ -499,16 +509,26 @@ MESSAGE(STATUS ${Boost_LIBRARIES})
 FIND_PACKAGE(BLAS)
 FIND_PACKAGE(LAPACK)
 
+# Check environment variables
+if(NOT DEFINED ENV{OMDEV})
+  message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+endif()
+if(NOT DEFINED ENV{OMDEV_MSYS})
+  message(FATAL_ERROR "Environment variable \"OMDEV_MSYS\" is not set.")
+endif()
+string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
+string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV_MSYS}")
+set(UCRT_DIR "${OMDEV_MSYS_ESCAPED}/ucrt64")
+
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
-  SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
-  SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
+  SET(LAPACK_MSVC_10  ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
+  SET(BLAS_MSVC_10 ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
 ELSEIF(IS_MINGW32)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw32/bin/libopenblas.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
+  MESSAGE(FATAL_ERROR "32-bit version not supported.")
 ELSEIF(IS_MINGW64)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw64/bin/libopenblas.dll )
+  SET(LAPACK_MINGW  ${UCRT_DIR}/bin/libopenblas.dll )
   SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
 ENDIF(MSVC)
 
