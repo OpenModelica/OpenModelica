@@ -44,6 +44,7 @@ namespace IAEX
    class NBParser
    {
    public:
+      virtual ~NBParser() = default;
       virtual Cell *parse() = 0;
    };
 };

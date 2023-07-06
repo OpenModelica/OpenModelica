@@ -64,6 +64,7 @@ namespace IAEX
    class Command
    {
    public:
+      virtual ~Command() = default;
       virtual void execute() = 0;
 
       virtual QString commandName(){ return QString("NoCommandNameSet");}

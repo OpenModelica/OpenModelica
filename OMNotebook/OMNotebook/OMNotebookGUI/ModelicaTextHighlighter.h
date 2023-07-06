@@ -46,6 +46,7 @@ namespace IAEX
     Q_OBJECT
   public:
     ModelicaTextHighlighter(QTextDocument *pTextDocument);
+    virtual ~ModelicaTextHighlighter() = default;
     void initializeSettings();
     void highlightMultiLine(const QString &text);
   protected:

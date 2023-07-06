@@ -49,6 +49,7 @@ namespace IAEX
    class CommandCenter
    {
    public:
+      virtual ~CommandCenter() = default;
       virtual void executeCommand(Command *) = 0;
       virtual CellApplication *application() = 0;
       virtual void setApplication(CellApplication *) = 0;

@@ -82,6 +82,8 @@ namespace IAEX
     Q_OBJECT
 
   public:
+    virtual ~Document() = default;
+
     //Application
     virtual CellApplication *application() = 0;
 

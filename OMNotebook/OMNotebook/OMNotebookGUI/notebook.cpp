@@ -3994,7 +3994,7 @@ void NotebookWindow::shiftcellsUp()
     Cell *current=subject_->getCursor()->currentCell();
     if (current->hasPrevious())
     {
-      if( typeid(CellGroup) == typeid( *current->previous()))
+      if( dynamic_cast<CellGroup*>(current->previous()) )
       {
         QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
       }
