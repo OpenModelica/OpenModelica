@@ -1544,7 +1544,11 @@ namespace IAEX {
   * highlightning is used in the output cell.
   *
   */
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QRecursiveMutex* guard = new QRecursiveMutex();
+#else // QT_VERSION_CHECK
   QMutex* guard = new QMutex(QMutex::Recursive);
+#endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
   {

@@ -111,8 +111,8 @@ void doOMCCommunication(const string *scriptname)
 
   if (scriptname) { // Execute script and output return value
     cout << "executing <" << scriptname << ">" << endl;
-    const char * str=("runScript(\""+*scriptname+"\")").c_str();
-    env->evalExpression(str);
+    std::string cmd = "runScript(\"" + *scriptname + "\")";
+    env->evalExpression(cmd);
     string res = env->getResult();
     cout << res << endl;
     return;

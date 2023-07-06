@@ -61,6 +61,8 @@ namespace IAEX{
    class Visitor
    {
    public:
+      virtual ~Visitor() = default;
+
       virtual void visitCellNodeBefore(Cell *node) = 0;
       virtual void visitCellNodeAfter(Cell *node) = 0;
 

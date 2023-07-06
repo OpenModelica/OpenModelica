@@ -643,20 +643,19 @@ namespace IAEX
         // clear selection before changing cell strucure
         document()->clearSelection();
 
-        vector<Cell *>::iterator c_iter = cells.begin();
-        for(; c_iter != cells.end() ; ++c_iter )
+        for (auto cell: cells)
         {
           //check if groupcell
-          if( typeid( *(*c_iter) ) == typeid( CellGroup ))
+          if( dynamic_cast<CellGroup*>(cell) )
           {
-            if( !(*c_iter)->hasChilds() )
+            if( !cell->hasChilds() )
               throw runtime_error( "No children" );
 
             // get child
-            Cell* child = (*c_iter)->child();
-            Cell* deletedCellsParent = (*c_iter)->parentCell();
-            Cell* deletedCellsPrevious = (*c_iter)->previous();
-            Cell* deletedCellsNext = (*c_iter)->next();
+            Cell* child = cell->child();
+            Cell* deletedCellsParent = cell->parentCell();
+            Cell* deletedCellsPrevious = cell->previous();
+            Cell* deletedCellsNext = cell->next();
 
             // if previous is 0 = first in cell
             child->setPrevious( deletedCellsPrevious );
@@ -693,8 +692,8 @@ namespace IAEX
               }
             }
 
-            (*c_iter)->setChild( 0 );
-            (*c_iter)->hide();
+            cell->setChild( 0 );
+            cell->hide();
 
             // must update groupcells parents layout
             deletedCellsParent->removeCellWidgets();
@@ -703,7 +702,7 @@ namespace IAEX
             // delete groupcell
             //(document()->getCursor())->moveAfter( (*c_iter) );
             //(document()->getCursor())->deleteCurrentCell();
-            delete (*c_iter);
+            delete cell;
 
             // update document
             document()->setChanged( true );
@@ -731,11 +730,11 @@ namespace IAEX
     {
       if( document()->getCursor()->currentCell() )
       {
-        if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) ||
-          typeid( *document()->getCursor()->currentCell() ) == typeid( InputCell ) )
+        auto cell = document()->getCursor()->currentCell();
+        if( dynamic_cast<TextCell*>(cell) || dynamic_cast<InputCell*>(cell) )
         {
           // extraxt text
-          QTextEdit* editor = document()->getCursor()->currentCell()->textEdit();
+          QTextEdit* editor = cell->textEdit();
           if( editor )
           {
             QTextCursor cursor = editor->textCursor();
@@ -744,7 +743,7 @@ namespace IAEX
             cursor.removeSelectedText();
 
             // add new cell
-            if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) )
+            if( dynamic_cast<TextCell*>(cell) )
             {
               AddCellCommand addcellCommand;
               addcellCommand.setApplication( application() );

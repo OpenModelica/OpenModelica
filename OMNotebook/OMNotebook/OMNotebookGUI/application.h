@@ -57,6 +57,7 @@ namespace IAEX
    class Application
    {
    public:
+      virtual ~Application() = default;
       virtual CommandCenter *commandCenter() = 0;
       virtual void setCommandCenter(CommandCenter *) = 0;
       virtual void addToPasteboard(Cell *cell) = 0;
