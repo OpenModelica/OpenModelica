@@ -42,6 +42,7 @@ These are the UCRT64 packages needed to build OpenModelica:
   - make
   - libtool
   - flex
+  - mingw-w64-ucrt-x86_64-make
   - mingw-w64-ucrt-x86_64-cmake
   - mingw-w64-ucrt-x86_64-ccache
   - mingw-w64-ucrt-x86_64-gcc-fortran
@@ -62,6 +63,7 @@ Optional packages for GUI (e.g OMEdit):
   - mingw-w64-ucrt-x86_64-qtwebkit
   - mingw-w64-ucrt-x86_64-OpenSceneGraph
     or mingw-w64-ucrt-x86_64-OpenSceneGraph-debug for the debug version.
+  - mingw-w64-ucrt-x86_64-gdb
 
 Optional packages for CPP runtime
 
@@ -85,6 +87,7 @@ and use `pacman` to install the packages:
 ```bash
 # Needed
 pacman -S zip unzip make libtool flex   \
+  mingw-w64-ucrt-x86_64-make            \
   mingw-w64-ucrt-x86_64-cmake           \
   mingw-w64-ucrt-x86_64-ccache          \
   mingw-w64-ucrt-x86_64-gcc-fortran     \
@@ -105,6 +108,7 @@ pacman -S mingw-w64-ucrt-x86_64-qt5     \
   mingw-w64-ucrt-x86_64-boost           \
   mingw-w64-ucrt-x86_64-python-numpy    \
   mingw-w64-ucrt-x86_64-libxml2         \
+  mingw-w64-ucrt-x86_64-gdb             \
   mingw-w64-ucrt-x86_64-clang
 ```
 
@@ -129,6 +133,8 @@ export OPENMODELICAHOME="C:\\path\\to\\OpenModelica\\build"
 export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodelica\\libraries"
 export OMDEV="C:\\OMDev"
 ```
+
+Use `MSYSTEM_PREFIX` everywhere???
 
 You can add this to your `.bashrc` file
 (usually in `C:\OMDev\tools\msys64\home\<USERNAME>\.bashrc`), to always have them in your

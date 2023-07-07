@@ -55,13 +55,10 @@ CMAKE_NO_CHECK_UNDEFINED = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	$(error "No 32-bit support")
+else # ucrt64
 	BOOST_PATH = $(OM_MSYS_ENV_DIR)/include
-	IS_MINGW32 = -DIS_MINGW32=ON
-	IS_MINGW64 = -DIS_MINGW64=OFF
-	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win32
-	LVE_EXE_SUFFIX=win32
-else # mingw64
-	BOOST_PATH = $(OM_MSYS_ENV_DIR)/include
+# TODO AHeu: Remove IS_MINGW32 and rename IS_MING64 to IS_MSYS ?
 	IS_MINGW32 = -DIS_MINGW32=OFF
 	IS_MINGW64 = -DIS_MINGW64=ON
 	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
@@ -125,8 +122,8 @@ CMINPACKLIB_SHARED = OFF
 
 CONFIG_REVISION = $(shell git describe --match "v*.*" --always)
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-PLATFORM_ARCH = (32-bit)
-else # mingw64
+$(error "No 32-bit support")
+else # ucrt64
 PLATFORM_ARCH = (64-bit)
 endif
 
@@ -230,35 +227,8 @@ testlogwindows:
 omdev_extra_dlls:
 	echo Copying needed .dlls to the $(OMBUILDDIR)/bin directory
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	# build 32 bit libOpenCL.a
-	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || gendef - $(WROOT)/SysWOW64/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
-	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgomp-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgfortran*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libexpat-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libopenblas.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
-	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
-	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
-else # mingw64
+	$(error "No 32-bit support")
+else # ucrt64
   # build 64 bit libOpenCL.a
 	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
 	test ! -f $(WROOT)/system32/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
@@ -279,6 +249,8 @@ else # mingw64
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)
+#TODO AHeu: Add omniORG for ucrt64!
+	$(error: "No omniORB available for ucrt64")
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)

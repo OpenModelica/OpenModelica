@@ -9,7 +9,7 @@
 <mapEntry key="OMDEV" value="/c/OMDev/"/>
 <mapEntry key="OPENMODELICAHOME" value="${project_loc}/build"/>
 <mapEntry key="OPENMODELICALIBRARY" value="${project_loc}\build\lib\omlibrary\"/>
-<mapEntry key="PATH" value="${env_var:OMDEV_MSYS}/mingw64/bin;${env_var:OMDEV_MSYS}/usr/bin;c:/windows;c:/windows/system32;"/>
+<mapEntry key="PATH" value="${env_var:OMDEV_MSYS}/ucrt64/bin;${env_var:OMDEV_MSYS}/usr/bin;c:/windows;c:/windows/system32;"/>
 <mapEntry key="SystemDrive" value="${env_var:SystemDrive}"/>
 <mapEntry key="SystemRoot" value="${env_var:SystemRoot}"/>
 <mapEntry key="TEMP" value="${env_var:TEMP}"/>

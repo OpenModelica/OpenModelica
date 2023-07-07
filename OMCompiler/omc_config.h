@@ -88,7 +88,7 @@
 #define CONFIG_TRIPLE ""
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lszip -Wl,-Bdynamic"
+#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
 
 #define CONFIG_WITH_OPENMP 1
 

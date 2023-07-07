@@ -31,12 +31,8 @@
 OPENMODELICAHOME = $$(OMBUILDDIR)
 # define used for OpenModelica C-API
 DEFINES += IMPORT_INTO=1
-# win32 vs. win64
-contains(QT_ARCH, i386) { # 32-bit
-  QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import,--large-address-aware
-} else { # 64-bit
-  QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
-}
+QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
+
 
 CONFIG(release, debug|release) { # release
   # required for backtrace
@@ -45,21 +41,11 @@ CONFIG(release, debug|release) { # release
   # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
   QMAKE_LFLAGS_RELEASE =
-  # win32 vs. win64
-  contains(QT_ARCH, i386) { # 32-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
-    INCLUDEPATH += $$(OMDEV)/tools/msys/mingw32/include/binutils
-  } else { # 64-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
-    INCLUDEPATH += $$(OMDEV)/tools/msys/mingw64/include/binutils
-  }
+  LIBS += -L$$(OMDEV_MSYS)/ucrt64/lib/binutils -L$$(OMDEV_MSYS)/ucrt64/bin
+  INCLUDEPATH += $$(OMDEV_MSYS)/ucrt64/include/binutils
   LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 } else { # debug
-  contains(QT_ARCH, i386) { # 32-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw32/bin
-  } else { # 64-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw64/bin
-  }
+  LIBS += -L$$(OMDEV_MSYS)/ucrt64/bin
   LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 }
 LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \

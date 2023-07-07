@@ -121,7 +121,7 @@ IF(WIN32)
 	IF(MSVC)
 		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/omsicpp/3rdParty/boost/msvc/")
 	ELSE(MSVC)
-		SET(Boost_INCLUDE_ "$(OMHOME)/tools/msys/mingw64/include/")
+		SET(Boost_INCLUDE_ "$(OMHOME)/tools/msys64/ucrt64/include/")
 	ENDIF(MSVC)
 
 	SET(SUNDIALS_LIBS_ "$(OMHOME)/bin")

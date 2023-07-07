@@ -164,9 +164,9 @@ AC_PROG_FC
 AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation, to setup CPPFLAGS, etc automatically.],
   [
     if echo $host_cpu | grep -q x86_64; then
-      MINGWNUM=mingw64
+      MINGWNUM=ucrt64
     else
-      MINGWNUM=mingw32
+      error "No 32-bit support"
     fi
     CPPFLAGS="$CPPFLAGS -I$withval/$MINGWNUM/include -I$withval/$MINGWNUM/include/tre"
     LDFLAGS="$LDFLAGS -L$withval/$MINGWNUM/lib"

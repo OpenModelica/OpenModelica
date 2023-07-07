@@ -30,7 +30,7 @@ encapsulated package Autoconf
   constant String ldflags_runtime_fmu = linkType + "-lregex -lryu -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
-                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
+                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lsz -Wl,-Bdynamic";
   constant String ldflags_runtime_fmu_static = " -lSimulationRuntimeFMI " + ldflags_runtime_fmu;
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
