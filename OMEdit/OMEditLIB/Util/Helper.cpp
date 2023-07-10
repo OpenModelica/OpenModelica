@@ -835,7 +835,7 @@ QString GUIMessages::getMessage(int type)
     case FIGARO_GENERATED:
       return tr("The FIGARO is generated.");
     case ENCRYPTED_PACKAGE_GENERATED:
-      return tr("The encrytped package is generated at <b>%1</b>.");
+      return tr("The encrypted package is generated at <b>%1</b>.");
     case READONLY_PACKAGE_GENERATED:
       return tr("The read-only package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
