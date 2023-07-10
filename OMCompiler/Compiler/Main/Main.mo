@@ -326,12 +326,14 @@ algorithm
     System.fflush();
     System.fputs(errorString, System.StreamType.STDERR);
     System.fputs("\n", System.StreamType.STDERR);
+    System.fflush();
   end if;
 
   if errorMessages <> "" then
     System.fflush();
     System.fputs(errorMessages, System.StreamType.STDERR);
     System.fputs("\n", System.StreamType.STDERR);
+    System.fflush();
   end if;
 end showErrors;
 
@@ -479,9 +481,9 @@ algorithm
     case (f::_)
       algorithm
         if System.regularFileExists(f) then
-          print("Error processing file: ");
+          print("Error processing file: "); System.fflush();
         else
-          print(System.gettext("File does not exist: "));
+          print(System.gettext("File does not exist: ")); System.fflush();
         end if;
 
         print(f); print("\n");
@@ -784,22 +786,20 @@ algorithm
     // OMC called with no arguments, print usage information and quit.
     if listEmpty(args) and Config.classToInstantiate()=="" then
       if not Config.helpRequest() then
-        print(FlagsUtil.printUsage());
+        print(FlagsUtil.printUsage()); System.fflush();
       end if;
       return;
     end if;
 
     try
       Settings.getInstallationDirectoryPath();
-      print("# Error encountered! Exiting...\n");
-      print("# Please check the error message and the flags.\n");
-      Print.printBuf("\n\n----\n\nError buffer:\n\n");
-      print(Print.getErrorString());
-      print(ErrorExt.printMessagesStr(false)); print("\n");
+      print("# Error encountered! Exiting...\n"); System.fflush();
+      print("# Please check the error message and the flags.\n"); System.fflush();
+      Print.printBuf("\n\n----\n\nError buffer:\n\n"); System.fflush();
+      print(Print.getErrorString()); System.fflush();
+      print(ErrorExt.printMessagesStr(false)); System.fflush(); print("\n"); System.fflush();
     else
-      print("Error: OPENMODELICAHOME was not set.\n");
-      print("  Read the documentation for instructions on how to set it properly.\n");
-      print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+      print("Error: Failed to retrieve the installation directory path!\n"); System.fflush();
     end try;
     fail();
   end try;
