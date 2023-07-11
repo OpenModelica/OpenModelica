@@ -1675,12 +1675,29 @@ function matchExpressions_cast
   input Boolean allowUnknown;
         output Type compatibleType;
         output MatchKind matchKind;
+protected
+  Expression before = exp1;
 algorithm
   (compatibleType, matchKind) := match (type1, type2)
     // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
         exp1 := Expression.typeCast(exp1, type2);
+      then
+        (type2, MatchKind.CAST);
+
+    // Integer can be cast to Enum on certain occasions
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+      algorithm
+        exp1 := Expression.typeCast(exp1, type2);
+        Error.addCompilerWarning("Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!");
+      then
+        (type2, MatchKind.CAST);
+
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+      algorithm
+        exp1 := Expression.typeCast(exp1, type2);
+        Error.addCompilerWarning("Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!");
       then
         (type2, MatchKind.CAST);
 
@@ -1694,14 +1711,14 @@ algorithm
     // as there are annotations having expressions such as Boolean x > 0.5
     case (Type.BOOLEAN(), Type.REAL()) guard Flags.isSet(Flags.NF_API)
       algorithm
-        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp1) + " to Real.");
+        Error.addCompilerWarning("Allowing casting of Boolean expression: " + Expression.toString(exp1) + " to Real.");
         exp1 := Expression.typeCast(exp1, type2);
       then
         (type2, MatchKind.CAST);
 
     case (Type.REAL(), Type.BOOLEAN()) guard Flags.isSet(Flags.NF_API)
       algorithm
-        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp2) + " to Real.");
+        Error.addCompilerWarning("Allowing casting of Boolean expression: " + Expression.toString(exp2) + " to Real.");
         exp2 := Expression.typeCast(exp2, type1);
       then
         (type1, MatchKind.CAST);
@@ -2396,6 +2413,8 @@ function matchTypes_cast
   input Boolean allowUnknown = false;
         output Type compatibleType;
         output MatchKind matchKind;
+protected
+  Expression before = expression;
 algorithm
   (compatibleType, matchKind) := match(actualType, expectedType)
     // Integer can be cast to Real.
@@ -2411,6 +2430,22 @@ algorithm
         // TODO: FIXME: Maybe this should be generic match
       then
         (actualType, MatchKind.CAST);
+
+    // Allow using enumeration as Integer without the explicit cast
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+      algorithm
+        expression := Expression.typeCast(expression, expectedType);
+        Error.addCompilerWarning("Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!");
+      then
+        (expectedType, MatchKind.CAST);
+
+    // Allow using enumeration as Integer without the explicit cast
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+      algorithm
+        expression := Expression.typeCast(expression, expectedType);
+        Error.addCompilerWarning("Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!");
+      then
+        (expectedType, MatchKind.CAST);
 
     // If the actual type is a tuple but the expected type isn't,
     // try to use the first type in the tuple.
