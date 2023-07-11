@@ -239,8 +239,8 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 
 #define omc_assert_macro(expr) \
   if (!(expr)) {                \
-    abort(); \
     throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, OMC_FUNCTION, #expr); \
+    exit(1); \
   }
 
 #ifdef USE_DEBUG_OUTPUT
