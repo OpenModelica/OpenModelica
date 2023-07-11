@@ -44,6 +44,7 @@ protected
   import Expression = NFExpression;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
+  import Prefixes = NFPrefixes;
   import SBGraphUtil = NFSBGraphUtil;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -150,10 +151,38 @@ public
   algorithm
     for system in systems loop
       (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
+      checkSystemVariabilities(new_system);
       new_systems := new_system :: new_systems;
     end for;
     new_systems := listReverse(new_systems);
   end applyModule;
+
+  function checkSystemVariabilities
+    "checks whether variability is valid. Prevents things like `Integer i = time;`"
+    input System.System system;
+  algorithm
+    if isSome(system.strongComponents) then
+      for scc in Util.getOption(system.strongComponents) loop
+        () := match scc
+          case StrongComponent.SINGLE_COMPONENT() algorithm
+            // The variability of the equation must be greater or equal to that of the variable it solves.
+            // See MLS section 3.8 Variability of Expressions
+            if ComponentRef.variability(BVariable.getVarName(scc.var)) <
+              Prefixes.variabilityMax(
+                Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
+                Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
+              )
+            then
+              Error.addMessage(Error.COMPILER_ERROR,{getInstanceName() + " failed because the following strong component has conflicting variability:\n" + StrongComponent.toString(scc)});
+              fail();
+            end if;
+          then ();
+          /* TODO case StrongComponent.MULTI_COMPONENT() */
+          else ();
+        end match;
+      end for;
+    end if;
+  end checkSystemVariabilities;
 
   function simple
     input VariablePointers vars;

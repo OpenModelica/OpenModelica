@@ -47,6 +47,7 @@ protected
   import Prefixes = NFPrefixes;
   import MetaModelica.Dangerous.*;
   import JSON;
+  import Variable = NFVariable;
 
   import ComponentRef = NFComponentRef;
 
@@ -453,9 +454,12 @@ public
     output Variability var;
   algorithm
     var := match cref
+      local
+        Pointer<Variable> v;
       case CREF(node = InstNode.COMPONENT_NODE())
         then Component.variability(InstNode.component(cref.node));
       case CREF(node = InstNode.CLASS_NODE()) then Variability.CONSTANT;
+      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then Variable.variability(Pointer.access(v));
       else Variability.CONTINUOUS;
     end match;
   end nodeVariability;
