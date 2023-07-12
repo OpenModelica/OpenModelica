@@ -2305,7 +2305,7 @@ algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE);
           else
-            b = FlagsUtil.disableDebug(Flags.EXEC_STAT);
+            b = FlagsUtil.set(Flags.EXEC_STAT, false);
           end if;
 
           strPostOptModules = {"wrapFunctionCalls",

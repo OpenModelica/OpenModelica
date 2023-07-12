@@ -964,7 +964,7 @@ algorithm
       algorithm
         if not Flags.isSet(Flags.SCODE_INST) then
           Builtin.clearInitialGraph();
-          FlagsUtil.enableDebug(Flags.SCODE_INST);
+          FlagsUtil.set(Flags.SCODE_INST, true);
           outCache := FCore.emptyCache();
         end if;
       then
@@ -976,7 +976,7 @@ algorithm
     case ("disableNewInstantiation",_)
       algorithm
         if Flags.isSet(Flags.SCODE_INST) then
-          FlagsUtil.disableDebug(Flags.SCODE_INST);
+          FlagsUtil.set(Flags.SCODE_INST, false);
           outCache := FCore.emptyCache();
           Builtin.clearInitialGraph();
         end if;

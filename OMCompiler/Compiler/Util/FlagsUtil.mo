@@ -49,6 +49,7 @@ import Print;
 import Settings;
 import StringUtil;
 import System;
+import UnorderedMap;
 import Util;
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -432,15 +433,21 @@ algorithm
 end saveFlags;
 
 protected function createConfigFlags
-  output array<Flags.FlagData> configFlags;
+  output UnorderedMap<String, Flags.FlagData> configFlags;
 algorithm
-  configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
+  configFlags := UnorderedMap.new<Flags.FlagData>(stringHashDjb2, stringEqual);
+  for flag in allConfigFlags loop
+    UnorderedMap.add(flag.name, flag.defaultValue, configFlags);
+  end for;
 end createConfigFlags;
 
 protected function createDebugFlags
-  output array<Boolean> debugFlags;
+  output UnorderedMap<String, Boolean> debugFlags;
 algorithm
-  debugFlags := listArray(list(flag.default for flag in allDebugFlags));
+  debugFlags := UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
+  for flag in allDebugFlags loop
+    UnorderedMap.add(flag.name, flag.default, debugFlags);
+  end for;
 end createDebugFlags;
 
 public function loadFlags
@@ -453,13 +460,11 @@ algorithm
     flags := Flags.getFlags();
   else
     if initialize then
-      checkDebugFlags();
-      checkConfigFlags();
       flags := Flags.FLAGS(createDebugFlags(), createConfigFlags());
       saveFlags(flags);
     else
       print("Flag loading failed!\n");
-      flags := Flags.NO_FLAGS();
+      flags := Flags.Flag.empty();
     end if;
   end try;
 end loadFlags;
@@ -468,18 +473,18 @@ public function backupFlags
   "Creates a copy of the existing flags."
   output Flags.Flag outFlags;
 protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
 algorithm
   Flags.FLAGS(debug_flags, config_flags) := loadFlags();
-  outFlags := Flags.FLAGS(arrayCopy(debug_flags), arrayCopy(config_flags));
+  outFlags := Flags.FLAGS(UnorderedMap.copy(debug_flags), UnorderedMap.copy(config_flags));
 end backupFlags;
 
 public function resetDebugFlags
   "Resets all debug flags to their default values."
 protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
 algorithm
   Flags.FLAGS(_, config_flags) := loadFlags();
   debug_flags := createDebugFlags();
@@ -489,51 +494,13 @@ end resetDebugFlags;
 public function resetConfigFlags
   "Resets all configuration flags to their default values."
 protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
 algorithm
   Flags.FLAGS(debug_flags, _) := loadFlags();
   config_flags := createConfigFlags();
   saveFlags(Flags.FLAGS(debug_flags, config_flags));
 end resetConfigFlags;
-
-protected function checkDebugFlags
-  "Checks that the flags listed in allDebugFlags have sequential and unique indices."
-protected
-  Integer index = 0;
-  String err_str;
-algorithm
-  for flag in allDebugFlags loop
-    index := index + 1;
-
-    // If the flag indices are borked, print an error and terminate the compiler.
-    // Only failing here could cause an infinite loop of trying to load the flags.
-    if flag.index <> index then
-      err_str := "Invalid flag '" + flag.name + "' with index " + String(flag.index) + " (expected " + String(index) +
-        ") in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly!";
-      Error.terminateError(err_str, sourceInfo());
-    end if;
-  end for;
-end checkDebugFlags;
-
-protected function checkConfigFlags
-  "Checks that the flags listed in allConfigFlags have sequential and unique indices."
-protected
-  Integer index = 0;
-  String err_str;
-algorithm
-  for flag in allConfigFlags loop
-    index := index + 1;
-
-    // If the flag indices are borked, print an error and terminate the compiler.
-    // Only failing here could cause an infinite loop of trying to load the flags.
-    if flag.index <> index then
-      err_str := "Invalid flag '" + flag.name + "' with index " + String(flag.index) + " (expected " + String(index) +
-        ") in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly!";
-      Error.terminateError(err_str, sourceInfo());
-    end if;
-  end for;
-end checkConfigFlags;
 
 public function set
   "Sets the value of a debug flag, and returns the old value."
@@ -541,30 +508,12 @@ public function set
   input Boolean inValue;
   output Boolean outOldValue;
 protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
 algorithm
   Flags.FLAGS(debug_flags, config_flags) := loadFlags();
-  (debug_flags, outOldValue) := updateDebugFlagArray(debug_flags, inValue, inFlag);
-  saveFlags(Flags.FLAGS(debug_flags, config_flags));
+  outOldValue := setDebugFlag(debug_flags, inFlag.name, inValue);
 end set;
-
-public function enableDebug
-  "Enables a debug flag."
-  input Flags.DebugFlag inFlag;
-  output Boolean outOldValue;
-algorithm
-  outOldValue := set(inFlag, true);
-end enableDebug;
-
-public function disableDebug
-  "Disables a debug flag."
-  input Flags.DebugFlag inFlag;
-  output Boolean outOldValue;
-algorithm
-  outOldValue := set(inFlag, false);
-end disableDebug;
-
 
 function getConfigOptionsStringList
   "Returns the valid options of a single-string configuration flag."
@@ -583,34 +532,15 @@ algorithm
   end match;
 end getConfigOptionsStringList;
 
-protected function updateDebugFlagArray
-  "Updates the value of a debug flag in the debug flag array."
-  input array<Boolean> inFlags;
-  input Boolean inValue;
-  input Flags.DebugFlag inFlag;
-  output array<Boolean> outFlags;
-  output Boolean outOldValue;
-protected
-  Integer index;
-algorithm
-  Flags.DEBUG_FLAG(index = index) := inFlag;
-  outOldValue := arrayGet(inFlags, index);
-  outFlags := arrayUpdate(inFlags, index, inValue);
-end updateDebugFlagArray;
-
-protected function updateConfigFlagArray
+protected function updateConfigFlagMap
   "Updates the value of a configuration flag in the configuration flag array."
-  input array<Flags.FlagData> inFlags;
-  input Flags.FlagData inValue;
   input Flags.ConfigFlag inFlag;
-  output array<Flags.FlagData> outFlags;
-protected
-  Integer index;
+  input Flags.FlagData inValue;
+  input UnorderedMap<String, Flags.FlagData> inFlags;
 algorithm
-  Flags.CONFIG_FLAG(index = index) := inFlag;
-  outFlags := arrayUpdate(inFlags, index, inValue);
+  UnorderedMap.add(inFlag.name, inValue, inFlags);
   applySideEffects(inFlag, inValue);
-end updateConfigFlagArray;
+end updateConfigFlagMap;
 
 public function readArgs
   "Reads the command line arguments to the compiler and sets the flags
@@ -666,7 +596,7 @@ algorithm
   if flagtype == "+" then
     if len == 1 then
       // + alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.Flag.empty());
     else
       parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
     end if;
@@ -675,14 +605,14 @@ algorithm
   elseif flagtype == "-" then
     if len == 1 then
       // - alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.Flag.empty());
     elseif len == 2 then
       // Short flag without argument, i.e. -h.
       parseFlag(System.substring(inArg, 2, 2), inFlags, flagtype);
     elseif stringGetStringChar(inArg, 2) == "-" then
       if len < 4 or stringGetStringChar(inArg, 4) == "=" then
         // Short flags may not be used with --, i.e. --h or --h=debug.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.Flag.empty());
       else
         // Long flag, i.e. --help or --help=debug.
         parseFlag(System.substring(inArg, 3, len), inFlags, "--");
@@ -693,7 +623,7 @@ algorithm
         parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
       else
         // Long flag used with -, i.e. -help, which is not allowed.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.Flag.empty());
       end if;
     end if;
     outConsumed := true;
@@ -747,14 +677,7 @@ end lookupConfigFlag;
 protected function configFlagEq
   input Flags.ConfigFlag inFlag1;
   input Flags.ConfigFlag inFlag2;
-  output Boolean eq;
-algorithm
-  eq := match(inFlag1, inFlag2)
-    local
-      Integer index1, index2;
-    case(Flags.CONFIG_FLAG(index=index1), Flags.CONFIG_FLAG(index=index2))
-    then index1 == index2;
-  end match;
+  output Boolean eq = stringEq(inFlag1.name, inFlag2.name);
 end configFlagEq;
 
 protected function setAdditionalOptModules
@@ -782,86 +705,46 @@ protected function evaluateConfigFlag
   input Flags.ConfigFlag inFlag;
   input list<String> inValues;
   input Flags.Flag inFlags;
+protected
+  list<String> values;
 algorithm
-  _ := match(inFlag, inFlags)
-    local
-      array<Boolean> debug_flags;
-      array<Flags.FlagData> config_flags;
-      list<String> values;
-
+  if configFlagEq(inFlag, Flags.DEBUG) then
     // Special case for +d, +debug, set the given debug flags.
-    case (Flags.CONFIG_FLAG(index = 1), Flags.FLAGS(debugFlags = debug_flags))
-      equation
-        List.map1_0(inValues, setDebugFlag, debug_flags);
-      then
-        ();
-
+    List.map1_0(inValues, parseDebugFlag, inFlags.debugFlags);
+  elseif configFlagEq(inFlag, Flags.HELP) then
     // Special case for +h, +help, show help text.
-    case (Flags.CONFIG_FLAG(index = 2), _)
-      equation
-        values = List.map(inValues, System.tolower);
-        System.gettextInit(if Flags.getConfigString(Flags.RUNNING_TESTSUITE) == "" then Flags.getConfigString(Flags.LOCALE_FLAG) else "C");
-        print(printHelp(values));
-        setConfigString(Flags.HELP, "omc");
-      then
-        ();
-
+    values := List.map(inValues, System.tolower);
+    System.gettextInit(if Flags.getConfigString(Flags.RUNNING_TESTSUITE) == "" then Flags.getConfigString(Flags.LOCALE_FLAG) else "C");
+    print(printHelp(values));
+    setConfigString(Flags.HELP, "omc");
+  elseif configFlagEq(inFlag, Flags.PRE_OPT_MODULES_ADD) then
     // Special case for --preOptModules+=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, inValues);
+  elseif configFlagEq(inFlag, Flags.PRE_OPT_MODULES_SUB) then
     // Special case for --preOptModules-=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, inValues);
+  elseif configFlagEq(inFlag, Flags.POST_OPT_MODULES_ADD) then
     // Special case for --postOptModules+=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, inValues);
+  elseif configFlagEq(inFlag, Flags.POST_OPT_MODULES_SUB) then
     // Special case for --postOptModules-=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, inValues);
+  elseif configFlagEq(inFlag, Flags.INIT_OPT_MODULES_ADD) then
     // Special case for --initOptModules+=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, inValues);
+  elseif configFlagEq(inFlag, Flags.INIT_OPT_MODULES_SUB) then
     // Special case for --initOptModules-=<value>
-    case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, inValues);
-      then
-        ();
-
+    setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, inValues);
+  else
     // All other configuration flags, set the flag to the given values.
-    case (_, Flags.FLAGS(configFlags = config_flags))
-      equation
-        setConfigFlag(inFlag, config_flags, inValues);
-      then
-        ();
-
-  end match;
+    setConfigFlag(inFlag, inFlags.configFlags, inValues);
+  end if;
 end evaluateConfigFlag;
 
-protected function setDebugFlag
+protected function parseDebugFlag
   "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;
-  input array<Boolean> inFlags;
+  input UnorderedMap<String, Boolean> inFlags;
 protected
   Boolean negated,neg1,neg2;
   String flag_str;
@@ -871,33 +754,23 @@ algorithm
   negated :=  neg1 or neg2;
   flag_str := if negated then Util.stringRest(inFlag) else inFlag;
   flag_str := if neg2 then Util.stringRest(flag_str) else flag_str;
-  setDebugFlag2(flag_str, not negated, inFlags);
-end setDebugFlag;
+  _ := setDebugFlag(inFlags, flag_str, not negated);
+end parseDebugFlag;
 
-protected function setDebugFlag2
-  input String inFlag;
-  input Boolean inValue;
-  input array<Boolean> inFlags;
+protected function setDebugFlag
+  input UnorderedMap<String, Boolean> inFlags;
+  input String flag_str;
+  input Boolean value;
+  output Boolean oldValue;
 algorithm
-  _ := matchcontinue(inFlag, inValue, inFlags)
-    local
-      Flags.DebugFlag flag;
-
-    case (_, _, _)
-      equation
-        flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-        (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
-      then
-        ();
-
-    else
-      equation
-        Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
-      then
-        fail();
-
-  end matchcontinue;
-end setDebugFlag2;
+  if UnorderedMap.contains(flag_str, inFlags) then
+    oldValue := UnorderedMap.getSafe(flag_str, inFlags, sourceInfo());
+    UnorderedMap.add(flag_str, value, inFlags);
+  else
+    Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {flag_str});
+    fail();
+  end if;
+end setDebugFlag;
 
 protected function matchDebugFlag
   "Returns true if the given flag has the given name, otherwise false."
@@ -931,7 +804,7 @@ protected function setConfigFlag
   "Sets the value of a configuration flag, where the value is given as a list of
   strings."
   input Flags.ConfigFlag inFlag;
-  input array<Flags.FlagData> inConfigData;
+  input UnorderedMap<String, Flags.FlagData> inConfigData;
   input list<String> inValues;
 protected
   Flags.FlagData data, default_value;
@@ -940,7 +813,7 @@ protected
 algorithm
   Flags.CONFIG_FLAG(name = name, defaultValue = default_value, validOptions = validOptions) := inFlag;
   data := stringFlagData(inValues, default_value, validOptions, name);
-  _ := updateConfigFlagArray(inConfigData, data, inFlag);
+  updateConfigFlagMap(inFlag, data, inConfigData);
 end setConfigFlag;
 
 protected function stringFlagData
@@ -1083,19 +956,6 @@ algorithm
   end matchcontinue;
 end printActualTypeStr;
 
-protected function configFlagsIsEqualIndex
-  "Checks if two config flags have the same index."
-  input Flags.ConfigFlag inFlag1;
-  input Flags.ConfigFlag inFlag2;
-  output Boolean outEqualIndex;
-protected
-  Integer index1, index2;
-algorithm
-  Flags.CONFIG_FLAG(index = index1) := inFlag1;
-  Flags.CONFIG_FLAG(index = index2) := inFlag2;
-  outEqualIndex := intEq(index1, index2);
-end configFlagsIsEqualIndex;
-
 protected function handleDeprecatedFlags
   "Gives warnings when deprecated flags are used. Sets newer flags if
    appropriate."
@@ -1107,24 +967,24 @@ algorithm
 
   // DEBUG FLAGS
   if Flags.isSet(Flags.NF_UNITCHECK) then
-    disableDebug(Flags.NF_UNITCHECK);
+    set(Flags.NF_UNITCHECK, false);
     setConfigBool(Flags.UNIT_CHECKING, true);
     Error.addMessage(Error.DEPRECATED_FLAG, {"-d=frontEndUnitCheck", "--unitChecking"});
   end if;
   if Flags.isSet(Flags.OLD_FE_UNITCHECK) then
-    disableDebug(Flags.OLD_FE_UNITCHECK);
+    set(Flags.OLD_FE_UNITCHECK, false);
     setConfigBool(Flags.UNIT_CHECKING, true);
     Error.addMessage(Error.DEPRECATED_FLAG, {"-d=oldFrontEndUnitCheck", "--unitChecking"});
   end if;
   if Flags.isSet(Flags.INTERACTIVE_TCP) then
-    disableDebug(Flags.INTERACTIVE_TCP);
+    set(Flags.INTERACTIVE_TCP, false);
     setConfigString(Flags.INTERACTIVE, "tcp");
     Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactive", "--interactive=tcp"});
     // The error message might get lost, so also print it directly here.
     print("The flag -d=interactive is depreciated. Please use --interactive=tcp instead.\n");
   end if;
   if Flags.isSet(Flags.INTERACTIVE_CORBA) then
-    disableDebug(Flags.INTERACTIVE_CORBA);
+    set(Flags.INTERACTIVE_CORBA, false);
     setConfigString(Flags.INTERACTIVE, "corba");
     Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactiveCorba", "--interactive=corba"});
     // The error message might get lost, so also print it directly here.
@@ -1169,40 +1029,28 @@ protected function applySideEffects
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
 algorithm
-  _ := matchcontinue(inFlag, inValue)
-    local
-      Boolean value;
-      String corba_name, corba_objid_path, zeroMQFileSuffix;
+  _ := match inValue
 
     // +showErrorMessages needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
-        Flags.BOOL_FLAG(data = value) = inValue;
-        ErrorExt.setShowErrorMessages(value);
-      then
-        ();
+    case Flags.BOOL_FLAG() guard(configFlagEq(inFlag, Flags.SHOW_ERROR_MESSAGES))
+      algorithm
+        ErrorExt.setShowErrorMessages(inValue.data);
+      then ();
 
     // The corba object reference file path needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) = inValue;
-        Corba.setObjectReferenceFilePath(corba_objid_path);
-      then
-        ();
+    case Flags.STRING_FLAG() guard(configFlagEq(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH))
+      algorithm
+        Corba.setObjectReferenceFilePath(inValue.data);
+      then ();
 
     // The corba session name needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) = inValue;
-        Corba.setSessionName(corba_name);
-      then
-        ();
+    case Flags.STRING_FLAG() guard(configFlagEq(inFlag, Flags.CORBA_SESSION))
+      algorithm
+        Corba.setSessionName(inValue.data);
+      then ();
 
     else ();
-  end matchcontinue;
+  end match;
 end applySideEffects;
 
 public function setConfigValue
@@ -1210,14 +1058,11 @@ public function setConfigValue
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
 protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
-  Flags.Flag flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
 algorithm
-  flags := loadFlags();
-  Flags.FLAGS(debug_flags, config_flags) := flags;
-  config_flags := updateConfigFlagArray(config_flags, inValue, inFlag);
-  saveFlags(Flags.FLAGS(debug_flags, config_flags));
+  Flags.FLAGS(debug_flags, config_flags) := loadFlags();
+  updateConfigFlagMap(inFlag, inValue, config_flags);
 end setConfigValue;
 
 public function setConfigBool
@@ -1896,10 +1741,11 @@ function unparseFlags
   output list<String> flagStrings = {};
 protected
   Flags.Flag flags;
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
+  UnorderedMap<String, Boolean> debug_flags;
+  UnorderedMap<String, Flags.FlagData> config_flags;
   String name;
   list<String> strl = {};
+  Flags.FlagData fdata;
   Boolean fvalue;
 algorithm
   try
@@ -1909,18 +1755,19 @@ algorithm
   end try;
 
   for f in allConfigFlags loop
-    if not flagDataEq(f.defaultValue, config_flags[f.index]) then
+    fdata := UnorderedMap.getSafe(f.name, config_flags, sourceInfo());
+    if not flagDataEq(f.defaultValue, fdata) then
       name := match f.shortname
         case SOME(name) then "-" + name;
         else "--" + f.name;
       end match;
 
-      flagStrings := (name + "=" + flagDataString(config_flags[f.index])) :: flagStrings;
+      flagStrings := (name + "=" + flagDataString(fdata)) :: flagStrings;
     end if;
   end for;
 
   for f in allDebugFlags loop
-    fvalue := debug_flags[f.index];
+    fvalue := UnorderedMap.getSafe(f.name, debug_flags, sourceInfo());
     if f.default <> fvalue then
       name := if fvalue then f.name else "no" + f.name;
       strl := name :: strl;
