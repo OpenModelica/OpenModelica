@@ -56,10 +56,9 @@ encapsulated package Flags
 
 public
 import Gettext;
-import UnorderedMap;
 protected
-import Error;
 import Global;
+import UnorderedMap;
 
 public uniontype DebugFlag
   record DEBUG_FLAG
@@ -1514,8 +1513,8 @@ algorithm
   if UnorderedMap.contains(inFlag.name, config_flags) then
     outValue := UnorderedMap.getSafe(inFlag.name, config_flags, sourceInfo());
   else
-    Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag.name});
-    fail();
+    // this should not happen, but in case its not set, just use default
+    outValue := inFlag.defaultValue;
   end if;
 end getConfigValue;
 
