@@ -136,10 +136,10 @@ modelica_boolean GreaterEq(double a, double b);
 /* functions used to evaluate relation in
  * zero-crossing with hysteresis effect
  */
-modelica_boolean LessZC(double a, double b, modelica_boolean);
-modelica_boolean LessEqZC(double a, double b, modelica_boolean);
-modelica_boolean GreaterZC(double a, double b, modelica_boolean);
-modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
+modelica_boolean LessZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
+modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
+modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
+modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 
 
 /**
@@ -189,7 +189,7 @@ static inline void relation(DATA* data, modelica_boolean* res, double exp1, doub
  * @param[in]   op_w      Comparison function, e.g. Less.
  * @param[in]   op_w_zc   Matching comparison function of op_w for zero-crossing, e.g. LessZC.
  */
-static inline void relationhysteresis(DATA* data, modelica_boolean* res, double exp1, double exp2, int index, modelica_boolean(*op_w)(double, double), modelica_boolean(*op_w_zc)(double, double, modelica_boolean))
+static inline void relationhysteresis(DATA* data, modelica_boolean* res, double exp1, double exp2, double exp1_nominal, double exp2_nominal, int index, modelica_boolean(*op_w)(double, double), modelica_boolean(*op_w_zc)(double, double, double, double, modelica_boolean))
 {
   if(data->simulationInfo->initial)
   {
@@ -202,7 +202,7 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
   }
   else
   {
-    *res = op_w_zc(exp1, exp2, data->simulationInfo->storedRelations[index]);
+    *res = op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, data->simulationInfo->storedRelations[index]);
     data->simulationInfo->relations[index] = *res;
   }
 }

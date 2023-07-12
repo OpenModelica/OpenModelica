@@ -1122,11 +1122,10 @@ public function getNominalAttr "
   input Option<DAE.VariableAttributes> attr;
   output DAE.Exp nominal;
 algorithm
-  nominal:=
-  match (attr)
+  nominal:= match attr
     local
       DAE.Exp n;
-    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(n)))) then n;
+    case SOME(DAE.VAR_ATTR_REAL(nominal=SOME(n))) then n;
     else DAE.RCONST(1.0);
   end match;
 end getNominalAttr;

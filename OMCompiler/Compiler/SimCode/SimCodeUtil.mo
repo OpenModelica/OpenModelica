@@ -15829,5 +15829,28 @@ algorithm
   end for;
 end getSimIteratorSize;
 
+function getExpNominal
+  "Returns the nominal value of an expression.
+  Used to scale zero-crossings like `a > b`."
+  input DAE.Exp exp;
+  output DAE.Exp nom;
+algorithm
+  nom := match exp
+    local
+      DAE.ComponentRef cr;
+      SimCodeVar.SimVar v;
+    case DAE.CREF(componentRef = cr) algorithm
+      v := cref2simvar(cr, getSimCode());
+    then Util.getOptionOrDefault(v.nominalValue, DAE.RCONST(1.0));
+
+    // for DAE.RCONST(0.0) use zero nominal to not saturate the other side of the zero-crossing
+    case DAE.RCONST() then exp;
+
+    // TODO find good rules for nominal propagation
+
+    else DAE.RCONST(1.0);
+  end match;
+end getExpNominal;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

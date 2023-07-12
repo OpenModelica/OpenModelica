@@ -1433,6 +1433,11 @@ package SimCodeUtil
     input SimCodeVar.SimVar simVar;
     output String out_string;
   end getFmiInitialAttributeStr;
+
+  function getExpNominal
+    input DAE.Exp exp;
+    output DAE.Exp nom;
+  end getExpNominal;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
