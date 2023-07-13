@@ -15839,12 +15839,57 @@ algorithm
     local
       DAE.ComponentRef cr;
       SimCodeVar.SimVar v;
+      Real nom1, nom2;
+
+    // for const 0 use zero nominal to not saturate the rest of the expression
+    case DAE.ICONST() then DAE.RCONST(intReal(exp.integer));
+    case DAE.RCONST() then exp;
+
     case DAE.CREF(componentRef = cr) algorithm
       v := cref2simvar(cr, getSimCode());
     then Util.getOptionOrDefault(v.nominalValue, DAE.RCONST(1.0));
 
-    // for DAE.RCONST(0.0) use zero nominal to not saturate the other side of the zero-crossing
-    case DAE.RCONST() then exp;
+    // a + b = (A*as) + (B*bs) = A*(as + B/A*bs) = B*(A/B*as + bs)
+    // if A >> B then a+b has nominal value A
+    // if A << B then a+b has nominal value B
+    // FIXME if A = B and a and b have opposite signs then the nominal value of
+    //   a+b may be arbitrarily small, but it's definitely smaller than max(A,B)
+    case DAE.BINARY(operator = DAE.ADD()) algorithm
+      DAE.RCONST(nom1) := getExpNominal(exp.exp1);
+      DAE.RCONST(nom2) := getExpNominal(exp.exp2);
+    then DAE.RCONST(max(abs(nom1), abs(nom2)));
+
+    // similar to DAE.ADD
+    case DAE.BINARY(operator = DAE.SUB()) algorithm
+      DAE.RCONST(nom1) := getExpNominal(exp.exp1);
+      DAE.RCONST(nom2) := getExpNominal(exp.exp2);
+    then DAE.RCONST(max(abs(nom1), abs(nom2)));
+
+    // a*b = (A*as)*(B*bs) = (A*B)*(as*bs)
+    case DAE.BINARY(operator = DAE.MUL()) algorithm
+      DAE.RCONST(nom1) := getExpNominal(exp.exp1);
+      DAE.RCONST(nom2) := getExpNominal(exp.exp2);
+    then DAE.RCONST(nom1 * nom2);
+
+    // a/b = (A*as)/(B*bs) = (A/B)*(as/bs)
+    case DAE.BINARY(operator = DAE.DIV()) algorithm
+      DAE.RCONST(nom1) := getExpNominal(exp.exp1);
+      DAE.RCONST(nom2) := getExpNominal(exp.exp2);
+      Error.assertion(nom2 <> 0.0, getInstanceName() + " failed because nominal"
+        + " value of denominator `" + ExpressionDump.printExpStr(exp.exp2)
+        + "` is zero.", sourceInfo());
+    then DAE.RCONST(nom1 / nom2);
+
+    // a^b = (A*as)^(B*bs) = (A^B)^bs * (as)^(B*bs)
+    case DAE.BINARY(operator = DAE.POW()) algorithm
+      DAE.RCONST(nom1) := getExpNominal(exp.exp1);
+      DAE.RCONST(nom2) := getExpNominal(exp.exp2);
+    then DAE.RCONST(abs(nom1) ^ abs(nom2));
+
+    // -a = -(A*as) = A*(-as)
+    case DAE.UNARY(operator = DAE.UMINUS())
+    then getExpNominal(exp.exp);
+
 
     // TODO find good rules for nominal propagation
 
