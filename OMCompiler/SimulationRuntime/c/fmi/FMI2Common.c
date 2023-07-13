@@ -156,7 +156,7 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
+    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
       fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
       fmi2_status_t status = fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
       free(valuesReferences_int);
@@ -202,7 +202,7 @@ void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
+    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
       fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
       int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
       fmi2_status_t status;
@@ -247,7 +247,7 @@ void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
+    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
       fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
       fmi2_status_t status = fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
       free(valuesReferences_int);
