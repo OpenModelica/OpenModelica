@@ -1416,27 +1416,27 @@ void setZCtol(double relativeTol)
 }
 
 /* TODO: fix this */
-modelica_boolean LessZC(double a, double b, modelica_boolean direction)
+modelica_boolean LessZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
   return direction ? (a - b <= eps) : (a - b <= -eps);
 }
 
-modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
+modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  return !GreaterZC(a, b, !direction);
+  return !GreaterZC(a, b, a_nominal, b_nominal, !direction);
 }
 
 /* TODO: fix this */
-modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
+modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
   return direction ? (a - b >= -eps ) : (a - b >= eps);
 }
 
-modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
+modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  return !LessZC(a, b, !direction);
+  return !LessZC(a, b, a_nominal, b_nominal, !direction);
 }
 
 modelica_boolean Less(double a, double b)

@@ -2013,22 +2013,13 @@ end getVarDirection;
 public function getVarNominalValue "
   Returns the DAE.NominalValue or default value of a variable."
   input BackendDAE.Var InVar;
-  output DAE.Exp nom;
-algorithm
-  nom := match(InVar)
-         local Option<DAE.VariableAttributes> attr;
-           case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
-         end match;
+  output DAE.Exp nom = DAEUtil.getNominalAttr(InVar.values);
 end getVarNominalValue;
 
 public function getVarKind "
   Get the DAE.VarKind of a variable"
   input BackendDAE.Var inVar;
-  output BackendDAE.VarKind varKind;
-algorithm
-  varKind := match (inVar)
-    case (BackendDAE.VAR(varKind = varKind)) then  varKind;
-  end match;
+  output BackendDAE.VarKind varKind = inVar.varKind;
 end getVarKind;
 
 public function getVarKindForVar"fetch the varkind for an indexed var inside the variable-array."
