@@ -15829,7 +15829,7 @@ algorithm
   end for;
 end getSimIteratorSize;
 
-function getExpNominal
+public function getExpNominal
   "Returns the nominal value of an expression.
   Used to scale zero-crossings like `a > b`."
   input DAE.Exp exp;
