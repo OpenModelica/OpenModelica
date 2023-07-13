@@ -6131,7 +6131,7 @@ case rel as RELATION(__) then
       let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
       let res = tempDecl("modelica_boolean", &varDecls)
       if intEq(rel.index,-1) then
-        let &preExp += '<%res%> = <%rel_f%>>(<%e1%>,<%e2%>);<%\n%>'
+        let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
         res
       else
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
