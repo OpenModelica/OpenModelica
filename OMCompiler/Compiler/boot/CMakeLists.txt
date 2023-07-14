@@ -7,9 +7,23 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
 else()
 #download and unpack the sources
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-file(DOWNLOAD https://build.openmodelica.org/omc/bootstrap/sources.tar.gz
-     ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz SHOW_PROGRESS)
-execute_process(COMMAND tar xzf sources.tar.gz
+file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz
+     ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
+     SHOW_PROGRESS
+     STATUS status
+     LOG log)
+# fetch the elements of the status!
+list(GET status 0 status_code)
+list(GET status 1 status_string)
+# check the download status!
+if(NOT status_code EQUAL 0)
+message(FATAL_ERROR "error: downloading 'https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz' failed
+        status_code: ${status_code}
+        status_string: ${status_string}
+        log: ${log}")
+endif()
+message(STATUS "downloading bootstrapping sources ... done")
+execute_process(COMMAND tar xzf sources.tar.gz --strip-components=1
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
 endif()
 

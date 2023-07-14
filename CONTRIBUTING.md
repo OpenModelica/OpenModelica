@@ -51,3 +51,7 @@ After Jenkins checks that all is OK a developer will:
 * **reset** (or restart, or **merge**, if there were other commits added to OMCompiler-3rdParty since you started) the OMCompiler-3rdParty master branch so the new HEAD contains the HEAD commit of the branch
 * merge the PR in the OpenModelica glue project
 * delete the branch in the OMCompiler-3rdParty
+
+## Bootstrapping sources
+
+Sometimes one would need to update the bootstrapping sources to add new features to the MetaModelica compiler. The bootstrapping sources are stored at: [OMBootstrapping](https://github.com/OpenModelica/OMBootstrapping.git), just make a PR for it with the contents of OMCompiler/Compiler/boot/build.

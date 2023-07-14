@@ -19,7 +19,7 @@ Modelica model. However, running actual simulations still needs some work.
 
 Unfortunately, it is not possbile to compile `OMEdit`, `OMNotebook` and `OMShell` yet because of missing `QtWebkit` support.
 
-On Windows, a package manager is necessary to get all the ubiquitous linux libraires that we have come to depend on such as `libcurl`, `libiconv`, `gettext` and `pthreads`. In addition, we also need to make availabe the bigger dependencies starting from `Lapack` all the way to `Boost`, `Qt`, `OpenGl`, and `OpenSceneGraph`.
+On Windows, a package manager is necessary to get all the ubiquitous Linux libraries that we have come to depend on such as `libcurl`, `libiconv`, `gettext` and `pthreads`. In addition, we also need to make available the bigger dependencies starting from `Lapack` all the way to `Boost`, `Qt`, `OpenGl`, and `OpenSceneGraph`.
 
 These instructions are intended to be used with:
 - The `Windows Terminal` terminal.
