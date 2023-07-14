@@ -23,12 +23,18 @@ REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
 
 ifndef OMDEV
-  $(error Environment variable OMDEV not set!)
+$(error Environment variable OMDEV not set!)
 endif
 ifndef OMDEV_MSYS
-  $(error Environment variable OMDEV_MSYS not set!)
+$(error Environment variable OMDEV_MSYS not set!)
 endif
-OM_MSYS_ENV_DIR="$(OMDEV_MSYS)/ucrt64"
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
+endif
+OMDEV          = $(shell cygpath $$OMDEV)
+OMDEV_MSYS     = $(shell cygpath $$OMDEV_MSYS)
+MSYSTEM_PREFIX = $(shell cygpath $$MSYSTEM_PREFIX)
+OM_MSYS_ENV_DIR="$(MSYSTEM_PREFIX)"
 
 CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
@@ -38,16 +44,7 @@ builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
-$(error TODO: $(OMDEV)/lib not compiled for UCRT64!)
-PKG_CONFIG_BIN = $(OMDEV)/lib/gtk+-2.24.10/bin
-
-DBUS_INCLUDE_DIR = $(OM_MSYS_ENV_DIR)/include/dbus-1.0/
-DBUS_INCLUDE_LIB_DIR = $(OM_MSYS_ENV_DIR)/lib/dbus-1.0/include/
-DBUS_PATH = $(OM_MSYS_ENV_DIR)/bin/
-BOOST_PATH = $(OM_MSYS_ENV_DIR)/include
-OSG_PATH = $(OM_MSYS_ENV_DIR)/
 PKG_CONFIG_PATH=$(OM_MSYS_ENV_DIR)/lib/pkgconfig
-OMNIORB_DIR=$(OMDEV)/lib/omniORBpy-4.2.0-win64
 
 ifeq ($(BUILDTYPE),)
 	BUILDTYPE=$(BuildType)
@@ -63,6 +60,9 @@ all: omc testsuite-depends
 
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
+	echo "Using OMDev from: $(OMDEV)"
+	echo "Using Msys from: $(OMDEV_MSYS)"
+	echo "MSYS2 MSYSTEM_PREFIX: $(MSYSTEM_PREFIX)"
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omc-diff:
@@ -229,6 +229,7 @@ testlogwindows:
 
 builddir_lib=$(OMBUILDDIR)/lib
 builddir_share=$(OMBUILDDIR)/share
+OMNIORB_DIR=$(OMDEV)/lib/omniORBpy-4.2.0-win64
 IDLPYTHON = $(OMNIORB_DIR)/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=OMCompiler/Compiler/runtime/omc_communication.idl
@@ -238,6 +239,9 @@ install-python: $(IDLPYTHONTARGET)
 .PHONY: script-files-python
 
 script-files-python: mkbuilddirs-python
+	ifneq (/mingw64,$(MSYSTEM_PREFIX))
+		$(error "omniORB not available for environment $(MSYSTEM_PREFIX)")
+	else
 	# copy library files neeeded by OMPython
 	cp -puf $(OMNIORB_DIR)/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python
 	cp -puf $(OMNIORB_DIR)/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python

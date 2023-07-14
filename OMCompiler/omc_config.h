@@ -39,17 +39,24 @@
 
 #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER))
 /* Windows */
-#if defined(__MINGW64__)
+#if defined(__MINGW64__) && defined(UCRT64) // MSYS with UCRT64
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "ucrt64"
 #define CONFIG_GCC_DUMPMACHINE "x86_64-w64-mingw32"
 #define CONFIG_GCC_VERSION __VERSION__
 
+#elif defined(__MINGW64__)  // MSYS with MINGW64
+
+#define CONFIG_MODELICA_SPEC_PLATFORM "win64"
+#define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw64"
+#define CONFIG_GCC_DUMPMACHINE "x86_64-w64-mingw32"
+#define CONFIG_GCC_VERSION __VERSION__
+
 #elif defined(__MINGW32__)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
-#define CONFIG_OPENMODELICA_SPEC_PLATFORM "ucrt32"
+#define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw32"
 #define CONFIG_GCC_DUMPMACHINE "i686-w64-mingw32"
 #define CONFIG_GCC_VERSION __VERSION__
 

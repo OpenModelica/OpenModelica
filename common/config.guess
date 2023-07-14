@@ -887,10 +887,10 @@ EOF
     i*:CYGWIN*:*)
 	echo "$UNAME_MACHINE"-pc-cygwin
 	exit ;;
-    *:UCRT64)
+		*:MINGW64*:*)
 	echo "$UNAME_MACHINE"-pc-mingw64
 	exit ;;
-    *:MINGW*:*)
+		*:MINGW*:*)
 	echo "$UNAME_MACHINE"-pc-mingw32
 	exit ;;
     *:MSYS*:*)

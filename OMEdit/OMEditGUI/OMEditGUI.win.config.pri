@@ -41,11 +41,11 @@ CONFIG(release, debug|release) { # release
   # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
   QMAKE_LFLAGS_RELEASE =
-  LIBS += -L$$(OMDEV_MSYS)/ucrt64/lib/binutils -L$$(OMDEV_MSYS)/ucrt64/bin
-  INCLUDEPATH += $$(OMDEV_MSYS)/ucrt64/include/binutils
+  LIBS += -L$$(MSYSTEM_PREFIX)/lib/binutils -L$$(MSYSTEM_PREFIX)/bin
+  INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/binutils
   LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 } else { # debug
-  LIBS += -L$$(OMDEV_MSYS)/ucrt64/bin
+  LIBS += -L$$(MSYSTEM_PREFIX)/bin
   LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 }
 LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \

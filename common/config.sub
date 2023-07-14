@@ -374,7 +374,7 @@ case $1 in
 				;;
 			mingw64)
 				basic_machine=x86_64-pc
-				basic_os=ucrt64
+				basic_os=mingw64
 				;;
 			mingw32)
 				basic_machine=i686-pc

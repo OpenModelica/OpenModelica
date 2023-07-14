@@ -134,8 +134,6 @@ export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodel
 export OMDEV="C:\\OMDev"
 ```
 
-Use `MSYSTEM_PREFIX` everywhere???
-
 You can add this to your `.bashrc` file
 (usually in `C:\OMDev\tools\msys64\home\<USERNAME>\.bashrc`), to always have them in your
 `PATH`.
@@ -145,6 +143,8 @@ Additional remarks:
   - MSYS doesn't use the Windows PATH variable.
     If you want to use it define a Windows environment variable called
     `MSYS2_PATH_TYPE=inherit`.
+    But be very careful you don't have any MINGW directories in you Windows PATH, e.g.
+    coming from Git.
   - MSYS doesn't use the Windows TEMP directory but `C:\OMDev\tools\msys64\tmp`
     You change this in `C:\OMDev\tools\msys64\etc\profile`, but it can have unexpected side effects.
   - If you want to use the msys shell from Windows command line  make sure you set

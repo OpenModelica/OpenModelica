@@ -92,7 +92,7 @@ void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
      echo fi
      ) > runTestWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
   """)
@@ -241,7 +241,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
      echo rm -rf ./path\\ with\\ space/
      ) > buildOMCWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
@@ -302,7 +302,7 @@ void buildOMSens() {
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
      ) > buildOMSensWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
   """)
@@ -328,7 +328,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
      ) > buildOMCWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
@@ -361,7 +361,7 @@ void buildGUI(stash, isQt5) {
      echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
@@ -407,7 +407,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
 
-     set MSYSTEM=UCRT64
+     set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
   """)
@@ -450,7 +450,7 @@ void generateTemplates() {
 
 def getVersion() {
   if (isWindows()) {
-  return (bat (script: 'set OMDEV=C:\\OMDev && set OMDEV_MSYS=C:\\OMDev\\tools\\msys64 && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
+  return (bat (script: 'set OMDEV=C:\\OMDev && set OMDEV_MSYS=C:\\OMDev\\tools\\msys64 && set MSYSTEM=MINGW64 && set MSYS2_PATH_TYPE=inherit && %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
   } else {
   return (sh (script: 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*"', returnStdout: true)).replaceAll("\\s","")
   }

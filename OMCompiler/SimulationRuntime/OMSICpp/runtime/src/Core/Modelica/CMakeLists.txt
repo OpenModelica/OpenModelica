@@ -112,16 +112,23 @@ IF(CMAKE_BUILD_TYPE)
 ENDIF(CMAKE_BUILD_TYPE)
 
 IF(WIN32)
+
+	# Check environment variables
+	if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+		message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+	endif()
+	string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
 	IF(MSVC)
-         SET(Boost_LIBS_ "$(OMHOME)/bin/msvc")
-    ELSE(MSVC)
-         SET(Boost_LIBS_ "$(OMHOME)/bin")
-    ENDIF(MSVC)
+		SET(Boost_LIBS_ "$(OMHOME)/bin/msvc")
+	ELSE(MSVC)
+		SET(Boost_LIBS_ "$(OMHOME)/bin")
+	ENDIF(MSVC)
 
 	IF(MSVC)
 		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/omsicpp/3rdParty/boost/msvc/")
 	ELSE(MSVC)
-		SET(Boost_INCLUDE_ "$(OMHOME)/tools/msys64/ucrt64/include/")
+		SET(Boost_INCLUDE_ "$(MSYSTEM_PREFIX_ESCAPED)/include/")
 	ENDIF(MSVC)
 
 	SET(SUNDIALS_LIBS_ "$(OMHOME)/bin")

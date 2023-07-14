@@ -42,6 +42,15 @@ string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 ## by linking to this library you get the include directories.
 add_library(omc_config INTERFACE)
 add_library(omc::config ALIAS omc_config)
+if(WIN32)
+  if(DEFINED ENV{MSYSTEM_PREFIX})
+    string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
+    if(IS_UCRT64)
+      target_compile_definitions(omc_config INTERFACE UCRT64)
+      message(STATUS "omc_config.h: CONFIG_OPENMODELICA_SPEC_PLATFORM=ucrt64")
+    endif()
+  endif()
+endif()
 target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 

@@ -973,16 +973,23 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
 QString Utilities::getGDBPath()
 {
 #if defined(_WIN32)
-#if defined(__MINGW64__)
-  const char *sgdb = "/tools/msys64/ucrt64/bin/gdb.exe";
-#endif
   const char *OMDEV = getenv("OMDEV");
-  if (QString(OMDEV).isEmpty()) {
-    return QString(Helper::OpenModelicaHome).append(sgdb);
-  } else {
-    QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    return QString(qOMDEV).append(sgdb);
+  const char *OMDEV_MSYS = getenv("OMDEV_MSYS");
+  const char *MSYSTEM_PREFIX = getenv("MSYSTEM_PREFIX");
+  // TODO AHeu: Ask Adeel how to handle this
+
+  // OMDEV_MSYS is set
+  if (!QString(OMDEV_MSYS).isEmpty()) {
+    QString qOMDEV_MSYS = QString(OMDEV_MSYS).replace("\\", "/");
+    return QString(qOMDEV_MSYS) + QString(MSYSTEM_PREFIX) + QString("/bin/gdb.exe");
   }
+  // OMDEV is set
+  if (!QString(OMDEV).isEmpty()) {
+    QString qOMDEV = QString(OMDEV).replace("\\", "/");
+    return QString(qOMDEV) + QString(MSYSTEM_PREFIX) + QString("/bin/gdb.exe");
+  }
+  // Default
+  return "gdb";
 #else
   return "gdb";
 #endif
