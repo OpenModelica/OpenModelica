@@ -15848,7 +15848,12 @@ algorithm
 
     case DAE.CREF(componentRef = cr) algorithm
       v := cref2simvar(cr, getSimCode());
-    then Util.getOptionOrDefault(v.nominalValue, DAE.RCONST(1.0));
+      // for now only use nominal value if it's a literal
+      nom1 := match v.nominalValue
+        case SOME(DAE.RCONST(real = nom1)) then nom1;
+        else 1.0;
+      end match;
+    then DAE.RCONST(nom1);
 
     // a + b = (A*as) + (B*bs) = A*(as + B/A*bs) = B*(A/B*as + bs)
     // if A >> B then a+b has nominal value A
@@ -15977,6 +15982,7 @@ algorithm
     then DAE.RCONST(1.0);
 
     // for these just calculate the value
+    // f(a) = f(A*as) = f(A + A*(as-1)) = f(A) + o(A*(as-1))
     case DAE.CALL(path = Absyn.IDENT(name = "sinh"), expLst = {e1}) algorithm
       DAE.RCONST(nom1) := getExpNominal(e1);
     then DAE.RCONST(sinh(nom1));
@@ -15989,14 +15995,17 @@ algorithm
       DAE.RCONST(nom1) := getExpNominal(e1);
     then DAE.RCONST(tanh(nom1));
 
+    // exp(a) = exp(A*as) = exp(A)^as
     case DAE.CALL(path = Absyn.IDENT(name = "exp"), expLst = {e1}) algorithm
       DAE.RCONST(nom1) := getExpNominal(e1);
     then DAE.RCONST(exp(nom1));
 
+    // log(a) = log(A*as) = log(A) + log(as)
     case DAE.CALL(path = Absyn.IDENT(name = "log"), expLst = {e1}) algorithm
       DAE.RCONST(nom1) := getExpNominal(e1);
     then DAE.RCONST(log(nom1));
 
+    // log10(a) = log10(A*as) = log10(A) + log10(as)
     case DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst = {e1}) algorithm
       DAE.RCONST(nom1) := getExpNominal(e1);
     then DAE.RCONST(log10(nom1));
