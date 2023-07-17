@@ -11,7 +11,7 @@
 #include "errorext.h"
 #include "omc_config.h"
 
-const char* findCurlCABundleMsys();
+char* findCurlCABundleMsys();
 
 typedef struct {
   const char *url;
@@ -52,7 +52,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result, int n)
   p->filename = MMC_CDR(first);
   p->tmpFilename = tmpFilename;
 #if defined(__MINGW32__)
-  const char* ca_bundle_file = findCurlCABundleMsys();
+  char* ca_bundle_file = findCurlCABundleMsys();
   if (!ca_bundle_file) {
     *result = 0;
     return rest;
@@ -156,7 +156,7 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
  *
  * @return const char* Path to ca-bundle.crt file on success, NULL on failure.
  */
-const char* findCurlCABundleMsys() {
+char* findCurlCABundleMsys() {
   char* ca_bundle_file = NULL;
   const char* omhome = SettingsImpl__getInstallationDirectoryPath();
   const char* omdev = getenv("OMDEV");
@@ -196,7 +196,7 @@ const char* findCurlCABundleMsys() {
   return NULL;
 }
 #else
-const char* findCurlCABundleMsys() {
+char* findCurlCABundleMsys() {
   return NULL;
 }
 #endif // defined(__MINGW32__)
