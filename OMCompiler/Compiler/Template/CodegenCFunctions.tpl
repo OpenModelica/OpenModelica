@@ -6088,34 +6088,35 @@ case rel as RELATION(__) then
       let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
       let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
       let res = tempDecl("modelica_boolean", &varDecls)
-      match rel.optionExpisASUB
-      case NONE() then
-        if intEq(rel.index,-1) then
-          let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
-          res
-        else
-          let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-          let e1_nom = daeExp(getExpNominal(rel.exp1), context, &preExp, &varDecls, &auxFunction)
-          let e2_nom = daeExp(getExpNominal(rel.exp2), context, &preExp, &varDecls, &auxFunction)
-          let &preExp += if isReal then
-            'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%e1_nom%>, <%e2_nom%>, <%rel.index%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+      if intEq(rel.index,-1) then
+        let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+        res
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.optionExpisASUB
+        case NONE() then
+          if isReal then
+            let tmp1 = tempDecl("modelica_boolean", &varDecls)
+            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+            res
           else
-            'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, <%rel_f%>);<%\n%>'
-          res
-      case SOME((exp,i,j)) then
-        let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-        if intEq(rel.index,-1) then
-          let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
-          res
-        else
-          let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-          let e1_nom = daeExp(getExpNominal(rel.exp1), context, &preExp, &varDecls, &auxFunction)
-          let e2_nom = daeExp(getExpNominal(rel.exp2), context, &preExp, &varDecls, &auxFunction)
-          let &preExp += if isReal then
-            'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%e1_nom%>, <%e2_nom%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+            let &preExp += 'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, <%rel_f%>);<%\n%>'
+            res
+        case SOME((exp,i,j)) then
+          let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+          if isReal then
+            let tmp1 = tempDecl("modelica_boolean", &varDecls)
+            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+            res
           else
-            'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>);<%\n%>'
-          res
+            let &preExp += 'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>);<%\n%>'
+            res
       end match
   case ZEROCROSSINGS_CONTEXT(__) then
     let rel_f = match rel.operator
@@ -6128,33 +6129,47 @@ case rel as RELATION(__) then
       let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
       let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
       let res = tempDecl("modelica_boolean", &varDecls)
-      match rel.optionExpisASUB
-      case NONE() then
-        if intEq(rel.index,-1) then
-          let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
-          res
-        else
-          let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-          let e1_nom = daeExp(getExpNominal(rel.exp1), context, &preExp, &varDecls, &auxFunction)
-          let e2_nom = daeExp(getExpNominal(rel.exp2), context, &preExp, &varDecls, &auxFunction)
-          let hysteresisfunction = if isReal then '<%rel_f%>ZC(<%e1%>, <%e2%>, <%e1_nom%>, <%e2_nom%>, data->simulationInfo->storedRelations[<%rel.index%>])' else '<%rel_f%>(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-      case SOME((exp,i,j)) then
-        if intEq(rel.index,-1) then
-          let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
-          res
-        else
-          let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-          let e1_nom = daeExp(getExpNominal(rel.exp1), context, &preExp, &varDecls, &auxFunction)
-          let e2_nom = daeExp(getExpNominal(rel.exp2), context, &preExp, &varDecls, &auxFunction)
-          let hysteresisfunction = if isReal then '<%rel_f%>ZC(<%e1%>, <%e2%>, <%e1_nom%>, <%e2_nom%>, data->simulationInfo->storedRelations[<%rel.index%>])' else '<%rel_f%>(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-      end match
+      if intEq(rel.index,-1) then
+        let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+        res
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.optionExpisASUB
+        case NONE() then
+          if isReal then
+            let tmp1 = tempDecl("modelica_boolean", &varDecls)
+            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            res
+          else
+            let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+            res
+        case SOME((exp,i,j)) then
+          if isReal then
+            let tmp1 = tempDecl("modelica_boolean", &varDecls)
+            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            res
+          else
+            let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+            res
+        end match
   end match
 end match
 end daeExpRelationSim;
+
+template daeExpNominalTmp(String tmp1, String tmp2, Exp exp1, Exp exp2, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates assignments for nominal values of expression into tmp var"
+::=
+<<
+<%tmp1%> = <%daeExp(getExpNominal(exp1), context, &preExp, &varDecls, &auxFunction)%>;
+<%tmp2%> = <%daeExp(getExpNominal(exp2), context, &preExp, &varDecls, &auxFunction)%>;
+>>
+end daeExpNominalTmp;
 
 template daeExpIf(Exp exp, Context context, Text &preExp,
                   Text &varDecls, Text &auxFunction)
@@ -6169,8 +6184,8 @@ case IFEXP(__) then
   let eElse = daeExp(expElse, context, &preExpElse, &varDecls, &auxFunction)
   let shortIfExp = if preExpThen then "" else if preExpElse then "" else if isArrayType(typeof(exp)) then "" else if isRecordType(typeof(exp)) then "" else "x"
   (if shortIfExp then
-      // Safe to do if eThen and eElse don't emit pre-expressions
-      '(<%condExp%>?<%eThen%>:<%eElse%>)'
+    // Safe to do if eThen and eElse don't emit pre-expressions
+    '(<%condExp%>?<%eThen%>:<%eElse%>)'
   else
     let condVar = tempDecl("modelica_boolean", &varDecls)
     let resVar = tempDeclTuple(typeof(exp), &varDecls)
