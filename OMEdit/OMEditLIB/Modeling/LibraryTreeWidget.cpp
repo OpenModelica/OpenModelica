@@ -144,19 +144,11 @@ void LibraryTreeItem::updateClassInformation()
     // set save contents type
     if (isFilePathValid()) {
       QFileInfo fileInfo(getFileName());
-      // if item has file name as package.mo and is top level then its save folder structure
-      if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
+      // if item has file name as package.mo then its save folder structure
+      if (fileInfo.fileName().compare("package.mo") == 0) {
         setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else if (isTopLevel()) {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       } else {
-        if (mpParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
-          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-        } else if (fileInfo.fileName().compare("package.mo") == 0) {
-          setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-        } else {
-          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-        }
+        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       }
     }
     // handle the Access annotation
