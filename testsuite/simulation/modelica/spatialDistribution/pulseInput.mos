@@ -78,6 +78,8 @@ simulate(pulseInputSpatialDistribution, simflags="-lv=LOG_EVENTS"); getErrorStri
 // LOG_EVENTS        | info    | state event at time=0.9
 // |                 | |       | | [5] integer((time - pulseIn.startTime) / pulseIn.period, 0)
 // |                 | |       | | [4] integer((time - pulseIn.startTime) / pulseIn.period) > pre(pulseIn.count)
+// LOG_EVENTS        | info    | state event at time=1
+// |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
