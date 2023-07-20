@@ -6096,8 +6096,8 @@ case rel as RELATION(__) then
         match rel.optionExpisASUB
         case NONE() then
           if isReal then
-            let tmp1 = tempDecl("modelica_boolean", &varDecls)
-            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
             let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
@@ -6108,8 +6108,8 @@ case rel as RELATION(__) then
         case SOME((exp,i,j)) then
           let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
           if isReal then
-            let tmp1 = tempDecl("modelica_boolean", &varDecls)
-            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
             let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
@@ -6137,8 +6137,8 @@ case rel as RELATION(__) then
         match rel.optionExpisASUB
         case NONE() then
           if isReal then
-            let tmp1 = tempDecl("modelica_boolean", &varDecls)
-            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
             let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
@@ -6148,8 +6148,8 @@ case rel as RELATION(__) then
             res
         case SOME((exp,i,j)) then
           if isReal then
-            let tmp1 = tempDecl("modelica_boolean", &varDecls)
-            let tmp2 = tempDecl("modelica_boolean", &varDecls)
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
             let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
