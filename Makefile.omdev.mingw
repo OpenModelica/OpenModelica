@@ -157,7 +157,7 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpng16-16.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libjpeg-8.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libfreetype-6.dll $(builddir_bin)/
