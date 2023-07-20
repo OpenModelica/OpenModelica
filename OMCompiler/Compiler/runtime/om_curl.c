@@ -11,6 +11,8 @@
 #include "errorext.h"
 #include "omc_config.h"
 
+#define MAX_BUFFER_SIZE 2048
+
 char* findCurlCABundleMsys();
 
 typedef struct {
@@ -151,8 +153,11 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
 /**
  * @brief Try to find curl CA bundle file on msys
  *
- * Searching for ca-bundle.crt in $OPENMODELICAHOME/tools/msys[64]/ssl/certs/ and
- * $OMDEV/tools/msys[64]/ssl/certs/
+ * Searching for ca-bundle.crt in:
+ *   - $OPENMODELICAHOME/tools/msys[64]/usr/ssl/certs/
+ *   - $OPENMODELICAHOME/tools/msys[64]/<environment>/ssl/certs/
+ *   - $OMDEV/tools/msys[64]/usr/ssl/certs/
+ *   - $OMDEV/tools/msys[64]/<environment>/ssl/certs/
  *
  * @return const char* Path to ca-bundle.crt file on success, NULL on failure.
  */
@@ -162,35 +167,56 @@ char* findCurlCABundleMsys() {
   const char* omdev = getenv("OMDEV");
   const char* msys = "tools/msys";
   const char* msys64 = "tools/msys64";
+  const char* environment = CONFIG_OPENMODELICA_SPEC_PLATFORM;
   const char* curl_ca_bundle_suffix = "ssl/certs/ca-bundle.crt";
-  ca_bundle_file = (char*) calloc(sizeof(char), strlen(omhome) + 1 + strlen(msys64) + 1 + strlen(curl_ca_bundle_suffix) + 1 );
+  char buffer[MAX_BUFFER_SIZE] = "";
+  unsigned int length = 0;
+  ca_bundle_file = (char*) calloc(sizeof(char), strlen(omhome) + 1 + strlen(msys64) + 1 + strlen(environment) + 1 + strlen(curl_ca_bundle_suffix) + 1 );
 
-  // Test $OPENMODELICAHOME/tools/msys/ssl/certs/ca-bundle.crt
-  sprintf(ca_bundle_file, "%s/%s/%s", omhome, msys, curl_ca_bundle_suffix);
+  // Test $OPENMODELICAHOME/tools/msys64/usr/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/usr/%s", omhome, msys64, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
     return (const char*) ca_bundle_file;
   }
 
-  // Test $OPENMODELICAHOME/tools/msys64/ssl/certs/ca-bundle.crt
-  sprintf(ca_bundle_file, "%s/%s/%s", omhome, msys64, curl_ca_bundle_suffix);
+  // Test $OPENMODELICAHOME/tools/msys/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omhome, msys, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
     return (const char*) ca_bundle_file;
   }
 
-  // Test $OMDEV/tools/msys64/ssl/certs/ca-bundle.crt
-  sprintf(ca_bundle_file, "%s/%s/%s", omdev, msys64, curl_ca_bundle_suffix);
+  // Test $OPENMODELICAHOME/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omhome, msys64, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
     return (const char*) ca_bundle_file;
   }
 
-  // Test $OMDEV/tools/msys64/ssl/certs/ca-bundle.crt
-  sprintf(ca_bundle_file, "%s/%s/%s", omdev, msys64, curl_ca_bundle_suffix);
+  // Test $OMDEV/tools/msys64/usr/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/usr/%s", omdev, msys64, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
     return (const char*) ca_bundle_file;
   }
 
-  const char* tokens[1] = {ca_bundle_file};
-  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "Couldn't find ca-bundle.crt in %s", tokens, 1);
+  // Test $OMDEV/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omdev, msys64, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return (const char*) ca_bundle_file;
+  }
+
+  // Test $OMDEV/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omdev, msys64, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return (const char*) ca_bundle_file;
+  }
+
+  const char* tokens[1] = {buffer};
+  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "Couldn't find ca-bundle.crt. Searched in:\n%s", tokens, 1);
 
   free(ca_bundle_file);
   return NULL;

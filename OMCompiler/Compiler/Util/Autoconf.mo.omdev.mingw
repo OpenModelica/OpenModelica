@@ -37,7 +37,7 @@ encapsulated package Autoconf
   constant String pathDelimiter = "/";
   constant String groupDelimiter = ";";
 
-  constant String corbaLibs = "-L$(OPENMODELICAHOME)/lib/omc -lomniORB420_rt -lomnithread40_rt";
+  constant String corbaLibs = "";
   constant list<String> systemLibs = {};
 
   constant String triple = "";

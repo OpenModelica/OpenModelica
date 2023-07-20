@@ -8,10 +8,10 @@ EXE_SUFFIX=
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware -L$(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/lib/x86_win32
+	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware
 	ISMINGW64 = false
 else
-	EXTRA_LD_FLAGS = -Wl,--stack,33554432 -L$(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/lib/x86_win32
+	EXTRA_LD_FLAGS = -Wl,--stack,33554432
 	ISMINGW64 = true
 endif
 
@@ -22,11 +22,13 @@ OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
 ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
-	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 	override CFLAGS += -fno-ipa-pure-const
 else
 	IS_NEW_OMDEV = true
-	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn2 -lpsl  -lbrotlienc-static -lbrotlidec-static -lbrotlicommon-static -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+# TODO AHeu: curl needs bcrypt?
+# Do we need to handle this differently for MINGW64 and UCRT64?
+	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn2 -lpsl  -lbrotlienc -lbrotlidec -lbrotlicommon -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -lbcrypt -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 endif
 
 TOP_DIR=../../
@@ -41,7 +43,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lomantlr3 -lregex -lwsock32 -luuid -lole32 -lws2_32 -limagehlp \
 -lRpcrt4 -lopenblas -fopenmp -lomcgc -lryu -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic -static-libgcc \
--lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
+-lgfortran -ltre \
 -lzmq \
 $(OMENCRYPTIONLIBS) \
 $(LDFLAGS_CURL) \

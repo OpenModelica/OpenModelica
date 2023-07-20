@@ -41,6 +41,8 @@
 /* Windows */
 #if defined(__MINGW64__) && defined(UCRT64) // MSYS with UCRT64
 
+// TODO AHeu: I don't like this.
+// It's too easy to forget to define UCRT64 and to end up with super strange errors.
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "ucrt64"
 #define CONFIG_GCC_DUMPMACHINE "x86_64-w64-mingw32"

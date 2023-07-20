@@ -15,10 +15,6 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 LIBSOCKET = -lwsock32
 
 SHELL	= /bin/sh
-override CFLAGS	+= $(USE_CORBA)
-
-USE_CORBA = -DUSE_CORBA
-CORBAHOME = $(OMDEV)
 
 SCRIPT_FILES = Compile.bat Prompt.bat openmodelica.lefty default_profiling.xsl replace-startValue.* simcodedump.xsl ngspicetoModelica.py
 

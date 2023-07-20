@@ -7,9 +7,16 @@ ifndef OMDEV
 	@echo See OpenModelica/OMCompiler/README.Windows.md
 	ABORT
 endif
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
+endif
+
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 
 TOP_DIR=../../
 USE_METIS = -DUSE_METIS
+# We don't compile with corba on OMDev-mingw any more
+USE_CORBA =
 CORBAHOME = $(OMDEV)
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
@@ -24,22 +31,28 @@ OMC=$(OMBUILDDIR)/bin/omc
 SHREXT=.a
 OMPCC = gcc -fopenmp
 
-# We always compile with corba on OMDev-mingw
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
-CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
-IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
-else # 64 bit
-USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
-CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
-IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+ifdef USE_CORBA
+	ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+		CORBA_C_CLFAGS = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
+		CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
+		IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+	else # 64 bit
+		CORBA_C_CLFAGS = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
+		CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
+		IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+	endif
+	OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
+else
+	CORBA_C_CLFAGS =
+  CORBAINCL =
+  OMCCORBASRC = corbaimpl_stub_omc.o
+	IDL =
 endif
-OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 
 SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
-override CFLAGS += $(USE_CORBA) $(USE_METIS) -Werror=implicit-function-declaration -Wall -Wno-unused-variable -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE) -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/" -DWIN32_LEAN_AND_MEAN
+override CFLAGS += $(CORBA_C_CLFAGS) $(USE_METIS) -Werror=implicit-function-declaration -Wall -Wno-unused-variable -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE) -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/" -DWIN32_LEAN_AND_MEAN
 override CXXFLAGS += -std=c++11 $(CFLAGS)
 
 include Makefile.common

@@ -35,7 +35,7 @@ MSYS2 with the installer in `C:\OMDEV\tools\msys64`.
 
 ## 1.2 Install MSYS2
 
-These are the UCRT64 packages needed to build OpenModelica:
+These are the UCRT64 packages needed to build OpenModelica with CMake:
 
   - zip
   - unzip
@@ -56,6 +56,11 @@ These are the UCRT64 packages needed to build OpenModelica:
   - mingw-w64-ucrt-x86_64-winpthreads-git
   - mingw-w64-ucrt-x86_64-opencl-headers
   - mingw-w64-ucrt-x86_64-openblas
+
+In addition the following packages are needed for the Makefile build:
+
+  - mingw-w64-ucrt-x86_64-autotools
+  - mingw-w64-ucrt-x86_64-openmp
 
 Optional packages for GUI (e.g OMEdit):
 
@@ -81,6 +86,10 @@ Optional compiler
 
   -  mingw-w64-ucrt-x86_64-clang
 
+Optional packages for OmniORB(?):
+
+  - mingw-w64-ucrt-x86_64-libidl2
+
 Start the bash command line with the UCRT64 environment `C:\OMDev\tools\msys64\ucrt64.exe`
 and use `pacman` to install the packages:
 
@@ -100,7 +109,9 @@ pacman -S zip unzip make libtool flex   \
   mingw-w64-ucrt-x86_64-libsystre       \
   mingw-w64-ucrt-x86_64-winpthreads-git \
   mingw-w64-ucrt-x86_64-opencl-headers  \
-  mingw-w64-ucrt-x86_64-openblas
+  mingw-w64-ucrt-x86_64-openblas        \
+  mingw-w64-ucrt-x86_64-autotools       \
+  mingw-w64-ucrt-x86_64-openmp
 # Optional
 pacman -S mingw-w64-ucrt-x86_64-qt5     \
   mingw-w64-ucrt-x86_64-qtwebkit        \

@@ -14,6 +14,30 @@ endif
 
 override FCFLAGS +=-fallow-argument-mismatch
 
+defaultMakefileTarget = Makefile.omdev.mingw
+REALPATH = $(realpath .)
+OMBUILDDIR=$(REALPATH)/build
+
+ifndef OMDEV
+$(error Environment variable OMDEV not set!)
+endif
+ifndef OMDEV_MSYS
+$(error Environment variable OMDEV_MSYS not set!)
+endif
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
+endif
+OMDEV           = $(shell cygpath $$OMDEV)
+OMDEV_MSYS      = $(shell cygpath $$OMDEV_MSYS)
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
+OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
+
+# Define UCRT64 for omc_config.h
+ifeq (ucrt64,$(findstring ucrt64,$(MSYSTEM_PREFIX)))
+override CFLAGS += -DUCRT64
+endif
+
+
 # makefile for Windows MinGW OMDev
 all : .testvariables settings omc
 
@@ -50,7 +74,7 @@ docdir = ${prefix}/doc
 
 MSGPACK_CFLAGS = -march=i686
 
-CMAKE = CC="$(CC)" CXX="$(CXX)" FC="$(FC)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" FFLAGS="$(FCFLAGS)" LDFLAGS="$(LDFLAGS)" $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE = CC="$(CC)" CXX="$(CXX)" FC="$(FC)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" FFLAGS="$(FCFLAGS)" LDFLAGS="$(LDFLAGS)" cmake.exe
 CMAKE_NO_CHECK_UNDEFINED = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
@@ -231,40 +255,38 @@ else # 64-bit MSYS
   # build 64 bit libOpenCL.a
 	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
 	test ! -f $(WROOT)/system32/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgomp-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgfortran*.dll $(builddir_bin)/)
+
+	echo "AHeu: OM_MSYS_ENV_DIR: $(OM_MSYS_ENV_DIR)"
+
+  # This is rediculus! Just use CMake to install dependencies instead of copying random DLLs.
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libexpat-1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libopenblas.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)
-	ifneq (/mingw64,$(MSYSTEM_PREFIX))
-		$(error "No omiORB for environment $(MSYSTEM_PREFIX) available")
-	else
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
-	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgfortran*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libgomp-1.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libopenblas.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libp11-kit*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/) || (cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
+
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
-	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
-	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
+# TODO AHeu: Do we need BLAS and LAPACK? We have it in 3rdParty
+#	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
+#	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
 	mkdir -p $(builddir_lib)/omc/libexec/
-	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
-	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
+# TODO AHeu: What is this?
+#	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
+#	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
 copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory

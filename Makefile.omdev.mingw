@@ -31,10 +31,10 @@ endif
 ifndef MSYSTEM_PREFIX
 $(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
-OMDEV          = $(shell cygpath $$OMDEV)
-OMDEV_MSYS     = $(shell cygpath $$OMDEV_MSYS)
-MSYSTEM_PREFIX = $(shell cygpath $$MSYSTEM_PREFIX)
-OM_MSYS_ENV_DIR="$(MSYSTEM_PREFIX)"
+OMDEV           = $(shell cygpath $$OMDEV)
+OMDEV_MSYS      = $(shell cygpath $$OMDEV_MSYS)
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
+OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
 
 CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
@@ -100,16 +100,9 @@ omparser:
 	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsimulator:
-	mkdir -p OMSimulator/build
-	cd OMSimulator/build && cmake .. \
-		-G $(CMAKE_TARGET) \
-		-DCMAKE_VERBOSE_MAKEFILE=ON \
-		-DCMAKE_INSTALL_PREFIX=../install
-	$(MAKE) -C OMSimulator/build/ install
-	cp -vpPR OMSimulator/install/include/OMSimulator/ $(OMBUILDDIR)/include/omc
-	cp -vpPR OMSimulator/install/bin/* $(OMBUILDDIR)/bin
-	cp -vpPR OMSimulator/install/share/OMSimulator/ $(OMBUILDDIR)/share
-	cp -vpPR OMSimulator/install/lib/* $(OMBUILDDIR)/lib/omc/
+	$(MAKE) -C OMSimulator config-3rdParty CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
+	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -185,7 +178,6 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
 
-
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
 	rm -f $(OMBUILDDIR)/lib/libOMPlot.a $(OMBUILDDIR)/lib/libOMOptimBasis.a $(OMBUILDDIR)/lib/libOMOptim.a
@@ -229,47 +221,8 @@ testlogwindows:
 
 builddir_lib=$(OMBUILDDIR)/lib
 builddir_share=$(OMBUILDDIR)/share
-OMNIORB_DIR=$(OMDEV)/lib/omniORBpy-4.2.0-win64
-IDLPYTHON = $(OMNIORB_DIR)/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
-IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
-IDLFILE=OMCompiler/Compiler/runtime/omc_communication.idl
-
-install-python: $(IDLPYTHONTARGET)
 
 .PHONY: script-files-python
-
-script-files-python: mkbuilddirs-python
-	ifneq (/mingw64,$(MSYSTEM_PREFIX))
-		$(error "omniORB not available for environment $(MSYSTEM_PREFIX)")
-	else
-	# copy library files neeeded by OMPython
-	cp -puf $(OMNIORB_DIR)/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python
-	cp -puf $(OMNIORB_DIR)/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python
-	cp -puf $(OMNIORB_DIR)/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/
-	cp -puf $(OMNIORB_DIR)/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/
-	# copy OMPython files
-	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
-	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython
-
-$(IDLPYTHONTARGET) : $(IDLFILE) script-files-python
-	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/PythonInterface $(IDLFILE)
-
-mkbuilddirs-python:
-	# create directories
-	mkdir -p $(builddir_lib)/python/omniORB
-	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
-
-clean-python:
-	rm -rf $(builddir_share)/omc/scripts/PythonInterface $(builddir_lib)/python
 
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
