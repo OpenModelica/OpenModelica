@@ -15852,7 +15852,12 @@ algorithm
     then match v.nominalValue
       case SOME(DAE.RCONST(r1)) then DAE.RCONST(abs(r1));
       case SOME(e1) then Expression.makePureBuiltinCall("abs", {e1}, t);
-      else DAE.RCONST(1.0);
+      case NONE() then match v.varKind
+        // for parameters use their actual value
+        case BackendDAE.PARAM() then Expression.makePureBuiltinCall("abs", {expr}, t);
+        else DAE.RCONST(1.0);
+        // TODO use min/max to deduce better nominal value than 1.
+      end match;
     end match;
 
     // a + b = (A*as) + (B*bs) = (A+B)*(A/(A+B)*as + B/(A+B)*bs)
