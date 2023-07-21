@@ -150,6 +150,10 @@ void LibraryTreeItem::updateClassInformation()
       } else {
         setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       }
+      // If item is not top level, parentItem needs to be considered
+      if (!isTopLevel() && (mpParentLibraryTreeItem->getFileName().compare("package.mo") == 0)) {
+        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      }
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
