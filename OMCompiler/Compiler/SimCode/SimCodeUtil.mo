@@ -15833,76 +15833,79 @@ public function getExpNominal
   "Returns the nominal value of an expression.
   Used to scale zero-crossings like `a > b`."
   input DAE.Exp expr;
-  output DAE.Exp nom;
+  output DAE.Exp nominal;
 algorithm
-  nom := match expr
+  nominal := match expr
     local
       DAE.ComponentRef cr;
       SimCodeVar.SimVar v;
-      Real nom1, nom2;
+      Real r1, r2;
       DAE.Exp e1, e2;
+      DAE.Type t;
 
     // for const 0 use zero nominal to not saturate the rest of the expression
-    case DAE.ICONST() then DAE.RCONST(intReal(expr.integer));
-    case DAE.RCONST() then expr;
+    case DAE.ICONST() then DAE.RCONST(abs(intReal(expr.integer)));
+    case DAE.RCONST() then DAE.RCONST(abs(expr.real));
 
-    case DAE.CREF(componentRef = cr) algorithm
+    case DAE.CREF(componentRef = cr, ty = t) algorithm
       v := cref2simvar(cr, getSimCode());
-      // for now only use nominal value if it's a literal
-      nom1 := match v.nominalValue
-        case SOME(DAE.RCONST(real = nom1)) then nom1;
-        else 1.0;
+    then match v.nominalValue
+      case SOME(DAE.RCONST(r1)) then DAE.RCONST(abs(r1));
+      case SOME(e1) then Expression.makePureBuiltinCall("abs", {e1}, t);
+      case NONE() then match v.varKind
+        // for parameters use their actual value
+        case BackendDAE.PARAM() then Expression.makePureBuiltinCall("abs", {expr}, t);
+        else DAE.RCONST(1.0);
+        // TODO use min/max to deduce better nominal value than 1.
       end match;
-    then DAE.RCONST(nom1);
+    end match;
 
-    // a + b = (A*as) + (B*bs) = A*(as + B/A*bs) = B*(A/B*as + bs)
-    // if A >> B then a+b has nominal value A
-    // if A << B then a+b has nominal value B
+    // a + b = (A*as) + (B*bs) = (A+B)*(A/(A+B)*as + B/(A+B)*bs)
     // FIXME if A = B and a and b have opposite signs then the nominal value of
-    //   a+b may be arbitrarily small, but it's definitely smaller than max(A,B)
-    case DAE.BINARY(operator = DAE.ADD()) algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.exp1);
-      DAE.RCONST(nom2) := getExpNominal(expr.exp2);
-    then DAE.RCONST(max(abs(nom1), abs(nom2)));
+    //   a+b may be arbitrarily small, but it's definitely smaller than A+B
+    case DAE.BINARY(operator = DAE.ADD(ty = t))
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
 
     // similar to DAE.ADD
-    case DAE.BINARY(operator = DAE.SUB()) algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.exp1);
-      DAE.RCONST(nom2) := getExpNominal(expr.exp2);
-    then DAE.RCONST(max(abs(nom1), abs(nom2)));
+    case DAE.BINARY(operator = DAE.SUB(ty = t))
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
+      case (e1, e2) then DAE.BINARY(e1, DAE.ADD(t), e2);
+    end match;
 
     // a*b = (A*as)*(B*bs) = (A*B)*(as*bs)
-    case DAE.BINARY(operator = DAE.MUL()) algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.exp1);
-      DAE.RCONST(nom2) := getExpNominal(expr.exp2);
-    then DAE.RCONST(nom1 * nom2);
+    case DAE.BINARY(operator = DAE.MUL())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1*r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
 
     // a/b = (A*as)/(B*bs) = (A/B)*(as/bs)
-    case DAE.BINARY(operator = DAE.DIV()) algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.exp1);
-      DAE.RCONST(nom2) := getExpNominal(expr.exp2);
-      Error.assertion(nom2 <> 0.0, getInstanceName() + " failed because nominal"
-        + " value of denominator `" + ExpressionDump.printExpStr(expr.exp2)
-        + "` is zero.", sourceInfo());
-    then DAE.RCONST(nom1 / nom2);
+    case DAE.BINARY(operator = DAE.DIV())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1/r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
 
     // a^b = (A*as)^(B*bs) = (A^B)^bs * (as)^(B*bs)
-    case DAE.BINARY(operator = DAE.POW()) algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.exp1);
-      DAE.RCONST(nom2) := getExpNominal(expr.exp2);
-    then DAE.RCONST(abs(nom1) ^ abs(nom2));
+    case DAE.BINARY(operator = DAE.POW())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1^r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
 
     // -a = -(A*as) = A*(-as)
     case DAE.UNARY(operator = DAE.UMINUS())
     then getExpNominal(expr.exp);
 
-    // TODO change nominal value depending on the branch, complicates things
-    // choosing the maximum is arbitrary
-    case DAE.IFEXP() algorithm
-      DAE.RCONST(nom1) := getExpNominal(expr.expThen);
-      DAE.RCONST(nom2) := getExpNominal(expr.expElse);
-    then DAE.RCONST(max(nom1, nom2));
+    // if cond then a else b = if cond then A*as else B*bs
+    case DAE.IFEXP()
+    then DAE.IFEXP(expr.expCond, getExpNominal(expr.expThen), getExpNominal(expr.expElse));
 
+    // |a| = |A*as| = A*|as|
     case DAE.CALL(path = Absyn.IDENT(name = "abs"), expLst = {e1})
     then getExpNominal(e1);
 
@@ -15911,48 +15914,45 @@ algorithm
     then DAE.RCONST(1.0);
 
     // sqrt(a) = sqrt(A*as) = sqrt(A)*sqrt(as)
-    case DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(sqrt(abs(nom1)));
+    case DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(sqrt(r1));
+      case e2 then Expression.makePureBuiltinCall("sqrt", {e2}, t);
+    end match;
 
     // div(a, b) is approximately a/b as long as a >> b
-    case DAE.CALL(path = Absyn.IDENT(name = "div"), expLst = {e1, e2}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-      DAE.RCONST(nom2) := getExpNominal(e2);
-      Error.assertion(nom2 <> 0.0, getInstanceName() + " failed because nominal"
-        + " value of divisor `" + ExpressionDump.printExpStr(e2) + "` is zero.",
-        sourceInfo());
-    then DAE.RCONST(max(1.0, abs(nom1 / nom2)));
+    case DAE.CALL(path = Absyn.IDENT(name = "div"), expLst = {e1, e2})
+    then match (getExpNominal(e1), getExpNominal(e2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(max(1.0, abs(r1 / r2)));
+      else DAE.RCONST(1.0);
+    end match;
 
     // mod(a, b) has values in [0, b]
-    case DAE.CALL(path = Absyn.IDENT(name = "mod"), expLst = {_, e2}) algorithm
-      DAE.RCONST(nom2) := getExpNominal(e2);
-      Error.assertion(nom2 <> 0.0, getInstanceName() + " failed because nominal"
-        + " value of divisor `" + ExpressionDump.printExpStr(e2) + "` is zero.",
-        sourceInfo());
-    then DAE.RCONST(nom2);
+    case DAE.CALL(path = Absyn.IDENT(name = "mod"), expLst = {_, e2})
+    then match getExpNominal(e2)
+      case DAE.RCONST(r2) then DAE.RCONST(r2);
+      else DAE.RCONST(1.0);
+    end match;
 
     // rem(a, b) has values in [-b, b]
-    case DAE.CALL(path = Absyn.IDENT(name = "rem"), expLst = {_, e2}) algorithm
-      DAE.RCONST(nom2) := getExpNominal(e2);
-      Error.assertion(nom2 <> 0.0, getInstanceName() + " failed because nominal"
-        + " value of divisor `" + ExpressionDump.printExpStr(e2) + "` is zero.",
-        sourceInfo());
-    then DAE.RCONST(nom2);
+    case DAE.CALL(path = Absyn.IDENT(name = "rem"), expLst = {_, e2})
+    then match getExpNominal(e2)
+      case DAE.RCONST(r2) then DAE.RCONST(r2);
+      else DAE.RCONST(1.0);
+    end match;
 
-    // ceil(a) is approximately a
+    // ceil(a) is approximately a as long as a >> 0
     case DAE.CALL(path = Absyn.IDENT(name = "ceil"), expLst = {e1})
     then getExpNominal(e1);
 
-    // floor(a) is approximately a
+    // floor(a) is approximately a as long as a >> 0
     case DAE.CALL(path = Absyn.IDENT(name = "floor"), expLst = {e1})
     then getExpNominal(e1);
 
     // sin(a) has values in [-1, 1]
-    // for a << 1, sin(a) is approximately a
-    case DAE.CALL(path = Absyn.IDENT(name = "sin"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(min(abs(nom1), 1.0));
+    // TODO for a << 1, sin(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "sin"))
+    then DAE.RCONST(1.0);
 
     // cos(a) has values in [-1, 1]
     case DAE.CALL(path = Absyn.IDENT(name = "cos"))
@@ -15972,10 +15972,9 @@ algorithm
     then DAE.RCONST(1.0);
 
     // atan(a) has values in [-pi/2, pi/2]
-    // for a << 1, atan(a) is approximately a
-    case DAE.CALL(path = Absyn.IDENT(name = "atan"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(min(abs(nom1), 1.0));
+    // TODO for a << 1, atan(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "atan"))
+    then DAE.RCONST(1.0);
 
     // atan2(a,b) has values in [-pi, pi]
     case DAE.CALL(path = Absyn.IDENT(name = "atan"))
@@ -15983,32 +15982,44 @@ algorithm
 
     // for these just calculate the value
     // f(a) = f(A*as) = f(A + A*(as-1)) = f(A) + o(A*(as-1))
-    case DAE.CALL(path = Absyn.IDENT(name = "sinh"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(sinh(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "sinh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(sinh(r1));
+      case e2 then Expression.makePureBuiltinCall("sinh", {e2}, t);
+    end match;
 
-    case DAE.CALL(path = Absyn.IDENT(name = "cosh"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(cosh(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "cosh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(cosh(r1));
+      case e2 then Expression.makePureBuiltinCall("cosh", {e2}, t);
+    end match;
 
-    case DAE.CALL(path = Absyn.IDENT(name = "tanh"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(tanh(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "tanh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(tanh(r1));
+      case e2 then Expression.makePureBuiltinCall("tanh", {e2}, t);
+    end match;
 
     // exp(a) = exp(A*as) = exp(A)^as
-    case DAE.CALL(path = Absyn.IDENT(name = "exp"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(exp(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "exp"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(exp(r1));
+      case e2 then Expression.makePureBuiltinCall("exp", {e2}, t);
+    end match;
 
     // log(a) = log(A*as) = log(A) + log(as)
-    case DAE.CALL(path = Absyn.IDENT(name = "log"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(log(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "log"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(log(r1));
+      case e2 then Expression.makePureBuiltinCall("log", {e2}, t);
+    end match;
 
     // log10(a) = log10(A*as) = log10(A) + log10(as)
-    case DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst = {e1}) algorithm
-      DAE.RCONST(nom1) := getExpNominal(e1);
-    then DAE.RCONST(log10(nom1));
+    case DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(log10(r1));
+      case e2 then Expression.makePureBuiltinCall("log10", {e2}, t);
+    end match;
 
     else DAE.RCONST(1.0);
   end match;
