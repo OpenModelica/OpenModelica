@@ -1,0 +1,8 @@
+/* read two values, do a while, print some values */
+read x y;
+
+while x <> 99 do
+  ans := (x+1) - (y/3);
+  write ans;
+  read x y;
+end

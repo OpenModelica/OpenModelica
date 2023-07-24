@@ -1,0 +1,1 @@
+There is no actual input, but all other testcases use it so a file is included to make the Makefile simpler

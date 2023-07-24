@@ -1,0 +1,58 @@
+ifdef OMDEV
+FPIC=
+else
+FPIC=-fPIC
+endif
+
+ifndef OPENMODELICAHOME
+CFLAGS = -I'../../../../build/include/omc/c' $(FPIC)
+OMC = ../../../../build/bin/omc
+else
+CFLAGS = -I'$(OPENMODELICAHOME)/include/omc/c' $(FPIC)
+OMC = ${OPENMODELICAHOME}/bin/omc
+endif
+
+CC = gcc
+.SUFFIXES : .mo .tpl
+run: run2 clean
+
+deps: $(DEPS)
+
+TEST = $(shell if [ -f ../../../rtest ]; then echo ../../../rtest; else echo $(OMC); fi)
+
+# LEXER
+
+lexer.o:  lexer.c parser.h
+lexer.c:  lexer.l
+	flex -t -l lexer.l >lexer.c.tmp
+	@mv lexer.c.tmp lexer.c
+
+# PARSER
+
+parser.o: parser.c parser.h
+parser.h: parser.c
+parser.c:  parser.y
+	bison -d parser.y
+	@mv parser.tab.c parser.c
+	@mv parser.tab.h parser.h
+
+clean:
+	@rm -f $(CLEAN) *.o *.so *.dll *.exe parser.c parser.h lexer.c rtest *~
+
+run2: deps
+	@echo "***   program   ***"
+	@cat program.txt
+	@echo "*** end program ***"
+	$(OMC) SCRIPT.mos
+
+test: test2
+
+test2: deps
+	$(TEST) $(SOLUTIONS)
+	@rm -f $(CLEAN) *.o *.so *.dll *.exe parser.c parser.h lexer.c rtest *~
+
+test-noclean: $(DEPS)
+	$(TEST) $(SOLUTIONS)
+
+%.mo: %.tpl
+	$(OMC) $<
