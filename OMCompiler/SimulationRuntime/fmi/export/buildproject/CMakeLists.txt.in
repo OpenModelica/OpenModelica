@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
-project(${FMU_NAME})
+project(${FMU_NAME} C)
 
 # FMU compilation options
 set(BUILD_SHARED_LIBS
@@ -29,7 +29,7 @@ set(CVODE_DIRECTORY
 # Test if RUNTIME_DEPENDENCIES is needed and available
 if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
   message(FATAL_ERROR
-          "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requiers CMake version 3.21 or higher.\n"
+          "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requires CMake version 3.21 or higher.\n"
           "You are running version ${CMAKE_VERSION}.\n"
           "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
 endif()
@@ -113,7 +113,7 @@ add_library(${FMU_NAME}
 
 # Linker options
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
+  if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
     target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:-undefined,error")
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")  # Using GCC
     target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
