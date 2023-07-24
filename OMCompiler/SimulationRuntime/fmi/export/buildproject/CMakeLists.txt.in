@@ -115,7 +115,7 @@ add_library(${FMU_NAME}
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
   if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
     target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:-undefined,error")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")  # Using GCC
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")  # Using GCC
     target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
   endif()
 endif()
