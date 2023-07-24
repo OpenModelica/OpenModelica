@@ -100,9 +100,9 @@ omparser:
 	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
-	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
+	$(MAKE) -C OMSimulator config-3rdParty CC="gcc" CXX="g++" OMTLM=OFF CERES=OFF
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="gcc" CXX="g++" OMTLM=OFF
+	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="gcc" CXX="g++" OMTLM=OFF
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -230,4 +230,4 @@ clean:
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
-	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode
+	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode/
