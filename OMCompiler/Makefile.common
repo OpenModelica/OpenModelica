@@ -51,7 +51,7 @@ $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
 # Silence unnecessary verbose install messages from CMAKE
-CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
+CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
 OMC_TBB_ROOT = 3rdParty/tbb

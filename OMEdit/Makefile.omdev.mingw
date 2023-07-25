@@ -23,7 +23,10 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_share=$(OMBUILDDIR)/share/
 resourcedir=./OMEditLIB/Resources/nls/
 CONFIG_DEFAULT_OPENMODELICAHOME = "$(OMBUILDDIR)/"
-LSB_RELEASE = $(shell cmd /c "ver")
+# Ugly hack because calling cmd /c "ver" doesn't close the command prompt on some version of MSYS2
+# Automatic path conversion is converting /c to C:\\
+# See https://github.com/msys2/MSYS2-packages/issues/2310
+LSB_RELEASE = $(shell MSYS2_ARG_CONV_EXCL=/c cmd /c ver)
 
 NAME=OMEdit
 EXE=.exe

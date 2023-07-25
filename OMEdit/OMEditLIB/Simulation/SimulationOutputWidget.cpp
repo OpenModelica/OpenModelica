@@ -56,7 +56,9 @@
 #include <QClipboard>
 #include <QDesktopServices>
 
+extern "C" {
 extern const char* System_openModelicaPlatform();
+}
 
 /*!
  * \class SimulationOutputTree
