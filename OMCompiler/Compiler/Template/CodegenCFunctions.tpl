@@ -5996,43 +5996,43 @@ case rel as RELATION(__) then
     let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
     match rel.operator
 
-    case LESS(ty = T_BOOL(__))             then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = T_STRING(__))           then '(stringCompare(<%e1%>, <%e2%>) < 0)'
-    case LESS(ty = T_INTEGER(__))          then '(<%e1%> < <%e2%>)'
-    case LESS(ty = T_REAL(__))             then '(<%e1%> < <%e2%>)'
-    case LESS(ty = T_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_BOOL(__))             then '!<%e1%> && <%e2%>'
+    case LESS(ty = T_STRING(__))           then 'stringCompare(<%e1%>, <%e2%>) < 0'
+    case LESS(ty = T_INTEGER(__))          then '<%e1%> < <%e2%>'
+    case LESS(ty = T_REAL(__))             then '<%e1%> < <%e2%>'
+    case LESS(ty = T_ENUMERATION(__))      then '<%e1%> < <%e2%>'
 
-    case GREATER(ty = T_BOOL(__))          then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = T_STRING(__))        then '(stringCompare(<%e1%>, <%e2%>) > 0)'
-    case GREATER(ty = T_INTEGER(__))       then '(<%e1%> > <%e2%>)'
-    case GREATER(ty = T_REAL(__))          then '(<%e1%> > <%e2%>)'
-    case GREATER(ty = T_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = T_BOOL(__))          then '<%e1%> && !<%e2%>'
+    case GREATER(ty = T_STRING(__))        then 'stringCompare(<%e1%>, <%e2%>) > 0'
+    case GREATER(ty = T_INTEGER(__))       then '<%e1%> > <%e2%>'
+    case GREATER(ty = T_REAL(__))          then '<%e1%> > <%e2%>'
+    case GREATER(ty = T_ENUMERATION(__))   then '<%e1%> > <%e2%>'
 
-    case LESSEQ(ty = T_BOOL(__))           then '(!<%e1%> || <%e2%>)'
-    case LESSEQ(ty = T_STRING(__))         then '(stringCompare(<%e1%>, <%e2%>) <= 0)'
-    case LESSEQ(ty = T_INTEGER(__))        then '(<%e1%> <= <%e2%>)'
-    case LESSEQ(ty = T_REAL(__))           then '(<%e1%> <= <%e2%>)'
-    case LESSEQ(ty = T_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_BOOL(__))           then '!<%e1%> || <%e2%>'
+    case LESSEQ(ty = T_STRING(__))         then 'stringCompare(<%e1%>, <%e2%>) <= 0'
+    case LESSEQ(ty = T_INTEGER(__))        then '<%e1%> <= <%e2%>'
+    case LESSEQ(ty = T_REAL(__))           then '<%e1%> <= <%e2%>'
+    case LESSEQ(ty = T_ENUMERATION(__))    then '<%e1%> <= <%e2%>'
 
-    case GREATEREQ(ty = T_BOOL(__))        then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = T_STRING(__))      then '(stringCompare(<%e1%>, <%e2%>) >= 0)'
-    case GREATEREQ(ty = T_INTEGER(__))     then '(<%e1%> >= <%e2%>)'
-    case GREATEREQ(ty = T_REAL(__))        then '(<%e1%> >= <%e2%>)'
-    case GREATEREQ(ty = T_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = T_BOOL(__))        then '<%e1%> || !<%e2%>'
+    case GREATEREQ(ty = T_STRING(__))      then 'stringCompare(<%e1%>, <%e2%>) >= 0'
+    case GREATEREQ(ty = T_INTEGER(__))     then '<%e1%> >= <%e2%>'
+    case GREATEREQ(ty = T_REAL(__))        then '<%e1%> >= <%e2%>'
+    case GREATEREQ(ty = T_ENUMERATION(__)) then '<%e1%> >= <%e2%>'
 
-    case EQUAL(ty = T_BOOL(__))            then '(!<%e1%> == !<%e2%>)' /* the ! converts to bool if not already */
-    case EQUAL(ty = T_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
-    case EQUAL(ty = T_INTEGER(__))         then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_BOOL(__))            then '!<%e1%> == !<%e2%>' /* the ! converts to bool if not already */
+    case EQUAL(ty = T_STRING(__))          then 'stringEqual(<%e1%>, <%e2%>)'
+    case EQUAL(ty = T_INTEGER(__))         then '<%e1%> == <%e2%>'
+    case EQUAL(ty = T_REAL(__))            then '<%e1%> == <%e2%>'
+    case EQUAL(ty = T_ENUMERATION(__))     then '<%e1%> == <%e2%>'
     //case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
-    case EQUAL(ty = T_ARRAY(__))           then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_ARRAY(__))           then '<%e1%> == <%e2%>'
 
-    case NEQUAL(ty = T_BOOL(__))           then '(!<%e1%> != !<%e2%>)' /* the ! converts to bool if not already */
-    case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
-    case NEQUAL(ty = T_INTEGER(__))        then '(<%e1%> != <%e2%>)'
-    case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
-    case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = T_BOOL(__))           then '!<%e1%> != !<%e2%>' /* the ! converts to bool if not already */
+    case NEQUAL(ty = T_STRING(__))         then '!stringEqual(<%e1%>, <%e2%>)'
+    case NEQUAL(ty = T_INTEGER(__))        then '<%e1%> != <%e2%>'
+    case NEQUAL(ty = T_REAL(__))           then '<%e1%> != <%e2%>'
+    case NEQUAL(ty = T_ENUMERATION(__))    then '<%e1%> != <%e2%>'
 
     else error(sourceInfo(), 'daeExpRelation <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 else error(sourceInfo(), 'daeExpRelation: Input expression not a DAE.RELATION ')
