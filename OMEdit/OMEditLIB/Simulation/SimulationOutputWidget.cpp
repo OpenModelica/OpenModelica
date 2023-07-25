@@ -56,7 +56,7 @@
 #include <QClipboard>
 #include <QDesktopServices>
 
-#include "omc_config.h"
+extern const char* System_openModelicaPlatform();
 
 /*!
  * \class SimulationOutputTree
@@ -577,7 +577,7 @@ void SimulationOutputWidget::compileModel()
   SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   args << mSimulationOptions.getOutputFileName()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
-       << CONFIG_OPENMODELICA_SPEC_PLATFORM << "parallel" << linkType << numProcs << "0";
+       << System_openModelicaPlatform() << "parallel" << linkType << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(compilationProcessPath, args);
