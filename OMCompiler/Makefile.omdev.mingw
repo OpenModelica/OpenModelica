@@ -256,8 +256,6 @@ else # 64-bit MSYS
 	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
 	test ! -f $(WROOT)/system32/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
 
-	echo "AHeu: OM_MSYS_ENV_DIR: $(OM_MSYS_ENV_DIR)"
-
   # This is rediculus! Just use CMake to install dependencies instead of copying random DLLs.
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libexpat-1.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libffi*.dll $(builddir_bin)/)

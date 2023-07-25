@@ -33,6 +33,19 @@ OPENMODELICAHOME = $$(OMBUILDDIR)
 DEFINES += IMPORT_INTO=1
 QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
 
+LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
+  -L$$(OMBUILDDIR)/lib/omc -L$$(OMBUILDDIR)/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
+  -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread -lshlwapi \
+  -lws2_32 \
+  -L$$(OMBUILDDIR)/bin -lOMSimulator
+
+# libbdf links differently on newer MSYS2, e.g. when using UCRT64
+msystem_prefix = $$(MSYSTEM_PREFIX)
+contains(msystem_prefix, .*ucrt64.*) {
+  BFD_LIBS = -lbfd -lintl -liberty -lsframe -lzstd -lzlib
+} else {
+  BFD_LIBS = -lbfd -lintl -liberty -lzlib
+}
 
 CONFIG(release, debug|release) { # release
   # required for backtrace
@@ -43,13 +56,8 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
   LIBS += -L$$(MSYSTEM_PREFIX)/lib/binutils -L$$(MSYSTEM_PREFIX)/bin
   INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/binutils
-  LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+  LIBS += -limagehlp $$BFD_LIBS -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 } else { # debug
   LIBS += -L$$(MSYSTEM_PREFIX)/bin
   LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 }
-LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
-  -L$$(OMBUILDDIR)/lib/omc -L$$(OMBUILDDIR)/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
-  -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lzlib -lomcgc -lpthread -lshlwapi \
-  -lws2_32 \
-  -L$$(OMBUILDDIR)/bin -lOMSimulator
