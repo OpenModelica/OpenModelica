@@ -127,7 +127,7 @@ SET(LibZName zlib) # only static version
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
-SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
+#SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(DASSLName ${LIBPREFIX}DASSL${LIBSUFFIX})
@@ -323,9 +323,8 @@ ELSEIF(SIMSTER_BUILD)
   ADD_DEFINITIONS(-DSIMSTER_BUILD)
 ENDIF(OMC_BUILD)
 
-
-# Handle MSYS
-#  - On windows boost,blas,lapack and sundial solvers from MSYS are used else the installed versions are used
+# Handle Boost
+#  - On windows boost from MSYS are used else the installed versions are used
 IF(WIN32)
   MESSAGE(STATUS "MINGW:")
   MESSAGE(STATUS ${IS_MINGW64})
@@ -334,19 +333,15 @@ IF(WIN32)
   if(NOT DEFINED ENV{OMDEV})
     message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
   endif()
-  if(NOT DEFINED ENV{OMDEV_MSYS})
-    message(FATAL_ERROR "Environment variable \"OMDEV_MSYS\" is not set.")
-  endif()
   if(NOT DEFINED ENV{MSYSTEM_PREFIX})
     message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
   endif()
   string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
-  string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV_MSYS}")
   string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
 
   IF(IS_MINGW64)
     SET(BOOST_ROOT ${MSYSTEM_PREFIX_ESCAPED})
-  ELSEIF(IS_MINGW632)
+  ELSEIF(IS_MINGW32)
     MESSAGE(FATAL_ERROR "32-bit version not supported")
   ELSE()
     IF(MSVC_VERSION GREATER 1700)
@@ -354,15 +349,9 @@ IF(WIN32)
     ELSE(MSVC_VERSION GREATER 1700)
       SET(BOOST_ROOT $ENV{OMDEV_ESCAPED}"/lib/3rdParty/boost-1_55/")
     ENDIF(MSVC_VERSION GREATER 1700)
-  ENDIF(IS_MINGW32)
+  ENDIF(IS_MINGW64)
   MESSAGE(STATUS "Boost root for cpp runtime:")
   MESSAGE(STATUS ${BOOST_ROOT})
-  # TODO AHeu: Set path to BLAS and LAPACK.
-  # Maybe we can use the msys64/ucrt/lib ones.
-  MESSAGE(FATAL_ERROR "Set path to BLAS, LAPACK compiled with MSVC")
-  SET(BLAS_blas_LIBRARY $ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-  SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
-  SET(BLAS_DIRY "$ENV{OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
   # Disable Optimization for RelWithDebInfo on Windows
   IF(MSVC)
@@ -373,8 +362,10 @@ IF(WIN32)
   ENDIF(MSVC)
 
   #set mico paths
-  SET(MICO_LIB_HOME $ENV{OMDEV_ESCAPED}/lib/mico-msys-mingw/)
-  SET(MICO_INCLUDE_HOME  $ENV{OMDEV_ESCAPED}/include/mico-msys-mingw/)
+  IF(USE_MICO)
+    SET(MICO_LIB_HOME $ENV{OMDEV_ESCAPED}/lib/mico-msys-mingw/)
+    SET(MICO_INCLUDE_HOME  $ENV{OMDEV_ESCAPED}/include/mico-msys-mingw/)
+  endif()
 
   SET(INSTALL_OMDEV_LIBS OFF)
 ENDIF(WIN32)
@@ -495,12 +486,12 @@ IF(FMU_TARGET AND NOT MSVC)
 ENDIF(FMU_TARGET AND NOT MSVC)
 
 IF(WIN32)
-SET(CPPTHREADS_LIBRARY)
-SET(CPPTHREADS_LIBRARY_FLAG)
+  SET(CPPTHREADS_LIBRARY)
+  SET(CPPTHREADS_LIBRARY_FLAG)
 ELSE(WIN32)
-find_package(Threads REQUIRED)
-SET(CPPTHREADS_LIBRARY Threads::Threads)
-SET(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
+  find_package(Threads REQUIRED)
+  SET(CPPTHREADS_LIBRARY Threads::Threads)
+  SET(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 ENDIF(WIN32)
 
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
@@ -511,47 +502,21 @@ MESSAGE(STATUS ${Boost_LIBRARIES})
 # Find Lapack and Blas
 FIND_PACKAGE(BLAS)
 FIND_PACKAGE(LAPACK)
-
-# Check environment variables
-IF(WIN32)
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
-  if(NOT DEFINED ENV{OMDEV_MSYS})
-    message(FATAL_ERROR "Environment variable \"OMDEV_MSYS\" is not set.")
-  endif()
-  string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
-  string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV_MSYS}")
-  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-ENDIF(WIN32)
+if(LAPACK_FOUND AND BLAS_FOUND)
+  MESSAGE(STATUS "LAPACK and BLAS found")
+  SET(USE_OPENMP_ "ON")
+else()
+  message(FATAL_ERROR "Couldn't find LAPACK and BLAS.")
+endif()
 
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
   SET(LAPACK_MSVC_10  ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
   SET(BLAS_MSVC_10 ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
-ELSEIF(IS_MINGW32)
-  MESSAGE(FATAL_ERROR "32-bit version not supported.")
-ELSEIF(IS_MINGW64)
-  SET(LAPACK_MINGW  ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
+  SET(LAPACK_LIBRARIES ${LAPACK_MSVC_10} ${BLAS_MSVC_10} )
 ENDIF(MSVC)
 
-FIND_LIBRARY(mkl_rt mkl_rt)
-IF (mkl_rt)
-  #workaround because find_package(lapack)-command returns the wrong libraries on Taurus (ZIH-TU Dresden)
-  SET(LAPACK_LIBRARIES ${mkl_rt})
-ENDIF(mkl_rt)
-
-LIST(LENGTH LAPACK_LIBRARIES LAPACKVARCOUNT)
-IF(LAPACKVARCOUNT GREATER 0)
-  LIST(GET LAPACK_LIBRARIES 0 LAPACKLISTHEAD)
-  GET_FILENAME_COMPONENT(LAPACKLISTHEAD "${LAPACKLISTHEAD}" PATH)
-  SET(LAPACK_LIBS "${LAPACKLISTHEAD}")
-ENDIF()
-
-MESSAGE(STATUS "Lapack Libraries")
-MESSAGE(STATUS ${LAPACK_LIBRARIES})
+MESSAGE(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
 MESSAGE(STATUS "use reduce dae method: ${REDUCE_DAE} - "  )
 IF(REDUCE_DAE)
@@ -776,8 +741,10 @@ include_directories ("Include")
 IF(USE_DGESV)
   ADD_SUBDIRECTORY(Solver/Dgesv)
 
-  GET_TARGET_PROPERTY(libDgesv ${DgesvName} LOCATION)
-  GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
+  IF(DGESV_FOUND)
+    GET_TARGET_PROPERTY(libDgesv ${DgesvName} LOCATION)
+    GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
+  ENDIF()
 ENDIF(USE_DGESV)
 
 # add base definitions for generating a target
@@ -989,21 +956,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/LibrariesConfig.h.in"
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
   )
-
-if(INSTALL_OMDEV_LIBS)
-  #if(USE_SUNDIALS)
-  #  install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
-  #endif(USE_SUNDIALS)
-
-  if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-  endif()
-
-  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
-  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
-  #install (FILES "${BOOST_SERIALIZATION_LIBRARY_RELEASE}"   DESTINATION bin)
-endif()
-
 
 MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
 

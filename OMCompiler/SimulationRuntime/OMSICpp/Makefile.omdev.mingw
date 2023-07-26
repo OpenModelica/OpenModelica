@@ -147,7 +147,7 @@ runtimeCpp: omcCAPIinstall
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
-	   cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) -DLIB_OMC=$(LIB_OMC) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64)  -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	   cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) -DLIB_OMC=$(LIB_OMC) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64)  -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" ../; \
 	   $(MAKE));)
 
 omcCAPImsvc: getMSVCversion
@@ -208,7 +208,7 @@ omcCAPIinstall:
 	mkdir -p Build_CAPI;
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
 	mkdir -p tmp; \
-	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE   $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DLIB_OMC=$(LIB_OMC) -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./tmp"  -DOMCAPI_ROOT="../../Build_CAPI/tmp" MAKE_CXX_COMPILER=g++ ../omcWrapper/; \
+	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE   $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DLIB_OMC=$(LIB_OMC) -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./tmp"  -DOMCAPI_ROOT="../../Build_CAPI/tmp" ../omcWrapper/; \
 	   $(MAKE) install; )
 
 	(cp -puf Build_CAPI/tmp/lib/*.dll* $(OMBUILDDIR)/bin/)
@@ -219,13 +219,6 @@ omcCAPIinstall:
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
-	cp -p $(OMDEVMSYS)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cd Build; cp -p $(OM_MSYS_ENV_DIR)/bin/libboost*.dll $(builddir_bin)/.)
-else
-	(cd Build; cp -p $(OM_MSYS_ENV_DIR)/bin/libboost*.dll $(builddir_bin)/.)
-endif
-
 
 clean:
 	$(foreach PLATFORM, $(PLATFORMS), \

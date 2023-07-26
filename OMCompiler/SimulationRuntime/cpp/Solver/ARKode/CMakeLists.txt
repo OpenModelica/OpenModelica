@@ -11,7 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${ARKodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${ARKodeName} Core/Modelica.h)
 
-install(FILES $<TARGET_PDB_FILE:${ARKodeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+if(MSVC)
+  install(FILES $<TARGET_PDB_FILE:${ARKodeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${ARKodeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
