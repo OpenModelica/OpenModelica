@@ -177,42 +177,42 @@ char* findCurlCABundleMsys() {
   sprintf(ca_bundle_file, "%s/%s/usr/%s", omhome, msys64, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   // Test $OPENMODELICAHOME/tools/msys/<environment>/ssl/certs/ca-bundle.crt
   sprintf(ca_bundle_file, "%s/%s/%s/%s", omhome, msys, environment, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   // Test $OPENMODELICAHOME/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
   sprintf(ca_bundle_file, "%s/%s/%s/%s", omhome, msys64, environment, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   // Test $OMDEV/tools/msys64/usr/ssl/certs/ca-bundle.crt
   sprintf(ca_bundle_file, "%s/%s/usr/%s", omdev, msys64, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   // Test $OMDEV/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
   sprintf(ca_bundle_file, "%s/%s/%s/%s", omdev, msys64, environment, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   // Test $OMDEV/tools/msys64/<environment>/ssl/certs/ca-bundle.crt
   sprintf(ca_bundle_file, "%s/%s/%s/%s", omdev, msys64, environment, curl_ca_bundle_suffix);
   length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
   if (SystemImpl__regularFileExists(ca_bundle_file)) {
-    return (const char*) ca_bundle_file;
+    return ca_bundle_file;
   }
 
   const char* tokens[1] = {buffer};
