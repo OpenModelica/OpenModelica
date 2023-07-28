@@ -31,6 +31,7 @@ ExternalProject_Add(OMSimulator_external
     BUILD_COMMAND COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 OMSimulator
+                                                OMTLM=OFF
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}

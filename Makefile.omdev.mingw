@@ -101,7 +101,7 @@ omparser:
 omsimulator:
 	$(MAKE) -C OMSimulator config-3rdParty CC="$(CC)" CXX="$(CXX)"
 	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
-	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OMTLM=OFF
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
