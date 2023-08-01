@@ -150,6 +150,11 @@ static void print_mem_pool(OMCMemPoolBlock* chunk) {
 
 MemPoolState omc_util_get_pool_state() {
   MemPoolState state;
+  /// If we forgot to explicitly initialize the pool, initialize it now.
+  if (!memory_pools) {
+    pool_init();
+  }
+
   state.block = memory_pools;
   state.used = memory_pools->used;
 
