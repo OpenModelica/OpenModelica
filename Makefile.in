@@ -204,4 +204,4 @@ Makefile: Makefile.in config.status
 config.status: configure
 	./config.status -recheck
 configure: configure.ac
-	autoconf
+	autoreconf --install

@@ -363,7 +363,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-xenial'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -391,7 +391,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-xenial'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -419,7 +419,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-xenial'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +

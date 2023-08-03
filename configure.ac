@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.71])
 AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 
 AC_LANG([C])
@@ -62,4 +62,5 @@ if test ! -z "$USE_CORBA"; then
   AC_CONFIG_SUBDIRS([OMOptim])
 fi
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
