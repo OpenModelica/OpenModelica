@@ -118,11 +118,11 @@ pipeline {
             }
           }
         }
-        stage('cmake-bionic-gcc') {
+        stage('cmake-jammy-gcc') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
