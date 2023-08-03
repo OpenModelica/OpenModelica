@@ -55,7 +55,7 @@ pipeline {
         stage('gcc') {
           agent {
             docker {
-              image 'anheuermann/openmodelica-build-deps:v1.22.0-qt4'
+              image 'anheuermann/openmodelica-build-deps:v1.22.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
