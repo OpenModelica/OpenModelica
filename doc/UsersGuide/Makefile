@@ -229,11 +229,11 @@ pdf: latex
 	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb}[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb}.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	(cd build/latex && latexmk -pdf OpenModelicaUsersGuide.tex)
 source/logo.pdf: source/logo.svg
-	inkscape -f $< -A $@
+	inkscape  $< -A $@
 source/media/systemoverview.pdf: source/media/systemoverview.svg
-	inkscape -f $< --export-pdf $@
+	inkscape $< --export-filename $@
 %.pdf: %.svg
-	inkscape -f $< --export-pdf $@
+	inkscape $< --export-filename $@
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
 source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
 	./resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
@@ -258,9 +258,9 @@ source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEditLIB/Resources
 	cp -a "$<" "$@"
 
 source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
-	inkscape "$<" --export-png="$@"
+	inkscape "$<" --export-filename="$@"
 source/media/omedit-icons/%.pdf: source/media/omedit-icons/%.svg
-	inkscape "$<" --export-pdf="$@"
+	inkscape "$<" --export-filename="$@"
 source/media/omoptim-icons/%.png: $(OPENMODELICA_ROOT)/OMOptim/OMOptim/GUI/Resources/icons/%.png
 	@mkdir -p source/media/omoptim-icons
 	cp -a "$<" "$@"
