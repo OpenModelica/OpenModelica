@@ -66,8 +66,7 @@ pipeline {
             QTDIR = "/usr/lib/qt4"
           }
           steps {
-            // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
+            script { common.buildOMC('gcc', 'g++', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
