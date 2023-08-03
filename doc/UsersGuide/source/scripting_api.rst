@@ -29,7 +29,8 @@ OpenModelica Scripting Commands
 ###############################
 
 The following are brief descriptions of the scripting commands available
-in the OpenModelica environment. All commands are shown in alphabetical order:
+in the OpenModelica environment. See also https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html.
+All commands are shown in alphabetical order:
 
 .. include :: interface.inc
 
@@ -61,10 +62,9 @@ Examples
 
 The following is an interactive session with the OpenModelica
 environment including some of the abovementioned commands and examples.
-First we start the system, and use the command line interface from
-OMShell, OMNotebook, or command window of some of the other tools.
+Run the examples below using OMShell or OMNotebook.
 
-We type in a very small model:
+We type in a very small model in the command window:
 
 .. omc-loadstring ::
 
