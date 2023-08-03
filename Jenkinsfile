@@ -136,8 +136,7 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                         + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build"
-                                    , "/opt/cmake-3.17.2/bin/cmake")
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
