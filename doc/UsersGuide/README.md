@@ -5,11 +5,11 @@ OpenModelica User's Guide using Sphinx (Python Documentation Generator).
 ## Dependencies
 
 Getting all dependencies right is a nightmare. Just use the dev container
-`build-deps:v1.16.4` from [.devcontainer/README.md](./../../.devcontainer/README.md) and
+`build-deps:v1.22.0` from [.devcontainer/README.md](./../../.devcontainer/README.md) and
 set `GITHUB_AUTH`.
 
  - omc, omc-diff and omsimulator
- - Inkscape
+ - Inkscape > v1.0
  - [Sphinx](http://sphinx-doc.org/)
  - Python3 and packages from [source/requirements.txt](./source/requirements.txt)
    ```bash
@@ -26,24 +26,6 @@ export GITHUB_AUTH=XXXXXXXXXXX
 ```
 This is needed to read release information from
 https://github.com/OpenModelica/OpenModelica with the PyGithub package.
-
-### Unix
-
-- Install the Python dependencies using `pip3 install -r source/requirements.txt`
-
-### Windows MinGW
-
-- Install `Python 2.7`.
-- Install `pip 7.1.2`.
-- Install `bibtexparser` using `pip install bibtexparser`.
-- Install `gitpython` using `pip install gitpython`.
-- Install `sphinx` using `pip install sphinx`.
-- Install `sphinxcontrib-bibtex` using `pip install sphinxcontrib-bibtex`.
-- Install `sphinxcontrib-inlinesyntaxhighlight` using `pip install sphinxcontrib-inlinesyntaxhighlight`.
-- Install `ompython`. See [OpenModelica OMPython instructions](https://github.com/OpenModelica/OMPython#installation) on how to install OMPython.
-- Install `pandoc` and make sure it's in PATH.
-- Install `gnuplot` and make sure it's in PATH.
-- Install `inkscape` and make sure it's in PATH.
 
 ## Build instructions
 
