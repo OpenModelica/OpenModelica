@@ -3198,10 +3198,10 @@ case "gcc" then
             $(eval LDSYSTEMFLAGS_COMMON=$(LDSYSTEMFLAGS_COMMON) <%papiLibs%>)
             endif
 
-            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppDataExchange -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lboost_program_options -lboost_filesystem -ldl -lOMCppModelicaUtilities -lOMCppDataExchange -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=$(LDSYSTEMFLAGS_COMMON) <%staticLibs%>
 
-            LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities -lOMCppExtensionUtilities $(LDMAINFLAGS_COMMON)
+            LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lboost_program_options -lboost_filesystem -ldl -lOMCppModelicaUtilities -lOMCppExtensionUtilities $(LDMAINFLAGS_COMMON)
             LDMAINFLAGS_STATIC=$(LDMAINFLAGS_COMMON) <%staticLibs%> $(SUNDIALS_LIBRARIES) $(LAPACK_LIBRARIES)
 
             ifeq ($(RUNTIME_STATIC_LINKING),ON)

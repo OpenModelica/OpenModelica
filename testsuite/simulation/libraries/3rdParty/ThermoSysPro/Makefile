@@ -11,7 +11,6 @@ ThermoSysPro.Examples.SimpleExamples.TestControlValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mos \
@@ -53,6 +52,7 @@ ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFan.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions3.mos \
