@@ -535,7 +535,7 @@ pipeline {
           agent {
             docker {
               image 'anheuermann/openmodelica-build-deps:v1.22.0'
-              label 'linux'
+              label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
             }
