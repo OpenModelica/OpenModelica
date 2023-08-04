@@ -2,7 +2,20 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
   "name": "build-deps:v1.22.0",
-  "image": "anheuermann/openmodelica-build-deps:v1.22.0",
+
+  // Build and tag base Docker image from .CI/cache/Dockerfile
+  //"initializeCommand": "docker build --tag build-deps-v1.22.0-base ${localWorkspaceFolder}/.CI/cache/",
+
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+        "BASE_IMAGE": "anheuermann/openmodelica-build-deps:v1.22.0",
+        // On Windows USERNAME is set, on Linux USER is set
+        // We hope only one is set
+        "USERNAME": "openmodelica-user"
+    }
+  },
 
   // Additional VSCode extensions
   "customizations": {
