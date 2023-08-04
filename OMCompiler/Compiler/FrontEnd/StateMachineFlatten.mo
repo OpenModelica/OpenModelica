@@ -36,7 +36,7 @@
 
   This module contains functions to transform an instantiated state machine to flat data-flow equations.
   This approach is a rather direct implementation of the state machine to data-flow equations transformation
-  described in the specification. A more efficient implemention could avoid that transformation to
+  described in the specification. A more efficient implementation could avoid that transformation to
   data-flow and instead keep the state machine structure in the back-end in order to generate optimized
   code (in terms of memory requirements and minimized conditional statements).
   "
