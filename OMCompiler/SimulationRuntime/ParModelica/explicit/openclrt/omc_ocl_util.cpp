@@ -300,7 +300,7 @@ void ocl_build_p_from_src(){
 #endif
 
     char options[1000];
-    const char* flags = "-I";
+    const char* flags = "-Werror -I";
     const char* OMEXT = "/include/omc/c/";
 
     // TODO: Make sure to remove spaces from OMHOME
