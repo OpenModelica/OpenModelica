@@ -65,8 +65,8 @@ Start `$OMDEV\tools\msys\mingw64.exe` or `$OMDEV\tools\msys\mingw32.exe` and run
 # export the path to your tools: git, svn, java/javac
 # note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
 export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
-export OPENMODELICAHOME="c:\\path\\to\\OpenModelica\\build"
-export OPENMODELICALIBRARY="c:\\path\\to\\OpenModelica\\build\\lib\\omlibrary"
+export OPENMODELICAHOME="C:\\path\\to\\OpenModelica\\build"
+export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodelica\\libraries"
 ```
 You can add this to your `.bashrc` file
 (usually in `C:\OMDev\tools\msys\home\<USERNAME>\.bashrc`), to always have them in your
