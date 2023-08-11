@@ -4375,8 +4375,8 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
+      case CAST() then isNonNegative(exp.exp);
+      case UNARY() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonNegative;
