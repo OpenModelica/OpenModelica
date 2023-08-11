@@ -2,7 +2,7 @@ program cirkel;
 
   const pi = 3.14159;
 
-  var o : real;
+  var o : real; 
       r : real;
 
   procedure init;

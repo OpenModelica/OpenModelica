@@ -1,9 +1,9 @@
 /* Compute foo */
 
-program
+program 
  a: integer;
  foo: real;
-
+ 
 body
  a:=17;
  foo:=a*2+8;

@@ -40,12 +40,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -144,3 +144,4 @@ begin
     write_real(sqrt(x));
     newline();
 end.
+    

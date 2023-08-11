@@ -10,11 +10,11 @@ Exp type additions:
     String str;
   end STRING;
 
-
+  
 function eval additions:
 ------------------------
-    case (env,STRING(str = sval))
-      equation
+    case (env,STRING(str = sval)) 
+      equation 
         z = stringInt(sval);
-      then (env,INTval(z));
-
+      then (env,INTval(z)); 
+      

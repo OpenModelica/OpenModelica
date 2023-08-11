@@ -147,7 +147,7 @@ assignment_statement  :  variable  T_ASSIGN  expression
 
 conditional_statement :  T_IF comparison T_THEN series T_ENDIF
                                 { $$ = Pam__IF($2, $4, Pam__SKIP); }
-                      |  T_IF comparison T_THEN series
+                      |  T_IF comparison T_THEN series 
                                          T_ELSE series T_ENDIF
                                 { $$ = Pam__IF($2, $4, $6); }
 

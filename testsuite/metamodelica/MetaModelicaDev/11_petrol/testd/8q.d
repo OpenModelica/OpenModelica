@@ -17,7 +17,7 @@ var
     down : array[{0..15}16] of integer;	{ down - facing diagonals }
     rows : array[{0..7}8] of integer;	{ rows }
     x : array[{0..7}8] of integer;	{ holds solution }
-
+    
 procedure init;
 var
     i : integer;
@@ -54,7 +54,7 @@ var
 	write(PLUS);
 	write(NEWLINE);
     end;
-
+	
 begin
     write(ESC); write(LBRACK); write(J);	{ home }
     r := 0;
@@ -100,7 +100,7 @@ begin
 	r := r + 1;
     end;
 end;
-
+    
 begin
     init();
     queens(0);				{ place 1st and subsequent queens }

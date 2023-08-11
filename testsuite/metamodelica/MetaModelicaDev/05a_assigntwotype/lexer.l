@@ -29,7 +29,7 @@ istring      \"{icon}\"
 {ident}      return lex_ident(); /* T_IDENT */
 {icon}       return lex_icon();  /* T_INTCONST */
 {rcon}       return lex_rcon();   /* T_REALCONST */
-{istring}    return lex_string(); /* T_STRINGCONST */
+{istring}    return lex_string(); /* T_STRINGCONST */      
 ":="         return T_ASSIGN;
 "+"          return T_ADD;
 "-"          return T_SUB;

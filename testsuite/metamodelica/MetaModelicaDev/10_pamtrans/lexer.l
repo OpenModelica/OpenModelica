@@ -12,14 +12,14 @@
 extern struct record_description Absyn_Exp_INT__desc;
 #define Absyn__INT(X1)       (mmc_mk_box2(3,&Absyn_Exp_INT__desc,X1))
 #endif
-
+ 
 int absyn_integer(char *s);
 int absyn_ident_or_keyword(char *s);
 int yywrap();
 %}
 
 %option yylineno
-
+ 
 %x c_comment
 
 whitespace   [ \t\n]+
@@ -71,16 +71,16 @@ icon         {digits}
 
 /* Make a boxed integer from a C string representation (decimal),
    box it for our abstract syntax, put in yylval and return constant token. */
-
+ 
 int absyn_integer(char *s)
 {
   yylval = Absyn__INT(mmc_mk_icon(atoi(s)));
   return T_INTCONST;
 }
-
+ 
 /* Make a String or a keyword token from a C string */
 /* Reserved words: if,then,else,endif,while,do,end,to,read,write */
-
+ 
 static struct keyword_s
 {
   char *name;

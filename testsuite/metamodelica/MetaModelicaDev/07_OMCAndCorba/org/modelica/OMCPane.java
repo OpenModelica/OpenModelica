@@ -29,7 +29,7 @@ public class OMCPane extends JPanel implements ActionListener
 	/**
 	 * This is the default constructor
 	 */
-	public OMCPane()
+	public OMCPane() 
 	{
 		super(new GridLayout(1,0));
 		initialize();
@@ -38,23 +38,23 @@ public class OMCPane extends JPanel implements ActionListener
 
 	/**
 	 * This method initializes this
-	 *
+	 * 
 	 * @return void
 	 */
-	private void initialize()
+	private void initialize() 
 	{
 		this.setSize(398, 260);
 		this.add(getJSplitPane(), null);
 	}
 
 	/**
-	 * This method initializes jTextField
-	 *
-	 * @return javax.swing.JTextField
+	 * This method initializes jTextField	
+	 * 	
+	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getJTextField()
+	private JTextField getJTextField() 
 	{
-		if (jTextField == null)
+		if (jTextField == null) 
 		{
 			jTextField = new JTextField();
 			jTextField.setName("Expression");
@@ -64,30 +64,30 @@ public class OMCPane extends JPanel implements ActionListener
 	}
 
 	/**
-	 * This method initializes jButton
-	 *
-	 * @return javax.swing.JButton
+	 * This method initializes jButton	
+	 * 	
+	 * @return javax.swing.JButton	
 	 */
-	private JButton getJButton()
+	private JButton getJButton() 
 	{
-		if (jButton == null)
+		if (jButton == null) 
 		{
 			jButton = new JButton();
 			jButton.setText("Send");
 			jButton.setActionCommand("send");
 		}
-		jButton.addActionListener(this);
+		jButton.addActionListener(this);		
 		return jButton;
 	}
 
 	/**
-	 * This method initializes jTextArea
-	 *
-	 * @return javax.swing.JTextArea
+	 * This method initializes jTextArea	
+	 * 	
+	 * @return javax.swing.JTextArea	
 	 */
-	private JTextArea getJTextArea()
+	private JTextArea getJTextArea() 
 	{
-		if (jTextArea == null)
+		if (jTextArea == null) 
 		{
 			jTextArea = new JTextArea();
 			jTextArea.setColumns(25);
@@ -95,14 +95,14 @@ public class OMCPane extends JPanel implements ActionListener
 		}
 		return jTextArea;
 	}
-
+	
 	public void actionPerformed(ActionEvent e)
 	{
 		System.out.println("ActionCommand:" + e.getActionCommand());
 		if (e.getActionCommand().equals("send"))
 		{
 			System.out.println("Expression:" + jTextField.getText());
-			if (jTextField.getText() != null &&
+			if (jTextField.getText() != null && 
 				jTextField.getText().length() > 0)
 			{
 				String result = "";
@@ -110,7 +110,7 @@ public class OMCPane extends JPanel implements ActionListener
 				{
 					jTextArea.append("\nSending expression:" + jTextField.getText());
 					result = omc.sendExpression(jTextField.getText());
-					jTextArea.append("\nGot reply:" + result);
+					jTextArea.append("\nGot reply:" + result);					
 				}
 				catch(Exception ex)
 				{
@@ -128,9 +128,9 @@ public class OMCPane extends JPanel implements ActionListener
 	}
 
 	/**
-	 * This method initializes jPanel1
-	 *
-	 * @return javax.swing.JPanel
+	 * This method initializes jPanel1	
+	 * 	
+	 * @return javax.swing.JPanel	
 	 */
 	private JPanel getJPanel1() {
 		if (jPanel1 == null) {
@@ -146,9 +146,9 @@ public class OMCPane extends JPanel implements ActionListener
 	}
 
 	/**
-	 * This method initializes jSplitPane
-	 *
-	 * @return javax.swing.JSplitPane
+	 * This method initializes jSplitPane	
+	 * 	
+	 * @return javax.swing.JSplitPane	
 	 */
 	private JSplitPane getJSplitPane() {
 		if (jSplitPane == null) {
@@ -161,9 +161,9 @@ public class OMCPane extends JPanel implements ActionListener
 	}
 
 	/**
-	 * This method initializes jScrollPane
-	 *
-	 * @return javax.swing.JScrollPane
+	 * This method initializes jScrollPane	
+	 * 	
+	 * @return javax.swing.JScrollPane	
 	 */
 	private JScrollPane getJScrollPane() {
 		if (jScrollPane == null) {

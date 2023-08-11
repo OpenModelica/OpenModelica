@@ -90,7 +90,7 @@ extern struct record_description Absyn_Stmt_SKIP__desc;
 #define Absyn__SEQ(X1,X2)      (mmc_mk_box3(9,&Absyn_Stmt_SEQ__desc,X1,X2))
 #define Absyn__SKIP            (mmc_mk_box1(10,&Absyn_Stmt_SKIP__desc))
 
-#endif
+#endif 
 %}
 
 %token T_READ
@@ -160,7 +160,7 @@ assignment_statement  :  variable  T_ASSIGN  expression
 
 conditional_statement :  T_IF comparison T_THEN series T_ENDIF
                                 { $$ = Absyn__IF($2, $4, Absyn__SKIP); }
-                      |  T_IF comparison T_THEN series
+                      |  T_IF comparison T_THEN series 
                                          T_ELSE series T_ENDIF
                                 { $$ = Absyn__IF($2, $4, $6); }
 

@@ -24,7 +24,7 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;

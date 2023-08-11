@@ -14,7 +14,7 @@ var
 	j : integer;
 begin
 	j := 10;
-	while (j > 0) do
+	while (j > 0) do 
 		i_arr[1+i-1] := j;
 		i_arr[i_arr[i]] := i_arr[i] - j;
 		j := j - 1;
@@ -36,14 +36,14 @@ procedure nasty(i : integer; j : integer; x : real; y : real);
 var
 	nasty_1 : integer;
 	nasty_2 : array[10] of integer;
-
+	
 	procedure do_zero;
 	const
 		OREZ = 48;
 		ZERO = OREZ;
 	var
 		z : integer;
-	begin
+	begin	
 		z := ZERO;
 		write(z);
 	end;

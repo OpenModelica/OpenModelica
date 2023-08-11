@@ -74,16 +74,16 @@ icon         {digits}
 
 /* Make a boxed integer from a C string representation (decimal),
    box it for our abstract syntax, put in yylval and return constant token. */
-
+ 
 long absyn_integer(char *s)
 {
   yylval= Pam__INT(mmc_mk_icon(atoi(s)));
   return T_INTCONST;
 }
-
+ 
 /* Make an String or a keyword token from a C string */
 /* Reserved words: if,then,else,endif,while,do,end,to,read,write */
-
+ 
 static struct keyword_s
 {
   char *name;

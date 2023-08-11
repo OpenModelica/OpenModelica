@@ -18,9 +18,9 @@ getErrorString();
 // true
 // true
 // ""
-// Int String List:1 2 10 15 30 45 110 121 150 200
-// Ordered String List:1 10 110 121 15 150 2 200 30 45
-// Ordered Real List:1 2 10 15 30 45 110 121 150 200
-//
+// Int String List:1 2 10 15 30 45 110 121 150 200 
+// Ordered String List:1 10 110 121 15 150 2 200 30 45 
+// Ordered Real List:1 2 10 15 30 45 110 121 150 200 
+// 
 // ""
 // endResult

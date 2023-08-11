@@ -3,13 +3,13 @@
     case (SUB(e1,e2),id)
       equation
         e1prim = diff(e1,id);
-        e2prim = diff(e2,id);
+        e2prim = diff(e2,id); 
       then SUB(e1prim,e2prim);
     // (e1*e2)’ => e1’*e2 + e1*e2’
     case (MUL(e1,e2),id)
       equation
         e1prim = diff(e1,id);
-        e2prim = diff(e2,id);
+        e2prim = diff(e2,id); 
       then ADD(MUL(e1prim,e2),MUL(e1,e2prim));
     // sin(e1)’ => cos(e1)*e1’
     case (CALL("sin", {e1}),id)

@@ -17,13 +17,13 @@ loadFile("Types.mo");
 nl := "
 "; // Because the parser thinks it's funny not to convert \n to a newline
 
-// factorial
+// factorial 
 n_str := "10";
 print("Factorial of " + n_str + " is: ");
-n := stringInt(n_str);
+n := stringInt(n_str);    
 i := Functions.factorial(n);
 str := intString(i);
-print(str);
+print(str); 
 print(nl);
 
 // test function

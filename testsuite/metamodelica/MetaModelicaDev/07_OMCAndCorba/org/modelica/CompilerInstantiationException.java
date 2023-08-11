@@ -50,15 +50,15 @@ public class CompilerInstantiationException extends CompilerException
 {
 	private static final long serialVersionUID = -1432532276931215491L;
 
-	public enum ProblemType
+	public enum ProblemType 
 	{
 		NO_COMPILERS_FOUND,
 		MULTIPLE_COMPILERS_FOUND,
 		ERROR_CREATING_COMPILER
 	}
-
+	
 	private ProblemType type;
-
+	
 	public CompilerInstantiationException(ProblemType type)
 	{
 		super();
@@ -80,11 +80,11 @@ public class CompilerInstantiationException extends CompilerException
 	{
 		return type;
 	}
-
+	
 	public String getMessage()
 	{
 		String message = "";
-
+		
 		switch (type)
 		{
 		case NO_COMPILERS_FOUND:
@@ -97,7 +97,7 @@ public class CompilerInstantiationException extends CompilerException
 			message = "Error while connecting to the compiler " + getCause().getMessage();
 			break;
 		}
-
+		
 		return message;
 	}
 }

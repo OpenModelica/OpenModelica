@@ -27,8 +27,8 @@ getErrorString();
 // true
 // ""
 // [Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
-//
-//
+// 
+// 
 // ""
 // f(x) = (((3*sin((x*1)))-(-cos(x)^2))+(x/2))
 // [Differentiating expression]

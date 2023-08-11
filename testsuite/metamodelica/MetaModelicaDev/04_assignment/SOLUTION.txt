@@ -12,12 +12,12 @@ algorithm
   _ := matchcontinue(assignList)
     local ExpLst expLst; Exp exp;
     case ({}) then (); // if nothing is in the list don't print anything
-    case (exp::{})
+    case (exp::{}) 
       equation
         printExp(exp);
         print("\n");
       then ();
-    case (exp::expLst)
+    case (exp::expLst) 
       equation
         printExp(exp);
         print(", ");
@@ -25,19 +25,19 @@ algorithm
       then ();
   end matchcontinue;
 end printAssignments;
-
+  
 function printExp
   input Exp exp;
 algorithm
   _ := matchcontinue(exp)
-    local
+    local   
       Integer i;
       Exp exp1, exp2, exp;
       Ident id;
-    case(INT(i))
+    case(INT(i)) 
       equation print(intString(i));
       then ();
-    case(BINARY(exp1, op, exp2))
+    case(BINARY(exp1, op, exp2)) 
       local BinOp op;
       equation
         printExp(exp1);
@@ -56,7 +56,7 @@ algorithm
         print(" = ");
         printExp(exp);
       then ();
-    case(IDENT(id))
+    case(IDENT(id)) 
       equation print(id);
       then ();
   end matchcontinue;
@@ -70,7 +70,7 @@ algorithm
     case (SUB()) equation print("-"); then ();
     case (MUL()) equation print("*"); then ();
     case (DIV()) equation print("/"); then ();
-  end matchcontinue;
+  end matchcontinue;   
 end printBinaryOp;
 
 function printUnaryOp
@@ -78,7 +78,7 @@ function printUnaryOp
 algorithm
   _ := matchcontinue (op)
     case (NEG()) equation print("-"); then ();
-  end matchcontinue;
+  end matchcontinue;   
 end printUnaryOp;
 //--------------
 
@@ -87,19 +87,19 @@ function printEnvironment
   input Env varBndList;
 algorithm
   _ := matchcontinue(varBndList)
-    local
+    local 
       Ident id;
-      Value val;
-      Env varBndLstRest;
+      Value val; 
+      Env varBndLstRest; 
     case ({}) then (); // if nothing is in the list don't print anything
-    case ((id, val)::{})
+    case ((id, val)::{}) 
       equation
         print(id);
         print(" = ");
         print(intString(val));
         print("\n");
       then ();
-    case ((id, val)::varBndLstRest)
+    case ((id, val)::varBndLstRest) 
       equation
         print(id);
         print(" = ");

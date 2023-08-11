@@ -18,7 +18,7 @@ public class StreamReaderThread extends Thread
 	public void run()
 	{
 		int ch;
-		try
+		try 
 		{
 			while(-1 != (ch=mIn.read()))
 			{

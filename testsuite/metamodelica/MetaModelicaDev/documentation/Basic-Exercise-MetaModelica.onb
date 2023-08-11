@@ -71,7 +71,7 @@ p, li { white-space: pre-wrap; }
     <GraphCell style="Graph" closed="false">
       <Input>1::"2"::{} // An illegal expression</Input>
       <Output>
-OMC-ERROR:
+OMC-ERROR: 
 "Error: Failed to match types of cons expression 1::"2"::{}. The head has type Integer and the tail list&lt;String>.
 "</Output>
     </GraphCell>
@@ -322,7 +322,7 @@ algorithm
   result := match number
     local
       Integer int,dividend,divisor;
-      Real real,re,im;
+      Real real,re,im;  
     case INT(int) then abs(int);
     case RATIONAL(dividend,divisor) then abs(dividend/divisor);
     case REAL(real=real) then abs(real);
@@ -385,10 +385,10 @@ end Expression;</Input>
 algorithm
   res := match exp
     local
-      Real r;
+      Real r;  
       Expression lhs,rhs;
     case RCONST(r) then r;
-    case ADD(lhs,rhs) then evalExp(lhs)+evalExp(rhs);
+    case ADD(lhs,rhs) then evalExp(lhs)+evalExp(rhs);  
     case SUB(lhs,rhs) then evalExp(lhs)-evalExp(rhs);
     case MUL(lhs,rhs) then evalExp(lhs)*evalExp(rhs);
     case DIV(lhs,rhs) then evalExp(lhs)/evalExp(rhs);
@@ -429,7 +429,7 @@ p, li { white-space: pre-wrap; }
 algorithm
   res := match e as exp
     local
-      Expression ex;
+      Expression ex;  
     case ex as RCONST() then ex.r; // Do not use the e alias
     case ADD() then eval(e.lhs) + eval(e.rhs); // Use the e alias
     case ex as SUB() then eval(ex.lhs) - eval(ex.rhs); // Use the ex as-binding (requires a local declaration for now)

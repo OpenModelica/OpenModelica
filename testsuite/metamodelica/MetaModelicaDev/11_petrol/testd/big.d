@@ -20,7 +20,7 @@ var
     down : array[{0..15}16] of integer;	{ down - facing diagonals }
     rows : array[{0..7}8] of integer;	{ rows }
     x : array[{0..7}8] of integer;	{ holds solution }
-
+    
 procedure init;
 var
     i : integer;
@@ -57,7 +57,7 @@ var
 	write(PLUS);
 	write(NEWLINE);
     end;
-
+	
 begin
     write(ESC); write(LBRACK); write(J);	{ home }
     r := 0;
@@ -103,7 +103,7 @@ begin
 	r := r + 1;
     end;
 end;
-
+    
 begin
     init();
     queens(0);				{ place 1st and subsequent queens }
@@ -129,7 +129,7 @@ var
     down : array[{0..15}16] of integer;	{ down - facing diagonals }
     rows : array[{0..7}8] of integer;	{ rows }
     x : array[{0..7}8] of integer;	{ holds solution }
-
+    
 procedure init;
 var
     i : integer;
@@ -166,7 +166,7 @@ var
 	write(PLUS);
 	write(NEWLINE);
     end;
-
+	
 begin
     write(ESC); write(LBRACK); write(J);	{ home }
     r := 0;
@@ -212,7 +212,7 @@ begin
 	r := r + 1;
     end;
 end;
-
+    
 begin
     init();
     queens(0);				{ place 1st and subsequent queens }
@@ -223,7 +223,7 @@ procedure cirkel1;
 
   const pi = 3.14159;
 
-  var o : real;
+  var o : real; 
       r : real;
 
   procedure init;
@@ -252,7 +252,7 @@ procedure cirkel2;
 
   const pi = 3.14159;
 
-  var o : real;
+  var o : real; 
       r : real;
 
   procedure init;
@@ -303,7 +303,7 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
@@ -340,7 +340,7 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
@@ -381,7 +381,7 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
@@ -405,7 +405,7 @@ begin
     write_int(fact(n));
     write(10);
 end;
-
+    
 { factorial.d }
 procedure factorial2;
 
@@ -437,7 +437,7 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
@@ -461,7 +461,7 @@ begin
     write_int(fact(n));
     write(10);
 end;
-
+    
 { fib.d }
 procedure fibonacci1;
 
@@ -616,12 +616,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -721,7 +721,7 @@ var
     t : integer;
     pivot : integer;
 begin
-    i := l;
+    i := l; 
     j := r;
     pivot := s[(l+r) div 2];
     while not(i > j) do
@@ -797,12 +797,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -902,7 +902,7 @@ var
     t : integer;
     pivot : integer;
 begin
-    i := l;
+    i := l; 
     j := r;
     pivot := s[(l+r) div 2];
     while not(i > j) do
@@ -1060,12 +1060,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -1189,12 +1189,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -1295,7 +1295,7 @@ var
 	j : integer;
 begin
 	j := 10;
-	while (j > 0) do
+	while (j > 0) do 
 		i_arr[1+i-1] := j;
 		i_arr[i_arr[i]] := i_arr[i] - j;
 		j := j - 1;
@@ -1317,14 +1317,14 @@ procedure nasty(i : integer; j : integer; x : real; y : real);
 var
 	nasty_1 : integer;
 	nasty_2 : array[10] of integer;
-
+	
 	procedure do_zero;
 	const
 		OREZ = 48;
 		ZERO = OREZ;
 	var
 		z : integer;
-	begin
+	begin	
 		z := ZERO;
 		write(z);
 	end;
@@ -1366,7 +1366,7 @@ var
 	j : integer;
 begin
 	j := 10;
-	while (j > 0) do
+	while (j > 0) do 
 		i_arr[1+i-1] := j;
 		i_arr[i_arr[i]] := i_arr[i] - j;
 		j := j - 1;
@@ -1388,14 +1388,14 @@ procedure nasty(i : integer; j : integer; x : real; y : real);
 var
 	nasty_1 : integer;
 	nasty_2 : array[10] of integer;
-
+	
 	procedure do_zero;
 	const
 		OREZ = 48;
 		ZERO = OREZ;
 	var
 		z : integer;
-	begin
+	begin	
 		z := ZERO;
 		write(z);
 	end;
@@ -1427,7 +1427,7 @@ const
     SIZE = 8191;
     FALSE = 0;
     TRUE = 1;
-
+    
 var
     flags : array[SIZE] of integer;
     i : integer;
@@ -1473,12 +1473,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -1548,10 +1548,10 @@ begin
     end;
     return res;
 end;
-
+    
 begin
     iter := 0;
-    while (iter < 10) do
+    while (iter < 10) do 
     	count := 0;
 	i := 0;
 	while (i < SIZE) do
@@ -1584,7 +1584,7 @@ const
     SIZE = 8191;
     FALSE = 0;
     TRUE = 1;
-
+    
 var
     flags : array[SIZE] of integer;
     i : integer;
@@ -1630,12 +1630,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -1705,10 +1705,10 @@ begin
     end;
     return res;
 end;
-
+    
 begin
     iter := 0;
-    while (iter < 10) do
+    while (iter < 10) do 
     	count := 0;
 	i := 0;
 	while (i < SIZE) do
@@ -1774,12 +1774,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -1905,12 +1905,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -2039,12 +2039,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -2185,12 +2185,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;

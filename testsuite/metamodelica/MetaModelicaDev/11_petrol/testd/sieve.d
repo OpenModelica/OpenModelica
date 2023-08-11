@@ -4,7 +4,7 @@ const
     SIZE = 8191;
     FALSE = 0;
     TRUE = 1;
-
+    
 var
     flags : array[SIZE] of integer;
     i : integer;
@@ -50,12 +50,12 @@ begin
 	bufp := bufp + 1;
 	val := val div 10;
     end;
-    while (bufp > 0) do
+    while (bufp > 0) do 
 	bufp := bufp - 1;
     	write(buf[bufp]);
     end;
 end;
-
+    
 procedure write_real(val : real);
 const
     DOT = 46;
@@ -125,10 +125,10 @@ begin
     end;
     return res;
 end;
-
+    
 begin
     iter := 0;
-    while (iter < 10) do
+    while (iter < 10) do 
     	count := 0;
 	i := 0;
 	while (i < SIZE) do

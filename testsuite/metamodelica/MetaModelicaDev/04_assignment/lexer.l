@@ -40,8 +40,8 @@ digits       {digit}+
 
 int lex_icon()
 {
-  yylval = Assignment__INT(mmc_mk_icon(atoi(yytext)));
-  return T_INTCONST;
+  yylval = Assignment__INT(mmc_mk_icon(atoi(yytext)));  
+  return T_INTCONST;        
 }
 
 int lex_ident()

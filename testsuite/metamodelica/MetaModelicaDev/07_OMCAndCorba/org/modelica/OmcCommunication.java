@@ -10,6 +10,6 @@ package org.modelica;
 
 
 // As simple as can be omc communication, sending and recieving of strings.
-public interface OmcCommunication extends OmcCommunicationOperations, org.omg.CORBA.Object, org.omg.CORBA.portable.IDLEntity
+public interface OmcCommunication extends OmcCommunicationOperations, org.omg.CORBA.Object, org.omg.CORBA.portable.IDLEntity 
 {
 } // interface OmcCommunication

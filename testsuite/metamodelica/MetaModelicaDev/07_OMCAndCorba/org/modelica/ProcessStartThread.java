@@ -20,7 +20,7 @@ public class ProcessStartThread extends Thread
 			int result;
 //			prepare buffers for process output and error streams
 			//StringBuffer err=new StringBuffer();
-			//StringBuffer out=new StringBuffer();
+			//StringBuffer out=new StringBuffer();		    	
 			Process proc=Runtime.getRuntime().exec(command, null, workingDirectory);
 			//create thread for reading inputStream (process' stdout)
 			StreamReaderThread outThread= new StreamReaderThread(proc.getInputStream(),System.out);
@@ -39,7 +39,7 @@ public class ProcessStartThread extends Thread
 		{
 			e.printStackTrace();
 			OMCProxy.logOMCStatus("Error running command " + e.getMessage());
-			OMCProxy.logOMCStatus("Unable to start OMC, giving up.");
-		}
+			OMCProxy.logOMCStatus("Unable to start OMC, giving up."); 
+		}	    
 	}
 }

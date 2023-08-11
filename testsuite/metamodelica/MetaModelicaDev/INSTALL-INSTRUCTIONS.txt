@@ -68,15 +68,15 @@ Add as new Java project:
 07_OMCAndCorba
 
 NOTES:
-- When working with an exercise, close all
-  the other projects and leave just the
+- When working with an exercise, close all 
+  the other projects and leave just the 
   current exercise project open.
 - Each exercise has a README.txt in it with assignments.
-- Exercises 08->11 are just as examples
-  of how to model different languages
+- Exercises 08->11 are just as examples 
+  of how to model different languages 
   using MetaModelica.
 
-If you need any help with anything just contact
+If you need any help with anything just contact 
 Adrian Pop or Martin Sjölund [{adrpo,marsj}@ida.liu.se]
 
 2009-10-21: Modified makefiles, added previosuly missing files and 03_symbolicderivative. Martin Sjölund.

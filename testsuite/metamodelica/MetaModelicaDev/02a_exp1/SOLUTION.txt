@@ -2,8 +2,8 @@ Solution of the exercise 02a_exp1:
 
 parser.y file changes:
 ======================
-locate the uncomment here section
-and remove the comment to make the
+locate the uncomment here section 
+and remove the comment to make the 
 comment active
 
 Exp1.mo file changes:
@@ -14,10 +14,10 @@ Exp1.Exp type addition:
   record FACop
     Exp exp;
   end FACop;
-
+  
   record POWop
     Exp exp1;
-    Exp exp2;
+    Exp exp2;    
   end POWop;
 
 
@@ -25,15 +25,15 @@ Exp1.eval function addition:
 ----------------------------
 
     case (FACop(exp = e))
-      equation
+      equation 
         v1 = eval(e);
-        v2 = fac(v1);
+        v2 = fac(v1); 
       then v2;
     case (POWop(exp1 = e1, exp2 = e2))
       local
         Integer v3;
-      equation
-        v1 = eval(e1);
+      equation 
+        v1 = eval(e1); 
         v2 = eval(e2);
         v3 = realInt(intReal(v1) ^. intReal(v2));
       then v3;
@@ -46,7 +46,7 @@ function fac
 algorithm
   o := matchcontinue (i)
     case (0) then 1;
-    case (n)
+    case (n) 
       local Integer n;
       then n*fac(n-1);
   end matchcontinue;
