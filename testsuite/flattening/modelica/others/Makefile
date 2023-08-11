@@ -98,6 +98,7 @@ VectorizeExtendedType.mo \
 WillowForest.mo \
 Homotopy.mos \
 TestEnumAsInteger.mos \
+TestTopLevelOuter.mos \
 
 
 # test that currently fail. Move up when fixed. 
