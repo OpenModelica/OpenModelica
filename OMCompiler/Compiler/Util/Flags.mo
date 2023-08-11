@@ -1388,6 +1388,7 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(146, "allowNonStan
     ("nonStdEnumerationAsIntegers", Gettext.gettext("Allow enumeration as integer without casting via Integer(Enum).\nSee: https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#type-conversion-of-enumeration-values-to-string-or-integer")),
     ("nonStdIntegersAsEnumeration", Gettext.gettext("Allow integer as enumeration without casting via Enum(Integer).\nSee: https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#type-conversion-of-integer-to-enumeration-values")),
     ("nonStdDifferentCaseFileVsClassName", Gettext.gettext("Allow directory or file with different case in the name than the contained class name.\nSee: https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system")),
+    ("nonStdTopLevelOuter", Gettext.gettext("Allow top level outer.\nSee: https://specification.modelica.org/maint/3.6/scoping-name-lookup-and-flattening.html#S4.p1")),
     ("protectedAccess", Gettext.gettext("Allow access of protected elements")),
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections"))
     })),

@@ -3532,7 +3532,7 @@ algorithm
     node := Lookup.lookupSimpleName(name, scope, context);
 
     if InstNode.isInner(node) then
-      is_error := not InstContext.inRelaxed(context);
+      is_error := not (InstContext.inRelaxed(context) or Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdTopLevelOuter"));
 
       if is_error then
         Error.addSourceMessageAsError(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
