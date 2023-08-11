@@ -2,11 +2,12 @@
 
 ## Table of content
 
-- [1 MSYS2](#1-msys2)
+- [1 MSYS Environments](#1-msys-environments)
   - [1.1 General Notes](#11-general-notes)
-  - [1.2 Install MSYS2 packages](#12-install-msys2)
-  - [1.3 Install Additional Programs](#13-install-additional-programs)
-  - [1.4 Environment Variables](#14-environment-variables)
+  - [1.2 Install OMDev packages](#12-install-omdev)
+  - [1.3 Install MSYS2](#13-install-msys2)
+  - [1.4 Install Additional Programs](#14-install-additional-programs)
+  - [1.5 Environment Variables](#15-environment-variables)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
   - [2.2 MSYS and Make](#22-msys-and-make)
@@ -14,14 +15,27 @@
 - [4 Test Suite](#4-test-suite)
 - [5 Troubleshooting](#5-troubleshooting)
 
-# 1 MSYS2
+# 1 MSYS Environments
 
 We use Linux tools to compile OpenModelica on Windows.
-For that you'll need to install [MSYS2](https://www.msys2.org/) with
-[UCRT64](https://www.msys2.org/docs/environments/) environment.
 
-Follow the installation instructions in [www.msys2.org](https://www.msys2.org/) to install
-MSYS2 with the installer in `C:\OMDEV\tools\msys64`.
+There are two ways to install all prerequisites to compile OMC on Windows.
+If you are unsure what to pick or building OpenModelica for the first time select the second option using **UCRT**.
+
+This Readme uses the `UCRT64` environment to explain the compilation process.
+If you use the `MINGW` environments change the path to 
+
+  1. OMDev package: MSYS2 with
+    [MINGW32 and MINGW64 environments](https://www.msys2.org/docs/environments/),
+    as well as additional tools for optional compiler features.
+    Follow the instructions in [1.2 Install OMDev](#12-install-omdev).
+  2. [MSYS2](https://www.msys2.org/) with
+    [UCRT64](https://www.msys2.org/docs/environments/) environment.
+    Follow the instructions in [1.3 Install MSYS2](#13-install-msys2).
+
+> **Warning**
+> The MINGW and UCRT environments from OMDev and MSYS2 are not compatible and can't be
+> mixed.
 
 ## 1.1 General Notes
 
@@ -33,7 +47,28 @@ MSYS2 with the installer in `C:\OMDEV\tools\msys64`.
       git config --global core.autocrlf input
     ```
 
-## 1.2 Install MSYS2
+## 1.2 Install OMDev
+
+  - Clone OMDev into a directory without any spaces in the path. We recommend to use
+    `C:\OMDev\`.
+
+    Run the following in a Git Bash:
+    ```bash
+      cd /c/
+      git clone https://openmodelica.org/git/OMDev.git
+    ```
+
+  - Define a Windows environment variable `OMDEV` pointing to the OMDev directory.
+    Restart or logiut/login to make it available.
+
+  - Follow the instructions in the `C:\OMDev\INSTALL.txt` file.
+
+If you encounter issues with OpenModelica compilation try updating OMDev (git pull).
+
+## 1.3 Install MSYS2
+
+Follow the installation instructions in [www.msys2.org](https://www.msys2.org/) to install
+MSYS2 with the installer in `C:\OMDEV\tools\msys64`.
 
 These are the UCRT64 packages needed to build OpenModelica with CMake:
 
@@ -123,7 +158,7 @@ pacman -S mingw-w64-ucrt-x86_64-qt5     \
   mingw-w64-ucrt-x86_64-clang
 ```
 
-## 1.3 Install Additional Programs
+## 1.4 Install Additional Programs
 
 Install the following programs:
 
@@ -132,18 +167,27 @@ Install the following programs:
   - [TortoiseSVN](https://tortoisesvn.net/), SVN tool for Windows
   - [CMake](https://cmake.org/download/) (>= v3.21)
 
-## 1.4 Environment Variables
+## 1.5 Environment Variables
 
-Start `C:\OMDev\tools\msys64\ucrt64.exe` and run:
+Start `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+(MINGW64) and run:
+
+Export the path to your tools: git, svn, java/javac
+Define environment variables pointing to your OMDev directory as well as the MSYS2
+root directory.
+
+> **Note**
+> If you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
 
 ```bash
-# export the path to your tools: git, svn, java/javac
-# note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
 export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
 export OPENMODELICAHOME="C:\\path\\to\\OpenModelica\\build"
 export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodelica\\libraries"
 export OMDEV="C:\\OMDev"
+export OMDEV_MSYS="C:\\OMDev\\tools\\msys64"  # UCRT64 case
 ```
+> **Note**
+> Use `export OMDEV_MSYS="C:\\OMDev\\tools\\msys` for the MINGW64 case
 
 You can add this to your `.bashrc` file
 (usually in `C:\OMDev\tools\msys64\home\<USERNAME>\.bashrc`), to always have them in your
@@ -170,7 +214,8 @@ Follow the instructions in [MSYS and Make](#21-msys-and-make) or [Eclipse](#22-e
 ## 2.1 MSYS and CMake
 
 Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell start a MSYS2
-shell `C:\OMDev\tools\msys64\ucrt64.exe` and run the following:
+shell `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+(MINGW64) and run the following:
 
 ```bash
 cd /path/to/OpenModelica
@@ -182,7 +227,8 @@ make -j<Nr. of cores> install -Oline
 
 ## 2.2 MSYS and Make
 
-Start MSYS terminal `C:\OMDev\tools\msys64\ucrt64.exe` and run:
+Start `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+(MINGW64) and run:
 
 ```bash
 cd /path/to/OpenModelica
@@ -200,7 +246,8 @@ make -f Makefile.omdev.mingw -j<Nr. of cores> qtclients
 # 3 Installer
 
 To build the OpenModelica releases and installer the Makefiles build and NSIS is used.
-If you need to know more checkout [OpenModelicaSetup/BuildWindowsRelease.sh](https://github.com/OpenModelica/OpenModelicaSetup#readme)
+If you need to know more checkout
+[OpenModelicaSetup/BuildWindowsRelease.sh](https://github.com/OpenModelica/OpenModelicaSetup#readme)
 
 
 # 4 Test Suite
@@ -232,4 +279,4 @@ If something does not work check the following:
 
 --------------
 
-Last updated 2023-07-04.
+Last updated 2023-08-11.
