@@ -26,8 +26,7 @@ ifeq "$(OLD_OMDEV)" "1"
 	override CFLAGS += -fno-ipa-pure-const
 else
 	IS_NEW_OMDEV = true
-# TODO AHeu: curl needs bcrypt?
-# Do we need to handle this differently for MINGW64 and UCRT64?
+# TODO: Do we need to handle this differently for MINGW64 and UCRT64?
 	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn2 -lpsl  -lbrotlienc -lbrotlidec -lbrotlicommon -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -lbcrypt -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 endif
 

@@ -11,6 +11,7 @@ ifndef MSYSTEM_PREFIX
 $(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
 
+OMDEV           = $(shell cygpath $$OMDEV)
 MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 
 TOP_DIR=../../

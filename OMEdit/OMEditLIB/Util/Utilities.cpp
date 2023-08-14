@@ -53,6 +53,10 @@
 #include <QXmlSchemaValidator>
 #include <QDir>
 
+extern "C" {
+extern const char* System_openModelicaPlatform();
+}
+
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -976,20 +980,28 @@ QString Utilities::getGDBPath()
   const char *OMDEV = getenv("OMDEV");
   const char *OMDEV_MSYS = getenv("OMDEV_MSYS");
   const char *MSYSTEM_PREFIX = getenv("MSYSTEM_PREFIX");
-  // TODO AHeu: Ask Adeel how to handle this
+  const char* msysEnv = System_openModelicaPlatform(); /* "ucrt64" or "mingw64" */
 
-  // OMDEV_MSYS is set
+  // MSYSTEM_PREFIX is set: <MSYSTEM_PREFIX>/bin/gdb.exe
+  if (!QString(MSYSTEM_PREFIX).isEmpty()) {
+    QString qMSYSTEM_PREFIX = QString(MSYSTEM_PREFIX).replace("\\", "/");
+    return QString(qMSYSTEM_PREFIX) + QString("/bin/gdb.exe");
+  }
+
+  // OMDEV_MSYS is set: <OMDEV_MSYS>/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
   if (!QString(OMDEV_MSYS).isEmpty()) {
     QString qOMDEV_MSYS = QString(OMDEV_MSYS).replace("\\", "/");
-    return QString(qOMDEV_MSYS) + QString(MSYSTEM_PREFIX) + QString("/bin/gdb.exe");
+    return QString(qOMDEV_MSYS) + QString("/") + QString(msysEnv) + QString("/bin/gdb.exe");
   }
-  // OMDEV is set
+
+  // OMDEV is set: <OMDEV>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
   if (!QString(OMDEV).isEmpty()) {
     QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    return QString(qOMDEV) + QString(MSYSTEM_PREFIX) + QString("/bin/gdb.exe");
+    return QString(qOMDEV) + QString("/tools/msys/") + QString(msysEnv) + QString("/bin/gdb.exe");
   }
-  // Default
-  return "gdb";
+
+  // Default: <OPENMODELICAHOME>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
+  return QString(Helper::OpenModelicaHome) + QString("/tools/msys/") + QString(msysEnv) + QString("bin/gdb.exe");
 #else
   return "gdb";
 #endif

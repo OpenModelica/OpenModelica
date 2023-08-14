@@ -278,13 +278,7 @@ else # 64-bit MSYS
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
-# TODO AHeu: Do we need BLAS and LAPACK? We have it in 3rdParty
-#	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
-#	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
 	mkdir -p $(builddir_lib)/omc/libexec/
-# TODO AHeu: What is this?
-#	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
-#	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
 copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
