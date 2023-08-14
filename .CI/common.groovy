@@ -169,6 +169,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
+     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
