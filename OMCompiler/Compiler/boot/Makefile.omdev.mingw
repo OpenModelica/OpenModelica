@@ -20,14 +20,23 @@ PREVIOUS_GCC_VERSION = "5.3.0"
 GCC_VERSION := "`gcc -dumpversion`"
 OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
+# Uggly hack to decied what version of msys we have.
+# If ucrt64 is set, it must be the newer version, so it's libbrotli instead of libbrotli-static
+ifeq (ucrt64,$(findstring ucrt64,$(MSYSTEM_PREFIX)))
+BROTLI_STATIC_LINKER_FLAGS = -lbrotlienc -lbrotlidec -lbrotlicommon
+IS_NEW_NEW_OMDEV = true
+else
+BROTLI_STATIC_LINKER_FLAGS = -lbrotlienc-static -lbrotlidec-static -lbrotlicommon-static
+IS_NEW_NEW_OMDEV = false
+endif
+
 ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
 	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 	override CFLAGS += -fno-ipa-pure-const
 else
 	IS_NEW_OMDEV = true
-# TODO: Do we need to handle this differently for MINGW64 and UCRT64?
-	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn2 -lpsl  -lbrotlienc -lbrotlidec -lbrotlicommon -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -lbcrypt -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn2 -lpsl $(BROTLI_STATIC_LINKER_FLAGS) -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -lbcrypt -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 endif
 
 TOP_DIR=../../
@@ -72,8 +81,8 @@ default: all
 
 ../Util/Autoconf.mo: ../Util/Autoconf.mo.omdev.mingw
 	sed "s/@ISMINGW64@/$(ISMINGW64)/" "$<" > "$@.tmp"
-	sed "s/@IS_NEW_OMDEV@/$(IS_NEW_OMDEV)/" "$@.tmp" > "$@.tmp_"
-	rm "$@.tmp"
-	mv "$@.tmp_" "$@"
+	sed -i "s/@IS_NEW_OMDEV@/$(IS_NEW_OMDEV)/" "$@.tmp"
+	sed -i "s/@IS_NEW_NEW_OMDEV@/$(IS_NEW_NEW_OMDEV)/" "$@.tmp"
+	mv "$@.tmp" "$@"
 
 include Makefile.common

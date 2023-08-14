@@ -2,6 +2,7 @@ encapsulated package Autoconf
 
   constant Boolean is64Bit = @ISMINGW64@;
   constant Boolean isNewOMDev = @IS_NEW_OMDEV@;
+  constant Boolean isNewNewOMDev = @IS_NEW_NEW_OMDEV@;
 
   constant String bstatic = "-Wl,-Bstatic";
   constant String bdynamic = "-Wl,-Bdynamic";
@@ -26,11 +27,16 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lryu -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
-  constant String ldflags_runtime_fmu = linkType + "-lregex -lryu -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
+  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  // TODO AHeu: On older msys zlib is called libzlib.dll, on newer it is libz.dll
+  // Same for szip instead of sz.
+  constant String ldflags_zip = if isNewNewOMDev then "-lz -lsz " else "-lzip -lszip ";
+  constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
-                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lsz -Wl,-Bdynamic";
+                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 "
+                                        + ldflags_zip +
+                                        "-Wl,-Bdynamic";
   constant String ldflags_runtime_fmu_static = " -lSimulationRuntimeFMI " + ldflags_runtime_fmu;
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
