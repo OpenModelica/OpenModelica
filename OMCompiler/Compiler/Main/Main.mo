@@ -634,7 +634,7 @@ algorithm
         end if;
         msysPath = Util.makeValueOrDefault(System.readEnv,"OMDEV_MSYS","");
         if stringEq(msysPath, "") then
-          msysPath = omdevPath + "\\tools\\msys64";
+          msysPath = omdevPath + "\\tools\\msys";
         end if;
         mingwDir = System.openModelicaPlatform();
         msysBinDir = msysPath + "\\usr\\bin";

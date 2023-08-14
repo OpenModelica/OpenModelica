@@ -68,7 +68,7 @@ If you encounter issues with OpenModelica compilation try updating OMDev (git pu
 ## 1.3 Install MSYS2
 
 Follow the installation instructions in [www.msys2.org](https://www.msys2.org/) to install
-MSYS2 with the installer in `C:\OMDEV\tools\msys64`.
+MSYS2 with the installer in `C:\OMDEV\tools\msys`.
 
 These are the UCRT64 packages needed to build OpenModelica with CMake:
 
@@ -125,7 +125,7 @@ Optional packages for OmniORB(?):
 
   - mingw-w64-ucrt-x86_64-libidl2
 
-Start the bash command line with the UCRT64 environment `C:\OMDev\tools\msys64\ucrt64.exe`
+Start the bash command line with the UCRT64 environment `C:\OMDev\tools\msys\ucrt64.exe`
 and use `pacman` to install the packages:
 
 ```bash
@@ -169,7 +169,7 @@ Install the following programs:
 
 ## 1.5 Environment Variables
 
-Start `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+Start `C:\OMDev\tools\msys\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
 (MINGW64) and run:
 
 Export the path to your tools: git, svn, java/javac
@@ -184,13 +184,11 @@ export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
 export OPENMODELICAHOME="C:\\path\\to\\OpenModelica\\build"
 export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodelica\\libraries"
 export OMDEV="C:\\OMDev"
-export OMDEV_MSYS="C:\\OMDev\\tools\\msys64"  # UCRT64 case
+export OMDEV_MSYS="C:\\OMDev\\tools\\msys"
 ```
-> **Note**
-> Use `export OMDEV_MSYS="C:\\OMDev\\tools\\msys` for the MINGW64 case
 
 You can add this to your `.bashrc` file
-(usually in `C:\OMDev\tools\msys64\home\<USERNAME>\.bashrc`), to always have them in your
+(usually in `C:\OMDev\tools\msys\home\<USERNAME>\.bashrc`), to always have them in your
 `PATH`.
 
 Additional remarks:
@@ -200,10 +198,10 @@ Additional remarks:
     `MSYS2_PATH_TYPE=inherit`.
     But be very careful you don't have any MINGW directories in you Windows PATH, e.g.
     coming from Git.
-  - MSYS doesn't use the Windows TEMP directory but `C:\OMDev\tools\msys64\tmp`
-    You change this in `C:\OMDev\tools\msys64\etc\profile`, but it can have unexpected side effects.
+  - MSYS doesn't use the Windows TEMP directory but `C:\OMDev\tools\msys\tmp`
+    You change this in `C:\OMDev\tools\msys\etc\profile`, but it can have unexpected side effects.
   - If you want to use the msys shell from Windows command line  make sure you set
-    environment variable `MSYSTEM=UCRT64` or call `C:\OMDev\tools\msys64\ucrt64.exe`.
+    environment variable `MSYSTEM=UCRT64` or call `C:\OMDev\tools\msys\ucrt64.exe`.
 
 # 2 Compile OpenModelica
 
@@ -214,7 +212,7 @@ Follow the instructions in [MSYS and Make](#21-msys-and-make) or [Eclipse](#22-e
 ## 2.1 MSYS and CMake
 
 Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell start a MSYS2
-shell `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+shell `C:\OMDev\tools\msys\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
 (MINGW64) and run the following:
 
 ```bash
@@ -227,7 +225,7 @@ make -j<Nr. of cores> install -Oline
 
 ## 2.2 MSYS and Make
 
-Start `C:\OMDev\tools\msys64\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
+Start `C:\OMDev\tools\msys\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
 (MINGW64) and run:
 
 ```bash

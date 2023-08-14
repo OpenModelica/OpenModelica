@@ -2,7 +2,7 @@
 REM Arguments
 REM 1 fileprefix
 REM 2 target (gcc|msvc)
-REM 3 platform (ucrt64)
+REM 3 platform (ucrt64|mingw64)
 REM 4 serial/parallel
 REM 5 linkType (dynamic|static)
 REM 6 number of processors
@@ -18,7 +18,7 @@ set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
 call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
-set MINGW="%OPENMODELICAHOME%\tools\msys64\%OM_PLATFORM%"
+set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
 REM If OMDEV_MSYS is set, use Msys from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed

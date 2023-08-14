@@ -7,7 +7,7 @@ set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
 if not "%1"=="" (set OM_PLATFORM=%1) else (set OM_PLATFORM=ucrt64)
-set MINGW="%OPENMODELICAHOME%\tools\msys64\%OM_PLATFORM%"
+set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
 REM If OMDEV_MSYS is set, use Msys from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
