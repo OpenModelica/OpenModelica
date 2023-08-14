@@ -82,6 +82,30 @@
 
 #include <QtSvg/QSvgGenerator>
 
+namespace ToolBars {
+  QString welcomePerspective = "welcomePerspective";
+  QString modelingModelicaPerspective = "modelingModelicaPerspective";
+  QString modelingTextPerspective = "modelingTextPerspective";
+  QString modelingCompositeModelPerspective = "modelingCompositeModelPerspective";
+  QString modelingOMSPerspective = "modelingOMSPerspective";
+  QString plottingPerspective = "plottingPerspective";
+  QString debuggingModelicaPerspective = "debuggingPerspective";
+  QString debuggingTextPerspective = "debuggingTextPerspective";
+  QString debuggingCompositeModelPerspective = "debuggingCompositeModelPerspective";
+  QString debuggingOMSPerspective = "debuggingOMSPerspective";
+  QString editToolBar = "editToolBar";
+  QString viewToolBar = "viewToolBar";
+  QString shapesToolBar = "shapesToolBar";
+  QString modelSwitcherToolBar = "modelSwitcherToolBar";
+  QString checkToolBar = "checkToolBar";
+  QString simulationToolBar = "simulationToolBar";
+  QString reSimulationToolBar = "reSimulationToolBar";
+  QString plotToolBar = "plotToolBar";
+  QString debuggerToolBar = "debuggerToolBar";
+  QString TLMSimulationToolBar = "TLMSimulationToolBar";
+  QString OMSimulatorToolBar = "OMSimulatorToolBar";
+}
+
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
@@ -374,7 +398,9 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
+    mRestoringState = true;
     restoreState(pSettings->value("application/windowState").toByteArray());
+    mRestoringState = false;
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
     mpStackFramesWidget->getStackFramesTreeWidget()->header()->restoreState(pSettings->value("stackFramesTreeState").toByteArray());
@@ -483,6 +509,156 @@ bool MainWindow::isPlottingPerspectiveActive()
 bool MainWindow::isDebuggingPerspectiveActive()
 {
   return mpPerspectiveTabbar->currentIndex() == 3;
+}
+
+#define SHOW_HIDE_TOOLBAR(pToolBar, toolBarSettingName, defaultValue) \
+  if (pSettings->contains(toolBarSettingName)) { \
+    bool signalsState = pToolBar->blockSignals(true); \
+    pToolBar->setVisible(pSettings->value(toolBarSettingName).toBool()); \
+    pToolBar->blockSignals(signalsState); \
+  } else { \
+    bool signalsState = pToolBar->blockSignals(true); \
+    pToolBar->setVisible(defaultValue); \
+    pToolBar->blockSignals(signalsState); \
+    pSettings->setValue(toolBarSettingName, defaultValue); \
+  }
+
+/*!
+ * \brief MainWindow::showModelingPerspectiveToolBars
+ * Updates the toolbars visibility for Modeling perspective based on the active library type.
+ * \param pModelWidget
+ */
+void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
+{
+  // show/hide toolbars
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+    pSettings->beginGroup(ToolBars::modelingTextPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    pSettings->beginGroup(ToolBars::modelingCompositeModelPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    pSettings->beginGroup(ToolBars::modelingOMSPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
+  } else { // Covers the case of LibraryTreeItem::Modelica and default.
+    pSettings->beginGroup(ToolBars::modelingModelicaPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  }
+  pSettings->endGroup();
+}
+
+/*!
+ * \brief MainWindow::showDebuggingPerspectiveToolBars
+ * Updates the toolbars visibility for Debugging perspective based on the active library type.
+ * \param pModelWidget
+ */
+void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
+{
+  // show/hide toolbars
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+    pSettings->beginGroup(ToolBars::debuggingTextPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    pSettings->beginGroup(ToolBars::debuggingCompositeModelPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    pSettings->beginGroup(ToolBars::debuggingOMSPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
+  } else { // Covers the case of LibraryTreeItem::Modelica and default.
+    pSettings->beginGroup(ToolBars::debuggingModelicaPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  }
+  pSettings->endGroup();
 }
 
 /*!
@@ -689,6 +865,8 @@ void MainWindow::beforeClosingMainWindow()
   // close any result file
   // delete the MessagesWidget object
   MessagesWidget::destroy();
+  // set restoring state to true so we don't try to save the toolbars settings after deleting the setting object.
+  mRestoringState = true;
   delete pSettings;
   // delete the OptionsDialog object
   OptionsDialog::destroy();
@@ -2991,6 +3169,116 @@ void MainWindow::toggleShapesButton()
 }
 
 /*!
+ * \brief MainWindow::editToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::editToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::editToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::viewToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::viewToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::viewToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::shapesToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::shapesToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::shapesToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::modelSwitcherToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::modelSwitcherToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::modelSwitcherToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::checkToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::checkToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::checkToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::simulationToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::simulationToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::simulationToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::reSimulationToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::reSimulationToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::reSimulationToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::plotToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::plotToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::plotToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::debuggerToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::debuggerToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::debuggerToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::TLMSimulationToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::TLMSimulationToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::TLMSimulationToolBar, visible);
+}
+
+/*!
+ * \brief MainWindow::OMSimulatorToolBarVisibilityChanged
+ * Slot activated when toolbar visibility is changed.
+ * \param visible
+ */
+void MainWindow::OMSimulatorToolBarVisibilityChanged(bool visible)
+{
+  toolBarVisibilityChanged(ToolBars::OMSimulatorToolBar, visible);
+}
+
+/*!
  * \brief MainWindow::openRecentModelWidget
  * Slot activated when mpModelSwitcherActions triggered SIGNAL is raised.\n
  * Before switching to new ModelWidget try to update the class contents if user has changed anything.
@@ -4050,7 +4338,7 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
-  pViewToolbarsMenu->addAction(mpOMSimulatorToobar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpOMSimulatorToolbar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
@@ -4254,18 +4542,22 @@ void MainWindow::switchToWelcomePerspective()
 #if !defined(WITHOUT_OSG)
   mpThreeDViewerDockWidget->hide();
 #endif
-  // hide toolbars
-  mpEditToolBar->setVisible(false);
-  mpViewToolBar->setVisible(false);
-  mpShapesToolBar->setVisible(false);
-  mpModelSwitcherToolBar->setVisible(false);
-  mpCheckToolBar->setVisible(false);
-  mpSimulationToolBar->setVisible(false);
-  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
-  mpPlotToolBar->setVisible(false);
-  mpPlotToolBar->setEnabled(false);
-  mpTLMSimulationToolbar->setVisible(false);
-  mpOMSimulatorToobar->setVisible(false);
+  // show/hide toolbars
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  pSettings->beginGroup(ToolBars::welcomePerspective);
+  SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+  SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  pSettings->endGroup();
 }
 
 #define ADD_SHOW_DIAGRAMVIEW() \
@@ -4292,14 +4584,7 @@ void MainWindow::switchToModelingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
-  ADD_SHOW_DIAGRAMVIEW()
-  // show/hide toolbars
-  mpEditToolBar->setVisible(true);
-  mpViewToolBar->setVisible(true);
-  mpModelSwitcherToolBar->setVisible(true);
-  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
-  mpPlotToolBar->setVisible(false);
-  mpPlotToolBar->setEnabled(false);
+  ADD_SHOW_DIAGRAMVIEW();
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4340,17 +4625,21 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars
-  mpEditToolBar->setVisible(false);
-  mpViewToolBar->setVisible(true);
-  mpShapesToolBar->setVisible(false);
-  mpModelSwitcherToolBar->setVisible(false);
-  mpCheckToolBar->setVisible(false);
-  mpSimulationToolBar->setVisible(false);
-  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
-  mpPlotToolBar->setVisible(true);
-  mpPlotToolBar->setEnabled(true);
-  mpTLMSimulationToolbar->setVisible(false);
-  mpOMSimulatorToobar->setVisible(false);
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  pSettings->beginGroup(ToolBars::plottingPerspective);
+  SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+  SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, true);
+  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+  SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, true);
+  SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+  SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  pSettings->endGroup();
   // In case user has tabbed the dock widgets then make VariablesWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4377,14 +4666,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
-  ADD_SHOW_DIAGRAMVIEW()
-  // show/hide toolbars
-  mpEditToolBar->setVisible(true);
-  mpViewToolBar->setVisible(true);
-  mpModelSwitcherToolBar->setVisible(true);
-  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
-  mpPlotToolBar->setVisible(false);
-  mpPlotToolBar->setEnabled(false);
+  ADD_SHOW_DIAGRAMVIEW();
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4504,6 +4786,7 @@ void MainWindow::createToolbars()
   // add actions to edit toolbar
   mpEditToolBar->addAction(mpUndoAction);
   mpEditToolBar->addAction(mpRedoAction);
+  connect(mpEditToolBar, SIGNAL(visibilityChanged(bool)), SLOT(editToolBarVisibilityChanged(bool)));
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");
@@ -4516,6 +4799,7 @@ void MainWindow::createToolbars()
   mpViewToolBar->addAction(mpZoomOutAction);
   mpViewToolBar->addSeparator();
   mpViewToolBar->addAction(mpFitToDiagramAction);
+  connect(mpViewToolBar, SIGNAL(visibilityChanged(bool)), SLOT(viewToolBarVisibilityChanged(bool)));
   // Shapes Toolbar
   mpShapesToolBar = addToolBar(tr("Shapes Toolbar"));
   mpShapesToolBar->setObjectName("Shapes Toolbar");
@@ -4531,6 +4815,7 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addAction(mpConnectModeAction);
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpTransitionModeAction);
+  connect(mpShapesToolBar, SIGNAL(visibilityChanged(bool)), SLOT(shapesToolBarVisibilityChanged(bool)));
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
@@ -4548,6 +4833,7 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
   connect(mpModelSwitcherToolButton, SIGNAL(clicked()), this, SLOT(openRecentModelWidget()));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
+  connect(mpModelSwitcherToolBar, SIGNAL(visibilityChanged(bool)), SLOT(modelSwitcherToolBarVisibilityChanged(bool)));
   // Check Toolbar
   mpCheckToolBar = addToolBar(tr("Check Toolbar"));
   mpCheckToolBar->setObjectName("Check Toolbar");
@@ -4556,6 +4842,7 @@ void MainWindow::createToolbars()
   mpCheckToolBar->addAction(mpCheckModelAction);
   mpCheckToolBar->addAction(mpCheckAllModelsAction);
   mpCheckToolBar->addAction(mpInstantiateModelAction);
+  connect(mpCheckToolBar, SIGNAL(visibilityChanged(bool)), SLOT(checkToolBarVisibilityChanged(bool)));
   // Simulation Toolbar
   mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
   mpSimulationToolBar->setObjectName("Simulation Toolbar");
@@ -4569,6 +4856,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
 //  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
+  connect(mpSimulationToolBar, SIGNAL(visibilityChanged(bool)), SLOT(simulationToolBarVisibilityChanged(bool)));
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
@@ -4577,6 +4865,7 @@ void MainWindow::createToolbars()
   // add actions to Re-simulation Toolbar
   mpReSimulationToolBar->addAction(mpReSimulateModelAction);
   mpReSimulationToolBar->addAction(mpReSimulateSetupAction);
+  connect(mpReSimulationToolBar, SIGNAL(visibilityChanged(bool)), SLOT(reSimulationToolBarVisibilityChanged(bool)));
   // Plot Toolbar
   mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
   mpPlotToolBar->setObjectName("Plot Toolbar");
@@ -4594,10 +4883,12 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
+  connect(mpPlotToolBar, SIGNAL(visibilityChanged(bool)), SLOT(plotToolBarVisibilityChanged(bool)));
   // Debugger Toolbar
   mpDebuggerToolBar = addToolBar(tr("Debugger Toolbar"));
   mpDebuggerToolBar->setObjectName("Debugger Toolbar");
   mpDebuggerToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  connect(mpDebuggerToolBar, SIGNAL(visibilityChanged(bool)), SLOT(debuggerToolBarVisibilityChanged(bool)));
   // Debug Configuration Menu
   mpDebugConfigurationMenu = new QMenu;
   updateDebuggerToolBarMenu();
@@ -4620,21 +4911,78 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
+  connect(mpTLMSimulationToolbar, SIGNAL(visibilityChanged(bool)), SLOT(TLMSimulationToolBarVisibilityChanged(bool)));
   // SSP Toolbar
-  mpOMSimulatorToobar = addToolBar(tr("SSP Toolbar"));
-  mpOMSimulatorToobar->setObjectName("SSP Toolbar");
-  mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
+  mpOMSimulatorToolbar = addToolBar(tr("SSP Toolbar"));
+  mpOMSimulatorToolbar->setObjectName("SSP Toolbar");
+  mpOMSimulatorToolbar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to SSP Toolbar
-  mpOMSimulatorToobar->addAction(mpAddSystemAction);
-  mpOMSimulatorToobar->addSeparator();
-  mpOMSimulatorToobar->addAction(mpAddOrEditIconAction);
-  mpOMSimulatorToobar->addAction(mpDeleteIconAction);
-  mpOMSimulatorToobar->addSeparator();
-  mpOMSimulatorToobar->addAction(mpAddConnectorAction);
-  mpOMSimulatorToobar->addAction(mpAddBusAction);
-  mpOMSimulatorToobar->addAction(mpAddTLMBusAction);
-  mpOMSimulatorToobar->addSeparator();
-  mpOMSimulatorToobar->addAction(mpAddSubModelAction);
+  mpOMSimulatorToolbar->addAction(mpAddSystemAction);
+  mpOMSimulatorToolbar->addSeparator();
+  mpOMSimulatorToolbar->addAction(mpAddOrEditIconAction);
+  mpOMSimulatorToolbar->addAction(mpDeleteIconAction);
+  mpOMSimulatorToolbar->addSeparator();
+  mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
+  mpOMSimulatorToolbar->addAction(mpAddBusAction);
+  mpOMSimulatorToolbar->addAction(mpAddTLMBusAction);
+  mpOMSimulatorToolbar->addSeparator();
+  mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
+  connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
+}
+
+/*!
+ * \brief MainWindow::toolBarVisibilityChanged
+ * Writes the toolbar visibility to the settings file.
+ * \param toolbar
+ * \param visible
+ */
+void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
+{
+  if (mRestoringState) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QString perspective;
+  ModelWidget *pModelWidget = 0;
+  switch (mpPerspectiveTabbar->currentIndex()) {
+    case 0:
+      perspective = ToolBars::welcomePerspective;
+      break;
+    case 1:
+      pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+        perspective = ToolBars::modelingTextPerspective;
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        perspective = ToolBars::modelingCompositeModelPerspective;
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        perspective = ToolBars::modelingOMSPerspective;
+      } else {
+        perspective = ToolBars::modelingModelicaPerspective;
+      }
+      break;
+    case 2:
+      perspective = ToolBars::plottingPerspective;
+      break;
+    case 3:
+      pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+        perspective = ToolBars::debuggingTextPerspective;
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        perspective = ToolBars::debuggingCompositeModelPerspective;
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        perspective = ToolBars::debuggingOMSPerspective;
+      } else {
+        perspective = ToolBars::debuggingModelicaPerspective;
+      }
+      break;
+    default:
+      perspective = ToolBars::welcomePerspective;
+      break;
+  }
+
+  pSettings->beginGroup(perspective);
+  pSettings->setValue(toolbar, visible);
+  pSettings->endGroup();
 }
 
 //! when the dragged object enters the main window
