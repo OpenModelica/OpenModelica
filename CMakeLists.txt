@@ -69,7 +69,7 @@ omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
 # set(CMAKE_C_STANDARD 90)
 
 ## Set the C++ standard to use.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
 set(CMAKE_CXX_EXTENSIONS OFF)
