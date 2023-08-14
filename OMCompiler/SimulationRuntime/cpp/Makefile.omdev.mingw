@@ -22,11 +22,11 @@ ifndef OMDEV
 	@echo See OpenModelica/OMCompiler/README.Windows.md
 	ABORT
 endif
-ifndef OMDEV_MSYS
-	@echo You have to set the OMDEV_MSYS variabile pointing to your OMDev package root! Exiting....
-	@echo See OpenModelica/OMCompiler/README.Windows.md
-	ABORT
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
+OMDEV           = $(shell cygpath $$OMDEV)
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -220,12 +220,7 @@ install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
 	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cd Build; cp -p $(OMDEV_MSYS)/bin/libboost*.dll $(builddir_bin)/.)
-else
-	(cd Build; cp -p $(OMDEV_MSYS)/bin/libboost*.dll $(builddir_bin)/.)
-endif
-
+	cp -p $(MSYSTEM_PREFIX)/bin/libboost*.dll $(builddir_bin)/.
 
 clean:
 	$(foreach PLATFORM, $(PLATFORMS), \
