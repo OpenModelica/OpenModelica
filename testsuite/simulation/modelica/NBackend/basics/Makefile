@@ -11,6 +11,7 @@ simpleNonlinearLoop.mos \
 implicitEquation.mos \
 underdetermined_init.mos \
 partitioning.mos \
+variability.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
