@@ -260,6 +260,7 @@ algorithm
     locals := comp_node :: locals;
   else
     setFieldDirection(comp_node, Direction.INPUT);
+    InstNode.componentApply(comp_node, Component.setVariability, Variability.CONTINUOUS);
     inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;

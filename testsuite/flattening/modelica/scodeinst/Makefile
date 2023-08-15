@@ -713,7 +713,6 @@ IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
 IfExpression12.mo \
-IfExpression13.mo \
 IfExpression14.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
@@ -961,6 +960,7 @@ RecordBinding12.mo \
 RecordBinding13.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
+RecordConstructor3.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
@@ -1165,6 +1165,7 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+IfExpression13.mo \
 ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
