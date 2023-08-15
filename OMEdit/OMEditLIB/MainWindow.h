@@ -78,6 +78,7 @@ class SimulationDialog;
 class TLMCoSimulationDialog;
 class OMSSimulationDialog;
 class ModelWidgetContainer;
+class ModelWidget;
 class WelcomePageWidget;
 class InfoBar;
 class AboutOMEditDialog;
@@ -222,7 +223,9 @@ public:
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
   QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
-  QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToobar;}
+  QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToolbar;}
+  void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
+  void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActionsAndList();
   void createRecentFileActions();
@@ -463,6 +466,7 @@ private:
   QMenu *mpNewModelMenu;
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
+  bool mRestoringState = false;
   QToolBar *mpFileToolBar;
   QToolBar *mpEditToolBar;
   QToolBar *mpViewToolBar;
@@ -478,7 +482,7 @@ private:
   QMenu *mpDebugConfigurationMenu;
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpTLMSimulationToolbar;
-  QToolBar *mpOMSimulatorToobar;
+  QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void showMessagesBrowser();
@@ -563,6 +567,17 @@ public slots:
   void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
+  void editToolBarVisibilityChanged(bool visible);
+  void viewToolBarVisibilityChanged(bool visible);
+  void shapesToolBarVisibilityChanged(bool visible);
+  void modelSwitcherToolBarVisibilityChanged(bool visible);
+  void checkToolBarVisibilityChanged(bool visible);
+  void simulationToolBarVisibilityChanged(bool visible);
+  void reSimulationToolBarVisibilityChanged(bool visible);
+  void plotToolBarVisibilityChanged(bool visible);
+  void debuggerToolBarVisibilityChanged(bool visible);
+  void TLMSimulationToolBarVisibilityChanged(bool visible);
+  void OMSimulatorToolBarVisibilityChanged(bool visible);
   void openRecentModelWidget();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void runDebugConfiguration();
@@ -597,6 +612,7 @@ private:
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
+  void toolBarVisibilityChanged(const QString &toolbar, bool visible);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;
