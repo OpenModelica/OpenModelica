@@ -167,13 +167,19 @@ public
           case StrongComponent.SINGLE_COMPONENT() algorithm
             // The variability of the equation must be greater or equal to that of the variable it solves.
             // See MLS section 3.8 Variability of Expressions
-            if ComponentRef.variability(BVariable.getVarName(scc.var)) <
+            if Variable.variability(Pointer.access(scc.var)) <
               Prefixes.variabilityMax(
                 Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
                 Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
               )
             then
-              Error.addMessage(Error.COMPILER_ERROR,{getInstanceName() + " failed because the following strong component has conflicting variability:\n" + StrongComponent.toString(scc)});
+              Error.addMessage(Error.COMPILER_ERROR, {"The following strong component has conflicting variabilities: "
+                + Prefixes.variabilityString(Variable.variability(Pointer.access(scc.var))) + " != "
+                + Prefixes.variabilityString(Prefixes.variabilityMax(
+                    Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
+                    Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
+                  ))
+                + "\n" + StrongComponent.toString(scc)});
               fail();
             end if;
           then ();
