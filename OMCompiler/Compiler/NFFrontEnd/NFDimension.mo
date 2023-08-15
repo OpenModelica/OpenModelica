@@ -360,7 +360,7 @@ public
   function endExp
     "Returns an expression for the last index in a dimension."
     input Dimension dim;
-    input ComponentRef cref;
+    input Expression subscriptedExp;
     input Integer index;
     output Expression sizeExp;
   algorithm
@@ -374,8 +374,13 @@ public
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
       case UNKNOWN()
-        then Expression.SIZE(Expression.fromCref(ComponentRef.stripSubscripts(cref)),
-                             SOME(Expression.INTEGER(index)));
+        then match subscriptedExp
+          case Expression.CREF()
+            then Expression.SIZE(Expression.fromCref(ComponentRef.stripSubscripts(subscriptedExp.cref)),
+                                 SOME(Expression.INTEGER(index)));
+          case Expression.SUBSCRIPTED_EXP()
+            then Expression.SIZE(subscriptedExp.exp, SOME(Expression.INTEGER(index)));
+        end match;
     end match;
   end endExp;
 

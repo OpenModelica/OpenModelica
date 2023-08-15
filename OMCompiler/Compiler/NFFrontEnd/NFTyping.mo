@@ -1287,7 +1287,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
         (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
-        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, info);
+        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
@@ -1295,7 +1295,7 @@ algorithm
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
-        (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, var1, exp.operator, info);
+        (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, var1, exp.operator, context, info);
       then
         (exp, ty, var1, pur1);
 
@@ -1304,7 +1304,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
         (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
-        (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, info);
+        (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
@@ -1312,7 +1312,7 @@ algorithm
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
-        (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, var1, exp.operator, info);
+        (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, var1, exp.operator, context, info);
       then
         (exp, ty, var1, pur1);
 
@@ -1492,7 +1492,7 @@ algorithm
     end if;
   else
     (e, ty, variability, purity) := typeExp(e, context, info);
-    (subs, subs_var) := typeSubscripts(subs, ty, ComponentRef.EMPTY(), context, info);
+    (subs, subs_var) := typeSubscripts(subs, ty, exp, context, info);
     ty := Type.subscript(ty, subs);
     exp := Expression.SUBSCRIPTED_EXP(e, subs, ty, false);
   end if;
@@ -1943,7 +1943,7 @@ algorithm
         // the given context, e.g. for package constants used in a function.
         node_ty := typeComponent(cref.node, crefContext(cref.node), typeChildren = firstPart or not InstContext.inDimension(context));
 
-        (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, context, info);
+        (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, Expression.CREF(node_ty, cref), context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
         subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
       then
@@ -1992,7 +1992,7 @@ end crefContext;
 function typeSubscripts
   input list<Subscript> subscripts;
   input Type crefType;
-  input ComponentRef cref;
+  input Expression subscriptedExp;
   input InstContext.Type context;
   input SourceInfo info;
   output list<Subscript> typedSubs;
@@ -2016,13 +2016,13 @@ algorithm
 
   if listLength(subscripts) > listLength(dims) then
     Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-      {ComponentRef.toString(cref), String(listLength(subscripts)), String(listLength(dims))}, info);
+      {Expression.toString(subscriptedExp), String(listLength(subscripts)), String(listLength(dims))}, info);
     fail();
   end if;
 
   for s in subscripts loop
     dim :: dims := dims;
-    (sub, var) := typeSubscript(s, dim, cref, i, next_context, info);
+    (sub, var) := typeSubscript(s, dim, subscriptedExp, i, next_context, info);
     typedSubs := sub :: typedSubs;
     variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
@@ -2041,7 +2041,7 @@ end typeSubscripts;
 function typeSubscript
   input Subscript subscript;
   input Dimension dimension;
-  input ComponentRef cref;
+  input Expression subscriptedExp;
   input Integer index;
   input InstContext.Type context;
   input SourceInfo info;
@@ -2056,7 +2056,7 @@ algorithm
     // An untyped subscript, type the expression and create a typed subscript.
     case Subscript.UNTYPED()
       algorithm
-        e := evaluateEnd(subscript.exp, dimension, cref, index, context, info);
+        e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
         if Type.isArray(ty) then
@@ -2515,7 +2515,7 @@ end checkSizeTypingError;
 function evaluateEnd
   input Expression exp;
   input Dimension dim;
-  input ComponentRef cref;
+  input Expression subscriptedExp;
   input Integer index;
   input InstContext.Type context;
   input SourceInfo info;
@@ -2526,14 +2526,14 @@ function evaluateEnd
       Type ty;
       ComponentRef cr;
 
-    case Expression.END() then Dimension.endExp(dim, cref, index);
+    case Expression.END() then Dimension.endExp(dim, subscriptedExp, index);
 
     // Stop when encountering a cref, any 'end' in a cref expression refers to
     // the cref's dimensions and will be evaluated when the cref is typed.
     case Expression.CREF() then exp;
 
     else Expression.mapShallow(exp,
-      function evaluateEnd(dim = dim, cref = cref, index = index, info = info, context = context));
+      function evaluateEnd(dim = dim, subscriptedExp = subscriptedExp, index = index, info = info, context = context));
 
   end match;
 end evaluateEnd;
@@ -3717,7 +3717,7 @@ algorithm
   // Deduced iteration range is 1:size(cr, dim_index)
   dim := Type.nthDimension(InstNode.getType(ComponentRef.node(cr)), dim_index);
   start_exp := Dimension.lowerBoundExp(dim);
-  stop_exp := Dimension.endExp(dim, cr, dim_index);
+  stop_exp := Dimension.endExp(dim, Expression.CREF(Type.UNKNOWN(), cr), dim_index);
   iterationRange := Expression.RANGE(Type.UNKNOWN(), start_exp, NONE(), stop_exp);
 end deduceIterationRange;
 

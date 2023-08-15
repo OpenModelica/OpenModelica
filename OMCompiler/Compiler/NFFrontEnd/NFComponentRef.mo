@@ -2094,7 +2094,7 @@ public
                   case Subscript.WHOLE()
                     then Expression.makeRange(Dimension.lowerBoundExp(dim),
                                               NONE(),
-                                              Dimension.endExp(dim, cref, dim_index));
+                                              Dimension.endExp(dim, Expression.CREF(cref.ty, cref), dim_index));
                 end match;
 
                 iterator := InstNode.newIndexedIterator(iter_index);

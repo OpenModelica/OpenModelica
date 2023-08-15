@@ -421,7 +421,7 @@ protected
     //  TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
     //end for;
 
-    matchedFunctions := Function.matchFunctionsSilent(candidates, args, namedArgs, info);
+    matchedFunctions := Function.matchFunctionsSilent(candidates, args, namedArgs, context, info);
     exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
     if listEmpty(exactMatches) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,

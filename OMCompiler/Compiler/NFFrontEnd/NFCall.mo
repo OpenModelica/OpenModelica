@@ -355,7 +355,7 @@ public
     Expression arg_exp;
   algorithm
     ARG_TYPED_CALL(call_scope = scope) := call;
-    matchedFunc := checkMatchingFunctions(call, info, vectorize);
+    matchedFunc := checkMatchingFunctions(call, context, info, vectorize);
 
     func := matchedFunc.func;
     typed_args := matchedFunc.args;
@@ -2567,6 +2567,7 @@ protected
 
   function checkMatchingFunctions
     input NFCall call;
+    input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
     output MatchedFunction matchedFunc;
@@ -2589,7 +2590,7 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, info, vectorize);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize);
     end match;
 
     if listEmpty(matchedFunctions) then
