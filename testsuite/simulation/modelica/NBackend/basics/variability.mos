@@ -1,6 +1,6 @@
 // name: variability
 // keywords: NewBackend
-// status: incorrect
+// status: correct
 
 loadString("
   model variability
