@@ -44,6 +44,7 @@ protected
   import Expression = NFExpression;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
+  import Prefixes = NFPrefixes;
   import SBGraphUtil = NFSBGraphUtil;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -100,7 +101,7 @@ public
 
       case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
+          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, func);
           bdae.ode := systems;
           bdae.varData := varData;
           bdae.eqData := eqData;
@@ -112,10 +113,10 @@ public
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, func);
+          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, func);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            (systems, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), varData, eqData, funcTree, func);
+            (systems, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), systemType, varData, eqData, funcTree, func);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.varData := varData;
@@ -125,7 +126,7 @@ public
 
       case (System.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          (systems, varData, eqData, funcTree) := applyModule(systems, varData, eqData, funcTree, causalizeDAEMode);
+          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, causalizeDAEMode);
           bdae.dae := SOME(systems);
           bdae.varData := varData;
           bdae.eqData := eqData;
@@ -140,6 +141,7 @@ public
 
   function applyModule
     input list<System.System> systems;
+    input System.SystemType systemType;
     output list<System.System> new_systems = {};
     input output VarData varData;
     input output EqData eqData;
@@ -147,13 +149,55 @@ public
     input Module.causalizeInterface func;
   protected
     System.System new_system;
+    Boolean violated = false "true if any system violated variability consistency";
   algorithm
     for system in systems loop
       (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
       new_systems := new_system :: new_systems;
     end for;
     new_systems := listReverse(new_systems);
+
+    if systemType <> System.SystemType.INI then
+      for system in new_systems loop
+        violated := checkSystemVariabilities(system) or violated;
+      end for;
+      if violated then fail(); end if;
+    end if;
   end applyModule;
+
+  function checkSystemVariabilities
+    "checks whether variability is valid. Prevents things like `Integer i = time;`"
+    input System.System system;
+    output Boolean violated = false;
+  algorithm
+    if isSome(system.strongComponents) then
+      for scc in Util.getOption(system.strongComponents) loop
+        () := match scc
+          case StrongComponent.SINGLE_COMPONENT() algorithm
+            if Variable.variability(Pointer.access(scc.var)) <
+              Prefixes.variabilityMax(
+                Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
+                Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
+              )
+            then
+              // The variability of the equation must be greater or equal to that of the variable it solves.
+              // See MLS section 3.8 Variability of Expressions
+              Error.addMessage(Error.COMPILER_ERROR, {"The following strong component has conflicting variabilities: "
+                + Prefixes.variabilityString(Variable.variability(Pointer.access(scc.var))) + " != "
+                + Prefixes.variabilityString(Prefixes.variabilityMax(
+                    Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
+                    Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
+                  ))
+                + "\n" + StrongComponent.toString(scc)});
+              violated := true;
+            end if;
+          then ();
+          /* TODO case StrongComponent.MULTI_COMPONENT() */
+          else ();
+        end match;
+      end for;
+    end if;
+  end checkSystemVariabilities;
 
   function simple
     input VariablePointers vars;

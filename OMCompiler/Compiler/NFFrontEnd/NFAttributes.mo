@@ -141,7 +141,7 @@ public
               finalPrefix = SCode.Final.NOT_FINAL(),
               innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER(),
               replaceablePrefix = SCode.Replaceable.NOT_REPLACEABLE()))
-        then NFAttributes.DEFAULT_ATTR;
+        then DEFAULT_ATTR;
 
       else
         algorithm
@@ -199,9 +199,9 @@ public
     Boolean fin, redecl;
     Replaceable repl;
   algorithm
-    if referenceEq(outerAttr, NFAttributes.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
+    if referenceEq(outerAttr, DEFAULT_ATTR) and innerAttr.connectorType == 0 then
       attr := innerAttr;
-    elseif referenceEq(innerAttr, NFAttributes.DEFAULT_ATTR) then
+    elseif referenceEq(innerAttr, DEFAULT_ATTR) then
       cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
       attr := Attributes.ATTRIBUTES(cty, outerAttr.parallelism,
         outerAttr.variability, outerAttr.direction, innerAttr.innerOuter, outerAttr.isFinal,
@@ -238,9 +238,9 @@ public
     Boolean fin, redecl;
     Replaceable repl;
   algorithm
-    if referenceEq(innerAttr, NFAttributes.DEFAULT_ATTR) and outerAttr.connectorType == 0 then
+    if referenceEq(innerAttr, DEFAULT_ATTR) and outerAttr.connectorType == 0 then
       attr := outerAttr;
-    elseif referenceEq(outerAttr, NFAttributes.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
+    elseif referenceEq(outerAttr, DEFAULT_ATTR) and innerAttr.connectorType == 0 then
       attr := innerAttr;
     else
       Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
@@ -266,9 +266,9 @@ public
     Boolean redecl;
     Replaceable repl;
   algorithm
-    if referenceEq(origAttr, NFAttributes.DEFAULT_ATTR) then
+    if referenceEq(origAttr, DEFAULT_ATTR) then
       attr := redeclAttr;
-    elseif referenceEq(redeclAttr, NFAttributes.DEFAULT_ATTR) then
+    elseif referenceEq(redeclAttr, DEFAULT_ATTR) then
       attr := origAttr;
     else
       Attributes.ATTRIBUTES(cty, par, var, dir, io, _, _, _) := origAttr;
@@ -514,7 +514,7 @@ public
   protected
     Variability var = attr.variability;
   algorithm
-    if referenceEq(attr, NFAttributes.DEFAULT_ATTR) and InstNode.isDiscreteClass(clsNode) then
+    if referenceEq(attr, DEFAULT_ATTR) and InstNode.isDiscreteClass(clsNode) then
       attr := NFAttributes.IMPL_DISCRETE_ATTR;
     elseif var == Variability.CONTINUOUS and InstNode.isDiscreteClass(clsNode) then
       attr.variability := Variability.IMPLICITLY_DISCRETE;

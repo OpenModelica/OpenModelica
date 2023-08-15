@@ -191,6 +191,26 @@ public
       else {var};
   end expandChildren;
 
+  function typeOf
+    input Variable var;
+    output Type ty = var.ty;
+  end typeOf;
+
+  function attributes
+    input Variable variable;
+    output Attributes attributes = variable.attributes;
+  end attributes;
+
+  function variability
+    input Variable variable;
+    output Variability variability = variable.attributes.variability;
+  end variability;
+
+  function visibility
+    input Variable variable;
+    output Visibility visibility = variable.visibility;
+  end visibility;
+
   function isComplex
     input Variable var;
     output Boolean b = Type.isComplex(var.ty);
@@ -206,16 +226,6 @@ public
     output Boolean structural =
       variable.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
   end isStructural;
-
-  function variability
-    input Variable variable;
-    output Variability variability = variable.attributes.variability;
-  end variability;
-
-  function visibility
-    input Variable variable;
-    output Visibility visibility = variable.visibility;
-  end visibility;
 
   function isEmptyArray
     input Variable variable;
