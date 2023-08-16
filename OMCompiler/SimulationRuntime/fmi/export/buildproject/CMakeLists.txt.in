@@ -39,6 +39,11 @@ if(NOT BUILD_SHARED_LIBS)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# Export all symbols on Windows
+if(MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 # FMI header files
 if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
   message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
@@ -53,9 +58,11 @@ endif()
 message(STATUS "FMI2 include directory: ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}")
 
 # POSIX Threads
-set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+if(NOT MSVC)
+  set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+endif()
 
 # Source files
 file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
@@ -121,7 +128,9 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
 endif()
 
 # Link additional libraries
-target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
+if(NOT MSVC)
+  target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
+endif()
 @FMU_ADDITIONAL_LIBS@
 if(${NEED_CVODE})
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
@@ -146,6 +155,9 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 
 # Set compiler definitions
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+if(MSVC)
+  target_compile_definitions(${FMU_NAME} PRIVATE OMC_NO_THREADS)
+endif()
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically
   target_compile_definitions(${FMU_NAME} PRIVATE FMI2_OVERRIDE_FUNCTION_PREFIX)
