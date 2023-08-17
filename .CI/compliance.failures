@@ -3,7 +3,6 @@ ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
 ModelicaCompliance.Arrays.Functions.Conversion.DimConversionMatrix
 ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
-ModelicaCompliance.Classes.Enumeration.EnumUnspecified
 ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidAlways
 ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidNever
 ModelicaCompliance.Classes.Predefined.ReservedBooleanComp

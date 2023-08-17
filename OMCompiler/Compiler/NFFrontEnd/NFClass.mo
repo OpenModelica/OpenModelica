@@ -710,6 +710,18 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     input output Class cls;
   algorithm
     () := match cls
+      case PARTIAL_CLASS()
+        algorithm
+          cls.prefixes := prefs;
+        then
+          ();
+
+      case PARTIAL_BUILTIN()
+        algorithm
+          cls.prefixes := prefs;
+        then
+          ();
+
       case EXPANDED_CLASS()
         algorithm
           cls.prefixes := prefs;
@@ -722,6 +734,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
         then
           ();
 
+      case INSTANCED_CLASS()
+        algorithm
+          cls.prefixes := prefs;
+        then
+          ();
     end match;
   end setPrefixes;
 

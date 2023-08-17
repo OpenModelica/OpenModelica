@@ -1664,10 +1664,24 @@ function redeclareEnum
   input InstNode originalNode;
   output Class redeclaredClass = redeclareClass;
 algorithm
+  // Expand the redeclare node so we can check whether it's an enumeration or not.
+  expand(redeclareNode);
+  redeclaredClass := InstNode.getClass(redeclareNode);
+
   redeclaredClass := match (redeclaredClass, originalClass)
     local
       list<String> lits1, lits2;
 
+    // Redeclare enumeration(:).
+    case (_, Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION(literals = {})))
+      guard InstNode.isEnumerationType(redeclareNode)
+      algorithm
+        redeclaredClass := Class.setPrefixes(prefixes, redeclaredClass);
+        redeclaredClass := Class.mergeModifier(outerMod, redeclaredClass);
+      then
+        redeclaredClass;
+
+    // Redeclare normal enumeration.
     case (Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION(literals = lits1)),
           Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION(literals = lits2)))
       algorithm

@@ -887,6 +887,8 @@ public constant ErrorTypes.Message PARTIAL_DERIVATIVE_INPUT_INVALID_TYPE = Error
   Gettext.gettext("'%s' in partial derivative of '%s' is not a scalar Real input parameter of the function."));
 public constant ErrorTypes.Message CONNECT_TYPE_MISMATCH = ErrorTypes.MESSAGE(406, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The connectors in connect(%s, %s) are not type compatible."));
+public constant ErrorTypes.Message UNSPECIFIED_ENUM_COMPONENT = ErrorTypes.MESSAGE(407, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component '%s' has an unspecified enumeration type (enumeration(:))."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
