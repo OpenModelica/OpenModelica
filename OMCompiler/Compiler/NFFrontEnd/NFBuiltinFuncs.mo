@@ -120,7 +120,7 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
   NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",

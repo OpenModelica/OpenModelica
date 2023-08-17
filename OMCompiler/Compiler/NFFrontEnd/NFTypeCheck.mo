@@ -1538,8 +1538,6 @@ algorithm
       then
         type1;
 
-    case Type.ENUMERATION_ANY() then type1;
-
     case Type.ARRAY()
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
@@ -1621,11 +1619,13 @@ algorithm
 
     case Type.ENUMERATION()
       algorithm
-        matchKind := matchEnumerationTypes(actualType, expectedType);
+        if Type.isUnspecifiedEnumeration(expectedType) then
+          matchKind := MatchKind.EXACT;
+        else
+          matchKind := matchEnumerationTypes(actualType, expectedType);
+        end if;
       then
         actualType;
-
-    case Type.ENUMERATION_ANY() then actualType;
 
     case Type.ARRAY()
       algorithm
@@ -2442,13 +2442,6 @@ algorithm
         expression := Expression.typeCast(expression, expectedType);
       then
         (expectedType, MatchKind.CAST);
-
-    // Any enumeration is compatible with enumeration(:).
-    case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
-      algorithm
-        // TODO: FIXME: Maybe this should be generic match
-      then
-        (actualType, MatchKind.CAST);
 
     // Allow using enumeration as Integer without the explicit cast
     case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
