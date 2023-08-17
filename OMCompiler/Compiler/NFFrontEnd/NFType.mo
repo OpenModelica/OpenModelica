@@ -80,8 +80,10 @@ public
     list<String> literals;
   end ENUMERATION;
 
-  record ENUMERATION_ANY "enumeration(:)"
-  end ENUMERATION_ANY;
+  // TODO: Remove this, which requires updating the bootstrapping sources to
+  //       avoid breaking the ffi interface.
+  record __ENUMERATION_ANY_NOT_USED__
+  end __ENUMERATION_ANY_NOT_USED__;
 
   record ARRAY
     Type elementType;
@@ -447,10 +449,19 @@ public
   algorithm
     isEnum := match ty
       case ENUMERATION() then true;
-      case ENUMERATION_ANY() then true;
       else false;
     end match;
   end isEnumeration;
+
+  function isUnspecifiedEnumeration
+    input Type ty;
+    output Boolean res;
+  algorithm
+    res := match ty
+      case ENUMERATION(literals = {}) then true;
+      else false;
+    end match;
+  end isUnspecifiedEnumeration;
 
   function isComplex
     input Type ty;
@@ -576,7 +587,6 @@ public
       case BOOLEAN() then true;
       case CLOCK() then true;
       case ENUMERATION() then true;
-      case ENUMERATION_ANY() then true;
       case FUNCTION() then isScalarBuiltin(Function.returnType(ty.fn));
       else false;
     end match;
@@ -884,9 +894,8 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then "enumeration " + AbsynUtil.pathString(ty.typePath) +
+      case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else "enumeration " + AbsynUtil.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
-      case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
@@ -919,8 +928,7 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
-      case Type.ENUMERATION_ANY() then "enumeration(:)";
+      case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
       case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toFlatString, toFlatString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toFlatString), ", ") + ")";
       case Type.NORETCALL() then "()";

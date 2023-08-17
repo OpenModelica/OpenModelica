@@ -2574,7 +2574,6 @@ protected
       case Type.BOOLEAN() then true;
       case Type.CLOCK() then true;
       case Type.ENUMERATION() then true;
-      case Type.ENUMERATION_ANY() then true;
       case Type.POLYMORPHIC() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
       case Type.COMPLEX() then isValidParamState(ty.cls);
