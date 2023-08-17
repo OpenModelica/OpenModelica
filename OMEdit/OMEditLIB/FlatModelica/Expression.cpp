@@ -2235,7 +2235,7 @@ namespace FlatModelica
    */
   Expression Expression::evaluate(const VariableEvaluator &var_eval, int recursion_level) const
   {
-    return Expression(_value->eval(var_eval, recursion_level));
+    return _value ? Expression(_value->eval(var_eval, recursion_level)) : Expression();
   }
 
   /*!
@@ -3000,7 +3000,11 @@ namespace FlatModelica
 
   std::ostream& operator<< (std::ostream &os, const Expression &e)
   {
-    e._value->print(os);
+    if (e._value) {
+      e._value->print(os);
+    } else {
+      os << "NIL";
+    }
     return os;
   }
 }
