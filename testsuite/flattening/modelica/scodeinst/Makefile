@@ -407,6 +407,7 @@ EnumConversion1.mo \
 EnumConversion2.mo \
 EnumInvalidLiteralName1.mo \
 EnumRangeBinding1.mo \
+EnumUnspecified1.mo \
 eq1.mo \
 eq2.mo \
 eq3.mo \
@@ -996,6 +997,8 @@ RedeclareEnum1.mo \
 RedeclareEnum2.mo \
 RedeclareEnum3.mo \
 RedeclareEnum4.mo \
+RedeclareEnum5.mo \
+RedeclareEnum6.mo \
 RedeclareFunction1.mo \
 RedeclareInvalidConnectorType1.mo \
 RedeclareInvalidVariability1.mo \

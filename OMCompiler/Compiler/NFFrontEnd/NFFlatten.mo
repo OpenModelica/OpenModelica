@@ -617,6 +617,7 @@ protected
   Prefix pre;
 algorithm
   Component.COMPONENT(ty = ty, binding = binding, attributes = comp_attr, comment = cmt, info = info) := comp;
+  checkUnspecifiedEnumType(ty, node, info);
   var := comp_attr.variability;
 
   if isSome(outerBinding) then
@@ -666,6 +667,22 @@ algorithm
   name := Prefix.prefix(pre);
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
 end flattenSimpleComponent;
+
+function checkUnspecifiedEnumType
+  input Type ty;
+  input InstNode node;
+  input SourceInfo info;
+algorithm
+  () := match ty
+    case Type.ENUMERATION(literals = {})
+      algorithm
+        Error.addSourceMessage(Error.UNSPECIFIED_ENUM_COMPONENT, {InstNode.name(node)}, info);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkUnspecifiedEnumType;
 
 function flattenTypeAttribute
   input Modifier attr;
