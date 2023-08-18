@@ -4674,6 +4674,7 @@ algorithm
     local
       Absyn.Modification mod;
 
+    case Absyn.MODIFICATION(finalPrefix = true) then false;
     case Absyn.MODIFICATION(modification = NONE()) then true;
     case Absyn.MODIFICATION(modification = SOME(mod)) then isEmptyMod(mod);
     else false;
@@ -6198,6 +6199,16 @@ algorithm
     else false;
   end match;
 end isBlock;
+
+function eachBool
+  input Absyn.Each eachPrefix;
+  output Boolean res;
+algorithm
+  res := match eachPrefix
+    case Absyn.Each.EACH() then true;
+    else false;
+  end match;
+end eachBool;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
