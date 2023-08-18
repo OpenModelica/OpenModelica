@@ -578,6 +578,107 @@ public
     end match;
   end applyExp;
 
+  function applyExpShallow
+    input Equation eq;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match eq
+      case Equation.EQUALITY()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.ARRAY_EQUALITY()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.CONNECT()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.FOR()
+        algorithm
+          if isSome(eq.range) then
+            func(Util.getOption(eq.range));
+          end if;
+        then
+          ();
+
+      case Equation.IF()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  func(b.condition);
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          ();
+
+      case Equation.WHEN()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  func(b.condition);
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          ();
+
+      case Equation.ASSERT()
+        algorithm
+          func(eq.condition);
+          func(eq.message);
+          func(eq.level);
+        then
+          ();
+
+      case Equation.TERMINATE()
+        algorithm
+          func(eq.message);
+        then
+          ();
+
+      case Equation.REINIT()
+        algorithm
+          func(eq.cref);
+          func(eq.reinitExp);
+        then
+          ();
+
+      case Equation.NORETCALL()
+        algorithm
+          func(eq.exp);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyExpShallow;
+
   partial function MapExpFn
     input output Expression MapExpFn;
   end MapExpFn;

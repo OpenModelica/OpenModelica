@@ -121,7 +121,7 @@ protected
       else ();
     end match;
 
-    Equation.applyExp(eq, function checkSubscriptBounds(info = Equation.info(eq)));
+    Equation.applyExpShallow(eq, function checkSubscriptBounds(info = Equation.info(eq)));
   end verifyEquation;
 
   function verifyWhenEquation
