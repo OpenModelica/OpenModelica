@@ -17,6 +17,7 @@ ArrayBounds3.mo \
 ArrayBoundsAlg1.mo \
 ArrayBoundsBinding1.mo \
 ArrayBoundsEq1.mo\
+ArrayBoundsEq2.mo\
 ArrayConnect1.mo \
 ArrayConnect2.mo \
 ArrayConnect3.mo \
