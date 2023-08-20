@@ -1442,7 +1442,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // rewind action
   mpRewindAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), tr("Rewind"), this);
-  mpRewindAction->setStatusTip(tr("Rewinds the visualization to the start"));
+  mpRewindAction->setStatusTip(tr("Rewind the visualization to the start"));
   connect(mpRewindAction, SIGNAL(triggered()), SLOT(rewindVisualization()));
   // play action
   mpPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
