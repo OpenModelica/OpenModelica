@@ -236,6 +236,7 @@ public:
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
+  void updatePlotWindows();
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:

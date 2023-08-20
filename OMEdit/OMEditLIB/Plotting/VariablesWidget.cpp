@@ -2383,7 +2383,16 @@ void VariablesWidget::simulationTimeChanged(int value)
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
   updateVisualization();
+  updatePlotWindows();
+}
 
+/*!
+ * \brief VariablesWidget::updatePlotWindows
+ * Updates the plot windows.
+ */
+void VariablesWidget::updatePlotWindows()
+{
+  double time = mpTimeManager->getVisTime();
   foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     try {
       if (MainWindow::instance()->getPlotWindowContainer()->isPlotWindow(pSubWindow->widget())) {
