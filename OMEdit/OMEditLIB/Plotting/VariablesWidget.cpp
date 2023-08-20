@@ -2826,7 +2826,11 @@ void VariablesWidget::rewindVisualization()
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setRealTimeFactor(0.0);
   mpTimeManager->setPause(true);
+  updateVisualization();
+  updatePlotWindows();
+  bool state = mpSimulationTimeSlider->blockSignals(true);
   mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+  mpSimulationTimeSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 }
 
@@ -2865,7 +2869,11 @@ void VariablesWidget::visualizationTimeChanged()
       time = end;
     }
     mpTimeManager->setVisTime(time);
+    bool state = mpSimulationTimeSlider->blockSignals(true);
     mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
+    updateVisualization();
+    updatePlotWindows();
   }
 }
 
@@ -2894,8 +2902,11 @@ void VariablesWidget::incrementVisualization()
   if (!mpTimeManager->isPaused()) {
     mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
     // set time slider
-    int time = mpTimeManager->getTimeFraction();
-    mpSimulationTimeSlider->setValue(time);
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
+    updateVisualization();
+    updatePlotWindows();
     //finish animation with pause when endtime is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       pauseVisualization();
