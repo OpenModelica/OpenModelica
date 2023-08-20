@@ -218,17 +218,17 @@ void AbstractAnimationWindow::createActions()
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   // rotate camera left action
   mpRotateCameraLeftAction = new QAction(QIcon(":/Resources/icons/rotateCameraLeft.svg"), tr("Rotate Left"), this);
-  mpRotateCameraLeftAction->setStatusTip(tr("Rotates the camera left"));
+  mpRotateCameraLeftAction->setStatusTip(tr("Rotate the camera left"));
   connect(mpRotateCameraLeftAction, SIGNAL(triggered()), this, SLOT(rotateCameraLeft()));
   // rotate camera right action
   mpRotateCameraRightAction = new QAction(QIcon(":/Resources/icons/rotateCameraRight.svg"), tr("Rotate Right"), this);
-  mpRotateCameraRightAction->setStatusTip(tr("Rotates the camera right"));
+  mpRotateCameraRightAction->setStatusTip(tr("Rotate the camera right"));
   connect(mpRotateCameraRightAction, SIGNAL(triggered()), this, SLOT(rotateCameraRight()));
-  //interactive control action
+  // interactive control action
   mpInteractiveControlAction = mpAnimationParameterDockerWidget->toggleViewAction();
   mpInteractiveControlAction->setIcon(QIcon(":/Resources/icons/control-panel.svg"));
-  mpInteractiveControlAction->setText(tr("interactive control"));
-  mpInteractiveControlAction->setStatusTip(tr("Opens the interactive control panel"));
+  mpInteractiveControlAction->setText(tr("Interactive Control"));
+  mpInteractiveControlAction->setStatusTip(tr("Open the interactive control panel"));
   mpInteractiveControlAction->setEnabled(false);
   mpAnimationParameterDockerWidget->hide();
 }
