@@ -632,7 +632,7 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
   double start = mpVisualization->getTimeManager()->getStartTime();
   double end = mpVisualization->getTimeManager()->getEndTime();
-  double time = (end - start) * (value / (double)mSliderRange);
+  double time = (end - start) * (value / (double)mSliderRange) + start;
   mpVisualization->getTimeManager()->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   mpVisualization->updateScene(time);
