@@ -237,6 +237,7 @@ public:
   void initializeVisualization();
   void updateVisualization();
   void updatePlotWindows();
+  void updateBrowserTime(double time);
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:

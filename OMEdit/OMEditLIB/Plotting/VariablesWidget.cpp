@@ -2381,23 +2381,35 @@ void VariablesWidget::simulationTimeChanged(int value)
     double start = mpTimeManager->getStartTime();
     double end = mpTimeManager->getEndTime();
     double time = (end - start) * (value / (double)mSliderRange) + start;
-    if (time < start) {
-      time = start;
-    } else if (time > end) {
-      time = end;
-    }
-    mpTimeManager->setVisTime(time);
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    bool state = mpSimulationTimeSlider->blockSignals(true);
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
-    mpSimulationTimeSlider->blockSignals(state);
-    updateVisualization();
-    updatePlotWindows();
+    updateBrowserTime(time);
   } else {
     bool state = mpSimulationTimeSlider->blockSignals(true);
     mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
     mpSimulationTimeSlider->blockSignals(state);
   }
+}
+
+/*!
+ * \brief VariablesWidget::updateBrowserTime
+ * Updates the browser to the provided point of time
+ * \param time The new point of time
+ */
+void VariablesWidget::updateBrowserTime(double time)
+{
+  double start = mpTimeManager->getStartTime();
+  double end = mpTimeManager->getEndTime();
+  if (time < start) {
+    time = start;
+  } else if (time > end) {
+    time = end;
+  }
+  mpTimeManager->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+  bool state = mpSimulationTimeSlider->blockSignals(true);
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+  mpSimulationTimeSlider->blockSignals(state);
+  updateVisualization();
+  updatePlotWindows();
 }
 
 /*!
@@ -2875,20 +2887,7 @@ void VariablesWidget::visualizationTimeChanged()
   bool isDouble = false;
   double time = mpTimeTextBox->text().toDouble(&isDouble);
   if (isDouble && time >= 0.0) {
-    double start = mpTimeManager->getStartTime();
-    double end = mpTimeManager->getEndTime();
-    if (time < start) {
-      time = start;
-    } else if (time > end) {
-      time = end;
-    }
-    mpTimeManager->setVisTime(time);
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    bool state = mpSimulationTimeSlider->blockSignals(true);
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
-    mpSimulationTimeSlider->blockSignals(state);
-    updateVisualization();
-    updatePlotWindows();
+    updateBrowserTime(time);
   } else {
     mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
   }
