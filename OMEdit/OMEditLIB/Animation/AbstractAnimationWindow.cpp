@@ -630,13 +630,20 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
  */
 void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
-  double start = mpVisualization->getTimeManager()->getStartTime();
-  double end = mpVisualization->getTimeManager()->getEndTime();
-  double time = (end - start) * (value / (double)mSliderRange) + start;
-  mpVisualization->getTimeManager()->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-  mpVisualization->updateScene(time);
-  mpViewerWidget->update();
+  if (value >= 0) {
+    double start = mpVisualization->getTimeManager()->getStartTime();
+    double end = mpVisualization->getTimeManager()->getEndTime();
+    double time = (end - start) * (value / (double)mSliderRange) + start;
+    if (time < start) {
+      time = start;
+    } else if (time > end) {
+      time = end;
+    }
+    mpVisualization->getTimeManager()->setVisTime(time);
+    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+    mpVisualization->updateScene(time);
+    mpViewerWidget->update();
+  }
 }
 
 /*!
