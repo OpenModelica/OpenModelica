@@ -1460,7 +1460,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTimeTextBox = new QLineEdit("0.0");
   mpTimeTextBox->setMaximumHeight(toolbarIconSize);
   mpTimeTextBox->setValidator(pDoubleValidator);
-  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visulizationTimeChanged()));
+  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visualizationTimeChanged()));
   // speed
   mpSpeedLabel = new Label;
   mpSpeedLabel->setText(Helper::speed);
@@ -2373,11 +2373,13 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
 /*!
  * \brief VariablesWidget::simulationTimeChanged
  * SLOT activated when mpSimulationTimeSlider valueChanged SIGNAL is raised.
- * \param time
+ * \param value
  */
-void VariablesWidget::simulationTimeChanged(int timePercent)
+void VariablesWidget::simulationTimeChanged(int value)
 {
-  double time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * ((double)timePercent / (double)mSliderRange);
+  double start = mpTimeManager->getStartTime();
+  double end = mpTimeManager->getEndTime();
+  double time = (end - start) * (value / (double)mSliderRange);
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 
@@ -2410,6 +2412,7 @@ void VariablesWidget::simulationTimeChanged(int timePercent)
     updateVisualization();
   }
 }
+
 /*!
  * \brief VariablesWidget::valueEntered
  * Handles the case when a new value is entered in VariablesTreeView.\n
@@ -2832,25 +2835,23 @@ void VariablesWidget::pauseVisualization()
 }
 
 /*!
- * \brief VariablesWidget::visulizationTimeChanged
+ * \brief VariablesWidget::visualizationTimeChanged
  * Slot activated when mpTimeTextBox returnPressed SIGNAL is raised.
  */
-void VariablesWidget::visulizationTimeChanged()
+void VariablesWidget::visualizationTimeChanged()
 {
-  QString time = mpTimeTextBox->text();
-  bool isDouble = true;
-  double start = mpTimeManager->getStartTime();
-  double end = mpTimeManager->getEndTime();
-  double value = time.toDouble(&isDouble);
-  if (isDouble && value >= 0.0) {
-    if (value < start) {
-      value = start;
-    } else if (value > end) {
-      value = end;
+  bool isDouble = false;
+  double time = mpTimeTextBox->text().toDouble(&isDouble);
+  if (isDouble && time >= 0.0) {
+    double start = mpTimeManager->getStartTime();
+    double end = mpTimeManager->getEndTime();
+    if (time < start) {
+      time = start;
+    } else if (time > end) {
+      time = end;
     }
-    mpTimeManager->setVisTime(value);
+    mpTimeManager->setVisTime(time);
     mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
-
   }
 }
 
@@ -2860,11 +2861,10 @@ void VariablesWidget::visulizationTimeChanged()
  */
 void VariablesWidget::visualizationSpeedChanged()
 {
-  QString speed = mpSpeedComboBox->lineEdit()->text();
-  bool isDouble = true;
-  double value = speed.toDouble(&isDouble);
-  if (isDouble && value > 0.0) {
-    mpTimeManager->setSpeedUp(value);
+  bool isDouble = false;
+  double speed = mpSpeedComboBox->lineEdit()->text().toDouble(&isDouble);
+  if (isDouble && speed > 0.0) {
+    mpTimeManager->setSpeedUp(speed);
   }
 }
 
