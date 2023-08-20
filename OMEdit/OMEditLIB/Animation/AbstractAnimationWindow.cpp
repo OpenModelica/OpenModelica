@@ -692,6 +692,8 @@ void AbstractAnimationWindow::setSpeedSlotFunction()
   if (isDouble && speed > 0.0) {
     mpVisualization->getTimeManager()->setSpeedUp(speed);
     mpViewerWidget->update();
+  } else {
+    mpSpeedComboBox->lineEdit()->setText(QString::number(mpVisualization->getTimeManager()->getSpeedUp()));
   }
 }
 
