@@ -2379,7 +2379,7 @@ void VariablesWidget::simulationTimeChanged(int value)
 {
   double start = mpTimeManager->getStartTime();
   double end = mpTimeManager->getEndTime();
-  double time = (end - start) * (value / (double)mSliderRange);
+  double time = (end - start) * (value / (double)mSliderRange) + start;
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
   updateVisualization();

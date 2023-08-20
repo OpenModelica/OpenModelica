@@ -60,7 +60,7 @@ void TimeManager::updateTick()
 
 int TimeManager::getTimeFraction()
 {
-  return int(_visTime / (_endTime - _startTime) * mTimeDiscretization);
+  return int((_visTime - _startTime) / (_endTime - _startTime) * mTimeDiscretization);
 }
 
 double TimeManager::getEndTime() const
