@@ -123,11 +123,11 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       mpAnimationRepeatAction->setEnabled(true);
       mpAnimationSlider->setEnabled(true);
       bool state = mpAnimationSlider->blockSignals(true);
-      mpAnimationSlider->setValue(0);
+      mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
       mpAnimationSlider->blockSignals(state);
       mpSpeedComboBox->setEnabled(true);
       mpTimeTextBox->setEnabled(true);
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getStartTime()));
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
       /* Only use isometric view as default for csv file type.
        * Otherwise use side view as default which suits better for Modelica models.
        */
@@ -589,7 +589,7 @@ void AbstractAnimationWindow::initSlotFunction()
 {
   mpVisualization->initVisualization();
   bool state = mpAnimationSlider->blockSignals(true);
-  mpAnimationSlider->setValue(0);
+  mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
   mpAnimationSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   mpViewerWidget->update();
