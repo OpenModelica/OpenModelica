@@ -625,6 +625,29 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
 }
 
 /*!
+ * \brief AbstractAnimationWindow::updateSceneTime
+ * Updates the scene to the provided point of time
+ * \param time The new point of time
+ */
+void AbstractAnimationWindow::updateSceneTime(double time)
+{
+  double start = mpVisualization->getTimeManager()->getStartTime();
+  double end = mpVisualization->getTimeManager()->getEndTime();
+  if (time < start) {
+    time = start;
+  } else if (time > end) {
+    time = end;
+  }
+  mpVisualization->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+  bool state = mpAnimationSlider->blockSignals(true);
+  mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+  mpAnimationSlider->blockSignals(state);
+  mpVisualization->updateScene(mpVisualization->getTimeManager()->getVisTime());
+  mpViewerWidget->update();
+}
+
+/*!
  * \brief AbstractAnimationWindow::sliderSetTimeSlotFunction
  * slot function for the time slider to jump to the adjusted point of time
  */
@@ -634,18 +657,7 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
     double start = mpVisualization->getTimeManager()->getStartTime();
     double end = mpVisualization->getTimeManager()->getEndTime();
     double time = (end - start) * (value / (double)mSliderRange) + start;
-    if (time < start) {
-      time = start;
-    } else if (time > end) {
-      time = end;
-    }
-    mpVisualization->getTimeManager()->setVisTime(time);
-    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-    bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
-    mpAnimationSlider->blockSignals(state);
-    mpVisualization->updateScene(time);
-    mpViewerWidget->update();
+    updateSceneTime(time);
   } else {
     bool state = mpAnimationSlider->blockSignals(true);
     mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
@@ -662,20 +674,7 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
   bool isDouble = false;
   double time = mpTimeTextBox->text().toDouble(&isDouble);
   if (isDouble && time >= 0.0) {
-    double start = mpVisualization->getTimeManager()->getStartTime();
-    double end = mpVisualization->getTimeManager()->getEndTime();
-    if (time < start) {
-      time = start;
-    } else if (time > end) {
-      time = end;
-    }
-    mpVisualization->getTimeManager()->setVisTime(time);
-    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-    bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
-    mpAnimationSlider->blockSignals(state);
-    mpVisualization->updateScene(time);
-    mpViewerWidget->update();
+    updateSceneTime(time);
   } else {
     mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   }
