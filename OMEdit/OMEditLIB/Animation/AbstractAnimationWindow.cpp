@@ -670,11 +670,14 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
       time = end;
     }
     mpVisualization->getTimeManager()->setVisTime(time);
+    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
     bool state = mpAnimationSlider->blockSignals(true);
     mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
     mpAnimationSlider->blockSignals(state);
     mpVisualization->updateScene(time);
     mpViewerWidget->update();
+  } else {
+    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   }
 }
 
