@@ -2382,6 +2382,7 @@ void VariablesWidget::simulationTimeChanged(int value)
   double time = (end - start) * (value / (double)mSliderRange);
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+  updateVisualization();
 
   PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
   if (pPlotWindow) {
@@ -2408,8 +2409,6 @@ void VariablesWidget::simulationTimeChanged(int value)
     } catch (PlotException &e) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     }
-  } else { // if no plot window then try to update the DiagramWindow
-    updateVisualization();
   }
 }
 
