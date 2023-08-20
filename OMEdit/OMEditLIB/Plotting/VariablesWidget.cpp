@@ -2384,27 +2384,33 @@ void VariablesWidget::simulationTimeChanged(int value)
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
   updateVisualization();
 
-  PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-  if (pPlotWindow) {
+  foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     try {
-      PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-      if (plotType == PlotWindow::PLOTARRAY) {
-        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-        foreach (PlotCurve* curve, curves) {
-          QString varName = curve->getYVariable();
-          pPlotWindow->setVariablesList(QStringList(varName));
-          pPlotWindow->plotArray(time, curve);
+      if (MainWindow::instance()->getPlotWindowContainer()->isPlotWindow(pSubWindow->widget())) {
+        PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+        PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
+        if (plotType == PlotWindow::PLOTARRAY || plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+          QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
+          if (curves.isEmpty()) {
+            if (!pPlotWindow->getFooter().isEmpty()) {
+              pPlotWindow->setTime(time);
+              pPlotWindow->updateTimeText();
+            }
+          } else if (plotType == PlotWindow::PLOTARRAY) {
+            foreach (PlotCurve* curve, curves) {
+              QString varName = curve->getYVariable();
+              pPlotWindow->setVariablesList(QStringList(varName));
+              pPlotWindow->plotArray(time, curve);
+            }
+          } else {
+            foreach (PlotCurve* curve, curves) {
+              QString xVarName = curve->getXVariable();
+              QString yVarName = curve->getYVariable();
+              pPlotWindow->setVariablesList({xVarName, yVarName});
+              pPlotWindow->plotArrayParametric(time, curve);
+            }
+          }
         }
-      } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
-        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-        foreach (PlotCurve* curve, curves) {
-          QString xVarName = curve->getXVariable();
-          QString yVarName = curve->getYVariable();
-          pPlotWindow->setVariablesList({xVarName,yVarName});
-          pPlotWindow->plotArrayParametric(time, curve);
-        }
-      } else {
-        return;
       }
     } catch (PlotException &e) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
@@ -2653,7 +2659,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
     if (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY ||
         pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
       pPlotWindow->setTimeUnit(unit);
-      pPlotWindow->updateTimeText(unit);
+      pPlotWindow->updateTimeText();
     } else if (pPlotWindow->getPlotType() == PlotWindow::PLOT ||
                pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
