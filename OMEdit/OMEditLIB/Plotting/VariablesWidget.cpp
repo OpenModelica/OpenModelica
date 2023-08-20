@@ -1864,8 +1864,8 @@ void VariablesWidget::initializeVisualization()
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setPause(true);
   // reset the visualization controls
-  mpTimeTextBox->setText("0.0");
-  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
+  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
   enableVisualizationControls(true);
 }
 
@@ -2826,7 +2826,7 @@ void VariablesWidget::rewindVisualization()
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setRealTimeFactor(0.0);
   mpTimeManager->setPause(true);
-  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 }
 
