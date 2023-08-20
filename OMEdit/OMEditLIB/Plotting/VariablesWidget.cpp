@@ -2377,13 +2377,20 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
  */
 void VariablesWidget::simulationTimeChanged(int value)
 {
-  double start = mpTimeManager->getStartTime();
-  double end = mpTimeManager->getEndTime();
-  double time = (end - start) * (value / (double)mSliderRange) + start;
-  mpTimeManager->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-  updateVisualization();
-  updatePlotWindows();
+  if (value >= 0) {
+    double start = mpTimeManager->getStartTime();
+    double end = mpTimeManager->getEndTime();
+    double time = (end - start) * (value / (double)mSliderRange) + start;
+    if (time < start) {
+      time = start;
+    } else if (time > end) {
+      time = end;
+    }
+    mpTimeManager->setVisTime(time);
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    updateVisualization();
+    updatePlotWindows();
+  }
 }
 
 /*!
