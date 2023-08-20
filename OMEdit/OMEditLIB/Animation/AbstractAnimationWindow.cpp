@@ -641,8 +641,15 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
     }
     mpVisualization->getTimeManager()->setVisTime(time);
     mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+    bool state = mpAnimationSlider->blockSignals(true);
+    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->blockSignals(state);
     mpVisualization->updateScene(time);
     mpViewerWidget->update();
+  } else {
+    bool state = mpAnimationSlider->blockSignals(true);
+    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->blockSignals(state);
   }
 }
 
