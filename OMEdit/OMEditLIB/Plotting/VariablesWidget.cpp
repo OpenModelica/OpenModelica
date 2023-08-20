@@ -2388,8 +2388,15 @@ void VariablesWidget::simulationTimeChanged(int value)
     }
     mpTimeManager->setVisTime(time);
     mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
     updateVisualization();
     updatePlotWindows();
+  } else {
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
   }
 }
 
