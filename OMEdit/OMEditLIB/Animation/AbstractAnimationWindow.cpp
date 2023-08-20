@@ -630,9 +630,9 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
  */
 void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
-  float time = (mpVisualization->getTimeManager()->getEndTime()
-                - mpVisualization->getTimeManager()->getStartTime())
-      * (float) (value / (float)mSliderRange);
+  double start = mpVisualization->getTimeManager()->getStartTime();
+  double end = mpVisualization->getTimeManager()->getEndTime();
+  float time = (end - start) * (value / (float)mSliderRange);
   mpVisualization->getTimeManager()->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   mpVisualization->updateScene(time);
@@ -645,22 +645,21 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
  */
 void AbstractAnimationWindow::jumpToTimeSlotFunction()
 {
-  QString str = mpTimeTextBox->text();
-  bool isDouble = true;
-  double start = mpVisualization->getTimeManager()->getStartTime();
-  double end = mpVisualization->getTimeManager()->getEndTime();
-  double value = str.toDouble(&isDouble);
-  if (isDouble && value >= 0.0) {
-    if (value < start) {
-      value = start;
-    } else if (value > end) {
-      value = end;
+  bool isDouble = false;
+  double time = mpTimeTextBox->text().toDouble(&isDouble);
+  if (isDouble && time >= 0.0) {
+    double start = mpVisualization->getTimeManager()->getStartTime();
+    double end = mpVisualization->getTimeManager()->getEndTime();
+    if (time < start) {
+      time = start;
+    } else if (time > end) {
+      time = end;
     }
-    mpVisualization->getTimeManager()->setVisTime(value);
+    mpVisualization->getTimeManager()->setVisTime(time);
     bool state = mpAnimationSlider->blockSignals(true);
     mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
     mpAnimationSlider->blockSignals(state);
-    mpVisualization->updateScene(value);
+    mpVisualization->updateScene(time);
     mpViewerWidget->update();
   }
 }
@@ -671,11 +670,10 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
  */
 void AbstractAnimationWindow::setSpeedSlotFunction()
 {
-  QString str = mpSpeedComboBox->lineEdit()->text();
-  bool isDouble = true;
-  double value = str.toDouble(&isDouble);
-  if (isDouble && value > 0.0) {
-    mpVisualization->getTimeManager()->setSpeedUp(value);
+  bool isDouble = false;
+  double speed = mpSpeedComboBox->lineEdit()->text().toDouble(&isDouble);
+  if (isDouble && speed > 0.0) {
+    mpVisualization->getTimeManager()->setSpeedUp(speed);
     mpViewerWidget->update();
   }
 }
