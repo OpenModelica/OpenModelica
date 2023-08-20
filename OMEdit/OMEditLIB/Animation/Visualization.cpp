@@ -1190,12 +1190,11 @@ void VisualizationAbstract::setUpScene()
 
 void VisualizationAbstract::sceneUpdate()
 {
-  //measure realtime
+  // measure real time
   mpTimeManager->updateTick();
-  //update scene and set next time step
+  // set next time step
   if (!mpTimeManager->isPaused()) {
-    updateScene(mpTimeManager->getVisTime());
-    //finish animation with pause when endtime is reached
+    // finish animation with pause when end time is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       if (mpTimeManager->canRepeat()) {
         initVisualization();
@@ -1203,23 +1202,26 @@ void VisualizationAbstract::sceneUpdate()
       } else {
         mpTimeManager->setPause(true);
       }
-    } else { // get the new visualization time
-      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+    } else {
+      // set new visualization time
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual() * mpTimeManager->getSpeedUp());
       if (newTime <= mpTimeManager->getEndTime()) {
         mpTimeManager->setVisTime(newTime);
       } else {
         mpTimeManager->setVisTime(mpTimeManager->getEndTime());
       }
+      // update scene
+      updateScene(mpTimeManager->getVisTime());
     }
   }
 }
 
 void VisualizationAbstract::initVisualization()
 {
-  initializeVisAttributes(mpTimeManager->getStartTime());
-  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-  mpTimeManager->setRealTimeFactor(0.0);
   mpTimeManager->setPause(true);
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  initializeVisAttributes(mpTimeManager->getVisTime());
 }
 
 void VisualizationAbstract::startVisualization()

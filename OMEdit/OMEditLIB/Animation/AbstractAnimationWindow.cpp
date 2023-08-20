@@ -547,23 +547,21 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualiza
 void AbstractAnimationWindow::updateScene()
 {
   if (mpVisualization) {
-    //set time label
-    if (!mpVisualization->getTimeManager()->isPaused()) {
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-      // set time slider
-      if (mpVisualization->getVisType() != VisType::FMU) {
-        int time = mpVisualization->getTimeManager()->getTimeFraction();
-        bool state = mpAnimationSlider->blockSignals(true);
-        mpAnimationSlider->setValue(time);
-        mpAnimationSlider->blockSignals(state);
-      }
-    }
-
-    //update the scene
+    // update scene
     mpVisualization->sceneUpdate();
     mpViewerWidget->update();
-
-    updateControlPanelValues();
+    if (!mpVisualization->getTimeManager()->isPaused()) {
+      // set time label
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+      // set time slider
+      bool state = mpAnimationSlider->blockSignals(true);
+      mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+      mpAnimationSlider->blockSignals(state);
+    }
+    if (mpVisualization->getVisType() == VisType::FMU) {
+      // set state labels
+      updateControlPanelValues();
+    }
   }
 }
 
@@ -588,12 +586,14 @@ void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 void AbstractAnimationWindow::initSlotFunction()
 {
   mpVisualization->initVisualization();
+  mpViewerWidget->update();
   bool state = mpAnimationSlider->blockSignals(true);
   mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
   mpAnimationSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-  mpViewerWidget->update();
-  updateControlPanelValues();
+  if (mpVisualization->getVisType() == VisType::FMU) {
+    updateControlPanelValues();
+  }
 }
 
 /*!
