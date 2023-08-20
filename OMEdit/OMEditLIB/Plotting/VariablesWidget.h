@@ -235,6 +235,7 @@ public:
   void interactiveReSimulation(QString modelName);
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization();
+  void updateVisualization();
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:
@@ -263,7 +264,6 @@ private:
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(double &startTime, double &stopTime);
-  void updateVisualization();
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
