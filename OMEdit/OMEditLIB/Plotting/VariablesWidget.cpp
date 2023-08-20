@@ -2896,7 +2896,8 @@ void VariablesWidget::visualizationTimeChanged()
 
 /*!
  * \brief VariablesWidget::visualizationSpeedChanged
- * Slot activated when mpSpeedComboBox currentIndexChanged SIGNAL is raised.
+ * Slot activated when mpSpeedComboBox currentIndexChanged SIGNAL is raised,
+ * as well as when mpSpeedComboBox->lineEdit() textChanged SIGNAL is raised.
  */
 void VariablesWidget::visualizationSpeedChanged()
 {
@@ -2904,6 +2905,8 @@ void VariablesWidget::visualizationSpeedChanged()
   double speed = mpSpeedComboBox->lineEdit()->text().toDouble(&isDouble);
   if (isDouble && speed > 0.0) {
     mpTimeManager->setSpeedUp(speed);
+  } else {
+    mpSpeedComboBox->lineEdit()->setText(QString::number(mpTimeManager->getSpeedUp()));
   }
 }
 
