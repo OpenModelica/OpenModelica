@@ -769,6 +769,7 @@ InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
 InnerOuterClass1.mo \
+InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \
 InnerOuterInvalidMod2.mo \

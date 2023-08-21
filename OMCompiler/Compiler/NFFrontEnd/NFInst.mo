@@ -2725,15 +2725,7 @@ algorithm
       then
         fail();
 
-    else
-      algorithm
-        prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(scope));
-        prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
-          cref else ComponentRef.append(cref, prefixed_cref);
-        prefixed_cref := ComponentRef.removeOuterCrefPrefix(prefixed_cref);
-      then
-        Expression.CREF(Type.UNKNOWN(), prefixed_cref);
-
+    else Expression.CREF(Type.UNKNOWN(), ComponentRef.appendScope(scope, cref));
   end match;
 end instCrefComponent;
 
@@ -2746,8 +2738,7 @@ function instCrefFunction
 protected
   ComponentRef fn_ref;
 algorithm
-  fn_ref := ComponentRef.fromNodeList(InstNode.scopeList(scope, includeRoot = true));
-  fn_ref := ComponentRef.append(cref, fn_ref);
+  fn_ref := ComponentRef.appendScope(scope, cref, includeRoot = true);
   fn_ref := Function.instFunctionRef(fn_ref, context, info);
   crefExp := Expression.CREF(Type.UNKNOWN(), fn_ref);
 end instCrefFunction;
@@ -3171,12 +3162,7 @@ protected
 algorithm
   (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, context, info);
   cref := instCrefSubscripts(cref, scope, context, info);
-
-  prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-  if not ComponentRef.isEmpty(prefix) then
-    cref := ComponentRef.append(cref, prefix);
-  end if;
-
+  cref := ComponentRef.appendScope(found_scope, cref);
   outExp := Expression.CREF(Type.UNKNOWN(), cref);
 end instConnectorCref;
 
