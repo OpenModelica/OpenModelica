@@ -191,6 +191,17 @@ OMVariable::OMVariable()
 
 OMVariable::OMVariable(const OMVariable &var)
 {
+  copyData(var);
+}
+
+OMVariable& OMVariable::operator=(const OMVariable &var)
+{
+  copyData(var);
+  return *this;
+}
+
+void OMVariable::copyData(const OMVariable &var)
+{
   name = var.name;
   comment = var.comment;
   info = var.info;
@@ -198,7 +209,7 @@ OMVariable::OMVariable(const OMVariable &var)
   definedIn = var.definedIn;
   usedIn = var.usedIn;
   foreach (OMOperation *op, var.ops) {
-    qDebug() << "dynamic_cast op: " << op->toString();
+    //qDebug() << "dynamic_cast op: " << op->toString();
     if (dynamic_cast<OMOperationSimplify*>(op))
       ops.append(new OMOperationSimplify(*dynamic_cast<OMOperationSimplify*>(op)));
     else if (dynamic_cast<OMOperationScalarize*>(op))

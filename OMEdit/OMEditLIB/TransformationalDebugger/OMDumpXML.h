@@ -167,6 +167,8 @@ struct OMVariable {
   QList<OMOperation*> ops;
   OMVariable();
   OMVariable(const OMVariable& var);
+  OMVariable& operator=(const OMVariable& var);
+  void copyData(const OMVariable& var);
   ~OMVariable();
 };
 
