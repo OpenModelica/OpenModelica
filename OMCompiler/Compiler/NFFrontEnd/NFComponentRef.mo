@@ -389,6 +389,23 @@ public
     end match;
   end append;
 
+  function appendScope
+    "Appends the instance scope of the given node to a component reference, as
+     defined by InstNode.scopeList."
+    input InstNode scope;
+    input output ComponentRef cref;
+    input Boolean includeRoot = false "Whether to include the root class name or not.";
+  protected
+    ComponentRef prefix;
+  algorithm
+    prefix := fromNodeList(InstNode.scopeList(scope, includeRoot));
+
+    if not ComponentRef.isEmpty(prefix) then
+      cref := append(cref, prefix);
+      cref := removeOuterCrefPrefix(cref);
+    end if;
+  end appendScope;
+
   function prepend
     input ComponentRef restCref;
     input output ComponentRef cref;
