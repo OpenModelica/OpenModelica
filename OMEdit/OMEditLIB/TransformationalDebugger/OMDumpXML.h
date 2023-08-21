@@ -43,6 +43,7 @@
 class OMOperation {
 public:
   virtual ~OMOperation() {}
+  virtual OMOperation* clone() const {return new OMOperation(*this);}
   virtual QString toString();
   virtual QString toHtml(HtmlDiff htmlDiff = HtmlDiff::Both);
   QString diffHtml(QString &before, QString &after, HtmlDiff htmlDiff);
@@ -53,8 +54,11 @@ class OMOperationInfo : public OMOperation
 public:
   QString name,info;
   OMOperationInfo(QString name, QString info);
-  QString toString();
-  QString toHtml(HtmlDiff htmlDiff);
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationInfo(*this);}
+  virtual QString toString() override;
+  virtual QString toHtml(HtmlDiff htmlDiff) override;
 };
 
 class OMOperationBeforeAfter : public OMOperation
@@ -62,14 +66,20 @@ class OMOperationBeforeAfter : public OMOperation
 public:
   QString name,before,after;
   OMOperationBeforeAfter(QString name, QStringList ops);
-  QString toString();
-  QString toHtml(HtmlDiff htmlDiff);
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationBeforeAfter(*this);}
+  virtual QString toString() override;
+  virtual QString toHtml(HtmlDiff htmlDiff) override;
 };
 
 class OMOperationSimplify : public OMOperationBeforeAfter
 {
 public:
   OMOperationSimplify(QStringList ops) : OMOperationBeforeAfter("simplify",ops) {}
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationSimplify(*this);}
 };
 
 class OMOperationScalarize : public OMOperation
@@ -78,19 +88,28 @@ public:
   int index;
   QString before,after;
   OMOperationScalarize(int _index,QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationScalarize(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationInline : public OMOperationBeforeAfter
 {
 public:
   OMOperationInline(QStringList ops) : OMOperationBeforeAfter("inline",ops) {}
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationInline(*this);}
 };
 
 class OMOperationSubstitution : public OMOperationBeforeAfter
 {
 public:
   OMOperationSubstitution(QStringList ops) : OMOperationBeforeAfter("substitution",ops) {}
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationSubstitution(*this);}
 };
 
 class OMOperationSolved : public OMOperation
@@ -98,7 +117,10 @@ class OMOperationSolved : public OMOperation
 public:
   QString lhs,rhs;
   OMOperationSolved(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationSolved(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationLinearSolved : public OMOperation
@@ -106,7 +128,10 @@ class OMOperationLinearSolved : public OMOperation
 public:
   QString text;
   OMOperationLinearSolved(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationLinearSolved(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationSolve : public OMOperation
@@ -115,7 +140,10 @@ public:
   QString lhs_old,rhs_old;
   QString lhs_new,rhs_new;
   OMOperationSolve(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationSolve(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationDifferentiate : public OMOperation
@@ -123,7 +151,10 @@ class OMOperationDifferentiate : public OMOperation
 public:
   QString exp,wrt,result;
   OMOperationDifferentiate(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationDifferentiate(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationResidual : public OMOperation
@@ -131,7 +162,10 @@ class OMOperationResidual : public OMOperation
 public:
   QString lhs,rhs,result;
   OMOperationResidual(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationResidual(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationDummyDerivative : public OMOperation
@@ -140,13 +174,19 @@ public:
   QString chosen;
   QStringList candidates;
   OMOperationDummyDerivative(QStringList ops);
-  QString toString();
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationDummyDerivative(*this);}
+  virtual QString toString() override;
 };
 
 class OMOperationFlattening : public OMOperationBeforeAfter
 {
 public:
   OMOperationFlattening(QStringList ops) : OMOperationBeforeAfter("flattening", ops) {}
+  // OMOperation interface
+public:
+  virtual OMOperation* clone() const override {return new OMOperationFlattening(*this);}
 };
 
 struct OMInfo {
@@ -167,6 +207,8 @@ struct OMVariable {
   QList<OMOperation*> ops;
   OMVariable();
   OMVariable(const OMVariable& var);
+  OMVariable& operator=(const OMVariable& var);
+  void copyData(const OMVariable& var);
   ~OMVariable();
 };
 
