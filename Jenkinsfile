@@ -25,7 +25,7 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux || osx'
+        label 'linux'
       }
       steps {
         script {
