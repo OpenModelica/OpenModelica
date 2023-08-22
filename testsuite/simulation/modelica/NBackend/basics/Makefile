@@ -5,8 +5,8 @@ emptyModel.mos \
 helloWorld.mos \
 multary_simplification.mos \
 parameterSystem.mos \
-RSE.mos \
-RSE2.mos \
+Alias.mos \
+Alias2.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
 underdetermined_init.mos \
@@ -16,6 +16,7 @@ variability.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+Alias3.mos \
 simpleForLoop.mos \
 minimalTearing.mos \
 solveSingleEquation.mos \

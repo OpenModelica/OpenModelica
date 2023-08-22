@@ -518,7 +518,9 @@ protected
       case Expression.REAL()      then (true, 0);
       case Expression.BOOLEAN()   then (true, 0);
       case Expression.STRING()    then (true, 0);
-      case Expression.CREF()      then (true, if ComponentRef.variability(exp.cref) > Variability.NON_STRUCTURAL_PARAMETER then 1 else 0);
+      case Expression.CREF()      then (true, 1);
+      // TODO what about parameters in the denominator, they could be zero, (alias strictness?)
+      //case Expression.CREF()      then (true, if ComponentRef.variability(exp.cref) > Variability.NON_STRUCTURAL_PARAMETER then 1 else 0);
 
       case Expression.CAST()      then isSimpleExp(exp.exp);
 
