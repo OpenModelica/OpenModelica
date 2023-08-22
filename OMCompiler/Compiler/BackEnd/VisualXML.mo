@@ -516,7 +516,7 @@ protected
 algorithm
   chars := stringListStringChar(sIn);
   if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
-    sOut := "modelica://"+CevalScript.getFullPathFromUri(program,sIn,true);
+    sOut := "file://"+CevalScript.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;
 
