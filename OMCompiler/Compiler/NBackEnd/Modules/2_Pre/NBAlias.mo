@@ -73,6 +73,7 @@ protected
   import Expression = NFExpression;
   import Operator = NFOperator;
   import Variable = NFVariable;
+  import NFPrefixes.Variability;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -318,7 +319,7 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
-      case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs, true) and isSimpleExp(eq.rhs, true)) algorithm
+      case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
@@ -444,7 +445,7 @@ protected
   end findSimpleEquation;
 
   function findCrefs "BB, kabdelhak
-  looks for variable crefs in Expressions, if more then 2 are found stop searching
+  looks for variable crefs in Expressions, if more than 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
   "
      input Expression exp;
@@ -504,67 +505,68 @@ protected
   function isSimpleExp
     "checks if an expression can be considered simple."
     input Expression exp;
-    input output Boolean simple;
+    input output Boolean simple = true;
     output Integer num_cref = 0;
   algorithm
-    if not simple then num_cref := 10; return; end if;
+    if not simple then return; end if;
     (simple, num_cref) := match exp
       local
         Integer num_cref_tmp;
+        Operator.Op op;
 
       case Expression.INTEGER()   then (true, 0);
       case Expression.REAL()      then (true, 0);
       case Expression.BOOLEAN()   then (true, 0);
       case Expression.STRING()    then (true, 0);
       case Expression.CREF()      then (true, 1);
+      // TODO what about parameters in the denominator, they could be zero, (alias strictness?)
+      //case Expression.CREF()      then (true, if ComponentRef.variability(exp.cref) > Variability.NON_STRUCTURAL_PARAMETER then 1 else 0);
 
-      case Expression.CAST() algorithm
-        (simple, num_cref) := isSimpleExp(exp.exp, simple);
-      then (simple, num_cref);
+      case Expression.CAST()      then isSimpleExp(exp.exp);
 
       case Expression.UNARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        (simple, num_cref) := isSimpleExp(exp.exp);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
       case Expression.LUNARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        (simple, num_cref) := isSimpleExp(exp.exp);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      case Expression.BINARY() algorithm
+      case Expression.BINARY(operator = Operator.OPERATOR(op = op)) algorithm
+        (simple, num_cref) := isSimpleExp(exp.exp2);
+        // 1/x is not considered simple
+        if op == NFOperator.Op.DIV and num_cref <> 0 then simple := false; return; end if;
         (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
         num_cref := num_cref + num_cref_tmp;
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
       case Expression.LBINARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
-        num_cref := num_cref + num_cref_tmp;
+        (simple, num_cref) := isSimpleExp(exp.exp1);
         (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
         num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      case Expression.MULTARY() algorithm
-        for arg in exp.arguments loop
-          if not simple then num_cref := 10; return; end if;
-          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
-          num_cref := num_cref + num_cref_tmp;
-        end for;
+      case Expression.MULTARY(operator = Operator.OPERATOR(op = op)) algorithm
         for arg in exp.inv_arguments loop
-          if not simple then num_cref := 10; return; end if;
           (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          if not simple then return; end if;
           num_cref := num_cref + num_cref_tmp;
         end for;
-        simple := checkOp(exp.operator, num_cref);
+        // 1/x is not considered simple
+        if op == NFOperator.Op.MUL and num_cref <> 0 then simple := false; return; end if;
+        for arg in exp.arguments loop
+          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          if not simple then return; end if;
+          num_cref := num_cref + num_cref_tmp;
+        end for;
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      else (false, 10);
+      else (false, num_cref);
     end match;
   end isSimpleExp;
 

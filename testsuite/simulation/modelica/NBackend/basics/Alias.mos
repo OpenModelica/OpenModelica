@@ -1,9 +1,9 @@
-// name: RSE
+// name: Alias
 // keywords: NewBackend
 // status: correct
 
 loadString("
-  model RSE
+  model Alias
     Real y;             // not simple
     Real x, z;          // regular simple
     Real a, b, c;       // constant simple
@@ -14,11 +14,11 @@ loadString("
     c = 3.0;
     y = time + c;
     z = sin(time);
-  end RSE;
+  end Alias;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=dumprepl");
-simulate(RSE); getErrorString();
+simulate(Alias); getErrorString();
 
 // Result:
 // true
@@ -55,8 +55,8 @@ simulate(RSE); getErrorString();
 // 	y	 ==> 	3.0 + time
 //
 // record SimulationResult
-//     resultFile = "RSE_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "Alias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
