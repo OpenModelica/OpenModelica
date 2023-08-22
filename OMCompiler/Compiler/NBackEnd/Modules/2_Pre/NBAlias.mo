@@ -73,6 +73,7 @@ protected
   import Expression = NFExpression;
   import Operator = NFOperator;
   import Variable = NFVariable;
+  import NFPrefixes.Variability;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -517,7 +518,7 @@ protected
       case Expression.REAL()      then (true, 0);
       case Expression.BOOLEAN()   then (true, 0);
       case Expression.STRING()    then (true, 0);
-      case Expression.CREF()      then (true, 1); // FIXME check if it is unknown or not
+      case Expression.CREF()      then (true, if ComponentRef.variability(exp.cref) > Variability.NON_STRUCTURAL_PARAMETER then 1 else 0);
 
       case Expression.CAST()      then isSimpleExp(exp.exp);
 
