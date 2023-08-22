@@ -48,7 +48,7 @@
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 
 #include <QOpenGLContext>
 #include <QGraphicsView>

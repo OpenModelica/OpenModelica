@@ -301,7 +301,7 @@ if(WIN32)
 endif()
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
-target_link_libraries(OMEditLib PUBLIC libOMSimulator)
+target_link_libraries(OMEditLib PUBLIC OMSimulatorLib)
 target_link_libraries(OMEditLib PUBLIC OMParser)
 target_link_libraries(OMEditLib PUBLIC omedit::debugger::parser)
 target_link_libraries(OMEditLib PUBLIC Qt5::Xml)

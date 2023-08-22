@@ -36,7 +36,7 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 
 #include <QTreeView>
 #include <QSortFilterProxyModel>
