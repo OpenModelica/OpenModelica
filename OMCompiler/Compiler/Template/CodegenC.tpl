@@ -5323,9 +5323,8 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
       return "function linearized_model()\n"
-      "#= <%modelNamePrefix%> =#\n"
-      "#= der(x) = A * x + B * u =#\n#= y = C * x + D * u =#\n"
-      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local m = <%varInfo.numInVars%> #= number of inputs =#\n  local p = <%varInfo.numOutVars%> #= number of outputs =#\n"
+      "  # <%modelNamePrefix%> #\n"
+      "  local n = <%varInfo.numStateVars%> # number of states \n  local m = <%varInfo.numInVars%> # number of inputs \n  local p = <%varInfo.numOutVars%> # number of outputs \n"
       "\n"
       "  local x0 = %s\n"
       "  local u0 = %s\n"
@@ -5334,11 +5333,12 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
-      <%getVarNameJulia(vars.stateVars, "x")%>
-      <%getVarNameJulia(vars.inputVars, "u")%>
-      <%getVarNameJulia(vars.outputVars, "y")%>
+      "  stateVars  = [<%getVarNameJulia(vars.stateVars, "x0")%>]\n"
+      "  inputVars  = [<%getVarNameJulia(vars.inputVars, "u0")%>]\n"
+      "  outputVars = [<%getVarNameJulia(vars.outputVars, "y0")%>]\n"
+      "  Ts = %g; #stop time\n\n"
       "\n"
-      "  (n, m, p, x0, u0, A, B, C, D)\n"
+      "  return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -5424,12 +5424,12 @@ end getVarNamePython;
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
-  simVars |> var hasindex arrindex fromindex 1 =>
-    (match var
+<<
+<%simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
-      <<"  # <%arrayName%>_<%crefStrMatlabSafe(name)%> = <%arrayName%>(<%arrindex%>);\n">>
-    end match)
-  ; empty
+      <<\"<%crefStrMatlabSafe(name)%>\">>
+    end match) ;separator=","%>
+>>
 end getVarNameJulia;
 
 template genMatrix(String name, String row, String col, Integer rowI, Integer colI) "template genMatrix
@@ -5491,7 +5491,7 @@ template genMatrixJulia(String name, String row, String col, Integer rowI, Integ
     case 0 then
       <<"  local <%name%> = zeros(<%row%>, <%col%>)%s\n">>
     case _ then
-      <<"  local <%name%> =\t[%s]\n\n">>
+      <<"  local <%name%> = [%s]\n\n">>
     end match
   end match
 end genMatrixJulia;

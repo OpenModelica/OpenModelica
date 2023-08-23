@@ -42,7 +42,7 @@
 
 using namespace std;
 
-static string array2string(double* array, int row, int col)
+static string array2string(double* array, int row, int col, DATA *data)
 {
   int i=0;
   int j=0;
@@ -53,7 +53,14 @@ static string array2string(double* array, int row, int col)
     int k = i;
     for(j=0; j<col-1; j++)
     {
-      retVal << array[k] << ", ";
+      if (data->modelData->linearizationDumpLanguage == 2)
+      {
+        retVal << array[k] << " "; // Julia matrix accepts space as separators
+      }
+      else
+      {
+        retVal << array[k] << ", ";
+      }
       k += row;
     }
     if(col > 0)
@@ -538,7 +545,7 @@ int linearize(DATA* data, threadData_t *threadData)
     /* Need to do this before changing anything so that we get a proper z0 */
     if(do_data_recovery > 0){
         if(size_z){
-            strZ0 = "{" + array2string(&data->localData[0]->realVars[2*size_A],1,size_z) + "}";
+            strZ0 = "{" + array2string(&data->localData[0]->realVars[2*size_A], 1, size_z, data) + "}";
         }else{
             strZ0 = "zeros(0)";
         }
@@ -591,28 +598,44 @@ int linearize(DATA* data, threadData_t *threadData)
     if (data->modelData->linearizationDumpLanguage != 3)
     {
 
-      strA = array2string(matrixA, size_A, size_A);
-      strB = array2string(matrixB, size_A, size_Inputs);
-      strC = array2string(matrixC, size_Outputs, size_A);
-      strD = array2string(matrixD, size_Outputs, size_Inputs);
+      strA = array2string(matrixA, size_A, size_A, data);
+      strB = array2string(matrixB, size_A, size_Inputs, data);
+      strC = array2string(matrixC, size_Outputs, size_A, data);
+      strD = array2string(matrixD, size_Outputs, size_Inputs, data);
       if (do_data_recovery > 0)
       {
-        strCz = array2string(matrixCz, size_z, size_A);
-        strDz = array2string(matrixDz, size_z, size_Inputs);
+        strCz = array2string(matrixCz, size_z, size_A, data);
+        strDz = array2string(matrixDz, size_z, size_Inputs, data);
       }
 
       // The empty array {} is not valid modelica, so we need to put something
       //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
       //   empty array if needed.
       if (size_A)
-        strX = "{" + array2string(data->localData[0]->realVars, 1, size_A) + "}";
+      {
+        // fix dummping julia vector braces
+        if (data->modelData->linearizationDumpLanguage == 2)
+          strX = "[" + array2string(data->localData[0]->realVars, 1, size_A, data) + "]";
+        else
+          strX = "{" + array2string(data->localData[0]->realVars, 1, size_A, data) + "}";
+      }
       else
+      {
         strX = "zeros(0)";
+      }
 
       if (size_Inputs)
-        strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "}";
+      {
+        // fix dummping julia vector braces
+        if (data->modelData->linearizationDumpLanguage == 2)
+          strU = "[" + array2string(data->simulationInfo->inputVars, 1, size_Inputs, data) + "]";
+        else
+          strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs, data) + "}";
+      }
       else
+      {
         strU = "zeros(0)";
+      }
     }
     else
     {
@@ -630,12 +653,12 @@ int linearize(DATA* data, threadData_t *threadData)
       // strA = "[[-2.887152375617477, -1.62655852935388], [-2.380918056675567, -2.388394731625707]]";
       //infoStreamPrint(LOG_STDOUT, 0, strA.c_str());
       if (size_A)
-        strX = "[" + array2string(data->localData[0]->realVars, 1, size_A) + "]";
+        strX = "[" + array2string(data->localData[0]->realVars, 1, size_A, data) + "]";
       else
         strX = "[0]";
 
       if (size_Inputs)
-        strU = "[" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "]";
+        strU = "[" + array2string(data->simulationInfo->inputVars, 1, size_Inputs, data) + "]";
       else
         strU = "[0]";
     }
