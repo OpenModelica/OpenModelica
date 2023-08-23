@@ -279,7 +279,10 @@ public
         Function fn;
         UnorderedMap<ComponentRef, Expression> local_replacements;
         list<ComponentRef> input_crefs;
-        Expression body_exp;
+        list<InstNode> failed_locals = {};
+        ComponentRef local_cref;
+        Option<Expression> binding_exp_opt;
+        Expression binding_exp, body_exp;
 
       case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
         // use the function from the tree, in case it was changed
@@ -288,18 +291,44 @@ public
         // map all the inputs to the arguments and add to local replacement map
         local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
+        // ToDo: rather use the function slots for this?
         for tpl in List.zip(input_crefs, call.arguments) loop
           addInputArgTpl(tpl, local_replacements);
         end for;
+
+        // add replacement rules for local (protected) variables
+        for local_node in fn.locals loop
+          local_cref    := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+          binding_exp_opt := InstNode.getBindingExpOpt(local_node);
+          if Util.isSome(binding_exp_opt) then
+            // replace binding expression with already gathered input replacements
+            binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
+            addInputArgTpl((local_cref, binding_exp), local_replacements);
+          else
+            failed_locals := local_node :: failed_locals;
+          end if;
+        end for;
+
+        // report and fail for locals that don't have bindings
+        // (protected variables should always have bindings in 1-line functions)
+        if not listEmpty(failed_locals) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed for function\n " + Function.toFlatString(fn) + "\n because there were local variables without binding:\n"
+            + List.toString(failed_locals, InstNode.toString, "", "\t", "\n\t", "")});
+          fail();
+        end if;
+
 
         // get the expression from function body (fails if its not a single replacable assignment)
         body_exp := getFunctionBody(fn);
 
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
-          print("-- Result: " + Expression.toString(body_exp) + "\n");
+          print("-- Result: " + Expression.toString(body_exp) + "\n\n");
         end if;
       then body_exp;
 
@@ -380,7 +409,7 @@ public
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n")});
+          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
       then fail();
     end match;
   end getFunctionBody;

@@ -93,6 +93,8 @@ public
 //                    TYPES, UNIONTYPES AND MEMBER FUNCTIONS
 // =========================================================================
   function inlineForEquation
+    "inlines for-equations of size 1 to its body equation by replacing
+    the iterators by the only values they are ever going to be."
     input output Equation eqn;
   algorithm
     eqn := match eqn
@@ -199,10 +201,9 @@ protected
       // try to inline other record equations. try catch to be sure to not discard
       case Equation.RECORD_EQUATION() algorithm
         try
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
-          end if;
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
           new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, eqn.recordSize, variables, record_eqns, index);
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("\n"); end if;
         else
           // inlining failed, keep old equation
           new_eqn := eqn;

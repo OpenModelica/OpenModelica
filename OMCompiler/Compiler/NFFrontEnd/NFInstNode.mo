@@ -31,6 +31,7 @@
 
 encapsulated package NFInstNode
 
+import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
 import SCode;
@@ -1971,6 +1972,19 @@ uniontype InstNode
       else false;
     end match;
   end hasBinding;
+
+  function getBindingExpOpt
+    input InstNode node;
+    output Option<Expression> binding_exp;
+  algorithm
+    binding_exp := match node
+      case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
+        then Binding.typedExp(Component.getBinding(Pointer.access(node.component)));
+      case COMPONENT_NODE()
+        then getBindingExpOpt(instanceParent(node));
+      else NONE();
+    end match;
+  end getBindingExpOpt;
 
   function getSections
     input InstNode node;
