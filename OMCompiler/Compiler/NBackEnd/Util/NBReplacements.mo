@@ -309,7 +309,8 @@ public
           end if;
         end for;
 
-        // report and fail for locals that don't have bindings (should always be the case for 1-line functions)
+        // report and fail for locals that don't have bindings
+        // (protected variables should always have bindings in 1-line functions)
         if not listEmpty(failed_locals) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
             + " failed for function\n " + Function.toFlatString(fn) + "\n because there were local variables without binding:\n"
