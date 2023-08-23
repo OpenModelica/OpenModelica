@@ -902,7 +902,8 @@ void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int
   return;
 }
 
-double getTimeUnitFactor(QString timeUnit){
+double getTimeUnitFactor(QString timeUnit)
+{
   if (timeUnit == "ms") return 1000.0;
   else if (timeUnit == "s") return 1.0;
   else if (timeUnit == "min") return 1.0/6.0;
@@ -911,8 +912,9 @@ double getTimeUnitFactor(QString timeUnit){
   else throw PlotException(QObject::tr("Unknown unit in plotArray(Parametric)."));
 }
 
-void PlotWindow::updateTimeText(QString unit)
+void PlotWindow::updateTimeText()
 {
+  QString unit = getTimeUnit();
   double timeUnitFactor = getTimeUnitFactor(unit);
   mpPlot->setFooter(QString("t = %1 " + unit).arg(getTime()*timeUnitFactor,0,'g',3));
   mpPlot->replot();
@@ -923,7 +925,6 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
   double *res;
   QString currentLine;
   setTime(time);
-  double timeUnitFactor = getTimeUnitFactor(getTimeUnit());
   if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOTARRAY)
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
   bool editCase = pPlotCurve ? true : false;
@@ -984,8 +985,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       pPlotCurve->attach(mpPlot);
-      mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-      mpPlot->replot();
+      updateTimeText();
     }
     mFile.close();
   }
@@ -1044,9 +1044,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       pPlotCurve->attach(mpPlot);
-      mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-      mpPlot->replot();
-
+      updateTimeText();
     }
     omc_free_csv_reader(csvReader);
   }
@@ -1105,8 +1103,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         }
         pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         pPlotCurve->attach(mpPlot);
-        mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-        mpPlot->replot();
+        updateTimeText();
         delete[] res;
       }
       // if plottype is PLOT then check which requested variables are not found in the file
@@ -1122,7 +1119,6 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
   QString xVariable, yVariable, xTitle, yTitle;
   int pair = 0;
   setTime(time);
-  double timeUnitFactor = getTimeUnitFactor(getTimeUnit());
   if (mVariablesList.isEmpty())
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
   else if (mVariablesList.size()%2 != 0)
@@ -1202,8 +1198,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       pPlotCurve->attach(mpPlot);
-      mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-      mpPlot->replot();
+      updateTimeText();
       mFile.close();
     }
     //    //PLOT CSV
@@ -1270,8 +1265,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       pPlotCurve->attach(mpPlot);
-      mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-      mpPlot->replot();
+      updateTimeText();
       omc_free_csv_reader(csvReader);
     }
     //PLOT MAT
@@ -1343,8 +1337,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       pPlotCurve->attach(mpPlot);
-      mpPlot->setFooter(QString("t = %1 " + getTimeUnit()).arg(time*timeUnitFactor,0,'g',3));
-      mpPlot->replot();
+      updateTimeText();
       omc_free_matlab4_reader(&reader);
     }
   }

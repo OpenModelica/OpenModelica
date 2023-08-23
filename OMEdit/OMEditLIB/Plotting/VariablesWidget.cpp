@@ -1442,7 +1442,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // rewind action
   mpRewindAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), tr("Rewind"), this);
-  mpRewindAction->setStatusTip(tr("Rewinds the visualization to the start"));
+  mpRewindAction->setStatusTip(tr("Rewind the visualization to the start"));
   connect(mpRewindAction, SIGNAL(triggered()), SLOT(rewindVisualization()));
   // play action
   mpPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
@@ -1460,7 +1460,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTimeTextBox = new QLineEdit("0.0");
   mpTimeTextBox->setMaximumHeight(toolbarIconSize);
   mpTimeTextBox->setValidator(pDoubleValidator);
-  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visulizationTimeChanged()));
+  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visualizationTimeChanged()));
   // speed
   mpSpeedLabel = new Label;
   mpSpeedLabel->setText(Helper::speed);
@@ -1864,8 +1864,8 @@ void VariablesWidget::initializeVisualization()
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setPause(true);
   // reset the visualization controls
-  mpTimeTextBox->setText("0.0");
-  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
+  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
   enableVisualizationControls(true);
 }
 
@@ -2373,43 +2373,86 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
 /*!
  * \brief VariablesWidget::simulationTimeChanged
  * SLOT activated when mpSimulationTimeSlider valueChanged SIGNAL is raised.
- * \param time
+ * \param value
  */
-void VariablesWidget::simulationTimeChanged(int timePercent)
+void VariablesWidget::simulationTimeChanged(int value)
 {
-  double time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * ((double)timePercent / (double)mSliderRange);
+  if (value >= 0) {
+    double start = mpTimeManager->getStartTime();
+    double end = mpTimeManager->getEndTime();
+    double time = (end - start) * (value / (double)mSliderRange) + start;
+    updateBrowserTime(time);
+  } else {
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::updateBrowserTime
+ * Updates the browser to the provided point of time
+ * \param time The new point of time
+ */
+void VariablesWidget::updateBrowserTime(double time)
+{
+  double start = mpTimeManager->getStartTime();
+  double end = mpTimeManager->getEndTime();
+  if (time < start) {
+    time = start;
+  } else if (time > end) {
+    time = end;
+  }
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+  bool state = mpSimulationTimeSlider->blockSignals(true);
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+  mpSimulationTimeSlider->blockSignals(state);
+  updateVisualization();
+  updatePlotWindows();
+}
 
-  PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-  if (pPlotWindow) {
+/*!
+ * \brief VariablesWidget::updatePlotWindows
+ * Updates the plot windows.
+ */
+void VariablesWidget::updatePlotWindows()
+{
+  double time = mpTimeManager->getVisTime();
+  foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     try {
-      PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-      if (plotType == PlotWindow::PLOTARRAY) {
-        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-        foreach (PlotCurve* curve, curves) {
-          QString varName = curve->getYVariable();
-          pPlotWindow->setVariablesList(QStringList(varName));
-          pPlotWindow->plotArray(time, curve);
+      if (MainWindow::instance()->getPlotWindowContainer()->isPlotWindow(pSubWindow->widget())) {
+        PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+        PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
+        if (plotType == PlotWindow::PLOTARRAY || plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+          QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
+          if (curves.isEmpty()) {
+            if (!pPlotWindow->getFooter().isEmpty()) {
+              pPlotWindow->setTime(time);
+              pPlotWindow->updateTimeText();
+            }
+          } else if (plotType == PlotWindow::PLOTARRAY) {
+            foreach (PlotCurve* curve, curves) {
+              QString varName = curve->getYVariable();
+              pPlotWindow->setVariablesList(QStringList(varName));
+              pPlotWindow->plotArray(time, curve);
+            }
+          } else {
+            foreach (PlotCurve* curve, curves) {
+              QString xVarName = curve->getXVariable();
+              QString yVarName = curve->getYVariable();
+              pPlotWindow->setVariablesList({xVarName, yVarName});
+              pPlotWindow->plotArrayParametric(time, curve);
+            }
+          }
         }
-      } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
-        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-        foreach (PlotCurve* curve, curves) {
-          QString xVarName = curve->getXVariable();
-          QString yVarName = curve->getYVariable();
-          pPlotWindow->setVariablesList({xVarName,yVarName});
-          pPlotWindow->plotArrayParametric(time, curve);
-        }
-      } else {
-        return;
       }
     } catch (PlotException &e) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     }
-  } else { // if no plot window then try to update the DiagramWindow
-    updateVisualization();
   }
 }
+
 /*!
  * \brief VariablesWidget::valueEntered
  * Handles the case when a new value is entered in VariablesTreeView.\n
@@ -2651,7 +2694,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
     if (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY ||
         pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
       pPlotWindow->setTimeUnit(unit);
-      pPlotWindow->updateTimeText(unit);
+      pPlotWindow->updateTimeText();
     } else if (pPlotWindow->getPlotType() == PlotWindow::PLOT ||
                pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
@@ -2806,10 +2849,14 @@ void VariablesWidget::showReSimulateSetup()
  */
 void VariablesWidget::rewindVisualization()
 {
-  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-  mpTimeManager->setRealTimeFactor(0.0);
   mpTimeManager->setPause(true);
-  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  updateVisualization();
+  updatePlotWindows();
+  bool state = mpSimulationTimeSlider->blockSignals(true);
+  mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+  mpSimulationTimeSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 }
 
@@ -2832,39 +2879,33 @@ void VariablesWidget::pauseVisualization()
 }
 
 /*!
- * \brief VariablesWidget::visulizationTimeChanged
+ * \brief VariablesWidget::visualizationTimeChanged
  * Slot activated when mpTimeTextBox returnPressed SIGNAL is raised.
  */
-void VariablesWidget::visulizationTimeChanged()
+void VariablesWidget::visualizationTimeChanged()
 {
-  QString time = mpTimeTextBox->text();
-  bool isDouble = true;
-  double start = mpTimeManager->getStartTime();
-  double end = mpTimeManager->getEndTime();
-  double value = time.toDouble(&isDouble);
-  if (isDouble && value >= 0.0) {
-    if (value < start) {
-      value = start;
-    } else if (value > end) {
-      value = end;
-    }
-    mpTimeManager->setVisTime(value);
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
-
+  bool isDouble = false;
+  double time = mpTimeTextBox->text().toDouble(&isDouble);
+  if (isDouble && time >= 0.0) {
+    updateBrowserTime(time);
+  } else {
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
   }
 }
 
 /*!
  * \brief VariablesWidget::visualizationSpeedChanged
- * Slot activated when mpSpeedComboBox currentIndexChanged SIGNAL is raised.
+ * Slot activated when mpSpeedComboBox currentIndexChanged SIGNAL is raised,
+ * as well as when mpSpeedComboBox->lineEdit() textChanged SIGNAL is raised.
  */
 void VariablesWidget::visualizationSpeedChanged()
 {
-  QString speed = mpSpeedComboBox->lineEdit()->text();
-  bool isDouble = true;
-  double value = speed.toDouble(&isDouble);
-  if (isDouble && value > 0.0) {
-    mpTimeManager->setSpeedUp(value);
+  bool isDouble = false;
+  double speed = mpSpeedComboBox->lineEdit()->text().toDouble(&isDouble);
+  if (isDouble && speed > 0.0) {
+    mpTimeManager->setSpeedUp(speed);
+  } else {
+    mpSpeedComboBox->lineEdit()->setText(QString::number(mpTimeManager->getSpeedUp()));
   }
 }
 
@@ -2874,24 +2915,32 @@ void VariablesWidget::visualizationSpeedChanged()
  */
 void VariablesWidget::incrementVisualization()
 {
-  //measure realtime
+  // measure real time
   mpTimeManager->updateTick();
-  //update scene and set next time step
+  // set next time step
   if (!mpTimeManager->isPaused()) {
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    // set time slider
-    int time = mpTimeManager->getTimeFraction();
-    mpSimulationTimeSlider->setValue(time);
-    //finish animation with pause when endtime is reached
+    // finish animation with pause when end time is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       pauseVisualization();
-    } else { // get the new visualization time
-      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+    } else {
+      // set new visualization time
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual() * mpTimeManager->getSpeedUp());
       if (newTime <= mpTimeManager->getEndTime()) {
         mpTimeManager->setVisTime(newTime);
       } else {
         mpTimeManager->setVisTime(mpTimeManager->getEndTime());
       }
+    }
+    // update browser
+    updateVisualization();
+    updatePlotWindows();
+    if (!mpTimeManager->isPaused()) {
+      // set time label
+      mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+      // set time slider
+      bool state = mpSimulationTimeSlider->blockSignals(true);
+      mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+      mpSimulationTimeSlider->blockSignals(state);
     }
   }
 }

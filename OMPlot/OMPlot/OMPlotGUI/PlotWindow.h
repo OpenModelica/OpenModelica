@@ -185,7 +185,7 @@ public:
   void closeEvent(QCloseEvent *event);
   void setTime(double time){mTime = time;}
   double getTime() {return mTime;}
-  void updateTimeText(QString unit);
+  void updateTimeText();
   void updateCurves();
   void updateYAxis(QPair<double, double> minMaxValues);
   void updatePlot();

@@ -235,6 +235,9 @@ public:
   void interactiveReSimulation(QString modelName);
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization();
+  void updateVisualization();
+  void updatePlotWindows();
+  void updateBrowserTime(double time);
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:
@@ -263,14 +266,13 @@ private:
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(double &startTime, double &stopTime);
-  void updateVisualization();
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
 public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
-  void simulationTimeChanged(int timePercent);
+  void simulationTimeChanged(int value);
   void valueEntered(const QModelIndex &index);
   void timeUnitChanged(QString unit);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
@@ -282,7 +284,7 @@ public slots:
 private slots:
   void playVisualization();
   void pauseVisualization();
-  void visulizationTimeChanged();
+  void visualizationTimeChanged();
   void visualizationSpeedChanged();
   void incrementVisualization();
 signals:
