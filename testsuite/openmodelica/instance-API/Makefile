@@ -25,6 +25,7 @@ GetModelInstanceConditional1.mos \
 GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceConnection2.mos \
+GetModelInstanceConnection3.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
