@@ -2990,9 +2990,18 @@ protected
 algorithm
   if InstContext.inInstanceAPI(context) then
     scode_eql := filterInstanceAPIEquations(scodeEql);
-  end if;
 
-  instEql := list(instEquation(eq, scope, context) for eq in scode_eql);
+    instEql := {};
+    for eq in scode_eql loop
+      try
+        instEql := instEquation(eq, scope, context) :: instEql;
+      else
+      end try;
+    end for;
+    instEql := listReverseInPlace(instEql);
+  else
+    instEql := list(instEquation(eq, scope, context) for eq in scode_eql);
+  end if;
 end instEquations;
 
 function filterInstanceAPIEquations
