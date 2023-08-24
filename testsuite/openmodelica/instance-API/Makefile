@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+GetModelInstanceAlgorithm1.mos \
 GetModelInstanceAnnotation1.mos \
 GetModelInstanceAnnotation2.mos \
 GetModelInstanceAnnotation3.mos \

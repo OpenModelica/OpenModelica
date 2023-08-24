@@ -3180,7 +3180,11 @@ function instAlgorithmSections
   input InstContext.Type context;
   output list<Algorithm> algs;
 algorithm
-  algs := list(instAlgorithmSection(alg, scope, context) for alg in algorithmSections);
+  if InstContext.inInstanceAPI(context) then
+    algs := {};
+  else
+    algs := list(instAlgorithmSection(alg, scope, context) for alg in algorithmSections);
+  end if;
 end instAlgorithmSections;
 
 function instAlgorithmSection
