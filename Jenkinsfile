@@ -90,10 +90,10 @@ pipeline {
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
-        stage('Win/MinGW') {
+        stage('Win/UCRT64') {
           agent {
             node {
-              label 'windows'
+              label 'omdev-ucrt64'
             }
           }
           when {
