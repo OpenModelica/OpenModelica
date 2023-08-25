@@ -1235,7 +1235,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       for (int j = 0; j<2; j++){
         res.clear();
         double *arrElement;
-        for (int i = 1; i++; true){
+        for (int i = 1; i++;){
           QString varNameQS = varPair[j];
           if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
             varNameQS.chop(1);
