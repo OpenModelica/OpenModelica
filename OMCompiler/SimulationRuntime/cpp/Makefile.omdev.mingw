@@ -171,7 +171,7 @@ omcCAPImsvc: getMSVCversion
 	echo echo Running NMake JOM >> Build_CAPI_MSVC/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_CAPI_MSVC/build.bat
 	cd ./Build_CAPI_MSVC; echo "change to Build_CAPI_MSVC";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
@@ -187,7 +187,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo echo Running NMake JOM >> Build_MSVC/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC/build.bat
 	cd ./Build_MSVC; echo "change to Build_MSVC";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 
 	echo 'Build cppRuntime (static) with MSVC'
 	#rm -rf Build_MSVC_static
@@ -202,7 +202,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo echo Running NMake JOM >> Build_MSVC_static/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC_static/build.bat
 	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 
 	# move folder to build dir
 	cp -R Build_MSVC/tmp/* $(builddir_build)

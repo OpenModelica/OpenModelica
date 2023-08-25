@@ -160,5 +160,5 @@ OMSIBaseMSVC: getMSVCversion
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
 	echo echo Running NMake JOM >> Build_MSVC/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC/build.bat
-	cd ./Build_MSVC &&	cmd /c build.bat
+	cd ./Build_MSVC &&	cmd "/c build.bat"
 
