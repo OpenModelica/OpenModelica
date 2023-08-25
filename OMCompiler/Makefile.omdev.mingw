@@ -316,7 +316,7 @@ $(LIBMODELICAZLIB_MSVC): getMSVCversion
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> $(ZLIB_DIR)/build_msvc/build.bat
 	# Change into directory and run batch file
 	cd ./$(ZLIB_DIR)/build_msvc; echo "change to $(ZLIB_DIR)/build_msvc";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 	# copy dll to bin folder
 	(cp -puf $(ZLIB_DIR)/install_msvc/lib/omc/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
@@ -345,7 +345,7 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc
 
 	# Change into directory and run batch file
 	cd ./3rdParty/FMIL/build_msvc; echo "change to 3rdParty/FMIL/build_msvc";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 
 	# copy dll to bin folder
 	mkdir -p $(OMBUILDDIR)/bin/msvc
@@ -381,7 +381,7 @@ $(OMBUILDDIR)/lib/omc/msvc/cminpack.lib: getMSVCversion
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/CMinpack/build_msvc/build.bat
 	# Change into directory and run batch file
 	cd ./3rdParty/CMinpack/build_msvc; echo "change to 3rdParty/CMinpack/build_msvc";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 	# copy dll to bin folder
 	(cp -puf 3rdParty/CMinpack/install_msvc/lib/cminpack.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
@@ -414,7 +414,7 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.
 
 	# Change into directory and run batch file
 	cd ./3rdParty/SuiteSparse-5.8.1/build_msvc; echo "change to 3rdParty/SuiteSparse-5.8.1/build_msvc";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 
 # build sundials
 # TODO: We need suitesparse_msvc as a dependency, but Make doesn't wait for suitesparse_msvc to be finishes
@@ -450,7 +450,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	# Change into directory and run batch file
 	cd ./3rdParty/sundials-5.4.0/build_msvc; echo "change to 3rdParty/sundials-5.4.0/build_msvc";\
-	cmd /c build.bat
+	cmd "/c build.bat"
 	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials-5.4.0/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
@@ -504,7 +504,7 @@ simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
 	echo set MAKE= >> SimulationRuntime/build_c/build.bat
 	echo set MAKEFLAGS= >> SimulationRuntime/build_c/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile >> SimulationRuntime/build_c/build.bat
-	cd SimulationRuntime/build_c &&	cmd /c build.bat
+	cd SimulationRuntime/build_c &&	cmd "/c build.bat"
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
 	(cd SimulationRuntime/build_c/ && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
 	(cd SimulationRuntime/build_c/ && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
@@ -518,7 +518,7 @@ simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
 	echo set MAKE= >> SimulationRuntime/build_debug_c/build.bat
 	echo set MAKEFLAGS= >> SimulationRuntime/build_debug_c/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile >> SimulationRuntime/build_debug_c/build.bat
-	cd SimulationRuntime/build_debug_c &&	cmd /c build.bat
+	cd SimulationRuntime/build_debug_c &&	cmd "/c build.bat"
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
 	(cd SimulationRuntime/build_debug_c/ && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
 	(cd SimulationRuntime/build_debug_c/ && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
@@ -543,7 +543,7 @@ simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
 	# echo set MAKE= >> 3rdParty/gc/build_msvc/build.bat
 	# echo set MAKEFLAGS= >> 3rdParty/gc/build_msvc/build.bat
 	# echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile >> 3rdParty/gc/build_msvc/build.bat
-	# cd 3rdParty/gc/build_msvc &&	cmd /c build.bat
+	# cd 3rdParty/gc/build_msvc &&	cmd "/c build.bat"
 	# echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
 	# cp -u 3rdParty/gc/build_msvc/omcgc.* $(OMBUILDDIR)/lib/omc/msvc/
 	# rm -rf 3rdParty/gc/build_msvc/
