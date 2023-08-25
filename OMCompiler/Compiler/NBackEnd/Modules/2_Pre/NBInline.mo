@@ -137,6 +137,8 @@ protected
 
     // apply replacements
     eqData := Replacements.replaceFunctions(eqData, replacements);
+    // replace record constucters after functions because record operator
+    // functions will produce record constructors once inlined
     eqData := inlineRecords(eqData, VarData.getVariables(varData));
   end inline;
 
