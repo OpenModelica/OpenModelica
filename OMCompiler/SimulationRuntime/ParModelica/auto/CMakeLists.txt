@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
-
-project(ParModelicaAuto)
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/auto)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
 
 find_package(Boost COMPONENTS graph chrono REQUIRED)
 
