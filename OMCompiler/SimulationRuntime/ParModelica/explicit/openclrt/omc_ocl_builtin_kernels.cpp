@@ -50,7 +50,7 @@
 */
 
 
-#include <omc_ocl_builtin_kernels.h>
+#include "omc_ocl_builtin_kernels.h"
 
 void ocl_real_arr_arr_arr(const char* kernel_name, modelica_real* src_1, modelica_real* src_2, modelica_real* dest, int size_){
 
