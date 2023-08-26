@@ -15,7 +15,7 @@ builddir_inc=$(OMBUILDDIR)/include/omc
 
 OMBUILDDIR_WIN=$(shell cygpath -w $$OMBUILDDIR)
 
-CMAKE = $(where cmake)
+CMAKE = cmake # this doesn't seem to work! $(where cmake)
 
 ifndef OMDEV
 	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
