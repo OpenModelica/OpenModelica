@@ -44,7 +44,7 @@
 
 
 
-#include <omc_ocl_memory_ops.h>
+#include "omc_ocl_memory_ops.h"
 
 
 
