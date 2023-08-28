@@ -52,6 +52,9 @@
 #include <QDesktopWidget>
 #include <QTcpSocket>
 #include <QMessageBox>
+#include <QTextDocumentFragment>
+#include <QClipboard>
+#include <QDesktopServices>
 
 /*!
  * \class SimulationOutputTree

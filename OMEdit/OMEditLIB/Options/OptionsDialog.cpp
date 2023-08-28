@@ -49,6 +49,9 @@
 #include <limits>
 
 #include <QStringBuilder>
+#include <QMessageBox>
+#include <QColorDialog>
+#include <QButtonGroup>
 
 /*!
  * \class OptionsDialog

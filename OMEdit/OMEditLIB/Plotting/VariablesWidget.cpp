@@ -47,6 +47,9 @@
 #include "TransformationalDebugger/TransformationsWidget.h"
 
 #include <QObject>
+#include <QDockWidget>
+#include <QMessageBox>
+#include <QMenu>
 
 using namespace OMPlot;
 

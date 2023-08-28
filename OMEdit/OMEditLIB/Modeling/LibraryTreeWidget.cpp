@@ -50,6 +50,10 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 
+#include <QDockWidget>
+#include <QMessageBox>
+#include <QMenu>
+
 /*!
  * \class LibraryTreeItem
  * \brief Contains the information about the Modelica class.

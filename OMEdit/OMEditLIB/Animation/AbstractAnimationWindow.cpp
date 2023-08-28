@@ -47,6 +47,8 @@
 #include "VisualizationMAT.h"
 #include "VisualizationCSV.h"
 
+#include <QDockWidget>
+
 /*!
  * \class AbstractAnimationWindow
  * \brief Abstract animation class defines a QMainWindow for animation.

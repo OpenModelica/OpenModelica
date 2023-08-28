@@ -40,6 +40,10 @@
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/DiagramWindow.h"
 
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QMenu>
+
 using namespace OMPlot;
 
 /*!

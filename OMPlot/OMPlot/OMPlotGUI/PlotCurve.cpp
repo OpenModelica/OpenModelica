@@ -1,20 +1,21 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
+ * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -22,12 +23,9 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
- *
- * Main Author 2011: Adeel Asghar
  *
  */
 
@@ -337,13 +335,23 @@ int PlotCurve::closestPoint(const QPoint &pos, double *dist) const
  */
 QRectF PlotCurve::boundingRect() const
 {
-  QRectF r = QwtPlotCurve::boundingRect();
-  if (r.isValid()) {
+  QRectF existingBoundingRect = QwtPlotCurve::boundingRect();
+  if (existingBoundingRect.isValid()) {
     /* Ticket:5515 Allow for some margin at the top and bottom of plot windows in OMEdit
      * We add a margin of 10% to the curves bottom and top to better visualize them.
      */
-    const double margin = r.height() * 0.1;
-    r.adjust(0, -margin, 0, margin);
+    const double margin = existingBoundingRect.height() * 0.1;
+    QRectF newBoundingRect = existingBoundingRect.adjusted(0, -margin, 0, margin);
+
+    /* Issue:7468 Check for negative values doing log plot.
+     * Do not add margin if the value becomes negative.
+     */
+    if ((mpParentPlot->getParentPlotWindow()->getLogXCheckBox()->isChecked() || mpParentPlot->getParentPlotWindow()->getLogYCheckBox()->isChecked())
+        && (newBoundingRect.top() < 0.0 || newBoundingRect.bottom() < 0.0)) {
+      return existingBoundingRect;
+    } else {
+      return newBoundingRect;
+    }
   }
-  return r;
+  return existingBoundingRect;
 }

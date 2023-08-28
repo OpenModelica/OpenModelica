@@ -49,6 +49,8 @@
 
 #include <QDebug>
 #include <limits>
+#include <QMessageBox>
+#include <QDockWidget>
 
 /*!
  * \class SimulationDialog

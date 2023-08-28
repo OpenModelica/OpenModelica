@@ -44,6 +44,7 @@
 
 #include <QDockWidget>
 #include <QMessageBox>
+#include <QSplitter>
 
 /*!
  * \class GDBLoggerWidget

@@ -9,8 +9,9 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -80,7 +81,7 @@ void LinearScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, doubl
   if ( testAttribute( QwtScaleEngine::IncludeReference ) )
     interval = interval.extend( reference() );
 
-  if ( interval.width() == 0.0  || LinearScaleEngine::fuzzyCompare(interval.minValue(), interval.maxValue()) )
+  if ( interval.width() == 0.0 || LinearScaleEngine::fuzzyCompare(interval.minValue(), interval.maxValue()) )
     interval = buildInterval( interval.minValue() );
 
   stepSize = QwtScaleArithmetic::divideInterval( interval.width(), qMax( maxNumSteps, 1 ), base() );
