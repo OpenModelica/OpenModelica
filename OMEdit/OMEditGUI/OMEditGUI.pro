@@ -76,7 +76,6 @@ SOURCES += main.cpp
 
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
-# Only disable the unused variable/function/parameter warning
 win32 {
   # -Wno-clobbered is not recognized by clang
   !contains(_cxx, clang++) {

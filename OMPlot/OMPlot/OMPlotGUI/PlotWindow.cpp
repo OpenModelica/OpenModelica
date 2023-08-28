@@ -1,20 +1,21 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
+ * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -22,20 +23,17 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
- *
- * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
  *
  */
 
 #include <iostream>
 #include <memory>
 
-#include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
+#include "LogScaleEngine.h"
 #include "LinearScaleEngine.h"
 #include "qwt_plot_layout.h"
 #if QWT_VERSION >= 0x060000
@@ -45,6 +43,19 @@
 #include "qwt_scale_widget.h"
 #include "qwt_text_label.h"
 #include "qwt_abstract_legend.h"
+
+#include <QtSvg/QSvgGenerator>
+#include <QToolBar>
+#include <QFileInfo>
+#include <QLayout>
+#include <QCloseEvent>
+#include <QDir>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QLineEdit>
+#include <QColorDialog>
 
 using namespace OMPlot;
 
@@ -538,7 +549,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
     }
     // read in all values
-    for (int i = 0; i < reader.nall; i++) {
+    for (uint32_t i = 0; i < reader.nall; i++) {
       if (mVariablesList.contains(reader.allInfo[i].name) || getPlotType() == PlotWindow::PLOTALL) {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
@@ -564,7 +575,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
             throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
           }
           // set plot curve data and attach it to plot
-          for (int i = 0 ; i < reader.nrows ; i++) {
+          for (uint32_t i = 0 ; i < reader.nrows ; i++) {
             pPlotCurve->addXAxisValue(timeVals[i]);
             pPlotCurve->addYAxisValue(vals[i]);
           }
@@ -784,7 +795,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
           omc_free_matlab4_reader(&reader);
           throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
         }
-        for (int i = 0 ; i < reader.nrows ; i++)
+        for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addXAxisValue(xVals[i]);
       }
       // if variable is a parameter then
@@ -811,7 +822,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
           omc_free_matlab4_reader(&reader);
           throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
         }
-        for (int i = 0 ; i < reader.nrows ; i++)
+        for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addYAxisValue(yVals[i]);
       }
       // if variable is a parameter then
@@ -1235,7 +1246,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       for (int j = 0; j<2; j++){
         res.clear();
         double *arrElement;
-        for (int i = 1; i++;){
+        for (int i = 1; ;i++){
           QString varNameQS = varPair[j];
           if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
             varNameQS.chop(1);
@@ -1794,44 +1805,38 @@ void PlotWindow::fitInView()
 
 void PlotWindow::setLogX(bool on)
 {
-  if(on)
-  {
+  if (on) {
 #if QWT_VERSION >= 0x060100
-    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LogScaleEngine);
 #else
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
 #endif
-  }
-  else
-  {
+  } else {
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-  mpLogXCheckBox->blockSignals(true);
+  bool state = mpLogXCheckBox->blockSignals(true);
   mpLogXCheckBox->setChecked(on);
-  mpLogXCheckBox->blockSignals(false);
-  mpPlot->replot();
+  mpLogXCheckBox->blockSignals(state);
+  updatePlot();
 }
 
 void PlotWindow::setLogY(bool on)
 {
-  if(on)
-  {
+  if (on) {
 #if QWT_VERSION >= 0x060100
-    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LogScaleEngine);
 #else
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
 #endif
-  }
-  else
-  {
+  } else {
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-  mpLogYCheckBox->blockSignals(true);
+  bool state = mpLogYCheckBox->blockSignals(true);
   mpLogYCheckBox->setChecked(on);
-  mpLogYCheckBox->blockSignals(false);
-  mpPlot->replot();
+  mpLogYCheckBox->blockSignals(state);
+  updatePlot();
 }
 
 void PlotWindow::setAutoScale(bool on)

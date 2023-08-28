@@ -31,18 +31,17 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-#ifndef LINEARSCALEENGINE_H
-#define LINEARSCALEENGINE_H
+#ifndef LOGSCALEENGINE_H
+#define LOGSCALEENGINE_H
 
 #include "qwt_scale_engine.h"
 
 namespace OMPlot
 {
-class LinearScaleEngine : public QwtLinearScaleEngine
+class LogScaleEngine : public QwtLogScaleEngine
 {
 public:
-  LinearScaleEngine(uint base = 10);
-  static bool fuzzyCompare(double p1, double p2);
+  LogScaleEngine(uint base = 10);
 
   // QwtScaleEngine interface
 public:
@@ -50,4 +49,4 @@ public:
 };
 }
 
-#endif // LINEARSCALEENGINE_H
+#endif // LOGSCALEENGINE_H

@@ -35,11 +35,12 @@
 #ifndef VARIABLESWIDGET_H
 #define VARIABLESWIDGET_H
 
-#include <QDomDocument>
-
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
+
+#include <QDomDocument>
+#include <QTreeView>
 
 class OMCProxy;
 class TreeSearchFilters;

@@ -53,6 +53,10 @@
 #include "Animation/AnimationWindow.h"
 #endif
 
+#include <QDockWidget>
+#include <QMessageBox>
+#include <QDesktopWidget>
+
 TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   : QDialog(pParent)
 {
