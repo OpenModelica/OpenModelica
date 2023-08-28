@@ -55,6 +55,7 @@
 
 #include <QDockWidget>
 #include <QMessageBox>
+#include <QDesktopWidget>
 
 TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   : QDialog(pParent)
