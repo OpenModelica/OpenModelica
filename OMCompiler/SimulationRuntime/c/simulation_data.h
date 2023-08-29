@@ -356,6 +356,9 @@ typedef struct NONLINEAR_SYSTEM_DATA
   NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
   modelica_real lastTimeSolved;        /* save last successful solved point in time */
 
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
+
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFEval;         /* number of function evaluations of this system */
@@ -431,6 +434,9 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_boolean solved;             /* true if solved in current step */
   modelica_boolean failed;             /* true if failed while last try with lapack */
 
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
+
   // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
@@ -462,6 +468,9 @@ typedef struct MIXED_SYSTEM_DATA
 
   modelica_integer method;             /* not used yet */
   modelica_boolean solved;             /* true if solved in current step */
+
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
 } MIXED_SYSTEM_DATA;
 #else
 typedef void* MIXED_SYSTEM_DATA;

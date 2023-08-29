@@ -127,7 +127,9 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   }
 
   /* Set error handler and print level */
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
+  if (!nlsData->logActive) {
+    printLevel = 0;
+  } else if (ACTIVE_STREAM(LOG_NLS_V)) {
     printLevel = 3;
   } else if (ACTIVE_STREAM(LOG_NLS)) {
     printLevel = 1;
@@ -862,7 +864,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
           nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
           nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
         }
-        /* Copy the sparse Jacobian into the kinsol data structure for later use*/
+        /* Copy the sparse Jacobian into the kinsol data structure for later use */
         SUNMatCopy_Sparse(spJac, kinsolData->J);
       }
       /* Scale the current Jacobian */

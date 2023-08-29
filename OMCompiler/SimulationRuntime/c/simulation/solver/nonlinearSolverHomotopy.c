@@ -167,7 +167,7 @@ typedef struct DATA_HOMOTOPY
 DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 {
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
-  assertStreamPrint(NULL, 0 != homotopyData, "allocationHomotopyData() failed!");
+  assertStreamPrint(NULL, NULL != homotopyData, "allocationHomotopyData() failed!");
 
   homotopyData->initialized = 0;
   homotopyData->n = size;
@@ -215,20 +215,19 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
   homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
   homotopyData->hvec = (double*) calloc(size,sizeof(double));
-  homotopyData->hJac  = (double*) calloc(size*(size+1),sizeof(double));
-  homotopyData->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
-  homotopyData->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
-  homotopyData->ones  = (double*) calloc(size+1,sizeof(double));
+  homotopyData->hJac = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac2 = (double*) calloc((size+1)*(size+2),sizeof(double));
+  homotopyData->hJacInit = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->ones = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
-  homotopyData->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
-  homotopyData->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
+  homotopyData->indRow = (int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
+  homotopyData->indCol = (int*) calloc(size+homBacktraceStrategy,sizeof(int));
 
   homotopyData->userData = userData;
 
   homotopyData->dataHybrid = allocateHybrdData(size, userData);
 
-  assertStreamPrint(NULL, homotopyData != NULL, "allocationHomotopyData() voiddata failed!");
   return homotopyData;
 }
 
@@ -1425,14 +1424,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         firstrun = 0;
-        if (assert){
-          debugDouble(LOG_NLS_V,"Assert of Newton step: lambda1 =", lambda1);
+        if (assert) {
+          debugDouble(LOG_NLS_V, "Assert of Newton step: lambda1 =", lambda1);
         }
       }
 
       if (lambda1 < lambdaMin)
       {
-        debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+        debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
         solverData->info = -1;
         break;
       }
@@ -1444,17 +1443,17 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
       vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->f2);
       error_f1_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->f2);
-      debugDouble(LOG_NLS_V,"Need to damp, grad_f = ", grad_f);
-      debugDouble(LOG_NLS_V,"Need to damp, error_f = ", sqrt(error_f_sqrd));
-      debugDouble(LOG_NLS_V,"Need to damp this!! lambda1 = ", lambda1);
-      debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
-      debugDouble(LOG_NLS_V,"Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
+      debugDouble(LOG_NLS_V, "Need to damp, grad_f = ", grad_f);
+      debugDouble(LOG_NLS_V, "Need to damp, error_f = ", sqrt(error_f_sqrd));
+      debugDouble(LOG_NLS_V, "Need to damp this!! lambda1 = ", lambda1);
+      debugDouble(LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
+      debugDouble(LOG_NLS_V, "Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
       if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f)
         && (error_f1_sqrd_scaled > error_f_sqrd_scaled + alpha*lambda1*grad_f_scaled)
         && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
         lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
-        debugDouble(LOG_NLS_V,"Need to damp this!! lambda2 = ", lambda2);
+        debugDouble(LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
 #ifndef OMC_EMCC
@@ -1471,14 +1470,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           solverData->f(solverData, solverData->x1, solverData->f1);
 
         error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
-        debugDouble(LOG_NLS_V,"Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
+        debugDouble(LOG_NLS_V, "Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
         assert = 0;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         if (assert)
         {
-          debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+          debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
           solverData->info = -1;
           break;
         }
@@ -1502,7 +1501,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                 lambda = -grad_f/(a2+sqrt(D));
           }
           lambda = fmax(lambda, lambdaMin);
-          debugDouble(LOG_NLS_V,"Need to damp this!! lambda = ", lambda);
+          debugDouble(LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
           vecAddScal(solverData->n, x, solverData->dy0, lambda, solverData->x1);
           assert= 1;
 #ifndef OMC_EMCC
@@ -1519,14 +1518,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
             solverData->f(solverData, solverData->x1, solverData->f1);
 
           error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
-          debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
+          debugDouble(LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
           assert = 0;
 #ifndef OMC_EMCC
           MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
           if (assert)
           {
-            debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+            debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
             solverData->info = -1;
             break;
           }
@@ -1538,8 +1537,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
     /* Calculate different error measurements */
     vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
-    debugVectorDouble(LOG_NLS_V,"function values:",solverData->f1, n);
-    debugVectorDouble(LOG_NLS_V,"scaled function values:",solverData->fvecScaled, n);
+    debugVectorDouble(LOG_NLS_V, "function values:",solverData->f1, n);
+    debugVectorDouble(LOG_NLS_V, "scaled function values:",solverData->fvecScaled, n);
 
     /* update delta_x_sqrd, error_f_sqrd */
     vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
@@ -1555,13 +1554,15 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
 
     /* debug information */
-    debugString(LOG_NLS_V, "error measurements:");
-    debugDouble(LOG_NLS_V, "delta_x        =", sqrt(delta_x_sqrd));
-    debugDouble(LOG_NLS_V, "delta_x_scaled =", sqrt(delta_x_sqrd_scaled));
-    debugDouble(LOG_NLS_V, "newtonXTol          =", sqrt(solverData->xtol_sqrd));
-    debugDouble(LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
-    debugDouble(LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
-    debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
+    if (useStream[LOG_NLS_V]) {
+      debugString(LOG_NLS_V, "error measurements:");
+      debugDouble(LOG_NLS_V, "delta_x        =", sqrt(delta_x_sqrd));
+      debugDouble(LOG_NLS_V, "delta_x_scaled =", sqrt(delta_x_sqrd_scaled));
+      debugDouble(LOG_NLS_V, "newtonXTol          =", sqrt(solverData->xtol_sqrd));
+      debugDouble(LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
+      debugDouble(LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
+      debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
+    }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo->nlsCsvInfomation){
@@ -1581,7 +1582,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
     if (countNegativeSteps > 20)
     {
-      debugInt(LOG_NLS_V,"UPS! Something happened, NegativeSteps = ", countNegativeSteps);
+      debugInt(LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
       break;
     }

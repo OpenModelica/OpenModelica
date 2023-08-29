@@ -268,7 +268,7 @@ void setGlobalLoggingTime(SIMULATION_INFO *simulationInfo)
   /* Check if lv_time flag is given */
   if (flagStr==NULL || *flagStr=='\0')
   {
-    /* default activated --> Log everything*/
+    /* default activated --> Log everything */
     simulationInfo->useLoggingTime = 0;
     return;
   }
@@ -829,6 +829,89 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   return retVal;
 }
 
+/**
+ * @brief Set log activation from equationIndex and list from lv_system.
+ *
+ * @param data  Data object
+ */
+static void setLVSystems(DATA *data, threadData_t *threadData)
+{
+  int i;
+  int N = 0; /* largest equationIndex */
+  modelica_boolean* a = NULL;
+  const char* p;
+  char* endptr;
+
+  MIXED_SYSTEM_DATA *mixedsys = data->simulationInfo->mixedSystemData;
+  LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
+
+  if (omc_flag[FLAG_LV_SYSTEM]) {
+    /* get largest equationIndex */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i)
+      if (mixedsys[i].equationIndex > N)
+        N = mixedsys[i].equationIndex;
+    for (i = 0; i < data->modelData->nLinearSystems; ++i)
+      if (linsys[i].equationIndex > N)
+        N = linsys[i].equationIndex;
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i)
+      if (nonlinsys[i].equationIndex > N)
+        N = nonlinsys[i].equationIndex;
+
+    /* initialize a with FALSE */
+    a = (modelica_boolean*) calloc(N+1, sizeof(modelica_boolean));
+    assertStreamPrint(threadData, NULL != a, "setLVSystems: Out of memory.");
+
+    /* set a[i] to true for all i in lv_system */
+    p = omc_flagValue[FLAG_LV_SYSTEM];
+    do {
+      errno = 0;
+      i = strtol(p, &endptr, 10);
+      if (errno == ERANGE) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %s takes equation indices (got '%s')",
+          endptr, omc_flagValue[FLAG_LV_SYSTEM]);
+      }
+      if (i > N) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %d is not a valid equation index", i);
+      }
+      a[i] = TRUE;
+      p = endptr;
+    } while(*(p++) == ',');
+
+    /* activate corresponding system */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i) {
+      mixedsys[i].logActive = a[mixedsys[i].equationIndex];
+      a[mixedsys[i].equationIndex] = FALSE;
+    }
+    for (i = 0; i < data->modelData->nLinearSystems; ++i) {
+      linsys[i].logActive = a[linsys[i].equationIndex];
+      a[linsys[i].equationIndex] = FALSE;
+    }
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i) {
+      nonlinsys[i].logActive = a[nonlinsys[i].equationIndex];
+      a[nonlinsys[i].equationIndex] = FALSE;
+    }
+
+    for (i = 0; i <= N; ++i){
+      if (a[i]) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %d is not a valid equation index.", i);
+      }
+    }
+    /* done */
+    free(a);
+  } else {
+    /* if no list is given then all systems are active */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i)
+      mixedsys[i].logActive = TRUE;
+    for (i = 0; i < data->modelData->nLinearSystems; ++i)
+      linsys[i].logActive = TRUE;
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i)
+      nonlinsys[i].logActive = TRUE;
+  }
+}
 
 /**
  * Initialization is the same for interactive or non-interactive simulation
@@ -1133,6 +1216,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   initializeMixedSystems(data, threadData);
   initializeLinearSystems(data, threadData);
   initializeNonlinearSystems(data, threadData);
+
+  /* set log activation from equationIndex and lv_system */
+  setLVSystems(data, threadData);
 
   sim_noemit = omc_flag[FLAG_NOEMIT];
 
