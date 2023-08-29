@@ -53,7 +53,7 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, WhenEquationBody};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody};
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Causalize = NBCausalize;
@@ -177,7 +177,7 @@ public
         name := BVariable.getVarName(state);
         (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
         kind := if BVariable.isContinuous(state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, {}, EquationAttributes.default(kind, true));
+        start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
         Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
@@ -278,7 +278,7 @@ public
     frames  := List.zip(iter_crefs, ranges);
     (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, frames, EquationAttributes.default(kind, true));
+    start_eq := Equation.makeAssignment(name, Expression.fromCref(start_name), idx, NBEquation.START_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
@@ -302,7 +302,7 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE_STATE(previous = previous)))
         algorithm
           kind := if BVariable.isContinuous(disc_state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-          pre_eq := Equation.makeAssignment(BVariable.getVarName(disc_state), Expression.fromCref(BVariable.getVarName(previous)), idx, NBEquation.PRE_STR, {}, EquationAttributes.default(kind, true));
+          pre_eq := Equation.makeAssignment(BVariable.getVarName(disc_state), Expression.fromCref(BVariable.getVarName(previous)), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
           Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       then ();
       else ();
@@ -337,7 +337,7 @@ public
     name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, frames, EquationAttributes.default(kind, true));
+    pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
 
     if not listEmpty(disc_state.indices) then
       // empty list indicates full array, slice otherwise

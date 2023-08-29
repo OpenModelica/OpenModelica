@@ -502,6 +502,8 @@ public
     end extractFromCall;
 
     function normalizedSubscripts
+      "creates a normalized subscript list such that the traversed iterators result in
+      consecutive indices starting at 1."
       input Iterator iter;
       output list<Subscript> subs;
     protected
@@ -513,6 +515,8 @@ public
     end normalizedSubscripts;
 
     function normalizedSubscript
+      "returns subscripts such that traversing the range results in consecutive subscript values 1,2,3....
+      e.g: i in 10:-2:1 -> x[(i-10)/(-2) + 1] which results in 1,2,3... for i=10,8,6..."
       input tuple<ComponentRef, Expression> frame;
       output Subscript sub;
     protected
@@ -522,6 +526,8 @@ public
     algorithm
       (iter_name, range) := frame;
       sub := match range
+
+        // (iterator-start)/step + 1
         case Expression.RANGE() algorithm
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
           sub_exp := Expression.MULTARY(
@@ -537,6 +543,7 @@ public
           operator = Operator.makeAdd(ty));
           sub_exp := SimplifyExp.simplify(sub_exp, true);
         then Subscript.INDEX(sub_exp);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
             + " failed because range is no range: " + Expression.toString(range)});
@@ -820,14 +827,14 @@ public
       input Expression rhs;
       input Pointer<Integer> idx;
       input String str;
-      input list<Frame> frames = {};
+      input Iterator iter;
       input EquationAttributes attr;
       output Pointer<Equation> eq;
     protected
       Equation e;
       Type ty = ComponentRef.getSubscriptedType(lhs, true);
     algorithm
-      if listLength(frames) == 0 then
+      if Iterator.isEmpty(iter) then
         if Type.isArray(ty) then
           eq := Pointer.create(ARRAY_EQUATION(
             ty          = ty,
@@ -849,7 +856,7 @@ public
       else
         e := FOR_EQUATION(
           size    = ComponentRef.size(lhs),
-          iter    = Iterator.fromFrames(frames),
+          iter    = iter,
           body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), rhs, DAE.emptyElementSource, attr)}, // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = attr

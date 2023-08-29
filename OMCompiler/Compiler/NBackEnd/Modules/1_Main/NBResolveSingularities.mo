@@ -235,7 +235,7 @@ public
       // some derivatives -> dummy derivatives (to algebraics)
       varData := VarData.addTypedList(varData, dummy_derivatives, NBVariable.VarData.VarType.ALGEBRAIC);
       // new equations
-      eqData := EqData.addTypedList(eqData, new_eqns, NBEquation.EqData.EqType.CONTINUOUS);
+      eqData := EqData.addTypedList(eqData, new_eqns, EqData.EqType.CONTINUOUS);
 
       // add all new differentiated variables
       variables := VariablePointers.addList(diffArguments.new_vars, variables);
@@ -339,8 +339,8 @@ public
         start_eqns := Pointer.access(ptr_start_eqns);
 
         // add new vars and equations to overall data
-        varData := VarData.addTypedList(varData, start_vars, NBVariable.VarData.VarType.START);
-        eqData := EqData.addTypedList(eqData, start_eqns, NBEquation.EqData.EqType.INITIAL);
+        varData := VarData.addTypedList(varData, start_vars, VarData.VarType.START);
+        eqData := EqData.addTypedList(eqData, start_eqns, EqData.EqType.INITIAL);
 
         // add new equations to system pointer arrays
         equations := EquationPointers.addList(start_eqns, equations);

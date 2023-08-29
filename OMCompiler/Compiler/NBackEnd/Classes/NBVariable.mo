@@ -93,6 +93,7 @@ public
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
   constant String PARTIAL_DERIVATIVE_STR  = "$pDER";
   constant String FUNCTION_DERIVATIVE_STR = "$fDER";
+  constant String FUNCTION_STR            = "$FUN";
   constant String PREVIOUS_STR            = "$PRE";
   constant String AUXILIARY_STR           = "$AUX";
   constant String START_STR               = "$START";
@@ -977,6 +978,31 @@ public
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeEventVar;
 
+  function makeAuxVar
+    "Creates an auxillary variable pointer from a unique index and context name.
+    e.g. (\"FUN\", 4) --> $FUN_4"
+    input String name                 "context name e.g. FUN";
+    input Integer uniqueIndex         "unique identifier index";
+    input Type ty                     "variable type containing dims";
+    input Boolean makeParam           "true if it is a parameter";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+  protected
+    InstNode node;
+    Variable var;
+    list<Dimension> dims = Type.arrayDims(ty);
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    cref  := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    var   := fromCref(cref);
+    // update the variable kind
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, if makeParam then VariableKind.PARAMETER() else VariableKind.fromType(ty));
+
+    // create the new variable pointer and safe it to the component reference
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+  end makeAuxVar;
+
   function makeAuxStateVar
     "Creates a auxiliary state variable from an expression.
     e.g. der(x^2 + y) --> der(aux)"
@@ -1818,7 +1844,7 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, ITERATOR);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR);
 
     function addTypedList
       input output VarData varData;
@@ -1852,9 +1878,21 @@ public
           varData.initials := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
+        case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.discretes := VariablePointers.addList(var_lst, varData.discretes);
+          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+        then varData;
+
         case (VAR_DATA_SIM(), VarType.START) algorithm
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.initials := VariablePointers.addList(var_lst, varData.initials);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.parameters := VariablePointers.addList(var_lst, varData.parameters);
+          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm

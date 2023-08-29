@@ -126,6 +126,21 @@ public
     end match;
   end inlineForEquation;
 
+  function functionInlineable
+    "returns true if the function can be inlined"
+    input Function fn;
+    output Boolean b = false;
+  algorithm
+    // currently we only inline single assignments
+    // also check for single output?
+    if Function.hasSingleOrEmptyBody(fn) then
+      b := match Function.getBody(fn)
+        case {Statement.ASSIGNMENT()} then true;
+        else false;
+      end match;
+    end if;
+  end functionInlineable;
+
 protected
   function inline extends Module.inlineInterface;
   protected
@@ -155,21 +170,6 @@ protected
       UnorderedMap.add(key, value, replacements);
     end if;
   end collectInlineFunctions;
-
-  function functionInlineable
-    "returns true if the function can be inlined"
-    input Function fn;
-    output Boolean b = false;
-  algorithm
-    // currently we only inline single assignments
-    // also check for single output?
-    if Function.hasSingleOrEmptyBody(fn) then
-      b := match Function.getBody(fn)
-        case {Statement.ASSIGNMENT()} then true;
-        else false;
-      end match;
-    end if;
-  end functionInlineable;
 
   function inlineRecords
     input output EqData eqData;
