@@ -283,6 +283,7 @@ ConnectAlgorithm.mo \
 ConnectArrays1.mo \
 ConnectArrays2.mo \
 ConnectArrays3.mo \
+ConnectArrays4.mo \
 ConnectArraysInvalidSubscript1.mo \
 ConnectComplex1.mo \
 ConnectComplexFlow1.mo \

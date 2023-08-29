@@ -2049,7 +2049,7 @@ function typeSubscript
   output Variability variability = Variability.CONSTANT;
 protected
   Expression e = Expression.EMPTY(Type.UNKNOWN());
-  Type ty, ety;
+  Type ty, matched_ty;
   MatchKind mk;
 algorithm
   (ty, variability) := match subscript
@@ -2058,10 +2058,10 @@ algorithm
       algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
+        (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
 
         if Type.isArray(ty) then
           outSubscript := Subscript.SLICE(e);
-          ty := Type.unliftArray(ty);
 
           if InstContext.inEquation(context) then
             Structural.markExp(e);
@@ -2070,34 +2070,53 @@ algorithm
           outSubscript := Subscript.INDEX(e);
         end if;
       then
-        (ty, variability);
+        (matched_ty, variability);
 
     // Other subscripts have already been typed, but still need to be type checked.
-    case Subscript.INDEX(index = e) then (Expression.typeOf(e), Expression.variability(e));
-    case Subscript.SLICE(slice = e) then (Type.unliftArray(Expression.typeOf(e)), Expression.variability(e));
+    case Subscript.INDEX(index = e)
+      algorithm
+        (e, ty) := checkSubscriptType(e, Expression.typeOf(e), dimension, info);
+        outSubscript := Subscript.INDEX(e);
+      then
+        (ty, Expression.variability(e));
+
+    case Subscript.SLICE(slice = e)
+      algorithm
+        (e, ty) := checkSubscriptType(e, Type.unliftArray(Expression.typeOf(e)), dimension, info);
+        outSubscript := Subscript.SLICE(e);
+      then
+        (ty, Expression.variability(e));
+
     case Subscript.WHOLE() then (Type.UNKNOWN(), Dimension.variability(dimension));
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown subscript", sourceInfo());
       then
         fail();
   end match;
+end typeSubscript;
 
-  // Type check the subscript's type against the expected subscript type for the dimension.
-  ety := Dimension.subscriptType(dimension);
-  e := match e
-    case Expression.EMPTY() then Expression.EMPTY(ty);
-    else e;
-  end match;
-  // We can have both : subscripts and : dimensions here, so we need to allow unknowns.
-  (_, _, mk) := TypeCheck.matchTypes(ty, ety, e, allowUnknown = true);
+function checkSubscriptType
+  input output Expression subscriptExp;
+  input Type subscriptType;
+  input Dimension dimension;
+  input SourceInfo info;
+        output Type outType;
+protected
+  Type expected_ty;
+  MatchKind mk;
+algorithm
+  expected_ty := Dimension.subscriptType(dimension);
+  (subscriptExp, outType, mk) := TypeCheck.matchTypes(subscriptType,
+    expected_ty, subscriptExp, allowUnknown = true);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.SUBSCRIPT_TYPE_MISMATCH,
-      {Subscript.toString(subscript), Type.toString(ty), Type.toString(ety)}, info);
+      {Expression.toString(subscriptExp), Type.toString(subscriptType), Type.toString(expected_ty)}, info);
     fail();
   end if;
-end typeSubscript;
+end checkSubscriptType;
 
 function typeArray
   input array<Expression> elements;

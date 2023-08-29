@@ -32,9 +32,9 @@ instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
 //   Integer i[3];
 //   Real x;
 // equation
-//   i[E.one] = 1;
-//   i[E.two] = 2;
-//   i[E.three] = 3;
+//   i[1] = 1;
+//   i[2] = 2;
+//   i[3] = 3;
 //   x = 1.0;
 // end TestNonStandardExtensions.TestEnumAsInteger;
 // "
@@ -57,10 +57,10 @@ instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
 //   Integer i[E.three];
 //   Integer x;
 // equation
-//   i[1] = 1;
-//   i[2] = 2;
-//   i[3] = 3;
-//   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*E*/(i[3]));
+//   i[E.one] = 1;
+//   i[E.two] = 2;
+//   i[E.three] = 3;
+//   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*E*/(i[E.three]));
 // end TestNonStandardExtensions.TestIntegerAsEnum;
 // "
 // "Warning: Allowing usage of Integer expression: 1 as enumeration: E.one. This is non-standard Modelica, use the actual enumeration instead!
