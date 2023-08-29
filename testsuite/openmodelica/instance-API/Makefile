@@ -30,6 +30,7 @@ GetModelInstanceConnection3.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
+GetModelInstanceDim1.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
