@@ -1,0 +1,76 @@
+// name: GetModelInstanceDim1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Integer n;
+    parameter Real x[:] = ones(n);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"n\",
+//       \"type\": \"Integer\",
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \"n\"
+//         ]
+//       },
+//       \"modifiers\": \"ones(n)\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"call\",
+//           \"name\": \"fill\",
+//           \"arguments\": [
+//             1,
+//             {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"n\"
+//                 }
+//               ]
+//             }
+//           ]
+//         }
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult
