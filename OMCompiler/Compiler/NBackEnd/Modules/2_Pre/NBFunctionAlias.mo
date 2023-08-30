@@ -43,7 +43,9 @@ protected
   import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFFunction.Function;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -168,8 +170,11 @@ protected
         Pointer<Variable> new_var;
 
       case EqData.EQ_DATA_SIM() algorithm
-        // first collect all functions from simulation equations
+        // first collect all natural functions alias from simulation equations
+        eqData.simulation := EquationPointers.map(eqData.simulation, function collectNaturalFunctionAlias(map = map, iter = Iterator.EMPTY()));
+        // then collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation, function introduceFunctionAliasEquation(map = map, index = index, init = false));
+
         // create new simulation variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           (id, aux)       := tpl;
@@ -186,8 +191,11 @@ protected
           UnorderedMap.add(id, aux, map);
         end for;
 
-        // afterwards collect all functions from initial equations but reuse simulation map to not create duplicates
+        // afterwards collect all initial natural functions alias from simulation equations
+        eqData.initials := EquationPointers.map(eqData.initials, function collectNaturalFunctionAlias(map = map, iter = Iterator.EMPTY()));
+        // finally collect all functions from initial equations
         eqData.initials := EquationPointers.map(eqData.initials, function introduceFunctionAliasEquation(map = map, index = index, init = true));
+
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           // only create new var and eqn if there is not already one in the simulation system
@@ -212,6 +220,88 @@ protected
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
   end functionAliasDefault;
 
+  function collectNaturalFunctionAlias
+    input output Equation eq;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Iterator iter;
+  algorithm
+    eq := match eq
+      local
+        Equation body;
+        Expression exp;
+
+      // apply on for equation body
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        eq.body := {collectNaturalFunctionAlias(body, map, eq.iter)};
+      then eq;
+
+      // ToDo: when and if equations
+
+      // check if it is already an alias equation and add the alias id
+      // [SCAL] cref = call()
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.lhs := updateMap(eq.lhs, exp, map, iter);
+      then eq;
+
+      // [SCAL] call() = cref
+      case Equation.SCALAR_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.rhs := updateMap(eq.rhs, exp, map, iter);
+      then eq;
+
+      // [ARRY] cref = call()
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.lhs := updateMap(eq.lhs, exp, map, iter);
+      then eq;
+
+      // [ARRY] call() = cref
+      case Equation.ARRAY_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.rhs := updateMap(eq.rhs, exp, map, iter);
+      then eq;
+
+      // [RECD] cref = call()
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.lhs := updateMap(eq.lhs, exp, map, iter);
+      then eq;
+
+      // [RECD] call() = cref
+      case Equation.RECORD_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
+        guard(checkCallReplacement(exp.call)) algorithm
+        eq.rhs := updateMap(eq.rhs, exp, map, iter);
+      then eq;
+
+      else eq;
+    end match;
+  end collectNaturalFunctionAlias;
+
+  function updateMap
+    "checks if the alias for call() was already found and replaces if necessary"
+    input output Expression name;
+    input Expression call;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Iterator iter;
+  protected
+    Call_Id id;
+    Call_Aux aux;
+    Option<Call_Aux> aux_opt;
+    ComponentRef cref;
+  algorithm
+    id := CALL_ID(call, iter);
+    aux_opt := UnorderedMap.get(id, map);
+    if isSome(aux_opt) then
+      aux := Util.getOption(aux_opt);
+      name := Expression.fromCref(aux.name);
+    else
+      cref := Expression.toCref(name);
+      aux := CALL_AUX(cref, if Type.isDiscrete(ComponentRef.nodeType(cref)) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, true);
+      UnorderedMap.add(id, aux, map);
+    end if;
+  end updateMap;
+
   function introduceFunctionAliasEquation
     "creates auxilliary variables for all not inlineable function calls in the equation"
     input output Equation eq;
@@ -230,7 +320,8 @@ protected
 
   function introduceFunctionAlias
     "checks if an expression is a function call and replaces it with auxilliary if not inlinable
-    map with Equation.map() or Expression.map()"
+    map with Equation.map() or Expression.map()
+    ToDo: also exclude special functions der(), pre(), ..."
     input output Expression exp;
     input UnorderedMap<Call_Id, Call_Aux> map;
     input Pointer<Integer> index;
@@ -249,7 +340,7 @@ protected
         Option<Call_Aux> aux_opt;
         Expression new_exp;
 
-      case Expression.CALL() guard(not Inline.functionInlineable(Call.typedFunction(exp.call))) algorithm
+      case Expression.CALL() guard(checkCallReplacement(exp.call)) algorithm
         // strip nested iterator for the iterators that actually occure in the function call
         if not Iterator.isEmpty(iter) then
           (names, ranges) := Iterator.getFrames(iter);
@@ -266,10 +357,14 @@ protected
         else
           // for initial systems create parameters, otherwise use type to determine variable kind
           ty := Expression.typeOf(exp);
-          (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
           if not Iterator.isEmpty(new_iter) then
+            ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(new_iter)));
+            (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
             // add iterators to subscripts of auxilliary variable
-            name    := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(new_iter), name, true, true);
+            name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(new_iter), name, true, true);
+          else
+            (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
+
           end if;
           aux := CALL_AUX(name, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
           UnorderedMap.add(id, aux, map);
@@ -282,6 +377,15 @@ protected
       else exp;
     end match;
   end introduceFunctionAlias;
+
+  function checkCallReplacement
+    "returns true if the call should be replaced"
+    input Call call;
+    output Boolean b;
+  algorithm
+    b := not Inline.functionInlineable(Call.typedFunction(call))
+     and not Function.isSpecialBuiltin(Call.typedFunction(call));
+  end checkCallReplacement;
 
   function filterFrames
     "filters the list of frames for all iterators that occure in exp"
