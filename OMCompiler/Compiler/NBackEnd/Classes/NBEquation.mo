@@ -227,6 +227,7 @@ public
       output Boolean b = true;
     algorithm
       b := match (iter1, iter2)
+        case (EMPTY(), EMPTY()) then true;
         case (SINGLE(), SINGLE()) then Expression.isEqual(iter1.range, iter2.range);
         case (NESTED(), NESTED()) algorithm
           if arrayLength(iter1.ranges) == arrayLength(iter2.ranges) then

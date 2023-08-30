@@ -121,8 +121,8 @@ protected
       input Call_Id id;
       output String str;
     algorithm
-      str := if not Iterator.isEmpty(id.iter) then "\tIterator: " + Iterator.toString(id.iter) + "\n" else "";
-      str := Expression.toString(id.call) + "\n" + str;
+      str := if not Iterator.isEmpty(id.iter) then " [" + Iterator.toString(id.iter) + "]" else "";
+      str := Expression.toString(id.call) + str;
     end toString;
 
     function hash
@@ -151,7 +151,20 @@ protected
       EquationKind kind;
       Boolean parsed;
     end CALL_AUX;
+
+    function toString
+      input Call_Aux aux;
+      output String str = ComponentRef.toString(aux.name);
+    end toString;
   end Call_Aux;
+
+  function functionAliasTplString
+    input tuple<String, String> tpl;
+    input Integer max_length;
+    output String str;
+  algorithm
+    str := Util.tuple21(tpl) + " " + StringUtil.repeat(".", max_length - stringLength(Util.tuple21(tpl))) + " " + Util.tuple22(tpl);
+  end functionAliasTplString;
 
   function functionAliasDefault
     extends Module.functionAliasInterface;
@@ -160,6 +173,9 @@ protected
     Pointer<Integer> index = Pointer.create(1);
     list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {};
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {};
+    list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
+    list<tuple<String, String>> debug_str;
+    Integer debug_max_length;
   algorithm
     _ := match eqData
       local
@@ -170,9 +186,7 @@ protected
         Pointer<Variable> new_var;
 
       case EqData.EQ_DATA_SIM() algorithm
-        // first collect all natural functions alias from simulation equations
-        eqData.simulation := EquationPointers.map(eqData.simulation, function collectNaturalFunctionAlias(map = map, iter = Iterator.EMPTY()));
-        // then collect all new functions from simulation equations
+        // first collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation, function introduceFunctionAliasEquation(map = map, index = index, init = false));
 
         // create new simulation variables and corresponding equations for the function alias
@@ -191,9 +205,11 @@ protected
           UnorderedMap.add(id, aux, map);
         end for;
 
-        // afterwards collect all initial natural functions alias from simulation equations
-        eqData.initials := EquationPointers.map(eqData.initials, function collectNaturalFunctionAlias(map = map, iter = Iterator.EMPTY()));
-        // finally collect all functions from initial equations
+        if Flags.isSet(Flags.DUMP_CSE) then
+          debug_lst_sim := UnorderedMap.toList(map);
+        end if;
+
+        // afterwards collect all functions from initial equations
         eqData.initials := EquationPointers.map(eqData.initials, function introduceFunctionAliasEquation(map = map, index = index, init = true));
 
         // create new initialization variables and corresponding equations for the function alias
@@ -218,89 +234,24 @@ protected
     eqData  := EqData.addTypedList(eqData, new_eqns_cont, EqData.EqType.CONTINUOUS, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_disc, EqData.EqType.DISCRETE, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
-  end functionAliasDefault;
 
-  function collectNaturalFunctionAlias
-    input output Equation eq;
-    input UnorderedMap<Call_Id, Call_Aux> map;
-    input Iterator iter;
-  algorithm
-    eq := match eq
-      local
-        Equation body;
-        Expression exp;
-
-      // apply on for equation body
-      case Equation.FOR_EQUATION(body = {body}) algorithm
-        eq.body := {collectNaturalFunctionAlias(body, map, eq.iter)};
-      then eq;
-
-      // ToDo: when and if equations
-
-      // check if it is already an alias equation and add the alias id
-      // [SCAL] cref = call()
-      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.lhs := updateMap(eq.lhs, exp, map, iter);
-      then eq;
-
-      // [SCAL] call() = cref
-      case Equation.SCALAR_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.rhs := updateMap(eq.rhs, exp, map, iter);
-      then eq;
-
-      // [ARRY] cref = call()
-      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.lhs := updateMap(eq.lhs, exp, map, iter);
-      then eq;
-
-      // [ARRY] call() = cref
-      case Equation.ARRAY_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.rhs := updateMap(eq.rhs, exp, map, iter);
-      then eq;
-
-      // [RECD] cref = call()
-      case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = exp as Expression.CALL())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.lhs := updateMap(eq.lhs, exp, map, iter);
-      then eq;
-
-      // [RECD] call() = cref
-      case Equation.RECORD_EQUATION(lhs = exp as Expression.CALL(), rhs = Expression.CREF())
-        guard(checkCallReplacement(exp.call)) algorithm
-        eq.rhs := updateMap(eq.rhs, exp, map, iter);
-      then eq;
-
-      else eq;
-    end match;
-  end collectNaturalFunctionAlias;
-
-  function updateMap
-    "checks if the alias for call() was already found and replaces if necessary"
-    input output Expression name;
-    input Expression call;
-    input UnorderedMap<Call_Id, Call_Aux> map;
-    input Iterator iter;
-  protected
-    Call_Id id;
-    Call_Aux aux;
-    Option<Call_Aux> aux_opt;
-    ComponentRef cref;
-  algorithm
-    id := CALL_ID(call, iter);
-    aux_opt := UnorderedMap.get(id, map);
-    if isSome(aux_opt) then
-      aux := Util.getOption(aux_opt);
-      name := Expression.fromCref(aux.name);
-    else
-      cref := Expression.toCref(name);
-      aux := CALL_AUX(cref, if Type.isDiscrete(ComponentRef.nodeType(cref)) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, true);
-      UnorderedMap.add(id, aux, map);
+    // dump if flag is set
+    if Flags.isSet(Flags.DUMP_CSE) then
+      // remove sim vars from final map to see whats exclusively initial
+      for tpl in debug_lst_sim loop
+        UnorderedMap.remove(Util.tuple21(tpl), map);
+      end for;
+      debug_lst_ini := UnorderedMap.toList(map);
+      print(StringUtil.headline_3("Simulation Function Alias"));
+      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_sim);
+      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(StringUtil.headline_3("Initial Function Alias"));
+      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_ini);
+      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
     end if;
-  end updateMap;
+  end functionAliasDefault;
 
   function introduceFunctionAliasEquation
     "creates auxilliary variables for all not inlineable function calls in the equation"
@@ -364,7 +315,6 @@ protected
             name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(new_iter), name, true, true);
           else
             (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
-
           end if;
           aux := CALL_AUX(name, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
           UnorderedMap.add(id, aux, map);
