@@ -994,7 +994,7 @@ algorithm
             c.attributes := attrs;
           end if;
         else
-          if Binding.isBound(c.condition) then
+          if Binding.isBound(c.condition) or InstContext.inInstanceAPI(context) then
             binding := Binding.INVALID_BINDING(binding, ErrorExt.getCheckpointMessages());
           else
             ErrorExt.delCheckpoint(getInstanceName());
