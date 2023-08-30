@@ -9,8 +9,8 @@
 
 loadString("
 record R
-  Real a; 
-  Real b; 
+  Real a;
+  Real b;
 end R;
 
 function f
@@ -34,7 +34,7 @@ model bug_2888
   Real y[n], x, p;
   parameter Integer n=2;
 equation
-  p = time*10+3.14159;
+  p = time*10 + 3.14159;
   (y, a, x) = f(time, n);
 end bug_2888;
 ");
@@ -49,14 +49,11 @@ simulate(bug_2888,simflags="-lv LOG_NLS"); getErrorString();
 // record SimulationResult
 //     resultFile = "bug_2888_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug_2888', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS'",
-//     messages = "LOG_NLS           | info    | initialize mixed system solvers
-// |                 | |       | | 0 mixed systems
-// LOG_NLS           | info    | initialize non-linear system solvers
+//     messages = "LOG_NLS           | info    | initialize non-linear system solvers
 // |                 | |       | | 0 non-linear systems
 // LOG_NLS           | info    | update static data of non-linear system solvers
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
