@@ -2181,14 +2181,19 @@ algorithm
 
     case Dimension.RAW_DIM(dim = dim)
       then
-        match dim
+        matchcontinue dim
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
               exp := instExp(dim.subscript, dimension.scope, context, info);
             then
               Dimension.UNTYPED(exp, false);
-        end match;
+
+          case _
+            guard InstContext.inRelaxed(context)
+            then Dimension.UNKNOWN();
+
+        end matchcontinue;
 
     else dimension;
   end match;
