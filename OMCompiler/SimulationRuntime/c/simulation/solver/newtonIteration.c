@@ -253,13 +253,16 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
     }
     else
     {
-      for (i =0; i<n; i++)
-        solverData->x_new[i]=x[i]-solverData->x_increment[i];
+      for (i = 0; i < n; i++)
+        solverData->x_new[i] = x[i]-solverData->x_increment[i];
 
-      infoStreamPrint(LOG_NLS_V,1,"x_increment");
-      for(i=0; i<n; i++)
-        infoStreamPrint(LOG_NLS_V, 0, "x_increment[%d] = %e ", i, solverData->x_increment[i]);
-      messageClose(LOG_NLS_V);
+      if(ACTIVE_STREAM(LOG_NLS_V)) {
+        infoStreamPrint(LOG_NLS_V, 1, "x_increment");
+        for(i = 0; i < n; i++) {
+          infoStreamPrint(LOG_NLS_V, 0, "x_increment[%d] = %e ", i, solverData->x_increment[i]);
+        }
+        messageClose(LOG_NLS_V);
+      }
 
       if (solverData->newtonStrategy == NEWTON_DAMPED)
       {
@@ -316,15 +319,15 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
 
     if(ACTIVE_STREAM(LOG_NLS_V))
     {
-      infoStreamPrint(LOG_NLS_V,1,"x vector");
-      for(i=0; i<n; i++)
+      infoStreamPrint(LOG_NLS_V, 1, "x vector");
+      for(i = 0; i < n; i++)
         infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
       messageClose(LOG_NLS_V);
       printErrors(delta_x, delta_x_scaled, delta_f, error_f, scaledError_f, eps);
     }
   }
 
-  solverData->numberOfIterations  += l;
+  solverData->numberOfIterations += l;
   solverData->numberOfFunctionEvaluations += solverData->nfev;
 
   return 0;
@@ -545,7 +548,8 @@ void damping_heuristic(double* x, genericResidualFunc f,
     {
       warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
 
-      /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+      /* if damping is without success, trying full newton step;
+         after 5 full newton steps try a very little step */
       if (*k >= 5)
         for (i=0; i<n; i++)
           solverData->x_new[i]=x[i]-*lambda*solverData->x_increment[i];
@@ -571,8 +575,8 @@ void damping_heuristic(double* x, genericResidualFunc f,
 /*! \fn damping_heuristic2
  *
  *  second (default) damping heuristic:
- *  x_increment will be multiplied by 3/4 until the Euclidean norm of the residual function
- *  is smaller than the Euclidean norm of the current point
+ *  x_increment will be multiplied by 3/4 until the Euclidean norm of the
+ *  residual function is smaller than the Euclidean norm of the current point
  *
  *  treshold for damping = 0.0001
  *  compiler flag: -newton = damped2
@@ -615,7 +619,8 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
     {
       warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
 
-      /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+      /* if damping is without success, trying full newton step;
+         after 5 full newton steps try a very little step */
       if (*k >= 5)
         for (i=0; i<n; i++)
           solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
@@ -639,8 +644,9 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 /*! \fn LineSearch
  *
  *  third damping heuristic:
- *  Along the tangent 5 five points are selected. For every point the Euclidean norm of
- *  the residual function will be calculated and the minimum is chosen for the further iteration.
+ *  Along the tangent 5 five points are selected. For every point the Euclidean
+ *  norm of the residual function will be calculated and the minimum is chosen
+ *  for the further iteration.
  *
  *  compiler flag: -newton = damped_ls
  */
@@ -679,7 +685,8 @@ void LineSearch(double* x, genericResidualFunc f,
   {
     warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda_minimum = 0 ");
 
-    /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+    /* if damping is without success, trying full newton step;
+       after 5 full newton steps try a very little step */
     if (*k >= 5)
     {
       lambda_minimum = 0.125;
@@ -748,7 +755,7 @@ void Backtracking(double* x,
   /* Backtracking only if full newton step is useless */
   if (enorm_new >= current_fvec_enorm)
   {
-    infoStreamPrint(LOG_NLS_V, 0, "Start Backtracking\n enorm_new= %f \t current_fvec_enorm=%f",enorm_new, current_fvec_enorm);
+    infoStreamPrint(LOG_NLS_V, 0, "Start Backtracking\n enorm_new= %f \t current_fvec_enorm=%f", enorm_new, current_fvec_enorm);
 
     /* h(x) = 1/2 * ||f(x)|| ^2
      * g(lambda) = h(x_old + lambda * x_increment)
@@ -758,7 +765,7 @@ void Backtracking(double* x,
 
     a = 0;
     b = 1;
-    tau = 0.61803398875;
+    tau = 0.618033988749894848;
 
     a1 = a + (1-tau)*(b-a);
     /* g1 = g(a1) = h(x_old - a1 * x_increment) = 1/2 * ||f(x_old- a1 * x_increment)||^2 */
@@ -809,9 +816,7 @@ void Backtracking(double* x,
       }
     }
 
-
     lambda = (a+b)/2;
-
 
     /* print lambda */
     infoStreamPrint(LOG_NLS_V, 0, "Backtracking - lambda = %e", lambda);
@@ -824,7 +829,6 @@ void Backtracking(double* x,
     solverData->nfev++;
   }
 }
-
 
 #ifdef __cplusplus
 }

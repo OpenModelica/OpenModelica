@@ -615,20 +615,20 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #endif
   }
 
-  for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
+  for (i=0; i<data->modelData->nNonLinearSystems; ++i) {
     initializeNonlinearSystemData(data, threadData, &nonlinsys[i], i, &someSmallDensity, &someBigSize);
   }
 
   /* print relevant flag information */
-  if(someSmallDensity) {
-    if(someBigSize) {
+  if (someSmallDensity) {
+    if (someBigSize) {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
                                      "specified using the runtime flags '<-nlssMaxDensity=value>' and '<-nlssMinSize=value>'.");
     } else {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
                                      "using the runtime flag '<-nlssMaxDensity=value>'.");
     }
-  } else if(someBigSize) {
+  } else if (someBigSize) {
     infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
                                    "using the runtime flag '<-nlssMinSize=value>'.");
   }
@@ -1183,6 +1183,10 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   FILE *pFile = NULL;
   double originalLambda = data->simulationInfo->lambda;
 
+  if (!nonlinsys->logActive) {
+    deactivateLogging();
+  }
+
 #if !defined(OMC_MINIMAL_RUNTIME)
   kinsol = (nonlinsys->nlsMethod == NLS_KINSOL);
 #endif
@@ -1399,6 +1403,11 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #endif
   res = check_nonlinear_solution(data, 1, sysNumber);
   data->simulationInfo->lambda = originalLambda;
+
+  if (!nonlinsys->logActive) {
+    reactivateLogging();
+  }
+
   return res;
 }
 

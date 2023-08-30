@@ -29,9 +29,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // record SimulationResult
 //     resultFile = "nonlinearSolverTests.bug_2841_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinearSolverTests.bug_2841', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V,LOG_NLS_V'",
-//     messages = "LOG_NLS           | info    | initialize mixed system solvers
-// |                 | |       | | 0 mixed systems
-// LOG_NLS           | info    | initialize non-linear system solvers
+//     messages = "LOG_NLS           | info    | initialize non-linear system solvers
 // |                 | |       | | 2 non-linear systems
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
@@ -435,7 +433,6 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | | [ 1]                              x  =       -77390.689
 // |                 | |       | | | [ 2]                              y  =    3.3118158e-06
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
