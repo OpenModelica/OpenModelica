@@ -28,7 +28,6 @@ ifndef MSYSTEM_PREFIX
 $(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
 OMDEV           = $(shell cygpath $$OMDEV)
-OMDEVMSYS       = $(shell cygpath $$OMDEV)
 OMDEV_MSYS      = $(shell cygpath $$OMDEV_MSYS)
 MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
@@ -88,7 +87,7 @@ IS_MINGW64 = -DIS_MINGW64=ON
 MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
 LVE_EXE_SUFFIX=win64
 endif
-BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
+BOOST_PATH_MSVC = $(OMDEV)/lib/3rdParty/boost-1_55/
 WROOT=$(shell cygpath $$SYSTEMROOT)
 
 OPENCL = Yes
@@ -113,7 +112,7 @@ LD_LAPACK=-lopenblas
 GRAPHLIB=libmetis.a
 GRAPHINCLUDE=3rdParty/metis-5.1.0/include/ -DUSE_METIS -DUSE_GRAPH
 BOOTSTRAP_FMIL_DEP=fmil
-IDLPYTHON = $(OMDEVMSYS)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
+IDLPYTHON = $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
@@ -169,11 +168,11 @@ else
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 else
@@ -185,21 +184,21 @@ ifeq ($(VSVERSION),2012)
 else
 ifeq ($(VSVERSION),2013)
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 endif
 endif
 endif
 endif
-	echo VSCOMNTOOLS: $(VSCOMNTOOLS)
-	echo VCVARS_PARAMS: $(VCVARS_PARAMS)
-	echo BOOST_PATH_MSVC: $(BOOST_PATH_MSVC)
-	echo OMDEVMSYS: $(OMDEVMSYS)
+	echo "VSCOMNTOOLS: $(VSCOMNTOOLS)"
+	echo "VCVARS_PARAMS: $(VCVARS_PARAMS)"
+	echo "BOOST_PATH_MSVC: $(BOOST_PATH_MSVC)"
+	echo "OMDEV: $(OMDEV)"
 
 
 revision:
@@ -232,7 +231,8 @@ endif
 
 settings:
 	@echo Building OMC using OMDev with the following settings...
-	@echo Using OMDev: $(OMDEVMSYS)
+	@echo Using OMDev: $(OMDEV)
+	@echo Using OMDev_MSYS: $(OMDEV_MSYS)
 	@echo Using Files: $(OMC_BUILD_FROM)
 	@echo Using Path : '$(PATH)'
 	@echo Current directory: `pwd`
@@ -529,15 +529,15 @@ simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
 	(cd SimulationRuntime/build_debug_c/ && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
 	rm -rf SimulationRuntime/build_debug_c/
 	echo 'Copy the needed .lib/.dll files from OMDev to $(OMBUILDDIR)/lib/omc'
-	cp -p $(OMDEVMSYS)/lib/libf2c/*.lib $(OMBUILDDIR)/lib/omc/msvc/release/
-	cp -p $(OMDEVMSYS)/lib/libf2c/debug/*.lib $(OMBUILDDIR)/lib/omc/msvc/debug/
-	cp -p $(OMDEVMSYS)/lib/expat-win32-msvc/*.lib $(OMBUILDDIR)/lib/omc/msvc/
-	cp -p $(OMDEVMSYS)/lib/lapack-win32-msvc/*.lib $(OMBUILDDIR)/lib/omc/msvc/
-	cp -p $(OMDEVMSYS)/lib/lis/*.lib $(OMBUILDDIR)/lib/omc/msvc/
-	cp -p $(OMDEVMSYS)/lib/pthread/*.* $(OMBUILDDIR)/lib/omc/msvc/
-	cp -p $(OMDEVMSYS)/include/pthread/*.* $(OMBUILDDIR)/include/omc/msvc/
+	cp -p $(OMDEV)/lib/libf2c/*.lib $(OMBUILDDIR)/lib/omc/msvc/release/
+	cp -p $(OMDEV)/lib/libf2c/debug/*.lib $(OMBUILDDIR)/lib/omc/msvc/debug/
+	cp -p $(OMDEV)/lib/expat-win32-msvc/*.lib $(OMBUILDDIR)/lib/omc/msvc/
+	cp -p $(OMDEV)/lib/lapack-win32-msvc/*.lib $(OMBUILDDIR)/lib/omc/msvc/
+	cp -p $(OMDEV)/lib/lis/*.lib $(OMBUILDDIR)/lib/omc/msvc/
+	cp -p $(OMDEV)/lib/pthread/*.* $(OMBUILDDIR)/lib/omc/msvc/
+	cp -p $(OMDEV)/include/pthread/*.* $(OMBUILDDIR)/include/omc/msvc/
 	echo 'Copy the needed .dll files from OMDev to $(OMBUILDDIR)/omc'
-	cp -p $(OMDEVMSYS)/lib/pthread/pthreadV*.dll $(OMBUILDDIR)/bin/
+	cp -p $(OMDEV)/lib/pthread/pthreadV*.dll $(OMBUILDDIR)/bin/
 	# build gc as well, as it is needed for the msvc c runtime
 	# echo 'Build gc (RelWithDebInfo)'
 	# mkdir -p 3rdParty/gc/build_msvc
