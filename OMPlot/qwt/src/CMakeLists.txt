@@ -255,4 +255,7 @@ set_target_properties(omqwt PROPERTIES
   VERSION ${QWT_VERSION}
   SOVERSION ${QWT_VER_MAJ}
   AUTOMOC ON)
+
 target_compile_definitions(omqwt PRIVATE QWT_MOC_INCLUDE)
+
+install(TARGETS omqwt)
