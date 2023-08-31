@@ -216,12 +216,14 @@ endif ()
 
 add_library(omqwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
 
-target_compile_definitions(omqwt
-	PUBLIC
-		$<$<BOOL:MSVC>:QWT_DLL>
-	PRIVATE
-		$<$<BOOL:MSVC>:QWT_MAKEDLL>
-)
+if(WIN32)
+  # define QWT_DLL so the headers add the dll export/import specifiers .
+  target_compile_definitions(omqwt PUBLIC QWT_DLL)
+  # When compiling omqwt itself, define QWT_MAKEDLL so the headers export the functions.
+  # Target that link to omqwt will not fet this define (private) which means they will
+  # dllimport the functions. See src/qwt_global.h:27-35
+  target_compile_definitions(omqwt PRIVATE QWT_MAKEDLL)
+endif()
 
 target_include_directories(omqwt
   PUBLIC
