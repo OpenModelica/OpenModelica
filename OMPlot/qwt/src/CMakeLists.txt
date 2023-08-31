@@ -214,15 +214,14 @@ if (QWT_WITH_WIDGETS)
     qwt_wheel.cpp)
 endif ()
 
-add_library(omqwt STATIC ${QWT_HEADERS} ${QWT_SOURCES})
+add_library(omqwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
 
-## We build it as a static library now. Disable dllimport/export attributes.
-# target_compile_definitions(omqwt
-# 	PUBLIC
-# 		$<$<BOOL:MSVC>:QWT_DLL>
-# 	PRIVATE
-# 		$<$<BOOL:MSVC>:QWT_MAKEDLL>
-# )
+target_compile_definitions(omqwt
+	PUBLIC
+		$<$<BOOL:MSVC>:QWT_DLL>
+	PRIVATE
+		$<$<BOOL:MSVC>:QWT_MAKEDLL>
+)
 
 target_include_directories(omqwt
   PUBLIC
