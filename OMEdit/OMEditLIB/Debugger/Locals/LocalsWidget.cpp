@@ -176,6 +176,7 @@ QVariant LocalsTreeItem::data(int column, int role) const
         default:
           break;
       }
+      break;
     case Qt::ToolTipRole:
       switch (column) {
         case 0:
@@ -187,6 +188,7 @@ QVariant LocalsTreeItem::data(int column, int role) const
         default:
           break;
       }
+      break;
     case Qt::BackgroundRole:
       return valueChanged() ? QColor(Qt::yellow) : QVariant();
     default:
