@@ -258,7 +258,7 @@ static const char* GetLastErrorAsString()
   return str;
 }
 
-char* omc_dlerror()
+const char* omc_dlerror()
 {
   return GetLastErrorAsString();
 }
@@ -277,7 +277,7 @@ void* dlopen(const char *filename, int flag) {
   return omc_dlopen(filename, flag);
 }
 
-char* dlerror() {
+const char* dlerror() {
   return omc_dlerror();
 }
 

@@ -159,13 +159,13 @@ typedef struct {
 
 char* mkdtemp(char *tpl);
 void* omc_dlopen(const char *filename, int flag);
-char* omc_dlerror();
+const char* omc_dlerror();
 void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
 int omc_dladdr(void *addr, Dl_info *info);
 
 void* dlopen(const char *filename, int flag);
-char* dlerror();
+const char* dlerror();
 void* dlsym(void *handle, const char *symbol);
 int dlclose(void *handle);
 int dladdr(void *addr, Dl_info *info);
