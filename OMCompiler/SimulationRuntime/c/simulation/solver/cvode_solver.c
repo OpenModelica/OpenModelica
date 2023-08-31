@@ -583,7 +583,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   flag = CVodeSetErrHandlerFn(cvodeData->cvode_mem, cvodeErrorHandlerFunction, cvodeData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetErrHandlerFn");
 
-  /* Set linear solver useb by CVODE */
+  /* Set linear solver used by CVODE */
   cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
   switch (cvodeData->config.jacobianMethod)
   {

@@ -351,11 +351,7 @@ public
 
     function size
       input Iterator iter;
-      output Integer size = 1;
-    algorithm
-      for i in sizes(iter) loop
-        size := size * i;
-      end for;
+      output Integer size = product(i for i in sizes(iter));
     end size;
 
     function createLocationReplacements

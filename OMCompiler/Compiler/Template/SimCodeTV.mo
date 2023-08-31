@@ -1383,12 +1383,6 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> eqs;
   end sortSimpleAssignmentBasedOnLhs;
 
-  function sortCrefBasedOnSimCodeIndex
-    input list<DAE.ComponentRef> inCrefs;
-    input SimCode.SimCode simCode;
-    output list<DAE.ComponentRef> crs;
-  end sortCrefBasedOnSimCodeIndex;
-
   function getNumContinuousEquations
     input list<SimCode.SimEqSystem> eqs;
     input Integer numStates;
