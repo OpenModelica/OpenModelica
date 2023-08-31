@@ -330,7 +330,7 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    assertStreamPrint(threadData, data->modelData->nBaseClocks==<%listLength(clockedPartitions)%>, "Number of base clocks doens't match numer of clocks that are initialized! Code generation error!");
+    assertStreamPrint(threadData, data->modelData->nBaseClocks==<%listLength(clockedPartitions)%>, "Number of base clocks doesn't match number of clocks that are initialized! Code generation error!");
     data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
 
     <%body%>

@@ -5468,22 +5468,19 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
-      String str;
       BackendDAE.Var v;
-      list<DAE.Exp> expLst;
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}))
       equation
         v = BackendVariable.createAliasDerVar(cr);
         cr = BackendVariable.varCref(v);
         outExp = DAE.CREF(cr,ty);
-     then (outExp);
+      then (outExp);
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")))
       equation
-        str = "BackendDAEUtil.replaceDerCall failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-     then fail();
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionDump.printExpStr(inExp) + "\n"});
+      then fail();
 
     else (inExp);
   end matchcontinue;

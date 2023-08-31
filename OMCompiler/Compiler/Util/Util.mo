@@ -602,7 +602,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value);
     else inDefaultValue;
@@ -628,7 +627,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value, inArg);
     else inDefaultValue;
@@ -656,7 +654,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value, inArg1, inArg2);
     else inDefaultValue;

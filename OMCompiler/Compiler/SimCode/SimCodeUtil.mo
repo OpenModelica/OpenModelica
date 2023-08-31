@@ -15419,13 +15419,6 @@ algorithm
   end match;
 end getNumContinuousEquationsSingleEq;
 
-public function sortCrefBasedOnSimCodeIndex
-  input output list<DAE.ComponentRef> crs;
-  input SimCode.SimCode simCode;
-algorithm
-  crs := List.sort(crs, function crefSimCodeIndexGreaterThan(simCode=simCode));
-end sortCrefBasedOnSimCodeIndex;
-
 protected function crefSimCodeIndexGreaterThan
   input DAE.ComponentRef cr1, cr2;
   input SimCode.SimCode simCode;

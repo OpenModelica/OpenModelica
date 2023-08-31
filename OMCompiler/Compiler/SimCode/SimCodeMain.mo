@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -108,7 +108,6 @@ import Util;
 import SerializeTaskSystemInfo;
 
 public
-constant Boolean debug=true;
 uniontype TranslateModelKind
   record NORMAL
   end NORMAL;
@@ -310,7 +309,7 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -428,7 +427,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
     fail();
