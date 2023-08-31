@@ -50,6 +50,7 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QMenu>
+#include <QToolBar>
 
 using namespace OMPlot;
 
