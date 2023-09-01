@@ -195,10 +195,10 @@ endif
 endif
 endif
 endif
-	echo " VSCOMNTOOLS: $(VSCOMNTOOLS) "
-	echo " VCVARS_PARAMS: $(VCVARS_PARAMS) "
-	echo " BOOST_PATH_MSVC: $(BOOST_PATH_MSVC) "
-	echo " OMDEV: $(OMDEV) "
+	echo 'VSCOMNTOOLS:$(VSCOMNTOOLS)/'
+	echo 'VCVARS_PARAMS: $(VCVARS_PARAMS)/'
+	echo 'BOOST_PATH_MSVC: $(BOOST_PATH_MSVC)/'
+	echo 'OMDEV: $(OMDEV)/'
 
 
 revision:
