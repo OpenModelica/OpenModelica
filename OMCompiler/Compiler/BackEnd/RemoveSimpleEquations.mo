@@ -3356,22 +3356,28 @@ algorithm
       BackendDAE.Variables vars, globalKnownVars;
       Option<DAE.Exp> min, max;
 
-    case((fixedset, startvalues, nominalset, minmaxset), _, _, BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
-      isdiscrete = BackendVariable.isVarDiscrete(inVar);
+    case((fixedset, startvalues, nominalset, minmaxset), _, _, BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+      isdiscrete := BackendVariable.isVarDiscrete(inVar);
 
       // start and fixed
       if not isdiscrete then
-        (v, b1) = mergeStartFixedAttributes(inVar, fixedset, startvalues, inShared);
+        (v, b1) := mergeStartFixedAttributes(inVar, fixedset, startvalues, inShared);
       end if;
       // nominal
-      (v, b2) = mergeNominalAttribute(nominalset, v, globalKnownVars);
+      (v, b2) := mergeNominalAttribute(nominalset, v, globalKnownVars);
       // min max
-      (min, max) = minmaxset;
-      v = BackendVariable.setVarMinMax(v, min, max);
+      (min, max) := minmaxset;
+      if isSome(min) then
+        min := SOME(ExpressionSimplify.simplify(Util.getOption(min)));
+      end if;
+      if isSome(max) then
+        max := SOME(ExpressionSimplify.simplify(Util.getOption(max)));
+      end if;
+      v := BackendVariable.setVarMinMax(v, min, max);
 
       // update vars
-      vars = BackendVariable.addVar(v, inVars);
-      warnAliasConflicts = b1 or b2;
+      vars := BackendVariable.addVar(v, inVars);
+      warnAliasConflicts := b1 or b2;
     then vars;
 
     else equation
