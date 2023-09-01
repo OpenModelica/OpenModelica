@@ -5,8 +5,6 @@ CXX=g++
 EXE_EXT=.exe
 EXE_SUFFIX=
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
-
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware
 	ISMINGW64 = false

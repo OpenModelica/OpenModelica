@@ -18,9 +18,7 @@ OMBUILDDIR_WIN=$(shell cygpath -w $$OMBUILDDIR)
 
 #use this call to use precompiled headers
 #use this call if you want to debug the cpp runtime
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
-
-OMDEVMSYS=$(shell cygpath $$OMDEV)
+CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
