@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=OMOptim
+GenericName=Tool for optimization of physical models and simulations
+Comment=A Modelica optimization tool
+TryExec=OMOptim
+Exec=OMOptim %f
+Icon=/usr/share/pixmaps/omoptim.ico
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Development;Education;Science;Math;

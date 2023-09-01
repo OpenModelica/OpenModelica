@@ -1,0 +1,9 @@
+?package(omshell-terminal):                          \
+       needs="text"                                  \
+       section="Applications/Science/Mathematics"    \
+       title="OMShell-terminal"                      \
+       command="/usr/bin/OMShell-terminal"           \
+       hints="Programming,Simulation"                \
+       icon="/usr/share/pixmaps/OMShell-terminal_icon.xpm"    \
+       longtitle="Open Modelica Shell-terminal"      \
+       description="A console based shell supporting Modelica"

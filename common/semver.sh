@@ -6,8 +6,8 @@ if test -f REVISION; then
 elif test "${PWD##*/}" != "OpenModelica" && test -f ../REVISION; then
   SOURCE_REVISION="OpenModelica `test -f ../REVISION && head -n1 ../REVISION`"
 elif test -z "$SOURCE_REVISION"; then
-  DESCRIBE_SHORT=`git describe --match "v[0-9]*.[0-9]*.[0-9]*" --always`
-  DESCRIBE_LONG=`git describe --match "v[0-9]*.[0-9]*.[0-9]*" --always --long`
+  DESCRIBE_SHORT=`git describe --abbrev=7 --match "v[0-9]*.[0-9]*.[0-9]*" --always`
+  DESCRIBE_LONG=`git describe --abbrev=7 --match "v[0-9]*.[0-9]*.[0-9]*" --always --long`
   if test "$DESCRIBE_SHORT" != "$DESCRIBE_LONG"; then
     SOURCE_REVISION="$DESCRIBE_SHORT"
   else

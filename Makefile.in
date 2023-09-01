@@ -17,11 +17,14 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
-all: @ALL_TARGETS@
+all: @ALL_TARGETS@ docs-install
 
 .PRECIOUS: Makefile
 .PHONY: omc omlibrary omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing test fast-test testsuite-depends omsens_qt
 
+docs-install:
+	mkdir -p "@OMBUILDDIR@/share/doc/omc/"
+	test ! -d "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`" || cp -a "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`/"* "@OMBUILDDIR@/share/doc/omc/"
 omc: omc.skip
 omc.skip:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
@@ -179,7 +182,7 @@ install: install-dirs
 	# License
 	cp -p OMCompiler/COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
-	test ! -e "doc" || cp -p doc/*.pdf ${INSTALL_DOCDIR}/omc/
+	test ! -d "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`" || cp -a "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`/"* "${INSTALL_DOCDIR}/omc/"
 	cp -p "@OMBUILDDIR@"/share/doc/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
 	# cp -p "@OMBUILDDIR@"/share/man/man1/*.gz ${INSTALL_MANDIR}/man1/
@@ -205,3 +208,21 @@ config.status: configure
 	./config.status -recheck
 configure: configure.ac
 	autoconf
+
+SOURCE_DIR=openmodelica_@SOURCE_REVISION_NO_PKG@
+source-dist: omlibrary
+	rm -rf "$(SOURCE_DIR)"
+	mkdir -p "$(SOURCE_DIR)"
+	git ls-files --recurse-submodules | tar caf - -T- | tar xC "$(SOURCE_DIR)"
+	echo "@SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/REVISION"
+	echo "OMEdit @SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/OMEdit/REVISION"
+	(cd OMSimulator && git describe --tags --match=v*.*.* | tr "-" "~") > "$(SOURCE_DIR)/OMSimulator/version.txt"
+	rm -rf "$(SOURCE_DIR)/testsuite" "$(SOURCE_DIR)/doc" "$(SOURCE_DIR)/OMOptim" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/CompositeModels" "$(SOURCE_DIR)/OMSimulator/testsuite" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/FMIWrapper/cvode-2.9.0/builddir" "$(SOURCE_DIR)/OMCompiler/3rdParty/tbb/src/test/" "$(SOURCE_DIR)/.CI" "$(SOURCE_DIR)/Jenkinsfile"
+	mkdir -p "$(SOURCE_DIR)/doc"
+	tar xCJf "$(SOURCE_DIR)/doc" doc/openmodelica-doc_@SOURCE_REVISION_NO_PKG@.orig.tar.xz
+	mkdir -p "$(SOURCE_DIR)/libraries/installing/.openmodelica/"
+	cp -a libraries/installing/.openmodelica/cache "$(SOURCE_DIR)/libraries/installing/.openmodelica/"
+	tar cJf "$(SOURCE_DIR).orig.tar.xz" "$(SOURCE_DIR)"
+	cp -a .CI/debian "$(SOURCE_DIR)"
+	sed -i -e s/@REV@/@SOURCE_REVISION_NO_PKG@/ -e "s/@TIME@/`date +'%a, %d %b %Y %H:%M:%S %z'`/" $(SOURCE_DIR)/debian/changelog
+	(cd "$(SOURCE_DIR)" && debuild --no-lintian -d -us -uc -S)

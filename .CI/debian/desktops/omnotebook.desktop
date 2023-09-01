@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=OMNotebook
+GenericName=Physical modeling and simulation tool
+Comment=An open-source software tool for an electronic notebook supporting Modelica.
+TryExec=OMNotebook
+Exec=OMNotebook %f
+Icon=/usr/share/pixmaps/OMNotebook_icon.svg
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Development;Education;Science;Math;
+MimeType=text/x-onb;application/x-omnotebook;

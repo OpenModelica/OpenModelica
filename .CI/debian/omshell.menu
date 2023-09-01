@@ -1,0 +1,9 @@
+?package(omshell):                                 \
+       needs="X11"                                 \
+       section="Applications/Science/Mathematics"  \
+       title="OMShell"                             \
+       command="/usr/bin/OMShell"                  \
+       hints="Programming,Simulation"              \
+       icon="/usr/share/pixmaps/OMShell_icon.xpm"  \
+       longtitle="Open Modelica Shell"             \
+       description="A Qt based shell supporting Modelica"

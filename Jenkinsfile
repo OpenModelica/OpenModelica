@@ -88,7 +88,8 @@ pipeline {
             }
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-            stash name: 'omc-clang', includes: 'build/**, **/config.status'
+            sh 'common/semver.sh | tee REVISION.new && mv REVISION.new REVISION' // If we tee to REVISION, semver.sh reads the empty file
+            stash name: 'omc-clang', includes: 'REVISION, build/**, **/config.status'
           }
         }
         stage('Win/MinGW') {
@@ -530,6 +531,9 @@ pipeline {
             sh "mv doc/UsersGuide/build/epub/OpenModelicaUsersGuide.epub OpenModelicaUsersGuide-${common.tagName()}.epub"
             archiveArtifacts "OpenModelicaUsersGuide-${common.tagName()}*.*"
             stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${common.tagName()}*.*"
+
+            sh "make -C doc"
+            stash name: 'doc-tarball', includes: "doc/openmodelica-doc_*.orig.tar.xz"
           }
         }
 
@@ -793,6 +797,25 @@ pipeline {
             sh "tar xJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz"
             sh "mv OpenModelicaUsersGuide ${common.tagName()}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${common.tagName()}*,${common.tagName()}/**")])])
+          }
+        }
+        stage('make-source-tarball') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          steps {
+            echo "${env.NODE_NAME}"
+            unstash 'doc-tarball'
+            unstash 'omc-clang'
+            sh "cat REVISION"
+            sh "./config.status"
+            sh "touch configure config.status Makefile"
+            sh "make source-dist"
+            archiveArtifacts "openmodelica_*.tar.xz"
           }
         }
       }

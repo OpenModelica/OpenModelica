@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-omnotebook">
+    <comment xml:lang="en">omnotebook compressed file</comment>
+    <glob pattern="*.onbz"/>
+  </mime-type>
+  <mime-type type="text/x-onb">
+    <comment xml:lang="en">omnotebook file</comment>
+    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <match value="&lt;!DOCTYPE OMNotebook&gt;" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+</mime-info>

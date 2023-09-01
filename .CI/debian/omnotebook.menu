@@ -1,0 +1,9 @@
+?package(omnotebook):                                \
+       needs="X11"                                   \
+       section="Applications/Science/Mathematics"    \
+       title="OMNotebook"                            \
+       command="/usr/bin/OMNotebook"                 \
+       hints="Programming,Simulation"                \
+       icon="/usr/share/pixmaps/OMNotebook_icon.xpm" \
+       longtitle="Open Modelica Notebook"            \
+       description="An electronic notebook supporting Modelica"

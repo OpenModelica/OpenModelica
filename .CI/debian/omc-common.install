@@ -1,0 +1,6 @@
+debian/tmp/usr/share/omc/*.idl
+debian/tmp/usr/share/omc/runtime
+debian/tmp/usr/lib/omc/*.mo
+debian/tmp/usr/include/omc/c
+debian/tmp/usr/include/omc/scripting-API
+debian/tmp/usr/include/omc/sundials

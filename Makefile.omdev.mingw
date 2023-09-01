@@ -58,8 +58,11 @@ endif
 
 .PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
-all: omc testsuite-depends
+all: omc testsuite-depends docs-install
 
+docs-install:
+	mkdir -p "@OMBUILDDIR@/share/doc/omc/"
+	test ! -d "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`" || cp -a "doc/openmodelica-doc_`./common/semver.sh | tr - "~" | sed -e 's/^v//'`/"* "@OMBUILDDIR@/share/doc/omc/"
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"

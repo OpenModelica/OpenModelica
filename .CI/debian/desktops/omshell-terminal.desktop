@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=OMShell-terminal
+GenericName=Physical modeling and simulation tool
+Comment=A complete Modelica modeling, compilation and simulation environment based on free software.
+TryExec=OMShell-terminal
+Exec=OMShell-terminal
+Icon=/usr/share/pixmaps/omshell-terminal-large.svg
+Terminal=true
+Type=Application
+StartupNotify=true
+Categories=Development;IDE;

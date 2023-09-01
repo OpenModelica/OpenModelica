@@ -1,0 +1,4 @@
+openmodelica (@REV@-1) unstable; urgency=low
+
+  * Automatic git build
+ -- OpenModelica Build System <build@openmodelica.org>  @TIME@
