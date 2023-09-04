@@ -41,7 +41,9 @@ threadData_t *OMC_MAIN_THREADDATA_NAME = 0;
 
 void mmc_init_nogc()
 {
+#if !defined(OMC_NO_THREADS)
   pthread_key_create(&mmc_thread_data_key,NULL);
+#endif
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* Stack overflow detection is too expensive and fun for small targets
    * C-code is usually not generated for stack overflow detection anyway... */

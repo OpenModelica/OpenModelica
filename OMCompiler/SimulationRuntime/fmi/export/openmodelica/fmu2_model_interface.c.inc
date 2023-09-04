@@ -67,7 +67,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
 
 // array of value references of states
-#if NUMBER_OF_STATES>0
+#if NUMBER_OF_STATES > 0
 fmi2ValueReference vrStates[NUMBER_OF_STATES] = STATES;
 fmi2ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 #endif
@@ -241,16 +241,20 @@ static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
 // ---------------------------------------------------------------------------
 static inline void resetThreadData(ModelInstance* comp)
 {
+#if !OMC_NO_THREADS
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
   }
+#endif
 }
 
 static inline void setThreadData(ModelInstance* comp)
 {
+#if !OMC_NO_THREADS
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadData);
   }
+#endif
 }
 
 fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
@@ -594,8 +598,9 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
     return NULL;
   }
-
+#if !OMC_NO_THREADS
   pthread_setspecific(mmc_thread_data_key, comp->threadData);
+#endif
   omc_assert = omc_assert_fmi;
   omc_assert_warning = omc_assert_fmi_warning;
 
@@ -687,14 +692,25 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   // printf("\nNumber of columns: %i", cols_);
   // printf("\n");
 
+#if NUMBER_OF_STATES > 0
   comp->states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
+#else
+  comp->states = NULL;
+  comp->states_der = NULL;
+#endif
+#if NUMBER_OF_EVENT_INDICATORS > 0
   comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
   comp->event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
-  if (NUMBER_OF_REAL_INPUTS == 0)
-    comp->input_real_derivative = NULL; // initialize to 0
-  else
-    comp->input_real_derivative = (fmi2Real*)functions->allocateMemory(NUMBER_OF_REAL_INPUTS, sizeof(fmi2Real));
+#else
+  comp->event_indicators = NULL;
+  comp->event_indicators_prev = NULL;
+#endif
+#if NUMBER_OF_REAL_INPUTS > 0
+  comp->input_real_derivative = (fmi2Real*)functions->allocateMemory(NUMBER_OF_REAL_INPUTS, sizeof(fmi2Real));
+#else
+  comp->input_real_derivative = NULL;
+#endif
 
   comp->_need_update = 1;
 
@@ -1891,7 +1907,7 @@ fmi2Status internalSetContinuousStates(fmi2Component c, const fmi2Real x[], size
     return fmi2Error;
   if (nullPointer(comp, "fmi2SetContinuousStates", "x[]", x))
     return fmi2Error;
-#if NUMBER_OF_STATES>0
+#if NUMBER_OF_STATES > 0
   for (i = 0; i < nx; i++) {
     fmi2ValueReference vr = vrStates[i];
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetContinuousStates: #r%d# = %.16g", vr, x[i])
@@ -1938,7 +1954,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
       comp->_need_update = 0;
     }
 
-#if NUMBER_OF_STATES>0
+#if NUMBER_OF_STATES > 0
     for (i = 0; i < nx; i++) {
       fmi2ValueReference vr = vrStatesDerivatives[i];
       derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
@@ -1982,7 +1998,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-#if NUMBER_OF_EVENT_INDICATORS>0
+#if NUMBER_OF_EVENT_INDICATORS > 0
     /* eval needed equations*/
     if (comp->_need_update)
     {
@@ -2030,7 +2046,7 @@ fmi2Status internalGetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetContinuousStates", "states[]", x))
     return fmi2Error;
-#if NUMBER_OF_STATES>0
+#if NUMBER_OF_STATES > 0
   for (i = 0; i < nx; i++)
   {
     fmi2ValueReference vr = vrStates[i];
@@ -2193,16 +2209,15 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     status=fmi2Error;
 
   // copy the input values
+#if NUMBER_OF_REAL_INPUTS > 0
   fmi2Real realInputDerivatives[NUMBER_OF_REAL_INPUTS];
-  if (NUMBER_OF_REAL_INPUTS > 0)
+  for (int i = 0; i < NUMBER_OF_REALS; ++i)
   {
-    for (int i = 0; i < NUMBER_OF_REALS; ++i)
-    {
-      int mappedIndex = mapInputReference2InputNumber(i);
-      if (mappedIndex != -1)
-        realInputDerivatives[mappedIndex] = getReal(comp, i);
-    }
+    int mappedIndex = mapInputReference2InputNumber(i);
+    if (mappedIndex != -1)
+      realInputDerivatives[mappedIndex] = getReal(comp, i);
   }
+#endif
 
   internalEventIteration(c, &eventInfo);
 
@@ -2212,36 +2227,32 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
 
     // set the real Inputs with output_derivative values
-    if (NUMBER_OF_REAL_INPUTS > 0)
+#if NUMBER_OF_REAL_INPUTS > 0
+    for (int i = 0; i < NUMBER_OF_REALS; ++i)
     {
-      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      int mappedIndex = mapInputReference2InputNumber(i);
+      if (mapInputReference2InputNumber(i) != -1)
       {
-        int mappedIndex = mapInputReference2InputNumber(i);
-        if (mapInputReference2InputNumber(i) != -1)
-        {
-          double dt = comp->fmuData->localData[0]->timeValue - t;
-          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
-          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-            return fmi2Error;
-        }
+        double dt = comp->fmuData->localData[0]->timeValue - t;
+        double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+        if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+          return fmi2Error;
       }
     }
+#endif
 
-    if (NUMBER_OF_STATES > 0)
-    {
-      status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
-      if (status != fmi2OK) return fmi2Error;
+#if NUMBER_OF_STATES > 0
+    status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
+    if (status != fmi2OK) return fmi2Error;
 
+    status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
+    if (status != fmi2OK) return fmi2Error;
+#endif
 
-      status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-      if (status != fmi2OK) return fmi2Error;
-    }
-
-    if (NUMBER_OF_EVENT_INDICATORS > 0)
-    {
-      status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) return fmi2Error;
-    }
+#if NUMBER_OF_EVENT_INDICATORS > 0
+    status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+    if (status != fmi2OK) return fmi2Error;
+#endif
 
     /* adjust for time events */
     if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tEnd))
@@ -2281,47 +2292,44 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     comp->_need_update = 1;
 
     // set the real Inputs with output_derivative values
-    if (NUMBER_OF_REAL_INPUTS > 0)
+#if (NUMBER_OF_REAL_INPUTS > 0)
+    for (int i = 0; i < NUMBER_OF_REALS; ++i)
     {
-      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      int mappedIndex = mapInputReference2InputNumber(i);
+      if (mapInputReference2InputNumber(i) != -1)
       {
-        int mappedIndex = mapInputReference2InputNumber(i);
-        if (mapInputReference2InputNumber(i) != -1)
-        {
-          double dt = comp->fmuData->localData[0]->timeValue - t;
-          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
-          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-            return fmi2Error;
-        }
+        double dt = comp->fmuData->localData[0]->timeValue - t;
+        double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+        if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+          return fmi2Error;
       }
     }
+#endif
 
     /* set the continuous states */
-    if (NUMBER_OF_STATES > 0)
-    {
-      status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
-      if (status != fmi2OK) return fmi2Error;
-    }
+#if NUMBER_OF_STATES > 0
+    status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
+    if (status != fmi2OK) return fmi2Error;
+#endif
 
     /* signal completed integrator step */
     status = internal_CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
     if (status != fmi2OK) return fmi2Error;
 
     /* check for events */
-    if (NUMBER_OF_EVENT_INDICATORS > 0)
-    {
-      status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) return fmi2Error;
+#if NUMBER_OF_EVENT_INDICATORS > 0
+    status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
+    if (status != fmi2OK) return fmi2Error;
 
-      for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
+    for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
+    {
+      if (event_indicators[i]*event_indicators_prev[i] < 0)
       {
-        if (event_indicators[i]*event_indicators_prev[i] < 0)
-        {
-          zc_event = 1;
-          break;
-        }
+        zc_event = 1;
+        break;
       }
     }
+#endif
 
     comp->solverInfo->didEventStep = 0;
 
