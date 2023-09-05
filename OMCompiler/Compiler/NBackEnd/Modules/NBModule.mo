@@ -215,6 +215,17 @@ public
 
 //                                 ALIAS
 // *************************************************************************
+  partial function functionAliasInterface
+    "Alias
+     This module is allowed to read and remove equations and move variables from
+     unknowns to knowns. Since this can also affect all other pointer arrays, the
+     full variable data is needed. All things that are allowed to be changed
+     are pointers, so no return value."
+    input output VarData varData         "Data containing variable pointers";
+    input output EqData eqData           "Data containing equation pointers";
+  end functionAliasInterface;
+
+
   partial function aliasInterface
     "Alias
      This module is allowed to read and remove equations and move variables from

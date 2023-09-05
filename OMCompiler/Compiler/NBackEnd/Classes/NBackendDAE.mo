@@ -67,17 +67,18 @@ protected
   import Variable = NFVariable;
 
   // New Backend imports
+  import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
   import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
+  import FunctionAlias = NBFunctionAlias;
   import Initialization = NBInitialization;
   import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
-  import Alias = NBAlias;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
@@ -227,6 +228,7 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
+      (FunctionAlias.main, "FunctionAlias"),
       (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),

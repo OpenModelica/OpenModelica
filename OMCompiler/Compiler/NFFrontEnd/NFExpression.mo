@@ -2052,19 +2052,10 @@ public
     input Operator operator;
     input Boolean useParanthesis = true;
     output String str;
-  protected
-    Expression first;
-    list<Expression> rest;
   algorithm
-    first :: rest := arguments;
-    if listEmpty(rest) then
-      str := toString(first);
-    elseif useParanthesis then
-      str := "(" + operandString(first, exp, true) + Operator.symbol(operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator)) + ")";
-    else
-      str := operandString(first, exp, true) + Operator.symbol(operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    if useParanthesis and listLength(arguments) > 1 then
+      str := "(" + str + ")";
     end if;
   end multaryString;
 

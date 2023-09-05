@@ -20,10 +20,10 @@ simulate(hybridSys); getErrorString();
 //
 // [stateselection] Natural discrete states from discrete equations:
 // *******************************************************************
-// 	[DISS] (1) Boolean phase_Start (start = true)
-// 	[DISS] (1) Boolean phase_Loop1 (start = false)
 // 	[DISS] (1) Boolean phase_Loop2 (start = false)
+// 	[DISS] (1) Boolean phase_Loop1 (start = false)
 // 	[DISS] (1) Boolean phase_Loop3 (start = false)
+// 	[DISS] (1) Boolean phase_Start (start = true)
 // 	[DISS] (1) Real x_End (start = 0.0)
 // 	[DISS] (1) Real x_Loop3 (start = 0.0)
 // 	[DISS] (1) Real x_Loop2 (start = 0.0)
@@ -56,13 +56,13 @@ simulate(hybridSys); getErrorString();
 // 	 slice: {};
 // 	[STAT] (1) Real x1 (start = 10.0)
 // 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Start
+// 	[PRE-] (1) Boolean $PRE.phase_Loop2
 // 	 slice: {};
 // 	[PRE-] (1) Boolean $PRE.phase_Loop1
 // 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Loop2
-// 	 slice: {};
 // 	[PRE-] (1) Boolean $PRE.phase_Loop3
+// 	 slice: {};
+// 	[PRE-] (1) Boolean $PRE.phase_Start
 // 	 slice: {};
 // 	[PRE-] (1) Real $PRE.x_End
 // 	 slice: {};

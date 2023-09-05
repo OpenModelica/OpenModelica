@@ -103,13 +103,18 @@ public
         bdae.alg_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.alg_event);
         bdae.funcTree   := Pointer.access(funcTree_ptr);
 
+        /*
+        // for now slicing just converts to generic, so deactivate
+        // also: referenceEq doesnt work on alias components
         if Flags.isSet(Flags.DUMP_SLICE) then
           for tpl in UnorderedMap.toList(duplicate_map) loop
             (unsolved, solved) := tpl;
-            print("[dumpSlice] The block:\n" + StrongComponent.toString(unsolved) + "\n"
-              + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1), "", "", "\n", "") + "\n\n");
+            if not referenceEq(List.first(solved), unsolved) then
+              print("[dumpSlice] The block:\n" + StrongComponent.toString(unsolved) + "\n"
+                + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1), "", "", "\n", "") + "\n\n");
+            end if;
           end for;
-        end if;
+        end if;*/
 
       then bdae;
 

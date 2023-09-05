@@ -240,6 +240,20 @@ public
         else true;
       end match;
     end isTimeDependent;
+
+    function fromType
+      "only creates record, discrete or algebraic kind"
+      input Type ty;
+      output VariableKind varKind;
+    algorithm
+      if Type.isRecord(ty) then
+        varKind := RECORD({}); // ToDo: children!
+      elseif Type.isDiscrete(ty) then
+        varKind := DISCRETE();
+      else
+        varKind := ALGEBRAIC();
+      end if;
+    end fromType;
   end VariableKind;
 
   uniontype VariableAttributes

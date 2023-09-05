@@ -845,6 +845,10 @@ public
     algorithm
       unique_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in dependencies);
       unique_dependencies := UnorderedSet.unique_list(unique_dependencies, ComponentRef.hash, ComponentRef.isEqual);
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print("Finding dependencies for:\n" + Equation.toString(eqn) + "\n");
+        print("dependencies: " + List.toString(unique_dependencies, ComponentRef.toString) + "\n\n");
+      end if;
       () := match eqn
         local
           list<Integer> row;
