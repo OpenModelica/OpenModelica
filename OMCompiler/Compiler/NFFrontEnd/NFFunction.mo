@@ -1783,6 +1783,8 @@ uniontype Function
   end isBuiltinAttr;
 
   function isSpecialBuiltin
+    "Returns whether or not a Function refers to a builtin function that doesn't
+     follow normal Modelica rules and instead needs special handling."
     input Function fn;
     output Boolean special;
   protected

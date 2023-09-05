@@ -70,6 +70,8 @@ protected
 
 public
   function needSpecialHandling
+    "Returns whether or not a call refers to a builtin function that doesn't
+     follow normal Modelica rules and instead needs special handling."
     input Call call;
     output Boolean special;
   algorithm
