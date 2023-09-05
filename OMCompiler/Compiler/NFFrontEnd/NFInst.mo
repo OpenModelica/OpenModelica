@@ -2011,10 +2011,10 @@ algorithm
     fail();
   end if;
 
-  orig_comp := InstNode.component(originalNode);
+  orig_comp := InstNode.component(InstNode.resolveInner(originalNode));
   rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(originalNode));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
-  rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
+  rdcl_node := InstNode.copyInstancePtr(InstNode.resolveInner(originalNode), rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
   instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, context,
     SOME(Component.getAttributes(orig_comp)), propagatedSubs);
@@ -2059,7 +2059,7 @@ algorithm
 
   end match;
 
-  InstNode.updateComponent(new_comp, redeclaredNode);
+  InstNode.updateComponent(new_comp, InstNode.resolveInner(redeclaredNode));
 end redeclareComponent;
 
 function checkOuterComponentMod
