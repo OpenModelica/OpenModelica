@@ -1364,7 +1364,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"306\"
 //     description=\"steam mass flow rate\"
 //     >
-//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-100000.0\" max=\"9.999999999999999e+59\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"136\" -->
 //   <ScalarVariable
