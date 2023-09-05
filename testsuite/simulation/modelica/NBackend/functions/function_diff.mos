@@ -35,14 +35,6 @@ simulate(function_diff); getErrorString();
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $RES_$AUX_5 = sin(x) - y ($RES_$AUX_5)
-// [AFTER ] [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_$AUX_5 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($pDER_INI_NLS_JAC_1.$RES_$AUX_5)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $RES_$AUX_6 = sin(x) - y ($RES_$AUX_6)
-// [AFTER ] [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_$AUX_6 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($pDER_INI_NLS_JAC_1.$RES_$AUX_6)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) y = sin(x) ($RES_$AUX_5)
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_$AUX_5)
 //

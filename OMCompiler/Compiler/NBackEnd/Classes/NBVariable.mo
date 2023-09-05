@@ -484,6 +484,17 @@ public
     end match;
   end isDummyVariable;
 
+  function isFunctionAlias
+    input Pointer<Variable> var;
+    output Boolean b = false;
+  protected
+    String str = ComponentRef.firstName(getVarName(var));
+  algorithm
+    if stringLength(str) > 3 then
+      b := substring(str, 1, 4) == FUNCTION_STR;
+    end if;
+  end isFunctionAlias;
+
   function createTimeVar
     output Pointer<Variable> var_ptr;
   protected

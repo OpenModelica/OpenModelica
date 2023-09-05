@@ -28,7 +28,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS 1 ODE System
 // ===========================
 //
-// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sin(time) ($RES_$AUX_3)
+//
+// BLOCK 2: Algebraic Loop (Linear = false, Mixed = false)
 // ---------------------------------------------------------
 // Strict Tearing Set
 // ********************
@@ -38,9 +45,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[ALGB] (1) Real x (start = 1.0, nominal = 1.0)
 // 	 slice: {};
 // ### Residual Equations:
-// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
+// 	[SCAL] (1) x = y ^ 2.0 + $FUN_1 ($RES_SIM_1)
 // 	 slice: {};
-// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) y = sin(x) ($RES_$AUX_2)
 // 	 slice: {};
 // ### Inner Equations:
 //
@@ -54,7 +61,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS 1 ODE System
 // ===========================
 //
-// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sin(time) ($RES_$AUX_3)
+//
+// BLOCK 2: Algebraic Loop (Linear = false, Mixed = false)
 // ---------------------------------------------------------
 // Strict Tearing Set
 // ********************
@@ -64,9 +78,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[ALGB] (1) Real x (start = 1.0, nominal = 1.0)
 // 	 slice: {};
 // ### Residual Equations:
-// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
+// 	[SCAL] (1) x = y ^ 2.0 + $FUN_1 ($RES_SIM_1)
 // 	 slice: {};
-// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) y = sin(x) ($RES_$AUX_2)
 // 	 slice: {};
 // ### Inner Equations:
 //
@@ -80,7 +94,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS 1 INI System
 // ===========================
 //
-// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false)
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sin(time) ($RES_$AUX_3)
+//
+// BLOCK 2: Algebraic Loop (Linear = false, Mixed = false)
 // ---------------------------------------------------------
 // Strict Tearing Set
 // ********************
@@ -90,9 +111,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[ALGB] (1) Real y (start = 1.0, nominal = 1.0)
 // 	 slice: {};
 // ### Residual Equations:
-// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) x = y ^ 2.0 + $FUN_1 ($RES_SIM_1)
 // 	 slice: {};
-// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
+// 	[SCAL] (1) y = sin(x) ($RES_$AUX_2)
 // 	 slice: {};
 // ### Inner Equations:
 //
@@ -106,7 +127,15 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS 1 ALG System
 // ===========================
 //
-// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false)
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
+// ------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sin(time) ($RES_$AUX_3)
+//
+// BLOCK 2: Algebraic Loop (Linear = false, Mixed = false)
 // ---------------------------------------------------------
 // Strict Tearing Set
 // ********************
@@ -116,9 +145,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[ALGB] (1) Real x (start = 1.0, nominal = 1.0)
 // 	 slice: {};
 // ### Residual Equations:
-// 	[SCAL] (1) $RES_SIM_0 = sin(x) - y ($RES_SIM_0)
+// 	[SCAL] (1) $RES_SIM_1 = (y ^ 2.0 + $FUN_1) - x ($RES_SIM_1)
 // 	 slice: {};
-// 	[SCAL] (1) $RES_SIM_1 = y ^ 2.0 + sin(time) - x ($RES_SIM_1)
+// 	[SCAL] (1) $RES_$AUX_2 = sin(x) - y ($RES_$AUX_2)
 // 	 slice: {};
 // ### Inner Equations:
 //
@@ -130,8 +159,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // Partial Derivative Variables (2/2)
 // ************************************
-// (1)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
-// (2)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// (1)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_$AUX_2
+// (2)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
 //
 // Seed Variables (2/2)
 // **********************
@@ -141,16 +170,16 @@ simulate(simpleNonlinearLoop); getErrorString();
 // BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
-// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
 // ### Equation:
-// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_0)
 //
 // BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
-// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_$AUX_2
 // ### Equation:
-// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_1)
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_$AUX_2 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_1)
 //
 // =============================
 // Sparsity Pattern (nnz: 4)
@@ -162,17 +191,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ### Partials (row vars) ###
 // -----------------------------
-// {$RES_SIM_1, $RES_SIM_0}
+// {$RES_$AUX_2, $RES_SIM_1}
 //
 // ### Columns ###
 // -----------------
-// (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
-// (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+// (y)	 affects:	{$RES_SIM_1,$RES_$AUX_2}
+// (x)	 affects:	{$RES_SIM_1,$RES_$AUX_2}
 //
 // ##### Rows #####
 // ------------------
-// ($RES_SIM_0)	 depends on:	{x,y}
 // ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_$AUX_2)	 depends on:	{x,y}
 //
 // =====================
 // Sparsity Coloring
@@ -196,7 +225,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS 1 INI System
 // ===========================
 //
-// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false)
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
+// ------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sin(time) ($RES_$AUX_3)
+//
+// BLOCK 2: Algebraic Loop (Linear = false, Mixed = false)
 // ---------------------------------------------------------
 // Strict Tearing Set
 // ********************
@@ -206,9 +242,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[ALGB] (1) Real y (start = 1.0, nominal = 1.0)
 // 	 slice: {};
 // ### Residual Equations:
-// 	[SCAL] (1) $RES_SIM_1 = y ^ 2.0 + sin(time) - x ($RES_SIM_1)
+// 	[SCAL] (1) $RES_SIM_1 = (y ^ 2.0 + $FUN_1) - x ($RES_SIM_1)
 // 	 slice: {};
-// 	[SCAL] (1) $RES_SIM_0 = sin(x) - y ($RES_SIM_0)
+// 	[SCAL] (1) $RES_$AUX_2 = sin(x) - y ($RES_$AUX_2)
 // 	 slice: {};
 // ### Inner Equations:
 //
@@ -220,7 +256,7 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // Partial Derivative Variables (2/2)
 // ************************************
-// (1)       [JVAR] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// (1)       [JVAR] (1) Real $pDER_INI_NLS_JAC_1.$RES_$AUX_2
 // (2)       [JVAR] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
 //
 // Seed Variables (2/2)
@@ -238,9 +274,9 @@ simulate(simpleNonlinearLoop); getErrorString();
 // BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
-// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// 	Real $pDER_INI_NLS_JAC_1.$RES_$AUX_2
 // ### Equation:
-// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_1)
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_$AUX_2 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_1)
 //
 // =============================
 // Sparsity Pattern (nnz: 4)
@@ -252,17 +288,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ### Partials (row vars) ###
 // -----------------------------
-// {$RES_SIM_0, $RES_SIM_1}
+// {$RES_$AUX_2, $RES_SIM_1}
 //
 // ### Columns ###
 // -----------------
-// (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
-// (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+// (x)	 affects:	{$RES_SIM_1,$RES_$AUX_2}
+// (y)	 affects:	{$RES_SIM_1,$RES_$AUX_2}
 //
 // ##### Rows #####
 // ------------------
 // ($RES_SIM_1)	 depends on:	{x,y}
-// ($RES_SIM_0)	 depends on:	{x,y}
+// ($RES_$AUX_2)	 depends on:	{x,y}
 //
 // =====================
 // Sparsity Coloring

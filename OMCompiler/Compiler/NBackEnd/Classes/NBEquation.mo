@@ -52,6 +52,7 @@ public
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
+  import NFPrefixes.{Variability, Purity};
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -543,6 +544,7 @@ public
           inv_arguments = {},
           operator = Operator.makeAdd(ty));
           sub_exp := SimplifyExp.simplify(sub_exp, true);
+          sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
         then Subscript.INDEX(sub_exp);
 
         else algorithm

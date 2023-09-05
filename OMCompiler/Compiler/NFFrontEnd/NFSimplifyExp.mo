@@ -707,7 +707,7 @@ algorithm
       (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isConstNumber);
 
       // combine the constants
-      new_const := combineConstantNumbers(const_args, inv_const_args, mcl);
+      new_const := combineConstantNumbers(const_args, inv_const_args, mcl, Operator.typeOf(operator));
 
       // return combined multary expression and check for trivial replacements
 
@@ -757,6 +757,7 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + Expression.toString(exp)});
     then fail();
   end match;
+
 end simplifyMultary;
 
 function simplifyMultarySigns
@@ -1246,10 +1247,10 @@ public function combineConstantNumbers
   input list<Expression> const      "has to be a list of REAL(), INTEGER() and/or CAST()";
   input list<Expression> inv_const  "has to be a list of REAL(), INTEGER() and/or CAST()";
   input Operator.MathClassification mcl;
+  input Type ty;
   output Expression res;
 protected
   Real tmp, result;
-  Boolean anyReal = false         "true if any element in the list is of type REAL() (or cast to one)";
 algorithm
   result := match mcl
 
@@ -1257,12 +1258,12 @@ algorithm
       result := 0.0;
       // sum all constants
       for exp in const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result + tmp;
       end for;
       // subtract all inverse constants
       for exp in inv_const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result - tmp;
       end for;
     then result;
@@ -1271,12 +1272,12 @@ algorithm
       result := 1.0;
       // multiply all constants
       for exp in const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result * tmp;
       end for;
       // devide all inverse constants
       for exp in inv_const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result / tmp;
       end for;
     then result;
@@ -1290,29 +1291,19 @@ algorithm
 
   end match;
 
-  res := if anyReal then Expression.REAL(result) else Expression.INTEGER(realInt(result));
+  res := if Type.isInteger(ty) then Expression.INTEGER(realInt(result)) else Expression.REAL(result);
 end combineConstantNumbers;
 
 protected function getConstantValue
   input Expression exp "REAL(), INTEGER(), CAST(), UNARY()";
   output Real value;
-  input output Boolean anyReal;
 algorithm
-  (value, anyReal) := match exp
-    local
-      Real r;
-      Integer i;
-      Boolean b;
-    case Expression.REAL(value = r)    then (r, true);
-    case Expression.INTEGER(value = i) then (intReal(i), anyReal);
-    case Expression.CAST() algorithm
-      (r, b) := getConstantValue(exp.exp, anyReal);
-      // negate b because it has been cast
-    then (r, anyReal or (not b));
-    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS)) algorithm
-      (r, b) := getConstantValue(exp.exp, anyReal);
-      // negate r because it has a minus sign
-    then (-r, anyReal or b);
+  value := match exp
+    case Expression.REAL()                                                          then exp.value;
+    case Expression.INTEGER()                                                       then intReal(exp.value);
+    case Expression.CAST()                                                          then getConstantValue(exp.exp);
+    // negate r because it has a minus sign
+    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS))  then -getConstantValue(exp.exp);
     else algorithm
       Error.assertion(false, getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
     then fail();

@@ -37,6 +37,8 @@ public
   import Module = NBModule;
 protected
   // OF imports
+  import Absyn;
+  import AbsynUtil;
   import DAE;
 
   // NF imports
@@ -46,6 +48,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -332,10 +335,38 @@ protected
     "returns true if the call should be replaced"
     input Call call;
     output Boolean b;
+  protected
+    Function fn = Call.typedFunction(call);
   algorithm
-    b := not Inline.functionInlineable(Call.typedFunction(call))
-     and not Function.isSpecialBuiltin(Call.typedFunction(call));
+    b := not Inline.functionInlineable(fn)
+     and not Function.isSpecialBuiltin(fn)
+     and not inlineException(fn);
   end checkCallReplacement;
+
+  function inlineException
+    input Function fn;
+    output Boolean b;
+  protected
+    Absyn.Path path;
+  algorithm
+    if Function.isDefaultRecordConstructor(fn) or Function.isNonDefaultRecordConstructor(fn) then
+      b := true;
+      return;
+    end if;
+    if not Function.isBuiltin(fn) then
+      b := false;
+    else
+      path := Function.nameConsiderBuiltin(fn);
+      if not AbsynUtil.pathIsIdent(path) then
+        b := false;
+      else
+        b := match AbsynUtil.pathFirstIdent(path)
+          case "integer" then true;
+          else false;
+        end match;
+      end if;
+    end if;
+  end inlineException;
 
   function filterFrames
     "filters the list of frames for all iterators that occure in exp"

@@ -699,6 +699,7 @@ protected
   algorithm
     // ToDo: put acutal rating algorithm here
     rating := if BVariable.isFixed(var_ptr) then 1 else 0;
+    rating := if BVariable.isFunctionAlias(var_ptr) then rating - 5 else rating;
   end rateVar;
 
   annotation(__OpenModelica_Interface="backend");
