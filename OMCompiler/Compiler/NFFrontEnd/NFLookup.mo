@@ -414,7 +414,7 @@ algorithm
   end while;
 
   // No inner found, try to generate one.
-  innerNode := generateInner(outerNode, prev_scope);
+  innerNode := generateInner(outerNode, InstNode.topScope(prev_scope));
 end lookupInner;
 
 function lookupLocalSimpleName

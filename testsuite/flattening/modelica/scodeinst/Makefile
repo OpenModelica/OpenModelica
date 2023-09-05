@@ -792,6 +792,7 @@ InnerOuterNotInner1.mo \
 InnerOuterPartialOuter1.mo \
 InnerOuterPartialOuter2.mo \
 InnerOuterReplaceable1.mo \
+InnerOuterReplaceable2.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
