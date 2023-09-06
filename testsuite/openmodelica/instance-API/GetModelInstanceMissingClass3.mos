@@ -1,0 +1,42 @@
+// name: GetModelInstanceMissingClass3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    M m;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"m\",
+//       \"type\": {
+//         \"name\": \"M\",
+//         \"missing\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// "[<interactive>:3:5-3:8:writable] Error: Declaration of element m causes recursive definition of class M.
+// "
+// endResult

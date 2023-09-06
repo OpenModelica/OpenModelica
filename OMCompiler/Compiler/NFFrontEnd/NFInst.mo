@@ -2154,6 +2154,9 @@ algorithm
         Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
           {InstNode.name(component), InstNode.name(InstNode.classScope(InstNode.parent(component)))},
           InstNode.info(component));
+        // Remove the class node from the component to avoid infinite loops when
+        // using the instance API.
+        InstNode.componentApply(component, Component.setClassInstance, InstNode.EMPTY_NODE());
         fail();
       end if;
 
@@ -2165,6 +2168,7 @@ algorithm
     // If we couldn't determine the exact cause of the recursion, print a generic error.
     Error.addSourceMessage(Error.INST_RECURSION_LIMIT_REACHED,
       {AbsynUtil.pathString(InstNode.scopePath(component))}, InstNode.info(component));
+    InstNode.componentApply(component, Component.setClassInstance, InstNode.EMPTY_NODE());
     fail();
   end if;
 end checkRecursiveDefinition;
