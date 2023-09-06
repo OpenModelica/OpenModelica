@@ -480,7 +480,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
   "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
   /* FLAG_LV_SYSTEM */
-  "  List of equation indices for which solver logs are shown",
+  "  Value is a comma-separated list of equation indices for which solver logs are shown",
   /* FLAG_MAX_BISECTION_ITERATIONS */
   "  Value specifies the maximum number of bisection iterations for state event\n"
   "  detection or zero for default behavior",
