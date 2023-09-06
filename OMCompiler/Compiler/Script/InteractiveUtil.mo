@@ -4633,7 +4633,11 @@ public function getPathedElementInProgram
 protected
   Absyn.Class cls;
 algorithm
-  cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), program);
+  try
+    cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), program);
+  else
+    cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), FBuiltin.getInitialFunctions());
+  end try;
 
   if AbsynUtil.pathIsIdent(path) then
     // Since the program only stores classes instead of elements we have to
