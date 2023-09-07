@@ -2301,12 +2301,12 @@ scaling used for OMEdit. This is done by changing the `Compatibility` settings f
    the drop-down menu, :numref:`omedit-dpi-settings`.
 
 
-.. figure :: media/omedit-dpi-settings-01.*
+.. figure :: media/omedit-dpi-settings-01.png
   :name: omedit-file-location
 
   Open file location of OpenModelica Connection Editor
 
-.. figure :: media/omedit-dpi-settings-02.*
+.. figure :: media/omedit-dpi-settings-02.png
   :name: omedit-dpi-settings
 
   Change high DPI settings for OMEdit.exe

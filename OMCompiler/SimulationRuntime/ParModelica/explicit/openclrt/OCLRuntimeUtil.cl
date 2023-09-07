@@ -83,9 +83,6 @@
 #define threadData NULL
 #define omc_dummyFileInfo __LINE__
 
-#define sin(v,m) (sin(v))
-#define cos(v,m) (cos(v))
-
 #ifdef DOUBLE_PREC_AVAILABLE
 typedef long  modelica_integer;
 typedef double modelica_real;

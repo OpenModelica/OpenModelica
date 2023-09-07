@@ -140,7 +140,6 @@ Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour.mos
 Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor.mos \
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke.mos \
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary.mos \
-Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL_MultiPhase.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase.mos \
@@ -282,6 +281,7 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPha
 FAILINGTESTFILES = \
 Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -105,7 +105,7 @@ To start a new project, use the New Modelica Project Wizard. It is
 accessible through File->New-> Modelica Project or by right-clicking in
 the Modelica Projects view and selecting New->Modelica Project.
 
-.. figure :: media/mdt-create-project.*
+.. figure :: media/mdt-create-project.png
 
   Eclipse Setup - creating a Modelica project in the workspace.
 
@@ -139,7 +139,7 @@ build from scratch (clean), or run simulations depending on how the
 project is setup. See :numref:`mdt-build-prompt` for an example of how omc
 can be compiled (:bash:`make omc` builds OMC).
 
-.. figure :: media/mdt-build-prompt.*
+.. figure :: media/mdt-build-prompt.png
   :name: mdt-build-prompt
 
   Eclipse - building a project.

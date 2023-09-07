@@ -24,7 +24,7 @@ for release in om.get_releases():
     fout.write("\n")
     print(release.title)
 fout.close()
-call(["pandoc", "--wrap=none", "--standalone", "-f", "gfm", "-t", "rst", "--base-header-level=2", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
+call(["pandoc", "--wrap=none", "--standalone", "-f", "gfm", "-t", "rst", "--shift-heading-level-by=3", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
 with open("githubreleases.tmp.rst", "r", encoding="utf-8") as fin:
     with open("githubreleases.tmp2.rst", "w", encoding="utf-8") as fout:
         fout.write('''Major OpenModelica Releases

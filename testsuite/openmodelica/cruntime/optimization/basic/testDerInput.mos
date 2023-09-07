@@ -22,7 +22,7 @@ end testDerInput;
 ");
 getErrorString();
 
-optimize(testDerInput, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -s optimization");
+optimize(testDerInput, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1 -s optimization");
 getErrorString();
 
 val(cost,0.0);
@@ -34,7 +34,7 @@ val(cost,1.0);
 // ""
 // record SimulationResult
 //     resultFile = "testDerInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'testDerInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -s optimization'",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'testDerInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
@@ -53,15 +53,6 @@ val(cost,1.0);
 //          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max error is 0.00499703 for the approximation of the state x1(time = 3.2)
-// LOG_IPOPT_ERROR   | info    | max error is 2.88615e-16 for the approximation of the state x1(time = 2.2)
-// LOG_IPOPT_ERROR   | info    | max error is 4.88541e-16 for the approximation of the state x1(time = 2.8)
-// LOG_IPOPT_ERROR   | info    | max error is 3.77519e-16 for the approximation of the state x1(time = 2.3)
-// LOG_IPOPT_ERROR   | info    | max error is 3.99637e-16 for the approximation of the state x1(time = 4.5)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27356e-16 for the approximation of the state x1(time = 3.4)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27356e-16 for the approximation of the state x1(time = 3.1)
-// LOG_IPOPT_ERROR   | info    | max error is 4.10696e-16 for the approximation of the state x1(time = 2.9)
-// LOG_IPOPT_ERROR   | info    | max error is 5.52509e-16 for the approximation of the state x1(time = 3.1)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

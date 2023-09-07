@@ -1,33 +1,23 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-  "name": "build-deps:v1.16.4",
+  "name": "build-deps:v1.22",
 
   // Build and tag base Docker image from .CI/cache/Dockerfile
-  "initializeCommand": "docker build --tag build-deps-v1.16.4-base ${localWorkspaceFolder}/.CI/cache/",
+  //"initializeCommand": "docker build --tag build-deps-v1.22.0-base ${localWorkspaceFolder}/.CI/cache/",
 
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-        "BASE_IMAGE": "build-deps-v1.16.4-base",
+        "BASE_IMAGE": "docker.openmodelica.org/build-deps:v1.22.1",
         // On Windows USERNAME is set, on Linux USER is set
         // We hope only one is set
         "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
     }
   },
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
-
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-
-  // Use 'postCreateCommand' to run commands after the container is created.
-  //"postCreateCommand": "uname -a",
-
-  // Configure tool-specific properties.
-  //"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Additional VSCode extensions
   "customizations": {
     "vscode": {
       "extensions": [
