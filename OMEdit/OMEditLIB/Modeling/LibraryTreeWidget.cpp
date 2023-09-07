@@ -285,9 +285,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
   /* Activate the access annotations if the class is encrypted
    * OR if the LibraryTreeItem's mAccessAnnotations is marked true based on the activate access annotation setting.
    */
-  bool isEncryptedClass = mFileName.endsWith(".moc");
-
-  if (isEncryptedClass || isAccessAnnotationsEnabled()) {
+  if (isEncryptedClass() || isAccessAnnotationsEnabled()) {
     if (mClassInformation.access.compare("Access.hide") == 0) {
       return LibraryTreeItem::hide;
     } else if (mClassInformation.access.compare("Access.icon") == 0) {
@@ -307,7 +305,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
     } else if (mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {   // if there is no override for Access annotation then look in the parent class.
       return mpParentLibraryTreeItem->getAccess();
     } else {
-      if (isEncryptedClass) { // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
+      if (isEncryptedClass()) { // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
         return LibraryTreeItem::documentation;
       } else {
         return LibraryTreeItem::all;
@@ -1116,7 +1114,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
 
     bool hide = ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
-                  && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses())
+                  && !(OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses() && !pLibraryTreeItem->isEncryptedClass()))
                  || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses()));
 
     // if any of children matches the filter, then current index matches the filter as well
