@@ -68,7 +68,6 @@ QString ItemDelegate::formatDisplayText(QVariant variant) const
 void ItemDelegate::initTextDocument(QTextDocument *pTextDocument, QFont font, int width) const
 {
   QTextOption textOption = pTextDocument->defaultTextOption();
-  textOption.setWrapMode(QTextOption::WordWrap);
   pTextDocument->setDefaultTextOption(textOption);
   pTextDocument->setDefaultFont(font);
   pTextDocument->setTextWidth(width);
