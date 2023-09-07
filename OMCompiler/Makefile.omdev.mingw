@@ -87,7 +87,7 @@ IS_MINGW64 = -DIS_MINGW64=ON
 MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
 LVE_EXE_SUFFIX=win64
 endif
-BOOST_PATH_MSVC = $(OMDEV)/lib/3rdParty/boost-1_55/
+BOOST_PATH_MSVC = $$(OMDEV)/lib/3rdParty/boost-1_55/
 WROOT=$(shell cygpath $$SYSTEMROOT)
 
 OPENCL = Yes
@@ -168,11 +168,11 @@ else
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 else
@@ -184,11 +184,11 @@ ifeq ($(VSVERSION),2012)
 else
 ifeq ($(VSVERSION),2013)
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 endif
