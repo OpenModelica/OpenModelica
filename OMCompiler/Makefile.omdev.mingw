@@ -168,11 +168,11 @@ else
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV_ORIGINAL)/lib/3rdParty/boost-1_59/)
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV_ORIGINAL)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 else
@@ -184,11 +184,11 @@ ifeq ($(VSVERSION),2012)
 else
 ifeq ($(VSVERSION),2013)
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV_ORIGINAL)/lib/3rdParty/boost-1_59/)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
-	$(eval BOOST_PATH_MSVC=$$(OMDEV)/lib/3rdParty/boost-1_59/)
+	$(eval BOOST_PATH_MSVC=$(OMDEV_ORIGINAL)/lib/3rdParty/boost-1_59/)
 	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 endif

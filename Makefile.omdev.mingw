@@ -31,6 +31,7 @@ endif
 ifndef MSYSTEM_PREFIX
 $(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
+OMDEV_ORIGINAL  = $$OMDEV
 OMDEV           = $(shell cygpath $$OMDEV)
 OMDEV_MSYS      = $(shell cygpath $$OMDEV_MSYS)
 MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
