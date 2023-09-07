@@ -3645,7 +3645,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
-  mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide)))"));
+  mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes if not encrypted"));
   // synchronize Libraries Browser with ModelWidget
   mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
   mpSynchronizeWithModelWidgetCheckBox->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
