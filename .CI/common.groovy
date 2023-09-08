@@ -492,6 +492,9 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
+/**
+ *  Return true if lable 'CI/Build MINGW' is set in pull request.
+ */
 def shouldWeBuildMINGW() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MINGW")) {
@@ -499,6 +502,42 @@ def shouldWeBuildMINGW() {
     }
   }
   return params.BUILD_MINGW
+}
+
+/**
+ *  Return true if lable 'CI/Build Debian' is set in pull request.
+ */
+def shouldWeBuildDebian() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Debian")) {
+      return true
+    }
+  }
+  return params.BUILD_DEBIAN
+}
+
+/**
+ *  Return true if lable 'CI/Build EnterpriseLinux' is set in pull request.
+ */
+def shouldWeBuildEnterpriseLinux() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build EnterpriseLinux")) {
+      return true
+    }
+  }
+  return params.BUILD_EL
+}
+
+/**
+ *  Return true if lable 'CI/Build Fedora' is set in pull request.
+ */
+def shouldWeBuildFedora() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Fedora")) {
+      return true
+    }
+  }
+  return params.BUILD_FEDORA
 }
 
 def shouldWeDisableAllCMakeBuilds() {

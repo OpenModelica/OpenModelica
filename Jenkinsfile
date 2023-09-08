@@ -1,5 +1,8 @@
 def common
 def shouldWeBuildMINGW
+def shouldWeBuildDebian
+def shouldWeBuildEnterpriseLinux
+def shouldWeBuildFedora
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeEnableMinGWCMakeBuild_value
@@ -16,6 +19,9 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
+    booleanParam(name: 'BUILD_DEBIAN', defaultValue: false, description: 'Build with Debian Bullseye AMD64')
+    booleanParam(name: 'BUILD_EL', defaultValue: false, description: 'Build with AlmaLinux 9 AMD64')
+    booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 38 AMD64')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
     booleanParam(name: 'ENABLE_MINGW_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MinGW')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on macOS')
@@ -39,6 +45,12 @@ pipeline {
           print "isPR: ${isPR}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
+          shouldWeBuildDebian = common.shouldWeBuildDebian()
+          print "shouldWeBuildDebian: ${shouldWeBuildDebian}"
+          shouldWeBuildEnterpriseLinux = common.shouldWeBuildEnterpriseLinux()
+          print "shouldWeBuildEnterpriseLinux: ${shouldWeBuildEnterpriseLinux}"
+          shouldWeBuildFedora = common.shouldWeBuildFedora()
+          print "shouldWeBuildFedora: ${shouldWeBuildFedora}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
@@ -114,6 +126,63 @@ pipeline {
                 common.buildGUI('', true)
                 common.buildAndRunOMEditTestsuite('')
               }
+            }
+          }
+        }
+        stage('Debian-Bookworm-gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:bookworm.nightly.amd64'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildDebian }
+          }
+          steps {
+            script {
+              common.buildOMC('gcc', 'g++', '', true, false)
+              common.getVersion()
+            }
+          }
+        }
+        stage('AlmaLinux-9-gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:el9.amd64'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildEnterpriseLinux }
+          }
+          steps {
+            script {
+              common.buildOMC('gcc', 'g++', '', true, false)
+              common.getVersion()
+            }
+          }
+        }
+        stage('Fedora-38-gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:fc38.amd64'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildFedora }
+          }
+          steps {
+            script {
+              common.buildOMC('gcc', 'g++', '', true, false)
+              common.getVersion()
             }
           }
         }
