@@ -2000,7 +2000,7 @@ protected
   Attributes attr;
   Type orig_ty, rdcl_ty;
   Option<SCode.Comment> cmt;
-  InstNode rdcl_node;
+  InstNode orig_node, rdcl_node;
   InstNodeType rdcl_type;
 algorithm
   // Check that the redeclare element actually is a component.
@@ -2011,10 +2011,11 @@ algorithm
     fail();
   end if;
 
-  orig_comp := InstNode.component(InstNode.resolveInner(originalNode));
-  rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(originalNode));
+  orig_node := InstNode.resolveInner(originalNode);
+  orig_comp := InstNode.component(orig_node);
+  rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(orig_node));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
-  rdcl_node := InstNode.copyInstancePtr(InstNode.resolveInner(originalNode), rdcl_node);
+  rdcl_node := InstNode.copyInstancePtr(orig_node, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
   instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, context,
     SOME(Component.getAttributes(orig_comp)), propagatedSubs);
