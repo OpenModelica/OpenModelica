@@ -7836,6 +7836,7 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
     const int indices[<%len%>] = {<%indices%>};
+    /* static ls data */
     for (int i = 0; i < <%len%>; ++i) {
       linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
       linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
