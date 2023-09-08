@@ -1240,13 +1240,7 @@ protected
   list<T> l1 = {}, l2 = inList;
   T e;
 algorithm
-  // Check if inPosition is a valid value
-  if inPosition < 0 or inPosition > listLength(inList) then
-    print("function split ERROR:\n");
-    print("Out of bounds error for input argument inPosition=" + intString(inPosition) + "\n");
-    fail();
-  end if;
-
+  true := inPosition >= 0;
   pos := inPosition;
 
   // Move elements from l2 to l1 until we reach the split position.
