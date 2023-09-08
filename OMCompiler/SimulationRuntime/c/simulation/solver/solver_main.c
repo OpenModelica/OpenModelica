@@ -459,7 +459,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
  *
- *  This function starts the initialization process of the model .
+ *  This function starts the initialization process of the model.
  */
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time)

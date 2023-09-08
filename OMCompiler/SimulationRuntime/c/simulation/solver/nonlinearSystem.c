@@ -660,7 +660,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
-    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 0 /* false */, 0 /* false */);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], FALSE, FALSE);
   }
 
   messageClose(LOG_NLS);

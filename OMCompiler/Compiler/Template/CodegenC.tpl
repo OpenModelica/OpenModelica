@@ -2418,13 +2418,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
               >>
             case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
-         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
-           <<
-           /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
        <<
        <%auxFunction%>
        <%tmp%>
@@ -2449,11 +2442,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData%>
-       }
+       <%initializeStaticLSVars(ls.vars, ls.index)%>
        >>
        else
          let &varDecls = buffer "" /*BUFD*/
@@ -2472,13 +2461,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
              '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
           ;separator="\n")
-         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
-           <<
-           /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
        <<
        <%auxFunction%>
        OMC_DISABLE_OPT
@@ -2498,11 +2480,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData%>
-       }
+       <%initializeStaticLSVars(ls.vars, ls.index)%>
        >>
      end match
 
@@ -2531,13 +2509,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
               >>
             case SES_FOR_RESIDUAL(__) then "case 3"
            ;separator="\n")
-         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
-           <<
-           /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
          // for casual tearing set
          let &varDeclsRes2 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
@@ -2558,14 +2529,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
              >>
             case SES_FOR_RESIDUAL(__) then "case 4"
            ;separator="\n")
-         let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
-           <<
-           /* static at data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
-
        <<
        <%auxFunction%>
        <%tmp%>
@@ -2590,11 +2553,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData%>
-       }
+       <%initializeStaticLSVars(ls.vars, ls.index)%>
 
        <%auxFunction2%>
        <%tmp2%>
@@ -2619,11 +2578,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData2%>
-       }
+       <%initializeStaticLSVars(at.vars, at.index)%>
        >>
        else
          // for strict tearing set
@@ -2643,13 +2598,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
              '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
           ;separator="\n")
-         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
-           <<
-           /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
          // for casual tearing set
          let &varDecls3 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
@@ -2667,14 +2615,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
            let expPart4 = daeExp(exp, contextSimulationDiscrete, &preExp4, &varDecls4, &auxFunction2)
              '<%preExp4%>linearSystemData->setBElement(<%i0%>, <%expPart4%>, linearSystemData, threadData);'
            ;separator="\n")
-         let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
-           <<
-           /* static at data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
-           >> ;separator="\n")
-
        <<
        <%auxFunction%>
        OMC_DISABLE_OPT
@@ -2694,11 +2634,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData%>
-       }
+       <%initializeStaticLSVars(ls.vars, ls.index)%>
 
        <%auxFunction2%>
        OMC_DISABLE_OPT
@@ -2718,11 +2654,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb2%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
-       {
-         int i=0;
-         <%body_initializeStaticLSData2%>
-       }
+       <%initializeStaticLSVars(at.vars, at.index)%>
        >>
      end match
    )
