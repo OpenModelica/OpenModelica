@@ -239,6 +239,8 @@ public
         if BVariable.isFixed(var) then
           parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
         end if;
+      else
+        BVariable.setBindingAsStart(var);
       end if;
     end for;
     equations := EquationPointers.addList(parameter_eqs, equations);
