@@ -310,7 +310,7 @@ AC_LANG_POP([C++])
 fi
 
 m4_include([common/m4/ax_cxx_compile_stdcxx.m4])
-AX_CXX_COMPILE_STDCXX(14,[noext],[optional])
+AX_CXX_COMPILE_STDCXX(17,[noext],[mandatory])
 
 if test "`getconf LONG_BIT`" = "32"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set

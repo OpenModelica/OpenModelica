@@ -574,7 +574,7 @@ size_t Record::size() const noexcept
   return get_slots(_value) - 1;
 }
 
-Value Record::operator[](const std::string &name) const noexcept
+Value Record::operator[](std::string_view name) const noexcept
 {
   return *find(name);
 }
@@ -593,7 +593,7 @@ Value Record::at(size_t index) const
   return (*this)[index];
 }
 
-IndexedConstIterator Record::find(const std::string &name) const noexcept
+IndexedConstIterator Record::find(std::string_view name) const noexcept
 {
   auto desc = static_cast<record_description*>(get_index(_value, 0));
 
@@ -606,7 +606,7 @@ IndexedConstIterator Record::find(const std::string &name) const noexcept
   return end();
 }
 
-bool Record::contains(const std::string &name) const noexcept
+bool Record::contains(std::string_view name) const noexcept
 {
   return find(name) != end();
 }

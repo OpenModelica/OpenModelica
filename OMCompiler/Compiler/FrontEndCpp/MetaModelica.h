@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <ostream>
 
 namespace OpenModelica
@@ -221,12 +222,11 @@ namespace OpenModelica
         IndexedConstIterator cend() const noexcept;
         size_t size() const noexcept;
 
-        // TODO: Change to C++17 and use string_view instead.
-        Value operator[](const std::string &name) const noexcept;
+        Value operator[](std::string_view name) const noexcept;
         Value operator[](size_t index) const noexcept;
         Value at(size_t index) const;
-        IndexedConstIterator find(const std::string &name) const noexcept;
-        bool contains(const std::string &name) const noexcept;
+        IndexedConstIterator find(std::string_view name) const noexcept;
+        bool contains(std::string_view name) const noexcept;
 
       private:
         void *_value;
