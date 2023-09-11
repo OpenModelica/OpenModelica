@@ -36,8 +36,7 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
-//using namespace std;
-
+//
 namespace IAEX{
    class Cell;
    class CellGroup;

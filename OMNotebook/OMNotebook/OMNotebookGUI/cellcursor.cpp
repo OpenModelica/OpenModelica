@@ -469,7 +469,7 @@ namespace IAEX
     }
     else
     {
-      throw runtime_error("LAST CHILD: Tried to move to a child that did not exist.");
+      throw std::runtime_error("LAST CHILD: Tried to move to a child that did not exist.");
     }
 
     // TMP EMIT
@@ -487,7 +487,7 @@ namespace IAEX
     removeFromCurrentPosition();
 
     //if(!current->hasParentCell())
-    //  throw runtime_error("Could not insert after root");
+    //  throw std::runtime_error("Could not insert after root");
 
     if(current->hasParentCell())
     {
@@ -546,7 +546,7 @@ namespace IAEX
 
     }
     else
-      throw runtime_error("Could not insert before root");
+      throw std::runtime_error("Could not insert before root");
 
     setPrevious(current->previous());
     current->setPrevious(this);

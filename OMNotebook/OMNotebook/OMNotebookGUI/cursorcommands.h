@@ -42,7 +42,6 @@
 #include "cellcursor.h"
 #include "serializingvisitor.h"
 
-using namespace std;
 
 namespace IAEX
 {
@@ -91,11 +90,11 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("CursorMoveUpCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("CursorMoveUpCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   };
@@ -145,11 +144,11 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("CursorMoveDownCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("CursorMoveDownCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   };
@@ -200,11 +199,11 @@ namespace IAEX
         }
 
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("CursorMoveAfterCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("CursorMoveAfterCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   private:

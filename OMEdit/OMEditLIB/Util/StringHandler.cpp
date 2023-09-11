@@ -1595,7 +1595,6 @@ QStringList StringHandler::makeVariableParts(QString variable)
 }
 
 #include <iostream>
-using namespace std;
 
 QStringList StringHandler::makeVariablePartsWithInd(QString variable)
 {

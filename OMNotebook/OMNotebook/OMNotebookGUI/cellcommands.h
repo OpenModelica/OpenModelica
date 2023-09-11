@@ -51,7 +51,6 @@
 #include "cellapplication.h"
 
 
-using namespace std;
 
 namespace IAEX
 {

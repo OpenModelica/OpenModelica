@@ -68,7 +68,6 @@
 #include <QDataStream>
 #include <QTextOption>
 
-using namespace std;
 
 namespace IAEX
 {
@@ -133,7 +132,7 @@ namespace IAEX
             doc_->runVisitor( visitor );
           }
         }
-        catch( exception &e )
+        catch(std::exception &e )
         {
           throw e;
         }
@@ -159,16 +158,16 @@ namespace IAEX
         QByteArray ba = doc.toByteArray(2);
         if (!ba.size())
         {
-          string msg = "Document is empty and will not be saved to file: " +
+          std::string msg = "Document is empty and will not be saved to file: " +
             file.fileName().toStdString();
-          throw runtime_error( msg.c_str() );
+          throw std::runtime_error( msg.c_str() );
         }
 
         if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
         {
-          string msg = "The file for saving the document is not writable: " +
+          std::string msg = "The file for saving the document is not writable: " +
             file.fileName().toStdString() + "\nPlease use Save As.";
-          throw runtime_error( msg.c_str() );
+          throw std::runtime_error( msg.c_str() );
         }
 
         if (file.open(QIODevice::WriteOnly | QIODevice::Truncate) == true)
@@ -187,17 +186,17 @@ namespace IAEX
         }
         else
         {
-          string msg = "Could not write document to file:\n" +
+          std::string msg = "Could not write document to file:\n" +
             file.fileName().toStdString() + " because:\n" +
             file.errorString().toStdString() + " error code: ";
-          throw runtime_error( msg.c_str() );
+          throw std::runtime_error( msg.c_str() );
         }
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("SaveDocumentCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("SaveDocumentCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   private:
@@ -223,10 +222,10 @@ namespace IAEX
       {
         application()->open( filename_, READMODE_NORMAL );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
-        string msg = string("OpenFileCommand(), Exception:\r\n") + e.what();
-        throw runtime_error( msg.c_str() );
+        std::string msg = std::string("OpenFileCommand(), Exception:\r\n") + e.what();
+        throw std::runtime_error( msg.c_str() );
       }
     }
   private:
@@ -256,10 +255,10 @@ namespace IAEX
       {
         application()->open( filename_, readmode_ );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
-        string msg = string("OpenOldFileCommand(), Exception:\r\n") + e.what();
-        throw runtime_error( msg.c_str() );
+        std::string msg = std::string("OpenOldFileCommand(), Exception:\r\n") + e.what();
+        throw std::runtime_error( msg.c_str() );
       }
     }
   private:
@@ -303,10 +302,10 @@ namespace IAEX
         // 2006-03-16 AF
         delete printDocument;
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
-        string msg = string("PrintDocumentCommand(), Exception:\r\n") + e.what();
-        throw runtime_error( msg.c_str() );
+        std::string msg = std::string("PrintDocumentCommand(), Exception:\r\n") + e.what();
+        throw std::runtime_error( msg.c_str() );
       }
     }
   private:
@@ -333,11 +332,11 @@ namespace IAEX
 
         document()->close();
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("CloseFileCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("CloseFileCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   };
@@ -363,11 +362,11 @@ namespace IAEX
         doc = new CellDocument( application(), QString() );
         */
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("NewFileCommand(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("NewFileCommand(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
   };
@@ -398,17 +397,17 @@ namespace IAEX
         }
         else
         {
-          string msg = "Could not export text to file: " + filename_.toStdString();
-          throw runtime_error( msg.c_str() );
+          std::string msg = "Could not export text to file: " + filename_.toStdString();
+          throw std::runtime_error( msg.c_str() );
         }
 
         file.close();
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
         // 2006-01-30 AF, add exception
-        string str = string("ExportToPureText(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("ExportToPureText(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
 
@@ -435,9 +434,9 @@ namespace IAEX
     {
       try
       {
-        vector<Cell *> cells = doc_->getSelection();
+        std::vector<Cell *> cells = doc_->getSelection();
 
-        vector<Cell *>::iterator c_iter = cells.begin();
+        std::vector<Cell *>::iterator c_iter = cells.begin();
         while( c_iter != cells.end() )
         {
           evalCell( (*c_iter) );
@@ -446,10 +445,10 @@ namespace IAEX
 
         doc_->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
-        string str = string("EvalSelectedCells(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("EvalSelectedCells(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
 
@@ -510,10 +509,10 @@ namespace IAEX
         ChapterCounterVisitor visitor;
         doc_->runVisitor( visitor );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
-        string str = string("UpdateChapterCounters(), Exception: ") + e.what();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("UpdateChapterCounters(), Exception: ") + e.what();
+        throw std::runtime_error( str.c_str() );
       }
     }
 

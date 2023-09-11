@@ -7,8 +7,6 @@
 #include "Line.h"
 #include <iostream>
 
-using namespace std;
-
 Line::Line(QWidget *parent):QWidget(parent)
 {
         label = new QLabel(this);

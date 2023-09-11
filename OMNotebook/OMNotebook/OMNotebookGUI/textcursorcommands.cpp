@@ -618,8 +618,8 @@ namespace IAEX
       }
       else
       {
-        string str = string("Could not open image: ") + filepath_.toStdString().c_str();
-        throw runtime_error( str.c_str() );
+        std::string str = std::string("Could not open image: ") + filepath_.toStdString().c_str();
+        throw std::runtime_error( str.c_str() );
       }
     }
   }

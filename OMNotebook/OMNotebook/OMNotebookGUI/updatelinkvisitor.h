@@ -45,7 +45,6 @@
 // forward declaration
 class QDir;
 
-using namespace std;
 
 namespace IAEX
 {

@@ -76,7 +76,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-using namespace std;
 using namespace OMPlot;
 
 namespace IAEX
@@ -132,8 +131,8 @@ namespace IAEX
     QFile file( filename_ );
     if( !file.open( QIODevice::ReadOnly ))
     {
-      string msg = "Could not open " + filename_.toStdString();
-      throw runtime_error( msg.c_str() );
+      std::string msg = "Could not open " + filename_.toStdString();
+      throw std::runtime_error( msg.c_str() );
     }
 
     QByteArray ba = file.readAll();
@@ -145,8 +144,8 @@ namespace IAEX
       if(!(ba = qUncompress(ba)).size())
       {
         file.close();
-        string msg = "The file " + filename_.toStdString() + " is not a valid onbz file.";
-        throw runtime_error(msg.c_str());
+        std::string msg = "The file " + filename_.toStdString() + " is not a valid onbz file.";
+        throw std::runtime_error(msg.c_str());
       }
     }
 
@@ -185,8 +184,8 @@ namespace IAEX
     if(!domdoc.setContent(ba))
     {
       file.close();
-      string msg = "Could not understand content of " + filename_.toStdString();
-      throw runtime_error( msg.c_str() );
+      std::string msg = "Could not understand content of " + filename_.toStdString();
+      throw std::runtime_error( msg.c_str() );
     }
 
     file.close();
@@ -203,7 +202,7 @@ namespace IAEX
         return parseNormal( domdoc );
       }
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -225,9 +224,9 @@ namespace IAEX
     // Check if correct root, otherwise throw exception
     if( root.toElement().tagName() != XML_NOTEBOOK )
     {
-      string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
+      std::string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
         ") in file " + filename_.toStdString();
-      throw runtime_error( msg.c_str() );
+      throw std::runtime_error( msg.c_str() );
     }
 
     // Remove first cellgroup.
@@ -248,7 +247,7 @@ namespace IAEX
       if( !node.isNull() )
         traverseCells( rootcell, node );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -257,8 +256,8 @@ namespace IAEX
     // check if root cell is empty
     if( !rootcell->hasChilds() )
     {
-      string msg = "File " + filename_.toStdString() + " is empty";
-      throw runtime_error( msg.c_str() );
+      std::string msg = "File " + filename_.toStdString() + " is empty";
+      throw std::runtime_error( msg.c_str() );
     }
 */
 
@@ -281,9 +280,9 @@ namespace IAEX
     // Check if correct root, otherwise throw exception
     if( root.toElement().tagName() != "Notebook" )
     {
-      string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
+      std::string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
         ") in file " + filename_.toStdString() + " (Old File)";
-      throw runtime_error( msg.c_str() );
+      throw std::runtime_error( msg.c_str() );
     }
 
     // Remove first cellgroup.
@@ -341,15 +340,15 @@ namespace IAEX
             traverseLatexCell( parent, element );
           else
           {
-            string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
-            throw runtime_error( msg.c_str() );
+            std::string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
+            throw std::runtime_error( msg.c_str() );
           }
         }
 
         node = node.nextSibling();
       }
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -385,7 +384,7 @@ namespace IAEX
     else if( closed == XML_FALSE )
       groupcell->setClosed( false );
     else
-      throw runtime_error( "Unknown closed value in group cell" );
+      throw std::runtime_error( "Unknown closed value in group cell" );
 
     parent->addChild( groupcell );
   }
@@ -439,7 +438,7 @@ namespace IAEX
             while (done > -1)
             {
               // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2);
-              // cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
+              // std::cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
               text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
               done = rx.indexIn(text);
             }
@@ -462,8 +461,8 @@ namespace IAEX
         }
         else
         {
-          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in text cell";
-          throw runtime_error( msg.c_str() );
+          std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in text cell";
+          throw std::runtime_error( msg.c_str() );
         }
       }
 
@@ -528,8 +527,8 @@ namespace IAEX
         }
         else
         {
-          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
-          throw runtime_error( msg.c_str() );
+          std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
+          throw std::runtime_error( msg.c_str() );
         }
       }
 
@@ -547,7 +546,7 @@ namespace IAEX
     else if( closed == XML_FALSE )
       inputcell->setClosed( false );
     else
-      throw runtime_error( "Unknown closed value in inputcell" );
+      throw std::runtime_error( "Unknown closed value in inputcell" );
 
     parent->addChild( inputcell );
   }
@@ -678,8 +677,8 @@ namespace IAEX
         }
         else
         {
-          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
-          throw runtime_error( msg.c_str() );
+          std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
+          throw std::runtime_error( msg.c_str() );
         }
       }
 
@@ -710,7 +709,7 @@ namespace IAEX
     else if( closed == XML_FALSE )
       gCell->setClosed( false,true );
     else
-      throw runtime_error( "Unknown closed value in inputcell" );
+      throw std::runtime_error( "Unknown closed value in inputcell" );
 
     parent->addChild( graphcell );
   }
@@ -753,8 +752,8 @@ namespace IAEX
           }
           else
           {
-            string msg = "Unknown tagname " + e.tagName().toStdString() + ", in Latex cell";
-            throw runtime_error( msg.c_str() );
+            std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in Latex cell";
+            throw std::runtime_error( msg.c_str() );
           }
         }
 
@@ -775,7 +774,7 @@ namespace IAEX
       else if( closed == XML_FALSE )
         gCell->setClosed( false,true );
       else
-        throw runtime_error( "Unknown closed value in latexcell" ); */
+        throw std::runtime_error( "Unknown closed value in latexcell" ); */
 
       parent->addChild(latexcell);
 
@@ -804,7 +803,7 @@ namespace IAEX
     // Get saved image name
     QString imagename = element.attribute( XML_NAME, "" );
     if( imagename.isEmpty() || imagename.isNull() )
-      throw runtime_error( "No name in image tag" );
+      throw std::runtime_error( "No name in image tag" );
 
 
     // Get saved image data
@@ -863,14 +862,14 @@ namespace IAEX
 
       else
       {
-        string msg = "Unknown typeid of parent cell";
-        throw runtime_error( msg.c_str() );
+        std::string msg = "Unknown typeid of parent cell";
+        throw std::runtime_error( msg.c_str() );
       }
     }
     else
     {
-      string msg = "Error creating image: <"+ imagename.toStdString() +">";
-      throw runtime_error( msg.c_str() );
+      std::string msg = "Error creating image: <"+ imagename.toStdString() +">";
+      throw std::runtime_error( msg.c_str() );
     }
   }
 
@@ -923,8 +922,8 @@ namespace IAEX
         }
         else
         {
-          string msg = "Unknown tag: <"+ e.tagName().toStdString() +">";
-          throw runtime_error( msg.c_str() );
+          std::string msg = "Unknown tag: <"+ e.tagName().toStdString() +">";
+          throw std::runtime_error( msg.c_str() );
         }
       }
       node = node.nextSibling();
