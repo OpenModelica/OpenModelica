@@ -34,7 +34,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 # Set the C++ standard.
-CONFIG += c++17
+CONFIG += c++1z
 
 TARGET = OMEdit
 TEMPLATE = app

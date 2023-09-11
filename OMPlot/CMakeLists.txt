@@ -5,12 +5,6 @@ project(OMPlot)
 ## to the install component 'omplot' if it is not explicitly changed.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omplot)
 
-## Set the C++ standard to use. OMPlot uses C++14.
-set(CMAKE_CXX_STANDARD 14)
-set(CXX_STANDARD_REQUIRED ON)
-## Make sure we do not start relying on extensions down the road.
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
