@@ -1789,7 +1789,7 @@ namespace IAEX {
   InputCellDelegate *GraphCell::getDelegate()
   {
     if(!hasDelegate())
-      throw runtime_error("No delegate.");
+      throw std::runtime_error("No delegate.");
 
     return delegate_;
   }

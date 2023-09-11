@@ -48,7 +48,6 @@ class QTextTable;
 class QPrinter;
 
 
-using namespace std;
 namespace IAEX
 {
   class PrinterVisitor : public Visitor

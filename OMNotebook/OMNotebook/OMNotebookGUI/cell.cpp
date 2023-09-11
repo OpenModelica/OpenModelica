@@ -54,7 +54,6 @@
 
 
 using namespace IAEX;
-using namespace std;
 
 namespace IAEX
 {
@@ -180,7 +179,7 @@ namespace IAEX
       setStyle( style );
     else
     {
-      cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
+      std::cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
     }
   }
 
@@ -275,7 +274,7 @@ namespace IAEX
     QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
     if( 0 > r->attribute().indexOf( expression ))
     {
-      cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
+      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
     }
     else
     {
@@ -283,25 +282,25 @@ namespace IAEX
       {
         QRegExp fontslant( "Italic" );
         if( 0 > r->value().indexOf( fontslant ))
-          cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "TextAlignment" )
       {
         QRegExp textalignment( "Right|Left|Center|Justify" );
         if( 0 > r->value().indexOf( textalignment ))
-          cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "TextJustification" )
       {
         QRegExp textjustification( "1|0" );
         if( 0 > r->value().indexOf( textjustification ))
-          cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "FontWeight" )
       {
         QRegExp fontweight( "Bold|Plain" );
         if( 0 > r->value().indexOf( fontweight ))
-          cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
       }
     }
 
@@ -531,7 +530,7 @@ namespace IAEX
   QWidget *Cell::mainWidget()
   {
     if(!mainWidget_)
-      throw logic_error("Cell::mainWidget(): No mainWidget set.");
+      throw std::logic_error("Cell::mainWidget(): No mainWidget set.");
 
     return mainWidget_;
   }
@@ -572,7 +571,7 @@ namespace IAEX
   TreeView *Cell::treeView()
   {
     if(!treeView_)
-      throw logic_error("Cell::treeView(): No treeView set.");
+      throw std::logic_error("Cell::treeView(): No treeView set.");
 
     return treeView_;
   }
@@ -622,7 +621,7 @@ namespace IAEX
     }*/
 
     if(!treeView_)
-      throw logic_error("SetHeight(const int height): TreeView is not set.");
+      throw std::logic_error("SetHeight(const int height): TreeView is not set.");
 
         setFixedHeight(h);
 
@@ -870,7 +869,7 @@ namespace IAEX
 
   void Cell::printCell(Cell *current)
   {
-    cout << "This: " << current << endl
+    std::cout << "This: " << current << endl
       << "Parent: " << current->parentCell() << endl
       << "Child: " << current->child() << endl
       << "Last: " << current->last() << endl

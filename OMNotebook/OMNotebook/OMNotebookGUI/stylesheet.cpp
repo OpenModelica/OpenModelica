@@ -58,7 +58,6 @@
 #include "stylesheet.h"
 
 
-using namespace std;
 
 namespace IAEX
 {
@@ -87,8 +86,8 @@ namespace IAEX
     if(!file.open(QIODevice::ReadOnly))
     {
       // 2005-10-03 AF, throw exception instead of exit
-      string tmp = "Could not open file: " + filename.toStdString();
-      throw runtime_error( tmp.c_str() );
+      std::string tmp = "Could not open file: " + filename.toStdString();
+      throw std::runtime_error( tmp.c_str() );
     }
 
     //Här kan det bli feeeeel!
@@ -97,10 +96,10 @@ namespace IAEX
       file.close();
 
       // 2005-10-26 AF, throw exception instead of exit
-      string tmp = "Could not read content from file: " +
+      std::string tmp = "Could not read content from file: " +
         filename.toStdString() +
         " Probably some syntax error in the xml file";
-      throw runtime_error( tmp.c_str() );
+      throw std::runtime_error( tmp.c_str() );
     }
     file.close();
 
@@ -169,9 +168,9 @@ namespace IAEX
    * \date 2005-10-26
    *
    * \brief Returns all the CellStyle names of the visible styles
-   * \return A vector with all CellStyle names
+   * \return A std::vector with all CellStyle names
    */
-  vector<QString> Stylesheet::getAvailableStyleNames() const
+  std::vector<QString> Stylesheet::getAvailableStyleNames() const
   {
     return styleNames_;
   }
@@ -263,7 +262,7 @@ namespace IAEX
   void Stylesheet::traverseStyleSettings( QDomNode node, CellStyle *item ) const
   {
     if( !item )
-      throw runtime_error( "STYLESHEET TRAVERSE... No ITEM SET!!" );
+      throw std::runtime_error( "STYLESHEET TRAVERSE... No ITEM SET!!" );
 
     while( !node.isNull() )
     {
@@ -278,7 +277,7 @@ namespace IAEX
       else if( element.tagName() == "chapterlevel" )
         parseChapterLevelTag( element, item );
       else
-        cout << "Tag not known" << element.tagName().toStdString();
+        std::cout << "Tag not known" << element.tagName().toStdString();
 
       node = node.nextSibling();
     }
@@ -331,7 +330,7 @@ namespace IAEX
     else if( alignment == "justify" )
       item->setAlignment( Qt::AlignJustify );
     else
-      cout << "Alignment value not correct: " << alignment.toStdString();
+      std::cout << "Alignment value not correct: " << alignment.toStdString();
 
 
     // VERTICAL ALIGNMENT
@@ -343,7 +342,7 @@ namespace IAEX
     else if( vertical == "super" )
       item->textCharFormat()->setVerticalAlignment( QTextCharFormat::AlignSuperScript );
     else
-      cout << "Vertical Alignment value not correct: " << vertical.toStdString();
+      std::cout << "Vertical Alignment value not correct: " << vertical.toStdString();
   }
 
   /*
@@ -428,7 +427,7 @@ namespace IAEX
             item->textCharFormat()->font().setStretch( QFont::UltraExpanded );
           else
           {
-            cout << "Stretch value not correct: " << stretch.toStdString();
+            std::cout << "Stretch value not correct: " << stretch.toStdString();
             item->textCharFormat()->font().setStretch( QFont::Unstretched );
           }
         }
@@ -478,7 +477,7 @@ namespace IAEX
         }
         else
         {
-          cout << "font tag not specified: " <<
+          std::cout << "font tag not specified: " <<
             fontElement.tagName().toStdString();
         }
       }

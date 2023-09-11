@@ -73,8 +73,8 @@ namespace IAEX
 
     if( !oldDir_.exists() || !newDir_.exists() )
     {
-      string msg = "UpdateLink, old or new dir don't exists.";
-      throw runtime_error( msg.c_str() );
+      std::string msg = "UpdateLink, old or new dir don't exists.";
+      throw std::runtime_error( msg.c_str() );
     }
   }
 
@@ -130,8 +130,8 @@ namespace IAEX
         else
         {
           // this should never happen!
-          string msg = "Error, found no end of linkpath";
-                    throw runtime_error( msg.c_str() );
+          std::string msg = "Error, found no end of linkpath";
+                    throw std::runtime_error( msg.c_str() );
           break;
         }
       }

@@ -58,7 +58,6 @@
 #include "cell.h"
 #include "visitor.h"
 
-using namespace std;
 using namespace IAEX;
 
 namespace IAEX{

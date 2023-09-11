@@ -90,7 +90,6 @@
 #include "xmlparser.h"
 #include "removehighlightervisitor.h"
 #include "omcinteractiveenvironment.h"
-using namespace std;
 
 namespace IAEX
 {
@@ -220,7 +219,7 @@ NotebookWindow::NotebookWindow(Document *subject,
 
   Cell *current = subject_->getMainCell()->child();
   cells.clear();
-  /**find  and inserts all the present cells in document in a vector**/
+  /**find  and inserts all the present cells in document in a std::vector**/
   cells=SearchCells(current);
 
 #if USE_OMSKETCH
@@ -255,7 +254,7 @@ NotebookWindow::~NotebookWindow()
   //subject_ = 0;
 
   // 2005-11-03/04/07 AF, remova all created QAction
-  map<QString, QAction*>::iterator s_iter = styles_.begin();
+  std::map<QString, QAction*>::iterator s_iter = styles_.begin();
   while( s_iter != styles_.end() )
   {
     delete (*s_iter).second;
@@ -831,8 +830,8 @@ void NotebookWindow::createFormatMenu()
   formatMenu = menuBar()->addMenu( tr("&Format") );
   styleMenu = formatMenu->addMenu( tr("&Styles") );
 
-  vector<QString> styles = sheet->getAvailableStyleNames();
-  vector<QString>::iterator i = styles.begin();
+  std::vector<QString> styles = sheet->getAvailableStyleNames();
+  std::vector<QString>::iterator i = styles.begin();
   for(;i != styles.end(); ++i)
   {
     if ((*i != "Latex") && (*i != "Graph") && (*i != "Input"))
@@ -1689,7 +1688,7 @@ void NotebookWindow::updateMenus()
 void NotebookWindow::updateStyleMenu()
 {
   CellStyle style = *subject_->getCursor()->currentCell()->style();
-  map<QString, QAction*>::iterator cs = styles_.find(style.name());
+  std::map<QString, QAction*>::iterator cs = styles_.find(style.name());
 
   if(cs != styles_.end())
   {
@@ -2183,8 +2182,8 @@ void NotebookWindow::updateWindowMenu()
   windowMenu->clear();
 
   // add new menu items
-  vector<DocumentView *> windowViews = application()->documentViewList();
-  vector<DocumentView *>::iterator v_iter = windowViews.begin();
+  std::vector<DocumentView *> windowViews = application()->documentViewList();
+  std::vector<DocumentView *>::iterator v_iter = windowViews.begin();
   int k = 1;
   while( v_iter != windowViews.end() )
   {
@@ -2362,7 +2361,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
     // 2005-11-22 AF, Support for deleting cells with 'DEL' key.
     if( event->key() == Qt::Key_Delete )
     {
-      vector<Cell *> cells = subject_->getSelection();
+      std::vector<Cell *> cells = subject_->getSelection();
       if( !cells.empty() )
       {
         deleteCurrentCellAsk();
@@ -2493,7 +2492,7 @@ void NotebookWindow::openFile(const QString filename)
       //Cancel pushed. Do nothing
     }
   }
-  catch(exception &e)
+  catch(std::exception &e)
   {
     QMessageBox::warning( 0, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what(), "OK" );
     openFile();
@@ -2676,7 +2675,7 @@ void NotebookWindow::helpText()
       QMessageBox::warning( 0, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"), "OK" );
     }
   }
-  catch(exception &e)
+  catch(std::exception &e)
   {
     QString msg = tr("In HelpText(), Exception: \n") + e.what();
     QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
@@ -2955,7 +2954,7 @@ void NotebookWindow::changeStyle()
 {
   // 2005-10-28 changed in the funtion here because style changed
   // from QString  to CellStyle /AF
-  map<QString, QAction*>::iterator cs = styles_.begin();
+  std::map<QString, QAction*>::iterator cs = styles_.begin();
   Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" ); //AF
   for(;cs != styles_.end(); ++cs)
   {
@@ -3679,7 +3678,7 @@ void NotebookWindow::openOldFile()
             new OpenOldFileCommand( filename, READMODE_OLD ));
     }
   }
-  catch( exception &e )
+  catch(std::exception &e )
   {
     QString msg = QString("In NotebookWindow(), Exception:\r\n") + e.what();
     QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
@@ -3954,13 +3953,13 @@ QVector<Cell*> NotebookWindow::SearchCells(Cell* current)
 
 void NotebookWindow::shiftselectedcells()
 {
-    vector<Cell *> cells = subject_->getSelection();
+    std::vector<Cell *> cells = subject_->getSelection();
     qDebug()<<cells.size();
 
     if( !cells.empty() )
     {
       // open closed groupcells otherwise OMNotebook does not copy right and crashes afterwards
-      vector<Cell *>::iterator i = cells.begin();
+      std::vector<Cell *>::iterator i = cells.begin();
       for(;i != cells.end();++i)
       {
         (*i)->setClosed(false);
@@ -3987,7 +3986,7 @@ void NotebookWindow::shiftselectedcells()
 
 void NotebookWindow::shiftcellsUp()
 {
-  vector<Cell *> cells = subject_->getSelection();
+  std::vector<Cell *> cells = subject_->getSelection();
 
   if (cells.size()==0)
   {
@@ -4064,8 +4063,8 @@ void NotebookWindow::shiftcellsUp()
         else
         {
           Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-          std::vector<QString> vector = sheet->getAvailableStyleNames();
-          if (std::find(vector.begin(), vector.end(), style) != vector.end() )
+          std::vector<QString> styles = sheet->getAvailableStyleNames();
+          if (std::find(styles.begin(), styles.end(), style) != styles.end() )
           {
             QString textoutput=current->textHtml();
             subject_->cursorDeleteCell();
@@ -4090,7 +4089,7 @@ void NotebookWindow::shiftcellsUp()
 
 void NotebookWindow::shiftcellsDown()
 {
-  vector<Cell *> cells = subject_->getSelection();
+  std::vector<Cell *> cells = subject_->getSelection();
   if (cells.size()==0)
   {
     Cell *current=subject_->getCursor()->currentCell();
@@ -4171,8 +4170,8 @@ void NotebookWindow::shiftcellsDown()
         else
         {
           Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-          std::vector<QString> vector = sheet->getAvailableStyleNames();
-          if (std::find(vector.begin(), vector.end(), style) != vector.end() )
+          std::vector<QString> styles = sheet->getAvailableStyleNames();
+          if (std::find(styles.begin(), styles.end(), style) != styles.end() )
           {
             QString textoutput=current->textHtml();
             subject_->cursorDeleteCell();

@@ -80,7 +80,7 @@ namespace IAEX
     Q_OBJECT
 
   public:
-    typedef vector<Rule *> rules_t;
+    typedef std::vector<Rule *> rules_t;
 
     Cell(QWidget *parent=0);            // Changed 2005-10-27 AF
     Cell(Cell &c);

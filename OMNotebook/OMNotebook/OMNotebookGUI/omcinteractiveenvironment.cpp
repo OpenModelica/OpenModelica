@@ -64,7 +64,6 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
 }
 
-using namespace std;
 
 namespace IAEX
 {
@@ -221,7 +220,7 @@ namespace IAEX
       version.remove( "\"" );
       //delete env;
     }
-    catch( exception &e )
+    catch(std::exception &e )
     {
       e.what();
       QMessageBox::critical( 0, QObject::tr("OMC Error"), QObject::tr("Unable to get OMC version, OMC is not started.") );

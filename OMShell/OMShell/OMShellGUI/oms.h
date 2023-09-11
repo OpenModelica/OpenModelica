@@ -41,9 +41,6 @@
 
 #include <exception>
 
-using namespace std;
-
-
 // QT Headers
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -122,7 +119,7 @@ private:
   void createAction();
   void createMenu();
   void createToolbar();
-  void exceptionInEval(exception &e);
+  void exceptionInEval(std::exception &e);
   void addCommandLine();
   void selectCommandLine();
   QStringList getFunctionNames(QString);

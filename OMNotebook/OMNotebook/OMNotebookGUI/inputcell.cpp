@@ -1114,7 +1114,7 @@ namespace IAEX
       emit textChanged(true);
     }
     else
-      cout << "Not delegate on inputcell" << endl;
+      std::cout << "Not delegate on inputcell" << endl;
 
     input_->blockSignals(false);
     output_->blockSignals(false);
@@ -1219,7 +1219,7 @@ namespace IAEX
   InputCellDelegate *InputCell::delegate()
   {
     if(!hasDelegate())
-      throw runtime_error("No delegate.");
+      throw std::runtime_error("No delegate.");
 
     return delegate_;
   }

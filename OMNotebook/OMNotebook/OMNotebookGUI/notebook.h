@@ -395,7 +395,7 @@ private:
   QString filename_;
 
   // QTimer *savingTimer_;
-  map<QString, QAction*> styles_;
+  std::map<QString, QAction*> styles_;
 
   SearchForm* findForm_;
   bool closing_;
