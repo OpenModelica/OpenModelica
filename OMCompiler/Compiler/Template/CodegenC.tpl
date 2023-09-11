@@ -2395,6 +2395,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
+         /* FIXME make a for-loop for xloc (also in other places) */
          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (match ls.partOfJac
            case true then
@@ -3298,17 +3299,18 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   "Generates initial function for nonlinear loops."
 ::=
   let len = listLength(crefs)
-  let indices = (crefs |> cr => varIndexWithComment(cref2simvar(cr, getSimCode())) ;separator=", ")
   <<
   OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
   {
-    const int indices[<%len%>] = {<%indices%>};
-    /* static nls data */
+    const REAL_ATTRIBUTE* ptr[<%len%>] = {
+      <%(crefs |> cr => '&(<%crefAttributes(cr)%>)' ;separator=",\n")%>
+    };
+    /* static data */
     for (int i = 0; i < <%len%>; ++i) {
-      sysData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
-      sysData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
-      sysData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      sysData->min[i]     = ptr[i]->min;
+      sysData->max[i]     = ptr[i]->max;
+      sysData->nominal[i] = ptr[i]->nominal;
     }
     /* initial sparse pattern */
     if (initSparsePattern) {
@@ -3324,16 +3326,13 @@ end generateStaticInitialData;
 template getIterationVars(list<ComponentRef> crefs, String indexName)
   "Generates iteration variables update."
 ::=
-  let len = listLength(crefs)
-  let indices = (crefs |> cr => varIndexWithComment(cref2simvar(cr, getSimCode())) ;separator=", ")
+  let &sub = buffer ""
+  let vars = (crefs |> cr hasindex i => 'array[<%i%>] = <%cref(cr, &sub)%>;' ;separator="\n")
   <<
   OMC_DISABLE_OPT
   void getIterationVars<%indexName%>(DATA* data, double *array)
   {
-    const int indices[<%len%>] = {<%indices%>};
-    for (int i = 0; i < <%len%>; ++i) {
-      array[i] = data->localData[0]->realVars[indices[i]];
-    }
+    <%vars%>
   }
   >>
 end getIterationVars;
