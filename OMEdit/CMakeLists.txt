@@ -8,13 +8,6 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
 
-## Set the C++ standard to use. OMEdit uses C++17
-set(CMAKE_CXX_STANDARD 17)
-set(CXX_STANDARD_REQUIRED ON)
-## Make sure we do not start relying on extensions down the road.
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-
 find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network Svg REQUIRED)
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
 find_package(OpenGL REQUIRED)

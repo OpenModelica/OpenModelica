@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 # Set the C++ standard.
-CONFIG += c++14
+CONFIG += c++1z
 
 TRANSLATIONS = \
   OMShell_de.ts \
