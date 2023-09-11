@@ -101,6 +101,7 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/c/util \
   $$OPENMODELICAHOME/include/omc/fmil \
+  $$OPENMODELICAHOME/../OMSimulator/include/ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 

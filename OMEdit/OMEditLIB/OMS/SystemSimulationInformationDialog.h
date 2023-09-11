@@ -34,7 +34,7 @@
 #ifndef SYSTEMSIMULATIONINFORMATIONDIALOG_H
 #define SYSTEMSIMULATIONINFORMATIONDIALOG_H
 
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 
 #include <QDialog>
 #include <QLineEdit>
