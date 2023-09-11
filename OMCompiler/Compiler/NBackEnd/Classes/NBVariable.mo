@@ -1097,7 +1097,7 @@ public
     Pointer.update(var_ptr, var);
   end setFixed;
 
-  function setBindingAsStartAndFix
+  function setBindingAsStart
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)
     NOTE: this overwrites the old start value. throw error/warning if different?"
     input output Pointer<Variable> var_ptr;
@@ -1113,7 +1113,6 @@ public
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty);
         var.backendinfo := binfo;
       then var;
 
@@ -1122,6 +1121,14 @@ public
       then fail();
     end match;
     Pointer.update(var_ptr, var);
+  end setBindingAsStart;
+
+  function setBindingAsStartAndFix
+    input output Pointer<Variable> var_ptr;
+    input Boolean b = true;
+  algorithm
+    var_ptr := setBindingAsStart(var_ptr);
+    var_ptr := setFixed(var_ptr, b);
   end setBindingAsStartAndFix;
 
   function hasNonTrivialAliasBinding
