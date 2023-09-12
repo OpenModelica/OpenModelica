@@ -29,6 +29,7 @@
  */
 
 #include "meta_modelica.h"
+#include "ryu/ryu.h"
 #include <ctype.h>
 
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
@@ -65,6 +66,14 @@ modelica_string _old_realString(modelica_real r)
   return mmc_mk_scon(buffer);
 }
 
+modelica_string _ryu_realString(modelica_real r)
+{
+  char* buffer[32];
+  d2s_buffered(r, buffer);
+  return mmc_mk_scon(buffer);
+}
+
+
 modelica_string realString(modelica_real r)
 {
   if (isinf(r) && r < 0)
@@ -73,7 +82,7 @@ modelica_string realString(modelica_real r)
     return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
   else if (isnan(r))
     return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-  return _old_realString(r);
+  return _ryu_realString(r);
 }
 
 

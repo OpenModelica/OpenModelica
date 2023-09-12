@@ -39,7 +39,7 @@ endif
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lomantlr3 -lregex -lwsock32 -luuid -lole32 -lws2_32 -limagehlp \
--lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
+-lRpcrt4 -lopenblas -fopenmp -lomcgc -lryu -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic -static-libgcc \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
 -lzmq \

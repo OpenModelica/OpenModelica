@@ -18,7 +18,7 @@ encapsulated package Autoconf
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
   constant String libMsvcrt = if not isNewOMDev then "-lmsvcrt " else " ";
-  constant String ldflags_basic = " -lomcgc " + linkType + "-static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32" +
+  constant String ldflags_basic = " -lomcgc -lryu " + linkType + "-static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32" +
                                   " -lpthread -lm " +
                                   libFortran +
                                   "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
@@ -26,8 +26,8 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
-  constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
+  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lryu -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  constant String ldflags_runtime_fmu = linkType + "-lregex -lryu -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
                                         libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
