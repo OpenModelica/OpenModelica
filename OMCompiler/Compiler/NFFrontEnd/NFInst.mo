@@ -325,9 +325,38 @@ function lookupRootClass
   input InstNode topScope;
   input InstContext.Type context;
   output InstNode clsNode;
+protected
+  InstContext.Type next_context;
+  String last;
+  ComplexType cty;
 algorithm
-  clsNode := Lookup.lookupClassName(path, topScope, InstContext.set(context, NFInstContext.RELAXED),
-    AbsynUtil.dummyInfo, checkAccessViolations = false);
+  next_context := InstContext.set(context, NFInstContext.RELAXED);
+
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    clsNode := Lookup.lookupClassName(path, topScope, next_context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    // Allow lookup of structor functions in ExternalObject:s (to allow e.g.
+    // checkModel on them). These are stored in the ComplexType of the node
+    // instead of in the class tree like normal elements.
+    try
+      last := AbsynUtil.pathLastIdent(path);
+      true := last == "constructor" or last == "destructor";
+      clsNode := Lookup.lookupName(AbsynUtil.stripLast(path), topScope, next_context, checkAccessViolations = false);
+      Type.COMPLEX(complexTy = cty) := InstNode.getType(clsNode);
+
+      if last == "constructor" then
+        ComplexType.EXTERNAL_OBJECT(constructor = clsNode) := cty;
+      else
+        ComplexType.EXTERNAL_OBJECT(destructor = clsNode) := cty;
+      end if;
+      ErrorExt.rollBack(getInstanceName());
+    else
+      ErrorExt.delCheckpoint(getInstanceName());
+    end try;
+  end try;
+
   clsNode := InstUtil.mergeScalars(clsNode, path);
   checkInstanceRestriction(clsNode, path, context);
   clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);

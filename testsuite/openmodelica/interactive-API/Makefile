@@ -17,6 +17,7 @@ Bug4209.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
+CheckModelExtObj1.mos \
 choicesAllMatching.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
