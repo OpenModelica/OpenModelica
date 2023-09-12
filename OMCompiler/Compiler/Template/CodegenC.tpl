@@ -5154,7 +5154,10 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linearized_model \"<%modelNamePrefix%>\" \n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      return "model linearized_model \"<%modelNamePrefix%>\"\n"
+      "  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n"
+      "  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n"
+      "  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
       "  parameter Real x0[n] = %s;\n"
       "  parameter Real u0[m] = %s;\n"
       "\n"
@@ -5170,11 +5173,18 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%getVarName(vars.stateVars, "x")%>
       <%getVarName(vars.inputVars, "u")%>
       <%getVarName(vars.outputVars, "y")%>
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linearized_model;\n";
+      "equation\n"
+      "  der(x) = A * x + B * u;\n"
+      "  y = C * x + D * u;\n"
+      "end linearized_model;\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linearized_model \"<%modelNamePrefix%>\" \n parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
+      return "model linearized_model \"<%modelNamePrefix%>\"\n"
+      "  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n"
+      "  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n"
+      "  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      "  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"
       "  parameter Real z0[<%varInfo.numAlgVars%>] = %s;\n"
@@ -5195,7 +5205,11 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%getVarName(vars.inputVars, "u")%>
       <%getVarName(vars.outputVars, "y")%>
       <%getVarName(vars.algVars, "z")%>
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linearized_model;\n";
+      "equation\n"
+      "  der(x) = A * x + B * u;\n"
+      "  y = C * x + D * u;\n"
+      "  z = Cz * x + Dz * u;\n"
+      "end linearized_model;\n";
     }
     >>
   end match
@@ -5216,8 +5230,11 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
     {
       return "function [A, B, C, D, stateVars, inputVars, outputVars] = linearized_model()\n"
       "%% <%modelNamePrefix%>\n"
-      "%% der(x) = A * x + B * u\n%% y = C * x + D * u\n"
-      "  n = <%varInfo.numStateVars%>; %% number of states\n  m = <%varInfo.numInVars%>; %% number of inputs\n  p = <%varInfo.numOutVars%>; %% number of outputs\n"
+      "%% der(x) = A * x + B * u\n"
+      "%% y = C * x + D * u\n"
+      "  n = <%varInfo.numStateVars%>; %% number of states\n"
+      "  m = <%varInfo.numInVars%>; %% number of inputs\n"
+      "  p = <%varInfo.numOutVars%>; %% number of outputs\n"
       "\n"
       "  x0 = %s;\n"
       "  u0 = %s;\n"
@@ -5256,7 +5273,9 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
     {
       return "function linearized_model()\n"
       "  # <%modelNamePrefix%> #\n"
-      "  local n = <%varInfo.numStateVars%> # number of states \n  local m = <%varInfo.numInVars%> # number of inputs \n  local p = <%varInfo.numOutVars%> # number of outputs \n"
+      "  local n = <%varInfo.numStateVars%> # number of states \n"
+      "  local m = <%varInfo.numInVars%> # number of inputs \n"
+      "  local p = <%varInfo.numOutVars%> # number of outputs \n"
       "\n"
       "  local x0 = %s\n"
       "  local u0 = %s\n"
@@ -5297,8 +5316,11 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
     {
       return "def linearized_model():\n"
       "    # <%modelNamePrefix%>\n"
-      "    # der(x) = A * x + B * u \n    # y = C * x + D * u \n"
-      "    n = <%varInfo.numStateVars%> # number of states\n    m = <%varInfo.numInVars%> # number of inputs\n    p = <%varInfo.numOutVars%> # number of outputs\n"
+      "    # der(x) = A * x + B * u \n"
+      "    # y = C * x + D * u \n"
+      "    n = <%varInfo.numStateVars%> # number of states\n"
+      "    m = <%varInfo.numInVars%> # number of inputs\n"
+      "    p = <%varInfo.numOutVars%> # number of outputs\n"
       "\n"
       "    x0 = %s\n"
       "    u0 = %s\n"
@@ -5323,45 +5345,37 @@ end functionlinearmodelPython;
 template getVarName(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
-  simVars |> var hasindex arrindex fromindex 1 =>
-    (match var
+  simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
       <<"  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n">>
-    end match)
-  ; empty
+    end match) ;separator="\n"
 end getVarName;
 
 template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
-<<
-<%simVars |> var hasindex arrindex fromindex 1 => (match var
+  simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
       <<'<%crefStrMatlabSafe(name)%>'>>
-    end match) ;separator=","%>
->>
+    end match) ;separator=","
 end getVarNameMatlab;
 
 template getVarNamePython(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a variables."
 ::=
-<<
-<%simVars |> var hasindex arrindex fromindex 0 => (match var
+  simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
       <<'<%crefStrMatlabSafe(name)%>'>>
-    end match) ;separator=","%>
->>
+    end match) ;separator=","
 end getVarNamePython;
 
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
-<<
-<%simVars |> var hasindex arrindex fromindex 0 => (match var
+  simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
       <<\"<%crefStrMatlabSafe(name)%>\">>
-    end match) ;separator=","%>
->>
+    end match) ;separator=","
 end getVarNameJulia;
 
 template genMatrix(String name, String row, String col, Integer rowI, Integer colI) "template genMatrix
