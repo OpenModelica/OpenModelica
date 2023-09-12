@@ -1,0 +1,40 @@
+// name: CheckModelExtObj1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+loadString("
+class ExternalObject1
+  extends ExternalObject;
+
+  function constructor
+    output ExternalObject1 obj;
+    external \"C\" obj = initObject();
+  end constructor;
+
+  function destructor
+    input ExternalObject1 obj;
+    external \"C\" destroyObject(obj);
+  end destructor;
+end ExternalObject1;
+");
+
+checkModel(ExternalObject1.constructor);
+checkModel(ExternalObject1.destructor);
+checkModel(ExternalObject1);
+getErrorString();
+
+// Result:
+// true
+// "Check of ExternalObject1.constructor completed successfully.
+// Class ExternalObject1.constructor has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// "Check of ExternalObject1.destructor completed successfully.
+// Class ExternalObject1.destructor has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// "Check of ExternalObject1 completed successfully.
+// Class ExternalObject1 has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult
