@@ -51,7 +51,14 @@ omsimulator.skip:
 		-DCMAKE_INSTALL_PREFIX=../install
 	$(MAKE) -C OMSimulator/build/ install
 	cp -vpPR OMSimulator/install/bin/OMSimulator* @OMBUILDDIR@/bin
-	cp -vpPR OMSimulator/install/lib/@host_short@/* @OMBUILDDIR@/lib/@host_short@/omc/
+#	copy the libraries from lib/@host_short@/ OR lib64/. Fails if it can not find at least one of them.
+#	This is needed because the autoconf configuration adds the '@host_short@' (e.g. 'x86_64-linux-gnu') even
+#	on systems that do not use it to signify library architecture differences. For example, on fedora
+#	linux one is supposed to use 'lib64/' instead of 'lib/x86_64-linux-gnu/'. The OMSimulator CMake build will
+#	use the lib64 but OpenModelica wants to install to lib/x86_64-linux-gnu/. So try both locations and take
+#	the one that exists. If we find other systems with different setups this will need to be extended.
+	cp -vpPR OMSimulator/install/lib/@host_short@/* @OMBUILDDIR@/lib/@host_short@/omc/ || \
+	cp -vpPR OMSimulator/install/lib64/* @OMBUILDDIR@/lib/@host_short@/omc/
 omnotebook: omnotebook.skip
 omnotebook.skip: omc omplot
 	$(MAKE) -C OMNotebook
