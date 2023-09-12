@@ -446,7 +446,7 @@ OpenModelica has different solvers available for non-linear systems.
 Initializing with homotopy on the first try
 is default if a homotopy operator is used. It can be switched off with
 :ref:`noHomotopyOnFirstTry <simflag-noHomotopyOnFirstTry>`. For a general
-overview see :cite:`sielemann2011robust`, for details on the implementation in
+overview see :cite:`sielemann2011robust`, :cite:`sielemann2012PhD`, for details on the implementation in
 OpenModelica see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
 
 The homotopy methods distinguish between local and global methods meaning, if
