@@ -875,18 +875,20 @@ algorithm
           end for;
         end if;
 
-        // An external object must have exactly two functions called constructor and
-        // destructor.
+        // An external object must have exactly two non-replaceable functions
+        // called constructor and destructor.
         for cls in tree.classes loop
           () := match InstNode.name(cls)
             case "constructor" guard SCodeUtil.isFunction(InstNode.definition(cls))
               algorithm
+                checkElementNotReplaceable(cls);
                 constructor := cls;
               then
                 ();
 
             case "destructor" guard SCodeUtil.isFunction(InstNode.definition(cls))
               algorithm
+                checkElementNotReplaceable(cls);
                 destructor := cls;
               then
                 ();
@@ -920,6 +922,16 @@ algorithm
 
   end match;
 end makeExternalObjectType;
+
+function checkElementNotReplaceable
+  input InstNode node;
+algorithm
+  if SCodeUtil.isElementReplaceable(InstNode.definition(node)) then
+    Error.addSourceMessage(Error.ELEMENT_REPLACEABLE_NOT_ALLOWED,
+      {InstNode.name(node)}, InstNode.info(node));
+    fail();
+  end if;
+end checkElementNotReplaceable;
 
 function expandClassDerived
   input SCode.Element element;
@@ -1139,6 +1151,10 @@ algorithm
     case Class.PARTIAL_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT())
       algorithm
         inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, cls.restriction);
+
+        // External objects have nothing to modify, but call applyModifier
+        // so we get an error message if there is a modifier anyway.
+        applyModifier(outerMod, cls.elements, node, context);
         node := InstNode.replaceClass(inst_cls, node);
         updateComponentType(parent, node);
         instExternalObjectStructors(cls.ty, parent, context);

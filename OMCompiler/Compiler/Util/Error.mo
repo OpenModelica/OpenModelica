@@ -889,6 +889,8 @@ public constant ErrorTypes.Message CONNECT_TYPE_MISMATCH = ErrorTypes.MESSAGE(40
   Gettext.gettext("The connectors in connect(%s, %s) are not type compatible."));
 public constant ErrorTypes.Message UNSPECIFIED_ENUM_COMPONENT = ErrorTypes.MESSAGE(407, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Component '%s' has an unspecified enumeration type (enumeration(:))."));
+public constant ErrorTypes.Message ELEMENT_REPLACEABLE_NOT_ALLOWED = ErrorTypes.MESSAGE(408, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("'%s' may not be replaceable."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

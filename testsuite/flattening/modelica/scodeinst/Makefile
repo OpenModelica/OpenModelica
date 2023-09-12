@@ -492,6 +492,8 @@ ExternalObject5.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
+ExternalObjectMod1.mo \
+ExternalObjectReplaceable1.mo \
 ExternalObjectStructorCall1.mo \
 ExternalObjectStructorCall2.mo \
 Final1.mo \
