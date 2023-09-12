@@ -165,10 +165,6 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMPlot)
   omc_add_subdirectory(OMShell)
   omc_add_subdirectory(OMNotebook)
-  # Tell OMSimulator that it is being built as part of OpenModelica.
-  # It will affect things like which 3rdParty libraries are added to the
-  # build process (to avoid duplicates)
-  set(OPENMODELICA_SUPERPROJECT ON)
   omc_add_subdirectory(OMSimulator)
   omc_add_subdirectory(OMEdit)
   omc_add_subdirectory(OMSens_Qt)

@@ -50,7 +50,9 @@ omsimulator.skip:
 		-DCMAKE_CXX_FLAGS="@CXXFLAGS@" \
 		-DCMAKE_INSTALL_PREFIX=../install
 	$(MAKE) -C OMSimulator/build/ install
+	cp -vpPR OMSimulator/install/include/OMSimulator/ @OMBUILDDIR@/include/omc
 	cp -vpPR OMSimulator/install/bin/OMSimulator* @OMBUILDDIR@/bin
+	cp -vpPR OMSimulator/install/share/OMSimulator/ @OMBUILDDIR@/share
 #	copy the libraries from lib/@host_short@/ OR lib64/. Fails if it can not find at least one of them.
 #	This is needed because the autoconf configuration adds the '@host_short@' (e.g. 'x86_64-linux-gnu') even
 #	on systems that do not use it to signify library architecture differences. For example, on fedora
