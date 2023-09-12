@@ -841,6 +841,8 @@ pipeline {
             sshagent (credentials: ['Hudson-SSH-Key']) {
               sh """
               if ! git diff-index --quiet HEAD; then
+                git config user.name "OpenModelica Jenkins"
+                git config user.email "openmodelicabuilds@ida.liu.se"
                 git commit -m 'Updated bibliography'
                 ssh-keyscan github.com >> ~/.ssh/known_hosts
                 git push --set-upstream origin main
