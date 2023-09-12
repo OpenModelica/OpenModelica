@@ -105,7 +105,9 @@ omsimulator:
 		-DCMAKE_VERBOSE_MAKEFILE=ON \
 		-DCMAKE_INSTALL_PREFIX=../install
 	$(MAKE) -C OMSimulator/build/ install
+	cp -vpPR OMSimulator/install/include/OMSimulator/ @OMBUILDDIR@/include/omc
 	cp -vpPR OMSimulator/install/bin/OMSimulator* $(OMBUILDDIR)/bin
+	cp -vpPR OMSimulator/install/share/OMSimulator/ @OMBUILDDIR@/share
 	cp -vpPR OMSimulator/install/lib/* $(OMBUILDDIR)/lib/omc/
 
 omnotebook: omc omplot qtclientsDLLs
