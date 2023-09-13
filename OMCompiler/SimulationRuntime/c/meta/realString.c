@@ -29,7 +29,7 @@
  */
 
 #include "meta_modelica.h"
-#include "ryu/ryu.h"
+#include "ryu.h"
 #include <ctype.h>
 
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
