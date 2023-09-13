@@ -202,6 +202,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
+    setZValue(3000);
     /* Use the linecolor of the first shape of the start element for the connection line.
      * If there is no shape then look in the inherited shapes.
      * Or use black color if no shape is found even in inheritance.
@@ -258,7 +259,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(1000);
+  setZValue(3000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -301,7 +302,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(1000);
+  setZValue(3000);
   mpLine = pConnection->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
@@ -721,21 +722,74 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.3);
       }
     }
-    drawLineAnnotation(painter);
+    drawAnnotation(painter, false);
+    /* issue #9557
+     * Redraw the connectors which collides with connection.
+     */
+    if (mLineType == LineAnnotation::ConnectionType) {
+      QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
+      for (int i = 0; i < items.size(); ++i) {
+        Element *pElement = dynamic_cast<Element*>(items.at(i));
+        if (pElement && ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
+                         || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()))) {
+          painter->save();
+          pElement->reDrawConnector(painter);
+          painter->restore();
+        }
+      }
+    }
   }
 }
 
-void LineAnnotation::drawLineAnnotation(QPainter *painter)
+/*!
+ * \brief LineAnnotation::drawAnnotation
+ * Draws the line.
+ * \param painter
+ * \param scene
+ */
+void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   applyLinePattern(painter);
+
+  QPainterPath path = getShape();
+  PointArrayAnnotation points = mPoints;
+  if (scene) {
+    path = mapToScene(path);
+    for (int i = 0; i < points.size(); ++i) {
+      points.setPoint(i, mapToScene(points.at(i)));
+    }
+  }
+
+  if (mLineType == LineAnnotation::ConnectionType) {
+    qreal strokeWidth = 2.0;
+    QColor strokeColor = Qt::white;
+    if (isSelected()) {
+      strokeWidth = 3.0;
+      strokeColor = QColor(255, 255, 128);
+    }
+
+    QPainterPathStroker stroker;
+    stroker.setWidth(strokeWidth);
+    stroker.setCapStyle(Qt::SquareCap);
+    stroker.setJoinStyle(Qt::MiterJoin);
+    QPainterPath strokedPath = stroker.createStroke(path);
+    QPen pen(strokeColor);
+    pen.setCosmetic(true);
+    painter->save();
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(QBrush(strokeColor));
+    painter->drawPath(strokedPath);
+    painter->restore();
+  }
+
   // draw start arrow
-  if (mPoints.size() > 1) {
+  if (points.size() > 1) {
     /* If line is a initial state then we need to draw filled arrow.
      * From Modelica Spec 33revision1,
      * The initialState line has a filled arrow head and a bullet at the opposite end of the initial state [ as shown above ].
      */
     if (mLineType == LineAnnotation::InitialStateType) {
-      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, StringHandler::ArrowFilled);
+      drawArrow(painter, points.at(0), points.at(1), mArrowSize, StringHandler::ArrowFilled);
     } else {
       /* If line is a transition then we need to draw starting fork if needed.
        * From Modelica Spec 33revision1,
@@ -744,9 +798,9 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
       if (mLineType == LineAnnotation::TransitionType) {
         if (mSynchronize) {
           painter->save();
-          QPolygonF polygon1 = perpendicularLine(mPoints.at(0), mPoints.at(1), 4.0);
+          QPolygonF polygon1 = perpendicularLine(points.at(0), points.at(1), 4.0);
           QPointF midPoint = (polygon1.at(0) +  polygon1.at(1)) / 2;
-          QPolygonF polygon2 = perpendicularLine(midPoint, mPoints.at(0), 4.0);
+          QPolygonF polygon2 = perpendicularLine(midPoint, points.at(0), 4.0);
           QPolygonF polygon;
           polygon << polygon1 << polygon2 << polygon1.at(0);
           painter->drawPolygon(polygon);
@@ -759,9 +813,9 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
         painter->save();
         QPolygonF polygon;
         if (mImmediate) {
-          polygon = perpendicularLine(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), 5.0);
+          polygon = perpendicularLine(points.at(points.size() - 1), points.at(points.size() - 2), 5.0);
         } else {
-          polygon = perpendicularLine(mPoints.at(0), mPoints.at(1), 5.0);
+          polygon = perpendicularLine(points.at(0), points.at(1), 5.0);
         }
         QPen pen = painter->pen();
         pen.setWidth(2);
@@ -769,18 +823,20 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
         painter->drawLine(polygon.at(0), polygon.at(1));
         painter->restore();
       }
-      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0));
+      drawArrow(painter, points.at(0), points.at(1), mArrowSize, mArrow.at(0));
     }
   }
-  painter->drawPath(getShape());
+
+  painter->drawPath(path);
+
   // draw end arrow
-  if (mPoints.size() > 1) {
+  if (points.size() > 1) {
     /* If line is a transition then we need to draw ending arrow in any case.
      * From Modelica Spec 33revision1,
      * If reset=true, a filled arrow head is used otherwise an open arrow head.
      */
     if (mLineType == LineAnnotation::TransitionType) {
-      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize,
+      drawArrow(painter, points.at(points.size() - 1), points.at(points.size() - 2), mArrowSize,
                 mReset ? StringHandler::ArrowFilled : StringHandler::ArrowOpen);
     } else if (mLineType == LineAnnotation::InitialStateType) {
       /* If line is a initial state then we need to draw bullet.
@@ -789,10 +845,10 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
        */
       painter->save();
       painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-      painter->drawEllipse(mPoints.at(mPoints.size() - 1), 2, 2);
+      painter->drawEllipse(points.at(points.size() - 1), 2, 2);
       painter->restore();
     } else {
-      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1));
+      drawArrow(painter, points.at(points.size() - 1), points.at(points.size() - 2), mArrowSize, mArrow.at(1));
     }
   }
 }

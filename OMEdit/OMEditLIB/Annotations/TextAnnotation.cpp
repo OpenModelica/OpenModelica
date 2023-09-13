@@ -351,16 +351,17 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.2);
       }
     }
-    drawTextAnnotation(painter);
+    drawAnnotation(painter, false);
   }
 }
 
 /*!
- * \brief TextAnnotation::drawTextAnnotation
- * Draws the Text annotation
+ * \brief TextAnnotation::drawAnnotation
+ * Draws the text.
  * \param painter
+ * \param scene
  */
-void TextAnnotation::drawTextAnnotation(QPainter *painter)
+void TextAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
@@ -396,9 +397,10 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
     sy = scaleY;
   }
   // map the existing bounding rect to new transformation
-  QRectF mappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, boundingRect().width() * sx, boundingRect().height() * sy);
+  QRectF boundingRectangle = scene ? mapToScene(boundingRect()).boundingRect() : boundingRect();
+  QRectF mappedBoundingRect = QRectF(boundingRectangle.x() * sx, boundingRectangle.y() * sy, boundingRectangle.width() * sx, boundingRectangle.height() * sy);
   // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
-  QRectF absMappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, qAbs(boundingRect().width() * sx), qAbs(boundingRect().height() * sy));
+  QRectF absMappedBoundingRect = QRectF(boundingRectangle.x() * sx, boundingRectangle.y() * sy, qAbs(boundingRectangle.width() * sx), qAbs(boundingRectangle.height() * sy));
   // normalize the text for drawing
   QString textString = StringHandler::removeFirstLastQuotes(mTextString);
   textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
