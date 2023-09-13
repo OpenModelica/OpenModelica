@@ -68,7 +68,7 @@ modelica_string _old_realString(modelica_real r)
 
 modelica_string _ryu_realString(modelica_real r)
 {
-  char* buffer[32];
+  char buffer[32];
   d2s_buffered(r, buffer);
   return mmc_mk_scon(buffer);
 }
