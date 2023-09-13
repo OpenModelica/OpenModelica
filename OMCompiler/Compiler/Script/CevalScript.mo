@@ -1338,22 +1338,15 @@ algorithm
     case ("parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_)
       algorithm
         vals := {}; // make sure is initialized, see #9250
-        str := System.pwd();
-        try
-          0 := System.cd(System.dirname(filename));
-          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
-          if b then
-            // clear the errors before!
-            Error.clearMessages() "Clear messages";
-            Print.clearErrorBuf() "Clear error buffer";
-            filename := Testsuite.friendlyPath(filename);
-            (paths) := Interactive.parseFile(filename, "UTF-8");
-            vals := List.map(paths,ValuesUtil.makeCodeTypeName);
-          end if;
-        else
-          b := false;
-        end try;
-        0 := System.cd(str);
+        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
+        if b then
+          // clear the errors before!
+          Error.clearMessages() "Clear messages";
+          Print.clearErrorBuf() "Clear error buffer";
+          filename := Testsuite.friendlyPath(filename);
+          (paths) := Interactive.parseFile(filename, "UTF-8");
+          vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+        end if;
       then
         ValuesUtil.makeArray(vals);
 
@@ -1363,27 +1356,16 @@ algorithm
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
-        str := System.pwd();
-        try
-          if System.cd(System.dirname(filename)) <> 0 then
-            Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
-            fail();
-          end if;
-
-          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
-          if (b) then
-            execStatReset();
-            filename := Testsuite.friendlyPath(filename);
-            p := SymbolTable.getAbsyn();
-            newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
-            execStat("loadFile("+filename+")");
-            SymbolTable.setAbsyn(newp);
-          end if;
-          outCache := FCore.emptyCache();
-        else
-          b := false;
-        end try;
-        0 := System.cd(str);
+        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
+        if (b) then
+          execStatReset();
+          filename := Testsuite.friendlyPath(filename);
+          p := SymbolTable.getAbsyn();
+          newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
+          execStat("loadFile("+filename+")");
+          SymbolTable.setAbsyn(newp);
+        end if;
+        outCache := FCore.emptyCache();
       then
         Values.BOOL(b);
 
@@ -2968,7 +2950,17 @@ algorithm
   outFilename := "";
   if (System.regularFileExists(filename)) then
     if (Util.endsWith(filename, ".mol")) then
-      workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
+      // Use the directory of the file if no working directory was specified.
+      workdir := if inWorkdir == "<default>" then System.dirname(filename) else inWorkdir;
+
+      // Create the working directory if it doesn't already exist.
+      if not System.directoryExists(workdir) then
+        if not System.createDirectory(workdir) then
+          Error.addMessage(Error.DIRECTORY_COULD_NOT_BE_CREATED, {workdir});
+          return;
+        end if;
+      end if;
+
       if (skipUnzip or 0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
         s1 := System.basename(filename);
         s2 := Util.removeLast4Char(s1);

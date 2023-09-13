@@ -1280,6 +1280,8 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
   Gettext.gettext("Duplicate elements:\n %s."));
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
+public constant ErrorTypes.Message DIRECTORY_COULD_NOT_BE_CREATED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Directory '%s' could not be created."));
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
