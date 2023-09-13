@@ -1351,6 +1351,7 @@ algorithm
             vals := List.map(paths,ValuesUtil.makeCodeTypeName);
           end if;
         else
+          b := false;
         end try;
         0 := System.cd(str);
       then
@@ -1364,7 +1365,11 @@ algorithm
       algorithm
         str := System.pwd();
         try
-          0 := System.cd(System.dirname(filename));
+          if System.cd(System.dirname(filename)) <> 0 then
+            Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+            fail();
+          end if;
+
           (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
           if (b) then
             execStatReset();
@@ -1376,6 +1381,7 @@ algorithm
           end if;
           outCache := FCore.emptyCache();
         else
+          b := false;
         end try;
         0 := System.cd(str);
       then
