@@ -254,6 +254,8 @@ public:
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
   void addElementToClass(Element *pElement);
+  void addElementItem(Element *pElement);
+  void removeElementItem(Element *pElement);
   void deleteElement(Element *pElement);
   void deleteElementFromClass(Element *pElement);
   void deleteElementFromList(Element *pElement) {mElementsList.removeOne(pElement);}

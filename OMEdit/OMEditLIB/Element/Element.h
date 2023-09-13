@@ -236,6 +236,10 @@ public:
   bool hasChoices() {return (mChoices.size() > 0);}
   CoOrdinateSystem getCoOrdinateSystem() const;
   ModelInstance::CoordinateSystem getCoOrdinateSystemNew() const;
+  ResizerItem* getBottomLeftResizerItem() {return mpBottomLeftResizerItem;}
+  ResizerItem* getTopLeftResizerItem() {return mpTopLeftResizerItem;}
+  ResizerItem* getTopRightResizerItem() {return mpTopRightResizerItem;}
+  ResizerItem* getBottomRightResizerItem() {return mpBottomRightResizerItem;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
@@ -305,6 +309,7 @@ public:
   Element* getBusComponent() {return mpBusComponent;}
   Element* getElementByName(const QString &elementName);
   static ModelInstance::Component *getModelComponentByName(ModelInstance::Model *pModel, const QString &name);
+  void reDrawConnector(QPainter *painter);
 
   Transformation mTransformation;
   Transformation mOldTransformation;

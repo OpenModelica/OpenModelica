@@ -155,27 +155,41 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawEllipseAnnotation(painter);
+    drawAnnotation(painter, false);
   }
 }
 
-void EllipseAnnotation::drawEllipseAnnotation(QPainter *painter)
+/*!
+ * \brief EllipseAnnotation::drawAnnotation
+ * Draws the ellipse.
+ * \param painter
+ * \param scene
+ */
+void EllipseAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   // first we invert the painter since we have our coordinate system inverted.
   // inversion is required to draw the elliptic curves at correct angles.
   painter->scale(1.0, -1.0);
-  painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+  QRectF boundingRectangle = boundingRect();
+  if (scene) {
+    boundingRectangle = mapToScene(boundingRect()).boundingRect();
+  }
+  painter->translate(0, ((-boundingRectangle.top()) - boundingRectangle.bottom()));
   applyLinePattern(painter);
   if (mClosure != StringHandler::ClosureNone) {
     applyFillPattern(painter);
   }
 
+  boundingRectangle = getBoundingRect();
+  if (scene) {
+    boundingRectangle = mapToScene(getBoundingRect()).boundingRect();
+  }
   if (mClosure == StringHandler::ClosureNone) {
-    painter->drawArc(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+    painter->drawArc(boundingRectangle, mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   } else if (mClosure == StringHandler::ClosureChord) {
-    painter->drawChord(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+    painter->drawChord(boundingRectangle, mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   } else { // StringHandler::ClosureRadial
-    painter->drawPie(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+    painter->drawPie(boundingRectangle, mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   }
 }
 

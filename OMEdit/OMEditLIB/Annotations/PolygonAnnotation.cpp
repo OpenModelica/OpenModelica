@@ -224,15 +224,21 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawPolygonAnnotation(painter);
+    drawAnnotation(painter, false);
   }
 }
 
-void PolygonAnnotation::drawPolygonAnnotation(QPainter *painter)
+/*!
+ * \brief PolygonAnnotation::drawAnnotation
+ * Draws the polygon.
+ * \param painter
+ * \param scene
+ */
+void PolygonAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);
-  painter->drawPath(getShape());
+  painter->drawPath(scene ? mapToScene(getShape()) : getShape());
 }
 
 /*!

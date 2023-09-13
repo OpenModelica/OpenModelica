@@ -202,15 +202,25 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
         painter->setOpacity(0.2);
       }
     }
-    drawRectangleAnnotation(painter);
+    drawAnnotation(painter, false);
   }
 }
 
-void RectangleAnnotation::drawRectangleAnnotation(QPainter *painter)
+/*!
+ * \brief RectangleAnnotation::drawAnnotation
+ * Draws the rectangle.
+ * \param painter
+ * \param scene
+ */
+void RectangleAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);
-  painter->drawRoundedRect(getBoundingRect().normalized(), mRadius, mRadius);
+  if (scene) {
+    painter->drawRoundedRect(mapToScene(getBoundingRect()).boundingRect().normalized(), mRadius, mRadius);
+  } else {
+    painter->drawRoundedRect(getBoundingRect().normalized(), mRadius, mRadius);
+  }
 }
 
 /*!

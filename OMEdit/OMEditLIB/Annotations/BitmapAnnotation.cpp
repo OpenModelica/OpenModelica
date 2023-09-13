@@ -197,18 +197,22 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawBitmapAnnotation(painter);
+    drawAnnotation(painter, false);
   }
 }
 
 /*!
- * \brief BitmapAnnotation::drawBitmapAnnotation
+ * \brief BitmapAnnotation::drawAnnotation
  * Draws the bitmap.
  * \param painter
+ * \param scene
  */
-void BitmapAnnotation::drawBitmapAnnotation(QPainter *painter)
+void BitmapAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
   QRectF rect = getBoundingRect().normalized();
+  if (scene) {
+    rect = mapToScene(getBoundingRect()).boundingRect().normalized();
+  }
   QImage image = mImage.scaled(rect.width(), rect.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
   QPointF centerPoint = rect.center() - image.rect().center();
   QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());

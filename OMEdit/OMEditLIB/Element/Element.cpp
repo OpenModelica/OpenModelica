@@ -2240,6 +2240,34 @@ ModelInstance::Component* Element::getModelComponentByName(ModelInstance::Model 
 }
 
 /*!
+ * \brief Element::reDrawConnector
+ * Redraws the connector that collides with the connection.
+ * \param painter
+ */
+void Element::reDrawConnector(QPainter *painter)
+{
+  if (mpDefaultElementRectangle && mpDefaultElementRectangle->isVisible()) {
+    mpDefaultElementRectangle->drawAnnotation(painter, true);
+  }
+
+  if (mpDefaultElementText && mpDefaultElementText->isVisible()) {
+    mpDefaultElementText->drawAnnotation(painter, true);
+  }
+
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    pInheritedElement->reDrawConnector(painter);
+  }
+
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    pShapeAnnotation->drawAnnotation(painter, true);
+  }
+
+  foreach (Element *pElement, mElementsList) {
+    pElement->reDrawConnector(painter);
+  }
+}
+
+/*!
  * \brief Element::createNonExistingElement
  * Creates a non-existing element.
  */
@@ -2743,7 +2771,7 @@ void Element::createResizerItems()
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
   mpBottomLeftResizerItem = new ResizerItem(this);
-  mpBottomLeftResizerItem->setPos(mapFromScene(x1, y1));
+  mpBottomLeftResizerItem->setPos(x1, y1);
   mpBottomLeftResizerItem->setResizePosition(ResizerItem::BottomLeft);
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
@@ -2752,7 +2780,7 @@ void Element::createResizerItems()
   mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
-  mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
+  mpTopLeftResizerItem->setPos(x1, y2);
   mpTopLeftResizerItem->setResizePosition(ResizerItem::TopLeft);
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
@@ -2761,7 +2789,7 @@ void Element::createResizerItems()
   mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
-  mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
+  mpTopRightResizerItem->setPos(x2, y2);
   mpTopRightResizerItem->setResizePosition(ResizerItem::TopRight);
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
@@ -2770,7 +2798,7 @@ void Element::createResizerItems()
   mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
-  mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
+  mpBottomRightResizerItem->setPos(x2, y1);
   mpBottomRightResizerItem->setResizePosition(ResizerItem::BottomRight);
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeElement(ResizerItem*)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
@@ -2813,16 +2841,16 @@ void Element::showResizerItems()
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
-  mpBottomLeftResizerItem->setPos(mapFromScene(x1, y1));
+  mpBottomLeftResizerItem->setPos(x1, y1);
   mpBottomLeftResizerItem->setActive();
   //Top left resizer
-  mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
+  mpTopLeftResizerItem->setPos(x1, y2);
   mpTopLeftResizerItem->setActive();
   //Top Right resizer
-  mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
+  mpTopRightResizerItem->setPos(x2, y2);
   mpTopRightResizerItem->setActive();
   //Bottom Right resizer
-  mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
+  mpBottomRightResizerItem->setPos(x2, y1);
   mpBottomRightResizerItem->setActive();
 }
 
@@ -3153,6 +3181,16 @@ void Element::updatePlacementAnnotation()
 void Element::updateOriginItem()
 {
   mpOriginItem->setPos(mTransformation.getOrigin());
+  qreal x1, y1, x2, y2;
+  getResizerItemsPositions(&x1, &y1, &x2, &y2);
+  //Bottom left resizer
+  mpBottomLeftResizerItem->setPos(x1, y1);
+  //Top left resizer
+  mpTopLeftResizerItem->setPos(x1, y2);
+  //Top Right resizer
+  mpTopRightResizerItem->setPos(x2, y2);
+  //Bottom Right resizer
+  mpBottomRightResizerItem->setPos(x2, y1);
 }
 
 /*!

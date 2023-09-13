@@ -241,9 +241,11 @@ GraphicsView::~GraphicsView()
    * We need to delete the items that are not part of the scene.
    */
   foreach (Element *pElement, mOutOfSceneElementsList) {
-    if (pElement->getOriginItem()) {
-      delete pElement->getOriginItem();
-    }
+    delete pElement->getOriginItem();
+    delete pElement->getBottomLeftResizerItem();
+    delete pElement->getTopLeftResizerItem();
+    delete pElement->getTopRightResizerItem();
+    delete pElement->getBottomRightResizerItem();
     delete pElement;
   }
 
@@ -436,8 +438,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
             if (pDiagramElement) {
               pDiagramElement->setModelComponent(pModelInstanceComponent);
               pDiagramElement->reDrawElementNew();
-              pDiagramGraphicsView->addItem(pDiagramElement);
-              pDiagramGraphicsView->addItem(pDiagramElement->getOriginItem());
+              pDiagramGraphicsView->addElementItem(pDiagramElement);
               pDiagramGraphicsView->addElementToList(pDiagramElement);
               pDiagramGraphicsView->deleteElementFromOutOfSceneList(pDiagramElement);
               if (pModelInstanceComponent->getModel()->isConnector() && connectorIndex < modelInfo.mIconElementsList.size()) {
@@ -445,8 +446,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
                 if (pIconElement) {
                   pIconElement->setModelComponent(pModelInstanceComponent);
                   pIconElement->reDrawElementNew();
-                  pIconGraphicsView->addItem(pIconElement);
-                  pIconGraphicsView->addItem(pIconElement->getOriginItem());
+                  pIconGraphicsView->addElementItem(pIconElement);
                   pIconGraphicsView->addElementToList(pIconElement);
                   pIconGraphicsView->deleteElementFromOutOfSceneList(pIconElement);
                   pIconElement->setVisible(pModelInstanceComponent->isPublic());
@@ -1074,8 +1074,7 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
   if (pIconElement && pComponent->getModel()->isConnector()) {
     // Connector type elements exists on icon view as well
     if (pIconElement->mTransformation.isValid() && pIconElement->mTransformation.getVisible()) {
-      pIconGraphicsView->addItem(pIconElement);
-      pIconGraphicsView->addItem(pIconElement->getOriginItem());
+      pIconGraphicsView->addElementItem(pIconElement);
     }
     if (pIconElement->isInheritedElement()) {
       pIconGraphicsView->addInheritedElementToList(pIconElement);
@@ -1087,8 +1086,7 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
   }
 
   if (pDiagramElement->mTransformation.isValid() && pDiagramElement->mTransformation.getVisible()) {
-    pDiagramGraphicsView->addItem(pDiagramElement);
-    pDiagramGraphicsView->addItem(pDiagramElement->getOriginItem());
+    pDiagramGraphicsView->addElementItem(pDiagramElement);
   }
   if (pDiagramElement->isInheritedElement()) {
     pDiagramGraphicsView->addInheritedElementToList(pDiagramElement);
@@ -1163,6 +1161,36 @@ void GraphicsView::addElementToClass(Element *pElement)
   }
 }
 
+/*!
+ * \brief GraphicsView::addElementItem
+ * Adds the Element and its origin and resizer items to the GraphicsView.
+ * \param pElement
+ */
+void GraphicsView::addElementItem(Element *pElement)
+{
+  addItem(pElement);
+  addItem(pElement->getOriginItem());
+  addItem(pElement->getBottomLeftResizerItem());
+  addItem(pElement->getTopLeftResizerItem());
+  addItem(pElement->getTopRightResizerItem());
+  addItem(pElement->getBottomRightResizerItem());
+}
+
+/*!
+ * \brief GraphicsView::removeElementItem
+ * Removes the Element and its origin and resizer items from the GraphicsView.
+ * \param pElement
+ */
+void GraphicsView::removeElementItem(Element *pElement)
+{
+  removeItem(pElement);
+  removeItem(pElement->getOriginItem());
+  removeItem(pElement->getBottomLeftResizerItem());
+  removeItem(pElement->getTopLeftResizerItem());
+  removeItem(pElement->getTopRightResizerItem());
+  removeItem(pElement->getBottomRightResizerItem());
+}
+
 QString getComponentName(const QString &qualifiedComponentName)
 {
   QString componentName = StringHandler::getFirstWordBeforeDot(qualifiedComponentName);
@@ -1228,14 +1256,12 @@ void GraphicsView::deleteElement(Element *pElement)
       }
       Element *pConnectorElement = pGraphicsView->getElementObject(pElement->getName());
       if (pConnectorElement) {
-        pGraphicsView->removeItem(pConnectorElement);
-        pGraphicsView->removeItem(pConnectorElement->getOriginItem());
+        pGraphicsView->removeElementItem(pConnectorElement);
         pGraphicsView->deleteElementFromList(pConnectorElement);
         pGraphicsView->addElementToOutOfSceneList(pConnectorElement);
       }
     }
-    removeItem(pElement);
-    removeItem(pElement->getOriginItem());
+    removeElementItem(pElement);
     deleteElementFromList(pElement);
     addElementToOutOfSceneList(pElement);
     deleteElementFromClass(pElement);
@@ -2119,9 +2145,12 @@ void GraphicsView::removeClassComponents()
   foreach (Element *pElement, mElementsList) {
     pElement->removeChildren();
     deleteElementFromList(pElement);
-    removeItem(pElement->getOriginItem());
+    removeElementItem(pElement);
     delete pElement->getOriginItem();
-    removeItem(pElement);
+    delete pElement->getBottomLeftResizerItem();
+    delete pElement->getTopLeftResizerItem();
+    delete pElement->getTopRightResizerItem();
+    delete pElement->getBottomRightResizerItem();
     pElement->emitDeleted();
     delete pElement;
   }
@@ -2134,8 +2163,7 @@ void GraphicsView::removeClassComponents()
 void GraphicsView::removeElementsFromScene()
 {
   foreach (Element *pElement, mElementsList) {
-    removeItem(pElement->getOriginItem());
-    removeItem(pElement);
+    removeElementItem(pElement);
     addElementToOutOfSceneList(pElement);
     deleteElementFromList(pElement);
   }
@@ -2151,6 +2179,10 @@ void GraphicsView::removeOutOfSceneClassComponents()
     pComponent->removeChildren();
     deleteElementFromOutOfSceneList(pComponent);
     delete pComponent->getOriginItem();
+    delete pComponent->getBottomLeftResizerItem();
+    delete pComponent->getTopLeftResizerItem();
+    delete pComponent->getTopRightResizerItem();
+    delete pComponent->getBottomRightResizerItem();
     pComponent->emitDeleted();
     delete pComponent;
   }
@@ -2179,9 +2211,12 @@ void GraphicsView::removeInheritedClassElements()
   foreach (Element *pElement, mInheritedElementsList) {
     pElement->removeChildren();
     deleteInheritedElementFromList(pElement);
-    removeItem(pElement->getOriginItem());
+    removeElementItem(pElement);
     delete pElement->getOriginItem();
-    removeItem(pElement);
+    delete pElement->getBottomLeftResizerItem();
+    delete pElement->getTopLeftResizerItem();
+    delete pElement->getTopRightResizerItem();
+    delete pElement->getBottomRightResizerItem();
     pElement->emitDeleted();
     delete pElement;
   }
@@ -8699,14 +8734,12 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
       || (pLibraryTreeItem->getOMSBusConnector())
       || (pLibraryTreeItem->getOMSTLMBusConnector())) {
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
-    mpIconGraphicsView->addItem(pIconComponent);
-    mpIconGraphicsView->addItem(pIconComponent->getOriginItem());
+    mpIconGraphicsView->addElementItem(pIconComponent);
     mpIconGraphicsView->addElementToList(pIconComponent);
   }
   // add the element to diagram view
   Element *pDiagramComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
-  mpDiagramGraphicsView->addItem(pDiagramComponent);
-  mpDiagramGraphicsView->addItem(pDiagramComponent->getOriginItem());
+  mpDiagramGraphicsView->addElementItem(pDiagramComponent);
   mpDiagramGraphicsView->addElementToList(pDiagramComponent);
 }
 
