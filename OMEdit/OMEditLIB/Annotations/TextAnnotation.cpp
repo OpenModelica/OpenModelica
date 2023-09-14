@@ -343,7 +343,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     }
     // text annotation on a transition
     LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
-    if (pTransitionLineAnnotation && pTransitionLineAnnotation->getLineType() == LineAnnotation::TransitionType
+    if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()
         && pTransitionLineAnnotation->getGraphicsView() && pTransitionLineAnnotation->getGraphicsView()->isVisualizationView()) {
       if (pTransitionLineAnnotation->isActiveState()) {
         painter->setOpacity(1.0);

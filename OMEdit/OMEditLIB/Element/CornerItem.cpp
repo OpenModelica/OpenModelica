@@ -155,9 +155,8 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
     if (pLineAnnotation) {
       QVector<QPointF> points = pLineAnnotation->getPoints();
-      LineAnnotation::LineType lineType = pLineAnnotation->getLineType();
-      if ((((lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
-           || (lineType == LineAnnotation::InitialStateType && mConnectedPointIndex == 0))) {
+      if ((((pLineAnnotation->isConnection() || pLineAnnotation->isTransition()) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
+           || (pLineAnnotation->isInitialState() && mConnectedPointIndex == 0))) {
         QGraphicsItem::mouseMoveEvent(event);
         return;
       }

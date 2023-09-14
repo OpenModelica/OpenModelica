@@ -1449,16 +1449,16 @@ void GraphicsView::addConnectionDetails(LineAnnotation *pConnectionLineAnnotatio
   if (pStartElement) {
     if (pStartElement->getRootParentElement()) {
       pStartElement->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pStartElement->getRootParentElement()->setHasTransition(true);
-      } else if (pConnectionLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+      } else if (pConnectionLineAnnotation->isInitialState()) {
         pStartElement->getRootParentElement()->setIsInitialState(true);
       }
     } else {
       pStartElement->addConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pStartElement->setHasTransition(true);
-      } else if (pConnectionLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+      } else if (pConnectionLineAnnotation->isInitialState()) {
         pStartElement->setIsInitialState(false);
       }
     }
@@ -1468,12 +1468,12 @@ void GraphicsView::addConnectionDetails(LineAnnotation *pConnectionLineAnnotatio
   if (pEndElement) {
     if (pEndElement->getRootParentElement()) {
       pEndElement->getRootParentElement()->addConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pEndElement->getRootParentElement()->setHasTransition(true);
       }
     } else {
       pEndElement->addConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pEndElement->setHasTransition(true);
       }
     }
@@ -1711,16 +1711,16 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
   if (pStartElement) {
     if (pStartElement->getRootParentElement()) {
       pStartElement->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pStartElement->getRootParentElement()->setHasTransition(false);
-      } else if (pConnectionLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+      } else if (pConnectionLineAnnotation->isInitialState()) {
         pStartElement->getRootParentElement()->setIsInitialState(false);
       }
     } else {
       pStartElement->removeConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pStartElement->setHasTransition(false);
-      } else if (pConnectionLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+      } else if (pConnectionLineAnnotation->isInitialState()) {
         pStartElement->setIsInitialState(false);
       }
     }
@@ -1730,12 +1730,12 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
   if (pEndElement) {
     if (pEndElement->getRootParentElement()) {
       pEndElement->getRootParentElement()->removeConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pEndElement->getRootParentElement()->setHasTransition(false);
       }
     } else {
       pEndElement->removeConnectionDetails(pConnectionLineAnnotation);
-      if (pConnectionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pConnectionLineAnnotation->isTransition()) {
         pEndElement->setHasTransition(false);
       }
     }
@@ -2922,7 +2922,7 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
     if (pShapeAnnotation && !pShapeAnnotation->isInheritedShape()) {
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
       // if the shape is connection line then we only return true for certain cases.
-      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+      if (pLineAnnotation && pLineAnnotation->isConnection()) {
         switch (key) {
           case Qt::Key_Delete:
             selectedAndEditable = true;
@@ -3582,7 +3582,7 @@ void GraphicsView::copyItems(bool cut)
         components << QString("%1 %2%3 %4;").arg(pComponent->getClassName(), pComponent->getName(), "", pComponent->getPlacementAnnotation(true));
       } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
         LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
-        if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        if (pLineAnnotation && pLineAnnotation->isConnection()) {
           // Only consider the connection for copying if both the start and the end components are selected.
           if (pLineAnnotation->getStartElement()->getRootParentElement()->isSelected() && pLineAnnotation->getEndElement()->getRootParentElement()->isSelected()) {
             pMimeData->addConnection(pLineAnnotation);
@@ -3642,12 +3642,12 @@ void GraphicsView::modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation
   pMenu->addSeparator();
   pMenu->addAction(mpCutAction);
   pMenu->addAction(mpCopyAction);
-  if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+  if (pLineAnnotation && pLineAnnotation->isConnection()) {
     // nothing special for connection
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+  } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
     pMenu->addSeparator();
     pMenu->addAction(pShapeAnnotation->getEditTransitionAction());
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ShapeType) {
+  } else if (pLineAnnotation && pLineAnnotation->isLineShape()) {
     pMenu->addAction(mpDuplicateAction);
     pMenu->addSeparator();
     pMenu->addAction(mpManhattanizeAction);
@@ -4739,7 +4739,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
-      if (pTransitionLineAnnotation && pTransitionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()) {
         pShapeAnnotation->editTransition();
       } else {
         pShapeAnnotation->showShapeProperties();
@@ -4748,7 +4748,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     }
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
       LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
-      if (pConnectionLineAnnotation && pConnectionLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+      if (pConnectionLineAnnotation && pConnectionLineAnnotation->isConnection()) {
         pConnectionLineAnnotation->showOMSConnection();
       }
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
