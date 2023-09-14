@@ -335,7 +335,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
             mpSimulationOutputWidget->embeddedServerInitialized();
           }
           if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString());
+            mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString(), Qt::WhiteSpaceNormal);
           } else {
             mpSimulationMessage->mText = attributes.value("text").toString();
           }
