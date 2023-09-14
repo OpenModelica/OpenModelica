@@ -45,6 +45,7 @@ getComponentsTestNF.mos \
 getComponentsTestOF.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
+getElementAnnotation.mos \
 getIconAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
@@ -85,6 +86,7 @@ saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
+setElementAnnotation.mos \
 setElementModifierValue.mos \
 setExtendsModifierValue.mos \
 setSourceFileListFile.mos \

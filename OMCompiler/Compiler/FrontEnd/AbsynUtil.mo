@@ -5831,25 +5831,23 @@ function getClassAnnotation
    annotations because Modelica 2 allowed it, in that case only the first
    annotation is returned."
   input Absyn.Class cls;
-  output Option<Absyn.Annotation> ann;
+  output Option<Absyn.Annotation> outAnnotation;
 algorithm
-  ann := getClassDefAnnotation(cls.body);
+  outAnnotation := getClassDefAnnotation(cls.body);
 end getClassAnnotation;
 
 function getClassDefAnnotation
   "Returns the optional annotation for a class definition."
-  input Absyn.ClassDef cdef;
-  output Option<Absyn.Annotation> ann;
+  input Absyn.ClassDef def;
+  output Option<Absyn.Annotation> outAnnotation;
 algorithm
-  ann := match cdef
-    case Absyn.ClassDef.PARTS()
-      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
-    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
-    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
-    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
-    case Absyn.ClassDef.CLASS_EXTENDS()
-      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
-    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+  outAnnotation := match def
+    case Absyn.ClassDef.PARTS() guard not listEmpty(def.ann) then SOME(listHead(def.ann));
+    case Absyn.ClassDef.DERIVED() then getCommentOptAnnotation(def.comment);
+    case Absyn.ClassDef.ENUMERATION() then getCommentOptAnnotation(def.comment);
+    case Absyn.ClassDef.OVERLOAD() then getCommentOptAnnotation(def.comment);
+    case Absyn.ClassDef.CLASS_EXTENDS() guard not listEmpty(def.ann) then SOME(listHead(def.ann));
+    case Absyn.ClassDef.PDER() then getCommentOptAnnotation(def.comment);
     else NONE();
   end match;
 end getClassDefAnnotation;
@@ -6209,6 +6207,127 @@ algorithm
     else false;
   end match;
 end eachBool;
+
+function getElementAnnotation
+  "Returns the annotation of an element. The name argument is used to select a
+   component when there are multiple components in one element, in other cases
+   it's ignored."
+  input Absyn.Element element;
+  input String name;
+  output Option<Absyn.Annotation> outAnnotation;
+algorithm
+  outAnnotation := match element
+    case Absyn.Element.ELEMENT() then getElementSpecAnnotation(element.specification, name);
+    else NONE();
+  end match;
+end getElementAnnotation;
+
+function getElementSpecAnnotation
+  input Absyn.ElementSpec spec;
+  input String name;
+  output Option<Absyn.Annotation> outAnnotation;
+algorithm
+  outAnnotation := match spec
+    case Absyn.ElementSpec.CLASSDEF() then getClassAnnotation(spec.class_);
+    case Absyn.ElementSpec.EXTENDS() then spec.annotationOpt;
+    case Absyn.ElementSpec.IMPORT() then getCommentOptAnnotation(spec.comment);
+    case Absyn.ElementSpec.COMPONENTS() then getComponentItemsAnnotation(spec.components, name);
+    else NONE();
+  end match;
+end getElementSpecAnnotation;
+
+function getComponentItemsAnnotation
+  input list<Absyn.ComponentItem> items;
+  input String name;
+  output Option<Absyn.Annotation> outAnnotation;
+protected
+  Option<Absyn.ComponentItem> oi;
+  Absyn.ComponentItem i;
+algorithm
+  oi := List.findOption(items, function isComponentItemNamed(name = name));
+
+  if isSome(oi) then
+    SOME(i) := oi;
+    outAnnotation := getCommentOptAnnotation(i.comment);
+  else
+    outAnnotation := NONE();
+  end if;
+end getComponentItemsAnnotation;
+
+function getCommentOptAnnotation
+  input Option<Absyn.Comment> commentOpt;
+  output Option<Absyn.Annotation> outAnnotation;
+algorithm
+  if isSome(commentOpt) then
+    SOME(Absyn.Comment.COMMENT(annotation_ = outAnnotation)) := commentOpt;
+  else
+    outAnnotation := NONE();
+  end if;
+end getCommentOptAnnotation;
+
+function setElementAnnotation
+  "Sets the annotation on an element. The name argument is used to select a
+   component when there are multiple components in one element, in other cases
+   it's ignored."
+  input output Absyn.Element element;
+  input String name;
+  input Option<Absyn.Annotation> inAnnotation;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := setElementSpecAnnotation(element.specification, name, inAnnotation);
+      then
+        ();
+
+    else ();
+  end match;
+end setElementAnnotation;
+
+function setElementSpecAnnotation
+  input output Absyn.ElementSpec spec;
+  input String name;
+  input Option<Absyn.Annotation> inAnnotation;
+protected
+  Absyn.Class cls;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := setClassAnnotation(spec.class_, inAnnotation);
+      then
+        ();
+
+    case Absyn.ElementSpec.EXTENDS()
+      algorithm
+        spec.annotationOpt := inAnnotation;
+      then
+        ();
+
+    case Absyn.ElementSpec.IMPORT()
+      algorithm
+        spec.comment := setCommentAnnotation(spec.comment, inAnnotation);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.components := List.findAndMap(spec.components,
+          function isComponentItemNamed(name = name),
+          function setComponentItemAnnotation(inAnnotation = inAnnotation));
+      then
+        ();
+
+    else ();
+  end match;
+end setElementSpecAnnotation;
+
+function setComponentItemAnnotation
+  input output Absyn.ComponentItem item;
+  input Option<Absyn.Annotation> inAnnotation;
+algorithm
+  item.comment := setCommentAnnotation(item.comment, inAnnotation);
+end setComponentItemAnnotation;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

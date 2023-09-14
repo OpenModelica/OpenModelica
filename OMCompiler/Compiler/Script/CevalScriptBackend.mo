@@ -3133,6 +3133,18 @@ algorithm
     case ("qualifyPath", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       then ValuesUtil.makeCodeTypeName(NFApi.mkFullyQual(SymbolTable.getAbsyn(), classpath, path));
 
+    case ("getElementAnnotation", {Values.CODE(Absyn.C_TYPENAME(path))})
+      then Values.STRING(InteractiveUtil.getElementAnnotation(path, SymbolTable.getAbsyn()));
+
+    case ("setElementAnnotation",
+          {Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        Values.BOOL(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
