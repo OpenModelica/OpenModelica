@@ -15,6 +15,17 @@ docdir = @docdir@
 AR = @AR@
 host = @host@
 host_short = @host_short@
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@
+MSGPACK_CFLAGS =
+CPPFLAGS=@CPPFLAGS@
+CXXFLAGS=@CXXFLAGS@
+LDFLAGS=@LDFLAGS@
+LDFLAGS_LIBSTDCXX=@LDFLAGS_LIBSTDCXX@
+LINK=@LINK@
+
 FC = @FC@
 FCFLAGS = @FCFLAGS@
 CMAKE=@OMC_CMAKE_EXE@
@@ -34,15 +45,6 @@ MAKEFILE_BOOT = LinkMain.makefile
 QMAKE=@QMAKE@
 APP=@APP@
 
-CC=@CC@
-CXX=@CXX@
-CFLAGS=@CFLAGS@
-MSGPACK_CFLAGS =
-CPPFLAGS=@CPPFLAGS@
-CXXFLAGS=@CXXFLAGS@
-LDFLAGS=@LDFLAGS@
-LDFLAGS_LIBSTDCXX=@LDFLAGS_LIBSTDCXX@
-LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 # LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
 # Do not use munmap; it crashes processes...
