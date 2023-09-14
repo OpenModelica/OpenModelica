@@ -107,6 +107,10 @@ public:
   ModelInstance::Line* getLine() {return mpLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
+  bool isConnection() const {return mLineType == LineAnnotation::ConnectionType;}
+  bool isTransition() const {return mLineType == LineAnnotation::TransitionType;}
+  bool isInitialState() const {return mLineType == LineAnnotation::InitialStateType;}
+  bool isLineShape() const {return mLineType == LineAnnotation::ShapeType;}
   void setStartElement(Element *pStartElement) {mpStartElement = pStartElement;}
   Element* getStartElement() {return mpStartElement;}
   void setStartElementName(QString name) {mStartElementName = name;}
@@ -154,6 +158,8 @@ public:
   static QColor findLineColorForConnection(Element *pComponent);
 private:
   ModelInstance::Line *mpLine;
+
+  PointArrayAnnotation adjustPointsForDrawing() const;
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 

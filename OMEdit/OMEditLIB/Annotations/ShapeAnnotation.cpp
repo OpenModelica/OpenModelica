@@ -687,7 +687,7 @@ void ShapeAnnotation::applyTransformation()
     pGraphicsView = mpReferenceShapeAnnotation->getGraphicsView();
   }
 
-  if (!mpParentComponent && pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
+  if (!mpParentComponent && pGraphicsView && (pLineAnnotation && pLineAnnotation->isLineShape())
       && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (pGraphicsView->getModelWidget()->isNewApi() && mIsInheritedShape))) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
     ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
@@ -1312,11 +1312,11 @@ void ShapeAnnotation::deleteMe()
 {
   // delete the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+  if (pLineAnnotation && pLineAnnotation->isConnection()) {
     mpGraphicsView->deleteConnection(pLineAnnotation);
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+  } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
     mpGraphicsView->deleteTransition(pLineAnnotation);
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+  } else if (pLineAnnotation && pLineAnnotation->isInitialState()) {
     mpGraphicsView->deleteInitialState(pLineAnnotation);
   } else {
     mpGraphicsView->deleteShape(this);
@@ -1562,13 +1562,13 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
           return;
         }
       } else {
-        if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        if (pLineAnnotation && pLineAnnotation->isConnection()) {
           manhattanizeShape(false);
           removeRedundantPointsGeometriesAndCornerItems();
           // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
           QString newAnnotation = getOMCShapeAnnotation();
           pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-        } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+        } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
           manhattanizeShape(false);
           removeRedundantPointsGeometriesAndCornerItems();
           QString newAnnotation = getOMCShapeAnnotation();
@@ -1610,7 +1610,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
   if (dynamic_cast<LineAnnotation*>(this)) {
     point = mapFromScene(point);
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+    if (pLineAnnotation && pLineAnnotation->isConnection()) {
       if (mPoints.size() > index) {
         // if moving the 2nd last point then we need to add more points after it to keep the last point manhattanized with connector
         int secondLastIndex = mPoints.size() - 2;
@@ -1868,10 +1868,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
   QGraphicsItem::itemChange(change, value);
   if (change == QGraphicsItem::ItemSelectedHasChanged) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation) {
-      lineType = pLineAnnotation->getLineType();
-    }
     if (isSelected()) {
       setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
@@ -1881,7 +1877,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
         connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        if (lineType == LineAnnotation::ShapeType) {
+        if (pLineAnnotation && pLineAnnotation->isLineShape()) {
           connect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
@@ -1914,7 +1910,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }
         disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
-        if (lineType == LineAnnotation::ShapeType) {
+        if (pLineAnnotation && pLineAnnotation->isLineShape()) {
           disconnect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
           disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));

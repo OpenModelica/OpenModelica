@@ -661,33 +661,34 @@ void LineAnnotation::parseShapeAnnotation()
 
 QPainterPath LineAnnotation::getShape() const
 {
+  PointArrayAnnotation points = adjustPointsForDrawing();
   QPainterPath path;
-  if (mPoints.size() > 0) {
+  if (points.size() > 0) {
     // mPoints.size() is at least 1
-    path.moveTo(mPoints.at(0));
+    path.moveTo(points.at(0));
     if (mSmooth) {
-      if (mPoints.size() == 2) {
+      if (points.size() == 2) {
         // if points are only two then spline acts as simple line
-        path.lineTo(mPoints.at(1));
+        path.lineTo(points.at(1));
       } else {
-        for (int i = 2 ; i < mPoints.size() ; i++) {
-          QPointF point3 = mPoints.at(i);
+        for (int i = 2 ; i < points.size() ; i++) {
+          QPointF point3 = points.at(i);
           // calculate middle points for bezier curves
-          QPointF point2 = mPoints.at(i - 1);
-          QPointF point1 = mPoints.at(i - 2);
+          QPointF point2 = points.at(i - 1);
+          QPointF point1 = points.at(i - 2);
           QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
           QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
           path.lineTo(point12);
           path.cubicTo(point12, point2, point23);
           // if its the last point
-          if (i == mPoints.size() - 1) {
+          if (i == points.size() - 1) {
             path.lineTo(point3);
           }
         }
       }
     } else {
-      for (int i = 1 ; i < mPoints.size() ; i++) {
-        path.lineTo(mPoints.at(i));
+      for (int i = 1 ; i < points.size() ; i++) {
+        path.lineTo(points.at(i));
       }
     }
   }
@@ -752,7 +753,7 @@ void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
   applyLinePattern(painter);
 
   QPainterPath path = getShape();
-  PointArrayAnnotation points = mPoints;
+  PointArrayAnnotation points = adjustPointsForDrawing();
   if (scene) {
     path = mapToScene(path);
     for (int i = 0; i < points.size(); ++i) {
@@ -1408,6 +1409,26 @@ QColor LineAnnotation::findLineColorForConnection(Element *pComponent)
     }
   }
   return lineColor;
+}
+
+/*!
+ * \brief LineAnnotation::adjustPointsForDrawing
+ * Adjusts the start and end points of the connection to the center of start and end connectors.
+ * This only updates the points for drawing and does not modify the actual values for Modelica code.
+ * \return
+ */
+PointArrayAnnotation LineAnnotation::adjustPointsForDrawing() const
+{
+  PointArrayAnnotation points = mPoints;
+  if (isConnection()) {
+    if (mpStartElement && points.size() > 0) {
+      points.setPoint(0, mpStartElement->sceneBoundingRect().center());
+    }
+    if (mpEndElement && points.size() > 1) {
+      points.setPoint(points.size() - 1, mpEndElement->sceneBoundingRect().center());
+    }
+  }
+  return points;
 }
 
 QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
