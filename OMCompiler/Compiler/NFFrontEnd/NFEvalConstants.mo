@@ -93,9 +93,11 @@ function evaluateVariable
   input EvalSettings settings;
 protected
   Binding binding;
+  Boolean structural;
 algorithm
-  binding := evaluateBinding(var.binding, var.name,
-    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER, context, settings);
+  structural := Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER and
+                not Type.isExternalObject(var.ty);
+  binding := evaluateBinding(var.binding, var.name, structural, context, settings);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
@@ -198,7 +200,8 @@ algorithm
           Expression.mapFoldShallow(exp,
             function evaluateExpTraverser(info = info), false);
 
-        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
+        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
+           not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
           outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(cref));
