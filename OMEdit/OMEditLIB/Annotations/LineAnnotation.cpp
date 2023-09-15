@@ -730,12 +730,36 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     if (mLineType == LineAnnotation::ConnectionType) {
       QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
       for (int i = 0; i < items.size(); ++i) {
-        Element *pElement = dynamic_cast<Element*>(items.at(i));
-        if (pElement && ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
-                         || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()))) {
-          painter->save();
-          pElement->reDrawConnector(painter);
-          painter->restore();
+        if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
+          if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
+              || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+            painter->save();
+            pElement->reDrawConnector(painter);
+            painter->restore();
+          }
+        } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
+          if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
+              && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
+                  || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
+            PointArrayAnnotation points = pConnectionAnnotation->getPoints();
+            for (int i = 0; i < mPoints.size(); ++i) {
+              for (int j = 0; j < points.size(); ++j) {
+                if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                  QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                  QLineF line2(points.at(j), points.at(j + 1));
+                  QPointF intersectionPoint;
+                  QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+                  if (type == QLineF::BoundedIntersection) {
+                    painter->save();
+                    painter->setPen(Qt::NoPen);
+                    painter->setBrush(QBrush(mLineColor));
+                    painter->drawEllipse(intersectionPoint, 1, 1);
+                    painter->restore();
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -761,6 +785,7 @@ void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
     }
   }
 
+  // draw highlight for connections
   if (mLineType == LineAnnotation::ConnectionType) {
     qreal strokeWidth = 2.0;
     QColor strokeColor = Qt::white;
@@ -769,18 +794,20 @@ void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
       strokeColor = QColor(255, 255, 128);
     }
 
-    QPainterPathStroker stroker;
-    stroker.setWidth(strokeWidth);
-    stroker.setCapStyle(Qt::SquareCap);
-    stroker.setJoinStyle(Qt::MiterJoin);
-    QPainterPath strokedPath = stroker.createStroke(path);
-    QPen pen(strokeColor);
-    pen.setCosmetic(true);
-    painter->save();
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(QBrush(strokeColor));
-    painter->drawPath(strokedPath);
-    painter->restore();
+    if (isSelected() || mSmooth != StringHandler::SmoothBezier) {
+      QPainterPathStroker stroker;
+      stroker.setWidth(strokeWidth);
+      stroker.setCapStyle(Qt::SquareCap);
+      stroker.setJoinStyle(Qt::MiterJoin);
+      QPainterPath strokedPath = stroker.createStroke(path);
+      QPen pen(strokeColor);
+      pen.setCosmetic(true);
+      painter->save();
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(QBrush(strokeColor));
+      painter->drawPath(strokedPath);
+      painter->restore();
+    }
   }
 
   // draw start arrow
