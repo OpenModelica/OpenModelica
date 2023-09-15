@@ -525,7 +525,6 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   }
 
   mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mCref));
-  mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelSimulationButton->setEnabled(false);
   // simulation finished show the results
   if (!mpSimulationRequestSocket) {
@@ -553,7 +552,6 @@ void OMSSimulationOutputWidget::cancelSimulation()
     mIsSimulationProcessKilled = true;
     mpSimulationProcess->kill();
     mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mCref));
-    mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   }
