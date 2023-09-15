@@ -6972,6 +6972,46 @@ algorithm
   outList := append_reverse(outList, rest);
 end findMap3;
 
+public function findAndMap<T>
+  "Applies a function to the first element in the list for which the predicate
+   function returns true, and returns the new list as well as whether the
+   element was found or not."
+  input list<T> inList;
+  input PredFunc pred;
+  input Func func;
+  output list<T> outList = {};
+  output Boolean found = false;
+
+  partial function PredFunc
+    input T e;
+    output Boolean result;
+  end PredFunc;
+
+  partial function Func
+    input output T e;
+  end Func;
+protected
+  T e;
+  list<T> rest = inList;
+algorithm
+  while not listEmpty(rest) and not found loop
+    e :: rest := rest;
+
+    if pred(e) then
+      e := func(e);
+      found := true;
+    end if;
+
+    outList := e :: outList;
+  end while;
+
+  if found then
+    outList := append_reverse(outList, rest);
+  else
+    outList := inList;
+  end if;
+end findAndMap;
+
 public function findSome<T1,T2>
   "Applies the given function over the list and returns first returned value that is not NONE()."
   input list<T1> inList;

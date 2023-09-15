@@ -4699,6 +4699,238 @@ algorithm
   end match;
 end getPathedElementInElement;
 
+public function transformPathedElementInProgram
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Program program;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  String name;
+  Absyn.Class cls;
+  list<Absyn.Class> clss;
+
+  function transform_class
+    input Absyn.Path path;
+    input Func func;
+    input output Absyn.Class cls;
+          output Boolean found;
+  protected
+    Absyn.Element elem;
+  algorithm
+    // Is this the class we're looking for?
+    found := AbsynUtil.pathFirstIdent(path) == cls.name;
+
+    if found then
+      if AbsynUtil.pathIsIdent(path) then
+        // The path points to a top-level class, temporarily transform it to an
+        // element and call the function on it.
+        elem := Absyn.Element.ELEMENT(false, NONE(), Absyn.InnerOuter.NOT_INNER_OUTER(),
+          Absyn.ElementSpec.CLASSDEF(false, cls), cls.info, NONE());
+        elem := func(elem);
+        Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls)) := elem;
+      else
+        // The path points to an element inside the class.
+        (cls, found) := transformPathedElementInClass(AbsynUtil.pathRest(path), func, cls);
+      end if;
+    end if;
+  end transform_class;
+algorithm
+  name := AbsynUtil.pathFirstIdent(path);
+  (clss, success) := List.findMap(program.classes, function transform_class(path = path, func = func));
+
+  if success then
+    program.classes := clss;
+  end if;
+end transformPathedElementInProgram;
+
+protected function transformPathedElementInClass
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Class cls;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.ClassDef def;
+algorithm
+  (def, success) := transformPathedElementInClassDef(path, func, cls.body);
+
+  if success then
+    cls.body := def;
+  end if;
+end transformPathedElementInClass;
+
+protected function transformPathedElementInClassDef
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ClassDef def;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  list<Absyn.ClassPart> parts;
+algorithm
+  success := match def
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        (parts, success) := List.findMap(def.classParts,
+          function transformPathedElementInClassPart(path = path, func = func));
+
+        if success then
+          def.classParts := parts;
+        end if;
+      then
+        success;
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        (parts, success) := List.findMap(def.parts,
+          function transformPathedElementInClassPart(path = path, func = func));
+
+        if success then
+          def.parts := parts;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassDef;
+
+protected function transformPathedElementInClassPart
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ClassPart part;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  list<Absyn.ElementItem> items;
+algorithm
+  success := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        (items, success) := List.findMap(part.contents,
+          function transformPathedElementInElementItem(path = path, func = func));
+
+        if success then
+          part.contents := items;
+        end if;
+      then
+        success;
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        (items, success) := List.findMap(part.contents,
+          function transformPathedElementInElementItem(path = path, func = func));
+
+        if success then
+          part.contents := items;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassPart;
+
+protected function transformPathedElementInElementItem
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ElementItem item;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.Element element;
+algorithm
+  success := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      guard AbsynUtil.isElementItemNamed(AbsynUtil.pathFirstIdent(path), item)
+      algorithm
+        if AbsynUtil.pathIsIdent(path) then
+          item.element := func(item.element);
+          success := true;
+        else
+          (element, success) := transformPathedElementInElement(AbsynUtil.pathRest(path), func, item.element);
+
+          if success then
+            item.element := element;
+          end if;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElementItem;
+
+protected function transformPathedElementInElement
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Element element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.ElementSpec spec;
+algorithm
+  success := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        (spec, success) := transformPathedElementInElementSpec(path, func, element.specification);
+
+        if success then
+          element.specification := spec;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElement;
+
+protected function transformPathedElementInElementSpec
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ElementSpec spec;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.Class cls;
+algorithm
+  success := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        (cls, success) := transformPathedElementInClass(path, func, spec.class_);
+
+        if success then
+          spec.class_ := cls;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElementSpec;
+
 public function getPathedClassRestriction
   input Absyn.Path path;
   input Absyn.Program program;
@@ -4725,6 +4957,55 @@ algorithm
     element := getPathedSCodeElementInProgram(AbsynUtil.pathRest(path), SCodeUtil.getClassElements(element));
   end if;
 end getPathedSCodeElementInProgram;
+
+public function getElementAnnotation
+  input Absyn.Path elementPath;
+  input Absyn.Program program;
+  output String annotationString;
+protected
+  Absyn.Class cls;
+  Absyn.Element elem;
+  Option<Absyn.Annotation> ann;
+  list<Absyn.ElementArg> eargs;
+algorithm
+  try
+    elem := getPathedElementInProgram(elementPath, program);
+    ann := AbsynUtil.getElementAnnotation(elem, AbsynUtil.pathLastIdent(elementPath));
+
+    if isSome(ann) then
+      SOME(Absyn.Annotation.ANNOTATION(elementArgs = eargs)) := ann;
+      annotationString := List.toString(eargs, Dump.unparseElementArgStr, "", "(", ", ", ")");
+    else
+      annotationString := "()";
+    end if;
+  else
+    annotationString := "";
+  end try;
+end getElementAnnotation;
+
+public function setElementAnnotation
+  input Absyn.Path elementPath;
+  input Absyn.Modification annotationMod;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Option<Absyn.Annotation> ann;
+  String name;
+algorithm
+  try
+    if listEmpty(annotationMod.elementArgLst) then
+      ann := NONE();
+    else
+      ann := SOME(Absyn.Annotation.ANNOTATION(annotationMod.elementArgLst));
+    end if;
+
+    name := AbsynUtil.pathLastIdent(elementPath);
+    (program, success) := transformPathedElementInProgram(elementPath,
+      function AbsynUtil.setElementAnnotation(name = name, inAnnotation = ann), program);
+  else
+    success := false;
+  end try;
+end setElementAnnotation;
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

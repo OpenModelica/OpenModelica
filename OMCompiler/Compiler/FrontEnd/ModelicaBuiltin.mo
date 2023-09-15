@@ -3265,6 +3265,29 @@ annotation(
   preferredView="text");
 end getInstantiatedParametersAndValues;
 
+function getElementAnnotation
+  input TypeName elementName;
+  output String annotationString;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the annotation on a component or class element as a string.</p>
+</html>"),
+  preferredView="text");
+end getElementAnnotation;
+
+function setElementAnnotation
+  input TypeName elementName;
+  input ExpressionOrModification annotationMod;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Sets the annotation on a component or class element.</p>
+</html>"),
+  preferredView="text");
+end setElementAnnotation;
+
 function removeExtendsModifiers
   input TypeName className;
   input TypeName baseClassName;
