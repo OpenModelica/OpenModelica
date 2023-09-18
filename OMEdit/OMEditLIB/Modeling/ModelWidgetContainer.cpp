@@ -6804,6 +6804,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     if (mpLibraryTreeItem->isInPackageOneFile()) {
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
+    } else if (isNewApi()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
     }
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
@@ -6816,6 +6818,11 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
     pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
+    // If isNewApi() then update the depending model.
+    if (isNewApi()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+      disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
+    }
     mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
