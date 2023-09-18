@@ -1253,7 +1253,7 @@ QString Element::getTransformationAnnotation(bool ModelicaSyntax)
 QString Element::getPlacementAnnotation(bool ModelicaSyntax)
 {
   // create the placement annotation string
-  QString placementAnnotationString = ModelicaSyntax ? "annotation(Placement(" : "annotate=Placement(";
+  QString placementAnnotationString = ModelicaSyntax ? "Placement(" : "annotate=Placement(";
   if (mTransformation.isValid()) {
     if (mTransformation.getVisible().isDynamicSelectExpression() || mTransformation.getVisible().toQString().compare(QStringLiteral("true")) != 0) {
       placementAnnotationString.append(QString("visible=%1,").arg(mTransformation.getVisible().toQString()));
@@ -1280,7 +1280,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
   } else {
     placementAnnotationString.append(getTransformationAnnotation(ModelicaSyntax));
   }
-  placementAnnotationString.append(ModelicaSyntax ? "))" : ")");
+  placementAnnotationString.append(ModelicaSyntax ? ")" : ")");
   return placementAnnotationString;
 }
 
@@ -3167,7 +3167,7 @@ void Element::updatePlacementAnnotation()
     }
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateComponent(getName(), getClassName(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
+    pOMCProxy->setElementAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure() % "." % getName(), "$Code((" % getPlacementAnnotation(true) % "))");
   }
   /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {

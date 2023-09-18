@@ -3579,7 +3579,7 @@ void GraphicsView::copyItems(bool cut)
           pComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pComponent);
         }
         pMimeData->addComponent(pComponent);
-        components << QString("%1 %2%3 %4;").arg(pComponent->getClassName(), pComponent->getName(), "", pComponent->getPlacementAnnotation(true));
+        components << pComponent->getClassName() % " " % pComponent->getName() % " " % "annotation(" % pComponent->getPlacementAnnotation(true) % ")";
       } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
         LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
         if (pLineAnnotation && pLineAnnotation->isConnection()) {

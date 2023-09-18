@@ -188,6 +188,7 @@ public:
   bool deleteComponent(QString name, QString componentName);
   bool renameComponent(QString className, QString oldName, QString newName);
   bool updateComponent(QString name, QString className, QString componentName, QString placementAnnotation);
+  bool setElementAnnotation(const QString &elementName, QString annotation);
   bool renameComponentInClass(QString className, QString oldName, QString newName);
   bool updateConnection(QString className, QString from, QString to, QString annotation);
   bool updateConnectionNames(QString className, QString from, QString to, QString fromNew, QString toNew);
