@@ -1910,7 +1910,7 @@ protected
   JSON j;
   InstContext.Type context;
 algorithm
-  (connections, transitions, initial_states) := sortEquations(sections);
+  (connections, transitions, initial_states) := sortEquations(Sections.equations(sections));
   context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
   transitions := list(Typing.typeEquation(e, context) for e in transitions);
   initial_states := list(Typing.typeEquation(e, context) for e in initial_states);
@@ -1926,47 +1926,49 @@ algorithm
 end dumpJSONEquations;
 
 function sortEquations
-  input Sections sections;
-  output list<Equation> connections = {};
-  output list<Equation> transitions = {};
-  output list<Equation> initialStates = {};
-  output list<Equation> others = {};
+  input list<Equation> equations;
+  input output list<Equation> connections = {};
+  input output list<Equation> transitions = {};
+  input output list<Equation> initialStates = {};
 algorithm
-  () := match sections
-    case Sections.SECTIONS()
-      algorithm
-        for eq in listReverse(sections.equations) loop
-          () := match eq
-            case Equation.CONNECT()
-              algorithm
-                connections := eq :: connections;
-              then
-                ();
+  for eq in listReverse(equations) loop
+    () := match eq
+      case Equation.CONNECT()
+        algorithm
+          connections := eq :: connections;
+        then
+          ();
 
-            case Equation.NORETCALL()
-              algorithm
-                if Expression.isCallNamed(eq.exp, "transition") then
-                  transitions := eq :: transitions;
-                elseif Expression.isCallNamed(eq.exp, "initialState") then
-                  initialStates := eq :: initialStates;
-                else
-                  others := eq :: others;
-                end if;
-              then
-                ();
+      case Equation.IF()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Equation.Branch.BRANCH()
+                algorithm
+                  (connections, transitions, initialStates) :=
+                    sortEquations(b.body, connections, transitions, initialStates);
+                then
+                  ();
 
-            else
-              algorithm
-                others := eq :: others;
-              then
-                ();
-          end match;
-        end for;
-      then
-        ();
+              else ();
+            end match;
+          end for;
+        then
+          ();
 
-    else ();
-  end match;
+      case Equation.NORETCALL()
+        algorithm
+          if Expression.isCallNamed(eq.exp, "transition") then
+            transitions := eq :: transitions;
+          elseif Expression.isCallNamed(eq.exp, "initialState") then
+            initialStates := eq :: initialStates;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
 end sortEquations;
 
 function dumpJSONConnections

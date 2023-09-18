@@ -77,6 +77,16 @@ public
     end if;
   end new;
 
+  function equations
+    input Sections sections;
+    output list<Equation> equations;
+  algorithm
+    equations := match sections
+      case SECTIONS() then sections.equations;
+      else {};
+    end match;
+  end equations;
+
   function prepend
     input list<Equation> equations;
     input list<Equation> initialEquations;

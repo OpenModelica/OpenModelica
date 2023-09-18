@@ -3073,6 +3073,13 @@ algorithm
           guard name == "transition" or name == "initialState"
         then eq :: outEql;
 
+      case SCode.Equation.EQ_IF()
+        algorithm
+          eq.thenBranch := list(filterInstanceAPIEquations(eql) for eql in eq.thenBranch);
+          eq.elseBranch := filterInstanceAPIEquations(eq.elseBranch);
+        then
+          if List.all(eq.thenBranch, listEmpty) and listEmpty(eq.elseBranch) then outEql else eq :: outEql;
+
       else outEql;
     end match;
   end for;
