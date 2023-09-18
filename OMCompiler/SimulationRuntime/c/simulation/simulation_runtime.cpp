@@ -1489,7 +1489,15 @@ void setStreamPrintXML(int isXML)
   }
 }
 
-void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/, double currentTime, double currentStepSize)
+/**
+ * @brief Send status via XMLTCP or TCP.
+ *
+ * @param phase               Simulation phase.
+ * @param completionPercent   Percentage of simulation progress: 0.0 to 1.0
+ * @param currentTime         Current simulation time.
+ * @param currentStepSize     Current solver step size.
+ */
+void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize)
 {
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (sim_communication_port_open && isXMLTCP) {
