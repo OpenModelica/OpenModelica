@@ -2042,16 +2042,36 @@ bool OMCProxy::renameComponent(QString className, QString oldName, QString newNa
 }
 
 /*!
-  Updates the component annotations.
-  \param name - the component name
-  \param className - the component fully qualified name.
-  \param componentName - the name of the component to update.
-  \param annotation - the updated annotation.
-  \return true on success.
-  */
+ * \brief OMCProxy::updateComponent
+ * Updates the component annotations.
+ * \param name - the component name
+ * \param className - the component fully qualified name.
+ * \param componentName - the name of the component to update.
+ * \param placementAnnotation - the updated annotation.
+ * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
+ */
 bool OMCProxy::updateComponent(QString name, QString className, QString componentName, QString placementAnnotation)
 {
   sendCommand("updateComponent(" + name + "," + className + "," + componentName + "," + placementAnnotation + ")");
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setElementAnnotation
+ * Sets the element annotation.
+ * \param elementName
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
+{
+  sendCommand("setElementAnnotation(" % elementName % "," + annotation + ")");
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
