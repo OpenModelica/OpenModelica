@@ -1467,9 +1467,14 @@ General Options
 
 -  Optional Features
 
-  -  *Enable instance API* - Enables/disables the use of json based instance api.
-     The instance API enables the features like conditional connectors, dialog enable,
-     replaceable etc.
+  -  *Disable new instance-based graphical editing of models* - Enables/disables the use of instance-based graphical editing.
+     The instance-based graphical editing enables features like parameter-dependent conditional connectors, conditional dialog enable,
+     replaceable classes and models, etc. It also provides much faster rendering than the previously implemented graphical editing framework.
+     This feature has been thoroughly tested, but it could still have some issues;
+     in case the graphical rendering of models fails (blank screen) or is not correct,
+     you can disable the instance-based editing and fall back to the old editing framework.
+     In that case, please open a ticket on the `OpenModelica issue tracker <https://github.com/OpenModelica/OpenModelica/issues/new/choose>`_
+     so we can fix the issue for the next release.
 
 Libraries Options
 ~~~~~~~~~~~~~~~~~

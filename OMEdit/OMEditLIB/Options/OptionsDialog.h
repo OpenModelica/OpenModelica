@@ -291,7 +291,7 @@ public:
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
   QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
-  QCheckBox* getEnableInstanceAPICheckBox() {return mpEnableInstanceAPICheckBox;}
+  QCheckBox* getDisableInstanceAPICheckBox() {return mpDisableInstanceAPICheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -331,7 +331,7 @@ private:
   QCheckBox *mpShowLatestNewsCheckBox;
   QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
   QGroupBox *mpOptionalFeaturesGroupBox;
-  QCheckBox *mpEnableInstanceAPICheckBox;
+  QCheckBox *mpDisableInstanceAPICheckBox;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
