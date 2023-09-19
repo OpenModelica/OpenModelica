@@ -64,7 +64,7 @@ bool containsPoint(QPointF point, QPointF point1, QPointF point2, double xSelect
   // If point is out of bounds, no need to do further checks.
   if (point.x() + xSelectionMargin < leftPoint.x() || rightPoint.x() < point.x() - xSelectionMargin) {
     return false;
-  } else if (point.y() + ySelectionMargin < qMin(leftPoint.y(), rightPoint.y()) || qMin(leftPoint.y(), rightPoint.y()) < point.y() - ySelectionMargin) {
+  } else if (point.y() + ySelectionMargin < qMin(leftPoint.y(), rightPoint.y()) || qMax(leftPoint.y(), rightPoint.y()) < point.y() - ySelectionMargin) {
     return false;
   }
   double deltaX = rightPoint.x() - leftPoint.x();
