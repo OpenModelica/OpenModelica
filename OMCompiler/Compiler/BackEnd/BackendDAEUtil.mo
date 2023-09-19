@@ -7945,6 +7945,9 @@ algorithm
     funcs := getFunctions(inShared);
     (syst, _, _, mapEqnIncRow, mapIncRowEqn) := getAdjacencyMatrixScalar(inSystem, BackendDAE.NORMAL(), SOME(funcs), isInitializationDAE(inShared));
     (outSystem, _) := BackendDAETransform.strongComponentsScalar(syst, inShared, mapEqnIncRow, mapIncRowEqn);
+    if Flags.isSet(Flags.DUMP_SCC_GRAPHML) then
+      dumpStrongComponents(outSystem, inShared);
+    end if;
   else
     //BackendDump.dumpEqSystem(inSystem, "Transformation module sort components failed for following system:");
     Error.addInternalError("Transformation module sort components failed", sourceInfo());
@@ -7957,17 +7960,16 @@ function dumpStrongComponents
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
 algorithm
-  if Flags.isSet(Flags.DUMP_SCC_GRAPHML) then return; end if;
-  _ := match(isyst, ishared)
+  () := match ishared
     local
       String fileName, fileNamePrefix;
       Integer seqNo;
 
-    case (_, BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix=fileNamePrefix)))
-      equation
-        seqNo = System.tmpTickIndex(Global.backendDAE_fileSequence);
-        fileName = fileNamePrefix + "_" + intString(seqNo) + "_Comps" + intString(systemSize(isyst)) + ".graphml";
-        DumpGraphML.dumpSystem(isyst,ishared,NONE(),fileName,false);
+    case BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix = fileNamePrefix))
+      algorithm
+        seqNo := System.tmpTickIndex(Global.backendDAE_fileSequence);
+        fileName := fileNamePrefix + "_" + intString(seqNo) + "_Comps" + intString(systemSize(isyst)) + ".graphml";
+        DumpGraphML.dumpSystem(isyst, ishared, NONE(), fileName, false);
       then ();
 
   end match;
