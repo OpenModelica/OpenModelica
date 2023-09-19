@@ -627,7 +627,7 @@ uniontype Function
       SCode.defaultPrefixes,
       SCode.Encapsulated.NOT_ENCAPSULATED(),
       SCode.Partial.NOT_PARTIAL(),
-      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.PURE())),
       fn_def,
       SCode.Comment.COMMENT(NONE(), SOME("Automatically generated conversion operator for " + enum_name)),
       info
@@ -2479,15 +2479,16 @@ protected
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
         DAE.FunctionBuiltin builtin;
+        Absyn.FunctionPurity purity;
 
       // External builtin function.
-      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(is_impure)
+      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(purity)
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          is_impure := is_impure or hasImpure(cmt);
+          is_impure := AbsynUtil.isImpure(purity) or hasImpure(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
@@ -2525,8 +2526,7 @@ protected
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
           is_impure := SCodeUtil.isRestrictionImpure(res,
-              Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
-              not listEmpty(outputs)) or
+              Config.languageStandardAtMost(Config.LanguageStandard.'3.2')) or
             SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
 
           if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then

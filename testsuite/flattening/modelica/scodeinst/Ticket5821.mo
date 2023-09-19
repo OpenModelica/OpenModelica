@@ -2,7 +2,7 @@
 // keywords: tests Connections.branch/Connections.uniqueRoot/Connections.uniqueRootIndices
 // status:   correct
 //
-// cflags:   -d=newInst
+// cflags:   -d=newInst --std=3.2
 //
 
 
