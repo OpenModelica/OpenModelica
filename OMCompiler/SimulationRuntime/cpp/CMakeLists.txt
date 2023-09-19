@@ -442,8 +442,14 @@ ELSE(PAPI_FOUND)
   SET(USE_PAPI_ "OFF")
 ENDIF(PAPI_FOUND)
 
-
 # Find Boost
+# If MSVC, we do not want to use MSYS/MingGW installed boost's CMake config files for locating Boost
+# We have a manually provided boost already specified using BOOST_ROOT.
+# This is essentialy saying we do not want any help from boost itself in finding its libraries and setup.
+# Let CMake do it alone the old way by just finding the files it knows.
+IF(MSVC)
+  SET(Boost_NO_BOOST_CMAKE ON)
+ENDIF(MSVC)
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
