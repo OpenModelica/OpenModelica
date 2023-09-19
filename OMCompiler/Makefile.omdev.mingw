@@ -465,7 +465,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall_old:
+runtimeCPPmsvcinstall_old: getMSVCversion
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
