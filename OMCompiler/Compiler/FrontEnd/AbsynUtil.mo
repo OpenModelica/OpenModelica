@@ -6329,5 +6329,40 @@ algorithm
   item.comment := setCommentAnnotation(item.comment, inAnnotation);
 end setComponentItemAnnotation;
 
+function isImpure
+  input Absyn.FunctionPurity purity;
+  input Boolean defaultImpure = false; // No prefix = impure if true, otherwise = pure.
+  output Boolean isImpure;
+algorithm
+  isImpure := match purity
+    case Absyn.FunctionPurity.IMPURE() then true;
+    case Absyn.FunctionPurity.NO_PURITY() then defaultImpure;
+    else false;
+  end match;
+end isImpure;
+
+function purityEqual
+  input Absyn.FunctionPurity purity1;
+  input Absyn.FunctionPurity purity2;
+  input Boolean defaultImpure = false; // No prefix = impure if true, otherwise = pure.
+  output Boolean isEqual;
+algorithm
+  if valueConstructor(purity1) == valueConstructor(purity2) then
+    isEqual := true;
+  elseif defaultImpure then
+    isEqual := match (purity1, purity2)
+      case (Absyn.FunctionPurity.NO_PURITY(), Absyn.FunctionPurity.IMPURE()) then true;
+      case (Absyn.FunctionPurity.IMPURE(), Absyn.FunctionPurity.NO_PURITY()) then true;
+      else false;
+    end match;
+  else
+    isEqual := match (purity1, purity2)
+      case (Absyn.FunctionPurity.PURE(), Absyn.FunctionPurity.IMPURE()) then true;
+      case (Absyn.FunctionPurity.IMPURE(), Absyn.FunctionPurity.PURE()) then true;
+      else false;
+    end match;
+  end if;
+end purityEqual;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

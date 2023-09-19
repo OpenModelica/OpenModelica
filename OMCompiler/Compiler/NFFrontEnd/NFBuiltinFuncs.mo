@@ -72,7 +72,7 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
   SCode.defaultPrefixes,
   SCode.Encapsulated.ENCAPSULATED(),
   SCode.Partial.NOT_PARTIAL(),
-  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY())),
   SCode.ClassDef.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.Comment.COMMENT(NONE(), NONE()),
   AbsynUtil.dummyInfo

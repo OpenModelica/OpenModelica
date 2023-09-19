@@ -260,17 +260,6 @@ algorithm
   end match;
 end getListofQualOperatorFuncsfromOperator;
 
-public function translatePurity
-  input Absyn.FunctionPurity inPurity;
-  output Boolean outPurity;
-algorithm
-  outPurity := match(inPurity)
-    case Absyn.IMPURE() then true;
-    else false;
-  end match;
-end translatePurity;
-
-// Changed to public! krsta
 public function translateRestriction
 "Convert a class restriction."
   input Absyn.Class inClass;
@@ -288,11 +277,9 @@ algorithm
 
     // ?? Only normal functions can have 'external'
     case (d,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(purity)))
-      equation
-        isImpure = translatePurity(purity);
       then if containsExternalFuncDecl(d)
-             then SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))
-             else SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure));
+             then SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity))
+             else SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity));
 
     case (_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION());
     case (_,Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());

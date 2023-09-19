@@ -7209,9 +7209,11 @@ algorithm
       DAE.InlineType inlineType;
       String name;
       list<DAE.Var> inVars,outVars;
+      Absyn.FunctionPurity purity;
 
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)))
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity)))
       equation
+        isImpure = AbsynUtil.isImpure(purity);
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
         name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));

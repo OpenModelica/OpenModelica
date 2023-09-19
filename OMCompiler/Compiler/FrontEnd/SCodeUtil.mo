@@ -712,9 +712,10 @@ public function funcRestrictionEqual
   output Boolean equal;
 algorithm
   equal := match(funcRestr1,funcRestr2)
-    local Boolean b1, b2;
-    case (SCode.FR_NORMAL_FUNCTION(b1),SCode.FR_NORMAL_FUNCTION(b2)) then boolEq(b1, b2);
-    case (SCode.FR_EXTERNAL_FUNCTION(b1),SCode.FR_EXTERNAL_FUNCTION(b2)) then boolEq(b1, b2);
+    case (SCode.FR_NORMAL_FUNCTION(),SCode.FR_NORMAL_FUNCTION())
+      then AbsynUtil.purityEqual(funcRestr1.purity, funcRestr2.purity);
+    case (SCode.FR_EXTERNAL_FUNCTION(),SCode.FR_EXTERNAL_FUNCTION())
+      then AbsynUtil.purityEqual(funcRestr1.purity, funcRestr2.purity);
     case (SCode.FR_OPERATOR_FUNCTION(),SCode.FR_OPERATOR_FUNCTION()) then true;
     case (SCode.FR_RECORD_CONSTRUCTOR(),SCode.FR_RECORD_CONSTRUCTOR()) then true;
     case (SCode.FR_PARALLEL_FUNCTION(),SCode.FR_PARALLEL_FUNCTION()) then true;
@@ -4498,9 +4499,9 @@ public function isImpureFunctionRestriction
   input SCode.FunctionRestriction inRestr;
   output Boolean isExternal;
 algorithm
-  isExternal := match(inRestr)
-    case (SCode.FR_EXTERNAL_FUNCTION(true)) then true;
-    case (SCode.FR_NORMAL_FUNCTION(true)) then true;
+  isExternal := match inRestr
+    case SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then true;
+    case SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then true;
     else false;
   end match;
 end isImpureFunctionRestriction;
@@ -4508,12 +4509,15 @@ end isImpureFunctionRestriction;
 public function isRestrictionImpure
   input SCode.Restriction inRestr;
   input Boolean hasZeroOutputPreMSL3_2;
-  output Boolean isExternal;
+  output Boolean isImpure;
 algorithm
-  isExternal := match(inRestr,hasZeroOutputPreMSL3_2)
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(true)),_) then true;
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(true)),_) then true;
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(false)),false) then true;
+  isImpure := match inRestr
+    // Any function explicitly declared impure is impure.
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE())) then true;
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE())) then true;
+    // External functions with no pure/impure prefix are impure by default since Modelica 3.3.
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.NO_PURITY()))
+      then not hasZeroOutputPreMSL3_2;
     else false;
   end match;
 end isRestrictionImpure;
