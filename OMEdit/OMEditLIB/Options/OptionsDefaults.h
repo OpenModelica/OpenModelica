@@ -64,7 +64,7 @@ namespace OptionsDefaults
     int welcomePageView = 1;
     bool showLatestNews = true;
     int recentFilesAndLatestNewsSize = 15;
-    bool enableInstanceAPI = false;
+    bool disableInstanceAPI = false;
   }
 
   namespace Libraries {
