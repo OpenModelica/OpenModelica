@@ -438,7 +438,7 @@ namespace IAEX
             while (done > -1)
             {
               // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2);
-              // std::cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
+              // std::cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << std::endl;
               text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
               done = rx.indexIn(text);
             }

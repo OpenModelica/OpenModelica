@@ -741,7 +741,7 @@ namespace IAEX
   {
     int height = text_->document()->documentLayout()->documentSize().toSize().height();
 
-    //cout << "Height: " << height << endl;
+    //std::cout << "Height: " << height << std::endl;
 
     if( height < 0 )
       height = 30;

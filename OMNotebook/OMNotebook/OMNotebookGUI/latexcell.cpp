@@ -702,7 +702,7 @@ namespace IAEX {
     }
     catch(...)
     {
-      // qDebug() << "setReadOnly: crash" << endl;
+      // qDebug() << "setReadOnly: crash" << Qt::endl;
     }
   }
 

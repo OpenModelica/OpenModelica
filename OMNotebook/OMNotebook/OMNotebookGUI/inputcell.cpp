@@ -1114,7 +1114,7 @@ namespace IAEX
       emit textChanged(true);
     }
     else
-      std::cout << "Not delegate on inputcell" << endl;
+      std::cout << "Not delegate on inputcell" << std::endl;
 
     input_->blockSignals(false);
     output_->blockSignals(false);

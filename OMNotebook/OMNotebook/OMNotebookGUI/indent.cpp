@@ -269,7 +269,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states) {
     //}
 
     ism.newToken(current, next);
-    //qDebug() << ism.state << ", " << ism.level << ", " << ism.lMod << endl;
+    //qDebug() << ism.state << ", " << ism.level << ", " << ism.lMod << Qt::endl;
 
     if(current == "<newLine>") {
       current = "\n";
