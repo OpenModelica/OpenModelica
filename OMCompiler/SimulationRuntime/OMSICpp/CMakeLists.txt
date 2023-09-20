@@ -451,6 +451,13 @@ ENDIF(PAPI_FOUND)
 
 
 # Find Boost
+# If MSVC, we do not want to use MSYS/MingGW installed boost's CMake config files for locating Boost
+# We have a manually provided boost already specified using BOOST_ROOT.
+# This is essentialy saying we do not want any help from boost itself in finding its libraries and setup.
+# Let CMake do it alone the old way by just finding the files it knows.
+IF(MSVC)
+  SET(Boost_NO_BOOST_CMAKE ON)
+ENDIF(MSVC)
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
@@ -508,19 +515,14 @@ MESSAGE(STATUS "Boost Libraries for omsicpp runtime")
 MESSAGE(STATUS ${Boost_LIBRARIES})
 
 # Find Lapack and Blas
-FIND_PACKAGE(BLAS)
-FIND_PACKAGE(LAPACK)
-
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
    SET(LAPACK_MSVC_10  ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
   SET(BLAS_MSVC_10 ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
-ELSEIF(IS_MINGW32)
-  MESSAGE(FATAL_ERROR "No 32-bit MSYS support.")
-ELSEIF(IS_MINGW64)
-  SET(LAPACK_MINGW  ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
+ELSE()
+  FIND_PACKAGE(BLAS)
+  FIND_PACKAGE(LAPACK)
 ENDIF(MSVC)
 
 LIST(LENGTH LAPACK_LIBRARIES LAPACKVARCOUNT)
@@ -530,8 +532,7 @@ IF(LAPACKVARCOUNT GREATER 0)
   SET(LAPACK_LIBS "${LAPACKLISTHEAD}")
 ENDIF()
 
-MESSAGE(STATUS "Lapack Libraries")
-MESSAGE(STATUS ${LAPACK_LIBRARIES})
+MESSAGE(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
 
 IF(REDUCE_DAE)
