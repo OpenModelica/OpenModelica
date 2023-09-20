@@ -121,8 +121,8 @@ namespace IAEX
           QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
           html.replace( startPos, endPos - startPos, newLink );
 
-          //cout << "OLD LINK: " << oldLink.toStdString() << endl;
-          //cout << "NEW LINK: " << newLink.toStdString() << endl;
+          //std::cout << "OLD LINK: " << oldLink.toStdString() << std::endl;
+          //std::cout << "NEW LINK: " << newLink.toStdString() << std::endl;
 
           // set pos to the end of the link
           pos = startPos + newLink.length();

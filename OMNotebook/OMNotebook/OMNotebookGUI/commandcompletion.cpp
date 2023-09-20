@@ -181,9 +181,9 @@ namespace IAEX
             currentList_->append( commandList.at(i) );
         }
 
-        //cout << "Found commands (" << command.toStdString() << "):" << endl;
+        //std::cout << "Found commands (" << command.toStdString() << "):" << std::endl;
         //for( int i = 0; i < currentList_->size(); ++i )
-        //  std::cout << " >" << currentList_->at(i).toStdString() << endl;
+        //  std::cout << " >" << currentList_->at(i).toStdString() << std::endl;
 
         // found one or more commands that match the word
         if( currentList_->size() > 0 )

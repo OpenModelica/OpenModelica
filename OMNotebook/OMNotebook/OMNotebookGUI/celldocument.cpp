@@ -701,7 +701,7 @@ namespace IAEX
       image = images_[name];
     else
     {
-      //cout << "Could not find image: " << name.toStdString() << endl;
+      //std::cout << "Could not find image: " << name.toStdString() << std::endl;
       image = new QImage();
     }
 
@@ -816,11 +816,11 @@ namespace IAEX
 
 #ifndef QT_NO_DEBUG_OUTPUT
 
-          std::cout << "*********************************************" << endl;
-          std::cout << "SCROLL TOP: " << scrollTop << endl;
-          std::cout << "SCROLL BOTTOM: " << scrollBottom << endl;
-          std::cout << "CELL CURSOR: " << pos << endl;
-          std::cout << "CELL HEIGHT: " << height << endl;
+          std::cout << "*********************************************" << std::endl;
+          std::cout << "SCROLL TOP: " << scrollTop << std::endl;
+          std::cout << "SCROLL BOTTOM: " << scrollBottom << std::endl;
+          std::cout << "CELL CURSOR: " << pos << std::endl;
+          std::cout << "CELL HEIGHT: " << height << std::endl;
 #endif
 
 
@@ -837,7 +837,7 @@ namespace IAEX
             scrollBottom > (scroll_->widget()->height() - 2 ) )
           {
 #ifndef QT_NO_DEBUG_OUTPUT
-            std::cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+            std::cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << std::endl;
 #endif
             // 2006-03-03 AF, ignore if cursor at end of document
             return;
@@ -854,7 +854,7 @@ namespace IAEX
               pos = 0;
 
             // set new scrollvalue
-            //cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+            //std::cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << std::endl;
             scroll_->verticalScrollBar()->setValue( pos );
           }
           // DOWN
@@ -873,7 +873,7 @@ namespace IAEX
             if( pos >= scroll_->verticalScrollBar()->maximum() )
             {
 #ifndef QT_NO_DEBUG_OUTPUT
-              std::cout << "more then max!" << endl;
+              std::cout << "more then max!" << std::endl;
 #endif
               scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
               //pos = scroll_->verticalScrollBar()->maximum();
@@ -886,7 +886,7 @@ namespace IAEX
             {
               // set new scrollvalue
 #ifndef QT_NO_DEBUG_OUTPUT
-              std::cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+              std::cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << std::endl;
 #endif
               scroll_->verticalScrollBar()->setValue( pos );
             }

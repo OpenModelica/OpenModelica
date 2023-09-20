@@ -194,7 +194,7 @@ public:
           str.insert( index, "font-weight:600; " );
         // OTHER
         else
-          std::cout << "[UNKNOWN] Rule::FontWeight::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] Rule::FontWeight::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT SLANT
       else if( (*r_iter).first == "FontSlant" )
@@ -206,7 +206,7 @@ public:
           str.insert( index, "font-style:italic; " );
         // OTHER
         else
-          std::cout << "[UNKNOWN] Rule::FontSlant::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] Rule::FontSlant::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT COLOR
       else if( (*r_iter).first == "FontColor" )
@@ -260,10 +260,10 @@ public:
             str.insert( index, color.toStdString() );
           }
           else
-            std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << endl;
+            std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << std::endl;
         }
         else
-          std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT VARIATIONS
       else if( (*r_iter).first == "FontVariations" )
@@ -272,7 +272,7 @@ public:
       }
       // OTHER / MISC
       else
-        std::cout << "[UNKNOWN] StyleBox::Rule: " << (*r_iter).first.c_str() << " - " << (*r_iter).second.c_str() << endl;
+        std::cout << "[UNKNOWN] StyleBox::Rule: " << (*r_iter).first.c_str() << " - " << (*r_iter).second.c_str() << std::endl;
     }
 
     return str;

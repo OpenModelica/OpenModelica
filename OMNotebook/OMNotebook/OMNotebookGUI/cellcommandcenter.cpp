@@ -112,7 +112,7 @@ namespace IAEX
 
       for(;i!= storage_.end();++i)
       {
-      diskstorage << (*i)->commandName().toStdString() << endl;
+      diskstorage << (*i)->commandName().toStdString() << std::endl;
       }
    }
 }

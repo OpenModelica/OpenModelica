@@ -227,7 +227,7 @@ namespace IAEX
         }
         else
         {
-          std::cout << "File not found: " << fileToOpen.toStdString() << endl;
+          std::cout << "File not found: " << fileToOpen.toStdString() << std::endl;
           open(QString());
         }
       }
@@ -255,8 +255,8 @@ namespace IAEX
             open( "DrModelica/DrModelica.onb", READMODE_NORMAL, 1);
           else
           {
-            std::cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-            std::cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+            std::cout << "Unable to find (1): " << drmodelica.toStdString() << std::endl;
+            std::cout << "Unable to find (2): DrModelica/DrModelica.onb" << std::endl;
             open(QString());
           }
         }
@@ -525,8 +525,8 @@ namespace IAEX
   */
   void CellApplication::convertDrModelica()
   {
-    std::cout << "CONVERTING DRMODELICA" << endl;
-    std::cout << "---------------------" << endl << endl;
+    std::cout << "CONVERTING DRMODELICA" << std::endl;
+    std::cout << "---------------------" << std::endl << std::endl;
 
     // load from
     QString path = "C:/OpenModelica132/DrModelicaConv";
@@ -553,7 +553,7 @@ namespace IAEX
         for( int j = 0; j < fileList.size(); ++j )
         {
           std::cout << "Loading: " << fileDir.absolutePath().toStdString() +
-            std::string( "/" ) + fileList.at(j).toStdString() << endl;
+            std::string( "/" ) + fileList.at(j).toStdString() << std::endl;
 
           Document *d = new CellDocument( this, fileDir.absolutePath() +
             QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
@@ -564,13 +564,13 @@ namespace IAEX
 
           std::cout << "Saving: " << dir.absolutePath().toStdString() +
             std::string( "/" ) + dirList.at(i).toStdString() + std::string( "/" ) +
-            filename.toStdString() << endl;
+            filename.toStdString() << std::endl;
 
           SaveDocumentCommand command( d, dir.absolutePath() +
             QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
           this->commandCenter()->executeCommand( &command );
 
-          std::cout << "DONE!" << endl << endl;
+          std::cout << "DONE!" << std::endl << std::endl;
 
           // delete file
           delete d;
@@ -579,7 +579,7 @@ namespace IAEX
       }
      }
 
-    std::cout << "CONVERTION DONE !!!" << endl;
+    std::cout << "CONVERTION DONE !!!" << std::endl;
   }
 
 }

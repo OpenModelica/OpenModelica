@@ -152,9 +152,9 @@ bool MyTextEdit::insideCommandSign()
     int cursorPos = textCursor().position();
     if( blockStartPos <= cursorPos && cursorPos < (blockStartPos+3) && signPos == 0)
     {
-      std::cerr << "Inside Command Sign" << endl;
+      std::cerr << "Inside Command Sign" << std::endl;
       std::cerr << "BlockStart: " << blockStartPos <<
-        ", Cursor: " << cursorPos << endl << endl;
+        ", Cursor: " << cursorPos << std::endl << std::endl;
 
       return true;
     }
@@ -162,7 +162,7 @@ bool MyTextEdit::insideCommandSign()
       return false;
   }
   else
-    std::cerr << "Not a valid QTextBlock (insideCommandSign)" << endl;
+    std::cerr << "Not a valid QTextBlock (insideCommandSign)" << std::endl;
 
   return true;
 }
@@ -181,7 +181,7 @@ bool MyTextEdit::startOfCommandSign()
       return false;
   }
   else
-    std::cerr << "Not a valid QTextBlock (startOfCommandSign)" << endl;
+    std::cerr << "Not a valid QTextBlock (startOfCommandSign)" << std::endl;
 
   return true;
 }
@@ -477,7 +477,7 @@ void OMS::returnPressed()
     }
     else
     {
-      std::cerr << "Not a valid QTextBlock (returnPressed)" << endl;
+      std::cerr << "Not a valid QTextBlock (returnPressed)" << std::endl;
       break;
     }
   }
@@ -627,7 +627,7 @@ void OMS::goHome( bool shift )
     moshEdit_->setTextCursor( cursor_ );
   }
   else
-    std::cout << "Not a valid QTextBlock (selectCommandLine)" << endl;
+    std::cout << "Not a valid QTextBlock (selectCommandLine)" << std::endl;
 }
 
 void OMS::codeCompletion( bool same )
@@ -686,7 +686,7 @@ void OMS::selectCommandLine()
     }
     else
     {
-      std::cout << "Not a valid QTextBlock (selectCommandLine)" << endl;
+      std::cout << "Not a valid QTextBlock (selectCommandLine)" << std::endl;
       break;
     }
   }

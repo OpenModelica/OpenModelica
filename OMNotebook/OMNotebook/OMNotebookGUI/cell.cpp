@@ -179,7 +179,7 @@ namespace IAEX
       setStyle( style );
     else
     {
-      std::cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
+      std::cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << std::endl;
     }
   }
 
@@ -274,7 +274,7 @@ namespace IAEX
     QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
     if( 0 > r->attribute().indexOf( expression ))
     {
-      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
+      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << std::endl;
     }
     else
     {
@@ -282,25 +282,25 @@ namespace IAEX
       {
         QRegExp fontslant( "Italic" );
         if( 0 > r->value().indexOf( fontslant ))
-          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextAlignment" )
       {
         QRegExp textalignment( "Right|Left|Center|Justify" );
         if( 0 > r->value().indexOf( textalignment ))
-          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextJustification" )
       {
         QRegExp textjustification( "1|0" );
         if( 0 > r->value().indexOf( textjustification ))
-          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "FontWeight" )
       {
         QRegExp fontweight( "Bold|Plain" );
         if( 0 > r->value().indexOf( fontweight ))
-          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << std::endl;
       }
     }
 
@@ -869,12 +869,12 @@ namespace IAEX
 
   void Cell::printCell(Cell *current)
   {
-    std::cout << "This: " << current << endl
-      << "Parent: " << current->parentCell() << endl
-      << "Child: " << current->child() << endl
-      << "Last: " << current->last() << endl
-      << "Next: " << current->next() << endl
-      << "Prev: " << current->previous() << endl;
+    std::cout << "This: " << current << std::endl
+      << "Parent: " << current->parentCell() << std::endl
+      << "Child: " << current->child() << std::endl
+      << "Last: " << current->last() << std::endl
+      << "Next: " << current->next() << std::endl
+      << "Prev: " << current->previous() << std::endl;
   }
 
   void Cell::printSurrounding(Cell *current)
