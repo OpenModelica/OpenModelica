@@ -1293,7 +1293,7 @@ void ElementParameters::setUpDialog()
   createTabsGroupBoxesAndParameters(mpElement->getModel());
   fetchElementExtendsModifiers(mpElement->getModel());
   fetchElementModifiers();
-  fetchClassExtendsModifiers();
+  fetchClassExtendsModifiers(mpElement);
   // Apply the default modifiers that are given in the redeclaration of the replaceable class or component.
   applyModifiers(mDefaultElementModifier, true);
   // Apply the modifiers that are given in the constainedBy of the replaceable class or component.
@@ -1461,7 +1461,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
       /* Issue #10811
-       * Go deep the in the extends hierarchy and then apply the values in bottom to top order.
+       * Go deep in the extends hierarchy and then apply the values in bottom to top order.
        */
       fetchElementExtendsModifiers(pExtend->getModel());
       foreach (auto modifier, pExtend->getModifier().getModifiers()) {
@@ -1487,24 +1487,28 @@ void ElementParameters::fetchElementModifiers()
 /*!
  * \brief ElementParameters::fetchClassExtendsModifiers
  * If the Element is inherited then fetch the class extends modifiers and apply modifier values on the appropriate Parameters.
+ * \param pModelElement
  */
-void ElementParameters::fetchClassExtendsModifiers()
+void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pModelElement)
 {
-  ModelInstance::Model *pClassModelInstance = mpGraphicsView->getModelWidget()->getModelInstance();
-  QList<ModelInstance::Element*> elements = pClassModelInstance->getElements();
-  foreach (auto pElement, elements) {
-    if (pElement->isExtend() && pElement->getModel()) {
-      auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
-      if (pExtend->getModel()->getName().compare(mpElement->getParentModel()->getName()) == 0) {
-        foreach (auto modifier, pExtend->getModifier().getModifiers()) {
-          if (modifier.getName().compare(mpElement->getName()) == 0) {
-            foreach (auto subModifier, modifier.getModifiers()) {
-              Parameter *pParameter = findParameter(subModifier.getName());
-              applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, false);
-            }
-            break;
+  /* Issue #10864
+   * Fetch the class extends modifiers recursively.
+   */
+  if (pModelElement && pModelElement->getParentModel()) {
+    auto pExtend = pModelElement->getParentModel()->getParentElement();
+    if (pExtend && pExtend->isExtend()) {
+      bool hasParentElement = pExtend->getParentModel() && pExtend->getParentModel()->getParentElement();
+      foreach (auto modifier, pExtend->getModifier().getModifiers()) {
+        if (modifier.getName().compare(mpElement->getName()) == 0) {
+          foreach (auto subModifier, modifier.getModifiers()) {
+            Parameter *pParameter = findParameter(subModifier.getName());
+            applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, hasParentElement);
           }
+          break;
         }
+      }
+      if (hasParentElement) {
+        fetchClassExtendsModifiers(pExtend);
       }
     }
   }
