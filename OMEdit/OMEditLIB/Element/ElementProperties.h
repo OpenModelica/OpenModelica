@@ -229,7 +229,7 @@ private:
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementModifiers();
-  void fetchClassExtendsModifiers();
+  void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifiers(const ModelInstance::Modifier modifiers, bool defaultValue);
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
