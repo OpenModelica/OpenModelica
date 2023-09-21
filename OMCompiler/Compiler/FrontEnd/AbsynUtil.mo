@@ -6357,8 +6357,8 @@ algorithm
     end match;
   else
     isEqual := match (purity1, purity2)
-      case (Absyn.FunctionPurity.PURE(), Absyn.FunctionPurity.IMPURE()) then true;
-      case (Absyn.FunctionPurity.IMPURE(), Absyn.FunctionPurity.PURE()) then true;
+      case (Absyn.FunctionPurity.NO_PURITY(), Absyn.FunctionPurity.PURE()) then true;
+      case (Absyn.FunctionPurity.PURE(), Absyn.FunctionPurity.NO_PURITY()) then true;
       else false;
     end match;
   end if;
