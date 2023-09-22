@@ -6,12 +6,12 @@
     <message>
         <location filename="../../MainWindow.cpp" line="5036"/>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>À propos de %1</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="5039"/>
         <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %4&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%5&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connecté à %3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connecté à %4&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Chemin d&apos;installation &lt;b &gt;%5&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distribué sous OSMC-PL et GPL, voir &lt;u&gt;&lt;a href =&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compilé sans prise en charge de l&apos;animation 3D&lt;/em&gt;.</translation>
     </message>
 </context>
 <context>
@@ -19,67 +19,67 @@
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="195"/>
         <source>Time [s]:</source>
-        <translation type="unfinished"></translation>
+        <translation>Temps [s] :</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="203"/>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vitesse :</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="222"/>
         <source>Rotate Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Tourner à Gauche</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="226"/>
         <source>Rotate Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Tourner à Droite</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="223"/>
         <source>Rotate the camera left</source>
-        <translation type="unfinished"></translation>
+        <translation>Fait pivoter la caméra vers la gauche</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="227"/>
         <source>Rotate the camera right</source>
-        <translation type="unfinished"></translation>
+        <translation>Fait pivoter la caméra vers la droite</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="232"/>
         <source>Interactive Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Contrôle interactif</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="233"/>
         <source>Open the interactive control panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le panneau de contrôle interactif</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="320"/>
         <source>Information about states could not be determined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Les informations sur les états n&apos;ont pas pu être déterminées.</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="326"/>
         <source>Interactive Control needs an FMU ME 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Le contrôle interactif nécessite un FMU ME 2</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="391"/>
         <source>Unknown visualization type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de visualisation inconnu.</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="398"/>
         <source>Could not find the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le fichier XML visuel %1.</translation>
     </message>
     <message>
         <location filename="../../Animation/AbstractAnimationWindow.cpp" line="411"/>
         <source>Could not init %1 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;initialiser %1 %2.</translation>
     </message>
 </context>
 <context>
@@ -87,7 +87,7 @@
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="518"/>
         <source>Bus</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -96,7 +96,7 @@
         <location filename="../../OMS/ModelDialog.cpp" line="731"/>
         <location filename="../../OMS/ModelDialog.cpp" line="741"/>
         <source>Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Connecteur</translation>
     </message>
 </context>
 <context>
@@ -105,17 +105,17 @@
         <location filename="../../OMS/ModelDialog.cpp" line="385"/>
         <location filename="../../OMS/ModelDialog.cpp" line="405"/>
         <source>SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Sous-Modèle</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="396"/>
         <source>Unable to find the SubModel file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le fichier Sous-Modèle.</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="439"/>
         <source>Failed to add submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de l&apos;ajout du sous-modèle. %1</translation>
     </message>
 </context>
 <context>
@@ -124,12 +124,12 @@
         <location filename="../../OMS/ModelDialog.cpp" line="229"/>
         <location filename="../../OMS/ModelDialog.cpp" line="246"/>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Système</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="237"/>
         <source>A model already have a system. Only one system is allowed inside a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un modèle a déjà un système. Un seul système est autorisé dans un modèle.</translation>
     </message>
 </context>
 <context>
@@ -150,22 +150,22 @@
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="627"/>
         <source>Domain:</source>
-        <translation type="unfinished"></translation>
+        <translation>Domaine :</translation>
     </message>
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="643"/>
         <source>Dimension:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimension :</translation>
     </message>
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="651"/>
         <source>Interpolation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Interpolation :</translation>
     </message>
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="820"/>
         <source>TLM Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Bus TLM</translation>
     </message>
 </context>
 <context>
@@ -186,7 +186,7 @@
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="258"/>
         <source>Interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Interfaces</translation>
     </message>
 </context>
 <context>
@@ -194,7 +194,7 @@
     <message>
         <location filename="../../Simulation/ArchivedSimulationsWidget.cpp" line="89"/>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modèle</translation>
     </message>
 </context>
 <context>
@@ -240,12 +240,12 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2132"/>
         <source>Show Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher Tabulations et Espaces</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2133"/>
         <source>Shows the Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche les tabulations et les espaces</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2137"/>
@@ -260,37 +260,37 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2172"/>
         <source>Fold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Plier tout</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2176"/>
         <source>Unfold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplier tout</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2207"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2211"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Refaire</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2230"/>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Couper</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2237"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Copier</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2244"/>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Coller</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2253"/>
@@ -389,7 +389,7 @@
     <message>
         <location filename="../../OMS/BusDialog.cpp" line="1523"/>
         <source>Note: Yellow marked rows are existing connections.</source>
-        <translation type="unfinished"></translation>
+        <translation>Remarque&#xa0;: Les lignes marquées en jaune correspondent aux connexions existantes.</translation>
     </message>
 </context>
 <context>
@@ -397,7 +397,8 @@
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="29"/>
         <source>Clean Repository</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Laisser Repository ou utiliser référentiel ou autre?</translatorcomment>
+        <translation type="unfinished">Nettoyer Repository</translation>
     </message>
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="33"/>
@@ -412,7 +413,7 @@
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="44"/>
         <source>Clean</source>
-        <translation type="unfinished"></translation>
+        <translation>Nettoyer</translation>
     </message>
 </context>
 <context>
@@ -463,7 +464,7 @@
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="55"/>
         <source>Author:</source>
-        <translation type="unfinished"></translation>
+        <translation>Auteur:</translation>
     </message>
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="58"/>
@@ -493,7 +494,7 @@
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="87"/>
         <source>Files:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichiers:</translation>
     </message>
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="93"/>
@@ -511,17 +512,17 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2396"/>
         <source>%1 - Enter Component Name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Entrer Nom Composant</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2398"/>
         <source>Please choose a meaningful name for this component, to improve the readability of simulation results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veuillez choisir un nom significatif pour ce composant, afin d&apos;améliorer la lisibilité des résultats de simulation.</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2447"/>
         <source>A component name should not have spaces. Please choose another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un nom de composant ne doit pas contenir d&apos;espaces. Veuillez choisir un autre nom.</translation>
     </message>
 </context>
 <context>
@@ -699,49 +700,51 @@
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="90"/>
         <source>Following selected files will be sent along with the report,</source>
-        <translation type="unfinished"></translation>
+        <translation>Les fichiers sélectionnés suivants seront envoyés avec le rapport,</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="129"/>
         <source>&lt;b&gt;Sending crash report. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Envoi du rapport d&apos;erreur. Veuillez patienter.&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="138"/>
         <source>The program crashed unexpectedly. Please report the issue.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le programme s&apos;est écrasé de manière inattendue. Veuillez signaler le problème.</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="200"/>
         <source>Following error has occurred while retrieving detailed gdb backtrace,
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;erreur suivante s&apos;est produite lors de la récupération de la trace détaillée de GDB,
+
+%1</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="201"/>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Essayer à nouveau</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="202"/>
         <source>Send brief backtrace</source>
-        <translation type="unfinished"></translation>
+        <translation>Envoyer une brève trace</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="239"/>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nous ne pouvons pas vous contacter avec une solution possible si vous ne fournissez pas une adresse e-mail valide.</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="240"/>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Envoyer sans adresse électronique</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="241"/>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Laissez-moi entrer une adresse électronique</translation>
     </message>
 </context>
 <context>
@@ -749,7 +752,7 @@
     <message>
         <location filename="../../Annotations/LineAnnotation.cpp" line="2142"/>
         <source>Specify the indexes below to connect to the parts of the connectors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spécifiez les index ci-dessous pour vous connecter aux parties des connecteurs.</translation>
     </message>
 </context>
 <context>
@@ -762,12 +765,12 @@
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="143"/>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modèle</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="148"/>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Système</translation>
     </message>
 </context>
 <context>
@@ -775,12 +778,12 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2189"/>
         <source>Please enter path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veuillez entrer le chemin.</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2196"/>
         <source>Path &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le chemin &lt;b&gt;%1&lt;/b&gt; n&apos;existe pas.</translation>
     </message>
 </context>
 <context>
@@ -788,27 +791,27 @@
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2287"/>
         <source>Algorithm:</source>
-        <translation type="unfinished"></translation>
+        <translation>Algorithme:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2289"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapprochement Données</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2290"/>
         <source>Boundary Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>Conditions aux Limites</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2294"/>
         <source>Measurement Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier d&apos;entrée de mesure :</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2299"/>
         <source>Correlation Matrix Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier d&apos;entrée de matrice de corrélation&#xa0;:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2304"/>
@@ -818,22 +821,22 @@
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2311"/>
         <source>Reconciled Measurement File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier de mesures rapprochées&#xa0;:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2316"/>
         <source>Reconciled Correlation Matrix File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier de matrice de corrélation rapprochée :</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2323"/>
         <source>Save Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer les paramètres</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2325"/>
         <source>Calculate</source>
-        <translation type="unfinished"></translation>
+        <translation>Calculer</translation>
     </message>
 </context>
 <context>
@@ -861,7 +864,7 @@
     <message>
         <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="113"/>
         <source>GDB path defined in %1-&gt;Debugger is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le chemin GDB défini dans %1-&gt;Debugger est utilisé si le champ ci-dessus est vide.</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="92"/>
@@ -917,12 +920,12 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6526"/>
         <source>GDB Output Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Limite de sortie GDB :</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6528"/>
         <source> characters</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished"> caractères</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6534"/>
@@ -947,7 +950,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6552"/>
         <source>Default GDB path is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Le chemin GDB par défaut est utilisé si le champ ci-dessus est vide.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6564"/>
@@ -957,7 +960,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6565"/>
         <source>Generate Operations</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Générer des opérations</translation>
     </message>
 </context>
 <context>
@@ -1812,7 +1815,7 @@ A source-code only FMU is generated if no platform is selected.</source>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2548"/>
         <source>Case Sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sensible aux majuscules et minuscules</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2549"/>
@@ -1822,6 +1825,7 @@ A source-code only FMU is generated if no platform is selected.</source>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2550"/>
         <source>Regular Expressions</source>
+        <translatorcomment>Expressions Régulières (RegExp)</translatorcomment>
         <translation>Expressions</translation>
     </message>
     <message>
@@ -1879,7 +1883,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="756"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists or is a Modelica keyword. Please choose another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un composant portant le nom &lt;b&gt;%1&lt;/b&gt; existe déjà ou est un mot-clé Modelica. Veuillez choisir un autre nom.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="760"/>
@@ -1914,27 +1918,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="830"/>
         <source>Cannot move FMU to &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de déplacer FMU vers &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="832"/>
         <source>A source-only FMU will be generated because an empty list of platforms is selected. If this is not intended, check settings in &lt;b&gt;%1-&gt;FMI-&gt;Platforms&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une FMU source uniquement sera générée car une liste vide de plates-formes est sélectionnée. Si ce n&apos;est pas votre intention, vérifiez les paramètres dans &lt;b&gt;%1-&gt;FMI-&gt;Plateformes&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="840"/>
         <source>The read-only package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le package en lecture seule est généré à &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="852"/>
         <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the -d=infoXmlOperations flag via &lt;b&gt;%2-&gt;Simulation-&gt;OMC Command Line Options&lt;/b&gt; and simulate again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Les opérations n&apos;ont pas été générées. Cochez Générer des opérations dans &lt;b&gt;%1-&gt;Debugger-&gt;Débogueur transformationnel&lt;/b&gt; OU vous devez définir l&apos;indicateur -d=infoXmlOperations via &lt;b&gt;%2-&gt;Simulation-&gt;Options de ligne de commande OMC&lt;/b&gt; et simuler à nouveau.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="872"/>
         <source>TLM co-simulation session is already running. Only one session is allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La session de co-simulation TLM est déjà en cours. Une seule séance est autorisée.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="790"/>
@@ -1944,7 +1948,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="758"/>
         <source>Connectors %1 and %2 are not compatible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Les connecteurs %1 et %2 ne sont pas compatibles.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="768"/>
@@ -1964,27 +1968,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="778"/>
         <source>Could not find installation directory path. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le chemin du répertoire d&apos;installation. Veuillez vous assurer qu&apos;OpenModelica est correctement installé.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="784"/>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;Si vous ne trouvez pas la source de l&apos;erreur, vous pouvez toujours &lt;b&gt;revenir à la dernière version correcte&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="786"/>
         <source>Please make sure you are not using any OpenModelica/Modelica Keywords like model, package, record, class etc.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veuillez vous assurer que vous n&apos;utilisez aucun mot clé OpenModelica/Modelica tel que model, package, record, class...</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="788"/>
         <source>Unable to create class &lt;b&gt;%1&lt;/b&gt;. Invalid name.&lt;br /&gt;&lt;br /&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de créer la classe &lt;b&gt;%1&lt;/b&gt;. Nom invalide.&lt;br /&gt;&lt;br /&gt;%2</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="792"/>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;ouvrir le fichier &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="800"/>
@@ -1995,7 +1999,8 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <location filename="../../Util/Helper.cpp" line="802"/>
         <source>Error has occurred while loading the model : 
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une erreur s&apos;est produite lors du chargement du modèle&#xa0;:
+%1.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="804"/>
@@ -2005,7 +2010,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="808"/>
         <source>Only single nonstructured entity is allowed to be stored in the file.&lt;br /&gt;If the file was generated by the API function &lt;b&gt;saveTotalModel()&lt;/b&gt;, you can only load it with the API function &lt;b&gt;loadFile()&lt;/b&gt; in a script or in the interactive environment, not in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une seule entité non structurée peut être stockée dans le fichier.&lt;br /&gt;Si le fichier a été généré par la fonction API &lt;b&gt;saveTotalModel()&lt;/b&gt;, vous ne pouvez le charger qu&apos;avec la fonction API &lt;b&gt;loadFile ()&lt;/b&gt; dans un script ou dans l&apos;environnement interactif, pas dans OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contient les classes suivantes &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="812"/>
@@ -2035,49 +2040,50 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="838"/>
         <source>The encrypted package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le package chiffré est généré à &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="878"/>
         <location filename="../../Util/Helper.cpp" line="882"/>
         <location filename="../../Util/Helper.cpp" line="886"/>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le composant %1 lors de l&apos;analyse de %2 dans %3.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="880"/>
         <source>Unable to find component %1 while parsing transition(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le composant %1 lors de l&apos;analyse de la transition (%2).</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="884"/>
         <source>Unable to find component %1 while parsing initialState(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le composant %1 lors de l&apos;analyse de initialState(%2).</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="888"/>
         <source>Select at least one of the following options, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</source>
-        <translation type="unfinished"></translation>
+        <translation>Sélectionnez au moins une des options suivantes, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="894"/>
         <source>Please enter a valid condition e.g., x &gt;=0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veuillez saisir une condition valide, par exemple x &gt;=0.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="900"/>
         <source>Name &lt;b&gt;%1&lt;/b&gt; is not a valid identifier.&lt;br /&gt;A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Ce n&apos;est peut-être pas un mot réservé. ou Cela ne peut pas être un mot réservé ?</translatorcomment>
+        <translation>Le nom &lt;b&gt;%1&lt;/b&gt; n&apos;est pas un identifiant valide.&lt;br /&gt;Un nom doit commencer par une lettre et tous les caractères doivent être des lettres ou des chiffres. Ce n&apos;est peut-être pas un mot réservé.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="902"/>
         <source>Please enter a script file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veuillez saisir un fichier de script.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="904"/>
         <source>Library index file &lt;b&gt;%1&lt;/b&gt; doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le fichier d&apos;index de bibliothèque &lt;b&gt;%1&lt;/b&gt; n&apos;existe pas.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="836"/>
@@ -2092,7 +2098,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="844"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Êtes-vous sûr de vouloir supprimer &lt;b&gt;%1&lt;/b&gt;&#xa0;? Tout ce qui est contenu dans cette classe sera également supprimé.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="846"/>
@@ -2102,7 +2108,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="848"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;This will also delete from file system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Êtes-vous sûr de vouloir supprimer &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;Cela supprimera également du système de fichiers.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="850"/>
@@ -2112,17 +2118,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="868"/>
         <source>TLM Manager executable path is not set. Set it via &lt;b&gt;%1-&gt;TLM&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Le chemin de l&apos;exécutable du gestionnaire TLM n&apos;est pas défini. Définissez-le via &lt;b&gt;%1-&gt;TLM&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="870"/>
         <source>CompositeModel &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
-        <translation type="unfinished"></translation>
+        <translation>CompositeModel &lt;b&gt;%1&lt;/b&gt; comporte des modifications non enregistrées. Voulez-vous sauvegarder ?</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="874"/>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>La commande du terminal n&apos;est pas définie. Vous pouvez définir une nouvelle commande de terminal dans &lt;b&gt;%1-&gt;Général-&gt;Commande de terminal&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="854"/>
@@ -2132,12 +2138,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="828"/>
         <source>The FMU is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le FMU est généré à &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="834"/>
         <source>The XML is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le XML est généré à &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="856"/>
@@ -2177,27 +2183,28 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="780"/>
         <source>Following error has occurred.&lt;br /&gt;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;erreur suivante s&apos;est produite.&lt;br /&gt;%1</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="782"/>
         <source>Problems are found in %1 Text. &lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>ou Des problèmes ont été trouvés dans le texte %1. &lt;br /&gt;</translatorcomment>
+        <translation>Des problèmes ont été trouvés dans %1 Text. &lt;br /&gt;</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="794"/>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;enregistrer le fichier &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="796"/>
         <source>Unable to delete &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de supprimer &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="806"/>
         <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exist(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Redéfinition de la ou des classe(s) &lt;b&gt;%1&lt;/b&gt; qui existent déjà.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="816"/>
@@ -2207,7 +2214,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="820"/>
         <source>Enter a value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrez une valeur pour &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="822"/>
@@ -2217,17 +2224,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="876"/>
         <source>Unable to find component %1 while parsing connection %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le composant %1 lors de l&apos;analyse de la connexion %2.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="896"/>
         <source>Multiple declarations of component &lt;b&gt;%1&lt;/b&gt; are found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plusieurs déclarations du composant &lt;b&gt;%1&lt;/b&gt; ont été trouvées.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="898"/>
         <source>Following error has occurred &lt;b&gt;%1&lt;/b&gt; GDB arguments are &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;erreur suivante s&apos;est produite &lt;b&gt;%1&lt;/b&gt; Les arguments GDB sont &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
@@ -2948,22 +2955,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="459"/>
         <source>Percentage:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pourcentage:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="460"/>
         <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisir Transparence</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="461"/>
         <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisir Spécularité</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="462"/>
         <source>Choose Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisir Couleur</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="464"/>
@@ -2993,17 +3000,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="473"/>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer une copie de la classe dans un nouveau fichier</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="474"/>
         <source>Save Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer Total</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="475"/>
         <source>Save class with all used classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer la classe avec toutes les classes utilisées</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="476"/>
@@ -3034,7 +3041,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="490"/>
         <source>Renames an item</source>
-        <translation type="unfinished"></translation>
+        <translation>Renomme un élément</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="493"/>
@@ -3124,12 +3131,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="520"/>
         <source>OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>CLI du compilateur OpenModelica</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="527"/>
         <source>Fit to Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajuster au diagramme</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="531"/>
@@ -3174,7 +3181,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="546"/>
         <source>Export Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporter Variables</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="549"/>
@@ -3184,12 +3191,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="551"/>
         <source>Simulate with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuler avec Animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="552"/>
         <source>Simulates the Modelica class with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simule la classe Modelica avec Animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="553"/>
@@ -3294,7 +3301,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="664"/>
         <source>Report Issue</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaler un problème</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="668"/>
@@ -3309,52 +3316,52 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="675"/>
         <source>Align Interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Aligner Interfaces</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="676"/>
         <source>Aligns the interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Aligne les interfaces</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="692"/>
         <source>New SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouveau Modèle SSP</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="693"/>
         <source>Creates a new SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Crée un nouveau Modèle SSP</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="712"/>
         <source>&lt;New Variable&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Nouvelle variable&gt;</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="713"/>
         <source>Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliothèque</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="714"/>
         <source>Move Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplacer vers le Haut</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="715"/>
         <source>Move Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplacer vers le Bas</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="716"/>
         <source>Fix error(s) manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Corriger les erreurs manuellement</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="717"/>
         <source>Revert to last correct version</source>
-        <translation type="unfinished"></translation>
+        <translation>Revenir à la dernière version correcte</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="722"/>
@@ -3379,22 +3386,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="743"/>
         <source>Install Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Installer Bibliothèque</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="744"/>
         <source>Upgrade Installed Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Mettre à niveau Bibliothèques Installées</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="745"/>
         <source>Update Library Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Mettre à jour Index Bibliothèque</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="746"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapprochement Données</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="582"/>
@@ -3564,27 +3571,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="611"/>
         <source>Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Créer Connexion</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="612"/>
         <source>Connection Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Attributs de Connexion</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="613"/>
         <source>Create Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Créer Transition</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="614"/>
         <source>Edit Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer Transition</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="615"/>
         <source>Find Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechercher des variables</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="616"/>
@@ -3814,7 +3821,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="663"/>
         <source>Attach the debugger to running process</source>
-        <translation type="unfinished"></translation>
+        <translation>Attachez le débogueur au processus en cours d&apos;exécution</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="665"/>
@@ -3849,87 +3856,87 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="672"/>
         <source>Cancel Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Annuler Simulation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="673"/>
         <source>Fetch Interface Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Récupérer Données Interface</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="677"/>
         <source>TLM Co-Simulation Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuration co-simulation TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="678"/>
         <source>Opens the TLM co-simulation setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la configuration de co-simulation TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="679"/>
         <source>TLM Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Co-simulation TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="680"/>
         <source>Animation File</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier Animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="681"/>
         <source>Open an animation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrez une animation.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="682"/>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialiser</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="683"/>
         <source>Initialize the animation scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialiser la scène d&apos;animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="684"/>
         <source>Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Jouer</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="685"/>
         <source>Play the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Jouer l&apos;animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="686"/>
         <source>Repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>Répéter</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="687"/>
         <source>Repeat the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Répéter l&apos;animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="688"/>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="689"/>
         <source>Pause the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Mettre en pause l&apos;animation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="690"/>
         <source>Simulation Parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Paramètres Simulation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="691"/>
         <source>Shows the Simulation Parameters dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la boîte de dialogue Paramètres de simulation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="742"/>
@@ -3939,112 +3946,112 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="694"/>
         <source>Add System</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Système</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="695"/>
         <source>Adds the System i.e., FMI or TLM</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter le Système (FMI ou TLM)</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="696"/>
         <source>Add SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Sous-Modèle</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="697"/>
         <source>Adds the SubModel i.e., FMU or Table</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute le Sous-Modèle (FMU ou Table)</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="698"/>
         <source>Add Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="699"/>
         <source>Adds the bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute le bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="700"/>
         <source>Edit Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer Bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="701"/>
         <source>Add TLM Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter TLM Bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="702"/>
         <source>Adds the TLM bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute le Bus TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="703"/>
         <source>Edit TLM Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer Bus TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="704"/>
         <source>Add Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Connecteur</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="705"/>
         <source>Adds the connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute le connecteur</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="706"/>
         <source>Add Bus Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Connexion Bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="707"/>
         <source>Edit Bus Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer Connexion Bus</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="708"/>
         <source>Add TLM Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter Connexion TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="709"/>
         <source>Edit TLM Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer Connexion TLM</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="710"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>En cours d&apos;exécution</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="711"/>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminé</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="718"/>
         <source>Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste séparée par des espaces des options de ligne de commande OMC, par exemple -d=initialization --cheapmatchingAlgorithm=3</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="719"/>
         <source>Save experiment annotation inside model i.e., experiment annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer l&apos;annotation de l&apos;expérience dans le modèle, c&apos;est-à-dire l&apos;annotation de l&apos;expérience</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="720"/>
         <source>Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer les indicateurs de simulation dans le modèle, c&apos;est-à-dire l&apos;annotation __OpenModelica_simulationFlags</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="721"/>
         <source>Save translation flags inside model i.e., __OpenModelica_commandLineOptions annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer les indicateurs de traduction dans le modèle, c&apos;est-à-dire l&apos;annotation __OpenModelica_commandLineOptions</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="726"/>
@@ -4054,17 +4061,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="727"/>
         <source>Immediate</source>
-        <translation type="unfinished"></translation>
+        <translation>Immédiat</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="728"/>
         <source>Synchronize</source>
-        <translation type="unfinished"></translation>
+        <translation>Synchroniser</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="729"/>
         <source>Priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Priorité:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="730"/>
@@ -4094,22 +4101,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="735"/>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Statut</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="736"/>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vitesse:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="737"/>
         <source>Terminate Instantiation</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminer l&apos;instanciation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="738"/>
         <source>Terminates the model instantiation</source>
-        <translation type="unfinished"></translation>
+        <translation>Termine l&apos;instanciation du modèle</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="739"/>
@@ -4119,7 +4126,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="740"/>
         <source>System Simulation Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Informations sur la simulation du système</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="741"/>
@@ -4169,7 +4176,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="581"/>
         <source>Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Couleurs</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="596"/>
@@ -4216,7 +4223,8 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="606"/>
         <source>Filter Classes</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Filtrer ou Filtre ?</translatorcomment>
+        <translation type="unfinished">Filtrer Classes</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="607"/>
@@ -4357,7 +4365,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="75"/>
         <source>* If no Output Directory specified then the Modelica model will be generated in the current working directory.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">* Si aucun répertoire de sortie n&apos;est spécifié, le modèle Modelica sera généré dans le répertoire de travail actuel.</translation>
     </message>
     <message>
         <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="121"/>
@@ -4764,27 +4772,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3739"/>
         <source>New Composite Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouveau Mode Composite</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3740"/>
         <source>Create New Composite Model file</source>
-        <translation type="unfinished"></translation>
+        <translation>Créer un Nouveau Fichier de Modèle Composite</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3743"/>
         <source>Open Composite Model(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir Modèle(s) composite(s)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3744"/>
         <source>Opens the Composite Model file(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le(s) fichier(s) du modèle composite</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3748"/>
         <source>Loads the External Model(s) for the TLM co-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Charge le(s) modèle(s) externe(s) pour la co-simulation TLM</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3764"/>
@@ -4809,12 +4817,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3041"/>
         <source>Failed to load OMSens plugin. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec du chargement du plug-in OMSens. %1</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3054"/>
         <source>Please open a model before starting the OMSens plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Veuillez ouvrir un modèle avant de démarrer le plugin OMSens</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3865"/>
@@ -4829,32 +4837,32 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3894"/>
         <source>Close Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer la Fenêtre</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3895"/>
         <source>Closes the active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ferme la fenêtre active</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3898"/>
         <source>Close All Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer Toutes les Fenêtres</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3899"/>
         <source>Closes all windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Ferme toutes les fenêtres</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3902"/>
         <source>Close All Windows But This</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer Toutes les Fenêtres sauf Celle-ci</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3903"/>
         <source>Closes all windows except active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ferme toutes les fenêtres sauf la fenêtre active</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3910"/>
@@ -4884,22 +4892,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4061"/>
         <source>OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Guide de l&apos;utilisateur d&apos;OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4062"/>
         <source>Opens the OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le Guide de l&apos;Utilisateur d&apos;OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4066"/>
         <source>OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le Guide de l&apos;Utilisateur d&apos;OpenModelica (PDF)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4067"/>
         <source>Opens the OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le Guide de l&apos;Utilisateur d&apos;OpenModelica (PDF)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4074"/>
@@ -4924,12 +4932,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4082"/>
         <source>OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Guide de l&apos;utilisateur d&apos;OMSimulator</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4083"/>
         <source>Opens the OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le Guide de l&apos;Utilisateur d&apos;OMSimulator</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4090"/>
@@ -4979,22 +4987,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4206"/>
         <source>Add/Edit Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter/Modifier une icône</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4207"/>
         <source>Adds/Edits an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute/Modifie une icône</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4209"/>
         <source>Delete Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer Icône</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4210"/>
         <source>Deletes an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Supprimer une icône</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4233"/>
@@ -5050,7 +5058,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="2164"/>
         <source>Are you sure you want to clear recent files?</source>
-        <translation type="unfinished"></translation>
+        <translation>Êtes-vous sûr de vouloir effacer les fichiers récents&#xa0;?</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2602"/>
@@ -5070,7 +5078,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="2675"/>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;exécuter la commande &lt;b&gt;%1&lt;/b&gt; avec les arguments &lt;b&gt;%2&lt;/b&gt;. Le processus a échoué avec l&apos;erreur &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2705"/>
@@ -5080,12 +5088,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="2765"/>
         <source>Updating library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour de l&apos;index de la bibliothèque</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2769"/>
         <source>Failed to update the library index. This could be because of bad internet connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de la mise à jour de l&apos;index de la bibliothèque. Cela pourrait être dû à une mauvaise connexion Internet.</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2789"/>
@@ -5105,12 +5113,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3004"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;exécuter la commande de terminal &lt;b&gt;%1&lt;/b&gt; avec les arguments &lt;b&gt;%2&lt;/b&gt;. Le processus a échoué avec l&apos;erreur &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3030"/>
         <source>OMSens is not supported on MacOS</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSens n&apos;est pas pris en charge sur MacOS</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3711"/>
@@ -5140,7 +5148,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3747"/>
         <source>Load External Model(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Charger des Modèles Externes</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3837"/>
@@ -5190,7 +5198,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="182"/>
         <source>Initializing</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialisation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="225"/>
@@ -5200,27 +5208,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="230"/>
         <source>Changes to modeling perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifications apportées à la perspective de modélisation (%1)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="235"/>
         <source>Changes to plotting perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifications apportées à la perspective de tracé (%1)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="237"/>
         <source>Debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Débogage</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="240"/>
         <source>Changes to debugging perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifications apportées à la perspective de débogage (%1)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="264"/>
         <source>Search Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Navigateur de recherche</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="275"/>
@@ -5250,37 +5258,37 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="341"/>
         <source>3D Viewer Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Navigateur de visionneuse 3D</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1208"/>
         <source>Exporting the package as encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporter le package en tant que package chiffré</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1241"/>
         <source>Exporting the package as read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporter le package en tant que package en lecture seule</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1532"/>
         <source>Unable to find the file &lt;b&gt;%1&lt;/b&gt; with line number &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver le fichier &lt;b&gt;%1&lt;/b&gt; avec le numéro de ligne &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2617"/>
         <source>making encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>création d&apos;un paquet chiffré</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2632"/>
         <source>making read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>création d&apos;un package en lecture seule</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3722"/>
         <source>Load Encrypted Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Charger la Bibliothèque Chiffrée</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3723"/>
@@ -5290,37 +5298,37 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3735"/>
         <source>Unload All</source>
-        <translation type="unfinished"></translation>
+        <translation>Tout décharger</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3736"/>
         <source>Unloads all loaded classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Décharge toutes les classes chargées</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3751"/>
         <source>Open Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir Répertoire</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3752"/>
         <source>Opens the directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le répertoire</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3776"/>
         <source>FMU Model Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Description de Modèle FMU</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3777"/>
         <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
-        <translation type="unfinished"></translation>
+        <translation>Importe le modèle à partir de la description du modèle Functional Mockup Interface (FMU)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3780"/>
         <source>From OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Depuis OMNotebook</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3784"/>
@@ -5330,7 +5338,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3788"/>
         <source>To Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Vers le presse-papier</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3792"/>
@@ -5345,32 +5353,32 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3819"/>
         <source>To OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Vers OMNotebook</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3825"/>
         <source>Opens the install library window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la fenêtre d&apos;installation de la bibliothèque</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3829"/>
         <source>Upgrades the installed libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Met à niveau les bibliothèques installées</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3833"/>
         <source>Updates the library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Met à jour l&apos;index de la bibliothèque</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3850"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3855"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Refaire</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3906"/>
@@ -5385,92 +5393,92 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3918"/>
         <source>Toggle Tab/Sub-window View</source>
-        <translation type="unfinished"></translation>
+        <translation>Basculer l&apos;Affichage par Onglet/Sous-Fenêtre</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3919"/>
         <source>Toggle between tab or sub-window view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Basculer entre le mode d&apos;affichage par onglet ou par sous-fenêtre</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3971"/>
         <source>Shows the list of archived simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la liste des simulations archivées</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3975"/>
         <source>Calculate Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Calculer le Rapprochement des Données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3976"/>
         <source>Calculates the data reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Calcule le rapprochement des données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4024"/>
         <source>Shows OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la CLI du compilateur OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4028"/>
         <source>OpenModelica Command Prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>Invite de Commande OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4029"/>
         <source>Open OpenModelica command prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir l&apos;invite de commande OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4034"/>
         <source>OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Diff du Compilateur OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4035"/>
         <source>Shows OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche les différences du compilateur OpenModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4039"/>
         <source>Open Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir le Répertoire Temporaire</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4040"/>
         <source>Opens the temporary directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le répertoire temporaire</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4043"/>
         <source>Open Working Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir le Répertoire de Travail</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4044"/>
         <source>Opens the current working directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le répertoire de travail actuel</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4047"/>
         <source>Open Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir Terminal</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4048"/>
         <source>Opens the terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre le terminal</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4056"/>
         <source>Run Sensitivity Analysis and Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Exécuter une analyse de sensibilité et une optimisation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4057"/>
         <source>Runs the sensitivity analysis and optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Exécute l’analyse de sensibilité et l’optimisation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4070"/>
@@ -5485,12 +5493,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4086"/>
         <source>OpenModelica TLM Simulator Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Documentation du Simulateur OpenModelica TLM</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4087"/>
         <source>Opens the OpenModelica TLM Simulator Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la documentation du simulateur OpenModelica TLM</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4100"/>
@@ -5535,57 +5543,57 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4135"/>
         <source>Transition Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Mode Transition</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4136"/>
         <source>Changes to/from transition mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Change vers/depuis le mode de transition</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4162"/>
         <source>New Array Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle Fenêtre de Tracé de Tableau</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4163"/>
         <source>Inserts new array plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Insère une nouvelle fenêtre de tracé de tableau</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4166"/>
         <source>New Array Parametric Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle Fenêtre de Tracé Paramétrique de Tableau</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4167"/>
         <source>Inserts new array parametric plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Insère une nouvelle fenêtre de tracé paramétrique de tableau</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4171"/>
         <source>New Animation Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle Fenêtre d&apos;Animation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4172"/>
         <source>Inserts new animation window</source>
-        <translation type="unfinished"></translation>
+        <translation>Insère une nouvelle fenêtre d&apos;animation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4176"/>
         <source>Diagram Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Fenêtre Diagramme</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4177"/>
         <source>Inserts a diagram window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserts a diagram window</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4181"/>
         <source>Exports the plotted variables to a CSV file</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporte les variables tracées vers un fichier CSV</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4184"/>
@@ -5640,7 +5648,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4415"/>
         <source>&amp;Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Réconciliation &amp;Données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4456"/>
@@ -5655,12 +5663,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4423"/>
         <source>Sensitivity Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Optimisation Sensibilité</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4916"/>
         <source>SSP Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Barre d&apos;outils SSP</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4431"/>
@@ -5675,7 +5683,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4435"/>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Traçabilité</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4464"/>
@@ -5695,7 +5703,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4766"/>
         <source>&amp;New</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nouveau</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4783"/>
@@ -5715,7 +5723,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4838"/>
         <source>Check Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Vérifier Barre d&apos;Outils</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4847"/>
@@ -5730,7 +5738,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4258"/>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importer</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4861"/>
@@ -5745,17 +5753,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4888"/>
         <source>Debugger Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barre d&apos;outils du débogueur</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4897"/>
         <source>Run the debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Exécutez le débogueur</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4904"/>
         <source>TLM Simulation Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barre d&apos;outils de simulation TLM</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1392"/>
@@ -6271,37 +6279,37 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3218"/>
         <source>CompositeModel Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur de modèle composite</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3206"/>
         <source>Text Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur de Texte</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3210"/>
         <source>Modelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur Modelica</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3214"/>
         <source>MetaModelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur MetaModelica</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3222"/>
         <source>SSP Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur SSP</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3226"/>
         <source>C/C++ Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur C/C++</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3230"/>
         <source>HTML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Éditeur HTML</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3234"/>
@@ -6346,17 +6354,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3443"/>
         <source>Reset to default</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialiser aux valeurs par défaut</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3444"/>
         <source>Are you sure that you want to reset OMEdit? This operation cannot be undone. </source>
-        <translation type="unfinished"></translation>
+        <translation>Êtes-vous sûr de vouloir réinitialiser OMEdit&#xa0;? Cette opération ne peut pas être annulée. </translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3282"/>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Traçabilité</translation>
     </message>
 </context>
 <context>
@@ -6369,7 +6377,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="775"/>
         <source>Unable to find the redeclare class.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver la classe redéclarée.</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="848"/>
@@ -6379,7 +6387,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="858"/>
         <source>Load</source>
-        <translation type="unfinished"></translation>
+        <translation>Charger</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="954"/>
@@ -6468,27 +6476,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6206"/>
         <source>Auto Scale</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Échelle Auto</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6208"/>
         <source>Auto scale the plot to fit in view when variable is plotted.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Redimensionne automatiquement le tracé pour qu&apos;il s&apos;adapte à la vue lorsque la variable est tracée.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6210"/>
         <source>Prefix Units</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Unités de Préfixe</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6212"/>
         <source>Automatically pick the right prefix for units.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Choisit automatiquement le bon préfixe pour les unités.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6219"/>
         <source>Default Plotting View Mode</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mode d&apos;affichage du tracé par défaut</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6220"/>
@@ -6503,38 +6511,39 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6258"/>
         <source>Curve styles are used for new curves. Use plot setup window to update the existing curves.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Les styles de courbe sont utilisés pour les nouvelles courbes. Utilisez la fenêtre de configuration du tracé pour mettre à jour les courbes existantes.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6265"/>
         <source>Variable Filter</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Filtre Variable</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6266"/>
         <source>Adds a delay, specified as Filter Interval, in filtering the variables.
 Set the value to 0 if you don&apos;t want any delay.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ajoute un délai, spécifié comme Intervalle de Filtrage, dans le filtrage des variables.
+Définissez la valeur sur 0 si vous ne souhaitez aucun délai.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6268"/>
         <source>Filter Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Intervalle de filtrage :</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6270"/>
         <source> seconds</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished"> secondes</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6283"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Taille de Police</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6330"/>
         <source>Font sizes are used for new plot windows. Use plot setup window to update the existing plots.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Les tailles de police sont utilisées pour les nouvelles fenêtres de tracé. Utilisez la fenêtre de configuration du tracé pour mettre à jour les tracés existants.</translation>
     </message>
 </context>
 <context>
@@ -6857,22 +6866,23 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="388"/>
         <source>Searching &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Attendre un instant ou un moment ?</translatorcomment>
+        <translation>Recherche de &lt;b&gt;%1&lt;/b&gt; sur &lt;b&gt;%2&lt;/b&gt; fichiers. Veuillez attendre un instant.</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="399"/>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Recherche &lt;b&gt;%1&lt;/b&gt; sur &lt;b&gt;%2&lt;/b&gt; fichiers. Recherche annulée.</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="411"/>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Completed.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Recherche &lt;b&gt;%1&lt;/b&gt; sur &lt;b&gt;%2&lt;/b&gt; fichiers. Recherche terminée.</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="422"/>
         <source>&lt;b&gt;%1&lt;/b&gt; FOUND</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt; TROUVÉ</translation>
     </message>
 </context>
 <context>
@@ -7129,7 +7139,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="298"/>
         <source>Launch Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Lancer Animation</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
@@ -8635,7 +8645,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5251"/>
         <source>Latest News &amp; Events</source>
-        <translation type="unfinished"></translation>
+        <translation>Dernières Nouvelles et Événements</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5265"/>
@@ -8645,7 +8655,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5315"/>
         <source>System Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliothèques système</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5395"/>
