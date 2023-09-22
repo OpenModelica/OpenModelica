@@ -176,7 +176,7 @@ pipeline {
         stage('cmake-OMDev-gcc') {
           agent {
             node {
-              label 'windows'
+              label 'omdev-ucrt64'
             }
           }
           when {
