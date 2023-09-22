@@ -354,6 +354,7 @@ algorithm
       ErrorExt.rollBack(getInstanceName());
     else
       ErrorExt.delCheckpoint(getInstanceName());
+      fail();
     end try;
   end try;
 
