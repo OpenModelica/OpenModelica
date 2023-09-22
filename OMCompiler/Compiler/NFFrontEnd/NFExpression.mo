@@ -1980,7 +1980,7 @@ public
         str := stringAppendList(strl);
       end if;
     else
-      str := toFlatString(exp) + Subscript.toFlatStringList(subscripts);
+      str := "(" + toFlatString(exp) + Subscript.toFlatStringList(subscripts) + ")";
     end if;
   end toFlatSubscriptedString;
 
