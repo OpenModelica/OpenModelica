@@ -234,7 +234,7 @@ stored_definition returns [void* ast]
 #endif
         }
       }
-      if (!listEmpty(commentAfter) && !listEmpty(cl)) {
+      if (!listEmpty(commentAfter) && cl && !listEmpty(cl)) {
         void *last = cl;
         while (!listEmpty(MMC_CDR(last))) {
           last = MMC_CDR(last);
