@@ -554,8 +554,10 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
     ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
     qreal initialScale = coordinateSystem.getInitialScale();
     QVector<QPointF> extent;
-    extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    qreal xExtent = initialScale * boundingRect().width() / 2;
+    qreal yExtent = initialScale * boundingRect().height() / 2;
+    extent.append(QPointF(-xExtent, -yExtent));
+    extent.append(QPointF(xExtent, yExtent));
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   } else if (!placementAnnotation.isEmpty()) {
@@ -699,8 +701,10 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
     CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
     qreal initialScale = coOrdinateSystem.getInitialScale();
     QVector<QPointF> extent;
-    extent.append(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    extent.append(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    qreal xExtent = initialScale * boundingRect().width() / 2;
+    qreal yExtent = initialScale * boundingRect().height() / 2;
+    extent.append(QPointF(-xExtent, -yExtent));
+    extent.append(QPointF(xExtent, yExtent));
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
   }
@@ -3438,25 +3442,24 @@ void Element::resizeElement(QPointF newPosition)
     mYFactor = mYFactor < 0 ? factor * -1 : factor;
   }
   // Apply the transformation to the temporary polygon using the new scaling factors
-  QPointF pivot = mPivotPoint - pos();
-  // Creates a temporaty transformation
-  QTransform tmpTransform = QTransform().translate(pivot.x(), pivot.y()).rotate(0)
-      .scale(mXFactor, mYFactor)
-      .translate(-pivot.x(), -pivot.y());
-  setTransform(mTransform * tmpTransform);
-  // set the final resize on component.
+  PointAnnotation startOrigin = mOldTransformation.getOrigin();
+  ExtentAnnotation startExtent = mOldTransformation.getExtent();
+  QPointF startExtent1 = startExtent.at(0);
+  QPointF startExtent2 = startExtent.at(1);
+  qreal x = mPivotPoint.x() + (startOrigin.x() - mPivotPoint.x()) * mXFactor;
+  qreal y = mPivotPoint.y() + (startOrigin.y() - mPivotPoint.y()) * mYFactor;
   QPointF extent1, extent2;
-  qreal sx, sy;
-  getScale(&sx, &sy);
-  extent1.setX(sx * boundingRect().left());
-  extent1.setY(sy * boundingRect().top());
-  extent2.setX(sx * boundingRect().right());
-  extent2.setY(sy * boundingRect().bottom());
-  mTransformation.setOrigin(scenePos());
+  extent1.setX(mXFactor * startExtent1.x());
+  extent1.setY(mYFactor * startExtent1.y());
+  extent2.setX(mXFactor * startExtent2.x());
+  extent2.setY(mYFactor * startExtent2.y());
+  mTransformation.setOrigin(QPointF(x, y));
   QVector<QPointF> extent;
   extent.append(extent1);
   extent.append(extent2);
   mTransformation.setExtent(extent);
+  if (mOldTransformation.getRotateAngle() != 0)
+    mTransformation.setRotateAngle((mXFactor < 0 ? -1 : 1) * (mYFactor < 0 ? -1 : 1) * mOldTransformation.getRotateAngle());
   setTransform(mTransformation.getTransformationMatrix());
   // let connections know that component has changed.
   emit transformChange(false);
