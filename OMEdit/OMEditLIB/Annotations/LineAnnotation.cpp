@@ -1452,10 +1452,10 @@ PointArrayAnnotation LineAnnotation::adjustPointsForDrawing() const
 {
   PointArrayAnnotation points = mPoints;
   if (isConnection()) {
-    if (mpStartElement && points.size() > 0) {
+    if (mpStartElement && (points.size() > 0) && qFuzzyCompare(mpStartElement->sceneBoundingRect().width(), mpStartElement->sceneBoundingRect().height())) {
       points.setPoint(0, mpStartElement->sceneBoundingRect().center());
     }
-    if (mpEndElement && points.size() > 1) {
+    if (mpEndElement && (points.size() > 1) && qFuzzyCompare(mpEndElement->sceneBoundingRect().width(), mpEndElement->sceneBoundingRect().height())) {
       points.setPoint(points.size() - 1, mpEndElement->sceneBoundingRect().center());
     }
   }
