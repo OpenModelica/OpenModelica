@@ -69,6 +69,24 @@ install(TARGETS OMCppDgesvSolver_static)
 
 
 #####################################################################################################
+# OMCppIda
+set(OMC_SIMRT_CPP_SOLVER_IDA_SOURCES IDA/IDA.cpp
+                                     IDA/IDASettings.cpp
+                                     IDA/FactoryExport.cpp)
+
+add_library(OMCppIda SHARED)
+add_library(omc::simrt::cpp::solver::ida ALIAS OMCppIda)
+
+target_sources(OMCppIda PRIVATE ${OMC_SIMRT_CPP_SOLVER_IDA_SOURCES})
+
+target_link_libraries(OMCppIda PRIVATE omc::simrt::cpp::core::modelica)
+target_link_libraries(OMCppIda PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppIda PRIVATE omc::3rd::sundials::ida)
+
+install(TARGETS OMCppIda)
+
+
+#####################################################################################################
 # OMCppKinsol
 set(OMC_SIMRT_CPP_SOLVER_KINSOL_SOURCES Kinsol/Kinsol.cpp
                                         Kinsol/KinsolSettings.cpp
