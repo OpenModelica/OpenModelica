@@ -167,14 +167,13 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
  */
 void EllipseAnnotation::drawAnnotation(QPainter *painter, bool scene)
 {
-  // first we invert the painter since we have our coordinate system inverted.
-  // inversion is required to draw the elliptic curves at correct angles.
-  painter->scale(1.0, -1.0);
   QRectF boundingRectangle = boundingRect();
-  if (scene) {
-    boundingRectangle = mapToScene(boundingRect()).boundingRect();
+  if (!scene) {
+    // first we invert the painter since we have our coordinate system inverted.
+    // inversion is required to draw the elliptic curves at correct angles.
+    painter->scale(1.0, -1.0);
+    painter->translate(0, ((-boundingRectangle.top()) - boundingRectangle.bottom()));
   }
-  painter->translate(0, ((-boundingRectangle.top()) - boundingRectangle.bottom()));
   applyLinePattern(painter);
   if (mClosure != StringHandler::ClosureNone) {
     applyFillPattern(painter);
@@ -249,7 +248,7 @@ QString EllipseAnnotation::getShapeAnnotation()
   // get the closure
   if (mClosure.isDynamicSelectExpression() || !((mStartAngle == 0 && mEndAngle == 360 && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Chord")) == 0)
                                                 || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure.toQString().compare(QStringLiteral("EllipseClosure.Radial")) == 0))) {
-    annotationString.append(QString("closure=%1").append(mClosure.toQString()));
+    annotationString.append(QString("closure=%1").arg(mClosure.toQString()));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
