@@ -8634,7 +8634,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="292"/>
         <source>Change Color</source>
-        <translation type="unfinished">Changer Couleur</translation>
+        <translation>Changer Couleur</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="289"/>
@@ -8660,7 +8660,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="295"/>
         <source>Apply Custom Texture</source>
-        <translation type="unfinished">Appliquer Texture Personnalisée</translation>
+        <translation>Appliquer Texture Personnalisée</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="296"/>
