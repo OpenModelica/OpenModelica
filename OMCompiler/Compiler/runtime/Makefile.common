@@ -112,7 +112,7 @@ ZeroMQ_omc.o : zeromqimpl.c
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 OMSimulator_omc.o : OMSimulator_omc.c
-ffi_omc.o : ffi_omc.c
+ffi_omc.o : ffi_omc.cpp
 
 # Objects depending on BOOTH
 Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/util/read_write.h $(SimRuntimeCDir)/gc/omc_gc.h Dynload.cpp $(RML_COMPAT)

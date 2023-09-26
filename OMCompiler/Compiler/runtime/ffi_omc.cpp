@@ -30,6 +30,7 @@
  */
 
 
+extern "C" {
 #include "ffi.h"
 
 #include <gc.h>
@@ -43,6 +44,7 @@
 #else
   #include "../OpenModelicaBootstrappingHeader.h"
 #endif
+}
 
 #define UNBOX_OFFSET 1
 
@@ -90,7 +92,7 @@ static void* alloc_exp(void *exp, struct Alignment *align);
 static void* write_exp_value(void *exp, void *ptr, struct Alignment *align);
 static void* mk_ffi_value(void *exp, struct Alignment *align, int wrap_pointer);
 
-extern void* FFI_callFunction(int fnHandle, void *args, void *specs, void *returnType, void **outputArgs);
+extern "C" void* FFI_callFunction(int fnHandle, void *args, void *specs, void *returnType, void **outputArgs);
 
 /* Increments a pointer the given amount of bytes */
 void* increment_ptr(void *ptr, size_t bytes)
@@ -550,7 +552,7 @@ static void* mk_ffi_value(void *exp, struct Alignment *align, int wrap_pointer)
   return v;
 }
 
-extern void* FFI_callFunction(int fnHandle, void *args, void *specs, void *returnType, void **outputArgs)
+extern "C" void* FFI_callFunction(int fnHandle, void *args, void *specs, void *returnType, void **outputArgs)
 {
   /* Fetch the function pointer associated with the handle */
   modelica_ptr_t func = lookup_ptr(fnHandle);
@@ -559,7 +561,7 @@ extern void* FFI_callFunction(int fnHandle, void *args, void *specs, void *retur
   /* Count the number of arguments and allocate arrays for the ffi arguments */
   int num_args = arrayLength(args);
   ffi_type **arg_specs = (ffi_type**)generic_alloc(num_args, sizeof(ffi_type*));
-  void **arg_values = generic_alloc(num_args, sizeof(void*));
+  void **arg_values = (void**)generic_alloc(num_args, sizeof(void*));
   struct Alignment *arg_aligns = (struct Alignment*)generic_alloc(num_args, sizeof(struct Alignment));
 
   /* Set up the type specifiers and pointers to the arguments */
@@ -593,7 +595,12 @@ extern void* FFI_callFunction(int fnHandle, void *args, void *specs, void *retur
 
   /* Call the function */
   void *rc = alloc_return_type(returnType);
-  ffi_call(&cif, FFI_FN(func->data.func.handle), rc, arg_values);
+
+  try {
+    ffi_call(&cif, FFI_FN(func->data.func.handle), rc, arg_values);
+  } catch (...) {
+    MMC_THROW();
+  }
 
   /* Construct the list of output arguments (if any) */
   *outputArgs = mmc_mk_nil();
