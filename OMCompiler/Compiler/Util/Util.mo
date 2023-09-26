@@ -1395,6 +1395,8 @@ algorithm
 
     case _
       equation
+        // this is because System.dirname(".openmodelica") != ".openmodelica"
+        // System.dirname(".openmodelica") = "." on Windows!
         true = stringEqual(parentDir, System.dirname(parentDir));
         b = System.createDirectory(inString);
       then b;
@@ -1421,9 +1423,14 @@ protected
   String parentDir;
   Boolean parentDirExists;
 algorithm
-  parentDir := System.dirname(inString);
-  parentDirExists := System.directoryExists(parentDir);
-  outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
+  // if is already there, just retrun true!
+  if System.directoryExists(inString) then
+    outBool := true;
+  else
+    parentDir := System.dirname(inString);
+    parentDirExists := System.directoryExists(parentDir);
+    outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
+  end if;
 end createDirectoryTree;
 
 public function nextPowerOf2
