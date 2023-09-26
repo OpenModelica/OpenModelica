@@ -945,7 +945,10 @@ extern int SystemImpl__createDirectory(const char *str)
 #endif
   if (rv == -1)
   {
-    return 0;
+    if (errno == EEXIST) // directory exists, return success!
+      return 1;
+    else
+      return 0;
   }
   else
   {
