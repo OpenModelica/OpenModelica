@@ -7,6 +7,7 @@ Boolean2.mos \
 Enum1.mos \
 Enum2.mos \
 Enum3.mos \
+Exception1.mos \
 Integer1.mos \
 Integer2.mos \
 MissingFunction1.mos \

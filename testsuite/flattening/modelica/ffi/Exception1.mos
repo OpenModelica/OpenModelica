@@ -1,0 +1,19 @@
+// name:     Exception1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+// Checks that the compiler doesn't crash if the external function throws an
+// exception.
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ErrorChecking.Exception1); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/ffi/FFITest/package.mo:279:7-279:40:writable] Error: Failed to evaluate function: FFITest.ErrorChecking.exception1.
+// "
+// endResult
