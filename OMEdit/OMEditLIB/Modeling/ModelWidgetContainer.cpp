@@ -7811,22 +7811,27 @@ QList<QVariant> ModelWidget::toOMSensData()
     pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
     pInheritedAndComposedComponents.append(pComponent);
     for (auto component : pInheritedAndComposedComponents) {
-      ElementInfo *pComponentInfo = component->getElementInfo();
-      auto causality = pComponentInfo->getCausality();
-      auto variability = pComponentInfo->getVariablity();
-      const bool classNameIsReal = pComponentInfo->getClassName().compare(QStringLiteral("Real")) == 0;
+      QString causality, variability;
+      if (isNewApi()) {
+        causality = component->getModelComponent()->getDirectionPrefix();
+        variability = component->getModelComponent()->getVariability();
+      } else {
+        causality = component->getElementInfo()->getCausality();
+        variability = component->getElementInfo()->getVariablity();
+      }
+      const bool classNameIsReal = component->getClassName().compare(QStringLiteral("Real")) == 0;
       if (causality.compare(QStringLiteral("input")) == 0) {
-        if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
-          inputVariables.append(pComponentInfo->getName());
+        if (classNameIsReal || component->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
+          inputVariables.append(component->getName());
         }
       } else if (causality.compare(QStringLiteral("output")) == 0) {
-        if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
-          outputVariables.append(pComponentInfo->getName());
+        if (classNameIsReal || component->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
+          outputVariables.append(component->getName());
         }
       } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
-        parameters.append(pComponentInfo->getName());
+        parameters.append(component->getName());
       } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
-        auxVariables.append(pComponentInfo->getName());
+        auxVariables.append(component->getName());
       }
     }
   }
