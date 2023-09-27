@@ -757,7 +757,7 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
                     painter->save();
                     painter->setPen(Qt::NoPen);
                     painter->setBrush(QBrush(mLineColor));
-                    painter->drawEllipse(intersectionPoint, 1, 1);
+                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
                     painter->restore();
                   }
                 }
@@ -791,10 +791,10 @@ void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
 
   // draw highlight for connections
   if (mLineType == LineAnnotation::ConnectionType) {
-    qreal strokeWidth = 2.0;
+    qreal strokeWidth = 1.0;
     QColor strokeColor = Qt::white;
     if (isSelected()) {
-      strokeWidth = 3.0;
+      strokeWidth = 2.0;
       strokeColor = QColor(255, 255, 128);
     }
 
