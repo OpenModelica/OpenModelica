@@ -377,7 +377,7 @@ fmi2Status internalEventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
   fmi2Status status = fmi2OK;
   eventInfo->newDiscreteStatesNeeded = fmi2True;
   eventInfo->terminateSimulation     = fmi2False;
-  while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
+  while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation && status != fmi2Error) {
     status = internalEventUpdate((ModelInstance *)c, eventInfo);
   }
   return status;
