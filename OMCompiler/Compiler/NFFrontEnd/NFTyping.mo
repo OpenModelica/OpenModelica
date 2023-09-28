@@ -3840,7 +3840,7 @@ algorithm
   dim1 := Type.nthDimension(InstNode.getType(node1), index1);
   dim2 := Type.nthDimension(InstNode.getType(node2), index2);
 
-  if not Dimension.isEqualKnown(dim1, dim2) then
+  if not Dimension.isEqualKnownSize(dim1, node1, index1, dim2, node2, index2) then
     Error.addSourceMessage(Error.INCOMPATIBLE_IMPLICIT_RANGES,
       {String(index1), ComponentRef.toString(cref1),
        String(index2), ComponentRef.toString(cref2)}, info);

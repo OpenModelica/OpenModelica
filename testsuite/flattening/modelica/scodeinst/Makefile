@@ -731,9 +731,9 @@ ImplicitRangeEq2.mo \
 ImplicitRangeEq3.mo \
 ImplicitRangeExp1.mo \
 ImplicitRangeExp2.mo \
+ImplicitRangeExp3.mo \
 ImplicitRangeInvalid1.mo \
 ImplicitRangeInvalid2.mo \
-ImplicitRangeInvalid3.mo \
 ImplicitRangeType1.mo \
 ImplicitRangeType2.mo \
 ImportComponent1.mo \
