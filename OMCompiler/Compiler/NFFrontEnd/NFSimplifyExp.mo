@@ -1317,6 +1317,61 @@ algorithm
   exp := combineBinariesExp(exp);
 end combineBinaries;
 
+public function splitMultary
+  "inverse functionality to combineBinaries.
+  returns a multary to its original binary representation."
+  input output Expression exp;
+algorithm
+  exp := match exp
+    local
+      Expression new_exp;
+      list<Expression> args, inv_args;
+      Operator inv_op;
+
+    case Expression.MULTARY() algorithm
+      if listLength(exp.arguments) > 0 then
+        // it has arguments, take the first one and start with it
+        new_exp :: args := exp.arguments;
+        inv_args    := exp.inv_arguments;
+      elseif listLength(exp.inv_arguments) > 0 then
+        // it has no arguments but inverse arguments
+        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
+          // take the first one out and negate it
+          new_exp :: inv_args := exp.inv_arguments;
+          args      := exp.arguments;
+          new_exp   := Expression.negate(new_exp);
+        else
+          // create an artificial 1 to devide by the inverse arguments
+          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
+          args      := exp.arguments;
+          inv_args  := exp.inv_arguments;
+        end if;
+      else
+        // empty, make either 0 or 1 depending on math classification
+        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
+          new_exp   := Expression.makeZero(Operator.typeOf(exp.operator));
+        else
+          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
+        end if;
+        args        := exp.arguments;
+        inv_args    := exp.inv_arguments;
+      end if;
+
+      inv_op := Operator.invert(exp.operator);
+      // chain all arguments
+      for arg in args loop
+        new_exp := Expression.BINARY(new_exp, exp.operator, arg);
+      end for;
+      // chain all inverse arguments
+      for arg in inv_args loop
+        new_exp := Expression.BINARY(new_exp, inv_op, arg);
+      end for;
+    then new_exp;
+
+    else exp;
+  end match;
+end splitMultary;
+
 protected function combineBinariesExp
   "author: kabdelhak 09-2020
   Combines binaries for better handling in the backend.
