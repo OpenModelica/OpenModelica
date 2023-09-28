@@ -622,10 +622,10 @@ function combineBinaries
    --> MULTARY({2, 3, x}, {y^2}, *)"
   input output FlatModel flatModel;
 algorithm
-  flatModel.variables := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
-  flatModel.equations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
-  flatModel.initialEquations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
-  flatModel.algorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
+  flatModel.variables         := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
+  flatModel.equations         := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
+  flatModel.initialEquations  := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
+  flatModel.algorithms        := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
   flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 
