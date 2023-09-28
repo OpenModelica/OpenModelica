@@ -867,6 +867,12 @@ algorithm
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   mod := parseModifier(modifier, top);
   cls_node := Inst.lookupRootClass(classPath, top, context);
+
+  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+    context := InstContext.unset(context, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.FUNCTION);
+  end if;
+
   cls_node := Inst.instantiateRootClass(cls_node, context, mod);
   execStat("Inst.instantiateRootClass");
   inst_tree := buildInstanceTree(cls_node);

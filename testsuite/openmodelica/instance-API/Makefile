@@ -43,6 +43,7 @@ GetModelInstanceExp2.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
 GetModelInstanceExtends3.mos \
+GetModelInstanceFunction1.mos \
 GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
