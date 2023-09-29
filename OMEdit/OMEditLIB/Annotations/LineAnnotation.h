@@ -156,6 +156,8 @@ public:
   void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
+  void clearCollidingConnections();
+  void handleCollidingConnections();
 private:
   ModelInstance::Line *mpLine;
 
@@ -185,6 +187,8 @@ protected:
   QString mAlpha;
   oms_connection_type_enu_t mOMSConnectionType;
   bool mActiveState;
+  QVector<Element*> mCollidingConnectorElements;
+  QVector<LineAnnotation*> mCollidingConnections;
 public slots:
   void handleComponentMoved(bool positionChanged);
   void updateConnectionAnnotation();

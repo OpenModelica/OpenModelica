@@ -2597,7 +2597,9 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
       // load the LibraryTreeItem pixmap
       loadLibraryTreeItemPixmap(pLibraryTreeItem);
     }
-    emit modelStateChanged(nameStructure);
+    if (!isCreatingAutoLoadedLibrary()) {
+      emit modelStateChanged(nameStructure);
+    }
   }
   return pLibraryTreeItem;
 }
@@ -5317,8 +5319,10 @@ void LibraryWidget::handleAutoLoadedLibrary()
   if (isLoadingLibraries()) {
     mAutoLoadedLibrariesTimer.start();
   } else {
+    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(true);
     mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
     mAutoLoadedLibrariesList.clear();
+    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(false);
   }
 }
 
