@@ -66,10 +66,10 @@ modelica_string _old_realString(modelica_real r)
   return mmc_mk_scon(buffer);
 }
 
-modelica_string _ryu_realString(modelica_real r)
+modelica_string ryu_realString(modelica_real r)
 {
   char buffer[32];
-  d2s_buffered(r, buffer);
+  ryu_to_hr(r, buffer, 1); /* include the trailing zero */
   return mmc_mk_scon(buffer);
 }
 
