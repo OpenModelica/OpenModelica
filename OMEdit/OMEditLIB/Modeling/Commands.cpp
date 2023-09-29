@@ -359,6 +359,9 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->setPos(0, 0);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpComponent->setTransform(mNewTransformation.getTransformationMatrix());
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && mpComponent->getGraphicsView()->getModelWidget()->isNewApi()) {
+    mpComponent->getGraphicsView()->handleCollidingConnections();
+  }
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
@@ -397,6 +400,9 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->setPos(0, 0);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpComponent->setTransform(mOldTransformation.getTransformationMatrix());
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && mpComponent->getGraphicsView()->getModelWidget()->isNewApi()) {
+    mpComponent->getGraphicsView()->handleCollidingConnections();
+  }
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
