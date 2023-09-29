@@ -84,6 +84,7 @@ public
       case Expression.CALL()     then expandCall(exp.call, exp);
       case Expression.SIZE()     then expandSize(exp);
       case Expression.BINARY()   then expandBinary(exp, exp.operator);
+      case Expression.MULTARY()  then expand(SimplifyExp.splitMultary(exp), backend);
       case Expression.UNARY()    then expandUnary(exp);
       case Expression.LBINARY()  then expandLogicalBinary(exp);
       case Expression.LUNARY()   then expandLogicalUnary(exp);

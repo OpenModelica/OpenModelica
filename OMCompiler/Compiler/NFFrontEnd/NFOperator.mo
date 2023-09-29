@@ -808,7 +808,6 @@ public
       case Op.MUL_ARRAY_SCALAR  then true;
       else false;
     end match;
-
   end isCommutative;
 
   function isSoftCommutative

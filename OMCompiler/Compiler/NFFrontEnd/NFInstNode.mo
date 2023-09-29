@@ -1481,6 +1481,8 @@ uniontype InstNode
         then referenceEq(Pointer.access(node1.cls), Pointer.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
         then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
+      case (VAR_NODE(), VAR_NODE())
+        then referenceEq(Pointer.access(node1.varPointer), Pointer.access(node2.varPointer));
       // Other nodes like ref nodes might be equal, but we neither know nor care.
       else false;
     end match;
