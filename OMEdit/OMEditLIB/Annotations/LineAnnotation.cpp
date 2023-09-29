@@ -728,38 +728,35 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
      * Redraw the connectors which collides with connection.
      */
     if (mLineType == LineAnnotation::ConnectionType) {
-      QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
-      for (int i = 0; i < items.size(); ++i) {
-        if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
-          if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
-              || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
-            painter->save();
-            pElement->reDrawConnector(painter);
-            painter->restore();
-          }
-        } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
-          if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
-              && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
-                  || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
-            PointArrayAnnotation points = pConnectionAnnotation->getPoints();
-            for (int i = 0; i < mPoints.size(); ++i) {
-              for (int j = 0; j < points.size(); ++j) {
-                if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
-                  QLineF line1(mPoints.at(i), mPoints.at(i + 1));
-                  QLineF line2(points.at(j), points.at(j + 1));
-                  QPointF intersectionPoint;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-                  QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
-#else // < Qt 5.14
-                  QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
-#endif // QT_VERSION_CHECK
-                  if (type == QLineF::BoundedIntersection) {
-                    painter->save();
-                    painter->setPen(Qt::NoPen);
-                    painter->setBrush(QBrush(mLineColor));
-                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
-                    painter->restore();
-                  }
+      // redraw colliding connectors
+      foreach (Element *pElement, mCollidingConnectorElements) {
+        if (pElement) {
+          painter->save();
+          pElement->reDrawConnector(painter);
+          painter->restore();
+        }
+      }
+      // draw nodes on colliding connections
+      foreach (LineAnnotation *pConnection, mCollidingConnections) {
+        if (pConnection) {
+          PointArrayAnnotation points = pConnection->getPoints();
+          for (int i = 0; i < mPoints.size(); ++i) {
+            for (int j = 0; j < points.size(); ++j) {
+              if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                QLineF line2(points.at(j), points.at(j + 1));
+                QPointF intersectionPoint;
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+                QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+  #else // < Qt 5.14
+                QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
+  #endif // QT_VERSION_CHECK
+                if (type == QLineF::BoundedIntersection) {
+                  painter->save();
+                  painter->setPen(Qt::NoPen);
+                  painter->setBrush(QBrush(mLineColor));
+                  painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                  painter->restore();
                 }
               }
             }
@@ -1440,6 +1437,41 @@ QColor LineAnnotation::findLineColorForConnection(Element *pComponent)
     }
   }
   return lineColor;
+}
+
+/*!
+ * \brief LineAnnotation::clearCollidingConnections
+ * Clears the colliding connector elements and connections lists.
+ */
+void LineAnnotation::clearCollidingConnections()
+{
+  mCollidingConnectorElements.clear();
+  mCollidingConnections.clear();
+}
+
+/*!
+ * \brief LineAnnotation::handleCollidingConnections
+ * Detect the colliding connections.\n
+ * Make a list of colliding connector elements and connections.\
+ * These lists will be used in the paint event to draw connectors and connection nodes.
+ */
+void LineAnnotation::handleCollidingConnections()
+{
+  QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
+  for (int i = 0; i < items.size(); ++i) {
+    if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
+      if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
+          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+        mCollidingConnectorElements.append(pElement);
+      }
+    } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
+      if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
+          && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
+              || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
+        mCollidingConnections.append(pConnectionAnnotation);
+      }
+    }
+  }
 }
 
 /*!

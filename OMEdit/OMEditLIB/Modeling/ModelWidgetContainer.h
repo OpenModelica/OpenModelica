@@ -192,6 +192,7 @@ public:
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawTransitions(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
+  void handleCollidingConnections();
 
 
   void setExtentRectangle(const QRectF rectangle);

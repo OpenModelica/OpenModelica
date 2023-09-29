@@ -697,6 +697,22 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
   }
 }
 
+/*!
+ * \brief GraphicsView::handleCollidingConnections
+ * Detect the colliding connections for the diagram view.
+ */
+void GraphicsView::handleCollidingConnections()
+{
+  // First clear the colliding connector elements and connections.
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    pConnectionLineAnnotation->clearCollidingConnections();
+  }
+
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    pConnectionLineAnnotation->handleCollidingConnections();
+  }
+}
+
 bool GraphicsView::isCreatingShape()
 {
   return isCreatingLineShape() ||
@@ -2280,6 +2296,7 @@ void GraphicsView::removeOutOfSceneShapes()
 void GraphicsView::removeConnectionsFromScene()
 {
   foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    pConnectionLineAnnotation->clearCollidingConnections();
     removeConnectionDetails(pConnectionLineAnnotation);
     removeItem(pConnectionLineAnnotation);
     addConnectionToOutOfSceneList(pConnectionLineAnnotation);
@@ -5913,6 +5930,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   clearDependsOnModels();
   disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
   drawModelIconDiagram(mpModelInstance, false, modelInfo);
+  mpDiagramGraphicsView->handleCollidingConnections();
 }
 
 void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
@@ -7906,7 +7924,7 @@ void ModelWidget::processPendingModelUpdate()
  */
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
-  if (dependsOnModel(modelName)) {
+  if (mDiagramViewLoaded && dependsOnModel(modelName)) {
     reDrawModelWidget(createModelInfo());
   }
 }
